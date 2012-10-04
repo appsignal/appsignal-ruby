@@ -30,5 +30,9 @@ describe Appsignal do
     it 'should return ignored exceptions' do
       subject[:ignore_exceptions].should eq []
     end
+
+    it 'should return the slow request threshold' do
+      subject[:slow_request_threshold].should eq 200
+    end
   end
 end

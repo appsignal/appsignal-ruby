@@ -50,14 +50,23 @@ module Appsignal
     end
 
     def formatted_events
+      @events.map { |event| format(event) }
+    end
+
+    def format(event)
+      {
+        :name => event.name,
+        :duration => event.duration,
+        :time => event.time,
+        :end => event.end,
+      }
+    end
+
+    def detailed_events
       @events.map do |event|
-        {
-          :name => event.name,
-          :duration => event.duration,
-          :time => event.time,
-          :end => event.end,
+        format(event).merge(
           :payload => sanitized_event_payload(event)
-        }
+        )
       end
     end
 
@@ -93,11 +102,15 @@ module Appsignal
       end
     end
 
+    def slow_request?
+      @log_entry.duration >= Appsignal.config[:slow_request_threshold]
+    end
+
     def to_hash
       {
         :request_id => @id,
         :log_entry => formatted_log_entry,
-        :events => formatted_events,
+        :events => slow_request? ? detailed_events : formatted_events,
         :exception => formatted_exception,
         :failed => exception.present?
       }

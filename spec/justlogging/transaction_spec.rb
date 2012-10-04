@@ -85,10 +85,10 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#formatted_events' do
+    describe '#detailed_events' do
       let(:start_time) { Time.parse('01-01-2001 10:00:00') }
       let(:end_time) { Time.parse('01-01-2001 10:00:01') }
-      let(:payload) do
+      let(:event_attributes) do
         {
           :name => 'name',
           :duration => 2,
@@ -97,18 +97,18 @@ describe Appsignal::Transaction do
           :payload => {:sensitive => 'data'}
         }
       end
-      let(:event) { stub(payload) }
+      let(:event) { stub(event_attributes) }
 
       before { transaction.add_event(event) }
 
-      subject { transaction.formatted_events }
+      subject { transaction.detailed_events }
 
-      it 'should return formatted events' do
-        should == [payload]
+      it 'should return detailed events' do
+        should == [event_attributes]
       end
 
       context "when there is a payload sanitizer" do
-        subject { transaction.formatted_events.first[:payload] }
+        subject { transaction.detailed_events.first[:payload] }
         before do
           @old_sanitizer = Appsignal.event_payload_sanitizer
           Appsignal.event_payload_sanitizer = proc do |event|
@@ -121,6 +121,34 @@ describe Appsignal::Transaction do
         after do
           Appsignal.event_payload_sanitizer = @old_sanitizer
         end
+      end
+    end
+
+    describe '#formatted_events' do
+      let(:start_time) { Time.parse('01-01-2001 10:00:00') }
+      let(:end_time) { Time.parse('01-01-2001 10:00:01') }
+      let(:event_attributes) do
+        {
+          :name => 'name',
+          :duration => 2,
+          :time => start_time,
+          :end => end_time,
+          :payload => :stuff
+        }
+      end
+      let(:event) { stub(event_attributes) }
+
+      before { transaction.add_event(event) }
+
+      subject { transaction.formatted_events }
+
+      it 'should return formatted events without payloads' do
+        should == [{
+          :name => 'name',
+          :duration => 2,
+          :time => start_time,
+          :end => end_time
+        }]
       end
     end
 
@@ -212,11 +240,27 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe '#slow_request?' do
+      let(:duration) { 199 }
+      subject { transaction.slow_request? }
+      before { transaction.set_log_entry(stub(:duration => duration)) }
+
+      it { should be_false }
+
+      context "when the request took long" do
+        let(:duration) { 200 }
+
+        it { should be_true }
+      end
+    end
+
     describe '#to_hash' do
       subject { transaction.to_hash }
       before { transaction.stub(
         :formatted_log_entry => {:name => 'log_entry'},
         :formatted_events => [{:name => 'event'}],
+        :detailed_events => [{:name => 'detailed event'}],
+        :slow_request? => false,
         :formatted_exception => {:name => 'exception'},
         :failed => false
       )}
@@ -229,6 +273,20 @@ describe Appsignal::Transaction do
           :exception => {:name => 'exception'},
           :failed => false
         }
+      end
+
+      context "when the request was slow" do
+        before { transaction.stub(:slow_request? => true) }
+
+        it 'should return detailed event data' do
+          should == {
+            :request_id => '1',
+            :log_entry => {:name => 'log_entry'},
+            :events => [{:name => 'detailed event'}],
+            :exception => {:name => 'exception'},
+            :failed => false
+          }
+        end
       end
     end
 
