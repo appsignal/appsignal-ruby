@@ -103,8 +103,8 @@ describe Appsignal::Transaction do
 
       subject { transaction.formatted_events }
 
-      it 'should return formatted events without the payload' do
-        should == [payload.merge(:payload => {})]
+      it 'should return formatted events' do
+        should == [payload]
       end
 
       context "when there is a payload sanitizer" do
@@ -166,6 +166,8 @@ describe Appsignal::Transaction do
         it 'returns the formatted payload of the log entry' do
           should == {
             :action => 'controller#action',
+            :controller => 'controller',
+            :sensitive => 'data',
             :duration => 2,
             :time => start_time,
             :end => end_time
