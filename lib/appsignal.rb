@@ -22,7 +22,7 @@ module Appsignal
     end
 
     def event_payload_sanitizer
-      @event_payload_sanitizer ||= proc { {} }
+      @event_payload_sanitizer ||= proc { |event| event.payload }
     end
 
   end
