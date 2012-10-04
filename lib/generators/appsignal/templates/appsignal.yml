@@ -1,0 +1,3 @@
+production:
+  api_key: "<%= push_key %>"
+  active: true

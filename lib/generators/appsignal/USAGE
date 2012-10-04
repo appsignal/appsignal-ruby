@@ -1,0 +1,8 @@
+Description:
+    Appsignal install generator
+
+Example:
+    rails generate appsignal PUSH_KEY
+
+    This will create config/appsignal.yml with your PUSH_KEY.
+    If you use capistrano it will load Appsignal in the deploy file.
