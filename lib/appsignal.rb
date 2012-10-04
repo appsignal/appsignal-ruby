@@ -15,7 +15,8 @@ module Appsignal
 
     def config
       @config ||= {:ignore_exceptions => [],
-        :endpoint => "http://push.appsignal.com/api/1"
+        :endpoint => "http://push.appsignal.com/api/1",
+        :slow_request_threshold => 200
       }.merge(
         YAML.load_file("#{Rails.root}/config/appsignal.yml")[Rails.env].
           symbolize_keys)
