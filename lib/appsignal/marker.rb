@@ -30,7 +30,9 @@ module Appsignal
 
     def config
       file = File.join(Dir.pwd, "config/appsignal.yml")
-      raise ArgumentError, "config not found at: #{file}" unless File.exists?(file)
+      unless File.exists?(file)
+        raise ArgumentError, "config not found at: #{file}"
+      end
       config = YAML.load_file(file)[@rails_env]
       raise ArgumentError,
         "config for '#{@rails_env}' environment not found" unless config
