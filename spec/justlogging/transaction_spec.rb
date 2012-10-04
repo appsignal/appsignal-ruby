@@ -88,7 +88,7 @@ describe Appsignal::Transaction do
     describe '#formatted_events' do
       let(:start_time) { Time.parse('01-01-2001 10:00:00') }
       let(:end_time) { Time.parse('01-01-2001 10:00:01') }
-      let(:payload) do
+      let(:event_attributes) do
         {
           :name => 'name',
           :duration => 2,
@@ -97,14 +97,14 @@ describe Appsignal::Transaction do
           :payload => {:sensitive => 'data'}
         }
       end
-      let(:event) { stub(payload) }
+      let(:event) { stub(event_attributes) }
 
       before { transaction.add_event(event) }
 
       subject { transaction.formatted_events }
 
       it 'should return formatted events' do
-        should == [payload]
+        should == [event_attributes]
       end
 
       context "when there is a payload sanitizer" do
