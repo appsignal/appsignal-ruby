@@ -14,12 +14,7 @@ module Appsignal
     end
 
     def config
-      @config ||= {:ignore_exceptions => [],
-        :endpoint => "http://push.appsignal.com/api/1",
-        :slow_request_threshold => 200
-      }.merge(
-        YAML.load_file("#{Rails.root}/config/appsignal.yml")[Rails.env].
-          symbolize_keys)
+      @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
     end
 
     def event_payload_sanitizer
@@ -29,6 +24,7 @@ module Appsignal
   end
 end
 
+require 'appsignal/config'
 require 'appsignal/transmitter'
 require 'appsignal/agent'
 require 'appsignal/capistrano'
