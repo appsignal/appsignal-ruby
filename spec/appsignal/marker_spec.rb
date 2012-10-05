@@ -70,43 +70,4 @@ describe Appsignal::Marker do
       end
     end
   end
-
-  context "config" do
-    subject { marker.config }
-
-    it {
-      should == {
-        'endpoint' => "http://localhost:3000/api/1",
-        'api_key' => "abc",
-        'active' => true
-      }
-    }
-
-    context 'when there is no config file' do
-      before{ Dir.stub(:pwd => '/not/existing')}
-
-      it "should generate error" do
-        lambda{
-          marker.config
-        }.should raise_error(
-          "config not found at:"\
-          " /not/existing/config/appsignal.yml"
-        )
-      end
-    end
-
-    context "the env is not in the config" do
-      let(:marker) {
-        Appsignal::Marker.new({}, 'staging', logger)
-      }
-
-      it "should generate error" do
-        lambda{
-          marker.config
-        }.should raise_error(
-          "config for 'staging' environment not found"
-        )
-      end
-    end
-  end
 end
