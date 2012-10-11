@@ -23,7 +23,7 @@ describe Appsignal::Marker do
     before do
       @transmitter = mock()
       Appsignal::Transmitter.should_receive(:new).
-        with("http://localhost:3000/api/1", 'markers', 'abc').
+        with('http://localhost:3000/api/1', 'markers', 'abc').
         and_return(@transmitter)
     end
 
@@ -57,12 +57,13 @@ describe Appsignal::Marker do
 
       it "should log other status" do
         @transmitter.should_receive(:transmit).and_return('500')
+        @transmitter.should_receive(:uri).and_return('http://localhost:3000/api/1/markers')
 
         marker.transmit
 
         log.string.should include('** Notifying Appsignal of deploy...')
         log.string.should include(
-          '** Something went wrong while trying to notify Appsignal'
+          '** Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/api/1/markers'
         )
         log.string.should_not include(
           '** Appsignal has been notified of this deploy!'

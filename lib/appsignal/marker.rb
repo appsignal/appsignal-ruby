@@ -19,7 +19,7 @@ module Appsignal
         if result == '200'
           @logger.info "Appsignal has been notified of this deploy!"
         else
-          raise
+          raise "#{result} at #{transmitter.uri}"
         end
       rescue Exception => e
         @logger.important "Something went wrong while trying to notify Appsignal: #{e}"
