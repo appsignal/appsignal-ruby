@@ -8,7 +8,7 @@ module Appsignal
     end
 
     def load
-      file = File.join(@root_path, "config/appsignal.yml")
+      file = File.join(@root_path, 'config/appsignal.yml')
       raise ArgumentError,
         "config not found at: #{file}" unless File.exists?(file)
 

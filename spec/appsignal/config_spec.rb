@@ -14,7 +14,7 @@ describe Appsignal::Config do
   }
 
   context 'when there is no config file' do
-    before{ Dir.stub(:pwd => '/not/existing') }
+    before { Dir.stub(:pwd => '/not/existing') }
 
     it "should generate error" do
       lambda {

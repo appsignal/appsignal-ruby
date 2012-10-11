@@ -8,6 +8,7 @@ describe Appsignal::Marker do
         :user => 'batman',
         :rails_env => 'development'
       },
+      Dir.pwd,
       'development',
       logger
     )
