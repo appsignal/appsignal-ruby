@@ -1,10 +1,10 @@
 module Appsignal
   class Config
-    attr_accessor :root_path, :rails_env
+    attr_accessor :rails_env, :root_path
 
-    def initialize(root_path, rails_env)
-      @root_path = root_path
+    def initialize(rails_env)
       @rails_env = rails_env
+      @root_path = Rails.root
     end
 
     def load

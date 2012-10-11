@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Appsignal::Config do
-  subject { Appsignal::Config.new(Dir.pwd, 'test').load }
+  subject { Appsignal::Config.new('test').load }
 
   it {
     should == {
@@ -14,7 +14,7 @@ describe Appsignal::Config do
   }
 
   context 'when there is no config file' do
-    before{ Dir.stub(:pwd => '/not/existing') }
+    before{ Rails.stub(:root => '/not/existing') }
 
     it "should generate error" do
       lambda {
@@ -27,7 +27,7 @@ describe Appsignal::Config do
   end
 
   context "the env is not in the config" do
-    subject { Appsignal::Config.new(Dir.pwd, 'staging').load }
+    subject { Appsignal::Config.new('staging').load }
 
     it "should generate error" do
       lambda {

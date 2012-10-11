@@ -5,7 +5,7 @@ module Appsignal
 
     def initialize(marker_data, rails_env, logger)
       @marker_data = marker_data
-      @config = Appsignal::Config.new(Dir.pwd, rails_env).load
+      @config = Appsignal::Config.new(rails_env).load
       @logger = logger
     end
 
