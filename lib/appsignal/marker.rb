@@ -1,6 +1,5 @@
 module Appsignal
   class Marker
-
     attr_reader :marker_data, :config, :logger
     ACTION = 'markers'
 
@@ -22,8 +21,8 @@ module Appsignal
         else
           raise
         end
-      rescue
-        @logger.info "Something went wrong while trying to notify Appsignal!"
+      rescue Exception => e
+        @logger.important "Something went wrong while trying to notify Appsignal: #{e}"
       end
     end
   end

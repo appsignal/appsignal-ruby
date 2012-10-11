@@ -62,7 +62,7 @@ describe Appsignal::Marker do
 
         log.string.should include('** Notifying Appsignal of deploy...')
         log.string.should include(
-          '** Something went wrong while trying to notify Appsignal!'
+          '** Something went wrong while trying to notify Appsignal'
         )
         log.string.should_not include(
           '** Appsignal has been notified of this deploy!'

@@ -6,9 +6,9 @@ describe Appsignal::Config do
   it {
     should == {
       :ignore_exceptions => [],
-      :endpoint => "http://localhost:3000/api/1",
+      :endpoint => 'http://localhost:3000/api/1',
       :slow_request_threshold => 200,
-      :api_key => "abc",
+      :api_key => 'abc',
       :active => true
     }
   }

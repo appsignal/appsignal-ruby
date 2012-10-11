@@ -1,3 +1,4 @@
+require 'rails'
 require 'capistrano'
 require 'appsignal/config'
 require 'appsignal/transmitter'
