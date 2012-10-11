@@ -1,4 +1,5 @@
 require 'capistrano'
+require 'appsignal/config'
 require 'appsignal/transmitter'
 require 'appsignal/marker'
 
@@ -6,7 +7,7 @@ module Appsignal
   class Capistrano
     def self.tasks(config)
       config.load do
-        after "deploy","appsignal:deploy"
+        after "deploy", "appsignal:deploy"
         after "deploy:migrations", "appsignal:deploy"
 
         namespace :appsignal do

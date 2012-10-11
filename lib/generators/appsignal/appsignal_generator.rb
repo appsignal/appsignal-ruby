@@ -2,7 +2,7 @@ class AppsignalGenerator < Rails::Generators::Base
   source_root File.expand_path('../templates', __FILE__)
   argument :push_key, :type => :string
 
-  desc "Install the config file for JustLogging with your PUSH_KEY."
+  desc "Install the config file for AppSignal with your PUSH_KEY."
   def copy_config_file
     template "appsignal.yml", "config/appsignal.yml"
   end
