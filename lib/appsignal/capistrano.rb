@@ -1,5 +1,5 @@
-require 'rails'
 require 'capistrano'
+require 'rails'
 require 'appsignal/config'
 require 'appsignal/transmitter'
 require 'appsignal/marker'
@@ -23,7 +23,7 @@ module Appsignal
               :rails_env => rails_env
             }
 
-            marker = Marker.new(marker_data, rails_env, logger)
+            marker = Marker.new(marker_data, ENV['PWD'], rails_env, logger)
             marker.transmit
           end
         end

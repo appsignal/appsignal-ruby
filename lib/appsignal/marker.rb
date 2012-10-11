@@ -3,9 +3,9 @@ module Appsignal
     attr_reader :marker_data, :config, :logger
     ACTION = 'markers'
 
-    def initialize(marker_data, rails_env, logger)
+    def initialize(marker_data, root_path, rails_env, logger)
       @marker_data = marker_data
-      @config = Appsignal::Config.new(rails_env).load
+      @config = Appsignal::Config.new(root_path, rails_env).load
       @logger = logger
     end
 

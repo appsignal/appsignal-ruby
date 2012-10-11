@@ -14,7 +14,7 @@ module Appsignal
     end
 
     def config
-      @config ||= Appsignal::Config.new(Rails.env).load
+      @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
     end
 
     def event_payload_sanitizer

@@ -15,7 +15,7 @@ describe Appsignal::Capistrano do
     before :all do
       @config.set(:rails_env, 'development')
       @config.set(:repository, 'master')
-      @config.set(:deploy_to, Rails.root)
+      @config.set(:deploy_to, '/home/username/app')
       @config.set(:current_release, '')
       @config.set(:current_revision, '503ce0923ed177a3ce000005')
       ENV['USER'] = 'batman'
@@ -34,7 +34,7 @@ describe Appsignal::Capistrano do
       before do
         @marker = mock()
         Appsignal::Marker.should_receive(:new).
-          with(marker_data, 'development', anything()).
+          with(marker_data, Rails.root.to_s, 'development', anything()).
           and_return(@marker)
       end
 
