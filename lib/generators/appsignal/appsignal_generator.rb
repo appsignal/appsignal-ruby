@@ -26,6 +26,9 @@ class AppsignalGenerator < Rails::Generators::Base
     else
       say "No capybara setup detected! Did you know you can use a Rake task" +
       " to notify Appsignal of deployments?"
+      say_status :info, "No capybara setup detected! Did you know you can " +
+      "use a Rake task to notify Appsignal of deployments?", :yellow
+      say_status "", "rake appsignal:notify_of_deploy"
     end
   end
 end
