@@ -24,7 +24,7 @@ class AppsignalGenerator < Rails::Generators::Base
           :after => "require './config/boot'\n"
       end
     else
-      say_status :info, "No capybara setup detected! Did you know you can " +
+      say_status :info, "No capybara setup detected! Did you know you can "\
       "use a Rake task to notify Appsignal of deployments?", :yellow
       say_status "", "rake appsignal:notify_of_deploy"
     end
@@ -39,11 +39,11 @@ class AppsignalGenerator < Rails::Generators::Base
       elsif result == '401'
         say_status :error, "Push key not valid with Appsignal...", :red
       else
-        say_status :error, "Could not confirm authorisation: " +
+        say_status :error, "Could not confirm authorisation: "\
         "#{result.nil? ? 'nil' : result} at #{auth_check.uri}", :red
       end
     rescue Exception => e
-      say_status :error, "Something went wrong while trying to authenticate " +
+      say_status :error, "Something went wrong while trying to authenticate "\
       "with Appsignal: #{e}", :red
     end
   end
