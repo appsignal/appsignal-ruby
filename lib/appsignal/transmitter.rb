@@ -17,7 +17,7 @@ module Appsignal
       URI("#{@endpoint}/#{@action}")
     end
 
-    def transmit(payload)
+    def transmit(payload = {})
       result = http_client.request(encoded_message(payload))
       result.code
     end
