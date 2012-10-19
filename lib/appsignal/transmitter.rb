@@ -5,10 +5,9 @@ require 'json'
 
 module Appsignal
   class Transmitter
-
     attr_accessor :endpoint, :action, :api_key
 
-    def initialize(endpoint, action, api_key)
+    def initialize(endpoint, action, api_key, logger=nil)
       @endpoint = endpoint
       @action = action
       @api_key = api_key
@@ -19,12 +18,8 @@ module Appsignal
     end
 
     def transmit(payload)
-      begin
-       result = http_client.request(encoded_message(payload))
-       result.code
-      rescue
-        nil
-      end
+      result = http_client.request(encoded_message(payload))
+      result.code
     end
 
     def encoded_message(payload)
@@ -57,6 +52,5 @@ module Appsignal
         end
       end
     end
-
   end
 end

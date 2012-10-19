@@ -14,22 +14,13 @@ describe Appsignal::Transmitter do
   end
 
   describe "#transmit" do
+    let(:http_client) { stub(:request => stub(:code => '200')) }
+    before { instance.stub(:encoded_message => :the_message) }
+    before { instance.stub(:http_client => http_client) }
+
     subject { instance.transmit(:shipit => :payload) }
 
-    context "without exception" do
-      let(:http_client) { stub(:request => stub(:code => '200')) }
-      before { instance.stub(:encoded_message => :the_message) }
-      before { instance.stub(:http_client => http_client) }
-
-      it { should == '200' }
-    end
-
-    context "with exception" do
-      let(:http_client) { stub(:request) }
-      before { instance.stub(:http_client).and_raise(Net::HTTPGatewayTimeOut) }
-
-      it { should == nil }
-    end
+    it { should == '200' }
   end
 
   describe "#encoded_message" do

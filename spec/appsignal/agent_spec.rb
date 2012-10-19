@@ -22,6 +22,11 @@ describe Appsignal::Agent do
       subject.should_receive(:handle_result).with('200')
     end
 
+    it "handles exceptions in transmit" do
+      subject.transmitter.stub(:transmit).and_raise(Net::HTTPGatewayTimeOut)
+      subject.should_receive(:handle_result).with(nil)
+    end
+
     after { subject.send_queue }
   end
 
