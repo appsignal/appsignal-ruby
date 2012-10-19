@@ -2,6 +2,8 @@ task :publish do
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
 
+  raise '$EDITOR should be set' unless ENV['EDITOR']
+
   def build_and_push_gem
     puts '# Building gem'
     puts `gem build #{NAME}.gemspec`
