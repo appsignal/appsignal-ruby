@@ -49,4 +49,29 @@ describe Appsignal::Transmitter do
       instance.message(:the => :payload)
     end
   end
+
+  describe "ca_file_path" do
+    subject { instance.send(:ca_file_path) }
+
+    it { should include('resources/thawte_primary_root_ca.pem') }
+    it("should exist") { File.exists?(subject).should be_true }
+  end
+
+  describe "#http_client" do
+    subject { instance.send(:http_client) }
+
+    context "with a http uri" do
+      it { should be_instance_of(Net::HTTP) }
+
+      its(:use_ssl?) { should be_false }
+    end
+
+    context "with a https uri" do
+      let(:instance) { klass.new('https://www.80beans.com', action, :the_api_key) }
+
+      its(:use_ssl?) { should be_true }
+      its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
+      its(:ca_file) { include('resources/thawte_primary_root_ca.pem') }
+    end
+  end
 end

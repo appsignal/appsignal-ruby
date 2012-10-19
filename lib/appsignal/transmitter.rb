@@ -44,11 +44,16 @@ module Appsignal
 
     protected
 
+    def ca_file_path
+      File.expand_path(File.join(__FILE__, '../../../resources/thawte_primary_root_ca.pem'))
+    end
+
     def http_client
       Net::HTTP.new(uri.host, uri.port).tap do |http|
         if uri.scheme == 'https'
           http.use_ssl = true
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          http.ca_file = ca_file_path
         end
       end
     end
