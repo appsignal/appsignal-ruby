@@ -45,7 +45,7 @@ module Appsignal
     protected
 
     def ca_file_path
-      File.expand_path(File.join(__FILE__, '../../../resources/thawte_primary_root_ca.pem'))
+      File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
     end
 
     def http_client

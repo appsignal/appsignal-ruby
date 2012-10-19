@@ -53,7 +53,7 @@ describe Appsignal::Transmitter do
   describe "ca_file_path" do
     subject { instance.send(:ca_file_path) }
 
-    it { should include('resources/thawte_primary_root_ca.pem') }
+    it { should include('resources/cacert.pem') }
     it("should exist") { File.exists?(subject).should be_true }
   end
 
@@ -71,7 +71,7 @@ describe Appsignal::Transmitter do
 
       its(:use_ssl?) { should be_true }
       its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
-      its(:ca_file) { include('resources/thawte_primary_root_ca.pem') }
+      its(:ca_file) { include('resources/cacert.pem') }
     end
   end
 end
