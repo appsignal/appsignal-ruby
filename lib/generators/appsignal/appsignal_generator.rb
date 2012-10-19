@@ -24,7 +24,7 @@ class AppsignalGenerator < Rails::Generators::Base
           :after => "require './config/boot'\n"
       end
     else
-      say_status :info, "No capybara setup detected! Did you know you can "\
+      say_status :info, "No capistrano setup detected! Did you know you can "\
       "use a Rake task to notify Appsignal of deployments?", :yellow
       say_status "", "rake appsignal:notify_of_deploy"
     end
