@@ -20,7 +20,7 @@ describe Appsignal do
     subject { Appsignal.config }
 
     it 'should return the endpoint' do
-      subject[:endpoint].should eq 'http://localhost:3000/api/1'
+      subject[:endpoint].should eq 'http://localhost:3000/1'
     end
 
     it 'should return the api key' do

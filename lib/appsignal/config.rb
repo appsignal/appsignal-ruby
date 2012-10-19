@@ -17,7 +17,7 @@ module Appsignal
         "config for '#{@rails_env}' environment not found" unless config
 
       config = {:ignore_exceptions => [],
-        :endpoint => 'https://push.appsignal.com/api/1',
+        :endpoint => 'https://push.appsignal.com/1',
         :slow_request_threshold => 200
       }.merge(config.symbolize_keys)
     end
