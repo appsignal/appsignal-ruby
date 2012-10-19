@@ -5,7 +5,7 @@ describe Appsignal::AuthCheck do
   before do
     @transmitter = mock
     Appsignal::Transmitter.should_receive(:new).
-      with('http://localhost:3000/api/1', 'auth', 'abc').
+      with('http://localhost:3000/1', 'auth', 'abc').
       and_return(@transmitter)
   end
 
