@@ -27,7 +27,8 @@ module Appsignal
     def send_queue
       begin
         handle_result transmitter.transmit(:log_entries => queue)
-      rescue
+      rescue Exception => ex
+        Rails.logger.error "Exception while communicating with AppSignal: #{ex}"
         handle_result nil
       end
     end

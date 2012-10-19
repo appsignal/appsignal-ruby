@@ -23,8 +23,9 @@ describe Appsignal::Agent do
     end
 
     it "handles exceptions in transmit" do
-      subject.transmitter.stub(:transmit).and_raise(Net::HTTPGatewayTimeOut)
+      subject.transmitter.stub(:transmit).and_raise(Exception.new)
       subject.should_receive(:handle_result).with(nil)
+      Rails.logger.should_receive(:error).with('Exception while communicating with AppSignal: Exception')
     end
 
     after { subject.send_queue }
