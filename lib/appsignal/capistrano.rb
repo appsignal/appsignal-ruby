@@ -13,14 +13,13 @@ module Appsignal
 
         namespace :appsignal do
           task :deploy do
-            rails_env = fetch(:rails_env, "production")
+            rails_env = fetch(:rails_env, 'production')
             user = ENV['USER'] || ENV['USERNAME']
 
             marker_data = {
               :revision => current_revision,
               :repository => repository,
-              :user => user,
-              :rails_env => rails_env
+              :user => user
             }
 
             marker = Marker.new(marker_data, ENV['PWD'], rails_env, logger)
