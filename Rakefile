@@ -2,16 +2,16 @@ task :publish do
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
 
-  def publish_gem
-    puts '# Building Gemspec'
+  def build_and_push_gem
+    puts '# Building gem'
     puts `gem build #{NAME}.gemspec`
     puts '# Publishing Gem'
-    puts `gem push #{gem_name}`
+    puts `gem push #{gem_name}-#{version}.gem`
   end
 
   def create_and_push_tag
     begin
-      puts `git commit -m 'Bump to #{version} [ci skip]'`
+      puts `git commit -am 'Bump to #{version} [ci skip]'`
       puts "# Creating tag #{version}"
       puts `git tag #{version}`
       puts `git push origin #{version}`
@@ -44,10 +44,9 @@ task :publish do
 
   system("$EDITOR #{VERSION_FILE}")
   if changes.member?(VERSION_FILE)
-    publish_gem
+    build_and_push_gem
     create_and_push_tag
   else
     raise "Actually change the version in: #{VERSION_FILE}"
   end
-
 end
