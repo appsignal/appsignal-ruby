@@ -2,5 +2,7 @@ development: &development
   endpoint: "http://localhost:3000/1"
   api_key: "abc"
   active: true
+production:
+  <<: *development
 test:
   <<: *development

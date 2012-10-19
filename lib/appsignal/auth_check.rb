@@ -6,7 +6,7 @@ module Appsignal
     ACTION = 'auth'
 
     def initialize
-      @config = Appsignal.config
+      @config = Appsignal::Config.new(Rails.root, 'production').load
     end
 
     def perform
