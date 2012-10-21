@@ -80,6 +80,7 @@ module Appsignal
         :path => request.fullpath,
         :hostname => Socket.gethostname,
         :environment => @env,
+        :session_data => request.session,
         :kind => 'http_request'
       }.merge(formatted_payload)
     end

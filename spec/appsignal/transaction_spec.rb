@@ -154,10 +154,19 @@ describe Appsignal::Transaction do
     describe '#formatted_log_entry' do
       subject { transaction.formatted_log_entry }
       before do
-        transaction.stub(:request => mock(:fullpath => '/blog'))
+        transaction.stub(
+          :request => mock(
+            :fullpath => '/blog',
+            :session => {:current_user => 1}
+          )
+        )
         Socket.stub(:gethostname => 'app1.local')
         Rails.stub(:env => 'care about it')
-        transaction.stub(:formatted_payload => {:foo => :bar})
+        transaction.stub(
+          :formatted_payload => {
+            :foo => :bar
+          }
+        )
       end
 
       it 'returns a formatted log_entry' do
@@ -165,6 +174,7 @@ describe Appsignal::Transaction do
           :path => '/blog',
           :hostname => 'app1.local',
           :environment => {'SERVER_NAME' => 'localhost'},
+          :session_data => {:current_user => 1},
           :kind => 'http_request',
           :foo => :bar
         }
