@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe Appsignal::Transaction do
-
   describe '.create' do
     before { Appsignal::Transaction.create('1', {}) }
 
@@ -156,14 +155,16 @@ describe Appsignal::Transaction do
       subject { transaction.formatted_log_entry }
       before do
         transaction.stub(:request => mock(:fullpath => '/blog'))
+        Socket.stub(:gethostname => 'app1.local')
         Rails.stub(:env => 'care about it')
         transaction.stub(:formatted_payload => {:foo => :bar})
       end
 
       it 'returns a formatted log_entry' do
         should == {
-          :name => '/blog',
-          :hostname => 'localhost',
+          :path => '/blog',
+          :hostname => 'app1.local',
+          :environment => {'SERVER_NAME' => 'localhost'},
           :kind => 'http_request',
           :foo => :bar
         }

@@ -1,3 +1,5 @@
+require 'socket'
+
 module Appsignal
   class Transaction
     def self.create(key, env)
@@ -75,8 +77,9 @@ module Appsignal
 
     def formatted_log_entry
       {
-        :name => request.fullpath,
-        :hostname => @env['SERVER_NAME'],
+        :path => request.fullpath,
+        :hostname => Socket.gethostname,
+        :environment => @env,
         :kind => 'http_request'
       }.merge(formatted_payload)
     end
