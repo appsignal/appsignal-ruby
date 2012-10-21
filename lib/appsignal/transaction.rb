@@ -75,11 +75,19 @@ module Appsignal
       Appsignal.event_payload_sanitizer.call(event)
     end
 
+    def sanitized_environment
+      out = {}
+      @env.each_pair do |key, value|
+        out[key] = value.to_s
+      end
+      out
+    end
+
     def formatted_log_entry
       {
         :path => request.fullpath,
         :hostname => Socket.gethostname,
-        :environment => @env,
+        :environment => sanitized_environment,
         :session_data => request.session,
         :kind => 'http_request'
       }.merge(formatted_payload)
