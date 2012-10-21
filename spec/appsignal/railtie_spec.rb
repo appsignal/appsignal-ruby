@@ -15,7 +15,6 @@ describe Appsignal::Railtie do
   end
 
   context "non action_controller event" do
-
     it "should call add_event for non action_controller event" do
       current = stub
       current.should_receive(:add_event)
@@ -27,7 +26,6 @@ describe Appsignal::Railtie do
   end
 
   context "action_controller event" do
-
     it "should call set_log_entry for action_controller event" do
       current = stub
       current.should_receive(:set_log_entry)

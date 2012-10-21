@@ -2,7 +2,6 @@ raise 'This appsignal gem only works with rails' unless defined?(Rails)
 
 module Appsignal
   class << self
-
     attr_accessor :subscriber, :event_payload_sanitizer
 
     def transactions
@@ -20,7 +19,6 @@ module Appsignal
     def event_payload_sanitizer
       @event_payload_sanitizer ||= proc { |event| event.payload }
     end
-
   end
 end
 

@@ -60,7 +60,6 @@ describe Appsignal::Agent do
     end
 
     context "bad responses" do
-
       context "with 429" do
         let(:code) { '429' }
 
@@ -121,10 +120,8 @@ describe Appsignal::Agent do
   end
 
   describe "#stop_logging" do
-
     it "does not raise exceptions" do
       expect { subject.send :stop_logging }.not_to raise_error
     end
   end
-
 end

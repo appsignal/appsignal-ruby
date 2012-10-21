@@ -1,6 +1,5 @@
 module Appsignal
   class Transaction
-
     def self.create(key, env)
       Thread.current[:appsignal_transaction_id] = key
       Appsignal.transactions[key] = Appsignal::Transaction.new(key, env)
@@ -123,6 +122,5 @@ module Appsignal
         Appsignal.agent.add_to_queue(current_transaction.to_hash)
       end
     end
-
   end
 end

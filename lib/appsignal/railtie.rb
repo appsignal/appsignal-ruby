@@ -21,6 +21,5 @@ module Appsignal
         end
       end
     end
-
   end
 end
