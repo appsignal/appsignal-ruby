@@ -1,3 +1,5 @@
+require 'socket'
+
 module Appsignal
   class Transaction
     def self.create(key, env)
@@ -73,11 +75,20 @@ module Appsignal
       Appsignal.event_payload_sanitizer.call(event)
     end
 
+    def sanitized_environment
+      out = {}
+      @env.each_pair do |key, value|
+        out[key] = value.to_s
+      end
+      out
+    end
+
     def formatted_log_entry
       {
-        :name => request.fullpath,
-        :environment => Rails.env,
-        :server => @env['SERVER_NAME'],
+        :path => request.fullpath,
+        :hostname => Socket.gethostname,
+        :environment => sanitized_environment,
+        :session_data => request.session,
         :kind => 'http_request'
       }.merge(formatted_payload)
     end
