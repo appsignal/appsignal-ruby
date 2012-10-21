@@ -17,6 +17,7 @@ task :publish do
       puts "# Creating tag #{version}"
       puts `git tag #{version}`
       puts `git push origin #{version}`
+      puts `git push origin master`
     rescue
       raise "Tag: '#{version}' already exists"
     end
