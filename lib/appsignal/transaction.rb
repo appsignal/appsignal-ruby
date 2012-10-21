@@ -76,8 +76,7 @@ module Appsignal
     def formatted_log_entry
       {
         :name => request.fullpath,
-        :environment => Rails.env,
-        :server => @env['SERVER_NAME'],
+        :hostname => @env['SERVER_NAME'],
         :kind => 'http_request'
       }.merge(formatted_payload)
     end

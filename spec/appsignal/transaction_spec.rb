@@ -163,8 +163,7 @@ describe Appsignal::Transaction do
       it 'returns a formatted log_entry' do
         should == {
           :name => '/blog',
-          :environment => 'care about it',
-          :server => 'localhost',
+          :hostname => 'localhost',
           :kind => 'http_request',
           :foo => :bar
         }
