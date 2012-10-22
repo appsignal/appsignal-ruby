@@ -50,10 +50,6 @@ module Appsignal
       }
     end
 
-    def formatted_events
-      @events.map { |event| format(event) }
-    end
-
     def format(event)
       {
         :name => event.name,
@@ -121,7 +117,7 @@ module Appsignal
       {
         :request_id => @id,
         :log_entry => formatted_log_entry,
-        :events => slow_request? ? detailed_events : formatted_events,
+        :events => slow_request? ? detailed_events : [],
         :exception => formatted_exception,
         :failed => exception.present?
       }
@@ -130,7 +126,7 @@ module Appsignal
     def complete!
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@id)
-      if @events.any? || exception?
+      if @log_entry || exception?
         Appsignal.agent.add_to_queue(current_transaction.to_hash)
       end
     end

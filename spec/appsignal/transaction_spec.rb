@@ -128,34 +128,6 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#formatted_events' do
-      let(:start_time) { Time.parse('01-01-2001 10:00:00') }
-      let(:end_time) { Time.parse('01-01-2001 10:00:01') }
-      let(:event_attributes) do
-        {
-          :name => 'name',
-          :duration => 2,
-          :time => start_time,
-          :end => end_time,
-          :payload => :stuff
-        }
-      end
-      let(:event) { stub(event_attributes) }
-
-      before { transaction.add_event(event) }
-
-      subject { transaction.formatted_events }
-
-      it 'should return formatted events without payloads' do
-        should == [{
-          :name => 'name',
-          :duration => 2,
-          :time => start_time,
-          :end => end_time
-        }]
-      end
-    end
-
     describe "#sanitized_environment" do
       subject { transaction.sanitized_environment }
 
@@ -308,7 +280,7 @@ describe Appsignal::Transaction do
         should == {
           :request_id => '1',
           :log_entry => {:name => 'log_entry'},
-          :events => [{:name => 'event'}],
+          :events => [],
           :exception => {:name => 'exception'},
           :failed => false
         }
@@ -330,7 +302,8 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete!' do
-      before { transaction }
+      before { transaction.stub(:to_hash => {}) }
+      before { transaction.set_log_entry(stub(:duration => 199, :time => Time.now)) }
 
       it 'should remove transaction from the queue' do
         expect {
@@ -340,9 +313,9 @@ describe Appsignal::Transaction do
 
       context 'calling the appsignal agent' do
 
-        context 'without events and exception' do
-          it 'should not add transaction to the agent' do
-            Appsignal.agent.should_not_receive(:add_to_queue)
+        context 'without events and exception (fast request)' do
+          it 'should add transaction to the agent' do
+            Appsignal.agent.should_receive(:add_to_queue)
           end
         end
 
