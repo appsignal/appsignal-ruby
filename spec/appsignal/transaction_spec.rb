@@ -252,6 +252,16 @@ describe Appsignal::Transaction do
 
         it { should be_true }
       end
+
+      context "when log entry is empty" do
+        before { transaction.set_log_entry(nil) }
+
+        it "should not raise an error" do
+          expect {
+            transaction.slow_request?
+          }.to_not raise_error
+        end
+      end
     end
 
     describe '#to_hash' do

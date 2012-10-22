@@ -103,6 +103,7 @@ module Appsignal
     end
 
     def slow_request?
+      return false unless @log_entry
       @log_entry.duration >= Appsignal.config[:slow_request_threshold]
     end
 
