@@ -39,10 +39,12 @@ describe AppsignalGenerator do
     context "with capistrano" do
       before do
         prepare_destination
+        cap_file = File.expand_path("Capfile", destination_root)
+        File.open(cap_file, "w") {}
         FileUtils.mkdir(File.expand_path("config", destination_root))
-        cap_file = File.expand_path(File.join("config", "deploy.rb"),
+        deploy_file = File.expand_path(File.join("config", "deploy.rb"),
           destination_root)
-        File.open(cap_file, "w+") do |file|
+        File.open(deploy_file, "w+") do |file|
           file.write("require 'bundler/capistrano'\n\n")
         end
         run_generator_in_tmp
@@ -50,6 +52,7 @@ describe AppsignalGenerator do
 
       specify "config file is created and capistrano deploy file modified" do
         destination_root.should have_structure {
+          file "Capfile"
           directory "config" do
             file "appsignal.yml"
             file "deploy.rb" do
