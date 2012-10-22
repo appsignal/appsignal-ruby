@@ -14,22 +14,13 @@ describe Appsignal::Transmitter do
   end
 
   describe "#transmit" do
+    let(:http_client) { stub(:request => stub(:code => '200')) }
+    before { instance.stub(:encoded_message => :the_message) }
+    before { instance.stub(:http_client => http_client) }
+
     subject { instance.transmit(:shipit => :payload) }
 
-    context "without exception" do
-      let(:http_client) { stub(:request => stub(:code => '200')) }
-      before { instance.stub(:encoded_message => :the_message) }
-      before { instance.stub(:http_client => http_client) }
-
-      it { should == '200' }
-    end
-
-    context "with exception" do
-      let(:http_client) { stub(:request) }
-      before { instance.stub(:http_client).and_raise(Net::HTTPGatewayTimeOut) }
-
-      it { should == nil }
-    end
+    it { should == '200' }
   end
 
   describe "#encoded_message" do
@@ -56,6 +47,31 @@ describe Appsignal::Transmitter do
       )
       Net::HTTP::Post.should_receive(:new).with('/action').and_return(post)
       instance.message(:the => :payload)
+    end
+  end
+
+  describe "ca_file_path" do
+    subject { instance.send(:ca_file_path) }
+
+    it { should include('resources/cacert.pem') }
+    it("should exist") { File.exists?(subject).should be_true }
+  end
+
+  describe "#http_client" do
+    subject { instance.send(:http_client) }
+
+    context "with a http uri" do
+      it { should be_instance_of(Net::HTTP) }
+
+      its(:use_ssl?) { should be_false }
+    end
+
+    context "with a https uri" do
+      let(:instance) { klass.new('https://www.80beans.com', action, :the_api_key) }
+
+      its(:use_ssl?) { should be_true }
+      its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
+      its(:ca_file) { include('resources/cacert.pem') }
     end
   end
 end

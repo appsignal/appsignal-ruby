@@ -1,6 +1,5 @@
 module Appsignal
   class Agent
-
     attr_reader :queue, :active, :sleep_time, :transmitter
     ACTION = 'log_entries'
 
@@ -26,7 +25,12 @@ module Appsignal
     end
 
     def send_queue
-      handle_result transmitter.transmit(:log_entries => queue)
+      begin
+        handle_result transmitter.transmit(:log_entries => queue)
+      rescue Exception => ex
+        Rails.logger.error "Exception while communicating with AppSignal: #{ex}"
+        handle_result nil
+      end
     end
 
     def handle_result(code)
@@ -68,6 +72,5 @@ module Appsignal
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(@thread)
     end
-
   end
 end

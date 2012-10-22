@@ -2,7 +2,6 @@ require 'action_dispatch'
 
 module Appsignal
   class Middleware
-
     def initialize(app, options = {})
       @app, @options = app, options
     end
@@ -27,6 +26,5 @@ module Appsignal
       Array.wrap(Appsignal.config[:ignore_exceptions]).
         include?(exception.class.name)
     end
-
   end
 end

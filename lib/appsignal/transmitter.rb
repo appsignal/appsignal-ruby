@@ -5,10 +5,9 @@ require 'json'
 
 module Appsignal
   class Transmitter
-
     attr_accessor :endpoint, :action, :api_key
 
-    def initialize(endpoint, action, api_key)
+    def initialize(endpoint, action, api_key, logger=nil)
       @endpoint = endpoint
       @action = action
       @api_key = api_key
@@ -18,13 +17,9 @@ module Appsignal
       URI("#{@endpoint}/#{@action}")
     end
 
-    def transmit(payload)
-      begin
-       result = http_client.request(encoded_message(payload))
-       result.code
-      rescue
-        nil
-      end
+    def transmit(payload = {})
+      result = http_client.request(encoded_message(payload))
+      result.code
     end
 
     def encoded_message(payload)
@@ -49,14 +44,18 @@ module Appsignal
 
     protected
 
+    def ca_file_path
+      File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
+    end
+
     def http_client
       Net::HTTP.new(uri.host, uri.port).tap do |http|
         if uri.scheme == 'https'
           http.use_ssl = true
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+          http.ca_file = ca_file_path
         end
       end
     end
-
   end
 end

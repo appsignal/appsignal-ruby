@@ -22,6 +22,12 @@ describe Appsignal::Agent do
       subject.should_receive(:handle_result).with('200')
     end
 
+    it "handles exceptions in transmit" do
+      subject.transmitter.stub(:transmit).and_raise(Exception.new)
+      subject.should_receive(:handle_result).with(nil)
+      Rails.logger.should_receive(:error).with('Exception while communicating with AppSignal: Exception')
+    end
+
     after { subject.send_queue }
   end
 
@@ -54,7 +60,6 @@ describe Appsignal::Agent do
     end
 
     context "bad responses" do
-
       context "with 429" do
         let(:code) { '429' }
 
@@ -115,10 +120,8 @@ describe Appsignal::Agent do
   end
 
   describe "#stop_logging" do
-
     it "does not raise exceptions" do
       expect { subject.send :stop_logging }.not_to raise_error
     end
   end
-
 end

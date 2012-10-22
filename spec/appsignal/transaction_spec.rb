@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe Appsignal::Transaction do
-
   describe '.create' do
     before { Appsignal::Transaction.create('1', {}) }
 
@@ -26,7 +25,12 @@ describe Appsignal::Transaction do
 
   describe 'transaction instance' do
     let(:transaction) do
-      Appsignal::Transaction.create('1', {'SERVER_NAME' => 'localhost'})
+      Appsignal::Transaction.create('1', {
+        'SERVER_NAME' => 'localhost',
+        'action_dispatch.routes' => mock(
+          :to_s => '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
+        )
+      })
     end
 
     describe '#request' do
@@ -152,19 +156,44 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#sanitized_environment" do
+      subject { transaction.sanitized_environment }
+
+      it "should have an unchanged SERVER_NAME" do
+        subject['SERVER_NAME'].should == 'localhost'
+      end
+
+      it "should have the to_s of action_dispatch.routes" do
+        subject['action_dispatch.routes'].should == '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
+      end
+    end
+
     describe '#formatted_log_entry' do
       subject { transaction.formatted_log_entry }
       before do
-        transaction.stub(:request => mock(:fullpath => '/blog'))
-        Rails.stub(:env => 'care about it')
-        transaction.stub(:formatted_payload => {:foo => :bar})
+        transaction.stub(
+          :request => mock(
+            :fullpath => '/blog',
+            :session => {:current_user => 1}
+          )
+        )
+        Socket.stub(:gethostname => 'app1.local')
+        transaction.stub(
+          :formatted_payload => {
+            :foo => :bar
+          }
+        )
       end
 
       it 'returns a formatted log_entry' do
         should == {
-          :name => '/blog',
-          :environment => 'care about it',
-          :server => 'localhost',
+          :path => '/blog',
+          :hostname => 'app1.local',
+          :environment => {
+            'SERVER_NAME' => 'localhost',
+            'action_dispatch.routes' => '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
+          },
+          :session_data => {:current_user => 1},
           :kind => 'http_request',
           :foo => :bar
         }

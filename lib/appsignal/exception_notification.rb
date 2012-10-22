@@ -1,12 +1,10 @@
 module Appsignal
   class MissingController
-
     def method_missing(*args, &block)
     end
   end
 
   class ExceptionNotification
-
     attr_reader :env, :exception, :kontroller, :request, :backtrace
 
     def initialize(env, exception)

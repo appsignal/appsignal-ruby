@@ -9,7 +9,6 @@ end
 
 module MyApp
   class Application < Rails::Application
-
     config.active_support.deprecation = proc { |message, stack| }
   end
 end

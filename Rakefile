@@ -2,19 +2,22 @@ task :publish do
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
 
-  def publish_gem
-    puts '# Building Gemspec'
+  raise '$EDITOR should be set' unless ENV['EDITOR']
+
+  def build_and_push_gem
+    puts '# Building gem'
     puts `gem build #{NAME}.gemspec`
     puts '# Publishing Gem'
-    puts `gem push #{gem_name}`
+    puts `gem push #{NAME}-#{gem_version}.gem`
   end
 
   def create_and_push_tag
     begin
-      puts `git commit -m 'Bump to #{version} [ci skip]'`
+      puts `git commit -am 'Bump to #{version} [ci skip]'`
       puts "# Creating tag #{version}"
       puts `git tag #{version}`
       puts `git push origin #{version}`
+      puts `git push origin master`
     rescue
       raise "Tag: '#{version}' already exists"
     end
@@ -24,12 +27,8 @@ task :publish do
     git_status_to_array(`git status -s -u `)
   end
 
-  def gem_name
-    @gem_name ||= git_status_to_array(`git status -s -u`).last
-  end
-
   def gem_version
-    @gem_version ||= gem_name.gsub(/^.*(\d+\.\d+\.\d+).gemspec$/,'\1')
+    Appsignal::VERSION
   end
 
   def version
@@ -44,10 +43,10 @@ task :publish do
 
   system("$EDITOR #{VERSION_FILE}")
   if changes.member?(VERSION_FILE)
-    publish_gem
+    require File.expand_path(VERSION_FILE)
+    build_and_push_gem
     create_and_push_tag
   else
     raise "Actually change the version in: #{VERSION_FILE}"
   end
-
 end
