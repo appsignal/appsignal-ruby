@@ -25,7 +25,6 @@ end
 require 'appsignal/config'
 require 'appsignal/transmitter'
 require 'appsignal/agent'
-require 'appsignal/capistrano'
 require 'appsignal/marker'
 require 'appsignal/middleware'
 require 'appsignal/transaction'
