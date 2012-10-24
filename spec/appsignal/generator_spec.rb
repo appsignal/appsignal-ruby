@@ -44,9 +44,7 @@ describe AppsignalGenerator do
         FileUtils.mkdir(File.expand_path("config", destination_root))
         deploy_file = File.expand_path(File.join("config", "deploy.rb"),
           destination_root)
-        File.open(deploy_file, "w+") do |file|
-          file.write("require 'bundler/capistrano'\n\n")
-        end
+        File.open(deploy_file, "w") {}
         run_generator_in_tmp
       end
 
@@ -56,8 +54,7 @@ describe AppsignalGenerator do
           directory "config" do
             file "appsignal.yml"
             file "deploy.rb" do
-              contains "require 'bundler/capistrano'\n" +
-                "require './config/boot'\nrequire 'appsignal/capistrano'"
+              contains "require 'appsignal/capistrano'"
             end
           end
         }

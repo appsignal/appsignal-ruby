@@ -12,21 +12,12 @@ class AppsignalGenerator < Rails::Generators::Base
     cap_file = File.expand_path('Capfile')
     if [deploy_file, cap_file].all? { |file| File.exists?(file) }
       file_contents = File.read(deploy_file)
-      boot_not_loaded =
-        (file_contents =~ /require (\'|\").\/config\/boot/).nil?
-      appsignal_not_loaded =
-        (file_contents =~ /require (\'|\").\/appsignal\/capistrano/).nil?
-      if boot_not_loaded
-        insert_into_file deploy_file, "require './config/boot'\n",
-          :after => "require 'bundler/capistrano'\n"
-      end
-      if appsignal_not_loaded
-        insert_into_file deploy_file, "require 'appsignal/capistrano'\n",
-          :after => "require './config/boot'\n"
+      if (file_contents =~ /require (\'|\").\/appsignal\/capistrano/).nil?
+        append_to_file deploy_file, "\nrequire 'appsignal/capistrano'\n"
       end
     else
       say_status :info, "No capistrano setup detected! Did you know you can "\
-      "use a Rake task to notify Appsignal of deployments?", :yellow
+        "use a Rake task to notify Appsignal of deployments?", :yellow
       say_status "", "rake appsignal:notify_of_deploy"
     end
   end
@@ -41,11 +32,11 @@ class AppsignalGenerator < Rails::Generators::Base
         say_status :error, "Push key not valid with Appsignal...", :red
       else
         say_status :error, "Could not confirm authorisation: "\
-        "#{result.nil? ? 'nil' : result} at #{auth_check.uri}", :red
+          "#{result.nil? ? 'nil' : result} at #{auth_check.uri}", :red
       end
     rescue Exception => e
       say_status :error, "Something went wrong while trying to authenticate "\
-      "with Appsignal: #{e}", :red
+        "with Appsignal: #{e}", :red
     end
   end
 end
