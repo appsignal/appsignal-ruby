@@ -79,10 +79,14 @@ module Appsignal
       out
     end
 
+    def hostname
+      @hostname ||= Socket.gethostname
+    end
+
     def formatted_log_entry
       {
         :path => request.fullpath,
-        :hostname => Socket.gethostname,
+        :hostname => hostname,
         :environment => sanitized_environment,
         :session_data => request.session,
         :kind => 'http_request'

@@ -140,6 +140,14 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#hostname" do
+      before { Socket.stub(:gethostname => 'app1.local') }
+
+      subject { transaction.hostname }
+
+      it { should == 'app1.local' }
+    end
+
     describe '#formatted_log_entry' do
       subject { transaction.formatted_log_entry }
       before do
@@ -149,7 +157,7 @@ describe Appsignal::Transaction do
             :session => {:current_user => 1}
           )
         )
-        Socket.stub(:gethostname => 'app1.local')
+        transaction.stub(:hostname => 'app1.local')
         transaction.stub(
           :formatted_payload => {
             :foo => :bar
@@ -225,11 +233,9 @@ describe Appsignal::Transaction do
             Appsignal.event_payload_sanitizer = @old_sanitizer
           end
         end
-
       end
 
       context "without a present log entry" do
-
         it "returns the exception as the action if there is one" do
           transaction.add_exception(mock(:inspect => '<#exceptional>'))
           should == {:action => 'exceptional'}
