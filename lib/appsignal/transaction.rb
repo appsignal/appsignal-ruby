@@ -71,10 +71,12 @@ module Appsignal
       Appsignal.event_payload_sanitizer.call(event)
     end
 
-    def sanitized_environment
+    def filtered_environment
       out = {}
       @env.each_pair do |key, value|
-        out[key] = value.to_s
+        if ENV_METHODS.include?(key)
+          out[key] = value
+        end
       end
       out
     end
@@ -87,7 +89,7 @@ module Appsignal
       {
         :path => request.fullpath,
         :hostname => hostname,
-        :environment => sanitized_environment,
+        :environment => filtered_environment,
         :session_data => request.session,
         :kind => 'http_request'
       }.merge(formatted_payload)
@@ -135,4 +137,14 @@ module Appsignal
       end
     end
   end
+
+  # Based on what Rails uses + some variables we'd like to show
+  ENV_METHODS = %w[ CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
+    PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER
+    REMOTE_ADDR REQUEST_METHOD SERVER_NAME SERVER_PORT
+    SERVER_PROTOCOL
+
+    HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
+    HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
+    HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE HTTP_PRAGMA ].freeze
 end

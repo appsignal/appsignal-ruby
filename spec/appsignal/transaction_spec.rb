@@ -26,10 +26,9 @@ describe Appsignal::Transaction do
   describe 'transaction instance' do
     let(:transaction) do
       Appsignal::Transaction.create('1', {
+        'HTTP_USER_AGENT' => 'IE6',
         'SERVER_NAME' => 'localhost',
-        'action_dispatch.routes' => mock(
-          :to_s => '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
-        )
+        'action_dispatch.routes' => 'not_available'
       })
     end
 
@@ -128,15 +127,19 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#sanitized_environment" do
-      subject { transaction.sanitized_environment }
+    describe "#filtered_environment" do
+      subject { transaction.filtered_environment }
 
-      it "should have an unchanged SERVER_NAME" do
+      it "should have a SERVER_NAME" do
         subject['SERVER_NAME'].should == 'localhost'
       end
 
-      it "should have the to_s of action_dispatch.routes" do
-        subject['action_dispatch.routes'].should == '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
+      it "should have a HTTP_USER_AGENT" do
+        subject['HTTP_USER_AGENT'].should == 'IE6'
+      end
+
+      it "should not have a action_dispatch.routes" do
+        subject.should_not have_key 'action_dispatch.routes'
       end
     end
 
@@ -171,7 +174,7 @@ describe Appsignal::Transaction do
           :hostname => 'app1.local',
           :environment => {
             'SERVER_NAME' => 'localhost',
-            'action_dispatch.routes' => '#[ActionDispatch::Routing::RouteSet:0x6f @name=nil]'
+            'HTTP_USER_AGENT' => 'IE6'
           },
           :session_data => {:current_user => 1},
           :kind => 'http_request',
