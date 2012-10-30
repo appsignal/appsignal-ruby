@@ -18,6 +18,7 @@ module Appsignal
         ACTION,
         Appsignal.config[:api_key]
       )
+      Appsignal.logger.info "Started the Appsignal agent"
     end
 
     def add_to_queue(transaction)
@@ -25,15 +26,17 @@ module Appsignal
     end
 
     def send_queue
+      Appsignal.logger.debug "Sending queue"
       begin
         handle_result transmitter.transmit(:log_entries => queue)
       rescue Exception => ex
-        Rails.logger.error "Exception while communicating with AppSignal: #{ex}"
+        Appsignal.logger.error "Exception while communicating with AppSignal: #{ex}"
         handle_result nil
       end
     end
 
     def handle_result(code)
+      Appsignal.logger.debug "Queue sent, response code: #{code}"
       case code
       when '200'
         good_response
@@ -69,6 +72,7 @@ module Appsignal
     end
 
     def stop_logging
+      Appsignal.logger.error "Something went wrong, disengaging the agent"
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(@thread)
     end
