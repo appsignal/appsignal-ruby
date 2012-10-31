@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'appsignal/capistrano'
 require 'capistrano/configuration'
 
 describe Appsignal::Capistrano do
