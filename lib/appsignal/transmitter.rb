@@ -25,7 +25,7 @@ module Appsignal
     def encoded_message(payload)
       encoded_payload = {}.tap do |hsh|
         payload.each do |key, val|
-          hsh[key] = JSON.generate(val)
+          hsh[key] = val.to_json
         end
       end
       message(encoded_payload)

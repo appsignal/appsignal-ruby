@@ -1,7 +1,7 @@
 require 'rspec'
 require 'rails'
 require 'action_controller/railtie'
-
+require 'fixtures/liever'
 module Rails
   class Application
   end

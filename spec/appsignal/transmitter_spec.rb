@@ -23,17 +23,20 @@ describe Appsignal::Transmitter do
     it { should == '200' }
   end
 
+  describe "regression spec for liever case" do
+
+    it "should not raise an error" do
+      expect {
+        instance.encoded_message(LIEVER_PAYLOAD)
+      }.to_not raise_error
+    end
+
+  end
+
   describe "#encoded_message" do
     it "calls message" do
-      JSON.stub(:generate => "{a:'b'}")
-      subject.should_receive(:message).with(:payload => "{a:'b'}")
+      subject.should_receive(:message).with(:payload => "{\"a\":\"b\"}")
     end
-
-    it "encodes the payload using json" do
-      subject.stub(:message)
-      JSON.should_receive(:generate).with({"a" => "b"})
-    end
-
     after { subject.encoded_message(:payload => {'a' => 'b'}) }
   end
 
