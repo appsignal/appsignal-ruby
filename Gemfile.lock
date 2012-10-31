@@ -38,7 +38,7 @@ GEM
       multi_json (~> 1.0)
     arel (3.0.2)
     builder (3.0.3)
-    capistrano (2.13.3)
+    capistrano (2.13.5)
       highline
       net-scp (>= 1.0.0)
       net-sftp (>= 2.0.0)
@@ -49,7 +49,7 @@ GEM
     generator_spec (0.8.5)
       rails (>= 3.0, < 4.0)
       rspec-rails
-    highline (1.6.14)
+    highline (1.6.15)
     hike (1.2.1)
     i18n (0.6.1)
     journey (1.0.4)
@@ -64,7 +64,7 @@ GEM
       net-ssh (>= 1.99.1)
     net-sftp (2.0.5)
       net-ssh (>= 2.0.9)
-    net-ssh (2.5.2)
+    net-ssh (2.6.1)
     net-ssh-gateway (1.1.0)
       net-ssh (>= 1.99.1)
     polyglot (0.3.3)
