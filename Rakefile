@@ -43,7 +43,7 @@ task :publish do
 
   system("$EDITOR #{VERSION_FILE}")
   if changes.member?(VERSION_FILE)
-    require File.expand_path(VERSION_FILE)
+    load File.expand_path(VERSION_FILE)
     build_and_push_gem
     create_and_push_tag
   else
