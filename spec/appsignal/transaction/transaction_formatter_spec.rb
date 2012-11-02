@@ -71,13 +71,32 @@ describe Appsignal::TransactionFormatter do
     end
 
     describe "#formatted_log_entry" do
+      subject { formatter.send(:formatted_log_entry) }
+
+      it "calls basic_log_entry" do
+        formatter.should_receive(:basic_log_entry)
+        subject
+      end
 
       context "with actual log entry data" do
-        pending
+        before { transaction.stub(:log_entry => create_log_entry) }
+
+        it { should be_a Hash }
+
+        it "merges formatted_payload on the basic_log_entry" do
+          subject[:duration].should == 1000.0
+          subject[:action].should == 'BlogPostsController#show'
+        end
       end
 
       context "without any log entry data" do
-        pending
+
+        it { should be_a Hash }
+
+        it "does not merge formatted_payload onto the basic_log_entry" do
+          subject.keys.should_not include :duration
+          subject.keys.should_not include :action
+        end
       end
     end
 
