@@ -95,6 +95,66 @@ describe AppsignalGenerator do
   include GeneratorSpec::TestCase
   destination File.expand_path("../../tmp", __FILE__)
 
+  context "multiple environments" do
+    context "normal flow" do
+      arguments %w(my_app_key --environment=development)
+
+      context "with new environment" do
+        before do
+          prepare_destination
+          FileUtils.mkdir(File.expand_path('config', destination_root))
+          config_file = File.join('config', 'appsignal.yml')
+          File.open(File.expand_path(config_file, destination_root), 'w') do |f|
+            f.write("production:\n  api_key: 111")
+          end
+          run_generator_in_tmp
+        end
+
+        specify "config file is created" do
+          destination_root.should have_structure {
+            directory 'config' do
+              file 'appsignal.yml' do
+                contains 'production:'
+                contains "\ndevelopment:"
+                contains 'api_key: "my_app_key"'
+              end
+              no_file 'deploy.rb'
+            end
+          }
+        end
+      end
+
+      context "with existing environment" do
+        before do
+          prepare_destination
+          FileUtils.mkdir(File.expand_path('config', destination_root))
+          config_file = File.join('config', 'appsignal.yml')
+          File.open(File.expand_path(config_file, destination_root), 'w') do |f|
+            f.write("development:\n  api_key: \"111\"")
+          end
+          run_generator_in_tmp
+        end
+
+        specify "config file is created" do
+          destination_root.should have_structure {
+            directory 'config' do
+              file 'appsignal.yml' do
+                contains "development:"
+                contains 'api_key: "111"'
+              end
+              no_file 'deploy.rb'
+            end
+          }
+        end
+      end
+    end
+  end
+end
+
+describe AppsignalGenerator do
+  include GeneratorSpec::TestCase
+  destination File.expand_path("../../tmp", __FILE__)
+
   context "without key" do
     arguments %w()
     before do
