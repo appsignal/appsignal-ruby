@@ -30,7 +30,12 @@ describe Appsignal::Capistrano do
           :user => "batman"
         }
       }
-
+      before :all do
+        @io = StringIO.new
+        logger = Capistrano::Logger.new(:output => @io)
+        logger.level = Capistrano::Logger::MAX_LEVEL
+        @config.logger = logger
+      end
       before do
         @marker = mock()
         Appsignal::Marker.should_receive(:new).
@@ -42,6 +47,17 @@ describe Appsignal::Capistrano do
         @marker.should_receive(:transmit)
 
         @config.find_and_execute_task('appsignal:deploy')
+      end
+
+      context "dry run" do
+        before(:all) { @config.dry_run = true }
+
+        it "should not send deploy marker" do
+          @marker.should_not_receive(:transmit)
+          @config.find_and_execute_task('appsignal:deploy')
+          @io.string.should include('** Dry run: Deploy marker not actually '\
+            'sent.')
+        end
       end
     end
   end

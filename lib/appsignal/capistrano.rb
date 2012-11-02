@@ -24,7 +24,11 @@ module Appsignal
             }
 
             marker = Marker.new(marker_data, ENV['PWD'], rails_env, logger)
-            marker.transmit
+            if config.dry_run
+              logger.info "Dry run: Deploy marker not actually sent."
+            else
+              marker.transmit
+            end
           end
         end
       end
