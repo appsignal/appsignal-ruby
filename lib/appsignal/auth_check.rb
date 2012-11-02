@@ -5,8 +5,8 @@ module Appsignal
     attr_accessor :transmitter
     ACTION = 'auth'
 
-    def initialize
-      @config = Appsignal::Config.new(Rails.root, 'production').load
+    def initialize(environment)
+      @config = Appsignal::Config.new(Rails.root, environment).load
     end
 
     def perform
