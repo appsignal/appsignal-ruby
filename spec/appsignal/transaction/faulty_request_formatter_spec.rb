@@ -44,19 +44,15 @@ describe Appsignal::TransactionFormatter::FaultyRequestFormatter do
       subject { faulty.send(:action) }
 
       context "after reaching a controller action" do
-        before do
-          faulty.stub_chain(:log_entry, :payload => {
-            :action => :bar, :controller => :foo
-          })
-        end
+        before { faulty.stub(:log_entry => create_log_entry) }
 
-        it { should == 'foo#bar' }
+        it { should == 'BlogPostsController#show' }
       end
 
       context "happened before a controller action was reached" do
-        before { faulty.stub(:log_entry => nil, :exception => ArgumentError) }
+        before { faulty.stub(:log_entry => nil) }
 
-        it { should == 'ArgumentError' }
+        it { should == 'ArgumentError: oh no' }
       end
     end
   end

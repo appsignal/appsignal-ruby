@@ -75,7 +75,8 @@ end
 def create_payload(args = {})
   {
     :path => '/blog',
-    :action => 'BlogPostsController#show',
+    :action => 'show',
+    :controller => 'BlogPostsController',
     :request_format => 'html',
     :request_method => "GET",
     :status => '200',

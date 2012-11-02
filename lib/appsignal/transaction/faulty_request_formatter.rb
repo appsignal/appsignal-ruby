@@ -19,7 +19,7 @@ module Appsignal
       end
 
       def action
-        log_entry ? super : exception.inspect.gsub(/^<#(.*)>$/, '\1')
+        log_entry ? super : exception.exception.inspect.gsub(/^#<([^>]*)>$/, '\1')
       end
 
     end
