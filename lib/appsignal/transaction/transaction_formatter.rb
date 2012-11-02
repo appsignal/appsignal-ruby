@@ -63,7 +63,9 @@ module Appsignal
     end
 
     def sanitized_event_payload(event)
-      Appsignal.event_payload_sanitizer.call(event)
+      Appsignal::ParamsSanitizer.sanitize(
+        Appsignal.event_payload_sanitizer.call(event)
+      )
     end
 
     def filtered_environment
@@ -90,3 +92,4 @@ end
 require 'appsignal/transaction/regular_request_formatter'
 require 'appsignal/transaction/slow_request_formatter'
 require 'appsignal/transaction/faulty_request_formatter'
+require 'appsignal/transaction/params_sanitizer'

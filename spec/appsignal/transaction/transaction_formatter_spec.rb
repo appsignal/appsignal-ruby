@@ -153,17 +153,24 @@ describe Appsignal::TransactionFormatter do
 
     describe "#sanitized_event_payload" do
       subject do
-        formatter.send(:sanitized_event_payload, {:payload => :sensitive})
+        formatter.send(:sanitized_event_payload, double(:payload => {:key => :sensitive}))
       end
 
       it "calls Appsignal event payload sanitizer" do
         Appsignal.should_receive(:event_payload_sanitizer).and_return(
-          proc do |hash|
-            hash[:payload] = :censored
-            hash
+          proc do |event|
+            event.payload[:key] = 'censored'
+            event.payload
           end
         )
-        subject.should == {:payload => :censored}
+        subject.should == {:key => 'censored'}
+      end
+
+      it "calls params sanitizer" do
+        Appsignal::ParamsSanitizer.should_receive(:sanitize).and_return(
+          :key => 'sensitive'
+        )
+        subject.should == {:key => 'sensitive'}
       end
     end
 
