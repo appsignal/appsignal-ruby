@@ -32,21 +32,38 @@ describe Appsignal::Capistrano do
       }
       before :all do
         @io = StringIO.new
-        logger = Capistrano::Logger.new(:output => @io)
-        logger.level = Capistrano::Logger::MAX_LEVEL
-        @config.logger = logger
+        @logger = Capistrano::Logger.new(:output => @io)
+        @logger.level = Capistrano::Logger::MAX_LEVEL
+        @config.logger = @logger
       end
       before do
-        @marker = mock()
+        @marker = Appsignal::Marker.new(marker_data, Rails.root.to_s,
+          'development', @logger)
         Appsignal::Marker.should_receive(:new).
           with(marker_data, Rails.root.to_s, 'development', anything()).
           and_return(@marker)
       end
 
-      it "should transmit data" do
-        @marker.should_receive(:transmit)
+      context "proper setup" do
+        before do
+          @transmitter = mock()
+          Appsignal::Transmitter.should_receive(:new).and_return(@transmitter)
+        end
 
+        it "should transmit data" do
+          @transmitter.should_receive(:transmit).and_return('200')
+          @config.find_and_execute_task('appsignal:deploy')
+          @io.string.should include('** Notifying Appsignal of deploy...')
+          @io.string.should include('** Appsignal has been notified of this '\
+            'deploy!')
+        end
+      end
+
+      it "should not transmit data" do
         @config.find_and_execute_task('appsignal:deploy')
+        @io.string.should include('** Notifying Appsignal of deploy...')
+        @io.string.should include('** Something went wrong while trying to '\
+          'notify Appsignal:')
       end
 
       context "dry run" do
