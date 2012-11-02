@@ -37,18 +37,18 @@ module Appsignal
 
     def handle_result(code)
       Appsignal.logger.debug "Queue sent, response code: #{code}"
-      case code
-      when '200'
+      case code.to_i
+      when 200
         good_response
-      when '420' # Enhance Your Calm
+      when 420 # Enhance Your Calm
         good_response
         @sleep_time = @sleep_time * 1.5
-      when '413' # Request Entity Too Large
+      when 413 # Request Entity Too Large
         good_response
         @sleep_time = @sleep_time / 1.5
-      when '429' # Too Many Requests (RFC 6585)
+      when 429 # Too Many Requests (RFC 6585)
         stop_logging
-      when '402' # Payment Grace period expired
+      when 402 # Payment Grace period expired
         stop_logging
       else
         retry_once
