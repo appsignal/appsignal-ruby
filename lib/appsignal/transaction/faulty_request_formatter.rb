@@ -19,7 +19,18 @@ module Appsignal
       end
 
       def action
-        log_entry ? super : exception.exception.inspect.gsub(/^#<([^>]*)>$/, '\1')
+        if log_entry
+          super
+        else
+          exception.exception.inspect.gsub(/^#<([^>]*)>$/, '\1')
+        end
+      end
+
+      def basic_log_entry
+        super.merge(
+          :environment => filtered_environment,
+          :session_data => request.session
+        )
       end
 
     end

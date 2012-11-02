@@ -61,4 +61,16 @@ describe Appsignal::TransactionFormatter::SlowRequestFormatter do
       } }
     end
   end
+
+  describe "#basic_log_entry" do
+    subject { slow.send(:basic_log_entry) }
+
+    it "should return a hash with extra keys" do
+      subject[:environment].should == {
+        "HTTP_USER_AGENT" => "IE6",
+        "SERVER_NAME" => "localhost"
+      }
+      subject[:session_data].should == {}
+    end
+  end
 end

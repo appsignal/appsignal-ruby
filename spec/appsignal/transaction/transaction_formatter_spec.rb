@@ -112,13 +112,16 @@ describe Appsignal::TransactionFormatter do
       it { should == {
         :path => '/blog',
         :hostname => 'app1.local',
-        :environment => {
-          'SERVER_NAME' => 'localhost',
-          'HTTP_USER_AGENT' => 'IE6'
-        },
-        :session_data => {:current_user => 1},
         :kind => 'http_request'
       } }
+
+      it "has no environment key" do
+        subject[:environment].should be_nil
+      end
+
+      it "has no session_data key" do
+        subject[:session_data].should be_nil
+      end
     end
 
     describe "#formatted_payload" do

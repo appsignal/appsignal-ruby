@@ -22,6 +22,13 @@ module Appsignal
         }
       end
 
+      def basic_log_entry
+        super.merge(
+          :environment => filtered_environment,
+          :session_data => request.session
+        )
+      end
+
     end
   end
 end

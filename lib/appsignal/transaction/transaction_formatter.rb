@@ -47,8 +47,6 @@ module Appsignal
       {
         :path => request.fullpath,
         :hostname => hostname,
-        :environment => filtered_environment,
-        :session_data => request.session,
         :kind => 'http_request'
       }
     end
