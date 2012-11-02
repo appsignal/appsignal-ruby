@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Appsignal::AuthCheck do
-  let(:auth_check) { Appsignal::AuthCheck.new }
+  let(:auth_check) { Appsignal::AuthCheck.new('production') }
   before do
     @transmitter = mock
     Appsignal::Transmitter.should_receive(:new).
