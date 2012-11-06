@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    appsignal (0.2.0.beta.6)
+    appsignal (0.2.0)
       json
       rails
       rake
