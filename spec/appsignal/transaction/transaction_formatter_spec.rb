@@ -125,8 +125,8 @@ describe Appsignal::TransactionFormatter do
     end
 
     describe "#formatted_payload" do
-    let(:start_time) { Time.at(2.71828182) }
-    let(:end_time) { Time.at(3.141592654) }
+      let(:start_time) { Time.at(2.71828182) }
+      let(:end_time) { Time.at(3.141592654) }
       subject { formatter.send(:formatted_payload) }
       before do
         transaction.stub(:sanitized_event_payload => {})
