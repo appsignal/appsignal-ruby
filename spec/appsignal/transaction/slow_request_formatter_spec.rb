@@ -19,8 +19,8 @@ describe Appsignal::TransactionFormatter::SlowRequestFormatter do
   # protected
 
   context "with an event" do
-    let(:start_time) { Time.parse('01-01-2001 10:00:00') }
-    let(:end_time) { Time.parse('01-01-2001 10:00:01') }
+    let(:start_time) { Time.at(2.71828182) }
+    let(:end_time) { Time.at(3.141592654) }
     let(:event) do
       mock(
         :event,
@@ -55,8 +55,8 @@ describe Appsignal::TransactionFormatter::SlowRequestFormatter do
       it { should == {
         :name => 'Startled',
         :duration => 2,
-        :time => start_time,
-        :end => end_time,
+        :time => start_time.to_f,
+        :end => end_time.to_f,
         :payload => :sanitized
       } }
     end
