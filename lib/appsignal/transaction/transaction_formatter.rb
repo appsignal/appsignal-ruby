@@ -55,8 +55,8 @@ module Appsignal
       sanitized_event_payload(log_entry).merge(
         {
           :duration => log_entry.duration,
-          :time => log_entry.time,
-          :end => log_entry.end,
+          :time => log_entry.time.to_f,
+          :end => log_entry.end.to_f,
           :action => action
         }
       )

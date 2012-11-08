@@ -125,8 +125,8 @@ describe Appsignal::TransactionFormatter do
     end
 
     describe "#formatted_payload" do
-      let(:start_time) { Time.parse('01-01-2001 10:00:00') }
-      let(:end_time) { Time.parse('01-01-2001 10:00:01') }
+    let(:start_time) { Time.at(2.71828182) }
+    let(:end_time) { Time.at(3.141592654) }
       subject { formatter.send(:formatted_payload) }
       before do
         transaction.stub(:sanitized_event_payload => {})
@@ -146,8 +146,8 @@ describe Appsignal::TransactionFormatter do
         :action => 'controller#action',
         :controller => 'controller', # DEBUG this should no longer be here now
         :duration => 2,
-        :time => start_time,
-        :end => end_time
+        :time => start_time.to_f,
+        :end => end_time.to_f
       } }
     end
 
