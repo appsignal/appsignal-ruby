@@ -16,25 +16,25 @@ describe Appsignal::Config do
   context 'when there is no config file' do
     before { Dir.stub(:pwd => '/not/existing') }
 
-    it "should generate error" do
-      lambda {
-        subject
-      }.should raise_error(
+    it "should log error" do
+      Appsignal.logger.should_receive(:error).with(
         "config not found at:"\
         " /not/existing/config/appsignal.yml"
       )
     end
+
+    after { subject }
   end
 
   context "the env is not in the config" do
     subject { Appsignal::Config.new(Dir.pwd, 'staging').load }
 
     it "should generate error" do
-      lambda {
-        subject
-      }.should raise_error(
-        "config for 'staging' environment not found"
+      Appsignal.logger.should_receive(:error).with(
+        "config for 'staging' not found"
       )
     end
+
+    after { subject }
   end
 end

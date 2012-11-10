@@ -4,6 +4,10 @@ module Appsignal
   class << self
     attr_accessor :subscriber, :event_payload_sanitizer
 
+    def active
+      config && config[:active] == true
+    end
+
     def logger
       @logger ||= Logger.new("#{Rails.root}/log/appsignal.log")
     end

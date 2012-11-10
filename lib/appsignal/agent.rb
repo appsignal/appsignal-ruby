@@ -4,6 +4,7 @@ module Appsignal
     ACTION = 'log_entries'
 
     def initialize
+      return unless Appsignal.active
       @sleep_time = 5.0
       @queue = []
       @retry_request = true

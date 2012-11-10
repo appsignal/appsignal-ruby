@@ -9,12 +9,18 @@ module Appsignal
 
     def load
       file = File.join(@root_path, 'config/appsignal.yml')
-      raise ArgumentError,
-        "config not found at: #{file}" unless File.exists?(file)
+
+      unless File.exists?(file)
+        Appsignal.logger.error "config not found at: #{file}"
+        return
+      end
 
       config = YAML.load_file(file)[@rails_env]
-      raise ArgumentError,
-        "config for '#{@rails_env}' environment not found" unless config
+
+      unless config
+        Appsignal.logger.error "config for '#{@rails_env}' not found"
+        return
+      end
 
       config = {:ignore_exceptions => [],
         :endpoint => 'https://push.appsignal.com/1',

@@ -40,4 +40,26 @@ describe Appsignal do
       subject[:slow_request_threshold].should eq 200
     end
   end
+
+  describe 'active' do
+    subject { Appsignal.active }
+
+    context "without config" do
+      before { Appsignal.stub(:config => nil) }
+
+      it { should be_false }
+    end
+
+    context "with config but inactive" do
+      before { Appsignal.stub(:config => {:active => false}) }
+
+      it { should be_false }
+    end
+
+    context "with active config" do
+      before { Appsignal.stub(:config => {:active => true}) }
+
+      it { should be_true }
+    end
+  end
 end
