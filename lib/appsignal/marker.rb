@@ -22,7 +22,13 @@ module Appsignal
           raise "#{result} at #{transmitter.uri}"
         end
       rescue Exception => e
-        @logger.important "Something went wrong while trying to notify Appsignal: #{e}"
+        message = "Something went wrong while trying to notify Appsignal: #{e}"
+        if @logger.respond_to?(:important)
+          # This is a Capistrano logger
+          @logger.important message
+        else
+          @logger.error message
+        end
       end
     end
   end
