@@ -14,11 +14,7 @@ describe Appsignal::Marker do
     )
   }
   let(:log) {log = StringIO.new}
-  let(:logger) {
-    logger = Capistrano::Logger.new(:output => log)
-    logger.level = Capistrano::Logger::MAX_LEVEL
-    logger
-  }
+  let(:logger) { Logger.new(log) }
 
   context "transmit" do
     before do
@@ -45,30 +41,44 @@ describe Appsignal::Marker do
     end
 
     context "logs" do
-      it "should log status 200" do
-        @transmitter.should_receive(:transmit).and_return('200')
+      shared_examples_for "logging info and errors" do
+        it "should log status 200" do
+          @transmitter.should_receive(:transmit).and_return('200')
 
-        marker.transmit
+          marker.transmit
 
-        log.string.should include('** Notifying Appsignal of deploy...')
-        log.string.should include(
-          '** Appsignal has been notified of this deploy!'
-        )
+          log.string.should include('Notifying Appsignal of deploy...')
+          log.string.should include(
+            'Appsignal has been notified of this deploy!'
+          )
+        end
+
+        it "should log other status" do
+          @transmitter.should_receive(:transmit).and_return('500')
+          @transmitter.should_receive(:uri).and_return('http://localhost:3000/1/markers')
+
+          marker.transmit
+
+          log.string.should include('Notifying Appsignal of deploy...')
+          log.string.should include(
+            'Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/1/markers'
+          )
+          log.string.should_not include(
+            'Appsignal has been notified of this deploy!'
+          )
+        end
       end
 
-      it "should log other status" do
-        @transmitter.should_receive(:transmit).and_return('500')
-        @transmitter.should_receive(:uri).and_return('http://localhost:3000/1/markers')
+      it_should_behave_like "logging info and errors"
 
-        marker.transmit
+      context "with a Capistrano logger" do
+        let(:logger) {
+          Capistrano::Logger.new(:output => log).tap do |logger|
+            logger.level = Capistrano::Logger::MAX_LEVEL
+          end
+        }
 
-        log.string.should include('** Notifying Appsignal of deploy...')
-        log.string.should include(
-          '** Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/1/markers'
-        )
-        log.string.should_not include(
-          '** Appsignal has been notified of this deploy!'
-        )
+        it_should_behave_like "logging info and errors"
       end
     end
   end
