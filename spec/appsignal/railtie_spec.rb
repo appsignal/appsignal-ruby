@@ -40,4 +40,15 @@ describe Appsignal::Railtie do
         instrument 'process_action.action_controller'
     end
   end
+
+  context "event that starts with a bang" do
+    it "should not be processed" do
+      Appsignal::Transaction.should_not_receive(:current)
+    end
+
+    after do
+      ActiveSupport::Notifications.
+        instrument '!render_template'
+    end
+  end
 end
