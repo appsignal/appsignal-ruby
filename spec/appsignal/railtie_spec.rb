@@ -2,7 +2,6 @@ require 'spec_helper'
 require 'action_controller/railtie'
 require 'appsignal/railtie'
 
-
 describe Appsignal::Railtie do
 
   before(:all) { MyApp::Application.initialize! }
