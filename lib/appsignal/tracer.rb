@@ -7,6 +7,7 @@ module Appsignal
 
     module ClassMethods
       def tracer_for(method_name)
+        return unless Appsignal.active
         method_name = method_name.to_s
 
         trace_method_name = "appsignal_trace_#{method_name.to_s}"

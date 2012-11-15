@@ -24,6 +24,26 @@ describe Appsignal::Tracer do
     it { should respond_to :perform }
   end
 
+  context "when inactive" do
+    before do
+      Appsignal.stub!(:active => false)
+      class Jobless
+        include Appsignal::Tracer
+
+        def perform
+          puts 'The job is performing'
+        end
+
+        tracer_for(:perform)
+      end
+    end
+    let(:job) { Jobless.new }
+
+    it { should_not respond_to :appsignal_trace_perform }
+    it { should_not respond_to :appsignal_perform_trace_perform }
+    it { should respond_to :perform }
+  end
+
   context "perform_trace" do
     let(:transaction) { Appsignal::Transaction.create('background_1', 'env') }
 
