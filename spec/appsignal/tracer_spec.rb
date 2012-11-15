@@ -11,7 +11,7 @@ class Job
     raise 'This generated an error'
   end
 
-  tracer_for(:perform)
+  appsignal_tracer_for(:perform)
 end
 
 describe Appsignal::Tracer do
@@ -34,7 +34,7 @@ describe Appsignal::Tracer do
           puts 'The job is performing'
         end
 
-        tracer_for(:perform)
+        appsignal_tracer_for(:perform)
       end
     end
     let(:job) { Jobless.new }
@@ -56,7 +56,7 @@ describe Appsignal::Tracer do
 
     it "should send a trace of a method" do
       transaction.should_receive(:set_log_entry)
-      job.perform_trace('count') do
+      job.appsignal_perform_trace('count') do
         1 + 1
       end
     end
@@ -64,7 +64,7 @@ describe Appsignal::Tracer do
     it "should send a trace of an exception" do
       transaction.should_receive(:add_exception)
       expect {
-        job.perform_trace('count') do
+        job.appsignal_perform_trace('count') do
           raise ArgumentError, 'Count error'
         end
       }.to raise_error ArgumentError
@@ -73,27 +73,27 @@ describe Appsignal::Tracer do
 
   context "hashes" do
     it "should generate transaction_hash" do
-      job.send(:transaction_hash, 'perform').should == {
+      job.send(:appsignal_transaction_hash, 'perform').should == {
         :action => "Job#perform",
         :kind => "background"
       }
     end
 
     it "should generate log_entry" do
-      job.send(:log_entry, 'perform',
-        Time.parse("01-01-2012 00:00:00"),
-        Time.parse("01-01-2012 00:00:10")
+      job.send(:appsignal_log_entry, 'perform',
+        Time.parse("01-01-2012 00:00:00 +0000"),
+        Time.parse("01-01-2012 00:00:10 +0000")
       ).should == {
         :action => "Job#perform",
         :duration => 10000.0,
-        :time => '2012-01-01 00:00:00 +0100',
-        :end => '2012-01-01 00:00:10 +0100',
+        :time => '2012-01-01 00:00:00 +0000',
+        :end => '2012-01-01 00:00:10 +0000',
         :kind => "background"
       }
     end
 
     it "should generate exception" do
-      job.send(:exception, Exception.new('Error'), 'generate_error'
+      job.send(:appsignal_exception, Exception.new('Error'), 'generate_error'
       ).should == {
         :action => "Job#generate_error",
         :exception => {
