@@ -30,6 +30,7 @@ module Appsignal
   end
 end
 
+require 'appsignal/cli'
 require 'appsignal/config'
 require 'appsignal/transmitter'
 require 'appsignal/agent'
