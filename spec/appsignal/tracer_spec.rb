@@ -51,7 +51,7 @@ describe Appsignal::Tracer do
       transaction
       Appsignal::Transaction.should_receive(:create).
         and_return(transaction)
-      transaction.should_receive(:complete!)
+      transaction.should_receive(:complete_trace!)
     end
 
     it "should send a trace of a method" do
@@ -80,14 +80,16 @@ describe Appsignal::Tracer do
     end
 
     it "should generate log_entry" do
+      start_time = Time.parse("01-01-2012 00:00:00 +0000")
+      end_time = Time.parse("01-01-2012 00:00:10 +0000")
       job.send(:appsignal_log_entry, 'perform',
-        Time.parse("01-01-2012 00:00:00 +0000"),
-        Time.parse("01-01-2012 00:00:10 +0000")
+        start_time,
+        end_time
       ).should == {
         :action => "Job#perform",
         :duration => 10000.0,
-        :time => '2012-01-01 00:00:00 +0000',
-        :end => '2012-01-01 00:00:10 +0000',
+        :time => start_time,
+        :end => end_time,
         :kind => "background"
       }
     end

@@ -27,7 +27,7 @@ module Appsignal
     def appsignal_perform_trace(method_name, *args, &block)
       start_time = Time.now
       id = "background_#{SecureRandom.hex(10)}"
-      transaction = Appsignal::Transaction.create(id, 'env')
+      transaction = Appsignal::Transaction.create(id, nil)
       begin
         yield
       rescue Exception => e
@@ -39,7 +39,7 @@ module Appsignal
             appsignal_log_entry(method_name, start_time, Time.now)
           )
         end
-        transaction.complete!
+        transaction.complete_trace!
       end
     end
 
