@@ -24,13 +24,11 @@ describe Appsignal::Transmitter do
   end
 
   describe "regression spec for liever case" do
-
     it "should not raise an error" do
       expect {
         instance.encoded_message(LIEVER_PAYLOAD)
       }.to_not raise_error
     end
-
   end
 
   describe "#encoded_message" do
