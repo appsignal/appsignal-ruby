@@ -30,7 +30,8 @@ describe Appsignal::Railtie do
     it "should call set_log_entry for action_controller event" do
       current = stub
       current.should_receive(:set_log_entry)
-      Appsignal::Transaction.should_receive(:current).twice.
+      current.should_receive(:add_event)
+      Appsignal::Transaction.should_receive(:current).exactly(3).times.
         and_return(current)
     end
 
