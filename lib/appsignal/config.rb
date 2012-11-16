@@ -2,23 +2,22 @@ module Appsignal
   class Config
     attr_accessor :root_path, :rails_env
 
-    def initialize(root_path, rails_env)
+    def initialize(root_path, rails_env, logger=Appsignal.logger)
       @root_path = root_path
       @rails_env = rails_env
+      @logger = logger
     end
 
     def load
       file = File.join(@root_path, 'config/appsignal.yml')
-
       unless File.exists?(file)
-        Appsignal.logger.error "config not found at: #{file}"
+        @logger.error "config not found at: #{file}"
         return
       end
 
       config = YAML.load_file(file)[@rails_env]
-
       unless config
-        Appsignal.logger.error "config for '#{@rails_env}' not found"
+        @logger.error "config for '#{@rails_env}' not found"
         return
       end
 
