@@ -1,10 +1,5 @@
 module Appsignal
   class Railtie < Rails::Railtie
-
-    rake_tasks do
-      require 'tasks/appsignal_tasks'
-    end
-
     initializer "appsignal.configure_rails_initialization" do |app|
       if Appsignal.active
         app.middleware.insert_before ActionDispatch::RemoteIp,
