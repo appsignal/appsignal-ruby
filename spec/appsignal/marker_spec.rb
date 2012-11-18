@@ -13,7 +13,7 @@ describe Appsignal::Marker do
       logger
     )
   }
-  let(:log) {log = StringIO.new}
+  let(:log) { StringIO.new }
   let(:logger) { Logger.new(log) }
 
   context "transmit" do
