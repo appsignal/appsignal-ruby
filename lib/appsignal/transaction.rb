@@ -71,8 +71,8 @@ module Appsignal
 
     def complete_trace!
       Thread.current[:appsignal_transaction_id] = nil
-      hash = log_entry || exception
-      Appsignal.agent.add_to_queue(hash) if hash
+      hash = {:log_entry => log_entry, :exception => exception}
+      Appsignal.agent.add_to_queue(hash)
     end
   end
 end

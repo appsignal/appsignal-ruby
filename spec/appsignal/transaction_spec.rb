@@ -183,6 +183,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete_trace!' do
+
       context 'calling the appsignal agent' do
 
         context 'with log_entry' do
@@ -194,7 +195,10 @@ describe Appsignal::Transaction do
 
           it 'should add transaction to the agent' do
             Appsignal.agent.should_receive(:add_to_queue).
-              with({:duration => 199, :kind => 'background'})
+              with({
+                :log_entry=> {:duration => 199, :kind => 'background'},
+                :exception => nil
+              })
           end
         end
 
@@ -207,7 +211,10 @@ describe Appsignal::Transaction do
 
           it 'should add transaction to the agent' do
             Appsignal.agent.should_receive(:add_to_queue).
-              with({:exception => 'Error', :kind => 'background'})
+              with({
+                :log_entry => nil,
+                :exception => {:exception => "Error", :kind => 'background'}
+              })
           end
         end
 

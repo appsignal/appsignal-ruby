@@ -72,12 +72,6 @@ describe Appsignal::Tracer do
   end
 
   context "hashes" do
-    it "should generate transaction_hash" do
-      job.send(:appsignal_transaction_hash, 'perform').should == {
-        :action => "Job#perform",
-        :kind => "background"
-      }
-    end
 
     it "should generate log_entry" do
       start_time = Time.parse("01-01-2012 00:00:00 +0000")
@@ -97,13 +91,11 @@ describe Appsignal::Tracer do
     it "should generate exception" do
       job.send(:appsignal_exception, Exception.new('Error'), 'generate_error'
       ).should == {
-        :action => "Job#generate_error",
         :exception => {
           :backtrace => nil,
           :exception => "Exception",
           :message => "Error"
-        },
-        :kind => "background"
+        }
       }
     end
   end
