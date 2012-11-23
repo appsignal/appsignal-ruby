@@ -181,5 +181,53 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    describe '#complete_trace!' do
+
+      context 'calling the appsignal agent' do
+
+        context 'with log_entry' do
+          before do
+            transaction.set_log_entry(
+              {:duration => 199, :kind => 'background'}
+            )
+          end
+
+          it 'should add transaction to the agent' do
+            Appsignal.agent.should_receive(:add_to_queue).
+              with({
+                :log_entry=> {:duration => 199, :kind => 'background'},
+                :exception => nil
+              })
+          end
+        end
+
+        context 'with exception' do
+          before do
+            transaction.add_exception(
+              {:exception => 'Error', :kind => 'background'}
+            )
+          end
+
+          it 'should add transaction to the agent' do
+            Appsignal.agent.should_receive(:add_to_queue).
+              with({
+                :log_entry => nil,
+                :exception => {:exception => "Error", :kind => 'background'}
+              })
+          end
+        end
+
+        after { transaction.complete_trace! }
+      end
+
+      context 'thread' do
+        before { transaction.complete_trace! }
+
+        it 'should reset the thread transaction id' do
+          Thread.current[:appsignal_transaction_id].should be_nil
+        end
+      end
+    end
   end
 end
