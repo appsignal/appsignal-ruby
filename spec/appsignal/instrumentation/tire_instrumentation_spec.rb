@@ -24,7 +24,7 @@ describe "Appsignal::TireInstrumentation" do
       context "with tire enabled in the config" do
         before :all do
           Appsignal.config.merge!(
-            :instrumentations => {:tire => true}
+            :instrumentations => {'tire' => true}
           )
           Appsignal::TireInstrumentation.setup(logger)
         end

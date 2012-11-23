@@ -28,7 +28,7 @@ describe "Appsignal::MongoInstrumentation" do
           end
           @mongo_logger = MockMongoLogger.new
           Appsignal.config.merge!(
-            :instrumentations => {:mongo => true}
+            :instrumentations => {'mongo' => true}
           )
           Appsignal::MongoInstrumentation.setup(logger)
         end

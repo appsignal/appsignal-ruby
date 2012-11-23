@@ -2,7 +2,7 @@ module Appsignal
   class TireInstrumentation
     def self.setup(logger)
       if Appsignal.config[:instrumentations] &&
-         Appsignal.config[:instrumentations][:tire] &&
+         Appsignal.config[:instrumentations]['tire'] &&
          defined?(Tire::Search::Search)
         logger.info 'Adding instrumentation to Tire::Search::Search'
 

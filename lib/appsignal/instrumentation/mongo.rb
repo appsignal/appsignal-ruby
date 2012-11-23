@@ -2,7 +2,7 @@ module Appsignal
   class MongoInstrumentation
     def self.setup(logger)
       if Appsignal.config[:instrumentations] &&
-         Appsignal.config[:instrumentations][:mongo] &&
+         Appsignal.config[:instrumentations]['mongo'] &&
          defined?(Mongo::Logging)
         logger.info 'Adding instrumentation to Mongo::Logging'
 
