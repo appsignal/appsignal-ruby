@@ -21,7 +21,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
   gem.version       = Appsignal::VERSION
 
-  gem.add_dependency 'rails'
+  gem.add_dependency 'rails', '~>3'
   gem.add_dependency 'rake'
   gem.add_dependency 'json'
 
