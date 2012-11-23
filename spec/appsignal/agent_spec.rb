@@ -126,7 +126,7 @@ describe Appsignal::Agent do
   end
 
   describe "when inactive" do
-    before { Appsignal.stub(:active => false) }
+    before { Appsignal.stub(:active? => false) }
 
     it "should not start a new thread" do
       Thread.should_not_receive(:new)

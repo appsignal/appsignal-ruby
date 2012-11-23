@@ -10,7 +10,7 @@ describe "Inactive Appsignal::Railtie" do
       pending "This spec cannot run on JRuby currently"
     else
       pid = fork do
-        Appsignal.stub(:active => false)
+        Appsignal.stub(:active? => false)
         Rails.application = nil
         instance_eval do
           module MyTempApp

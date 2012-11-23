@@ -1,7 +1,7 @@
 module Appsignal
   class Railtie < Rails::Railtie
     initializer "appsignal.configure_rails_initialization" do |app|
-      if Appsignal.active
+      if Appsignal.active?
         require 'appsignal/instrumentation'
 
         app.middleware.insert_before ActionDispatch::RemoteIp, Appsignal::Middleware

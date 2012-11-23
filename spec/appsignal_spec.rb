@@ -41,8 +41,8 @@ describe Appsignal do
     end
   end
 
-  describe 'active' do
-    subject { Appsignal.active }
+  describe '.active?' do
+    subject { Appsignal.active? }
 
     context "without config" do
       before { Appsignal.stub(:config => nil) }

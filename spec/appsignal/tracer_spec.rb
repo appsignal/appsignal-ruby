@@ -26,7 +26,7 @@ describe Appsignal::Tracer do
 
   context "when inactive" do
     before do
-      Appsignal.stub!(:active => false)
+      Appsignal.stub(:active? => false)
       class Jobless
         include Appsignal::Tracer
 
