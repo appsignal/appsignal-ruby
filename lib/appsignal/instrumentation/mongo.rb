@@ -1,7 +1,9 @@
 module Appsignal
   class MongoInstrumentation
     def self.setup(logger)
-      if defined?(Mongo::Logging)
+      if Appsignal.config[:instrumentations] &&
+         Appsignal.config[:instrumentations][:mongo] &&
+         defined?(Mongo::Logging)
         logger.info 'Adding instrumentation to Mongo::Logging'
 
         Mongo::Logging.module_eval do

@@ -2,3 +2,9 @@
   api_key: "<%= push_key %>"
   active: true
   slow_request_threshold: 200
+
+  # The appsignal gem includes some instrumentation implementations
+  # for widely used tools, uncomment to enable.
+  instrumentations:
+    # mongo: true
+    # tire: true
