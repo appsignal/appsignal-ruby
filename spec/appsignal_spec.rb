@@ -15,10 +15,11 @@ describe Appsignal do
     it { should be_a Appsignal::Agent }
   end
 
-  describe 'logger' do
+  describe '.logger' do
     subject { Appsignal.logger }
 
     it { should be_a Logger }
+    its(:level) { should == Logger::INFO }
   end
 
   describe '.config' do

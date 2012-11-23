@@ -9,7 +9,9 @@ module Appsignal
     end
 
     def logger
-      @logger ||= Logger.new("#{Rails.root}/log/appsignal.log")
+      @logger ||= Logger.new("#{Rails.root}/log/appsignal.log").tap do |l|
+        l.level = Logger::INFO
+      end
     end
 
     def transactions
