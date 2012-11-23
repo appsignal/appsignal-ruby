@@ -6,7 +6,9 @@ describe "Inactive Appsignal::Railtie" do
     # start multiple applications in one process. This works decently
     # on every platform except JRuby, so we're disabling this test on
     # JRuby for now.
-    unless RUBY_PLATFORM == "java"
+    if RUBY_PLATFORM == "java"
+      pending "This spec cannot run on JRuby currently"
+    else
       pid = fork do
         Appsignal.stub(:active => false)
         Rails.application = nil
