@@ -47,8 +47,8 @@ module Appsignal
         :action => "#{self.class}##{method_name}",
         :kind => 'background',
         :duration =>  1000.0 * (end_time - start_time),
-        :time => start_time,
-        :end => end_time
+        :time => start_time.to_f,
+        :end => end_time.to_f
       }
     end
 

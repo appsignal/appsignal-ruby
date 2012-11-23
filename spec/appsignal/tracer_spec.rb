@@ -82,8 +82,8 @@ describe Appsignal::Tracer do
       ).should == {
         :action => "Job#perform",
         :duration => 10000.0,
-        :time => start_time,
-        :end => end_time,
+        :time => 1325376000.0,
+        :end => 1325376010.0,
         :kind => "background"
       }
     end
