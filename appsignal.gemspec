@@ -10,9 +10,10 @@ Gem::Specification.new do |gem|
     'Jacob Vosmaer'
   ]
   gem.email         = ['contact@appsignal.com']
-  gem.description   = %q{The official appsignal.com gem}
-  gem.summary       = %q{Logs performance and exception data from your app to appsignal.com}
-  gem.homepage      = "http://github.com/80beans/appsignal"
+  gem.description   = 'The official appsignal.com gem'
+  gem.summary       = 'Logs performance and exception data from your app to'\
+                      'appsignal.com'
+  gem.homepage      = 'http://github.com/80beans/appsignal'
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
@@ -28,6 +29,4 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency 'capistrano'
   gem.add_development_dependency 'generator_spec'
-  gem.add_development_dependency 'mongo'
-  gem.add_development_dependency 'tire'
 end
