@@ -15,11 +15,6 @@ describe Appsignal::Railtie do
     MyApp::Application.middleware.to_a.should include Appsignal::Middleware
   end
 
-  it "should have required instrumentation" do
-    defined?(Appsignal::MongoInstrumentation).should be_true
-    defined?(Appsignal::TireInstrumentation).should be_true
-  end
-
   context "non action_controller event" do
     it "should call add_event for non action_controller event" do
       current = stub
