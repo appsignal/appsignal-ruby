@@ -2,6 +2,8 @@ require 'spec_helper'
 require "generator_spec/test_case"
 require './lib/generators/appsignal/appsignal_generator'
 
+SPEC_TMP_PATH = "../../../tmp"
+
 # The generator doesn't know we're testing
 # So change the path while running the generator
 # Change it back upon completion
@@ -13,7 +15,7 @@ end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path("../../tmp", __FILE__)
+  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "with key" do
     arguments %w(my_app_key)
@@ -66,7 +68,7 @@ end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path("../../tmp", __FILE__)
+  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "with custom environment" do
     context "normal flow" do
@@ -93,7 +95,7 @@ end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path("../../tmp", __FILE__)
+  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "multiple environments" do
     context "normal flow" do
@@ -153,7 +155,7 @@ end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path("../../tmp", __FILE__)
+  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "without key" do
     arguments %w()
