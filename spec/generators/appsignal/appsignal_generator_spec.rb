@@ -2,28 +2,24 @@ require 'spec_helper'
 require "generator_spec/test_case"
 require './lib/generators/appsignal/appsignal_generator'
 
-SPEC_TMP_PATH = "../../../tmp"
-
 # The generator doesn't know we're testing
 # So change the path while running the generator
 # Change it back upon completion
-def run_generator_in_tmp
+def run_generator_in_tmp(args=[])
   FileUtils.cd("spec/tmp") do
-    run_generator
+    run_generator args
   end
 end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
+  destination File.expand_path("../../../tmp", __FILE__)
 
   context "with key" do
-    arguments %w(my_app_key)
-
     context "normal flow" do
       before do
         prepare_destination
-        run_generator_in_tmp
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "config file is created" do
@@ -48,7 +44,7 @@ describe AppsignalGenerator do
         deploy_file = File.expand_path(File.join('config', 'deploy.rb'),
           destination_root)
         File.open(deploy_file, 'w') {}
-        run_generator_in_tmp
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "config file is created and capistrano deploy file modified" do
@@ -64,18 +60,12 @@ describe AppsignalGenerator do
       end
     end
   end
-end
-
-describe AppsignalGenerator do
-  include GeneratorSpec::TestCase
-  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "with custom environment" do
     context "normal flow" do
-      arguments %w(my_app_key --environment=development)
       before do
         prepare_destination
-        run_generator_in_tmp
+        run_generator_in_tmp %w(my_app_key --environment=development)
       end
 
       specify "config file is created" do
@@ -91,16 +81,9 @@ describe AppsignalGenerator do
       end
     end
   end
-end
-
-describe AppsignalGenerator do
-  include GeneratorSpec::TestCase
-  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "multiple environments" do
     context "normal flow" do
-      arguments %w(my_app_key --environment=development)
-
       context "with new environment" do
         before do
           prepare_destination
@@ -109,7 +92,7 @@ describe AppsignalGenerator do
           File.open(File.expand_path(config_file, destination_root), 'w') do |f|
             f.write("production:\n  api_key: 111")
           end
-          run_generator_in_tmp
+          run_generator_in_tmp %w(my_app_key --environment=development)
         end
 
         specify "config file is created" do
@@ -134,7 +117,7 @@ describe AppsignalGenerator do
           File.open(File.expand_path(config_file, destination_root), 'w') do |f|
             f.write("development:\n  api_key: \"111\"")
           end
-          run_generator_in_tmp
+          run_generator_in_tmp %w(my_app_key --environment=development)
         end
 
         specify "config file is created" do
@@ -151,17 +134,11 @@ describe AppsignalGenerator do
       end
     end
   end
-end
-
-describe AppsignalGenerator do
-  include GeneratorSpec::TestCase
-  destination File.expand_path(SPEC_TMP_PATH, __FILE__)
 
   context "without key" do
-    arguments %w()
     before do
       prepare_destination
-      run_generator_in_tmp
+      run_generator_in_tmp %w()
     end
 
     specify "no config files are created" do
