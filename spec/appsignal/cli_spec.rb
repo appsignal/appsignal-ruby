@@ -81,7 +81,8 @@ describe Appsignal::CLI do
       lambda {
         cli.validate_required_options(
           required_options,
-          :option_1 => 1
+          :option_1 => 1,
+          :option_2 => ''
         )
       }.should raise_error(SystemExit)
       out_stream.string.should include("Missing options: option_2, option_3")

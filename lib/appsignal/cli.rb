@@ -106,7 +106,7 @@ module Appsignal
 
       def validate_required_options(required_options, options)
         missing = required_options.select do |required_option|
-          options[required_option].nil?
+          options[required_option].blank?
         end
         if missing.any?
           puts "Missing options: #{missing.join(', ')}"
