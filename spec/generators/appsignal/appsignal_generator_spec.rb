@@ -26,7 +26,7 @@ describe AppsignalGenerator do
       end
 
       specify "should mention successful auth check" do
-        @output.should include('Appsignal has confirmed authorisation!')
+        @output.should include('AppSignal has confirmed authorisation!')
       end
     end
 
@@ -40,7 +40,7 @@ describe AppsignalGenerator do
       end
 
       specify "should mention invalid key" do
-        @output.should include('Push key not valid with Appsignal...')
+        @output.should include('Push key not valid with AppSignal...')
       end
     end
 
@@ -67,7 +67,7 @@ describe AppsignalGenerator do
 
       specify "should mention internal failure" do
         @output.should include('Something went wrong while trying to '\
-          'authenticate with Appsignal:')
+          'authenticate with AppSignal:')
       end
     end
   end

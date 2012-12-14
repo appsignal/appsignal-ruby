@@ -40,16 +40,16 @@ class AppsignalGenerator < Rails::Generators::Base
       auth_check = Appsignal::AuthCheck.new(options.environment)
       result = auth_check.perform
       if result == '200'
-        say_status :success, "Appsignal has confirmed authorisation!"
+        say_status :success, "AppSignal has confirmed authorisation!"
       elsif result == '401'
-        say_status :error, "Push key not valid with Appsignal...", :red
+        say_status :error, "Push key not valid with AppSignal...", :red
       else
         say_status :error, "Could not confirm authorisation: "\
           "#{result.nil? ? 'nil' : result} at #{auth_check.uri}", :red
       end
     rescue Exception => e
       say_status :error, "Something went wrong while trying to authenticate "\
-        "with Appsignal: #{e}", :red
+        "with AppSignal: #{e}", :red
     end
   end
 
