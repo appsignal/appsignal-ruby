@@ -29,8 +29,9 @@ class AppsignalGenerator < Rails::Generators::Base
       end
     else
       say_status :info, "No capistrano setup detected! Did you know you can "\
-        "use a Rake task to notify Appsignal of deployments?", :yellow
-      say_status "", "rake appsignal:notify_of_deploy"
+        "use the AppSignal CLI to notify AppSignal of deployments?", :yellow
+      say_status "", "Run the following command for help:"
+      say_status "", "appsignal notify_of_deploy -h"
     end
   end
 

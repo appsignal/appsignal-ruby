@@ -108,7 +108,7 @@ describe AppsignalGenerator do
 
     specify "should mention the deploy task" do
       @output.should include('No capistrano setup detected!')
-      @output.should include('rake appsignal:notify_of_deploy')
+      @output.should include('appsignal notify_of_deploy -h')
     end
   end
 
@@ -138,7 +138,7 @@ describe AppsignalGenerator do
 
     specify "should not mention the deploy task" do
       @output.should_not include('No capistrano setup detected!')
-      @output.should_not include('rake appsignal:notify_of_deploy')
+      @output.should_not include('appsignal notify_of_deploy -h')
     end
   end
 
