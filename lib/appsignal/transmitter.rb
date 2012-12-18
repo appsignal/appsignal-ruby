@@ -2,6 +2,7 @@ require 'net/http'
 require 'net/https'
 require 'uri'
 require 'json'
+require 'rack/utils'
 
 module Appsignal
   class Transmitter
@@ -15,7 +16,7 @@ module Appsignal
 
     def uri
       URI("#{@endpoint}/#{@action}").tap do |uri|
-        uri.query = URI.encode_www_form({
+        uri.query = Rack::Utils.build_query({
           :api_key => api_key,
           :gem_version => Appsignal::VERSION
         })
