@@ -1,7 +1,6 @@
 require 'rspec'
 require 'rails'
 require 'action_controller/railtie'
-require 'fixtures/liever'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__),'support','**','*.rb'))].each {|f| require f}
 
