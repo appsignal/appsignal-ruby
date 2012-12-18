@@ -29,7 +29,7 @@ module Appsignal
 
     def message(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |post|
-        post.body = payload.to_json
+        post.body = JSON.generate(payload)
       end
     end
 
