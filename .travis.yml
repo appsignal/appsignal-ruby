@@ -24,3 +24,7 @@ matrix:
     - gemfile: gemfiles/edge.gemfile
 
 script: RAILS_ENV=test bundle exec rspec spec
+
+notifications:
+  campfire: 80beans:d43f43244263cafb088182aa79e7d96419da0372@188927
+  email: false
