@@ -14,7 +14,7 @@ describe Appsignal::Agent do
   describe "#send_queue" do
     it "transmits" do
       subject.stub(:queue => 'foo')
-      subject.transmitter.should_receive(:transmit).with(:log_entries => 'foo')
+      subject.transmitter.should_receive(:transmit).with('foo')
     end
 
     it "handles the return code" do
