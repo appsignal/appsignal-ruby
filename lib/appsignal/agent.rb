@@ -29,7 +29,7 @@ module Appsignal
     def send_queue
       Appsignal.logger.debug "Sending queue"
       begin
-        handle_result transmitter.transmit(:log_entries => queue)
+        handle_result transmitter.transmit(queue)
       rescue Exception => ex
         Appsignal.logger.error "Exception while communicating with AppSignal: #{ex}"
         handle_result nil

@@ -2,6 +2,7 @@ require 'net/http'
 require 'net/https'
 require 'uri'
 require 'json'
+require 'rack/utils'
 
 module Appsignal
   class Transmitter
@@ -14,31 +15,22 @@ module Appsignal
     end
 
     def uri
-      URI("#{@endpoint}/#{@action}")
+      URI("#{@endpoint}/#{@action}").tap do |uri|
+        uri.query = Rack::Utils.build_query({
+          :api_key => api_key,
+          :gem_version => Appsignal::VERSION
+        })
+      end
     end
 
-    def transmit(payload = {})
-      result = http_client.request(encoded_message(payload))
+    def transmit(payload)
+      result = http_client.request(message(payload))
       result.code
     end
 
-    def encoded_message(payload)
-      encoded_payload = {}.tap do |hsh|
-        payload.each do |key, val|
-          hsh[key] = val.to_json
-        end
-      end
-      message(encoded_payload)
-    end
-
-    def message(encoded_hash)
+    def message(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |post|
-        post.set_form_data(
-          {
-            :api_key => api_key,
-            :gem_version => Appsignal::VERSION
-          }.merge(encoded_hash)
-        )
+        post.body = JSON.generate(payload)
       end
     end
 
