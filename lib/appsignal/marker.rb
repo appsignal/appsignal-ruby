@@ -15,7 +15,7 @@ module Appsignal
           @config[:endpoint], ACTION, @config[:api_key]
         )
         @logger.info "Notifying Appsignal of deploy..."
-        result = transmitter.transmit(:marker_data => marker_data)
+        result = transmitter.transmit(marker_data)
         if result == '200'
           @logger.info "Appsignal has been notified of this deploy!"
         else
