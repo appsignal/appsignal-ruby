@@ -107,11 +107,9 @@ describe Appsignal::CLI do
         'abc'
       ).and_return(transmitter)
       transmitter.should_receive(:transmit).with(
-        :marker_data => {
-          :revision => 'aaaaa',
-          :repository => 'git@github.com:our/project.git',
-          :user => 'thijs'
-        }
+        :revision => 'aaaaa',
+        :repository => 'git@github.com:our/project.git',
+        :user => 'thijs'
       )
 
       cli.run([

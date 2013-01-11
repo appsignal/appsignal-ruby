@@ -27,13 +27,11 @@ describe Appsignal::Marker do
     it "should transmit data" do
       @transmitter.should_receive(:transmit).
         with(
-          {:marker_data =>
-            {
-              :revision => "503ce0923ed177a3ce000005",
-              :repository => "master",
-              :user => "batman",
-              :rails_env => "development"
-            }
+          {
+            :revision => "503ce0923ed177a3ce000005",
+            :repository => "master",
+            :user => "batman",
+            :rails_env => "development"
           }
         )
 
