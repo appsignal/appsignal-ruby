@@ -13,7 +13,7 @@ module Appsignal
       self.transmitter = Appsignal::Transmitter.new(
         @config[:endpoint], ACTION, @config[:api_key]
       )
-      transmitter.transmit
+      transmitter.transmit({})
     end
   end
 end
