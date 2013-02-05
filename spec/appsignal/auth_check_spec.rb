@@ -11,7 +11,7 @@ describe Appsignal::AuthCheck do
 
   describe "#perform" do
     it "should not transmit any extra data" do
-      @transmitter.should_receive(:transmit).with().and_return()
+      @transmitter.should_receive(:transmit).with({}).and_return({})
       auth_check.perform
     end
   end
