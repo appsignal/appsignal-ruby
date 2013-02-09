@@ -9,7 +9,7 @@ describe Appsignal::Transmitter do
 
   describe "#uri" do
     it "returns uri" do
-      subject.uri.should == URI("http://www.80beans.com/action?api_key=the_api_key&gem_version=0.3.1")
+      subject.uri.should == URI("http://www.80beans.com/action?api_key=the_api_key&gem_version=#{Appsignal::VERSION}")
     end
   end
 
@@ -26,7 +26,7 @@ describe Appsignal::Transmitter do
     it "calls Net::HTTP.post_form with the correct params" do
       post = stub
       post.should_receive(:body=).with("{\"the\":\"payload\"}")
-      Net::HTTP::Post.should_receive(:new).with('/action?api_key=the_api_key&gem_version=0.3.1').and_return(post)
+      Net::HTTP::Post.should_receive(:new).with("/action?api_key=the_api_key&gem_version=#{Appsignal::VERSION}").and_return(post)
       instance.message(:the => :payload)
     end
   end
