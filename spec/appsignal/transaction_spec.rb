@@ -68,14 +68,6 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#hostname" do
-      before { Socket.stub(:gethostname => 'app1.local') }
-
-      subject { transaction.hostname }
-
-      it { should == 'app1.local' }
-    end
-
     describe '#slow_request?' do
       let(:duration) { 199 }
       subject { transaction.slow_request? }

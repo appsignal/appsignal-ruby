@@ -6,7 +6,7 @@ require 'rack/utils'
 
 module Appsignal
   class Transmitter
-    attr_accessor :endpoint, :action, :api_key
+    attr_reader :endpoint, :action, :api_key
 
     def initialize(endpoint, action, api_key, logger=nil)
       @endpoint = endpoint
@@ -15,9 +15,10 @@ module Appsignal
     end
 
     def uri
-      URI("#{@endpoint}/#{@action}").tap do |uri|
+      @uri ||= URI("#{@endpoint}/#{@action}").tap do |uri|
         uri.query = Rack::Utils.build_query({
           :api_key => api_key,
+          :hostname => Socket.gethostname,
           :gem_version => Appsignal::VERSION
         })
       end

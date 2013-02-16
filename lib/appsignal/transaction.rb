@@ -38,10 +38,6 @@ module Appsignal
       @exception = ex
     end
 
-    def hostname
-      @hostname ||= Socket.gethostname
-    end
-
     def exception?
       !! exception
     end

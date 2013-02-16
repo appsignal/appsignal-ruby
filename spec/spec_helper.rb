@@ -79,7 +79,6 @@ def create_payload(args = {})
     :request_format => 'html',
     :request_method => "GET",
     :status => '200',
-    :hostname => 'app1',
     :view_runtime => 500,
     :db_runtime => 500
   }.merge(args)

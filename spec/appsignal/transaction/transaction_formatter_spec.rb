@@ -28,8 +28,6 @@ describe Appsignal::TransactionFormatter do
   end
 
   context "a new formatter" do
-    before { transaction.stub(:hostname => 'app1.local') }
-
     describe "#to_hash" do
       subject { formatter.to_hash }
       before { formatter.stub(:action => :foo, :formatted_log_entry => :bar) }
@@ -53,14 +51,11 @@ describe Appsignal::TransactionFormatter do
   it { should delegate(:exception?).to(:transaction) }
   it { should delegate(:env).to(:transaction) }
   it { should delegate(:request).to(:transaction) }
-  it { should delegate(:hostname).to(:transaction) }
   it { should delegate(:log_entry).to(:transaction) }
 
   it { should delegate(:payload).to(:log_entry) }
 
   context "a new formatter" do
-    before { transaction.stub(:hostname => 'app1.local') }
-
     describe "#action" do
       subject { formatter.send(:action) }
       before do
@@ -111,7 +106,6 @@ describe Appsignal::TransactionFormatter do
 
       it { should == {
         :path => '/blog',
-        :hostname => 'app1.local',
         :kind => 'http_request'
       } }
 

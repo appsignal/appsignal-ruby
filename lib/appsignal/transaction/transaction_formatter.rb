@@ -30,7 +30,7 @@ module Appsignal
     protected
 
     def_delegators :transaction, :id, :events, :exception, :exception?, :env,
-      :request, :hostname, :log_entry
+      :request, :log_entry
     def_delegators :log_entry, :payload
 
     attr_reader :transaction
@@ -46,7 +46,6 @@ module Appsignal
     def basic_log_entry
       {
         :path => request.fullpath,
-        :hostname => hostname,
         :kind => 'http_request'
       }
     end
