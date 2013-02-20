@@ -68,6 +68,14 @@ describe Appsignal::Agent do
         end
       end
 
+      context "with 406" do
+        let(:code) { '406' }
+
+        it "calls a stop to logging" do
+          subject.should_receive :stop_logging
+        end
+      end
+
       context "with 402" do
         let(:code) { '402' }
 

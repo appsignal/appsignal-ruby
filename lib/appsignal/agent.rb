@@ -47,10 +47,16 @@ module Appsignal
       when 413 # Request Entity Too Large
         good_response
         @sleep_time = @sleep_time / 1.5
-      when 429 # Too Many Requests (RFC 6585)
+      when 429
+        Appsignal.logger.error "Too many requests sent, disengaging the agent"
         stop_logging
-      when 402 # Payment Grace period expired
+      when 406
+        Appsignal.logger.error "Your appsignal gem cannot communicate with the API anymore, please upgrade. Disengaging the agent"
         stop_logging
+      when 402
+        Appsignal.logger.error "Payment required, disengaging the agent"
+        stop_logging
+      when 406
       else
         retry_once
       end
@@ -73,7 +79,6 @@ module Appsignal
     end
 
     def stop_logging
-      Appsignal.logger.error "Something went wrong, disengaging the agent"
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(@thread)
     end
