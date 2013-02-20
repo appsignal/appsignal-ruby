@@ -39,12 +39,13 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_process_action_event' do
-      let(:process_action_event) {stub(:name => 'test') }
+      let(:process_action_event) { create_process_action_event }
 
       it 'should add a process action event' do
-        expect {
-          transaction.set_process_action_event(process_action_event)
-        }.to change(transaction, :process_action_event).to(process_action_event)
+        transaction.set_process_action_event(process_action_event)
+
+        transaction.process_action_event.should == process_action_event
+        transaction.action.should == 'BlogPostsController#show'
       end
     end
 
@@ -71,11 +72,13 @@ describe Appsignal::Transaction do
     describe '#slow_request?' do
       let(:duration) { 199 }
       subject { transaction.slow_request? }
-      before { transaction.set_process_action_event(stub(:duration => duration)) }
+      before { transaction.set_process_action_event(
+        stub(:duration => duration, :payload => {})
+      ) }
 
       it { should be_false }
 
-      context "when the request took long" do
+      context "when the request took too long" do
         let(:duration) { 200 }
 
         it { should be_true }
@@ -84,11 +87,24 @@ describe Appsignal::Transaction do
       context "when process action event is empty" do
         before { transaction.set_process_action_event(nil) }
 
-        it "should not raise an error" do
-          expect {
-            transaction.slow_request?
-          }.to_not raise_error
-        end
+        it { should be_false }
+      end
+
+      context "when process action event does not have a payload" do
+        before { transaction.set_process_action_event(stub(:payload => nil)) }
+
+        it { should be_false }
+      end
+    end
+
+    describe "#clear_payload_and_events!" do
+      subject { slow_transaction }
+
+      it "should clear the process action payload and events" do
+        subject.clear_payload_and_events!
+
+        subject.process_action_event.payload.should be_empty
+        subject.events.should be_empty
       end
     end
 
@@ -127,38 +143,36 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete!' do
-      before { transaction.stub(:to_hash => {}) }
-      before { transaction.set_process_action_event(stub(:duration => 199, :time => Time.now)) }
+      before { transaction.set_process_action_event(
+        stub(:duration => 199, :time => Time.now, :payload => nil)
+      ) }
 
-      it 'should remove transaction from the queue' do
+      it 'should remove transaction from the list' do
         expect {
           transaction.complete!
         }.to change(Appsignal.transactions, :length).by(-1)
       end
 
       context 'calling the appsignal agent' do
-
-        context 'without events and exception (fast request)' do
+        context 'without events and exception' do
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue)
+            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
         context 'with events' do
           before { transaction.add_event(stub) }
-          before { transaction.stub(:to_hash => {})}
 
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue)
+            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
         context 'with exception' do
           before { transaction.add_exception(stub) }
-          before { transaction.stub(:to_hash => {})}
 
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue)
+            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
@@ -175,9 +189,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete_trace!' do
-
       context 'calling the appsignal agent' do
-
         context 'with process action event' do
           before do
             transaction.set_process_action_event(

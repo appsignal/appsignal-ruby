@@ -52,19 +52,11 @@ describe Appsignal::TransactionFormatter do
   it { should delegate(:env).to(:transaction) }
   it { should delegate(:request).to(:transaction) }
   it { should delegate(:process_action_event).to(:transaction) }
+  it { should delegate(:action).to(:transaction) }
 
   it { should delegate(:payload).to(:process_action_event) }
 
   context "a new formatter" do
-    describe "#action" do
-      subject { formatter.send(:action) }
-      before do
-        formatter.stub(:payload => {:controller => :love, :action => :rocket})
-      end
-
-      it { should == "love#rocket" }
-    end
-
     describe "#formatted_process_action_event" do
       subject { formatter.send(:formatted_process_action_event) }
 
@@ -74,7 +66,7 @@ describe Appsignal::TransactionFormatter do
       end
 
       context "with actual process action event data" do
-        before { transaction.stub(:process_action_event => create_process_action_event) }
+        before { transaction.set_process_action_event(create_process_action_event) }
 
         it { should be_a Hash }
 

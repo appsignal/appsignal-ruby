@@ -1,11 +1,12 @@
 module Appsignal
   class Agent
-    attr_reader :queue, :active, :sleep_time, :transmitter
+    attr_reader :queue, :active, :sleep_time, :slowest_transactions, :transmitter
     ACTION = 'log_entries'
 
     def initialize
       return unless Appsignal.active?
-      @sleep_time = 5.0
+      @sleep_time = 60.0
+      @slowest_transactions = {}
       @queue = []
       @retry_request = true
       @thread = Thread.new do
@@ -19,17 +20,31 @@ module Appsignal
         ACTION,
         Appsignal.config[:api_key]
       )
-      Appsignal.logger.info "Started the Appsignal agent"
+      Appsignal.logger.info 'Started the Appsignal agent'
     end
 
     def add_to_queue(transaction)
+      # TODO don't check Hash type after tracer has been cleaned up
+      if !transaction.is_a?(Hash) && !transaction.exception? && transaction.action
+        current_slowest_transaction = @slowest_transactions[transaction.action]
+        if current_slowest_transaction
+          if current_slowest_transaction.duration < transaction.duration
+            current_slowest_transaction.clear_payload_and_events!
+            @slowest_transactions[transaction.action] = transaction
+          else
+            transaction.clear_payload_and_events!
+          end
+        else
+          @slowest_transactions[transaction.action] = transaction
+        end
+      end
       @queue << transaction
     end
 
     def send_queue
       Appsignal.logger.debug "Sending queue"
       begin
-        handle_result transmitter.transmit(queue)
+        handle_result transmitter.transmit(queue.map(&:to_hash))
       rescue Exception => ex
         Appsignal.logger.error "Exception while communicating with AppSignal: #{ex}"
         handle_result nil
@@ -66,6 +81,7 @@ module Appsignal
 
     def good_response
       @queue = []
+      @slowest_transactions = {}
       @retry_request = true
     end
 

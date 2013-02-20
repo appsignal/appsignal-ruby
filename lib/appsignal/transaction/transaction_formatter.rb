@@ -30,14 +30,10 @@ module Appsignal
     protected
 
     def_delegators :transaction, :id, :events, :exception, :exception?, :env,
-      :request, :process_action_event
+      :request, :process_action_event, :action
     def_delegators :process_action_event, :payload
 
     attr_reader :transaction
-
-    def action
-      "#{payload[:controller]}##{payload[:action]}"
-    end
 
     def formatted_process_action_event
       basic_process_action_event.tap { |hsh| hsh.merge!(formatted_payload) if process_action_event }

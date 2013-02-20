@@ -18,14 +18,6 @@ module Appsignal
         }
       end
 
-      def action
-        if process_action_event
-          super
-        else
-          exception.exception.inspect.gsub(/^#<([^>]*)>$/, '\1')
-        end
-      end
-
       def basic_process_action_event
         super.merge(
           :environment => filtered_environment,
