@@ -27,9 +27,9 @@ describe Appsignal::Railtie do
   end
 
   context "action_controller event" do
-    it "should call set_log_entry for action_controller event" do
+    it "should call set_process_action_event for action_controller event" do
       current = stub
-      current.should_receive(:set_log_entry)
+      current.should_receive(:set_process_action_event)
       current.should_receive(:add_event)
       Appsignal::Transaction.should_receive(:current).exactly(3).times.
         and_return(current)

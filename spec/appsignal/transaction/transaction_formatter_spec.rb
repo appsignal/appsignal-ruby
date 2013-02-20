@@ -30,7 +30,7 @@ describe Appsignal::TransactionFormatter do
   context "a new formatter" do
     describe "#to_hash" do
       subject { formatter.to_hash }
-      before { formatter.stub(:action => :foo, :formatted_log_entry => :bar) }
+      before { formatter.stub(:action => :foo, :formatted_process_action_event => :bar) }
 
       it 'returns a formatted hash of the transaction data' do
         should == {
@@ -51,9 +51,9 @@ describe Appsignal::TransactionFormatter do
   it { should delegate(:exception?).to(:transaction) }
   it { should delegate(:env).to(:transaction) }
   it { should delegate(:request).to(:transaction) }
-  it { should delegate(:log_entry).to(:transaction) }
+  it { should delegate(:process_action_event).to(:transaction) }
 
-  it { should delegate(:payload).to(:log_entry) }
+  it { should delegate(:payload).to(:process_action_event) }
 
   context "a new formatter" do
     describe "#action" do
@@ -65,38 +65,37 @@ describe Appsignal::TransactionFormatter do
       it { should == "love#rocket" }
     end
 
-    describe "#formatted_log_entry" do
-      subject { formatter.send(:formatted_log_entry) }
+    describe "#formatted_process_action_event" do
+      subject { formatter.send(:formatted_process_action_event) }
 
-      it "calls basic_log_entry" do
-        formatter.should_receive(:basic_log_entry)
+      it "calls basic_process_action_event" do
+        formatter.should_receive(:basic_process_action_event)
         subject
       end
 
-      context "with actual log entry data" do
-        before { transaction.stub(:log_entry => create_log_entry) }
+      context "with actual process action event data" do
+        before { transaction.stub(:process_action_event => create_process_action_event) }
 
         it { should be_a Hash }
 
-        it "merges formatted_payload on the basic_log_entry" do
+        it "merges formatted_payload on the basic_process_action_event" do
           subject[:duration].should == 1000.0
           subject[:action].should == 'BlogPostsController#show'
         end
       end
 
-      context "without any log entry data" do
-
+      context "without any process action event data" do
         it { should be_a Hash }
 
-        it "does not merge formatted_payload onto the basic_log_entry" do
+        it "does not merge formatted_payload onto the basic_process_action_event" do
           subject.keys.should_not include :duration
           subject.keys.should_not include :action
         end
       end
     end
 
-    describe "#basic_log_entry" do
-      subject { formatter.send(:basic_log_entry) }
+    describe "#basic_process_action_event" do
+      subject { formatter.send(:basic_process_action_event) }
       before do
         transaction.stub(:request => mock(
           :fullpath => '/blog',
@@ -124,7 +123,7 @@ describe Appsignal::TransactionFormatter do
       subject { formatter.send(:formatted_payload) }
       before do
         transaction.stub(:sanitized_event_payload => {})
-        transaction.set_log_entry(mock(
+        transaction.set_process_action_event(mock(
           :name => 'name',
           :duration => 2,
           :time => start_time,

@@ -55,7 +55,7 @@ describe Appsignal::Tracer do
     end
 
     it "should send a trace of a method" do
-      transaction.should_receive(:set_log_entry)
+      transaction.should_receive(:set_process_action_event)
       job.appsignal_perform_trace('count') do
         1 + 1
       end
@@ -73,10 +73,10 @@ describe Appsignal::Tracer do
 
   context "hashes" do
 
-    it "should generate log_entry" do
+    it "should generate a process action event" do
       start_time = Time.parse("01-01-2012 00:00:00 +0000")
       end_time = Time.parse("01-01-2012 00:00:10 +0000")
-      job.send(:appsignal_log_entry, 'perform',
+      job.send(:appsignal_process_action_event, 'perform',
         start_time,
         end_time
       ).should == {

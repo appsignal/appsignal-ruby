@@ -33,8 +33,8 @@ module Appsignal
         transaction.add_exception(appsignal_exception(e, method_name))
         raise e
       ensure
-        transaction.set_log_entry(
-          appsignal_log_entry(method_name, start_time, Time.now.utc)
+        transaction.set_process_action_event(
+          appsignal_process_action_event(method_name, start_time, Time.now.utc)
         )
         transaction.complete_trace!
       end
@@ -42,7 +42,7 @@ module Appsignal
 
     private
 
-    def appsignal_log_entry(method_name, start_time, end_time)
+    def appsignal_process_action_event(method_name, start_time, end_time)
       {
         :action => "#{self.class}##{method_name}",
         :kind => 'background',

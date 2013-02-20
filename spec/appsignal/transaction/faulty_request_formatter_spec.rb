@@ -44,21 +44,21 @@ describe Appsignal::TransactionFormatter::FaultyRequestFormatter do
       subject { faulty.send(:action) }
 
       context "after reaching a controller action" do
-        before { faulty.stub(:log_entry => create_log_entry) }
+        before { faulty.stub(:process_action_event => create_process_action_event) }
 
         it { should == 'BlogPostsController#show' }
       end
 
       context "happened before a controller action was reached" do
-        before { faulty.stub(:log_entry => nil) }
+        before { faulty.stub(:process_action_event => nil) }
 
         it { should == 'ArgumentError: oh no' }
       end
     end
   end
 
-  describe "#basic_log_entry" do
-    subject { faulty.send(:basic_log_entry) }
+  describe "#basic_process_action_event" do
+    subject { faulty.send(:basic_process_action_event) }
 
     it "should return a hash with extra keys" do
       subject[:environment].should == {

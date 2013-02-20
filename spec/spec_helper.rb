@@ -34,18 +34,18 @@ def transaction_with_exception
 end
 
 def regular_transaction
-  appsignal_transaction(:log_entry => create_log_entry)
+  appsignal_transaction(:process_action_event => create_process_action_event)
 end
 
 def slow_transaction
   appsignal_transaction(
-    :log_entry => create_log_entry(nil, nil, Time.parse('01-01-2001 10:01:00'))
+    :process_action_event => create_process_action_event(nil, nil, Time.parse('01-01-2001 10:01:00'))
   )
 end
 
 def appsignal_transaction(args = {})
-  log_entry = args.delete(:log_entry)
-  events = args.delete(:events) || [create_log_entry(name='query.mongoid')]
+  process_action_event = args.delete(:process_action_event)
+  events = args.delete(:events) || [create_process_action_event(name='query.mongoid')]
   exception = args.delete(:exception)
   Appsignal::Transaction.create(
     '1',
@@ -55,13 +55,13 @@ def appsignal_transaction(args = {})
       'action_dispatch.routes' => 'not_available'
     }.merge(args)
   ).tap do |o|
-    o.set_log_entry(log_entry)
+    o.set_process_action_event(process_action_event)
     o.add_exception(exception)
     events.each { |event| o.add_event(event) }
   end
 end
 
-def create_log_entry(name=nil, start=nil, ending=nil, tid=nil, payload=nil)
+def create_process_action_event(name=nil, start=nil, ending=nil, tid=nil, payload=nil)
   ActiveSupport::Notifications::Event.new(
     name || 'process_action.action_controller',
     start || Time.parse("01-01-2001 10:00:00"),

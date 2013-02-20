@@ -12,12 +12,12 @@ module Appsignal
       Appsignal.transactions[Thread.current[:appsignal_transaction_id]]
     end
 
-    attr_reader :id, :events, :exception, :env, :log_entry
+    attr_reader :id, :events, :process_action_event, :exception, :env
 
     def initialize(id, env)
       @id = id
       @events = []
-      @log_entry = nil
+      @process_action_event = nil
       @exception = nil
       @env = env
     end
@@ -26,8 +26,8 @@ module Appsignal
       ActionDispatch::Request.new(@env)
     end
 
-    def set_log_entry(event)
-      @log_entry = event
+    def set_process_action_event(event)
+      @process_action_event = event
     end
 
     def add_event(event)
@@ -43,8 +43,8 @@ module Appsignal
     end
 
     def slow_request?
-      return false unless log_entry
-      Appsignal.config[:slow_request_threshold] <= log_entry.duration
+      return false unless process_action_event
+      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
     end
 
     def to_hash
@@ -60,14 +60,14 @@ module Appsignal
     def complete!
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@id)
-      if log_entry || exception?
+      if process_action_event || exception?
         Appsignal.agent.add_to_queue(current_transaction.to_hash)
       end
     end
 
     def complete_trace!
       Thread.current[:appsignal_transaction_id] = nil
-      hash = {:log_entry => log_entry, :exception => exception}
+      hash = {:process_action_event => process_action_event, :exception => exception}
       Appsignal.agent.add_to_queue(hash)
     end
   end

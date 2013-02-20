@@ -38,20 +38,20 @@ describe Appsignal::Transaction do
       it { should be_a ActionDispatch::Request }
     end
 
-    describe '#set_log_entry' do
-      let(:log_entry) {stub(:name => 'test') }
+    describe '#set_process_action_event' do
+      let(:process_action_event) {stub(:name => 'test') }
 
-      it 'should add a log entry' do
+      it 'should add a process action event' do
         expect {
-          transaction.set_log_entry(log_entry)
-        }.to change(transaction, :log_entry).to(log_entry)
+          transaction.set_process_action_event(process_action_event)
+        }.to change(transaction, :process_action_event).to(process_action_event)
       end
     end
 
     describe '#add_event' do
       let(:event) {stub(:name => 'test') }
 
-      it 'should add a log entry' do
+      it 'should add an event' do
         expect {
           transaction.add_event(event)
         }.to change(transaction, :events).to([event])
@@ -71,7 +71,7 @@ describe Appsignal::Transaction do
     describe '#slow_request?' do
       let(:duration) { 199 }
       subject { transaction.slow_request? }
-      before { transaction.set_log_entry(stub(:duration => duration)) }
+      before { transaction.set_process_action_event(stub(:duration => duration)) }
 
       it { should be_false }
 
@@ -81,8 +81,8 @@ describe Appsignal::Transaction do
         it { should be_true }
       end
 
-      context "when log entry is empty" do
-        before { transaction.set_log_entry(nil) }
+      context "when process action event is empty" do
+        before { transaction.set_process_action_event(nil) }
 
         it "should not raise an error" do
           expect {
@@ -128,7 +128,7 @@ describe Appsignal::Transaction do
 
     describe '#complete!' do
       before { transaction.stub(:to_hash => {}) }
-      before { transaction.set_log_entry(stub(:duration => 199, :time => Time.now)) }
+      before { transaction.set_process_action_event(stub(:duration => 199, :time => Time.now)) }
 
       it 'should remove transaction from the queue' do
         expect {
@@ -178,9 +178,9 @@ describe Appsignal::Transaction do
 
       context 'calling the appsignal agent' do
 
-        context 'with log_entry' do
+        context 'with process action event' do
           before do
-            transaction.set_log_entry(
+            transaction.set_process_action_event(
               {:duration => 199, :kind => 'background'}
             )
           end
@@ -188,7 +188,7 @@ describe Appsignal::Transaction do
           it 'should add transaction to the agent' do
             Appsignal.agent.should_receive(:add_to_queue).
               with({
-                :log_entry=> {:duration => 199, :kind => 'background'},
+                :process_action_event=> {:duration => 199, :kind => 'background'},
                 :exception => nil
               })
           end
@@ -204,7 +204,7 @@ describe Appsignal::Transaction do
           it 'should add transaction to the agent' do
             Appsignal.agent.should_receive(:add_to_queue).
               with({
-                :log_entry => nil,
+                :process_action_event => nil,
                 :exception => {:exception => "Error", :kind => 'background'}
               })
           end
