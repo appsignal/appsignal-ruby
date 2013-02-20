@@ -24,7 +24,7 @@ describe Appsignal::Transmitter do
     it { should == '200' }
   end
 
-  describe "#message" do
+  describe "#http_post" do
     it "calls Net::HTTP.post_form with the correct params" do
       post = stub
       post.should_receive(:body=).with("{\"the\":\"payload\"}")
@@ -33,7 +33,7 @@ describe Appsignal::Transmitter do
       Net::HTTP::Post.should_receive(:new).with(
         "/action?api_key=the_api_key&hostname=app1.local&gem_version=#{Appsignal::VERSION}"
       ).and_return(post)
-      instance.message(:the => :payload)
+      instance.send(:http_post, :the => :payload)
     end
   end
 
