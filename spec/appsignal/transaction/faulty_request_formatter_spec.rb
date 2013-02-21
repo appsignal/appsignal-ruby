@@ -35,30 +35,8 @@ describe Appsignal::TransactionFormatter::FaultyRequestFormatter do
     its(:keys) { should include :message }
   end
 
-  describe "#action" do
-    it "can call #action on its superclass" do
-      parent.new(transaction).respond_to?(:action).should be_true
-    end
-
-    context "return value" do
-      subject { faulty.send(:action) }
-
-      context "after reaching a controller action" do
-        before { faulty.stub(:log_entry => create_log_entry) }
-
-        it { should == 'BlogPostsController#show' }
-      end
-
-      context "happened before a controller action was reached" do
-        before { faulty.stub(:log_entry => nil) }
-
-        it { should == 'ArgumentError: oh no' }
-      end
-    end
-  end
-
-  describe "#basic_log_entry" do
-    subject { faulty.send(:basic_log_entry) }
+  describe "#basic_process_action_event" do
+    subject { faulty.send(:basic_process_action_event) }
 
     it "should return a hash with extra keys" do
       subject[:environment].should == {

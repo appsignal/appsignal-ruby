@@ -62,8 +62,8 @@ describe Appsignal::TransactionFormatter::SlowRequestFormatter do
     end
   end
 
-  describe "#basic_log_entry" do
-    subject { slow.send(:basic_log_entry) }
+  describe "#basic_process_action_event" do
+    subject { slow.send(:basic_process_action_event) }
 
     it "should return a hash with extra keys" do
       subject[:environment].should == {

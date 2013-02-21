@@ -1,20 +1,111 @@
 require 'spec_helper'
 
 describe Appsignal::Agent do
-  let(:event) { stub(:name => 'event') }
+  let(:transaction) { stub(
+    :name => 'transaction',
+    :exception? => false,
+    :action => 'something#else'
+  ) }
 
   describe '#add_to_queue' do
-    it 'should add the event to the queue' do
-      expect {
-        subject.add_to_queue(event)
-      }.to change(subject, :queue).to([event])
+    before do
+      @agent = Appsignal::Agent.new
+      @exception_transaction = stub(
+        :name => 'exception',
+        :exception? => true,
+        :action => 'controller#action1'
+      )
+      @slow_transaction = stub(
+        :name => 'slow',
+        :action => 'controller#action1',
+        :exception? => false,
+        :duration => 250.0
+      )
+      @slower_transaction = stub(
+        :name => 'slow',
+        :action => 'controller#action1',
+        :exception? => false,
+        :duration => 300.0
+      )
+      @other_slow_transaction = stub(
+        :name => 'slow',
+        :action => 'controller#action1',
+        :exception? => false,
+        :duration => 260.0
+      )
+      @slow_transaction_in_other_action = stub(
+        :name => 'slow',
+        :action => 'controller#action2',
+        :exception? => false,
+        :duration => 400.0
+      )
+    end
+    subject { @agent }
+
+    context "an exception transaction" do
+      before do
+        @exception_transaction.should_not_receive(:clear_payload_and_events!)
+        subject.add_to_queue(@exception_transaction)
+      end
+
+      its(:queue) { should include(@exception_transaction) }
+      its(:slowest_transactions) { should be_empty }
+
+      context "a slow transaction" do
+        before do
+          subject.add_to_queue(@slow_transaction)
+        end
+
+        its(:queue) { should include(@slow_transaction) }
+        its(:slowest_transactions) { should == {
+          'controller#action1' => @slow_transaction
+        } }
+
+        context "a slower transaction in the same action" do
+          before do
+            @slow_transaction.should_receive(:clear_payload_and_events!)
+            @slower_transaction.should_not_receive(:clear_payload_and_events!)
+            subject.add_to_queue(@slower_transaction)
+          end
+
+          its(:queue) { should include(@slower_transaction) }
+          its(:slowest_transactions) { should == {
+            'controller#action1' => @slower_transaction
+          } }
+
+          context "a slow but not the slowest transaction in the same action" do
+            before do
+              @other_slow_transaction.should_receive(:clear_payload_and_events!)
+              subject.add_to_queue(@other_slow_transaction)
+            end
+
+            its(:queue) { should include(@other_slow_transaction) }
+            its(:slowest_transactions) { should == {
+              'controller#action1' => @slower_transaction
+            } }
+          end
+
+          context "an even slower transaction in a different action" do
+            before do
+              @slow_transaction_in_other_action.should_not_receive(:clear_payload_and_events!)
+              subject.add_to_queue(@slow_transaction_in_other_action)
+            end
+
+            its(:queue) { should include(@slow_transaction_in_other_action) }
+            its(:slowest_transactions) { should == {
+              'controller#action1' => @slower_transaction,
+              'controller#action2' => @slow_transaction_in_other_action
+            } }
+          end
+        end
+      end
     end
   end
 
   describe "#send_queue" do
     it "transmits" do
-      subject.stub(:queue => 'foo')
-      subject.transmitter.should_receive(:transmit).with('foo')
+      subject.stub(:queue => [stub(:to_hash => 'foo')])
+      subject.transmitter.should_receive(:transmit).with(['foo'])
     end
 
     it "handles the return code" do
@@ -32,7 +123,7 @@ describe Appsignal::Agent do
   end
 
   describe '#handle_result' do
-    before { subject.add_to_queue(event) }
+    before { subject.add_to_queue(transaction) }
     before { subject.instance_variable_set(:@sleep_time, 3.0) }
 
     context "good responses" do
@@ -42,12 +133,14 @@ describe Appsignal::Agent do
         let(:code) { '200' }
 
         its(:queue) { should be_empty }
+        its(:slowest_transactions) { should be_empty }
       end
 
       context "with 420" do
         let(:code) { '420' }
 
         its(:queue) { should be_empty }
+        its(:slowest_transactions) { should be_empty }
         its(:sleep_time) { should == 4.5 }
       end
 
@@ -55,6 +148,7 @@ describe Appsignal::Agent do
         let(:code) { '413' }
 
         its(:queue) { should be_empty }
+        its(:slowest_transactions) { should be_empty }
         its(:sleep_time) { should == 2.0 }
       end
     end
@@ -68,8 +162,24 @@ describe Appsignal::Agent do
         end
       end
 
+      context "with 406" do
+        let(:code) { '406' }
+
+        it "calls a stop to logging" do
+          subject.should_receive :stop_logging
+        end
+      end
+
       context "with 402" do
         let(:code) { '402' }
+
+        it "calls a stop to logging" do
+          subject.should_receive :stop_logging
+        end
+      end
+
+      context "with 401" do
+        let(:code) { '401' }
 
         it "calls a stop to logging" do
           subject.should_receive :stop_logging
@@ -91,11 +201,12 @@ describe Appsignal::Agent do
   describe "#good_response" do
     before do
       subject.instance_variable_set(:@retry_once, false)
-      subject.add_to_queue(event)
+      subject.add_to_queue(transaction)
       subject.send :good_response
     end
 
     its(:queue) { should be_empty }
+    its(:slowest_transactions) { should be_empty }
 
     it "allows the next request to be retried" do
       subject.instance_variable_get(:@retry_request).should be_true
@@ -104,12 +215,15 @@ describe Appsignal::Agent do
 
   describe "#retry_once" do
     before do
-      subject.add_to_queue(event)
+      subject.add_to_queue(transaction)
       subject.send :retry_once
     end
 
     context "on time," do
-      its(:queue) { should == [event] }
+      its(:queue) { should == [transaction] }
+      its(:slowest_transactions) { should == {
+        'something#else' => transaction
+      } }
 
       context "two times" do
         before { subject.send :retry_once }

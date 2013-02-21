@@ -8,7 +8,7 @@ module Appsignal
           if Appsignal::Transaction.current
             event = ActiveSupport::Notifications::Event.new(*args)
             if event.name == 'process_action.action_controller'
-              Appsignal::Transaction.current.set_log_entry(event)
+              Appsignal::Transaction.current.set_process_action_event(event)
             end
             Appsignal::Transaction.current.add_event(event)
           end

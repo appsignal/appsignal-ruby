@@ -22,7 +22,7 @@ module Appsignal
       {
         :request_id => id,
         :action => action,
-        :log_entry => formatted_log_entry,
+        :log_entry => formatted_process_action_event,
         :failed => exception?
       }
     end
@@ -30,33 +30,28 @@ module Appsignal
     protected
 
     def_delegators :transaction, :id, :events, :exception, :exception?, :env,
-      :request, :hostname, :log_entry
-    def_delegators :log_entry, :payload
+      :request, :process_action_event, :action
+    def_delegators :process_action_event, :payload
 
     attr_reader :transaction
 
-    def action
-      "#{payload[:controller]}##{payload[:action]}"
+    def formatted_process_action_event
+      basic_process_action_event.tap { |hsh| hsh.merge!(formatted_payload) if process_action_event }
     end
 
-    def formatted_log_entry
-      basic_log_entry.tap { |hsh| hsh.merge!(formatted_payload) if log_entry }
-    end
-
-    def basic_log_entry
+    def basic_process_action_event
       {
         :path => request.fullpath,
-        :hostname => hostname,
         :kind => 'http_request'
       }
     end
 
     def formatted_payload
-      sanitized_event_payload(log_entry).merge(
+      sanitized_event_payload(process_action_event).merge(
         {
-          :duration => log_entry.duration,
-          :time => log_entry.time.to_f,
-          :end => log_entry.end.to_f,
+          :duration => process_action_event.duration,
+          :time => process_action_event.time.to_f,
+          :end => process_action_event.end.to_f,
           :action => action
         }
       )

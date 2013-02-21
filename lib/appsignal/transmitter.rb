@@ -6,7 +6,7 @@ require 'rack/utils'
 
 module Appsignal
   class Transmitter
-    attr_accessor :endpoint, :action, :api_key
+    attr_reader :endpoint, :action, :api_key
 
     def initialize(endpoint, action, api_key, logger=nil)
       @endpoint = endpoint
@@ -15,29 +15,29 @@ module Appsignal
     end
 
     def uri
-      URI("#{@endpoint}/#{@action}").tap do |uri|
+      @uri ||= URI("#{@endpoint}/#{@action}").tap do |uri|
         uri.query = Rack::Utils.build_query({
           :api_key => api_key,
+          :hostname => Socket.gethostname,
           :gem_version => Appsignal::VERSION
         })
       end
     end
 
     def transmit(payload)
-      result = http_client.request(message(payload))
-      result.code
-    end
-
-    def message(payload)
-      Net::HTTP::Post.new(uri.request_uri).tap do |post|
-        post.body = JSON.generate(payload)
-      end
+      http_client.request(http_post(payload)).code
     end
 
     protected
 
     def ca_file_path
       File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
+    end
+
+    def http_post(payload)
+      Net::HTTP::Post.new(uri.request_uri).tap do |post|
+        post.body = JSON.generate(payload)
+      end
     end
 
     def http_client
