@@ -19,25 +19,33 @@ describe Appsignal::Agent do
         :name => 'slow',
         :action => 'controller#action1',
         :exception? => false,
-        :duration => 250.0
+        :process_action_event => stub(
+          :duration => 250.0
+        )
       )
       @slower_transaction = stub(
         :name => 'slow',
         :action => 'controller#action1',
         :exception? => false,
-        :duration => 300.0
+        :process_action_event => stub(
+          :duration => 300.0
+        )
       )
       @other_slow_transaction = stub(
         :name => 'slow',
         :action => 'controller#action1',
         :exception? => false,
-        :duration => 260.0
+        :process_action_event => stub(
+          :duration => 260.0
+        )
       )
       @slow_transaction_in_other_action = stub(
         :name => 'slow',
         :action => 'controller#action2',
         :exception? => false,
-        :duration => 400.0
+        :process_action_event => stub(
+          :duration => 400.0
+        )
       )
     end
     subject { @agent }

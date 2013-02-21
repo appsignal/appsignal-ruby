@@ -27,7 +27,8 @@ module Appsignal
       if !transaction.exception? && transaction.action
         current_slowest_transaction = @slowest_transactions[transaction.action]
         if current_slowest_transaction
-          if current_slowest_transaction.duration < transaction.duration
+          if current_slowest_transaction.process_action_event.duration <
+             transaction.process_action_event.duration
             current_slowest_transaction.clear_payload_and_events!
             @slowest_transactions[transaction.action] = transaction
           else
