@@ -71,7 +71,9 @@ module Appsignal
       when 402
         Appsignal.logger.error "Payment required, disengaging the agent"
         stop_logging
-      when 406
+      when 401
+        Appsignal.logger.error "API token cannot be authorized, disengaging the agent"
+        stop_logging
       else
         retry_once
       end
