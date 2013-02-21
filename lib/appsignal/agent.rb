@@ -24,8 +24,7 @@ module Appsignal
     end
 
     def add_to_queue(transaction)
-      # TODO don't check Hash type after tracer has been cleaned up
-      if !transaction.is_a?(Hash) && !transaction.exception? && transaction.action
+      if !transaction.exception? && transaction.action
         current_slowest_transaction = @slowest_transactions[transaction.action]
         if current_slowest_transaction
           if current_slowest_transaction.duration < transaction.duration

@@ -27,11 +27,8 @@ module Appsignal
     end
 
     def set_process_action_event(event)
-      # TODO simplify these conditions once we refactor the tracer
       @process_action_event = event
-      if @process_action_event &&
-         @process_action_event.respond_to?(:payload) &&
-         @process_action_event.payload
+      if @process_action_event && @process_action_event.payload
         @action = "#{process_action_event.payload[:controller]}#"\
                   "#{process_action_event.payload[:action]}"
       end
@@ -75,12 +72,6 @@ module Appsignal
       if process_action_event || exception?
         Appsignal.agent.add_to_queue(current_transaction)
       end
-    end
-
-    def complete_trace!
-      Thread.current[:appsignal_transaction_id] = nil
-      hash = {:process_action_event => process_action_event, :exception => exception}
-      Appsignal.agent.add_to_queue(hash)
     end
   end
 end
