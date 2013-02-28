@@ -77,11 +77,13 @@ describe Appsignal::TransactionFormatter do
       end
 
       context "without any process action event data" do
+
         it { should be_a Hash }
 
         it "does not merge formatted_payload onto the basic_process_action_event" do
           subject.keys.should_not include :duration
           subject.keys.should_not include :action
+          subject.keys.should include :time
         end
       end
     end
@@ -89,6 +91,7 @@ describe Appsignal::TransactionFormatter do
     describe "#basic_process_action_event" do
       subject { formatter.send(:basic_process_action_event) }
       before do
+        Time.stub_chain(:now, :utc, :to_f => 123.0)
         transaction.stub(:request => mock(
           :fullpath => '/blog',
           :session => {:current_user => 1})
@@ -97,7 +100,8 @@ describe Appsignal::TransactionFormatter do
 
       it { should == {
         :path => '/blog',
-        :kind => 'http_request'
+        :kind => 'http_request',
+        :time => 123.0
       } }
 
       it "has no environment key" do

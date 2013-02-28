@@ -36,13 +36,16 @@ module Appsignal
     attr_reader :transaction
 
     def formatted_process_action_event
-      basic_process_action_event.tap { |hsh| hsh.merge!(formatted_payload) if process_action_event }
+      basic_process_action_event.tap do |hsh|
+        hsh.merge!(formatted_payload) if process_action_event
+      end
     end
 
     def basic_process_action_event
       {
         :path => request.fullpath,
-        :kind => 'http_request'
+        :kind => 'http_request',
+        :time => Time.now.utc.to_f
       }
     end
 
