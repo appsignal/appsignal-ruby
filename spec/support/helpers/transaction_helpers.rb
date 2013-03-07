@@ -22,7 +22,10 @@ module TransactionHelpers
       {
         :process_action_event => notification_event(
           :start => Time.parse('01-01-2001 10:01:00'),
-          :ending => Time.parse('01-01-2001 10:01:00') + 250.0
+          :ending => (
+            Time.parse('01-01-2001 10:01:00') +
+            Appsignal.config[:slow_request_threshold] / 1000.0
+          )
         )
       }.merge(args)
     )
