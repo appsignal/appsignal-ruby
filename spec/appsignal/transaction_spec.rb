@@ -50,7 +50,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#add_event' do
-      let(:event) {stub(:name => 'test') }
+      let(:event) { mock(:event, :name => 'test') }
 
       it 'should add an event' do
         expect {
@@ -60,7 +60,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#add_exception' do
-      let(:exception) {stub(:name => 'test') }
+      let(:exception) { mock(:exception, :name => 'test') }
 
       it 'should add an exception' do
         expect {
