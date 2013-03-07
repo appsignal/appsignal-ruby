@@ -39,7 +39,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_process_action_event' do
-      let(:process_action_event) { create_process_action_event }
+      let(:process_action_event) { notification_event }
 
       it 'should add a process action event' do
         transaction.set_process_action_event(process_action_event)

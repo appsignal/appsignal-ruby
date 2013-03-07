@@ -1,12 +1,15 @@
 module NotificationHelpers
 
-  def create_process_action_event(name=nil, start=nil, ending=nil, tid=nil, payload=nil)
+  def notification_event(args={})
+    args = {
+      :name => 'process_action.action_controller',
+      :start => Time.parse("01-01-2001 10:00:00"),
+      :ending => Time.parse("01-01-2001 10:00:01"),
+      :tid => '1',
+      :payload => create_payload
+    }.merge(args)
     ActiveSupport::Notifications::Event.new(
-      name || 'process_action.action_controller',
-      start || Time.parse("01-01-2001 10:00:00"),
-      ending || Time.parse("01-01-2001 10:00:01"),
-      tid || '1',
-      payload || create_payload
+      args[:name], args[:start], args[:ending], args[:tid], args[:payload]
     )
   end
 
