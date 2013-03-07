@@ -16,7 +16,8 @@ describe Appsignal::Transmitter do
   end
 
   describe "#transmit" do
-    let(:http_client) { stub(:request => stub(:code => '200')) }
+    let(:response) { mock(:response, :code => '200') }
+    let(:http_client) { mock(:request, :request => response) }
     before { instance.stub(:http_client => http_client) }
 
     subject { instance.transmit(:shipit => :payload) }
@@ -26,7 +27,7 @@ describe Appsignal::Transmitter do
 
   describe "#http_post" do
     it "calls Net::HTTP.post_form with the correct params" do
-      post = stub
+      post = mock(:post)
       post.should_receive(:body=).with("{\"the\":\"payload\"}")
       Socket.stub(:gethostname => 'app1.local')
 
