@@ -122,6 +122,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#to_hash' do
+      let(:formatter) { Appsignal::TransactionFormatter }
       subject { transaction.to_hash }
       before { transaction.stub(:exception? => false) }
 
@@ -129,8 +130,7 @@ describe Appsignal::Transaction do
         before { transaction.stub(:exception? => true) }
 
         it "calls TransactionFormatter.faulty with self" do
-          Appsignal::TransactionFormatter.should_receive(:faulty).
-            with(transaction).and_return({})
+          formatter.should_receive(:faulty).with(transaction).and_return({})
         end
       end
 
@@ -138,8 +138,7 @@ describe Appsignal::Transaction do
         before { transaction.stub(:slow_request? => true) }
 
         it "calls TransactionFormatter.slow with self" do
-          Appsignal::TransactionFormatter.should_receive(:slow).
-            with(transaction).and_return({})
+          formatter.should_receive(:slow).with(transaction).and_return({})
         end
       end
 
@@ -147,8 +146,7 @@ describe Appsignal::Transaction do
         before { transaction.stub(:slow_request? => false) }
 
         it "calls TransactionFormatter.slow with self" do
-          Appsignal::TransactionFormatter.should_receive(:regular).
-            with(transaction).and_return({})
+          formatter.should_receive(:regular).with(transaction).and_return({})
         end
       end
 
@@ -156,36 +154,36 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete!' do
-      before { transaction.set_process_action_event(
-        stub(:duration => 199, :time => Time.now, :payload => nil)
-      ) }
+      let(:event) { mock(:event) }
+      before { transaction.set_process_action_event(notification_event) }
 
       it 'should remove transaction from the list' do
-        expect {
-          transaction.complete!
-        }.to change(Appsignal.transactions, :length).by(-1)
+        expect { transaction.complete! }.
+          to change(Appsignal.transactions, :length).by(-1)
       end
 
       context 'calling the appsignal agent' do
-        context 'without events and exception' do
+        let(:agent) { Appsignal.agent }
+
+        context 'without events and without exception' do
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
+            agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
         context 'with events' do
-          before { transaction.add_event(stub) }
+          before { transaction.add_event(event) }
 
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
+            agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
         context 'with exception' do
-          before { transaction.add_exception(stub) }
+          before { transaction.add_exception(event) }
 
           it 'should add transaction to the agent' do
-            Appsignal.agent.should_receive(:add_to_queue).with(transaction)
+            agent.should_receive(:add_to_queue).with(transaction)
           end
         end
 
