@@ -9,42 +9,51 @@ describe Appsignal::Agent do
 
   describe '#add_to_queue' do
     before do
+      start = Time.now
       @agent = Appsignal::Agent.new
-      @exception_transaction = stub(
-        :name => 'exception',
-        :exception? => true,
-        :action => 'controller#action1'
-      )
-      @slow_transaction = stub(
-        :name => 'slow',
-        :action => 'controller#action1',
-        :exception? => false,
-        :process_action_event => stub(
-          :duration => 250.0
+      @exception_transaction = transaction_with_exception
+      @slow_transaction = slow_transaction(
+        :process_action_event => notification_event(
+          :name => 'slow',
+          :start => start,
+          :ending => start + 250.0,
+          :payload => create_payload(
+            :action => 'action1',
+            :controller => 'controller'
+          )
         )
       )
-      @slower_transaction = stub(
-        :name => 'slow',
-        :action => 'controller#action1',
-        :exception? => false,
-        :process_action_event => stub(
-          :duration => 300.0
+      @slower_transaction = slow_transaction(
+        :process_action_event => notification_event(
+          :name => 'slow',
+          :start => start,
+          :ending => start + 350.0,
+          :payload => create_payload(
+            :action => 'action1',
+            :controller => 'controller'
+          )
         )
       )
-      @other_slow_transaction = stub(
-        :name => 'slow',
-        :action => 'controller#action1',
-        :exception? => false,
-        :process_action_event => stub(
-          :duration => 260.0
+      @other_slow_transaction = slow_transaction(
+        :process_action_event => notification_event(
+          :name => 'slow',
+          :start => start,
+          :ending => start + 260.0,
+          :payload => create_payload(
+            :action => 'action1',
+            :controller => 'controller'
+          )
         )
       )
-      @slow_transaction_in_other_action = stub(
-        :name => 'slow',
-        :action => 'controller#action2',
-        :exception? => false,
-        :process_action_event => stub(
-          :duration => 400.0
+      @slow_transaction_in_other_action = slow_transaction(
+        :process_action_event => notification_event(
+          :name => 'slow',
+          :start => start,
+          :ending => start + 400.0,
+          :payload => create_payload(
+            :action => 'action2',
+            :controller => 'controller'
+          )
         )
       )
     end
