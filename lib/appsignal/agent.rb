@@ -46,7 +46,8 @@ module Appsignal
       begin
         handle_result transmitter.transmit(queue.map(&:to_hash))
       rescue Exception => ex
-        Appsignal.logger.error "Exception while communicating with AppSignal: #{ex}"
+        Appsignal.logger.error "Exception while communicating with "\
+          "AppSignal: #{ex}"
         handle_result nil
       end
     end
@@ -66,13 +67,15 @@ module Appsignal
         Appsignal.logger.error "Too many requests sent, disengaging the agent"
         stop_logging
       when 406
-        Appsignal.logger.error "Your appsignal gem cannot communicate with the API anymore, please upgrade. Disengaging the agent"
+        Appsignal.logger.error "Your appsignal gem cannot communicate with "\
+          "the API anymore, please upgrade. Disengaging the agent"
         stop_logging
       when 402
         Appsignal.logger.error "Payment required, disengaging the agent"
         stop_logging
       when 401
-        Appsignal.logger.error "API token cannot be authorized, disengaging the agent"
+        Appsignal.logger.error "API token cannot be authorized, disengaging "\
+          "the agent"
         stop_logging
       else
         retry_once
