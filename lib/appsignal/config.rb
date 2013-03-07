@@ -1,5 +1,12 @@
 module Appsignal
+
   class Config
+    DEFAULT_CONFIG = {
+      :ignore_exceptions => [],
+      :endpoint => 'https://push.appsignal.com/1',
+      :slow_request_threshold => 200
+    }.freeze
+
     attr_accessor :root_path, :rails_env
 
     def initialize(root_path, rails_env, logger=Appsignal.logger)
@@ -21,10 +28,9 @@ module Appsignal
         return
       end
 
-      config = {:ignore_exceptions => [],
-        :endpoint => 'https://push.appsignal.com/1',
-        :slow_request_threshold => 200
-      }.merge(config.symbolize_keys)
+      DEFAULT_CONFIG.merge(config.symbolize_keys)
     end
+
   end
+
 end
