@@ -66,7 +66,7 @@ describe Appsignal::TransactionFormatter do
       end
 
       context "with actual process action event data" do
-        before { transaction.set_process_action_event(create_process_action_event) }
+        before { transaction.set_process_action_event(notification_event) }
 
         it { should be_a Hash }
 
