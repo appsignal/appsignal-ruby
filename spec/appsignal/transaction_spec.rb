@@ -70,18 +70,27 @@ describe Appsignal::Transaction do
     end
 
     describe '#slow_request?' do
-      let(:duration) { 199 }
+      let(:start) { Time.now }
       subject { transaction.slow_request? }
-      before { transaction.set_process_action_event(
-        stub(:duration => duration, :payload => {})
-      ) }
 
-      it { should be_false }
+      context "duration" do
+        before do
+          transaction.set_process_action_event(
+            notification_event(:start => start, :ending => start + duration)
+          )
+        end
 
-      context "when the request took too long" do
-        let(:duration) { 200 }
+        context "when it reasonably fast" do
+          let(:duration) { 0.199 } # in seconds
 
-        it { should be_true }
+          it { should be_false }
+        end
+
+        context "when the request took too long" do
+          let(:duration) { 0.200 } # in seconds
+
+          it { should be_true }
+        end
       end
 
       context "when process action event is empty" do
@@ -91,7 +100,11 @@ describe Appsignal::Transaction do
       end
 
       context "when process action event does not have a payload" do
-        before { transaction.set_process_action_event(stub(:payload => nil)) }
+        let(:event) { notification_event }
+        before do
+          event.instance_variable_set(:@payload, nil)
+          transaction.set_process_action_event(event)
+        end
 
         it { should be_false }
       end
