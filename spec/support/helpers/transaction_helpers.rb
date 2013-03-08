@@ -18,14 +18,12 @@ module TransactionHelpers
   end
 
   def slow_transaction(args={})
+    time = Time.parse('01-01-2001 10:01:00')
     appsignal_transaction(
       {
         :process_action_event => notification_event(
-          :start => Time.parse('01-01-2001 10:01:00'),
-          :ending => (
-            Time.parse('01-01-2001 10:01:00') +
-            Appsignal.config[:slow_request_threshold] / 1000.0
-          )
+          :start => time,
+          :ending => time + Appsignal.config[:slow_request_threshold] / 1000.0
         )
       }.merge(args)
     )

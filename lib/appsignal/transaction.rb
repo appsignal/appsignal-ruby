@@ -28,9 +28,8 @@ module Appsignal
 
     def set_process_action_event(event)
       @process_action_event = event
-      if @process_action_event && @process_action_event.payload
-        @action = "#{process_action_event.payload[:controller]}#"\
-                  "#{process_action_event.payload[:action]}"
+      if event && event.payload
+        @action = "#{event.payload[:controller]}##{event.payload[:action]}"
       end
     end
 

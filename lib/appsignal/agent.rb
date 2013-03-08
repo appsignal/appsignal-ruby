@@ -16,9 +16,9 @@ module Appsignal
         end
       end
       @transmitter = Transmitter.new(
-        Appsignal.config[:endpoint],
+        Appsignal.config.fetch(:endpoint),
         ACTION,
-        Appsignal.config[:api_key]
+        Appsignal.config.fetch(:api_key)
       )
       Appsignal.logger.info 'Started the Appsignal agent'
     end
