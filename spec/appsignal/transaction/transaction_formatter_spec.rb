@@ -71,7 +71,7 @@ describe Appsignal::TransactionFormatter do
         it { should be_a Hash }
 
         it "merges formatted_payload on the basic_process_action_event" do
-          subject[:duration].should == 1000.0
+          subject[:duration].should == 100.0
           subject[:action].should == 'BlogPostsController#show'
         end
       end
