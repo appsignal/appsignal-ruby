@@ -29,10 +29,10 @@ module Appsignal
         if current_slowest_transaction
           if current_slowest_transaction.process_action_event.duration <
              transaction.process_action_event.duration
-            current_slowest_transaction.clear_payload_and_events!
+            current_slowest_transaction.truncate!
             @slowest_transactions[transaction.action] = transaction
           else
-            transaction.clear_payload_and_events!
+            transaction.truncate!
           end
         else
           @slowest_transactions[transaction.action] = transaction

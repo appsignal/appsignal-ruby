@@ -50,7 +50,7 @@ module Appsignal
       Appsignal.config[:slow_request_threshold] <= process_action_event.duration
     end
 
-    def clear_payload_and_events!
+    def truncate!
       @process_action_event.payload.clear
       @events.clear
     end

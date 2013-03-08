@@ -61,7 +61,7 @@ describe Appsignal::Agent do
 
     context "an exception transaction" do
       before do
-        @exception_transaction.should_not_receive(:clear_payload_and_events!)
+        @exception_transaction.should_not_receive(:truncate!)
         subject.add_to_queue(@exception_transaction)
       end
 
@@ -80,8 +80,8 @@ describe Appsignal::Agent do
 
         context "a slower transaction in the same action" do
           before do
-            @slow_transaction.should_receive(:clear_payload_and_events!)
-            @slower_transaction.should_not_receive(:clear_payload_and_events!)
+            @slow_transaction.should_receive(:truncate!)
+            @slower_transaction.should_not_receive(:truncate!)
             subject.add_to_queue(@slower_transaction)
           end
 
@@ -92,7 +92,7 @@ describe Appsignal::Agent do
 
           context "a slow but not the slowest transaction in the same action" do
             before do
-              @other_slow_transaction.should_receive(:clear_payload_and_events!)
+              @other_slow_transaction.should_receive(:truncate!)
               subject.add_to_queue(@other_slow_transaction)
             end
 
@@ -104,7 +104,7 @@ describe Appsignal::Agent do
 
           context "an even slower transaction in a different action" do
             before do
-              @slow_transaction_in_other_action.should_not_receive(:clear_payload_and_events!)
+              @slow_transaction_in_other_action.should_not_receive(:truncate!)
               subject.add_to_queue(@slow_transaction_in_other_action)
             end
 
