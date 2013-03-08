@@ -47,12 +47,23 @@ module Appsignal
 
     def slow_request?
       return false unless process_action_event && process_action_event.payload
-      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
+      Appsignal.config[:slow_request_threshold] <=
+        process_action_event.duration
+    end
+
+    def slower?(transaction)
+      process_action_event.duration > transaction.process_action_event.duration
     end
 
     def truncate!
       @process_action_event.payload.clear
       @events.clear
+    end
+
+    def type
+      return :exception if exception?
+      return :slow_request if slow_request?
+      :regular_request
     end
 
     def to_hash

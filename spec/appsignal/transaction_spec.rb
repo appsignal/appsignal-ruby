@@ -110,14 +110,48 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#clear_payload_and_events!" do
+    describe "#slower?" do
+      context "comparing to a slower transaction" do
+        subject { regular_transaction.slower?(slow_transaction) }
+
+        it { should be_false }
+      end
+
+      context "comparing to a faster transaction" do
+        subject { slow_transaction.slower?(regular_transaction) }
+
+        it { should be_true }
+      end
+    end
+
+    describe "#truncate!" do
       subject { slow_transaction }
 
       it "should clear the process action payload and events" do
-        subject.clear_payload_and_events!
+        subject.truncate!
 
         subject.process_action_event.payload.should be_empty
         subject.events.should be_empty
+      end
+    end
+
+    describe "#type" do
+      context "with a regular transaction" do
+        subject { regular_transaction.type }
+
+        it { should == :regular_request }
+      end
+
+      context "with a slow transaction" do
+        subject { slow_transaction.type }
+
+        it { should == :slow_request }
+      end
+
+      context "with an exception transaction" do
+        subject { transaction_with_exception.type }
+
+        it { should == :exception }
       end
     end
 
