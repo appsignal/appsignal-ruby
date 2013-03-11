@@ -52,9 +52,5 @@ module Appsignal
       end
     end
 
-    def convert_values_to_primitives!(transaction)
-      Appsignal::ParamsSanitizer.sanitize!(transaction)
-    end
-
   end
 end
