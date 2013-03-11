@@ -29,6 +29,18 @@ module TransactionHelpers
     )
   end
 
+  def slower_transaction(args={})
+    time = Time.parse('01-01-2001 10:01:00')
+    appsignal_transaction(
+      {
+        :process_action_event => notification_event(
+          :start => time,
+          :ending => time + Appsignal.config[:slow_request_threshold] / 500.0
+        )
+      }.merge(args)
+    )
+  end
+
   def appsignal_transaction(args = {})
     process_action_event = args.delete(:process_action_event)
     events = args.delete(:events) || [

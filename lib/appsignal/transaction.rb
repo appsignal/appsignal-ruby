@@ -60,6 +60,11 @@ module Appsignal
       @events.clear
     end
 
+    def convert_values_to_primitives!
+      # TODO devise a way to convert values in events and the main event in place
+      # Appsignal::ParamsSanitizer.sanitize(self)
+    end
+
     def type
       return :exception if exception?
       return :slow_request if slow_request?

@@ -6,6 +6,7 @@ module Appsignal
     def initialize
       return unless Appsignal.active?
       @sleep_time = 60.0
+      # @aggregator = Aggregator.new
       @slowest_transactions = {}
       @queue = []
       @retry_request = true
@@ -85,6 +86,7 @@ module Appsignal
     protected
 
     def good_response
+      # @aggregator = Aggregator.new
       @queue = []
       @slowest_transactions = {}
       @retry_request = true
