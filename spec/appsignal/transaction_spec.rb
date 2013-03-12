@@ -196,12 +196,14 @@ describe Appsignal::Transaction do
           to change(Appsignal.transactions, :length).by(-1)
       end
 
-      context 'calling the appsignal agent' do
-        let(:agent) { Appsignal.agent }
+      context 'enqueueing' do
+        context 'sanity check' do
+          specify { Appsignal.should respond_to(:enqueue) }
+        end
 
         context 'without events and without exception' do
           it 'should add transaction to the agent' do
-            agent.should_receive(:add_to_queue).with(transaction)
+            Appsignal.should_receive(:enqueue).with(transaction)
           end
         end
 
@@ -209,7 +211,7 @@ describe Appsignal::Transaction do
           before { transaction.add_event(event) }
 
           it 'should add transaction to the agent' do
-            agent.should_receive(:add_to_queue).with(transaction)
+            Appsignal.should_receive(:enqueue).with(transaction)
           end
         end
 
@@ -217,7 +219,7 @@ describe Appsignal::Transaction do
           before { transaction.add_exception(event) }
 
           it 'should add transaction to the agent' do
-            agent.should_receive(:add_to_queue).with(transaction)
+            Appsignal.should_receive(:enqueue).with(transaction)
           end
         end
 

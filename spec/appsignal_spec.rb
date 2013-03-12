@@ -3,6 +3,21 @@ require 'spec_helper'
 describe Appsignal do
   it { should respond_to :subscriber }
 
+  describe ".push" do
+    pending
+  end
+
+  describe ".enqueue" do
+    let(:transaction) { regular_transaction }
+    subject { Appsignal.enqueue(transaction) }
+
+    it "forwards the call to the agent" do
+      Appsignal.agent.should respond_to(:enqueue)
+      Appsignal.agent.should_receive(:enqueue).with(transaction)
+      subject
+    end
+  end
+
   describe ".transactions" do
     subject { Appsignal.transactions }
 

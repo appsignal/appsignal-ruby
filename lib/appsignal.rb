@@ -4,32 +4,23 @@ module Appsignal
   class << self
     attr_accessor :subscriber, :event_payload_sanitizer
 
-    # Convenience method for pushing an exception or transaction straight to
-    # Appsignal.
+    # Convenience method for pushing a transaction straight to Appsignal,
+    # skipping the queue.
     #
     # @return [ Boolean ] If successful or not
     #
     # TODO @since VERSION
-    def push(exception_or_transaction)
+    def push(transaction)
     end
 
-    # Convenience method for adding an exception or transaction to the queue.
-    # This queue is managed and is periodically pushed to Appsignal.
+    # Convenience method for adding a transaction to the queue. This queue is
+    # managed and is periodically pushed to Appsignal.
     #
     # @return [ true ] True.
     #
     # TODO @since VERSION
-    def queue(exception_or_transaction)
-    end
-
-    def active?
-      config && config[:active] == true
-    end
-
-    def logger
-      @logger ||= Logger.new("#{Rails.root}/log/appsignal.log").tap do |l|
-        l.level = Logger::INFO
-      end
+    def enqueue(transaction)
+      agent.enqueue(transaction)
     end
 
     def transactions
@@ -40,8 +31,18 @@ module Appsignal
       @agent ||= Appsignal::Agent.new
     end
 
+    def logger
+      @logger ||= Logger.new("#{Rails.root}/log/appsignal.log").tap do |l|
+        l.level = Logger::INFO
+      end
+    end
+
     def config
       @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
+    end
+
+    def active?
+      config && config[:active] == true
     end
 
     # TODO replace me with middleware stack before sending queue

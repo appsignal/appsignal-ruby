@@ -7,9 +7,7 @@ module Appsignal
     def initialize
       return unless Appsignal.active?
       @sleep_time = 60.0
-      # @aggregator = Aggregator.new
-      @slowest_transactions = {}
-      @queue = []
+      @aggregator = Aggregator.new
       @retry_request = true
       @thread = Thread.new do
         while true do
@@ -25,28 +23,16 @@ module Appsignal
       Appsignal.logger.info 'Started the Appsignal agent'
     end
 
-    def add_to_queue(transaction)
-      if !transaction.exception? && transaction.action
-        current_slowest_transaction = @slowest_transactions[transaction.action]
-        if current_slowest_transaction
-          if current_slowest_transaction.process_action_event.duration <
-             transaction.process_action_event.duration
-            current_slowest_transaction.truncate!
-            @slowest_transactions[transaction.action] = transaction
-          else
-            transaction.truncate!
-          end
-        else
-          @slowest_transactions[transaction.action] = transaction
-        end
-      end
-      @queue << transaction
+    def enqueue(transaction)
+      aggregator.add(transaction)
     end
 
     def send_queue
       Appsignal.logger.debug "Sending queue"
       begin
-        handle_result transmitter.transmit(queue.map(&:to_hash))
+        queue = aggregator
+        @aggregator = Aggregator.new
+        handle_result transmitter.transmit(queue.post_processed_queue!)
       rescue Exception => ex
         Appsignal.logger.error "Exception while communicating with "\
           "AppSignal: #{ex}"
@@ -54,57 +40,39 @@ module Appsignal
       end
     end
 
+    protected
+
     def handle_result(code)
       Appsignal.logger.debug "Queue sent, response code: #{code}"
       case code.to_i
-      when 200
-        good_response
+      when 200 # ok
       when 420 # Enhance Your Calm
-        good_response
         @sleep_time = @sleep_time * 1.5
       when 413 # Request Entity Too Large
-        good_response
         @sleep_time = @sleep_time / 1.5
       when 429
-        Appsignal.logger.error "Too many requests sent, disengaging the agent"
+        Appsignal.logger.error "Too many requests sent"
         stop_logging
       when 406
         Appsignal.logger.error "Your appsignal gem cannot communicate with "\
-          "the API anymore, please upgrade. Disengaging the agent"
+          "the API anymore, please upgrade."
         stop_logging
       when 402
-        Appsignal.logger.error "Payment required, disengaging the agent"
+        Appsignal.logger.error "Payment required"
         stop_logging
       when 401
-        Appsignal.logger.error "API token cannot be authorized, disengaging "\
-          "the agent"
+        Appsignal.logger.error "API token cannot be authorized"
         stop_logging
       else
-        retry_once
-      end
-    end
-
-    protected
-
-    def good_response
-      # @aggregator = Aggregator.new
-      @queue = []
-      @slowest_transactions = {}
-      @retry_request = true
-    end
-
-    def retry_once
-      if @retry_request
-        @retry_request = false
-      else
-        @retry_request = true
-        @queue = []
+        Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
       end
     end
 
     def stop_logging
+      Appsignal.logger.info("Disengaging the agent")
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(@thread)
     end
+
   end
 end

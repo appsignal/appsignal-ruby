@@ -85,7 +85,7 @@ module Appsignal
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@id)
       if process_action_event || exception?
-        Appsignal.agent.add_to_queue(current_transaction)
+        Appsignal.enqueue(current_transaction)
       end
     end
   end
