@@ -1,7 +1,8 @@
 module Appsignal
   class Agent
-    attr_reader :queue, :active, :sleep_time, :slowest_transactions, :transmitter
     ACTION = 'log_entries'
+
+    attr_reader :aggregator, :active, :sleep_time, :transmitter
 
     def initialize
       return unless Appsignal.active?
