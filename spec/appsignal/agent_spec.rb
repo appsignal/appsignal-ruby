@@ -14,7 +14,7 @@ describe Appsignal::Agent do
 
   describe "#send_queue" do
     it "transmits" do
-      subject.stub(:aggregator => :foo)
+      subject.aggregator.stub(:post_processed_queue! => :foo)
       subject.transmitter.should_receive(:transmit).with(:foo)
     end
 

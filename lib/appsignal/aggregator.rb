@@ -26,7 +26,7 @@ module Appsignal
     # Post process the queue and return it
     #
     # @returns [ Array ] Array of post processed Appsignal::Transaction objects
-    def post_process!
+    def post_processed_queue!
       queue.map(&:to_hash)
     end
 

@@ -29,10 +29,10 @@ describe Appsignal::Aggregator do
     after { subject }
   end
 
-  describe "#post_process!" do
+  describe "#post_processed_queue!" do
     let(:transaction) { slow_transaction }
     let(:other_transaction) { regular_transaction }
-    subject { aggregator.post_process! }
+    subject { aggregator.post_processed_queue! }
     before do
       aggregator.add(transaction)
       aggregator.add(other_transaction)
