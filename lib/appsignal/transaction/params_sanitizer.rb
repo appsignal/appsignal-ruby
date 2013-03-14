@@ -29,7 +29,7 @@ module Appsignal
           sanitize_hash(value)
         when Array
           sanitize_array(value)
-        when String
+        when String, Fixnum
           value
         else
           value.inspect
