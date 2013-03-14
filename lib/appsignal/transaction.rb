@@ -61,8 +61,10 @@ module Appsignal
     end
 
     def convert_values_to_primitives!
-      # TODO devise a way to convert values in events and the main event in place
-      # Appsignal::ParamsSanitizer.sanitize(self)
+      Appsignal::ParamsSanitizer.sanitize!(@process_action_event.payload)
+      @events.each do |event|
+        Appsignal::ParamsSanitizer.sanitize!(event.payload)
+      end
     end
 
     def type

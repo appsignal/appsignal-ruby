@@ -135,6 +135,44 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#convert_values_to_primitives!" do
+      let(:transaction) { slow_transaction }
+      let(:action_event_payload) { transaction.process_action_event.payload }
+      let(:event_payload) { transaction.events.first.payload }
+      subject { transaction.convert_values_to_primitives! }
+
+      context "with values that need to be converted" do
+        before do
+          action_event_payload.merge!(:model => {:with => [:weird, Class.new]})
+          event_payload.merge!(:weird => Class.new)
+        end
+
+        it "changes the action event payload" do
+          expect { subject }.
+            to change(transaction.process_action_event, :payload)
+        end
+
+        it "changes all event payloads" do
+          expect { subject }.to change(transaction.events.first, :payload)
+        end
+      end
+
+      context "without values that need to be converted" do
+
+        it "doesn't change the action event payload" do
+          before = action_event_payload.dup
+          subject
+          action_event_payload.should == before
+        end
+
+        it " doesn't change the event payloads" do
+          before = event_payload.dup
+          subject
+          event_payload.should == before
+        end
+      end
+    end
+
     describe "#type" do
       context "with a regular transaction" do
         subject { regular_transaction.type }
