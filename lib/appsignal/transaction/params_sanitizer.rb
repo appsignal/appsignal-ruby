@@ -5,6 +5,10 @@ module Appsignal
         sanitize_hash(params)
       end
 
+      def sanitize!(params)
+        sanitize_value!(params)
+      end
+
       protected
 
       def sanitize_hash(hash)
@@ -25,6 +29,32 @@ module Appsignal
           sanitize_hash(value)
         when Array
           sanitize_array(value)
+        when String
+          value
+        else
+          value.inspect
+        end
+      end
+
+      def sanitize_hash!(hash)
+        hash.each_pair do |key, value|
+          hash[key] = sanitize_value(value)
+        end
+        hash
+      end
+
+      def sanitize_array!(array)
+        array.each_with_index do |item, index|
+          array[index] = sanitize_value!(item)
+        end
+      end
+
+      def sanitize_value!(value)
+        case value
+        when Hash
+          sanitize_hash!(value)
+        when Array
+          sanitize_array!(value)
         when String
           value
         else
