@@ -61,3 +61,5 @@ module Appsignal
 
   end
 end
+
+require 'appsignal/aggregator/post_processor'

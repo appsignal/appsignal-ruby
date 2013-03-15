@@ -41,6 +41,12 @@ module Appsignal
       @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
     end
 
+    def post_processing_middleware
+      @post_processing_chain ||= PostProcessor.default_middleware
+      yield @post_processing_chain if block_given?
+      @post_processing_chain
+    end
+
     def active?
       config && config[:active] == true
     end
@@ -60,6 +66,7 @@ require 'appsignal/agent'
 require 'appsignal/aggregator'
 require 'appsignal/marker'
 require 'appsignal/listener'
+require 'appsignal/middleware/chain'
 require 'appsignal/transaction'
 require 'appsignal/exception_notification'
 require 'appsignal/auth_check'
