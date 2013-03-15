@@ -2,7 +2,8 @@ module Appsignal
   class Railtie < Rails::Railtie
     initializer "appsignal.configure_rails_initialization" do |app|
       if Appsignal.active?
-        app.middleware.insert_before ActionDispatch::RemoteIp, Appsignal::Middleware
+        app.middleware.
+          insert_before(ActionDispatch::RemoteIp, Appsignal::Listener)
 
         Appsignal.subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
           if Appsignal::Transaction.current

@@ -10,11 +10,11 @@ class AppWithError
   end
 end
 
-describe Appsignal::Middleware do
+describe Appsignal::Listener do
   describe '#call' do
     let(:app) { stub(:call => true) }
     let(:env) { {'action_dispatch.request_id' => '1'} }
-    let(:middleware) { Appsignal::Middleware.new(app, {})}
+    let(:middleware) { Appsignal::Listener.new(app, {})}
     let(:current) { stub(:complete! => true, :add_exception => true) }
     before { Appsignal::Transaction.stub(:current => current) }
 

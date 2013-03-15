@@ -1,7 +1,7 @@
 require 'action_dispatch'
 
 module Appsignal
-  class Middleware
+  class Listener
     def initialize(app, options = {})
       @app, @options = app, options
     end

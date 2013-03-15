@@ -21,7 +21,8 @@ describe "Inactive Appsignal::Railtie" do
         end
         MyTempApp::Application.initialize!
 
-        MyTempApp::Application.middleware.to_a.should_not include Appsignal::Middleware
+        MyTempApp::Application.middleware.to_a.
+          should_not include Appsignal::Listener
       end
       Process.wait(pid)
       raise 'Example failed' unless $?.exitstatus == 0

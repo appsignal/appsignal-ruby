@@ -49,6 +49,7 @@ module Appsignal
     def event_payload_sanitizer
       @event_payload_sanitizer ||= proc { |event| event.payload }
     end
+
   end
 end
 
@@ -58,7 +59,7 @@ require 'appsignal/transmitter'
 require 'appsignal/agent'
 require 'appsignal/aggregator'
 require 'appsignal/marker'
-require 'appsignal/middleware'
+require 'appsignal/listener'
 require 'appsignal/transaction'
 require 'appsignal/exception_notification'
 require 'appsignal/auth_check'

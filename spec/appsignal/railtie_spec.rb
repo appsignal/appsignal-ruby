@@ -11,8 +11,8 @@ describe Appsignal::Railtie do
       should be_a ActiveSupport::Notifications::Fanout::Subscriber
   end
 
-  it "should have added the middleware for exceptions" do
-    MyApp::Application.middleware.to_a.should include Appsignal::Middleware
+  it "should have added the listener middleware for exceptions" do
+    MyApp::Application.middleware.to_a.should include Appsignal::Listener
   end
 
   context "non action_controller event" do
