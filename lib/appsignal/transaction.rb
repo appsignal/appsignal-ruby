@@ -85,7 +85,7 @@
     end
 
     def exception?
-      !!exception
+      !! exception
     end
 
     def slow_request?
@@ -98,20 +98,32 @@
     end
 
     def truncate!
+      return if truncated?
       process_action_event.payload.clear
       events.clear
       tags.clear
       sanitized_environment.clear
       sanitized_session_data.clear
       @env = nil
+      @truncated = true
+    end
+
+    def truncated?
+      !! @truncated
     end
 
     def convert_values_to_primitives!
+      return if have_values_been_converted_to_primitives?
       Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
       @events.map do |o|
         Appsignal::Transaction::ParamsSanitizer.sanitize(o.payload)
       end
       add_sanitized_context!
+      @have_values_been_converted_to_primitives = true
+    end
+
+    def have_values_been_converted_to_primitives?
+      !! @have_values_been_converted_to_primitives
     end
 
     def type
