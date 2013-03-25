@@ -29,6 +29,20 @@ describe Appsignal::Aggregator do
     after { subject }
   end
 
+  describe "#has_transactions?" do
+    subject { aggregator.has_transactions? }
+
+    context "with an empty queue" do
+      it { should be_false }
+    end
+
+    context "with an non empty queue" do
+      before { aggregator.add(regular_transaction) }
+
+      it { should be_true }
+    end
+  end
+
   describe "#post_processed_queue!" do
     let(:transaction) { slow_transaction }
     let(:other_transaction) { regular_transaction }

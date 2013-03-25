@@ -23,6 +23,13 @@ module Appsignal
       queue << transaction
     end
 
+    # Informs whether the queue has any transactions in it or not
+    #
+    # @returns [ Boolean ]
+    def has_transactions?
+      queue.any?
+    end
+
     # Post process the queue and return it
     #
     # @returns [ Array ] Array of post processed Appsignal::Transaction objects

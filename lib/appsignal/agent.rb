@@ -11,7 +11,7 @@ module Appsignal
       @retry_request = true
       @thread = Thread.new do
         while true do
-          send_queue if @queue.any?
+          send_queue if @aggregator.has_transactions?
           sleep @sleep_time
         end
       end
