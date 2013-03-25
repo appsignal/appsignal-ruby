@@ -11,8 +11,8 @@ module Appsignal
       @retry_request = true
       @thread = Thread.new do
         while true do
-          send_queue if @aggregator.has_transactions?
-          sleep @sleep_time
+          send_queue if aggregator.has_transactions?
+          sleep(sleep_time)
         end
       end
       @transmitter = Transmitter.new(
@@ -47,9 +47,9 @@ module Appsignal
       case code.to_i
       when 200 # ok
       when 420 # Enhance Your Calm
-        @sleep_time = @sleep_time * 1.5
+        @sleep_time = sleep_time * 1.5
       when 413 # Request Entity Too Large
-        @sleep_time = @sleep_time / 1.5
+        @sleep_time = sleep_time / 1.5
       when 429
         Appsignal.logger.error "Too many requests sent"
         stop_logging
