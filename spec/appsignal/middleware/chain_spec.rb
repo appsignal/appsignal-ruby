@@ -10,7 +10,7 @@ describe Appsignal::Middleware do
     let(:object) { mock(:object) }
     let(:other_object) { mock(:other_object) }
 
-    describe ".initialize" do
+    describe "#initialize" do
       it "yields itself when passing a block" do
         chain_klass.new { |o| o.should be_instance_of chain_klass }
       end
