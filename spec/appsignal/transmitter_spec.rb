@@ -28,7 +28,7 @@ describe Appsignal::Transmitter do
   describe "#http_post" do
     it "calls Net::HTTP.post_form with the correct params" do
       post = mock(:post)
-      post.should_receive(:[]=).with('Content-Type', 'application/json')
+      post.should_receive(:[]=).with('Content-Type', 'application/json; charset=UTF-8')
       post.should_receive(:body=).with("{\"the\":\"payload\"}")
       Socket.stub(:gethostname => 'app1.local')
 
