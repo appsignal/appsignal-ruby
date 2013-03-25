@@ -66,7 +66,7 @@ module Appsignal
       end
 
       def retrieve
-        entries.map(&:make_new)
+        @retrieve ||= entries.map(&:make_new)
       end
 
       def clear
