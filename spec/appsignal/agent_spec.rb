@@ -25,7 +25,7 @@ describe Appsignal::Agent do
 
     it "handles exceptions in transmit" do
       subject.transmitter.stub(:transmit).and_raise(Exception.new)
-      subject.should_receive(:handle_result).with(nil)
+      subject.should_receive(:stop_logging)
       Appsignal.logger.should_receive(:error).
         with('Exception while communicating with AppSignal: Exception')
     end

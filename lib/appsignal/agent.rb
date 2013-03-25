@@ -36,7 +36,7 @@ module Appsignal
       rescue Exception => ex
         Appsignal.logger.error "Exception while communicating with "\
           "AppSignal: #{ex}"
-        handle_result nil
+        stop_logging
       end
     end
 
