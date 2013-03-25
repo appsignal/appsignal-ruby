@@ -1,3 +1,5 @@
+require 'appsignal'
+
 class AppsignalGenerator < Rails::Generators::Base
   source_root File.expand_path('../templates', __FILE__)
   argument :push_key, :type => :string
