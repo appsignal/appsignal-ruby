@@ -4,31 +4,25 @@ module Appsignal
   #
   # @example To add middleware:
   #
-  #   Appsignal.configure_aggregator do |config|
-  #     config.post_process_middleware do |chain|
-  #       chain.add MyPostProcessingHook
-  #     end
+  #   Appsignal.post_processing_middleware do |chain|
+  #     chain.add MyPostProcessingHook
   #   end
   #
   # @example To insert immediately preceding another entry:
   #
-  #   Appsignal.configure_aggregator do |config|
-  #     config.post_process_middleware do |chain|
-  #       chain.insert_before ActiveRecord, MyPostProcessingHook
-  #     end
+  #   Appsignal.post_process_middleware do |chain|
+  #     chain.insert_before ActiveRecord, MyPostProcessingHook
   #   end
   #
   # @example To insert immediately after another entry:
   #
-  #   Appsignal.configure_aggregator do |config|
-  #     config.post_process_middleware do |chain|
-  #       chain.insert_after ActiveRecord, MyPostProcessingHook
-  #     end
+  #   Appsignal.post_process_middleware do |chain|
+  #     chain.insert_after ActiveRecord, MyPostProcessingHook
   #   end
   #
-  # @example This is an example of a minimal server middleware:
+  # @example This is an example of a minimal middleware class:
   #
-  #   class MyServerHook
+  #   class MySHook
   #     def call(transaction)
   #       puts "Before post processing"
   #       yield
@@ -72,19 +66,17 @@ module Appsignal
       end
 
       def retrieve
-        entries.map(&:make_new)
+        @retrieve ||= entries.map(&:make_new)
       end
 
       def clear
         entries.clear
       end
 
-      def invoke(*args, &final_action)
+      def invoke(*args)
         chain = retrieve.dup
         traverse_chain = lambda do
-          if chain.empty?
-            final_action.call
-          else
+          unless chain.empty?
             chain.shift.call(*args, &traverse_chain)
           end
         end
