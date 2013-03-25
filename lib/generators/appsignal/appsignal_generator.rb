@@ -37,7 +37,7 @@ class AppsignalGenerator < Rails::Generators::Base
 
   def check_key
     begin
-      auth_check = Appsignal::AuthCheck.new(options.environment)
+      auth_check = ::Appsignal::AuthCheck.new(options.environment)
       result = auth_check.perform
       if result == '200'
         say_status :success, "AppSignal has confirmed authorisation!"
