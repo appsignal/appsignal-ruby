@@ -111,7 +111,7 @@ describe Appsignal::Middleware do
 
     describe "#invoke" do
       let(:recorder) { [] }
-      subject { chain.invoke(:unsused) { recorder << '^_^' } }
+      subject { chain.invoke(:unsused) }
       before(:all) do
         TestInvoker1 = Struct.new(:id, :recorder) do
           def call(event)
@@ -132,7 +132,7 @@ describe Appsignal::Middleware do
           chain.add(TestInvoker3, 3, recorder)
         end
 
-        it { should == %w(Before1 Before2 Before3 ^_^ After3 After2 After1) }
+        it { should == %w(Before1 Before2 Before3 After3 After2 After1) }
       end
 
       context "a non yielding entry" do
