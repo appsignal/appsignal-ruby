@@ -1,3 +1,5 @@
+require 'forwardable'
+
 module Appsignal
   class TransactionFormatter
     extend Forwardable
