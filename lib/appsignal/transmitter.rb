@@ -36,6 +36,7 @@ module Appsignal
 
     def http_post(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |post|
+        post['Content-Type'] = 'application/json; charset=UTF-8'
         post.body = JSON.generate(payload)
       end
     end
