@@ -14,7 +14,6 @@ describe Appsignal::Middleware::SqlEventSanitizer do
     subject { event.payload[:sql] }
     before { sql_event_sanitizer.call(event) { } }
 
-
     context "with single quoted string parameters" do
       let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` = \'secret\'' }
 
