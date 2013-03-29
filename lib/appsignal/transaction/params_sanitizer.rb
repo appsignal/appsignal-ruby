@@ -6,21 +6,10 @@ module Appsignal
       end
 
       def sanitize!(params)
-        sanitize_value(params)
+        ParamsSanitizerDestructive.sanitize_value(params)
       end
 
       protected
-
-      def sanitize_hash(hash)
-        sanitize_hash_with_target(hash, hash)
-      end
-
-      def sanitize_hash_with_target(source_hash, target_hash)
-        source_hash.each_pair do |key, value|
-          target_hash[key] = sanitize_value(value)
-        end
-        target_hash
-      end
 
       def sanitize_value(value)
         case value
@@ -35,8 +24,11 @@ module Appsignal
         end
       end
 
-      def sanitize_array(array)
-        sanitize_array_with_target(array, array)
+      def sanitize_hash_with_target(source_hash, target_hash)
+        source_hash.each_pair do |key, value|
+          target_hash[key] = sanitize_value(value)
+        end
+        target_hash
       end
 
       def sanitize_array_with_target(source_array, target_array)
@@ -58,6 +50,20 @@ module Appsignal
 
       def sanitize_array(array)
         sanitize_array_with_target(array, [])
+      end
+    end
+  end
+
+  class ParamsSanitizerDestructive < ParamsSanitizer
+    class << self
+      protected
+
+      def sanitize_hash(hash)
+        sanitize_hash_with_target(hash, hash)
+      end
+
+      def sanitize_array(array)
+        sanitize_array_with_target(array, array)
       end
     end
   end
