@@ -14,22 +14,54 @@ describe Appsignal::Middleware::SqlEventSanitizer do
     subject { event.payload[:sql] }
     before { sql_event_sanitizer.call(event) { } }
 
-    context "with single quoted string parameters" do
-      let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` = \'secret\'' }
+    context "single quoted data value" do
+      let(:payload) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret'" }
 
-      it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+      it { should == "SELECT `table`.* FROM `table` WHERE `id` = ?" }
+
+      context "with an escaped single quote" do
+        let(:payload) { "`id` = '\\'big\\' secret'" }
+
+        it { should == "`id` = ?" }
+      end
+
+      context "with an escaped double quote" do
+        let(:payload) { "`id` = '\\\"big\\\" secret'" }
+
+        it { should == "`id` = ?" }
+      end
     end
 
-    context "with double quoted string parameters" do
+    context "double quoted data value" do
       let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` = "secret"' }
 
       it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+
+
+      context "with an escaped single quote" do
+        let(:payload) { '`id` = "\\\'big\\\' secret"' }
+
+        it { should == "`id` = ?" }
+      end
+
+      context "with an escaped double quote" do
+        let(:payload) { '`id` = "\\"big\\" secret"' }
+
+        it { should == "`id` = ?" }
+      end
     end
 
-    context "with numeric parameters" do
+    context "numeric parameter" do
+
       let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
 
       it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+    end
+
+    context "parameter array" do
+      let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
+
+      it { should == 'SELECT `table`.* FROM `table` WHERE `id` IN (?)' }
     end
   end
 end
