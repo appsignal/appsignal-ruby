@@ -2,25 +2,24 @@ module Appsignal
   class ParamsSanitizer
     class << self
       def sanitize(params)
-        sanitize_hash(params)
+        ParamsSanitizerCopy.sanitize_value(params)
       end
 
       def sanitize!(params)
-        sanitize_value!(params)
+        sanitize_value(params)
       end
 
       protected
 
       def sanitize_hash(hash)
-        out = {}
-        hash.each_pair do |key, value|
-          out[key] = sanitize_value(value)
-        end
-        out
+        sanitize_hash_with_target(hash, hash)
       end
 
-      def sanitize_array(array)
-        array.map { |value| sanitize_value(value) }
+      def sanitize_hash_with_target(source_hash, target_hash)
+        source_hash.each_pair do |key, value|
+          target_hash[key] = sanitize_value(value)
+        end
+        target_hash
       end
 
       def sanitize_value(value)
@@ -36,30 +35,29 @@ module Appsignal
         end
       end
 
-      def sanitize_hash!(hash)
-        hash.each_pair do |key, value|
-          hash[key] = sanitize_value(value)
-        end
-        hash
+      def sanitize_array(array)
+        sanitize_array_with_target(array, array)
       end
 
-      def sanitize_array!(array)
-        array.each_with_index do |item, index|
-          array[index] = sanitize_value!(item)
+      def sanitize_array_with_target(source_array, target_array)
+        source_array.each_with_index do |item, index|
+          target_array[index] = sanitize_value(item)
         end
+        target_array
+      end
+    end
+  end
+
+  class ParamsSanitizerCopy < ParamsSanitizer
+    class << self
+      protected
+
+      def sanitize_hash(hash)
+        sanitize_hash_with_target(hash, {})
       end
 
-      def sanitize_value!(value)
-        case value
-        when Hash
-          sanitize_hash!(value)
-        when Array
-          sanitize_array!(value)
-        when String
-          value
-        else
-          value.inspect
-        end
+      def sanitize_array(array)
+        sanitize_array_with_target(array, [])
       end
     end
   end

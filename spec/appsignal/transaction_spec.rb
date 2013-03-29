@@ -143,7 +143,7 @@ describe Appsignal::Transaction do
 
       context "with values that need to be converted" do
         before do
-          action_event_payload.merge!(:model => {:with => [:weird, Class.new]})
+          action_event_payload.merge!(:model => Class.new)
           event_payload.merge!(:weird => Class.new)
         end
 
