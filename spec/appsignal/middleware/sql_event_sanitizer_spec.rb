@@ -52,7 +52,6 @@ describe Appsignal::Middleware::SqlEventSanitizer do
     end
 
     context "numeric parameter" do
-
       let(:payload) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
 
       it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
