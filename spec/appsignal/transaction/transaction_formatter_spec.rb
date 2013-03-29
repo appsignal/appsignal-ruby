@@ -118,7 +118,6 @@ describe Appsignal::TransactionFormatter do
       let(:end_time) { Time.at(3.141592654) }
       subject { formatter.send(:formatted_payload) }
       before do
-        transaction.stub(:sanitized_event_payload => {})
         transaction.set_process_action_event(mock(
           :name => 'name',
           :duration => 2,
@@ -138,29 +137,6 @@ describe Appsignal::TransactionFormatter do
         :time => start_time.to_f,
         :end => end_time.to_f
       } }
-    end
-
-    describe "#sanitized_event_payload" do
-      subject do
-        formatter.send(:sanitized_event_payload, double(:payload => {:key => :sensitive}))
-      end
-
-      it "calls Appsignal event payload sanitizer" do
-        Appsignal.should_receive(:event_payload_sanitizer).and_return(
-          proc do |event|
-            event.payload[:key] = 'censored'
-            event.payload
-          end
-        )
-        subject.should == {:key => 'censored'}
-      end
-
-      it "calls params sanitizer" do
-        Appsignal::ParamsSanitizer.should_receive(:sanitize).and_return(
-          :key => 'sensitive'
-        )
-        subject.should == {:key => 'sensitive'}
-      end
     end
 
     describe "#filtered_environment" do

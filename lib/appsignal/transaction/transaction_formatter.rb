@@ -50,19 +50,13 @@ module Appsignal
     end
 
     def formatted_payload
-      sanitized_event_payload(process_action_event).merge(
+      process_action_event.payload.merge(
         {
           :duration => process_action_event.duration,
           :time => process_action_event.time.to_f,
           :end => process_action_event.end.to_f,
           :action => action
         }
-      )
-    end
-
-    def sanitized_event_payload(event)
-      Appsignal::ParamsSanitizer.sanitize(
-        Appsignal.event_payload_sanitizer.call(event)
       )
     end
 

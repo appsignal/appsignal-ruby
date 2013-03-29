@@ -18,7 +18,7 @@ module Appsignal
           :duration => event.duration,
           :time => event.time.to_f,
           :end => event.end.to_f,
-          :payload => sanitized_event_payload(event)
+          :payload => event.payload
         }
       end
 
