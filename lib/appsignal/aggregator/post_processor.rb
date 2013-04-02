@@ -16,7 +16,9 @@ module Appsignal
     end
 
     def self.default_middleware
-      Middleware::Chain.new
+      Middleware::Chain.new do |chain|
+        chain.add Appsignal::Middleware::SqlEventSanitizer
+      end
     end
 
   end

@@ -9,7 +9,7 @@ module Appsignal
     #
     # @return [ Boolean ] If successful or not
     #
-    # TODO @since VERSION
+    # @since 0.5.0
     def push(transaction)
     end
 
@@ -18,7 +18,7 @@ module Appsignal
     #
     # @return [ true ] True.
     #
-    # TODO @since VERSION
+    # @since 0.5.0
     def enqueue(transaction)
       agent.enqueue(transaction)
     end
@@ -67,7 +67,7 @@ require 'appsignal/config'
 require 'appsignal/exception_notification'
 require 'appsignal/listener'
 require 'appsignal/marker'
-require 'appsignal/middleware/chain'
+require 'appsignal/middleware'
 require 'appsignal/railtie'
 require 'appsignal/transaction'
 require 'appsignal/transmitter'

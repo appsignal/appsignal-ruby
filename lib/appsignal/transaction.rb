@@ -62,9 +62,7 @@ module Appsignal
 
     def convert_values_to_primitives!
       Appsignal::ParamsSanitizer.sanitize!(@process_action_event.payload)
-      @events.each do |event|
-        Appsignal::ParamsSanitizer.sanitize!(event.payload)
-      end
+      @events.each { |o| Appsignal::ParamsSanitizer.sanitize!(o.payload) }
     end
 
     def type
