@@ -17,7 +17,7 @@ module Appsignal
           sanitize_hash(value)
         when Array
           sanitize_array(value)
-        when String, Fixnum
+        when Fixnum, String, Symbol
           value
         else
           value.inspect
