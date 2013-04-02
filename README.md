@@ -13,36 +13,37 @@ example
 
     tagging [2]
 
-## Event payload sanitizer
+## Postprocessing middleware
 Appsignal logs Rails
 [ActiveSupport::Notification](http://api.rubyonrails.org/classes/ActiveSupport/Notifications.html)-events
 to appsignal.com over SSL. These events contain basic metadata such as a name
-and timestamps, and additional 'payload' log data. By default,
-appsignal will transmit all payload data. If you want to restrict the amount of
-payload data that gets sent to <https://appsignal.com>, you can define your own
-event payload sanitizer in `config/environment/my_env.rb`. The
-`event_payload_sanitizer` needs to be a callable object that returns a
-JSON-serializable hash.
+and timestamps, and additional 'payload' log data. Appsignal uses a postprocessing
+middleware stack to clean up events before they get sent to appsignal.com. You
+can add your own middleware to this stack in `config/environment/my_env.rb`.
 
 ### Examples
 
-#### Pass through the entire payload unmodified (default)
+#### Minimal template
 ```ruby
-Appsignal.event_payload_sanitizer = proc { |event| event.payload }
+class MiddlewareTemplate
+  def call(event)
+    # modify the event in place
+    yield # pass control to the next middleware
+    # modify the event some more
+  end
+end
+
+Appsignal.postprocessing_middleware.add MiddlewareTemplate
 ```
 
-#### Delete the entire event payload
+#### Remove boring payloads
 ```ruby
-Appsignal.event_payload_sanitizer = proc { {} }
-```
-
-#### Conditional modification of the payload
-```ruby
-Appsignal.event_payload_sanitizer = proc do |event|
-  if event.name == 'interesting'
-    event.payload
-  else
-    {}
+class RemoveBoringPayload
+  def call(event)
+    unless event.name == 'interesting'
+      event.payload = {}
+    end
+    yield
   end
 end
 ```

@@ -2,7 +2,7 @@ raise 'This appsignal gem only works with rails' unless defined?(Rails)
 
 module Appsignal
   class << self
-    attr_accessor :subscriber, :event_payload_sanitizer
+    attr_accessor :subscriber
 
     # Convenience method for pushing a transaction straight to Appsignal,
     # skipping the queue.
@@ -49,11 +49,6 @@ module Appsignal
 
     def active?
       config && config[:active] == true
-    end
-
-    # TODO replace me with middleware stack before sending queue
-    def event_payload_sanitizer
-      @event_payload_sanitizer ||= proc { |event| event.payload }
     end
 
   end

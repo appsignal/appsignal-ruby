@@ -50,14 +50,17 @@ describe Appsignal::TransactionFormatter::SlowRequestFormatter do
 
     describe "#format" do
       subject { slow.send(:format, event) }
-      before { slow.stub(:sanitized_event_payload => :sanitized) }
 
       it { should == {
         :name => 'Startled',
         :duration => 2,
         :time => start_time.to_f,
         :end => end_time.to_f,
-        :payload => :sanitized
+        :payload => {
+          :controller => 'controller',
+          :action => 'action',
+          :sensitive => 'data'
+        }
       } }
     end
   end
