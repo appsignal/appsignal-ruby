@@ -98,4 +98,37 @@ describe Appsignal::ParamsSanitizer do
       end
     end
   end
+
+  describe ".scrub!" do
+    subject { params }
+    before { Appsignal::ParamsSanitizer.scrub!(subject) }
+
+    it { should be_instance_of Hash }
+    its([:text]) { should == '?' }
+    its([:file]) { should == '?' }
+
+    context "hash" do
+      subject { params[:hash] }
+
+      it { should be_instance_of Hash }
+      its([:nested_text]) { should == '?' }
+
+      context "nested_array" do
+        subject { params[:hash][:nested_array] }
+
+        it { should be_instance_of Array }
+        its([0]) { should == '?' }
+        its([1]) { should == '?' }
+        its([2]) { should == '?' }
+
+        context "nested hash" do
+          subject { params[:hash][:nested_array][3] }
+
+          it { should be_instance_of Hash }
+          its([:key]) { should == '?' }
+          its([:file]) { should == '?' }
+        end
+      end
+    end
+  end
 end
