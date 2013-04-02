@@ -18,3 +18,5 @@ module Appsignal
     end
   end
 end
+
+require 'appsignal/to_appsignal_hash'
