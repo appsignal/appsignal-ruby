@@ -14,7 +14,6 @@ module Appsignal
   end
 end
 
-
 module ActiveSupport
   module Notifications
     class Event

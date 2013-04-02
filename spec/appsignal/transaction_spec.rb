@@ -45,7 +45,6 @@ describe Appsignal::Transaction do
         transaction.set_process_action_event(process_action_event)
 
         transaction.process_action_event.should == process_action_event
-        transaction.action.should == 'BlogPostsController#show'
       end
     end
 
@@ -155,25 +154,35 @@ describe Appsignal::Transaction do
       let(:transaction) { slow_transaction }
       let(:action_event_payload) { transaction.process_action_event.payload }
       let(:event_payload) { transaction.events.first.payload }
-      subject { transaction.convert_values_to_primitives! }
+      let(:weird_class) { Class.new }
 
       context "with values that need to be converted" do
-        before do
-          action_event_payload.merge!(:model => Class.new)
-          event_payload.merge!(:weird => Class.new)
+        context "process action event payload" do
+          subject { action_event_payload }
+          before do
+            action_event_payload.clear
+            action_event_payload.
+              merge!(:model => {:with => [:weird, weird_class]})
+            transaction.convert_values_to_primitives!
+          end
+
+          it { should == {:model => {:with => [:weird, weird_class.inspect]}} }
         end
 
-        it "changes the action event payload" do
-          expect { subject }.
-            to change(transaction.process_action_event, :payload)
-        end
+        context "payload of events" do
+          subject { event_payload }
+          before do
+            event_payload.clear
+            event_payload.merge!(:weird => weird_class)
+            transaction.convert_values_to_primitives!
+          end
 
-        it "changes all event payloads" do
-          expect { subject }.to change(transaction.events.first, :payload)
+          it { should == {:weird => weird_class.inspect} }
         end
       end
 
       context "without values that need to be converted" do
+        subject { transaction.convert_values_to_primitives! }
 
         it "doesn't change the action event payload" do
           before = action_event_payload.dup
@@ -210,35 +219,9 @@ describe Appsignal::Transaction do
     end
 
     describe '#to_hash' do
-      let(:formatter) { Appsignal::TransactionFormatter }
       subject { transaction.to_hash }
-      before { transaction.stub(:exception? => false) }
 
-      context "with an exception request" do
-        before { transaction.stub(:exception? => true) }
-
-        it "calls TransactionFormatter.faulty with self" do
-          formatter.should_receive(:faulty).with(transaction).and_return({})
-        end
-      end
-
-      context "with a slow request" do
-        before { transaction.stub(:slow_request? => true) }
-
-        it "calls TransactionFormatter.slow with self" do
-          formatter.should_receive(:slow).with(transaction).and_return({})
-        end
-      end
-
-      context "with a regular request" do
-        before { transaction.stub(:slow_request? => false) }
-
-        it "calls TransactionFormatter.slow with self" do
-          formatter.should_receive(:regular).with(transaction).and_return({})
-        end
-      end
-
-      after { subject }
+      it { should be_instance_of Hash }
     end
 
     describe '#complete!' do
@@ -286,6 +269,55 @@ describe Appsignal::Transaction do
         it 'should reset the thread transaction id' do
           Thread.current[:appsignal_transaction_id].should be_nil
         end
+      end
+    end
+
+    # protected
+
+    describe '#add_sanitized_context!' do
+      subject { transaction.send(:add_sanitized_context!) }
+
+      it "delegates to sanitize_environment! and sanitize_session_data!" do
+        transaction.should_receive(:sanitize_environment!)
+        transaction.should_receive(:sanitize_session_data!)
+        subject
+      end
+
+      specify { expect { subject }.to change(transaction, :env).to(nil) }
+    end
+
+    describe '#sanitize_environment!' do
+      let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
+      let(:transaction) { Appsignal::Transaction.create('1', env) }
+      let(:env) do
+        Hash.new.tap do |hash|
+          whitelisted_keys.each { |o| hash[o] = 1 } # use all whitelisted keys
+          hash[:not_whitelisted] = 'I will be sanitized'
+        end
+      end
+      subject { transaction.sanitized_environment }
+      before { transaction.send(:sanitize_environment!) }
+
+      its(:keys) { should == whitelisted_keys }
+    end
+
+    describe '#sanitize_session_data!' do
+      subject { transaction.send(:sanitize_session_data!) }
+      before do
+        transaction.should respond_to(:request)
+        transaction.stub_chain(:request, :session => :foo)
+        transaction.stub_chain(:request, :fullpath => :bar)
+      end
+
+      it "passes the session data into the params sanitizer" do
+        Appsignal::ParamsSanitizer.should_receive(:sanitize).with(:foo).
+          and_return(:sanitized_foo)
+        subject
+        transaction.sanitized_session_data.should == :sanitized_foo
+      end
+
+      it "sets the fullpath of the request" do
+        expect { subject }.to change(transaction, :fullpath).to(:bar)
       end
     end
   end

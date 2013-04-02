@@ -3,155 +3,81 @@ require 'spec_helper'
 describe Appsignal::TransactionFormatter do
   let(:klass) { Appsignal::TransactionFormatter }
   let(:formatter) { klass.new(transaction) }
-  let(:transaction) do
-    Appsignal::Transaction.create('1', {
-      'HTTP_USER_AGENT' => 'IE6',
-      'SERVER_NAME' => 'localhost',
-      'action_dispatch.routes' => 'not_available'
-    })
-  end
   subject { formatter }
+  before { transaction.stub(:fullpath => '/foo') }
 
-  describe ".regular" do
-    subject { klass.regular(transaction) }
-    it { should be_a klass::RegularRequestFormatter }
-  end
+  describe "#to_hash" do
+    before { formatter.to_hash }
+    subject { formatter.hash }
 
-  describe ".slow" do
-    subject { klass.slow(transaction) }
-    it { klass.slow(transaction).should be_a klass::SlowRequestFormatter }
-  end
+    context "with a regular request" do
+      let(:transaction) { regular_transaction }
 
-  describe ".faulty" do
-    subject { klass.faulty(transaction) }
-    it { should be_a klass::FaultyRequestFormatter }
-  end
-
-  context "a new formatter" do
-    describe "#to_hash" do
-      subject { formatter.to_hash }
-      before { formatter.stub(:action => :foo, :formatted_process_action_event => :bar) }
-
-      it 'returns a formatted hash of the transaction data' do
-        should == {
-          :request_id => '1',
-          :action => :foo,
-          :log_entry => :bar,
-          :failed => false
-        }
-      end
-    end
-  end
-
-  # protected
-
-  it { should delegate(:id).to(:transaction) }
-  it { should delegate(:events).to(:transaction) }
-  it { should delegate(:exception).to(:transaction) }
-  it { should delegate(:exception?).to(:transaction) }
-  it { should delegate(:env).to(:transaction) }
-  it { should delegate(:request).to(:transaction) }
-  it { should delegate(:process_action_event).to(:transaction) }
-  it { should delegate(:action).to(:transaction) }
-
-  it { should delegate(:payload).to(:process_action_event) }
-
-  context "a new formatter" do
-    describe "#formatted_process_action_event" do
-      subject { formatter.send(:formatted_process_action_event) }
-
-      it "calls basic_process_action_event" do
-        formatter.should_receive(:basic_process_action_event)
-        subject
-      end
-
-      context "with actual process action event data" do
-        before { transaction.set_process_action_event(notification_event) }
-
-        it { should be_a Hash }
-
-        it "merges formatted_payload on the basic_process_action_event" do
-          subject[:duration].should == 100.0
-          subject[:action].should == 'BlogPostsController#show'
-        end
-      end
-
-      context "without any process action event data" do
-
-        it { should be_a Hash }
-
-        it "does not merge formatted_payload onto the basic_process_action_event" do
-          subject.keys.should_not include :duration
-          subject.keys.should_not include :action
-          subject.keys.should include :time
-        end
-      end
-    end
-
-    describe "#basic_process_action_event" do
-      subject { formatter.send(:basic_process_action_event) }
-      before do
-        Time.stub_chain(:now, :utc, :to_f => 123.0)
-        transaction.stub(:request => mock(
-          :fullpath => '/blog',
-          :session => {:current_user => 1})
-        )
-      end
-
-      it { should == {
-        :path => '/blog',
-        :kind => 'http_request',
-        :time => 123.0
+      its(:keys) { should == [:request_id, :log_entry, :failed] }
+      its([:request_id]) { should == '1' }
+      its([:log_entry]) { should == {
+          :action => "BlogPostsController#show",
+          :db_runtime => 500,
+          :duration => 100.0,
+          :end => 978339660.1,
+          :environment => {},
+          :kind => "http_request",
+          :name => "process_action.action_controller",
+          :path => "/blog",
+          :request_format => "html",
+          :request_method => "GET",
+          :session_data => {},
+          :status => "200",
+          :time => 978339660.0,
+          :view_runtime => 500
       } }
+      its([:failed]) { should be_false }
+    end
 
-      it "has no environment key" do
-        subject[:environment].should be_nil
-      end
+    context "with an exception request" do
+      let(:transaction) { transaction_with_exception }
 
-      it "has no session_data key" do
-        subject[:session_data].should be_nil
+      its(:keys) { should == [:request_id, :log_entry, :failed, :exception] }
+      its([:request_id]) { should == '1' }
+      its([:failed]) { should be_true }
+
+      context "exception content" do
+        subject { formatter.hash[:exception] }
+
+        its(:keys) { should == [:backtrace, :exception, :message] }
+        its([:backtrace]) { should be_instance_of Array }
+        its([:exception]) { should == 'ArgumentError' }
+        its([:message]) { should == 'oh no' }
       end
     end
 
-    describe "#formatted_payload" do
-      let(:start_time) { Time.at(2.71828182) }
-      let(:end_time) { Time.at(3.141592654) }
-      subject { formatter.send(:formatted_payload) }
-      before do
-        transaction.set_process_action_event(mock(
-          :name => 'name',
-          :duration => 2,
-          :time => start_time,
-          :end => end_time,
+    context "with a slow request" do
+      let(:transaction) { slow_transaction }
+
+      its(:keys) { should == [:request_id, :log_entry, :failed, :events] }
+      its([:request_id]) { should == '1' }
+      its([:failed]) { should be_false }
+
+      context "events content" do
+        subject { formatter.hash[:events] }
+
+        its(:length) { should == 1 }
+        its(:first) { should == {
+          :name => "query.mongoid",
+          :duration => 100.0,
+          :time => 978339660.0,
+          :end => 978339660.1,
           :payload => {
-            :controller => 'controller',
-            :action => 'action'
+            :path => "/blog",
+            :action => "show",
+            :controller => "BlogPostsController",
+            :request_format => "html",
+            :request_method => "GET",
+            :status => "200",
+            :view_runtime => 500,
+            :db_runtime => 500
           }
-        ))
-      end
-
-      it { should == {
-        :action => 'controller#action',
-        :controller => 'controller', # DEBUG this should no longer be here now
-        :duration => 2,
-        :time => start_time.to_f,
-        :end => end_time.to_f
-      } }
-    end
-
-    describe "#filtered_environment" do
-      subject { formatter.send(:filtered_environment) }
-
-      it "should have a SERVER_NAME" do
-        subject['SERVER_NAME'].should == 'localhost'
-      end
-
-      it "should have a HTTP_USER_AGENT" do
-        subject['HTTP_USER_AGENT'].should == 'IE6'
-      end
-
-      it "should not have a action_dispatch.routes" do
-        subject.should_not have_key 'action_dispatch.routes'
+        } }
       end
     end
   end
