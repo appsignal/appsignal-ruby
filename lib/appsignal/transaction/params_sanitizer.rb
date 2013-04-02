@@ -9,6 +9,10 @@ module Appsignal
         ParamsSanitizerDestructive.sanitize_value(params)
       end
 
+      def scrub!(params)
+        ParamsSanitizerScrub.sanitize_value(params)
+      end
+
       protected
 
       def sanitize_value(value)
@@ -18,9 +22,9 @@ module Appsignal
         when Array
           sanitize_array(value)
         when Fixnum, String, Symbol
-          value
+          unmodified(value)
         else
-          value.inspect
+          inspected(value)
         end
       end
 
@@ -36,6 +40,14 @@ module Appsignal
           target_array[index] = sanitize_value(item)
         end
         target_array
+      end
+
+      def unmodified(value)
+        value
+      end
+
+      def inspected(value)
+        value.inspect
       end
     end
   end
@@ -64,6 +76,20 @@ module Appsignal
 
       def sanitize_array(array)
         sanitize_array_with_target(array, array)
+      end
+    end
+  end
+
+  class ParamsSanitizerScrub < ParamsSanitizerDestructive
+    class << self
+      protected
+
+      def unmodified(value)
+        '?'
+      end
+
+      def inspected(value)
+        '?'
       end
     end
   end
