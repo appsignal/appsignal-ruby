@@ -59,13 +59,29 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#add_exception' do
+    context "using exceptions" do
       let(:exception) { mock(:exception, :name => 'test') }
 
-      it 'should add an exception' do
-        expect {
-          transaction.add_exception(exception)
-        }.to change(transaction, :exception).to(exception)
+      describe '#add_exception' do
+        it 'should add an exception' do
+          expect {
+            transaction.add_exception(exception)
+          }.to change(transaction, :exception).to(exception)
+        end
+      end
+
+      describe "#exception?" do
+        subject { transaction.exception? }
+
+        context "without an exception" do
+          it { should be_false }
+        end
+
+        context "without an exception" do
+          before { transaction.add_exception(exception) }
+
+          it { should be_true }
+        end
       end
     end
 
