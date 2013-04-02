@@ -66,6 +66,12 @@ describe Appsignal::ParamsSanitizer do
     its([:file]) { should be_instance_of String }
     its([:file]) { should include '#<ActionDispatch::Http::UploadedFile:' }
 
+    it "does not change the original params" do
+      subject
+      params[:file].should == file
+      params[:hash][:nested_array][2].should == file
+    end
+
     context "hash" do
       subject { sanitized_params[:hash] }
 
