@@ -39,6 +39,7 @@ module Appsignal
       hash[:log_entry].tap do |o|
         o.merge!(o.delete(:payload))
         o[:action] = "#{o.delete(:controller)}##{o.delete(:action)}"
+        o.delete(:name)
       end
     end
 
