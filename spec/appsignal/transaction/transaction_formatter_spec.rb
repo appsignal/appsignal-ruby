@@ -22,7 +22,6 @@ describe Appsignal::TransactionFormatter do
           :end => 978339660.1,
           :environment => {},
           :kind => "http_request",
-          :name => "process_action.action_controller",
           :path => "/blog",
           :request_format => "html",
           :request_method => "GET",
