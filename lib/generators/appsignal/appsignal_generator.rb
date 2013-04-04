@@ -1,3 +1,5 @@
+require 'appsignal'
+
 class AppsignalGenerator < Rails::Generators::Base
   source_root File.expand_path('../templates', __FILE__)
   argument :push_key, :type => :string
@@ -37,7 +39,7 @@ class AppsignalGenerator < Rails::Generators::Base
 
   def check_key
     begin
-      auth_check = Appsignal::AuthCheck.new(options.environment)
+      auth_check = ::Appsignal::AuthCheck.new(options.environment)
       result = auth_check.perform
       if result == '200'
         say_status :success, "AppSignal has confirmed authorisation!"

@@ -1,4 +1,4 @@
-require 'delegate'
+require 'forwardable'
 
 module Appsignal
   class TransactionFormatter < SimpleDelegator
