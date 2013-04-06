@@ -3,6 +3,7 @@ raise 'This appsignal gem only works with rails' unless defined?(Rails)
 module Appsignal
   class << self
     attr_accessor :subscriber
+    attr_reader :in_memory_log
 
     # Convenience method for pushing a transaction straight to Appsignal,
     # skipping the queue.
@@ -32,11 +33,19 @@ module Appsignal
     end
 
     def logger
-      if Rails.root
-        @logger ||= Logger.new("#{Rails.root}/log/appsignal.log").tap do |l|
-          l.level = Logger::INFO
-        end
+      @in_memory_log = '' unless @in_memory_log
+      @logger ||= Logger.new(StringIO.new(@in_memory_log)
+).tap do |l|
+        l.level = Logger::INFO
       end
+    end
+
+    def flush_in_memory_log
+      Appsignal.logger << @in_memory_log
+    end
+
+    def logger=(l)
+      @logger = l
     end
 
     def config

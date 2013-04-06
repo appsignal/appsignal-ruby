@@ -16,9 +16,17 @@ module MyApp
   end
 end
 
+def log_file
+  File.join(File.dirname(__FILE__), '../log/appsignal.log')
+end
+
 require 'appsignal'
 
 RSpec.configure do |config|
   config.include TransactionHelpers
   config.include NotificationHelpers
+
+  config.before :all do
+    FileUtils.rm(log_file) if File.exists?(log_file)
+  end
 end

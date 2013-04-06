@@ -1,6 +1,11 @@
 module Appsignal
   class Railtie < Rails::Railtie
     initializer "appsignal.configure_rails_initialization" do |app|
+      Appsignal.logger = Logger.new(Rails.root.join('log/appsignal.log')).tap do |l|
+        l.level = Logger::INFO
+      end
+      Appsignal.flush_in_memory_log
+
       if Appsignal.active?
         app.middleware.
           insert_before(ActionDispatch::RemoteIp, Appsignal::Listener)
