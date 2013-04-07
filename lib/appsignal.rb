@@ -33,15 +33,14 @@ module Appsignal
     end
 
     def logger
-      @in_memory_log = '' unless @in_memory_log
-      @logger ||= Logger.new(StringIO.new(@in_memory_log)
-).tap do |l|
+      @in_memory_log = StringIO.new unless @in_memory_log
+      @logger ||= Logger.new(@in_memory_log).tap do |l|
         l.level = Logger::INFO
       end
     end
 
     def flush_in_memory_log
-      Appsignal.logger << @in_memory_log
+      Appsignal.logger << @in_memory_log.string
     end
 
     def logger=(l)
