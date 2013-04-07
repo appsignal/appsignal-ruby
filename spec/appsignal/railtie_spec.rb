@@ -5,7 +5,7 @@ require 'appsignal/railtie'
 describe Appsignal::Railtie do
   it "should log to the in memory log before init" do
     Appsignal.logger.error('Log something before init')
-    Appsignal.in_memory_log.should include('Log something before init')
+    Appsignal.in_memory_log.string.should include('Log something before init')
   end
 
   context "after initializing the app" do
