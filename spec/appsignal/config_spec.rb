@@ -1,7 +1,8 @@
 require 'spec_helper'
 
 describe Appsignal::Config do
-  subject { Appsignal::Config.new(Dir.pwd, 'test').load }
+  let(:logger_parameter) { [] }
+  subject { Appsignal::Config.new(Dir.pwd, 'test', *logger_parameter).load }
 
   it {
     should == {
@@ -23,16 +24,39 @@ describe Appsignal::Config do
       )
     end
 
+    context "when the logger has no #error method" do
+      let(:logger) { mock(:logger) }
+      let(:logger_parameter) { [logger] }
+
+      it "should log the error using #important" do
+        logger.should_receive(:important).with(
+          "config not found at:"\
+          " /not/existing/config/appsignal.yml"
+        )
+      end
+    end
+
     after { subject }
   end
 
   context "the env is not in the config" do
-    subject { Appsignal::Config.new(Dir.pwd, 'staging').load }
+    subject { Appsignal::Config.new(Dir.pwd, 'staging', *logger_parameter).load }
 
     it "should generate error" do
       Appsignal.logger.should_receive(:error).with(
         "config for 'staging' not found"
       )
+    end
+
+    context "when the logger has no #error method" do
+      let(:logger) { mock(:logger) }
+      let(:logger_parameter) { [logger] }
+
+      it "should log the error using #important" do
+        logger.should_receive(:important).with(
+          "config for 'staging' not found"
+        )
+      end
     end
 
     after { subject }

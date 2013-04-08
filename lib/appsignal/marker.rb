@@ -1,5 +1,9 @@
+require 'appsignal/careful_logger'
+
 module Appsignal
   class Marker
+    include Appsignal::CarefulLogger
+
     attr_reader :marker_data, :config, :logger
     ACTION = 'markers'
 
@@ -23,12 +27,7 @@ module Appsignal
         end
       rescue Exception => e
         message = "Something went wrong while trying to notify Appsignal: #{e}"
-        if @logger.respond_to?(:important)
-          # This is a Capistrano logger
-          @logger.important message
-        else
-          @logger.error message
-        end
+        carefully_log_error message
       end
     end
   end

@@ -1,6 +1,10 @@
+require 'appsignal/careful_logger'
+
 module Appsignal
 
   class Config
+    include Appsignal::CarefulLogger
+
     DEFAULT_CONFIG = {
       :ignore_exceptions => [],
       :endpoint => 'https://push.appsignal.com/1',
@@ -18,13 +22,13 @@ module Appsignal
     def load
       file = File.join(@root_path, 'config/appsignal.yml')
       unless File.exists?(file)
-        @logger.error "config not found at: #{file}"
+        carefully_log_error "config not found at: #{file}"
         return
       end
 
       config = YAML.load_file(file)[@rails_env]
       unless config
-        @logger.error "config for '#{@rails_env}' not found"
+        carefully_log_error "config for '#{@rails_env}' not found"
         return
       end
 
