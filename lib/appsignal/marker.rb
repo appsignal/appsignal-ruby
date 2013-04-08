@@ -27,7 +27,7 @@ module Appsignal
         end
       rescue Exception => e
         message = "Something went wrong while trying to notify Appsignal: #{e}"
-        log_error message
+        carefully_log_error message
       end
     end
   end
