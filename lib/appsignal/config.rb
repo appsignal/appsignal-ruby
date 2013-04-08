@@ -1,5 +1,9 @@
+require 'appsignal/careful_logger'
+
 module Appsignal
   class Config
+    include Appsignal::CarefulLogger
+
     attr_accessor :root_path, :rails_env
 
     def initialize(root_path, rails_env, logger=Appsignal.logger)
@@ -25,16 +29,6 @@ module Appsignal
         :endpoint => 'https://push.appsignal.com/1',
         :slow_request_threshold => 200
       }.merge(config.symbolize_keys)
-    end
-
-    protected
-
-    def log_error(message)
-      if @logger.respond_to?(:important)
-        @logger.important(message)
-      else
-        @logger.error(message)
-      end
     end
 
   end
