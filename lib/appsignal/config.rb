@@ -1,6 +1,10 @@
+require 'appsignal/careful_logger'
+
 module Appsignal
 
   class Config
+    include Appsignal::CarefulLogger
+
     DEFAULT_CONFIG = {
       :ignore_exceptions => [],
       :endpoint => 'https://push.appsignal.com/1',
@@ -29,16 +33,6 @@ module Appsignal
       end
 
       DEFAULT_CONFIG.merge(config.symbolize_keys)
-    end
-
-    protected
-
-    def log_error(message)
-      if @logger.respond_to?(:important)
-        @logger.important(message)
-      else
-        @logger.error(message)
-      end
     end
 
   end
