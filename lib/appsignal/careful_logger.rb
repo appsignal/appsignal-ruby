@@ -1,6 +1,6 @@
 module Appsignal
   module CarefulLogger
-    def log_error(message)
+    def carefully_log_error(message)
       if @logger.respond_to?(:important)
         @logger.important(message)
       else
