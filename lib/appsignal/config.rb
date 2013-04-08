@@ -11,13 +11,13 @@ module Appsignal
     def load
       file = File.join(@root_path, 'config/appsignal.yml')
       unless File.exists?(file)
-        @logger.error "config not found at: #{file}"
+        log_error "config not found at: #{file}"
         return
       end
 
       config = YAML.load_file(file)[@rails_env]
       unless config
-        @logger.error "config for '#{@rails_env}' not found"
+        log_error "config for '#{@rails_env}' not found"
         return
       end
 
@@ -26,5 +26,16 @@ module Appsignal
         :slow_request_threshold => 200
       }.merge(config.symbolize_keys)
     end
+
+    protected
+
+    def log_error(message)
+      if @logger.respond_to?(:important)
+        @logger.important(message)
+      else
+        @logger.error(message)
+      end
+    end
+
   end
 end
