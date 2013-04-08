@@ -62,6 +62,7 @@ describe AppsignalGenerator do
     context "internal failure" do
       before do
         prepare_destination
+        Appsignal::AuthCheck.should_receive(:new) { raise }
         run_generator_in_tmp %w(my_app_key)
       end
 
