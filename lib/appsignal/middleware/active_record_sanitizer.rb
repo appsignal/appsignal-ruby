@@ -1,6 +1,6 @@
 module Appsignal
   module Middleware
-    class SqlEventSanitizer
+    class ActiveRecordSanitizer
       TARGET_EVENT_NAME = 'sql.active_record'.freeze
 
       IN_ARRAY        = /(IN \()[^\)]+(\))/.freeze
@@ -19,10 +19,10 @@ module Appsignal
             query_string.gsub!(QUOTED_DATA,     SANITIZED_VALUE)
             query_string.gsub!(NUMERIC_DATA,    SANITIZED_VALUE)
           end
+          event.payload.delete(:connection_id)
         end
         yield
       end
-
     end
   end
 end
