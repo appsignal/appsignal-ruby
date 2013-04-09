@@ -29,13 +29,13 @@ module Appsignal
 
     def send_queue
       Appsignal.logger.debug "Sending queue"
+      current_aggregator = aggregator
+      @aggregator = Aggregator.new
       begin
-        queue = aggregator
-        @aggregator = Aggregator.new
-        handle_result transmitter.transmit(queue.post_processed_queue!)
+        handle_result transmitter.transmit(current_aggregator.post_processed_queue!)
       rescue Exception => ex
-        Appsignal.logger.error "Exception while communicating with "\
-          "AppSignal: #{ex}"
+        Appsignal.logger.error "#{ex.class} while communicating with AppSignal: #{ex}"
+        Appsignal.logger.error ex.backtrace
         stop_logging
       end
     end

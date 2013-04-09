@@ -1,5 +1,8 @@
 require 'spec_helper'
 
+class PostProcessingException < Exception
+end
+
 describe Appsignal::Agent do
   let(:transaction) { regular_transaction }
 
@@ -23,11 +26,31 @@ describe Appsignal::Agent do
       subject.should_receive(:handle_result).with('200')
     end
 
-    it "handles exceptions in transmit" do
-      subject.transmitter.stub(:transmit).and_raise(Exception.new)
+    it "handle exceptions in post processing" do
+      subject.aggregator.stub(:post_processed_queue!).and_raise(
+        PostProcessingException.new('Message')
+      )
+
       subject.should_receive(:stop_logging)
       Appsignal.logger.should_receive(:error).
-        with('Exception while communicating with AppSignal: Exception')
+        with('PostProcessingException while communicating with AppSignal: Message').
+        once
+      Appsignal.logger.should_receive(:error).
+        with(kind_of(Array)).
+        once
+    end
+
+    it "handles exceptions in transmit" do
+      subject.transmitter.stub(:transmit).and_raise(
+        Exception.new('Message')
+      )
+      subject.should_receive(:stop_logging)
+      Appsignal.logger.should_receive(:error).
+        with('Exception while communicating with AppSignal: Message').
+        once
+      Appsignal.logger.should_receive(:error).
+        with(kind_of(Array)).
+        once
     end
 
     after { subject.send_queue }
