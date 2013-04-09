@@ -1,7 +1,7 @@
 module Appsignal
   module Middleware
     class SqlEventSanitizer
-      TARGET_EVENT_NAME = 'sql.activerecord'.freeze
+      TARGET_EVENT_NAME = 'sql.active_record'.freeze
 
       IN_ARRAY        = /(IN \()[^\)]+(\))/.freeze
       ESCAPED_QUOTES  = /\\"|\\'/.freeze
