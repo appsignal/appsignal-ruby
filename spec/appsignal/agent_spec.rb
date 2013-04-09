@@ -36,7 +36,7 @@ describe Appsignal::Agent do
         with('PostProcessingException while communicating with AppSignal: Message').
         once
       Appsignal.logger.should_receive(:error).
-        with(kind_of(Array)).
+        with(kind_of(String)).
         once
     end
 
@@ -49,7 +49,7 @@ describe Appsignal::Agent do
         with('Exception while communicating with AppSignal: Message').
         once
       Appsignal.logger.should_receive(:error).
-        with(kind_of(Array)).
+        with(kind_of(String)).
         once
     end
 
