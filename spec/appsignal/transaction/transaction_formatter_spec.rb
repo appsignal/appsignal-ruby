@@ -19,7 +19,7 @@ describe Appsignal::TransactionFormatter do
           :action => "BlogPostsController#show",
           :db_runtime => 500,
           :duration => 100.0,
-          :end => 978361260.1,
+          :end => 978364860.1,
           :environment => {},
           :kind => "http_request",
           :path => "/blog",
@@ -27,7 +27,7 @@ describe Appsignal::TransactionFormatter do
           :request_method => "GET",
           :session_data => {},
           :status => "200",
-          :time => 978361260.0,
+          :time => 978364860.0,
           :view_runtime => 500
       } }
       its([:failed]) { should be_false }
@@ -64,8 +64,8 @@ describe Appsignal::TransactionFormatter do
         its(:first) { should == {
           :name => "query.mongoid",
           :duration => 100.0,
-          :time => 978361260.0,
-          :end => 978361260.1,
+          :time => 978364860.0,
+          :end => 978364860.1,
           :payload => {
             :path => "/blog",
             :action => "show",
