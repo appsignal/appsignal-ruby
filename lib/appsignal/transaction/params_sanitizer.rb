@@ -9,8 +9,12 @@ module Appsignal
         ParamsSanitizerDestructive.sanitize_value(params)
       end
 
+      def scrub(params)
+        ParamsSanitizerCopyScrub.sanitize_value(params)
+      end
+
       def scrub!(params)
-        ParamsSanitizerScrub.sanitize_value(params)
+        ParamsSanitizerDestructiveScrub.sanitize_value(params)
       end
 
       protected
@@ -80,7 +84,21 @@ module Appsignal
     end
   end
 
-  class ParamsSanitizerScrub < ParamsSanitizerDestructive
+  class ParamsSanitizerCopyScrub < ParamsSanitizerCopy
+    class << self
+      protected
+
+      def unmodified(value)
+        '?'
+      end
+
+      def inspected(value)
+        '?'
+      end
+    end
+  end
+
+  class ParamsSanitizerDestructiveScrub < ParamsSanitizerDestructive
     class << self
       protected
 
