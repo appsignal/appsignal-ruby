@@ -10,9 +10,9 @@ describe Appsignal::ToAppsignalHash do
     subject { notification_event.to_appsignal_hash }
 
     it { should == {
-      :time => 978339660.0,
+      :time => 978361260.0,
       :duration => 100.0,
-      :end => 978339660.1,
+      :end => 978361260.1,
       :name => "process_action.action_controller",
       :payload => {
         :path=>"/blog",
