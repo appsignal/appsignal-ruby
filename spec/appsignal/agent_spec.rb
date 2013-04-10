@@ -33,7 +33,7 @@ describe Appsignal::Agent do
 
       subject.should_receive(:stop_logging)
       Appsignal.logger.should_receive(:error).
-        with('PostProcessingException while communicating with AppSignal: Message').
+        with('PostProcessingException while sending queue: Message').
         once
       Appsignal.logger.should_receive(:error).
         with(kind_of(String)).
@@ -46,7 +46,7 @@ describe Appsignal::Agent do
       )
       subject.should_receive(:stop_logging)
       Appsignal.logger.should_receive(:error).
-        with('Exception while communicating with AppSignal: Message').
+        with('Exception while sending queue: Message').
         once
       Appsignal.logger.should_receive(:error).
         with(kind_of(String)).
