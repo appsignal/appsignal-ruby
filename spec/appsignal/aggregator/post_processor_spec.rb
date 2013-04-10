@@ -31,5 +31,11 @@ describe Appsignal::PostProcessor do
     subject { klass.default_middleware }
 
     it { should be_instance_of Appsignal::Middleware::Chain }
+
+    it "should include the default middleware stack" do
+      subject.exists?(Appsignal::Middleware::DeleteBlanks).should be_true
+      subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_true
+      subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_true
+    end
   end
 end
