@@ -7,7 +7,7 @@ describe Appsignal::Middleware::ActiveRecordSanitizer do
   describe "#call" do
     let(:event) do
       notification_event(
-        :name => klass::TARGET_EVENT_NAME,
+        :name => 'sql.active_record',
         :payload => create_payload(
           :sql => sql,
           :connection_id => 1111
