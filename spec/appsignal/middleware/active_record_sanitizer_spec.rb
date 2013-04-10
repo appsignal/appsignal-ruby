@@ -5,11 +5,13 @@ describe Appsignal::Middleware::ActiveRecordSanitizer do
   let(:sql_event_sanitizer) { klass.new }
 
   describe "#call" do
+    let(:binds) { [] }
     let(:event) do
       notification_event(
         :name => 'sql.active_record',
         :payload => create_payload(
           :sql => sql,
+          :binds => binds,
           :connection_id => 1111
         )
       )
@@ -70,6 +72,17 @@ describe Appsignal::Middleware::ActiveRecordSanitizer do
       let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
 
       it { should == 'SELECT `table`.* FROM `table` WHERE `id` IN (?)' }
+    end
+
+    context "skip sanitization when using prepared statements" do
+      let(:binds) { ['bind 1'] }
+      let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=$1' }
+
+      it { should == 'SELECT "table".* FROM "table" WHERE "id"=$1' }
+
+      it "should remove the binds" do
+        event.payload.should_not have_key(:binds)
+      end
     end
   end
 end
