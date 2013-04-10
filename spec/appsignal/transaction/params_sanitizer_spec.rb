@@ -21,6 +21,7 @@ describe Appsignal::ParamsSanitizer do
     }
   end
   let(:sanitized_params) { Appsignal::ParamsSanitizer.sanitize(params) }
+  let(:scrubbed_params) { Appsignal::ParamsSanitizer.scrub(params) }
 
   describe ".sanitize!" do
     subject { params }
@@ -123,6 +124,44 @@ describe Appsignal::ParamsSanitizer do
 
         context "nested hash" do
           subject { params[:hash][:nested_array][3] }
+
+          it { should be_instance_of Hash }
+          its([:key]) { should == '?' }
+          its([:file]) { should == '?' }
+        end
+      end
+    end
+  end
+
+  describe ".scrub" do
+    subject { scrubbed_params }
+
+     it "does not change the original params" do
+      subject
+      params[:file].should == file
+      params[:hash][:nested_array][2].should == file
+    end
+
+    it { should be_instance_of Hash }
+    its([:text]) { should == '?' }
+    its([:file]) { should == '?' }
+
+    context "hash" do
+      subject { scrubbed_params[:hash] }
+
+      it { should be_instance_of Hash }
+      its([:nested_text]) { should == '?' }
+
+      context "nested_array" do
+        subject { scrubbed_params[:hash][:nested_array] }
+
+        it { should be_instance_of Array }
+        its([0]) { should == '?' }
+        its([1]) { should == '?' }
+        its([2]) { should == '?' }
+
+        context "nested hash" do
+          subject { scrubbed_params[:hash][:nested_array][3] }
 
           it { should be_instance_of Hash }
           its([:key]) { should == '?' }
