@@ -5,8 +5,9 @@ module Appsignal
 
       def call(event)
         if event.name.end_with?(TARGET_EVENT_CATEGORY)
-          if event.payload[:identifier]
-            event.payload[:identifier].gsub!(root_path, '')
+          identifier = event.payload[:identifier]
+          if identifier
+            identifier.gsub!(root_path, '')
           end
           yield
         end
