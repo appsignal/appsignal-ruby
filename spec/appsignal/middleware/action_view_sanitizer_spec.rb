@@ -25,4 +25,3 @@ describe Appsignal::Middleware::ActionViewSanitizer do
     end
   end
 end
-
