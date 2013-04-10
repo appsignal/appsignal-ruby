@@ -18,6 +18,7 @@ module Appsignal
     def self.default_middleware
       Middleware::Chain.new do |chain|
         chain.add Appsignal::Middleware::DeleteBlanks
+        chain.add Appsignal::Middleware::ActionViewSanitizer
         chain.add Appsignal::Middleware::ActiveRecordSanitizer
       end
     end
