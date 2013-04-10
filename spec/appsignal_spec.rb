@@ -3,10 +3,6 @@ require 'spec_helper'
 describe Appsignal do
   it { should respond_to :subscriber }
 
-  describe ".push" do
-    pending
-  end
-
   describe ".enqueue" do
     let(:transaction) { regular_transaction }
     subject { Appsignal.enqueue(transaction) }

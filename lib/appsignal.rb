@@ -5,15 +5,6 @@ module Appsignal
     attr_accessor :subscriber
     attr_reader :in_memory_log
 
-    # Convenience method for pushing a transaction straight to Appsignal,
-    # skipping the queue.
-    #
-    # @return [ Boolean ] If successful or not
-    #
-    # @since 0.5.0
-    def push(transaction)
-    end
-
     # Convenience method for adding a transaction to the queue. This queue is
     # managed and is periodically pushed to Appsignal.
     #
