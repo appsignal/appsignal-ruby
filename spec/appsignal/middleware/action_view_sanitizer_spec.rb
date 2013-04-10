@@ -18,7 +18,7 @@ describe Appsignal::Middleware::ActionViewSanitizer do
       }
     end
     subject { event.payload }
-    before { sanitizer.call(event) }
+    before { sanitizer.call(event) { } }
 
     it "should strip Rails root from the path" do
       payload[:identifier].should == 'app/views/home/index/html.erb'

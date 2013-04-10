@@ -23,7 +23,7 @@ describe Appsignal::Middleware::DeleteBlanks do
       }
     end
     subject { event.payload }
-    before { delete_blanks.call(event) }
+    before { delete_blanks.call(event) { } }
 
     it { should have_key(:string) }
     it { should have_key(:array) }

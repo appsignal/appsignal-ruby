@@ -8,6 +8,7 @@ module Appsignal
           if event.payload[:identifier]
             event.payload[:identifier].gsub!(root_path, '')
           end
+          yield
         end
       end
 

@@ -5,6 +5,7 @@ module Appsignal
         event.payload.each do |key, value|
           event.payload.delete(key) if value.blank?
         end
+        yield
       end
     end
   end
