@@ -9,8 +9,8 @@ module Appsignal
           if identifier
             identifier.gsub!(root_path, '')
           end
-          yield
         end
+        yield
       end
 
       def root_path

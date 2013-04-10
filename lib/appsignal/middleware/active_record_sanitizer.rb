@@ -20,8 +20,8 @@ module Appsignal
             query_string.gsub!(NUMERIC_DATA,    SANITIZED_VALUE)
           end
           event.payload.delete(:connection_id)
-          yield
         end
+        yield
       end
     end
   end
