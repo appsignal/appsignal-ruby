@@ -3,8 +3,6 @@ require 'spec_helper'
 describe Appsignal::PostProcessor do
   let(:klass) { Appsignal::PostProcessor }
   let(:post_processor) { klass.new(transactions) }
-  let(:transaction) { regular_transaction }
-  let(:transactions) { [transaction] }
 
   describe "#initialize" do
     subject { klass.new(:foo) }
@@ -13,18 +11,63 @@ describe Appsignal::PostProcessor do
   end
 
   describe "#post_processed_queue!" do
-    it "calls the post procesing middleware chain" do
-      transaction.stub(:events => [:foo, :foo])
-      Appsignal.post_processing_middleware.
-        should_receive(:invoke).with(:foo).twice
+    let(:first_transaction) { regular_transaction }
+    let(:second_transaction) do
+      slow_transaction(
+        :events => [
+          notification_event(
+            :payload => {
+              :set_value => 'set value',
+              :nil_value => nil
+            }
+          )
+        ]
+      )
+    end
+    let(:transactions) { [first_transaction, second_transaction] }
+    let(:processed_queue) { post_processor.post_processed_queue! }
+    subject { processed_queue }
+
+    it { should have(2).items }
+
+    context "the first transaction" do
+      subject { processed_queue[0] }
+
+      it { should_not have_key(:events) }
+
+      context "log entry" do
+        subject { processed_queue[0][:log_entry] }
+
+        it { should have_key(:duration) }
+        it { should have_key(:end) }
+        it { should_not have_key(:events) }
+      end
     end
 
-    it "calls to hash on the transaction" do
-      transaction.should respond_to(:to_hash)
-      transaction.should_receive(:to_hash)
-    end
+    context "the second transaction" do
+      context "log entry" do
+        subject { processed_queue[1][:log_entry] }
 
-    after { post_processor.post_processed_queue! }
+        it { should have_key(:duration) }
+        it { should have_key(:end) }
+      end
+
+      context "first event" do
+        subject { processed_queue[1][:events][0] }
+
+        it { should_not be_nil }
+        it { should have_key(:name) }
+
+        it "should have the set value in the payload" do
+          subject[:payload][:set_value].should == 'set value'
+        end
+
+        it "should not have the nil value in the payload"\
+           "since delete blanks is in the middle ware stack" do
+          subject[:payload].should_not have_key(:nil_value)
+        end
+      end
+    end
   end
 
   describe ".default_middleware" do
