@@ -26,7 +26,7 @@ module Appsignal
         return
       end
 
-      config = YAML.load_file(file)[@rails_env]
+      config = YAML.load(ERB.new(IO.read(file)).result)[@rails_env]
       unless config
         carefully_log_error "config for '#{@rails_env}' not found"
         return

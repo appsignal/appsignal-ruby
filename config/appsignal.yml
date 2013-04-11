@@ -1,7 +1,7 @@
 development: &development
   endpoint: "http://localhost:3000/1"
   api_key: "abc"
-  active: true
+  active: <%= 'true' %>
 production:
   <<: *development
   api_key: "def"
