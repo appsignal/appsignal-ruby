@@ -4,5 +4,7 @@ development: &development
   active: true
 production:
   <<: *development
+  api_key: "def"
 test:
   <<: *development
+  api_key: "ghi"

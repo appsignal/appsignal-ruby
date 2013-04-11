@@ -104,7 +104,7 @@ describe Appsignal::CLI do
       Appsignal::Transmitter.should_receive(:new).with(
         'http://localhost:3000/1',
         'markers',
-        'abc'
+        'def'
       ).and_return(transmitter)
       transmitter.should_receive(:transmit).with(
         :revision => 'aaaaa',
