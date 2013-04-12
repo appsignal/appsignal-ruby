@@ -3,13 +3,21 @@ require 'spec_helper'
 describe Appsignal::Middleware::ActiveRecordSanitizer do
   let(:klass) { Appsignal::Middleware::ActiveRecordSanitizer }
   let(:sql_event_sanitizer) { klass.new }
+  let(:connection_config) { {} }
+  before do
+    ActiveRecord::Base.stub(
+      :connection_config => connection_config
+    )
+  end
 
   describe "#call" do
+    let(:name) { 'Model load' }
     let(:binds) { [] }
     let(:event) do
       notification_event(
         :name => 'sql.active_record',
         :payload => create_payload(
+          :name => name,
           :sql => sql,
           :binds => binds,
           :connection_id => 1111
@@ -19,69 +27,174 @@ describe Appsignal::Middleware::ActiveRecordSanitizer do
     subject { event.payload[:sql] }
     before { sql_event_sanitizer.call(event) { } }
 
-    context "connection id" do
+    context "connection id and bindings" do
       let(:sql) { '' }
       subject { event.payload }
 
       it { should_not have_key(:connection_id) }
+      it { should_not have_key(:binds) }
     end
 
-    context "single quoted data value" do
-      let(:sql) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret'" }
+    context "with backtick table names" do
+      before { sql_event_sanitizer.stub(:adapter_uses_double_quoted_table_names? => false) }
 
-      it { should == "SELECT `table`.* FROM `table` WHERE `id` = ?" }
+      context "single quoted data value" do
+        let(:sql) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret'" }
 
-      context "with an escaped single quote" do
-        let(:sql) { "`id` = '\\'big\\' secret'" }
+        it { should == "SELECT `table`.* FROM `table` WHERE `id` = ?" }
 
-        it { should == "`id` = ?" }
+        context "with an escaped single quote" do
+          let(:sql) { "`id` = '\\'big\\' secret'" }
+
+          it { should == "`id` = ?" }
+        end
+
+        context "with an escaped double quote" do
+          let(:sql) { "`id` = '\\\"big\\\" secret'" }
+
+          it { should == "`id` = ?" }
+        end
       end
 
-      context "with an escaped double quote" do
-        let(:sql) { "`id` = '\\\"big\\\" secret'" }
+      context "double quoted data value" do
+        let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = "secret"' }
 
-        it { should == "`id` = ?" }
+        it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+
+        context "with an escaped single quote" do
+          let(:sql) { '`id` = "\\\'big\\\' secret"' }
+
+          it { should == "`id` = ?" }
+        end
+
+        context "with an escaped double quote" do
+          let(:sql) { '`id` = "\\"big\\" secret"' }
+
+          it { should == "`id` = ?" }
+        end
+      end
+
+      context "numeric parameter" do
+        let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
+
+        it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+      end
+
+      context "parameter array" do
+        let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
+
+        it { should == 'SELECT `table`.* FROM `table` WHERE `id` IN (?)' }
       end
     end
 
-    context "double quoted data value" do
-      let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = "secret"' }
+    context "with double quote style table names and no prepared statements" do
+      let(:connection_config) { {:adapter => 'postgresql', :prepared_statements => false} }
 
-      it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
+      context "single quoted data value" do
+        let(:sql) { "SELECT \"table\".* FROM \"table\" WHERE \"id\" = 'secret'" }
 
-      context "with an escaped single quote" do
-        let(:sql) { '`id` = "\\\'big\\\' secret"' }
+        it { should == "SELECT \"table\".* FROM \"table\" WHERE \"id\" = ?" }
 
-        it { should == "`id` = ?" }
+        context "with an escaped single quote" do
+          let(:sql) { "\"id\" = '\\'big\\' secret'" }
+
+          it { should == "\"id\" = ?" }
+        end
+
+        context "with an escaped double quote" do
+          let(:sql) { "\"id\" = '\\\"big\\\" secret'" }
+
+          it { should == "\"id\" = ?" }
+        end
       end
 
-      context "with an escaped double quote" do
-        let(:sql) { '`id` = "\\"big\\" secret"' }
+      context "numeric parameter" do
+        let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=1' }
 
-        it { should == "`id` = ?" }
+        it { should == 'SELECT "table".* FROM "table" WHERE "id"=?' }
       end
     end
 
-    context "numeric parameter" do
-      let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
+    context "skip sanitization for prepared statements" do
+      let(:connection_config) { {:adapter => 'postgresql'} }
 
-      it { should == 'SELECT `table`.* FROM `table` WHERE `id` = ?' }
-    end
-
-    context "parameter array" do
-      let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
-
-      it { should == 'SELECT `table`.* FROM `table` WHERE `id` IN (?)' }
-    end
-
-    context "skip sanitization when using prepared statements" do
-      let(:binds) { ['bind 1'] }
       let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=$1' }
 
       it { should == 'SELECT "table".* FROM "table" WHERE "id"=$1' }
+    end
 
-      it "should remove the binds" do
-        event.payload.should_not have_key(:binds)
+    context "skip sanitization for schema queries" do
+      let(:name) { 'SCHEMA' }
+      let(:sql) { 'SET client_min_messages TO 22' }
+
+      it { should == 'SET client_min_messages TO 22' }
+    end
+  end
+
+  describe "#schema_query?" do
+    let(:payload) { {} }
+    let(:event) { notification_event(:payload => payload) }
+    subject { sql_event_sanitizer.schema_query?(event) }
+
+    it { should be_false }
+
+    context "when name is schema" do
+      let(:payload) { {:name => 'SCHEMA'} }
+
+      it { should be_true }
+    end
+  end
+
+  context "connection config" do
+    describe "#connection_config" do
+      let(:connection_config) { {:adapter => 'adapter'} }
+
+      subject { sql_event_sanitizer.connection_config }
+
+      it { should == {:adapter => 'adapter'} }
+    end
+
+    describe "#adapter_uses_double_quoted_table_names?" do
+      subject { sql_event_sanitizer.adapter_uses_double_quoted_table_names? }
+
+      context "when using mysql" do
+        let(:connection_config) { {:adapter => 'mysql'} }
+
+        it { should be_false }
+      end
+
+      context "when using postgresql" do
+        let(:connection_config) { {:adapter => 'postgresql'} }
+
+        it { should be_true }
+      end
+
+      context "when using sqlite" do
+        let(:connection_config) { {:adapter => 'sqlite'} }
+
+        it { should be_true }
+      end
+    end
+
+    describe "adapter_uses_prepared_statements?" do
+      subject { sql_event_sanitizer.adapter_uses_prepared_statements? }
+
+      context "when using mysql" do
+        let(:connection_config) { {:adapter => 'mysql'} }
+
+        it { should be_false }
+      end
+
+      context "when using postgresql" do
+        let(:connection_config) { {:adapter => 'postgresql'} }
+
+        it { should be_true }
+      end
+
+      context "when using postgresql and prepared statements is disabled" do
+        let(:connection_config) { {:adapter => 'postgresql', :prepared_statements => false} }
+
+        it { should be_false }
       end
     end
   end
