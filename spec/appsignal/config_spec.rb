@@ -9,7 +9,7 @@ describe Appsignal::Config do
       :ignore_exceptions => [],
       :endpoint => 'http://localhost:3000/1',
       :slow_request_threshold => 200,
-      :api_key => 'abc',
+      :api_key => 'ghi',
       :active => true
     }
   }

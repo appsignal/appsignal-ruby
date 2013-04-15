@@ -11,24 +11,24 @@ module Appsignal
       :slow_request_threshold => 200
     }.freeze
 
-    attr_accessor :root_path, :rails_env
+    attr_accessor :project_path, :env
 
-    def initialize(root_path, rails_env, logger=Appsignal.logger)
-      @root_path = root_path
-      @rails_env = rails_env
+    def initialize(project_path, env, logger=Appsignal.logger)
+      @project_path = project_path
+      @env = env
       @logger = logger
     end
 
     def load
-      file = File.join(@root_path, 'config/appsignal.yml')
+      file = File.join(@project_path, 'config', 'appsignal.yml')
       unless File.exists?(file)
         carefully_log_error "config not found at: #{file}"
         return
       end
 
-      config = YAML.load_file(file)[@rails_env]
+      config = YAML.load(ERB.new(IO.read(file)).result)[@env]
       unless config
-        carefully_log_error "config for '#{@rails_env}' not found"
+        carefully_log_error "config for '#{@env}' not found"
         return
       end
 
