@@ -1,10 +1,14 @@
 module Appsignal
   class Railtie < Rails::Railtie
     initializer "appsignal.configure_rails_initialization" do |app|
-      Appsignal.logger = Logger.new(Rails.root.join('log/appsignal.log')).tap do |l|
-        l.level = Logger::INFO
+      # Some apps when run from the console do not have Rails.root set, there's
+      # currently no way to spec this.
+      if Rails.root
+        Appsignal.logger = Logger.new(Rails.root.join('log/appsignal.log')).tap do |l|
+          l.level = Logger::INFO
+        end
+        Appsignal.flush_in_memory_log
       end
-      Appsignal.flush_in_memory_log
 
       if Appsignal.active?
         app.middleware.
