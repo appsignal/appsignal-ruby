@@ -40,9 +40,7 @@ Appsignal.postprocessing_middleware.add MiddlewareTemplate
 ```ruby
 class RemoveBoringPayload
   def call(event)
-    unless event.name == 'interesting'
-      event.payload = {}
-    end
+    event.payload.clear unless event.name == 'interesting'
     yield
   end
 end
