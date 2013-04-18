@@ -1,11 +1,10 @@
 module NotificationHelpers
 
   def notification_event(args={})
-    time = Time.parse('01-01-2001 10:01:00')
     args = {
       :name => 'process_action.action_controller',
-      :start => time,
-      :ending => time + 0.100,
+      :start => fixed_time,
+      :ending => fixed_time + 0.1,
       :tid => '1',
       :payload => create_payload
     }.merge(args)

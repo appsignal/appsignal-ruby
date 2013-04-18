@@ -1,5 +1,9 @@
 module TransactionHelpers
 
+  def fixed_time
+    @fixed_time ||= Time.at(978364860.0)
+  end
+
   def transaction_with_exception
     appsignal_transaction.tap do |o|
       begin
@@ -18,24 +22,22 @@ module TransactionHelpers
   end
 
   def slow_transaction(args={})
-    time = Time.parse('01-01-2001 10:01:00')
     appsignal_transaction(
       {
         :process_action_event => notification_event(
-          :start => time,
-          :ending => time + Appsignal.config[:slow_request_threshold] / 1000.0
+          :start => fixed_time,
+          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 1000.0
         )
       }.merge(args)
     )
   end
 
   def slower_transaction(args={})
-    time = Time.parse('01-01-2001 10:01:00')
     appsignal_transaction(
       {
         :process_action_event => notification_event(
-          :start => time,
-          :ending => time + Appsignal.config[:slow_request_threshold] / 500.0
+          :start => fixed_time,
+          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 500.0
         )
       }.merge(args)
     )
