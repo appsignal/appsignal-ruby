@@ -25,7 +25,7 @@ module Appsignal
       return unless used_unique_api_keys
       return unless current_environment_present
 
-      DEFAULT_CONFIG.merge(configurations[env].symbolize_keys)
+      DEFAULT_CONFIG.merge(configurations[env])
     end
 
     protected

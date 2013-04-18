@@ -89,13 +89,15 @@ describe Appsignal::CLI do
     end
   end
 
-  describe "notify_of_deploy" do
+  describe "#notify_of_deploy" do
     it "should validate that all options have been supplied" do
       options = {}
       cli.should_receive(:validate_required_options).with(
         [:revision, :repository, :user, :environment],
         options
       )
+      Appsignal::Marker.should_receive(:new).
+        and_return(mock(:transmit => true))
       cli.notify_of_deploy(options)
     end
 
