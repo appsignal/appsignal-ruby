@@ -35,7 +35,7 @@ module Appsignal
         handle_result transmitter.transmit(current_aggregator.post_processed_queue!)
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
-        Appsignal.logger.error ex.backtrace.join('\n')
+        Appsignal.logger.error ex.backtrace.join("\n")
         stop_logging
       end
     end
