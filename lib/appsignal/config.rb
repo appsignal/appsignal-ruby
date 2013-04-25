@@ -1,3 +1,5 @@
+require 'erb'
+require 'yaml'
 require 'appsignal/careful_logger'
 
 module Appsignal
@@ -57,7 +59,5 @@ module Appsignal
       carefully_log_error "config for '#{env}' not found"
       false
     end
-
   end
-
 end
