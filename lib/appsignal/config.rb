@@ -3,7 +3,6 @@ require 'yaml'
 require 'appsignal/careful_logger'
 
 module Appsignal
-
   class Config
     include Appsignal::CarefulLogger
 

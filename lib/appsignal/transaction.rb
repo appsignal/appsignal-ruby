@@ -128,6 +128,5 @@ module Appsignal
         Appsignal::ParamsSanitizer.sanitize(request.session)
       @fullpath = request.fullpath
     end
-
   end
 end

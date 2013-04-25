@@ -51,7 +51,6 @@ module Appsignal
     def active?
       config && config[:active] == true
     end
-
   end
 end
 

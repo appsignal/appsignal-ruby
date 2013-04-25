@@ -58,7 +58,6 @@ module Appsignal
         transaction.convert_values_to_primitives!
       end
     end
-
   end
 end
 

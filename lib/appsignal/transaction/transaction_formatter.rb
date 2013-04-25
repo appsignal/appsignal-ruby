@@ -2,7 +2,6 @@ require 'forwardable'
 
 module Appsignal
   class TransactionFormatter < SimpleDelegator
-
     def initialize(transaction)
       super(transaction)
     end
@@ -54,6 +53,5 @@ module Appsignal
     def add_events_to_hash!
       hash[:events] = events.map(&:to_appsignal_hash)
     end
-
   end
 end

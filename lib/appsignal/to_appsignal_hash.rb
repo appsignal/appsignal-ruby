@@ -1,6 +1,5 @@
 module Appsignal
   module ToAppsignalHash
-
     def to_appsignal_hash
       {
         :name => name,
@@ -10,7 +9,6 @@ module Appsignal
         :payload => payload
       }
     end
-
   end
 end
 

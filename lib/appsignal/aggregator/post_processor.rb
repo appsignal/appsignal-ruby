@@ -22,6 +22,5 @@ module Appsignal
         chain.add Appsignal::Middleware::ActiveRecordSanitizer
       end
     end
-
   end
 end

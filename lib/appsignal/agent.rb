@@ -73,6 +73,5 @@ module Appsignal
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(@thread)
     end
-
   end
 end
