@@ -1,9 +1,10 @@
 module Appsignal
   class AuthCheck
-    delegate :uri, :to => :transmitter
+    ACTION = 'auth'.freeze
+
     attr_reader :config
     attr_accessor :transmitter
-    ACTION = 'auth'
+    delegate :uri, :to => :transmitter
 
     def initialize(environment)
       @config = Appsignal::Config.new(Rails.root, environment).load

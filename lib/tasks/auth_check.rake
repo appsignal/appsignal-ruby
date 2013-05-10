@@ -16,7 +16,7 @@ namespace :appsignal do
           puts "  * API key not valid with AppSignal..."
         else
           puts "  * Could not confirm authorisation: "\
-            "#{result.nil? ? 'nil' : result} at #{auth_check.uri}"
+            "#{result.nil? ? 'nil' : result}"
         end
       rescue Exception => e
         puts "Something went wrong while trying to "\

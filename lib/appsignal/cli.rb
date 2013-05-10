@@ -9,7 +9,7 @@ require 'appsignal/transmitter'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w( notify_of_deploy )
+    AVAILABLE_COMMANDS = %w(notify_of_deploy)
 
     class << self
       def run(argv=ARGV)
@@ -25,7 +25,7 @@ module Appsignal
         global.order!(argv)
         command = argv.shift
         if command then
-          if AVAILABLE_COMMANDS.include?(command) then
+          if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
             case options[:command]
             when :notify_of_deploy
