@@ -1,5 +1,9 @@
 module Appsignal
   class Railtie < Rails::Railtie
+    rake_tasks do
+      load "tasks/auth_check.rake"
+    end
+
     initializer "appsignal.configure_rails_initialization" do |app|
       # Some apps when run from the console do not have Rails.root set, there's
       # currently no way to spec this.
