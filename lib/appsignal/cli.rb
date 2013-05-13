@@ -52,7 +52,7 @@ module Appsignal
 
       def global_option_parser(options)
         OptionParser.new do |o|
-          o.banner = %Q{Usage: appsignal <command> [options]}
+          o.banner = 'Usage: appsignal <command> [options]'
 
           o.on '-v', '--version', "Print version and exit" do |arg|
             puts "Appsignal #{Appsignal::VERSION}"
@@ -91,7 +91,11 @@ module Appsignal
             end
           end,
           'api_check' => OptionParser.new do |o|
-            o.banner = 'Usage: appsignal api_check'
+            o.banner = %q(Usage: appsignal api_check
+
+            This command checks the config file in config/appsignal.yml
+            and tries to use the api_keys available in each environment to
+            see if they work.)
           end
         }
       end
