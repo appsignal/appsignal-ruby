@@ -68,7 +68,7 @@ module Appsignal
       def command_option_parser(options)
         {
           'notify_of_deploy' => OptionParser.new do |o|
-            o.banner = %Q{Usage: appsignal notify_of_deploy [options] }
+            o.banner = 'Usage: appsignal notify_of_deploy [options]'
             options[:command] = :notify_of_deploy
 
             o.on '--revision=<revision>', "The revision you're deploying" do |arg|
