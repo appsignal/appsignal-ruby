@@ -4,12 +4,14 @@ require 'yaml'
 require 'rails'
 require 'appsignal/version'
 require 'appsignal/config'
+require 'appsignal/auth_check'
 require 'appsignal/marker'
 require 'appsignal/transmitter'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w( notify_of_deploy )
+    AVAILABLE_COMMANDS = %w(notify_of_deploy api_check).freeze
+    PROJECT_ROOT = File.join(File.dirname(__FILE__), '..', '..').freeze
 
     class << self
       def run(argv=ARGV)
@@ -24,12 +26,14 @@ module Appsignal
 
         global.order!(argv)
         command = argv.shift
-        if command then
-          if AVAILABLE_COMMANDS.include?(command) then
+        if command
+          if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
-            case options[:command]
+            case command.to_sym
             when :notify_of_deploy
               notify_of_deploy(options)
+            when :api_check
+              api_check
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to see the help"
@@ -48,7 +52,7 @@ module Appsignal
 
       def global_option_parser(options)
         OptionParser.new do |o|
-          o.banner = %Q{Usage: appsignal <command> [options]}
+          o.banner = 'Usage: appsignal <command> [options]'
 
           o.on '-v', '--version', "Print version and exit" do |arg|
             puts "Appsignal #{Appsignal::VERSION}"
@@ -68,8 +72,7 @@ module Appsignal
       def command_option_parser(options)
         {
           'notify_of_deploy' => OptionParser.new do |o|
-            o.banner = %Q{Usage: appsignal notify_of_deploy [options] }
-            options[:command] = :notify_of_deploy
+            o.banner = 'Usage: appsignal notify_of_deploy [options]'
 
             o.on '--revision=<revision>', "The revision you're deploying" do |arg|
               options[:revision] = arg
@@ -86,6 +89,13 @@ module Appsignal
             o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
+          end,
+          'api_check' => OptionParser.new do |o|
+            o.banner = %q(Usage: appsignal api_check
+
+            This command checks the config file in config/appsignal.yml
+            and tries to use the api_keys available in each environment to
+            see if they work.)
           end
         }
       end
@@ -103,6 +113,38 @@ module Appsignal
           logger
         ).transmit
       end
+
+      def api_check
+        puts "\nReading config/appsignal.yml and attempting to use the config "\
+          "in order to check if it is set up the way it should be.\n\n"
+        Appsignal::Config.new(
+          PROJECT_ROOT, '', logger
+        ).load_all.each do |env, config|
+          auth_check = ::Appsignal::AuthCheck.new(
+            env,
+            {:config => config, :logger => logger}
+          )
+          puts "[#{env}]"
+          puts '  * Configured not to monitor this environment' unless config[:active]
+          begin
+            result = auth_check.perform
+            case result
+            when '200'
+              puts '  * AppSignal has confirmed authorisation!'
+            when '401'
+              puts '  * API key not valid with AppSignal...'
+            else
+              puts '  * Could not confirm authorisation: '\
+                "#{result.nil? ? 'nil' : result}"
+            end
+          rescue Exception => e
+            puts "Something went wrong while trying to "\
+              "authenticate with AppSignal: #{e}"
+          end
+        end
+      end
+
+      protected
 
       def validate_required_options(required_options, options)
         missing = required_options.select do |required_option|
