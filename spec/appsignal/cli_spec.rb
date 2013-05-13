@@ -50,7 +50,8 @@ describe Appsignal::CLI do
         cli.run(['nonsense'])
       }.should raise_error(SystemExit)
 
-      out_stream.string.should include "Command 'nonsense' does not exist, run appsignal -h to see the help"
+    out_stream.string.should include "Command 'nonsense' does not exist, run "\
+      "appsignal -h to see the help"
   end
 
   # protected

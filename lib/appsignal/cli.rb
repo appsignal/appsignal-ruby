@@ -26,10 +26,10 @@ module Appsignal
 
         global.order!(argv)
         command = argv.shift
-        if command then
+        if command
           if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
-            case options[:command]
+            case command.to_sym
             when :notify_of_deploy
               notify_of_deploy(options)
             when :api_check
@@ -73,7 +73,6 @@ module Appsignal
         {
           'notify_of_deploy' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal notify_of_deploy [options]'
-            options[:command] = :notify_of_deploy
 
             o.on '--revision=<revision>', "The revision you're deploying" do |arg|
               options[:revision] = arg
@@ -93,7 +92,6 @@ module Appsignal
           end,
           'api_check' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal api_check'
-            options[:command] = :api_check
           end
         }
       end
