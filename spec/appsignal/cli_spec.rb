@@ -53,11 +53,14 @@ describe Appsignal::CLI do
       out_stream.string.should include "Command 'nonsense' does not exist, run appsignal -h to see the help"
   end
 
+  # protected
+
   describe "#validate_required_options" do
     let(:required_options) { [:option_1, :option_2, :option_3] }
 
     it "should do nothing with all options supplied" do
-      cli.validate_required_options(
+      cli.send(
+        :validate_required_options,
         required_options,
         :option_1 => 1,
         :option_2 => 2,
@@ -68,7 +71,8 @@ describe Appsignal::CLI do
 
     it "should print a message with one option missing" do
       lambda {
-        cli.validate_required_options(
+        cli.send(
+          :validate_required_options,
           required_options,
           :option_1 => 1,
           :option_2 => 2
@@ -79,7 +83,8 @@ describe Appsignal::CLI do
 
     it "should print a message with multiple options missing" do
       lambda {
-        cli.validate_required_options(
+        cli.send(
+          :validate_required_options,
           required_options,
           :option_1 => 1,
           :option_2 => ''

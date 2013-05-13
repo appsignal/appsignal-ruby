@@ -4,12 +4,14 @@ require 'yaml'
 require 'rails'
 require 'appsignal/version'
 require 'appsignal/config'
+require 'appsignal/auth_check'
 require 'appsignal/marker'
 require 'appsignal/transmitter'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(notify_of_deploy)
+    AVAILABLE_COMMANDS = %w(notify_of_deploy api_check).freeze
+    PROJECT_ROOT = File.join(File.dirname(__FILE__), '..', '..').freeze
 
     class << self
       def run(argv=ARGV)
@@ -30,6 +32,8 @@ module Appsignal
             case options[:command]
             when :notify_of_deploy
               notify_of_deploy(options)
+            when :api_check
+              api_check
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to see the help"
@@ -86,6 +90,10 @@ module Appsignal
             o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
+          end,
+          'api_check' => OptionParser.new do |o|
+            o.banner = 'Usage: appsignal api_check'
+            options[:command] = :api_check
           end
         }
       end
@@ -103,6 +111,38 @@ module Appsignal
           logger
         ).transmit
       end
+
+      def api_check
+        puts "\nReading config/appsignal.yml and attempting to use the config "\
+          "in order to check if it is set up the way it should be.\n\n"
+        Appsignal::Config.new(
+          PROJECT_ROOT, '', logger
+        ).load_all.each do |env, config|
+          auth_check = ::Appsignal::AuthCheck.new(
+            env,
+            {:config => config, :logger => logger}
+          )
+          puts "[#{env}]"
+          puts '  * Configured not to monitor this environment' unless config[:active]
+          begin
+            result = auth_check.perform
+            case result
+            when '200'
+              puts '  * AppSignal has confirmed authorisation!'
+            when '401'
+              puts '  * API key not valid with AppSignal...'
+            else
+              puts '  * Could not confirm authorisation: '\
+                "#{result.nil? ? 'nil' : result}"
+            end
+          rescue Exception => e
+            puts "Something went wrong while trying to "\
+              "authenticate with AppSignal: #{e}"
+          end
+        end
+      end
+
+      protected
 
       def validate_required_options(required_options, options)
         missing = required_options.select do |required_option|
