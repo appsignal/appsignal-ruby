@@ -18,11 +18,14 @@ class AppsignalGenerator < Rails::Generators::Base
       say_status(:error, "  api_key: #{push_key}\n\n", :red)
       say_status(:info, "Then run:\n\n", :red)
       say_status(:info, "  rake appsignal:check", :red)
-      exit(1)
     else
       template template_file, appsignal_file
+      capyistrano_install
+      check_key
     end
   end
+
+  protected
 
   def capyistrano_install
     deploy_file = File.expand_path(File.join('config', 'deploy.rb'))

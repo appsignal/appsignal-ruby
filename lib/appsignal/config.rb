@@ -1,4 +1,5 @@
 require 'appsignal/careful_logger'
+require 'erb'
 
 module Appsignal
 
