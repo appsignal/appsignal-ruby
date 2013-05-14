@@ -1,8 +1,8 @@
 module Appsignal
   class Agent
-    ACTION = 'log_entries'
+    ACTION = 'log_entries'.freeze
 
-    attr_reader :aggregator, :active, :sleep_time, :transmitter
+    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter
 
     def initialize
       return unless Appsignal.active?
@@ -36,8 +36,23 @@ module Appsignal
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
         Appsignal.logger.error ex.backtrace.join('\n')
-        stop_logging
       end
+    end
+
+    def forked!
+      @forked = true
+      @aggregator = Aggregator.new
+    end
+
+    def forked?
+      @forked ||= false
+    end
+
+    def shutdown(send_current_queue=false)
+      Appsignal.logger.info('Shutting down the agent')
+      ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
+      Thread.kill(thread) if thread
+      send_queue if send_current_queue && @aggregator.has_transactions?
     end
 
     protected
@@ -52,26 +67,20 @@ module Appsignal
         @sleep_time = sleep_time / 1.5
       when 429
         Appsignal.logger.error "Too many requests sent"
-        stop_logging
+        shutdown
       when 406
         Appsignal.logger.error "Your appsignal gem cannot communicate with "\
           "the API anymore, please upgrade."
-        stop_logging
+        shutdown
       when 402
         Appsignal.logger.error "Payment required"
-        stop_logging
+        shutdown
       when 401
         Appsignal.logger.error "API token cannot be authorized"
-        stop_logging
+        shutdown
       else
         Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
       end
-    end
-
-    def stop_logging
-      Appsignal.logger.info("Disengaging the agent")
-      ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
-      Thread.kill(@thread)
     end
 
   end

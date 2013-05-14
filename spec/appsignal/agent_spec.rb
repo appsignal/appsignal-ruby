@@ -31,7 +31,6 @@ describe Appsignal::Agent do
         PostProcessingException.new('Message')
       )
 
-      subject.should_receive(:stop_logging)
       Appsignal.logger.should_receive(:error).
         with('PostProcessingException while sending queue: Message').
         once
@@ -44,7 +43,7 @@ describe Appsignal::Agent do
       subject.transmitter.stub(:transmit).and_raise(
         Exception.new('Message')
       )
-      subject.should_receive(:stop_logging)
+
       Appsignal.logger.should_receive(:error).
         with('Exception while sending queue: Message').
         once
@@ -54,6 +53,58 @@ describe Appsignal::Agent do
     end
 
     after { subject.send_queue }
+  end
+
+  describe "#shutdown" do
+    before do
+      ActiveSupport::Notifications.should_receive(:unsubscribe).with(Appsignal.subscriber)
+      Thread.should_receive(:kill).with(subject.thread)
+    end
+
+    context "when not sending the current queue" do
+      context "with an empty queue" do
+        it "should shutdown" do
+          subject.shutdown
+        end
+      end
+
+      context "with a queue with transactions" do
+        it "should shutdown" do
+          subject.enqueue(slow_transaction)
+          subject.should_not_receive(:send_queue)
+
+          subject.shutdown
+        end
+      end
+    end
+
+    context "when the queue is to be sent" do
+      context "with an empty queue" do
+        it "should shutdown" do
+          subject.should_not_receive(:send_queue)
+
+          subject.shutdown(true)
+        end
+      end
+
+      context "with a queue with transactions" do
+        it "should send the queue and shutdown" do
+          subject.enqueue(slow_transaction)
+          subject.should_receive(:send_queue)
+
+          subject.shutdown(true)
+        end
+      end
+
+      context "when we're a child process" do
+        it "should shutdown" do
+          subject.stub(:forked? => true)
+          subject.should_not_receive(:send_queue)
+
+          subject.shutdown(true)
+        end
+      end
+    end
   end
 
   describe '#handle_result' do
@@ -91,7 +142,7 @@ describe Appsignal::Agent do
         let(:code) { '429' }
 
         it "calls a stop to logging" do
-          subject.should_receive :stop_logging
+          subject.should_receive(:shutdown)
         end
       end
 
@@ -99,7 +150,7 @@ describe Appsignal::Agent do
         let(:code) { '406' }
 
         it "calls a stop to logging" do
-          subject.should_receive :stop_logging
+          subject.should_receive(:shutdown)
         end
       end
 
@@ -107,7 +158,7 @@ describe Appsignal::Agent do
         let(:code) { '402' }
 
         it "calls a stop to logging" do
-          subject.should_receive :stop_logging
+          subject.should_receive(:shutdown)
         end
       end
 
@@ -115,7 +166,7 @@ describe Appsignal::Agent do
         let(:code) { '401' }
 
         it "calls a stop to logging" do
-          subject.should_receive :stop_logging
+          subject.should_receive(:shutdown)
         end
       end
 
@@ -131,9 +182,9 @@ describe Appsignal::Agent do
     end
   end
 
-  describe "#stop_logging" do
+  describe "#shutdown" do
     it "does not raise exceptions" do
-      expect { subject.send :stop_logging }.not_to raise_error
+      expect { subject.send(:shutdown) }.not_to raise_error
     end
   end
 
