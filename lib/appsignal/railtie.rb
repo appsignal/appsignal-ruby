@@ -15,6 +15,7 @@ module Appsignal
       end
 
       if Appsignal.active?
+        at_exit { Appsignal.agent.shutdown(true) }
         app.middleware.
           insert_before(ActionDispatch::RemoteIp, Appsignal::Listener)
 
