@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'active_record'
+require 'appsignal/middleware/active_record_sanitizer'
 
 describe Appsignal::Middleware::ActiveRecordSanitizer do
   let(:klass) { Appsignal::Middleware::ActiveRecordSanitizer }
