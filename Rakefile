@@ -43,6 +43,7 @@ task :publish do
 
   system("$EDITOR #{VERSION_FILE}")
   if changes.member?(VERSION_FILE)
+    Appsignal.send(:remove_const, :VERSION)
     load File.expand_path(VERSION_FILE)
     build_and_push_gem
     create_and_push_tag
