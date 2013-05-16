@@ -1,6 +1,7 @@
 require 'erb'
 require 'yaml'
 require 'appsignal/careful_logger'
+require 'erb'
 
 module Appsignal
   class Config
@@ -27,6 +28,17 @@ module Appsignal
       return unless current_environment_present
 
       DEFAULT_CONFIG.merge(configurations[env])
+    end
+
+    def load_all
+      return unless load_configurations_from_disk
+      return unless used_unique_api_keys
+
+      {}.tap do |result|
+        configurations.each do |env, config|
+          result[env] = DEFAULT_CONFIG.merge(config)
+        end
+      end
     end
 
     protected

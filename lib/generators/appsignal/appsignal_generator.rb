@@ -1,25 +1,31 @@
 require 'appsignal'
 
 class AppsignalGenerator < Rails::Generators::Base
-  source_root File.expand_path('../templates', __FILE__)
-  argument :push_key, :type => :string
-  class_option :environment, :type => :string, :default => 'production',
-    :desc => 'Install AppSignal for a different environment'
+  EXCLUDED_ENVIRONMENTS = [:test].freeze
 
+  source_root File.expand_path('../templates', __FILE__)
+  argument :environment, :type => :string
+  argument :push_key, :type => :string
   desc "Install the config file for AppSignal with your PUSH_KEY."
+
   def copy_config_file
     template_file = 'appsignal.yml'
     appsignal_file = File.join('config', template_file)
     if File.exists?(appsignal_file)
-      if environment_setup?(appsignal_file)
-        say_status :error, "Environment already setup", :red
-      else
-        append_to_file appsignal_file, "\n"+new_template_content(template_file)
-      end
+      say_status(:error, "Looks like you already have a config file.", :red)
+      say_status(:error, "Add the following to config/appsignal.yml:\n\n", :red)
+      say_status(:error, "#{environment}:", :red)
+      say_status(:error, "  api_key: #{push_key}\n\n", :red)
+      say_status(:info, "Then run:\n\n", :red)
+      say_status(:info, "  rake appsignal:check", :red)
     else
       template template_file, appsignal_file
+      capyistrano_install
+      check_key
     end
   end
+
+  protected
 
   def capyistrano_install
     deploy_file = File.expand_path(File.join('config', 'deploy.rb'))
@@ -39,7 +45,7 @@ class AppsignalGenerator < Rails::Generators::Base
 
   def check_key
     begin
-      auth_check = ::Appsignal::AuthCheck.new(options.environment)
+      auth_check = ::Appsignal::AuthCheck.new(environment)
       result = auth_check.perform
       if result == '200'
         say_status :success, "AppSignal has confirmed authorisation!"
@@ -47,7 +53,7 @@ class AppsignalGenerator < Rails::Generators::Base
         say_status :error, "Push key not valid with AppSignal...", :red
       else
         say_status :error, "Could not confirm authorisation: "\
-          "#{result.nil? ? 'nil' : result} at #{auth_check.uri}", :red
+          "#{result.nil? ? 'nil' : result}", :red
       end
     rescue Exception => e
       say_status :error, "Something went wrong while trying to authenticate "\
@@ -57,9 +63,17 @@ class AppsignalGenerator < Rails::Generators::Base
 
   private
 
+  alias :selected_environment :environment
+
+  def environments
+    @environments ||= Dir.glob(
+      File.join(%w(. config environments *.rb))
+    ).map { |o| File.basename(o, ".rb").to_sym } - EXCLUDED_ENVIRONMENTS
+  end
+
   def environment_setup?(config_file)
     file_contents = File.read(config_file)
-    file_contents =~ Regexp.new("#{options.environment}:")
+    file_contents =~ Regexp.new("#{environment}:")
   end
 
   # As based on Thor's template method
