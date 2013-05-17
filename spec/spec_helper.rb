@@ -1,5 +1,4 @@
 require 'rspec'
-require 'pry'
 require 'rails'
 require 'action_controller/railtie'
 
