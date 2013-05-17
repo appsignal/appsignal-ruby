@@ -1,14 +1,14 @@
 language: ruby
 
 rvm:
-  # - 1.9.2
-  - 1.9.3
   - 1.8.7
+  - 1.9.2
+  - 1.9.3
   - ree
-  # - ruby-head
-  # - jruby-18mode
+  - ruby-head
+  - jruby-18mode
   - jruby-19mode
-  # - jruby-head
+  - jruby-head
 
 gemfile:
   - gemfiles/3.0.gemfile
