@@ -41,7 +41,7 @@ describe Appsignal do
     end
 
     it 'should return the api key' do
-      subject[:api_key].should eq 'abc'
+      subject[:api_key].should eq 'ghi'
     end
 
     it 'should return ignored exceptions' do

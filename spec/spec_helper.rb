@@ -1,3 +1,4 @@
+ENV["RAILS_ENV"] ||= 'test'
 require 'rspec'
 require 'rails'
 require 'action_controller/railtie'
