@@ -2,7 +2,6 @@ require 'delegate'
 
 module Appsignal
   class TransactionFormatter < SimpleDelegator
-    attr_reader :id
 
     def initialize(transaction)
       super(transaction)

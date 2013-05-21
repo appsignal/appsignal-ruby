@@ -102,7 +102,7 @@ describe Appsignal::Transaction do
         end
 
         context "when the request took too long" do
-          let(:duration) { 0.200 } # in seconds
+          let(:duration) { 0.201 } # in seconds
 
           it { should be_true }
         end

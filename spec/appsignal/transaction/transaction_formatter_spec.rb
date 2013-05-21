@@ -18,7 +18,7 @@ describe Appsignal::TransactionFormatter do
       its([:log_entry]) { should == {
           :action => "BlogPostsController#show",
           :db_runtime => 500,
-          :duration => 100.0,
+          :duration => be_within(0.01).of(100.0),
           :end => 978364860.1,
           :environment => {},
           :kind => "http_request",
@@ -63,7 +63,7 @@ describe Appsignal::TransactionFormatter do
         its(:length) { should == 1 }
         its(:first) { should == {
           :name => "query.mongoid",
-          :duration => 100.0,
+          :duration => be_within(0.01).of(100.0),
           :time => 978364860.0,
           :end => 978364860.1,
           :payload => {

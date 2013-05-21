@@ -26,7 +26,7 @@ module TransactionHelpers
       {
         :process_action_event => notification_event(
           :start => fixed_time,
-          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 1000.0
+          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 999.99
         )
       }.merge(args)
     )
@@ -37,7 +37,7 @@ module TransactionHelpers
       {
         :process_action_event => notification_event(
           :start => fixed_time,
-          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 500.0
+          :ending => fixed_time + Appsignal.config[:slow_request_threshold] / 499.99
         )
       }.merge(args)
     )

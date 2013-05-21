@@ -11,7 +11,7 @@ describe Appsignal::ToAppsignalHash do
 
     it { should == {
       :time => 978364860.0,
-      :duration => 100.0,
+      :duration => be_within(0.01).of(100.0),
       :end => 978364860.1,
       :name => "process_action.action_controller",
       :payload => {
