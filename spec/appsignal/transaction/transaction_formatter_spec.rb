@@ -13,7 +13,7 @@ describe Appsignal::TransactionFormatter do
     context "with a regular request" do
       let(:transaction) { regular_transaction }
 
-      its(:keys) { should == [:request_id, :log_entry, :failed] }
+      its(:keys) { should =~ [:request_id, :log_entry, :failed] }
       its([:request_id]) { should == '1' }
       its([:log_entry]) { should == {
           :action => "BlogPostsController#show",
@@ -36,14 +36,14 @@ describe Appsignal::TransactionFormatter do
     context "with an exception request" do
       let(:transaction) { transaction_with_exception }
 
-      its(:keys) { should == [:request_id, :log_entry, :failed, :exception] }
+      its(:keys) { should =~ [:request_id, :log_entry, :failed, :exception] }
       its([:request_id]) { should == '1' }
       its([:failed]) { should be_true }
 
       context "exception content" do
         subject { formatter.hash[:exception] }
 
-        its(:keys) { should == [:backtrace, :exception, :message] }
+        its(:keys) { should =~ [:backtrace, :exception, :message] }
         its([:backtrace]) { should be_instance_of Array }
         its([:exception]) { should == 'ArgumentError' }
         its([:message]) { should == 'oh no' }
@@ -53,7 +53,7 @@ describe Appsignal::TransactionFormatter do
     context "with a slow request" do
       let(:transaction) { slow_transaction }
 
-      its(:keys) { should == [:request_id, :log_entry, :failed, :events] }
+      its(:keys) { should =~ [:request_id, :log_entry, :failed, :events] }
       its([:request_id]) { should == '1' }
       its([:failed]) { should be_false }
 

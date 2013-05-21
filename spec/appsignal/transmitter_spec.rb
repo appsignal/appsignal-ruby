@@ -10,10 +10,11 @@ describe Appsignal::Transmitter do
   describe "#uri" do
     it "returns the uri" do
       Socket.stub(:gethostname => 'app1.local')
-      subject.uri.should == URI(
-        "http://www.80beans.com/action?api_key=the_api_key&"\
-        "hostname=app1.local&gem_version=#{Appsignal::VERSION}"
-      )
+      uri = subject.uri.to_s
+      uri.should include "http://www.80beans.com/action?"
+      uri.should include "api_key=the_api_key"
+      uri.should include "hostname=app1.local"
+      uri.should include "gem_version=#{Appsignal::VERSION}"
     end
   end
 
@@ -36,8 +37,7 @@ describe Appsignal::Transmitter do
       Socket.stub(:gethostname => 'app1.local')
 
       Net::HTTP::Post.should_receive(:new).with(
-        "/action?api_key=the_api_key&hostname=app1.local&"\
-        "gem_version=#{Appsignal::VERSION}"
+        instance.uri.request_uri
       ).and_return(post)
       instance.send(:http_post, :the => :payload)
     end

@@ -2,6 +2,8 @@ require 'delegate'
 
 module Appsignal
   class TransactionFormatter < SimpleDelegator
+    attr_reader :id
+
     def initialize(transaction)
       super(transaction)
     end
@@ -21,7 +23,7 @@ module Appsignal
 
     def default_hash
       {
-        :request_id => id,
+        :request_id => request_id,
         :log_entry => {
           :path => fullpath,
           :kind => 'http_request',

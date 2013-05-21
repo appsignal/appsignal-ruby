@@ -298,7 +298,7 @@ describe Appsignal::Transaction do
       subject { transaction.sanitized_environment }
       before { transaction.send(:sanitize_environment!) }
 
-      its(:keys) { should == whitelisted_keys }
+      its(:keys) { should =~ whitelisted_keys }
     end
 
     describe '#sanitize_session_data!' do

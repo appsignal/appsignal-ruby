@@ -24,11 +24,11 @@ module Appsignal
       Appsignal.transactions[Thread.current[:appsignal_transaction_id]]
     end
 
-    attr_reader :id, :events, :process_action_event, :action, :exception, :env,
-      :fullpath, :time
+    attr_reader :request_id, :events, :process_action_event, :action, :exception,
+      :env, :fullpath, :time
 
-    def initialize(id, env)
-      @id = id
+    def initialize(request_id, env)
+      @request_id = request_id
       @events = []
       @process_action_event = nil
       @exception = nil
@@ -103,7 +103,7 @@ module Appsignal
 
     def complete!
       Thread.current[:appsignal_transaction_id] = nil
-      current_transaction = Appsignal.transactions.delete(@id)
+      current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         Appsignal.enqueue(current_transaction)
       end
