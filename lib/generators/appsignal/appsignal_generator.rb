@@ -17,7 +17,7 @@ class AppsignalGenerator < Rails::Generators::Base
       say_status(:error, "#{environment}:", :red)
       say_status(:error, "  api_key: #{push_key}\n\n", :red)
       say_status(:info, "Then run:\n\n", :red)
-      say_status(:info, "  rake appsignal:check", :red)
+      say_status(:info, "  appsignal api_check", :red)
     else
       template template_file, appsignal_file
       capyistrano_install
