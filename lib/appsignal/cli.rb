@@ -11,11 +11,11 @@ require 'appsignal/transmitter'
 module Appsignal
   class CLI
     AVAILABLE_COMMANDS = %w(notify_of_deploy api_check).freeze
-    PROJECT_ROOT = File.join(File.dirname(__FILE__), '..', '..').freeze
+    PROJECT_ROOT = ENV['PWD']
 
     class << self
       def run(argv=ARGV)
-        unless File.exists?(File.join(ENV['PWD'], 'config/appsignal.yml'))
+        unless File.exists?(File.join(PROJECT_ROOT, 'config/appsignal.yml'))
           puts 'No config file present at config/appsignal.yml'
           puts 'Log in to https://appsignal.com to get instructions on how to generate the config file.'
           exit(1)
@@ -108,7 +108,7 @@ module Appsignal
             :repository => options[:repository],
             :user => options[:user]
           },
-          ENV['PWD'],
+          PROJECT_ROOT,
           options[:environment],
           logger
         ).transmit
