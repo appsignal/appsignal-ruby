@@ -19,8 +19,15 @@ describe Appsignal::Railtie do
     end
 
     it "should have set the appsignal subscriber" do
-      Appsignal.subscriber.
-        should be_a ActiveSupport::Notifications::Fanout::Subscriber
+      if defined? ActiveSupport::Notifications::Fanout::Subscribers::Timed
+        # Rails 4
+        Appsignal.subscriber.
+          should be_a ActiveSupport::Notifications::Fanout::Subscribers::Timed
+      else
+        # Rails 3
+        Appsignal.subscriber.
+          should be_a ActiveSupport::Notifications::Fanout::Subscriber
+      end
     end
 
     it "should have added the listener middleware for exceptions" do

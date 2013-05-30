@@ -5,7 +5,12 @@ describe Appsignal::CLI do
   let(:error_stream) { StringIO.new }
   let(:cli) { Appsignal::CLI }
   before :each do
-     $stdout, $stderr = out_stream, error_stream
+    @original_stdout, @original_stderr = $stdout, $stderr
+    $stdout, $stderr = out_stream, error_stream
+  end
+  after :each do
+    $stdout = @original_stdout
+    $stderr = @original_stderr
   end
 
   describe "#logger" do
