@@ -23,7 +23,7 @@ module Appsignal
     end
 
     def load
-      return unless load_configurations_from_disk
+      return unless load_configurations
       return unless used_unique_api_keys
       return unless current_environment_present
 
@@ -31,7 +31,7 @@ module Appsignal
     end
 
     def load_all
-      return unless load_configurations_from_disk
+      return unless load_configurations
       return unless used_unique_api_keys
 
       {}.tap do |result|
@@ -43,16 +43,38 @@ module Appsignal
 
     protected
 
+    def config_file
+      File.join(project_path, 'config', 'appsignal.yml')
+    end
+
+    def load_configurations
+      unless load_configurations_from_disk || load_configurations_from_env
+        carefully_log_error "no config file found at '#{config_file}'
+          and no APPSIGNAL_API_KEY found in ENV"
+        return false
+      end
+      true
+    end
+
     def load_configurations_from_disk
-      file = File.join(project_path, 'config', 'appsignal.yml')
+      file = config_file
       unless File.exists?(file)
-        carefully_log_error "config not found at: '#{file}'"
         return false
       end
       @configurations = YAML.load(ERB.new(IO.read(file)).result)
       configurations.each { |k,v| v.symbolize_keys! }
       configurations.symbolize_keys!
       true
+    end
+
+    def load_configurations_from_env
+      api_key = ENV['APPSIGNAL_API_KEY']
+      if api_key.present?
+        @configurations = {:heroku => {:api_key => api_key, :active => true}}
+        true
+      else
+        false
+      end
     end
 
     def used_unique_api_keys

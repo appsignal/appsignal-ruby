@@ -24,7 +24,7 @@ describe Appsignal::Config do
     }
 
     context 'when there is no config file' do
-      before { Dir.stub(:pwd => '/not/existing') }
+      before { config.stub(:config_file => '/not/existing') }
 
       it { should be_nil }
     end
@@ -44,6 +44,37 @@ describe Appsignal::Config do
 
   # protected
 
+  describe "#load_configurations" do
+    subject { config.send(:load_configurations) }
+
+    context "when there is a config file" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(true)
+      end
+
+      it { should be_true }
+    end
+
+    context "when there is no config file" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(false)
+        config.should_receive(:load_configurations_from_env).and_return(true)
+      end
+
+      it { should be_true }
+    end
+
+    context "when there is no env api_key" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(false)
+        config.should_receive(:load_configurations_from_env).and_return(false)
+        config.should_receive(:carefully_log_error)
+      end
+
+      it { should be_false }
+    end
+  end
+
   describe "#load_configurations_from_disk" do
     subject do
       config.send(:load_configurations_from_disk)
@@ -57,10 +88,26 @@ describe Appsignal::Config do
     end
 
     context "when the file is not present" do
-      before do
-        config.should_receive(:carefully_log_error)
-        config.stub(:project_path => '/non/existing')
-      end
+      before { config.stub(:project_path => '/non/existing') }
+
+      it { should be_empty }
+    end
+  end
+
+  describe "#load_configurations_from_env" do
+    subject do
+      config.send(:load_configurations_from_env)
+      config.configurations
+    end
+
+    context "when the ENV variable is present" do
+      before { ENV['APPSIGNAL_API_KEY'] = 'ghi' }
+
+      it { should == {:heroku => {:api_key => "ghi", :active => true}} }
+    end
+
+    context "when the ENV variable is not present" do
+      before { ENV['APPSIGNAL_API_KEY'] = nil }
 
       it { should be_empty }
     end
