@@ -35,6 +35,10 @@ module Appsignal
       Appsignal.logger << @in_memory_log.string
     end
 
+    def json
+      ActiveSupport::JSON
+    end
+
     def logger=(l)
       @logger = l
     end
