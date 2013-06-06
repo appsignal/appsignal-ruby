@@ -54,6 +54,62 @@ describe Appsignal::CLI do
       "appsignal -h to see the help"
   end
 
+  describe "#notify_of_deploy" do
+    it "should validate that all options have been supplied" do
+      options = {}
+      cli.should_receive(:validate_required_options).with(
+        [:revision, :repository, :user, :environment],
+        options
+      )
+      Appsignal::Marker.should_receive(:new).
+        and_return(mock(:transmit => true))
+      cli.notify_of_deploy(options)
+    end
+
+    it "should notify of a deploy" do
+      transmitter = double
+      Appsignal::Transmitter.should_receive(:new).with(
+        'http://localhost:3000/1',
+        'markers',
+        'def'
+      ).and_return(transmitter)
+      transmitter.should_receive(:transmit).with(
+        :revision => 'aaaaa',
+        :repository => 'git@github.com:our/project.git',
+        :user => 'thijs'
+      )
+
+      cli.run([
+        'notify_of_deploy',
+        '--revision=aaaaa',
+        '--repository=git@github.com:our/project.git',
+        '--user=thijs',
+        '--environment=production'
+      ])
+    end
+  end
+
+  describe "api_check" do
+    it "should detect configured environments" do
+      authcheck = double
+      Appsignal::AuthCheck.should_receive(:new).with(
+        :development,
+        kind_of(Hash)
+      ).and_return(authcheck)
+      Appsignal::AuthCheck.should_receive(:new).with(
+        :production,
+        kind_of(Hash)
+      ).and_return(authcheck)
+      Appsignal::AuthCheck.should_receive(:new).with(
+        :test,
+        kind_of(Hash)
+      ).and_return(authcheck)
+
+      authcheck.should_receive(:perform).exactly(3).times.and_return('200')
+      cli.api_check
+    end
+  end
+
   # protected
 
   describe "#validate_required_options" do
@@ -92,41 +148,6 @@ describe Appsignal::CLI do
         )
       }.should raise_error(SystemExit)
       out_stream.string.should include("Missing options: option_2, option_3")
-    end
-  end
-
-  describe "#notify_of_deploy" do
-    it "should validate that all options have been supplied" do
-      options = {}
-      cli.should_receive(:validate_required_options).with(
-        [:revision, :repository, :user, :environment],
-        options
-      )
-      Appsignal::Marker.should_receive(:new).
-        and_return(mock(:transmit => true))
-      cli.notify_of_deploy(options)
-    end
-
-    it "should notify of a deploy" do
-      transmitter = double
-      Appsignal::Transmitter.should_receive(:new).with(
-        'http://localhost:3000/1',
-        'markers',
-        'def'
-      ).and_return(transmitter)
-      transmitter.should_receive(:transmit).with(
-        :revision => 'aaaaa',
-        :repository => 'git@github.com:our/project.git',
-        :user => 'thijs'
-      )
-
-      cli.run([
-        'notify_of_deploy',
-        '--revision=aaaaa',
-        '--repository=git@github.com:our/project.git',
-        '--user=thijs',
-        '--environment=production'
-      ])
     end
   end
 end
