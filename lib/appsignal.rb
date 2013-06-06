@@ -27,6 +27,7 @@ module Appsignal
       @in_memory_log = StringIO.new unless @in_memory_log
       @logger ||= Logger.new(@in_memory_log).tap do |l|
         l.level = Logger::INFO
+        l.formatter = Logger::Formatter.new
       end
     end
 

@@ -12,7 +12,7 @@ module Appsignal
       @thread = Thread.new do
         while true do
           send_queue if aggregator.has_transactions?
-          Appsignal.logger.debug("[#{$$}] Sleeping #{sleep_time}")
+          Appsignal.logger.debug("Sleeping #{sleep_time}")
           sleep(sleep_time)
         end
       end
@@ -21,7 +21,7 @@ module Appsignal
         ACTION,
         Appsignal.config.fetch(:api_key)
       )
-      Appsignal.logger.info("[#{$$}] Started the Appsignal agent")
+      Appsignal.logger.info("Started the Appsignal agent")
     end
 
     def enqueue(transaction)
@@ -29,7 +29,7 @@ module Appsignal
     end
 
     def send_queue
-      Appsignal.logger.debug("[#{$$}] Sending queue")
+      Appsignal.logger.debug("Sending queue")
       current_aggregator = aggregator
       @aggregator = Aggregator.new
       begin
@@ -43,7 +43,7 @@ module Appsignal
     def forked!
       @forked = true
       @aggregator = Aggregator.new
-      Appsignal.logger.info("[#{$$}] Forked the Appsignal agent")
+      Appsignal.logger.info("Forked the Appsignal agent")
     end
 
     def forked?
@@ -51,7 +51,7 @@ module Appsignal
     end
 
     def shutdown(send_current_queue=false)
-      Appsignal.logger.info("[#{$$}] Shutting down the agent")
+      Appsignal.logger.info("Shutting down the agent")
       ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
       Thread.kill(thread) if thread
       send_queue if send_current_queue && @aggregator.has_transactions?
@@ -60,7 +60,7 @@ module Appsignal
     protected
 
     def handle_result(code)
-      Appsignal.logger.debug "[#{$$}] Queue sent, response code: #{code}"
+      Appsignal.logger.debug "Queue sent, response code: #{code}"
       case code.to_i
       when 200 # ok
       when 420 # Enhance Your Calm
@@ -68,20 +68,20 @@ module Appsignal
       when 413 # Request Entity Too Large
         @sleep_time = sleep_time / 1.5
       when 429
-        Appsignal.logger.error "[#{$$}] Too many requests sent"
+        Appsignal.logger.error "Too many requests sent"
         shutdown
       when 406
-        Appsignal.logger.error "[#{$$}] Your appsignal gem cannot "\
+        Appsignal.logger.error "Your appsignal gem cannot "\
           "communicate with the API anymore, please upgrade."
         shutdown
       when 402
-        Appsignal.logger.error "[#{$$}] Payment required"
+        Appsignal.logger.error "Payment required"
         shutdown
       when 401
-        Appsignal.logger.error "[#{$$}] API token cannot be authorized"
+        Appsignal.logger.error "API token cannot be authorized"
         shutdown
       else
-        Appsignal.logger.error "[#{$$}] Unknown Appsignal response code: "\
+        Appsignal.logger.error "Unknown Appsignal response code: "\
           "'#{code}'"
       end
     end

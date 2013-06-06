@@ -16,7 +16,7 @@ module Appsignal
     attr_reader :configurations, :project_path, :env
 
     def initialize(project_path, env, logger=Appsignal.logger)
-      @project_path = project_path
+      @project_path = project_path || ENV['PWD']
       @env = env.to_sym
       @logger = logger
       @configurations = {}
