@@ -29,6 +29,20 @@ describe Appsignal::Config do
       it { should be_nil }
     end
 
+    context "the current env is in debug mode" do
+      context "using the Appsignal logger" do
+        specify { Appsignal.logger.should_not_receive(:level=) }
+      end
+
+      context "using another logger" do
+        let(:logger_parameter) { [Appsignal.logger.clone] }
+
+        specify { Appsignal.logger.should_not_receive(:level=) }
+      end
+
+      after { subject }
+    end
+
     context "the env is not in the config" do
       before { config.stub(:current_environment_present => false) }
 
