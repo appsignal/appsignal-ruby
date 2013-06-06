@@ -69,8 +69,9 @@ module Appsignal
 
     def load_configurations_from_env
       api_key = ENV['APPSIGNAL_API_KEY']
+      env = ENV['RAILS_ENV'] || :production
       if api_key.present?
-        @configurations = {:heroku => {:api_key => api_key, :active => true}}
+        @configurations = {env.to_sym => {:api_key => api_key, :active => true}}
         true
       else
         false

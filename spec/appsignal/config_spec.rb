@@ -100,16 +100,25 @@ describe Appsignal::Config do
       config.configurations
     end
 
-    context "when the ENV variable is present" do
+    context "when the ENV api_key variable is present" do
       before { ENV['APPSIGNAL_API_KEY'] = 'ghi' }
 
-      it { should == {:heroku => {:api_key => "ghi", :active => true}} }
+      it { should == {:test => {:api_key => "ghi", :active => true}} }
     end
 
-    context "when the ENV variable is not present" do
+    context "when the ENV api_key variable is not present" do
       before { ENV['APPSIGNAL_API_KEY'] = nil }
 
       it { should be_empty }
+    end
+
+    context "when the RAILS env is not present" do
+      before do
+        ENV['APPSIGNAL_API_KEY'] = 'ghi'
+        ENV['RAILS_ENV'] = nil
+      end
+
+      it { should == {:production => {:api_key => "ghi", :active => true}} }
     end
   end
 
