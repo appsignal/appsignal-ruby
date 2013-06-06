@@ -27,6 +27,9 @@ module Appsignal
       return unless used_unique_api_keys
       return unless current_environment_present
 
+      if @logger == Appsignal.logger
+        @logger.level = Logger::DEBUG if configurations[env][:debug]
+      end
       DEFAULT_CONFIG.merge(configurations[env])
     end
 
