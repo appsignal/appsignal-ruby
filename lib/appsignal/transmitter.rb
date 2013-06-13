@@ -36,8 +36,8 @@ module Appsignal
 
     def http_post(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
-        request[:'Content-Type'] = CONTENT_TYPE
-        request[:'Content-Encoding'] = CONTENT_ENCODING
+        request['Content-Type'] = CONTENT_TYPE
+        request['Content-Encoding'] = CONTENT_ENCODING
         request.body = Zlib::Deflate.
           deflate(Appsignal.json.encode(payload), Zlib::BEST_SPEED)
       end
