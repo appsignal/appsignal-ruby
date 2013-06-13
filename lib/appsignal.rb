@@ -1,4 +1,8 @@
-raise 'This appsignal gem only works with rails' unless defined?(Rails)
+begin
+  require "rails" unless defined?(Rails)
+rescue
+  raise 'This appsignal gem only works with rails'
+end
 
 module Appsignal
   class << self
