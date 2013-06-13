@@ -96,4 +96,38 @@ describe Appsignal do
       it { should be_true }
     end
   end
+
+  describe ".send_exception" do
+    it "should raise exception" do
+      agent = mock
+      Appsignal.should_receive(:agent).twice.and_return(agent)
+      agent.should_receive(:send_queue)
+
+      current = mock
+      Appsignal::Transaction.should_receive(:create).and_call_original
+      Appsignal::Transaction.should_receive(:current).twice.and_return(current)
+      current.should_receive(:add_exception).
+        with(kind_of(Appsignal::ExceptionNotification))
+      current.should_receive(:complete!)
+
+      expect {
+        begin
+          raise "I am an exception"
+        rescue Exception => e
+          Appsignal.send_exception(e)
+        end
+      }.to_not raise_error
+    end
+  end
+
+  describe ".listen_for_exception" do
+    it "should raise exception" do
+      Appsignal.should_receive(:send_exception).with(kind_of(Exception))
+      lambda {
+        Appsignal.listen_for_exception do
+          raise "I am an exception"
+        end
+      }.should raise_error(RuntimeError, "I am an exception")
+    end
+  end
 end
