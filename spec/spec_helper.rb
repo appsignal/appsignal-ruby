@@ -21,6 +21,7 @@ def log_file
 end
 
 require 'appsignal'
+require 'appsignal/cli'
 
 RSpec.configure do |config|
   config.include TransactionHelpers

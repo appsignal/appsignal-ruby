@@ -58,7 +58,6 @@ end
 require 'appsignal/agent'
 require 'appsignal/aggregator'
 require 'appsignal/auth_check'
-require 'appsignal/cli'
 require 'appsignal/config'
 require 'appsignal/exception_notification'
 require 'appsignal/integrations/passenger'
