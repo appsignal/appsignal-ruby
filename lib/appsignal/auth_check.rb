@@ -23,5 +23,25 @@ module Appsignal
       )
       transmitter.transmit({})
     end
+
+    def perform_with_result
+      begin
+        status = perform
+        case status
+        when '200'
+          result = 'AppSignal has confirmed authorisation!'
+        when '401'
+          result = 'API key not valid with AppSignal...'
+        else
+          result = 'Could not confirm authorisation: '\
+            "#{status.nil? ? 'nil' : status}"
+        end
+        [status, result]
+      rescue Exception => e
+        result = 'Something went wrong while trying to '\
+          "authenticate with AppSignal: #{e}"
+        [nil, result]
+      end
+    end
   end
 end
