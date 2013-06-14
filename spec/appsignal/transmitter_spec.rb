@@ -32,9 +32,9 @@ describe Appsignal::Transmitter do
     it "calls Net::HTTP.post_form with the correct params" do
       post = mock(:post)
       post.should_receive(:[]=).
-        with(:'Content-Type', 'application/json; charset=UTF-8')
+        with('Content-Type', 'application/json; charset=UTF-8')
       post.should_receive(:[]=).
-        with(:'Content-Encoding', 'gzip')
+        with('Content-Encoding', 'gzip')
       post.should_receive(:body=).
         with(Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED))
       Socket.stub(:gethostname => 'app1.local')
