@@ -62,12 +62,4 @@ class AppsignalGenerator < Rails::Generators::Base
       File.join(%w(. config environments *.rb))
     ).map { |o| File.basename(o, ".rb").to_sym } - EXCLUDED_ENVIRONMENTS
   end
-
-  # As based on Thor's template method
-  def new_template_content(template_file)
-    source  = File.expand_path(find_in_source_paths(template_file.to_s))
-    context = instance_eval('binding')
-    content = ERB.new(::File.binread(source), nil, '-', '@output_buffer').
-      result(context)
-  end
 end
