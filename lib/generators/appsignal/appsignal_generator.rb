@@ -63,11 +63,6 @@ class AppsignalGenerator < Rails::Generators::Base
     ).map { |o| File.basename(o, ".rb").to_sym } - EXCLUDED_ENVIRONMENTS
   end
 
-  def environment_setup?(config_file)
-    file_contents = File.read(config_file)
-    file_contents =~ Regexp.new("#{environment}:")
-  end
-
   # As based on Thor's template method
   def new_template_content(template_file)
     source  = File.expand_path(find_in_source_paths(template_file.to_s))
