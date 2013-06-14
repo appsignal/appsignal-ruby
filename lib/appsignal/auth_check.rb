@@ -29,11 +29,11 @@ module Appsignal
         status = perform
         case status
         when '200'
-          result = 'AppSignal has confirmed authorisation!'
+          result = 'AppSignal has confirmed authorization!'
         when '401'
           result = 'API key not valid with AppSignal...'
         else
-          result = 'Could not confirm authorisation: '\
+          result = 'Could not confirm authorization: '\
             "#{status.nil? ? 'nil' : status}"
         end
         [status, result]
