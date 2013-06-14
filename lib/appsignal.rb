@@ -27,11 +27,11 @@ module Appsignal
         Appsignal.agent
         env = ENV.to_hash
 
-        Appsignal::Transaction.create(SecureRandom.uuid, env)
-        Appsignal::Transaction.current.add_exception(
+        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
+        transaction.add_exception(
           Appsignal::ExceptionNotification.new(env, exception, false)
         )
-        Appsignal::Transaction.current.complete!
+        transaction.complete!
         Appsignal.agent.send_queue
       end
     end
