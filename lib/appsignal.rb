@@ -19,6 +19,27 @@ module Appsignal
       agent.enqueue(transaction)
     end
 
+    def listen_for_exception(&block)
+      yield
+    rescue Exception => exception
+      send_exception(exception)
+      raise exception
+    end
+
+    def send_exception(exception)
+      unless is_ignored_exception?(exception)
+        Appsignal.agent
+        env = ENV.to_hash
+
+        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
+        transaction.add_exception(
+          Appsignal::ExceptionNotification.new(env, exception, false)
+        )
+        transaction.complete!
+        Appsignal.agent.send_queue
+      end
+    end
+
     def transactions
       @transactions ||= {}
     end
@@ -55,6 +76,11 @@ module Appsignal
 
     def active?
       config && config[:active] == true
+    end
+
+    def is_ignored_exception?(exception)
+      Array.wrap(Appsignal.config[:ignore_exceptions]).
+        include?(exception.class.name)
     end
   end
 end

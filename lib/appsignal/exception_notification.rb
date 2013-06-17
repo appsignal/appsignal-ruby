@@ -7,11 +7,11 @@ module Appsignal
   class ExceptionNotification
     attr_reader :env, :exception, :kontroller, :request, :backtrace
 
-    def initialize(env, exception)
-      @exception  = exception
-      @backtrace  = Rails.respond_to?(:backtrace_cleaner) ?
-          Rails.backtrace_cleaner.send(:filter, exception.backtrace) :
-          exception.backtrace
+    def initialize(env, exception, rails_cleaner=true)
+      @exception = exception
+      @backtrace = rails_cleaner && Rails.respond_to?(:backtrace_cleaner) ?
+        Rails.backtrace_cleaner.send(:filter, exception.backtrace) :
+        exception.backtrace
     end
 
     def name

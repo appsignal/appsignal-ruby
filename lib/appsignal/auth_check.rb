@@ -4,13 +4,16 @@ module Appsignal
 
     attr_reader :environment, :logger
     attr_accessor :transmitter
-    delegate :uri, :to => :transmitter
 
     def initialize(*args)
       @environment = args.shift
       options = args.empty? ? {} : args.last
       @config = options[:config]
       @logger = options[:logger]
+    end
+
+    def uri
+      transmitter.uri
     end
 
     def config
