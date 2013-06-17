@@ -21,12 +21,13 @@ describe AppsignalGenerator do
         prepare_destination
         authcheck = mock()
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform).and_return('200')
+        authcheck.should_receive(:perform_with_result).
+          and_return(['200', 'everything ok'])
         run_generator_in_tmp %w(production my_app_key)
       end
 
       specify "should mention successful auth check" do
-        @output.should include('AppSignal has confirmed authorisation!')
+        @output.should include('success  everything ok')
       end
     end
 
@@ -35,12 +36,13 @@ describe AppsignalGenerator do
         prepare_destination
         authcheck = mock()
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform).and_return('401')
+        authcheck.should_receive(:perform_with_result).
+          and_return(['401', 'unauthorized'])
         run_generator_in_tmp %w(production my_app_key)
       end
 
       specify "should mention invalid key" do
-        @output.should include('Push key not valid with AppSignal...')
+        @output.should include('error  unauthorized')
       end
     end
 
@@ -49,19 +51,23 @@ describe AppsignalGenerator do
         prepare_destination
         authcheck = mock()
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform).and_return('500')
+        authcheck.should_receive(:perform_with_result).
+          and_return(['500', 'error!'])
         run_generator_in_tmp %w(production my_app_key)
       end
 
       specify "should mention failed check" do
-        @output.should include('error  Could not confirm authorisation: 500')
+        @output.should include('error  error!')
       end
     end
 
     context "internal failure" do
       before do
         prepare_destination
-        Appsignal::AuthCheck.should_receive(:new) { raise }
+        authcheck = Appsignal::AuthCheck.new
+        Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
+        authcheck.should_receive(:perform).
+          and_throw(:error)
         run_generator_in_tmp %w(production my_app_key)
       end
 

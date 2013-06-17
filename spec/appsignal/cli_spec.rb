@@ -94,7 +94,7 @@ describe Appsignal::CLI do
     end
   end
 
-  describe "api_check" do
+  describe "#api_check" do
     it "should detect configured environments" do
       authcheck = double
       Appsignal::AuthCheck.should_receive(:new).with(
@@ -110,8 +110,15 @@ describe Appsignal::CLI do
         kind_of(Hash)
       ).and_return(authcheck)
 
-      authcheck.should_receive(:perform).exactly(3).times.and_return('200')
-      cli.api_check
+      authcheck.should_receive(:perform_with_result).exactly(3).times.
+        and_return(['200', 'result'])
+      cli.run([
+        'api_check'
+      ])
+      out_stream.string.should =~ /\[development\]/
+      out_stream.string.should =~ /\[production\]/
+      out_stream.string.should =~ /\[test\]/
+      out_stream.string.should =~ /\* result/
     end
   end
 
