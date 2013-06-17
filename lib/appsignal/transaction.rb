@@ -125,7 +125,7 @@ module Appsignal
 
     def sanitize_session_data!
       @sanitized_session_data =
-        Appsignal::ParamsSanitizer.sanitize(request.session)
+        Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
       @fullpath = request.fullpath
     end
   end
