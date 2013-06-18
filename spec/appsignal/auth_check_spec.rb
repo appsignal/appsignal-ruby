@@ -7,7 +7,7 @@ describe Appsignal::AuthCheck do
     it "should give success message" do
       auth_check.should_receive(:perform).and_return('200')
       auth_check.perform_with_result.should ==
-        ['200', 'AppSignal has confirmed authorisation!']
+        ['200', 'AppSignal has confirmed authorization!']
     end
 
     it "should give 401 message" do
@@ -19,7 +19,7 @@ describe Appsignal::AuthCheck do
     it "should give error message" do
       auth_check.should_receive(:perform).and_return('402')
       auth_check.perform_with_result.should ==
-        ['402', 'Could not confirm authorisation: 402']
+        ['402', 'Could not confirm authorization: 402']
     end
   end
 

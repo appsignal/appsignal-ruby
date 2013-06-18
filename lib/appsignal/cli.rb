@@ -1,12 +1,7 @@
 require 'optparse'
 require 'logger'
 require 'yaml'
-require 'rails'
-require 'appsignal/version'
-require 'appsignal/config'
-require 'appsignal/auth_check'
-require 'appsignal/marker'
-require 'appsignal/transmitter'
+require 'appsignal'
 
 module Appsignal
   class CLI
