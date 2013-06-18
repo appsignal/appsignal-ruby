@@ -1,3 +1,5 @@
+require 'appsignal/version'
+
 task :publish do
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
