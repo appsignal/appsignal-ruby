@@ -1,9 +1,5 @@
 require 'capistrano'
-require 'rails'
-require 'appsignal/version'
-require 'appsignal/config'
-require 'appsignal/transmitter'
-require 'appsignal/marker'
+require 'appsignal'
 
 module Appsignal
   class Capistrano

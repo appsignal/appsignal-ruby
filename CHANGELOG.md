@@ -1,3 +1,6 @@
+# 0.6.1
+* Bugfix in Capistrano integration
+
 # 0.6.0
 * Support for Rails 4
 * Data that's posted to AppSignal is now gzipped
