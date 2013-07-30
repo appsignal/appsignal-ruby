@@ -49,7 +49,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#add_event' do
-      let(:event) { mock(:event, :name => 'test') }
+      let(:event) { double(:event, :name => 'test') }
 
       it 'should add an event' do
         expect {
@@ -59,7 +59,7 @@ describe Appsignal::Transaction do
     end
 
     context "using exceptions" do
-      let(:exception) { mock(:exception, :name => 'test') }
+      let(:exception) { double(:exception, :name => 'test') }
 
       describe '#add_exception' do
         it 'should add an exception' do
@@ -225,7 +225,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete!' do
-      let(:event) { mock(:event) }
+      let(:event) { double(:event) }
       before { transaction.set_process_action_event(notification_event) }
 
       it 'should remove transaction from the list' do

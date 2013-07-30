@@ -19,7 +19,7 @@ describe AppsignalGenerator do
     context "known key" do
       before do
         prepare_destination
-        authcheck = mock()
+        authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
         authcheck.should_receive(:perform_with_result).
           and_return(['200', 'everything ok'])
@@ -34,7 +34,7 @@ describe AppsignalGenerator do
     context "invalid key" do
       before do
         prepare_destination
-        authcheck = mock()
+        authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
         authcheck.should_receive(:perform_with_result).
           and_return(['401', 'unauthorized'])
@@ -49,7 +49,7 @@ describe AppsignalGenerator do
     context "failed check" do
       before do
         prepare_destination
-        authcheck = mock()
+        authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
         authcheck.should_receive(:perform_with_result).
           and_return(['500', 'error!'])

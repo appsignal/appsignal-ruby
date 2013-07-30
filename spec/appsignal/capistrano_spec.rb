@@ -46,7 +46,7 @@ describe Appsignal::Capistrano do
 
       context "proper setup" do
         before do
-          @transmitter = mock()
+          @transmitter = double
           Appsignal::Transmitter.should_receive(:new).and_return(@transmitter)
         end
 

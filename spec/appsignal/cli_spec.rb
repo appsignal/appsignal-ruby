@@ -67,7 +67,7 @@ describe Appsignal::CLI do
         options
       )
       Appsignal::Marker.should_receive(:new).
-        and_return(mock(:transmit => true))
+        and_return(double(:transmit => true))
       cli.notify_of_deploy(options)
     end
 
