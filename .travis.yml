@@ -10,6 +10,5 @@ gemfile:
   - gemfiles/3.1.gemfile
   - gemfiles/3.2.gemfile
   - gemfiles/4.0.gemfile
-  - gemfiles/edge.gemfile
 
 script: RAILS_ENV=test bundle exec rspec spec
