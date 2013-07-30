@@ -5,6 +5,7 @@ This gem collects error and performance data from your Rails
 applications and sends it to [AppSignal](https://appsignal.com)
 
 [![Build Status](https://travis-ci.org/appsignal/appsignal.png?branch=develop)](https://travis-ci.org/appsignal/appsignal)
+[![Code Climate](https://codeclimate.com/github/appsignal/appsignal.png)](https://codeclimate.com/github/appsignal/appsignal)
 
 ## Pull requests / issues
 
