@@ -3,6 +3,7 @@ require 'appsignal/version'
 task :publish do
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
+  CHANGELOG_FILE = 'CHANGELOG.md'
 
   raise '$EDITOR should be set' unless ENV['EDITOR']
 
@@ -49,6 +50,7 @@ task :publish do
   if changes.member?(VERSION_FILE)
     Appsignal.send(:remove_const, :VERSION)
     load File.expand_path(VERSION_FILE)
+    system("$EDITOR #{CHANGELOG_FILE}")
     build_and_push_gem
     create_and_push_tag
   else
