@@ -1,3 +1,6 @@
+# 0.6.2
+* Bugfix in backtrace cleaner usage for Rails 4
+
 # 0.6.1
 * Bugfix in Capistrano integration
 
