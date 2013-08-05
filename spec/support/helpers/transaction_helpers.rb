@@ -10,10 +10,11 @@ module TransactionHelpers
       begin
         raise ArgumentError, 'oh no'
       rescue ArgumentError => exception
-        env = {}
-        o.add_exception(
-          Appsignal::ExceptionNotification.new(env, exception)
-        )
+        exception.stub(:backtrace => [
+          Rails.root.join('app/controllers/somethings_controller.rb:10').to_s,
+          '/user/local/ruby/path.rb:8'
+        ])
+        o.add_exception(exception)
       end
     end
   end

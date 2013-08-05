@@ -32,9 +32,7 @@ module Appsignal
         env = ENV.to_hash
 
         transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
-        transaction.add_exception(
-          Appsignal::ExceptionNotification.new(env, exception, false)
-        )
+        transaction.add_exception(exception)
         transaction.complete!
         Appsignal.agent.send_queue
       end
@@ -99,7 +97,6 @@ require 'appsignal/agent'
 require 'appsignal/aggregator'
 require 'appsignal/auth_check'
 require 'appsignal/config'
-require 'appsignal/exception_notification'
 require 'appsignal/integrations/passenger'
 require 'appsignal/listener'
 require 'appsignal/marker'

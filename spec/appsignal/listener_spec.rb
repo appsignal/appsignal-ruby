@@ -40,7 +40,6 @@ describe Appsignal::Listener do
       end
 
       it 'should catch the exception and notify the transaction of it' do
-        Appsignal::ExceptionNotification.should_receive(:new)
         current.should_receive(:add_exception)
         middleware.call(env) rescue nil
       end
@@ -55,7 +54,6 @@ describe Appsignal::Listener do
         end
 
         it 'should ignore the error' do
-          Appsignal::ExceptionNotification.should_not_receive(:new)
           current.should_not_receive(:add_exception)
           middleware.call(env) rescue nil
         end

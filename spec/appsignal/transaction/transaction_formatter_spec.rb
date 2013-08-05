@@ -49,10 +49,13 @@ describe Appsignal::TransactionFormatter do
       context "exception content" do
         subject { formatter.hash[:exception] }
 
-        its(:keys) { should =~ [:backtrace, :exception, :message] }
-        its([:backtrace]) { should be_instance_of Array }
+        its(:keys) { should =~ [:exception, :message, :backtrace] }
         its([:exception]) { should == 'ArgumentError' }
         its([:message]) { should == 'oh no' }
+        its([:backtrace]) { should == [
+          'app/controllers/somethings_controller.rb:10',
+          '/user/local/ruby/path.rb:8'
+        ] }
       end
     end
 

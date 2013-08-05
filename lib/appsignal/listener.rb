@@ -11,9 +11,7 @@ module Appsignal
       @app.call(env)
     rescue Exception => exception
       unless Appsignal.is_ignored_exception?(exception)
-        Appsignal::Transaction.current.add_exception(
-          Appsignal::ExceptionNotification.new(env, exception)
-        )
+        Appsignal::Transaction.current.add_exception(exception)
       end
       raise exception
     ensure
