@@ -36,7 +36,7 @@ describe Appsignal::Railtie do
 
     context "non action_controller event" do
       it "should call add_event for non action_controller event" do
-        current = mock(:current)
+        current = double(:current)
         current.should_receive(:add_event)
         Appsignal::Transaction.should_receive(:current).twice.
           and_return(current)
@@ -47,7 +47,7 @@ describe Appsignal::Railtie do
 
     context "action_controller event" do
       it "should call set_process_action_event for action_controller event" do
-        current = mock(:current)
+        current = double(:current)
         current.should_receive(:set_process_action_event)
         current.should_receive(:add_event)
         Appsignal::Transaction.should_receive(:current).exactly(3).times.

@@ -25,7 +25,7 @@ describe Appsignal::AuthCheck do
 
   context "transmitting" do
     before do
-      @transmitter = mock
+      @transmitter = double
       Appsignal::Transmitter.should_receive(:new).
         with('http://localhost:3000/1', 'auth', 'def').
         and_return(@transmitter)

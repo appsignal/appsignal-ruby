@@ -19,8 +19,8 @@ describe Appsignal::Transmitter do
   end
 
   describe "#transmit" do
-    let(:response) { mock(:response, :code => '200') }
-    let(:http_client) { mock(:request, :request => response) }
+    let(:response) { double(:response, :code => '200') }
+    let(:http_client) { double(:request, :request => response) }
     before { instance.stub(:http_client => http_client) }
 
     subject { instance.transmit(:shipit => :payload) }
@@ -30,7 +30,7 @@ describe Appsignal::Transmitter do
 
   describe "#http_post" do
     it "calls Net::HTTP.post_form with the correct params" do
-      post = mock(:post)
+      post = double(:post)
       post.should_receive(:[]=).
         with('Content-Type', 'application/json; charset=UTF-8')
       post.should_receive(:[]=).

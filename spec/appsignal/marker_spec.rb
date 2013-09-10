@@ -18,7 +18,7 @@ describe Appsignal::Marker do
 
   context "transmit" do
     before do
-      @transmitter = mock()
+      @transmitter = double
       Appsignal::Transmitter.should_receive(:new).
         with('http://localhost:3000/1', 'markers', 'abc').
         and_return(@transmitter)

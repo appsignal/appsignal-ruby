@@ -105,7 +105,7 @@ describe Appsignal do
 
   describe ".send_exception" do
     it "should raise exception" do
-      agent = mock
+      agent = double
       Appsignal.should_receive(:agent).exactly(3).times.and_return(agent)
       agent.should_receive(:send_queue)
       agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
