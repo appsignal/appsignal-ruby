@@ -2,12 +2,13 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter
+    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter, :aggregator_semaphore
 
     def initialize
       return unless Appsignal.active?
       @sleep_time = 60.0
       @aggregator = Aggregator.new
+      @aggregator_semaphore = Mutex.new
       @retry_request = true
       @thread = Thread.new do
         while true do
@@ -25,15 +26,22 @@ module Appsignal
     end
 
     def enqueue(transaction)
-      aggregator.add(transaction)
+      aggregator_semaphore.synchronize do
+        aggregator.add(transaction)
+      end
     end
 
     def send_queue
       Appsignal.logger.debug("Sending queue")
-      current_aggregator = aggregator
-      @aggregator = Aggregator.new
+      aggregator_to_be_sent = nil
+      aggregator_semaphore.synchronize do
+        aggregator_to_be_sent = aggregator
+        @aggregator = Aggregator.new
+      end
       begin
-        handle_result transmitter.transmit(current_aggregator.post_processed_queue!)
+        handle_result(
+          transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
+        )
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
         Appsignal.logger.error ex.backtrace.join('\n')
