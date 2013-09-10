@@ -1,3 +1,6 @@
+# 0.6.3
+* Use a mutex around access to the aggregator
+
 # 0.6.2
 * Bugfix in backtrace cleaner usage for Rails 4
 
