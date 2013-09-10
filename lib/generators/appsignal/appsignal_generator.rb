@@ -60,6 +60,6 @@ class AppsignalGenerator < Rails::Generators::Base
   def environments
     @environments ||= Dir.glob(
       File.join(%w(. config environments *.rb))
-    ).map { |o| File.basename(o, ".rb").to_sym } - EXCLUDED_ENVIRONMENTS
+    ).map { |o| File.basename(o, ".rb") } - EXCLUDED_ENVIRONMENTS
   end
 end
