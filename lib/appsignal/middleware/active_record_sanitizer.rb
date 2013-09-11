@@ -40,7 +40,11 @@ module Appsignal
       end
 
       def connection_config
-        ActiveRecord::Base.connection_config
+        @connection_config ||= if ActiveRecord::Base.respond_to?(:connection_config)
+          ActiveRecord::Base.connection_config
+        else
+          ActiveRecord::Base.connection_pool.spec.config
+        end
       end
 
       def adapter_uses_double_quoted_table_names?

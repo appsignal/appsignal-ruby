@@ -1,16 +1,6 @@
 # encoding: utf-8
 source 'https://rubygems.org'
 
-gem 'rails', '~> 3.2'
-gem 'rspec'
-gem 'rake'
-gem 'json'
+gem 'rails', '~> 3.2.14'
 
-group :development, :test do
-  gem 'capistrano'
-  gem 'generator_spec'
-end
-
-platforms :jruby do
-  gem 'jruby-openssl'
-end
+gemspec :path => '../'
