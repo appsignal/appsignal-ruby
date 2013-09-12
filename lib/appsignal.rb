@@ -40,6 +40,12 @@ module Appsignal
       end
     end
 
+    def tag_request(params={})
+      transaction = Appsignal::Transaction.current
+      return unless transaction
+      transaction.set_tags(params)
+    end
+
     def transactions
       @transactions ||= {}
     end

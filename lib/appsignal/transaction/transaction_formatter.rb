@@ -13,7 +13,10 @@ module Appsignal
 
     def to_hash
       merge_process_action_event_with_log_entry! if process_action_event
-      add_exception_to_hash! if exception?
+      if exception?
+        add_exception_to_hash!
+        add_tags_to_hash!
+      end
       add_events_to_hash! if slow_request?
       hash
     end
@@ -28,7 +31,7 @@ module Appsignal
           :kind => 'http_request',
           :time => time,
           :environment => sanitized_environment,
-          :session_data => sanitized_session_data
+          :session_data => sanitized_session_data,
         },
         :failed => exception?
       }
@@ -41,6 +44,11 @@ module Appsignal
         o[:action] = "#{o.delete(:controller)}##{o.delete(:action)}"
         o.delete(:name)
       end
+    end
+
+    def add_tags_to_hash!
+      Appsignal.logger.warn("Five tags: #{sanitized_tags}")
+      hash[:tags] = sanitized_tags
     end
 
     def add_exception_to_hash!

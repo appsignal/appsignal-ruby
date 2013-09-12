@@ -6,7 +6,7 @@ module Appsignal
 
     def initialize
       return unless Appsignal.active?
-      @sleep_time = 60.0
+      @sleep_time = 4# 60.0
       @aggregator = Aggregator.new
       @retry_request = true
       @thread = Thread.new do

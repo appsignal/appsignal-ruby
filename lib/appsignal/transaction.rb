@@ -25,7 +25,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-      :env, :fullpath, :time
+      :env, :fullpath, :time, :tags
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -33,6 +33,7 @@ module Appsignal
       @process_action_event = nil
       @exception = nil
       @env = env
+      @tags = {}
     end
 
     def sanitized_environment
@@ -43,8 +44,17 @@ module Appsignal
       @sanitized_session_data ||= {}
     end
 
+    def sanitized_tags
+      Hash[@tags.keep_if { |k,v| v.is_a?(String) && v.length <= 100}.first(5)]
+    end
+
     def request
       ActionDispatch::Request.new(@env)
+    end
+
+    def set_tags(given_tags={})
+
+      @tags.merge!(given_tags)
     end
 
     def set_process_action_event(event)
@@ -80,6 +90,7 @@ module Appsignal
     def truncate!
       process_action_event.payload.clear
       events.clear
+      tags.clear
       sanitized_environment.clear
       sanitized_session_data.clear
       @env = nil
