@@ -31,7 +31,7 @@ module Appsignal
           :kind => 'http_request',
           :time => time,
           :environment => sanitized_environment,
-          :session_data => sanitized_session_data,
+          :session_data => sanitized_session_data
         },
         :failed => exception?
       }
