@@ -15,6 +15,7 @@ describe Appsignal::TransactionFormatter do
 
       its(:keys) { should =~ [:request_id, :log_entry, :failed] }
       its([:request_id]) { should == '1' }
+
       its([:log_entry]) { should == {
           :action => "BlogPostsController#show",
           :db_runtime => 500,
@@ -28,7 +29,7 @@ describe Appsignal::TransactionFormatter do
           :session_data => {},
           :status => "200",
           :time => 978364860.0,
-          :view_runtime => 500
+          :view_runtime => 500,
       } }
       its([:failed]) { should be_false }
     end
@@ -39,6 +40,12 @@ describe Appsignal::TransactionFormatter do
       its(:keys) { should =~ [:request_id, :log_entry, :failed, :exception] }
       its([:request_id]) { should == '1' }
       its([:failed]) { should be_true }
+
+      context "log_entry content" do
+        subject { formatter.hash[:log_entry] }
+
+        its([:tags]) { should == {'user_id' => 123} }
+      end
 
       context "exception content" do
         subject { formatter.hash[:exception] }

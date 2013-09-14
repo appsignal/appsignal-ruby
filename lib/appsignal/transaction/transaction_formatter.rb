@@ -47,8 +47,8 @@ module Appsignal
     end
 
     def add_tags_to_hash!
-      Appsignal.logger.warn("Five tags: #{sanitized_tags}")
-      hash[:tags] = sanitized_tags
+      Appsignal.logger.warn("#{tags}")
+      hash[:log_entry][:tags] = tags
     end
 
     def add_exception_to_hash!
