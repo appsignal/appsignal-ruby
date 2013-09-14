@@ -35,7 +35,6 @@ module Appsignal
     protected
 
     def http_post(payload)
-      Appsignal.logger.warn(payload.inspect)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
         request['Content-Type'] = CONTENT_TYPE
         request['Content-Encoding'] = CONTENT_ENCODING

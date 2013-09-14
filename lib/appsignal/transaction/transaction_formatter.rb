@@ -47,7 +47,6 @@ module Appsignal
     end
 
     def add_tags_to_hash!
-      Appsignal.logger.warn("#{tags}")
       hash[:log_entry][:tags] = tags
     end
 
