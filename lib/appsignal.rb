@@ -42,7 +42,7 @@ module Appsignal
 
     def tag_request(params={})
       transaction = Appsignal::Transaction.current
-      return unless transaction
+      return false unless transaction
       transaction.set_tags(params)
     end
 

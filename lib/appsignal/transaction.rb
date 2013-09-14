@@ -44,16 +44,11 @@ module Appsignal
       @sanitized_session_data ||= {}
     end
 
-    def sanitized_tags
-      Hash[@tags.keep_if { |k,v| v.is_a?(String) && v.length <= 100}.first(5)]
-    end
-
     def request
       ActionDispatch::Request.new(@env)
     end
 
     def set_tags(given_tags={})
-
       @tags.merge!(given_tags)
     end
 
@@ -125,7 +120,19 @@ module Appsignal
     def add_sanitized_context!
       sanitize_environment!
       sanitize_session_data!
+      sanitize_tags!
       @env = nil
+    end
+
+    # Only keep tags if they meet the following criteria:
+    # * Key is a symbol or string with less then 100 chars
+    # * Value is a symbol or string with less then 100 chars
+    # * Value is an integer
+    def sanitize_tags!
+      @tags.keep_if do |k,v|
+        (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
+        (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+      end
     end
 
     def sanitize_environment!

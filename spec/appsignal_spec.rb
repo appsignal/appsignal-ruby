@@ -14,6 +14,28 @@ describe Appsignal do
     end
   end
 
+  describe ".tag_request" do
+    before { Appsignal::Transaction.stub(:current => transaction) }
+
+    context "with transaction" do
+      let(:transaction) { double }
+
+      it "should call set_tags on transaction" do
+        transaction.should_receive(:set_tags).with({'a' => 'b'})
+      end
+
+      after { Appsignal.tag_request({'a' => 'b'}) }
+    end
+
+    context "without transaction" do
+      let(:transaction) { nil }
+
+      it "should call set_tags on transaction" do
+        Appsignal.tag_request.should be_false
+      end
+    end
+  end
+
   describe ".transactions" do
     subject { Appsignal.transactions }
 
