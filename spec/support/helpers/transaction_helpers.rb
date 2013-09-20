@@ -6,6 +6,7 @@ module TransactionHelpers
 
   def transaction_with_exception
     appsignal_transaction.tap do |o|
+      o.set_tags('user_id' => 123)
       begin
         raise ArgumentError, 'oh no'
       rescue ArgumentError => exception
