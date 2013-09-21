@@ -24,9 +24,23 @@ describe Appsignal::Config do
     }
 
     context 'when there is no config file' do
-      before { Dir.stub(:pwd => '/not/existing') }
+      before { config.stub(:config_file => '/not/existing') }
 
       it { should be_nil }
+    end
+
+    context "the current env is in debug mode" do
+      context "using the Appsignal logger" do
+        specify { Appsignal.logger.should_not_receive(:level=) }
+      end
+
+      context "using another logger" do
+        let(:logger_parameter) { [Appsignal.logger.clone] }
+
+        specify { Appsignal.logger.should_not_receive(:level=) }
+      end
+
+      after { subject }
     end
 
     context "the env is not in the config" do
@@ -44,6 +58,37 @@ describe Appsignal::Config do
 
   # protected
 
+  describe "#load_configurations" do
+    subject { config.send(:load_configurations) }
+
+    context "when there is a config file" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(true)
+      end
+
+      it { should be_true }
+    end
+
+    context "when there is no config file" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(false)
+        config.should_receive(:load_configurations_from_env).and_return(true)
+      end
+
+      it { should be_true }
+    end
+
+    context "when there is no env api_key" do
+      before do
+        config.should_receive(:load_configurations_from_disk).and_return(false)
+        config.should_receive(:load_configurations_from_env).and_return(false)
+        config.should_receive(:carefully_log_error)
+      end
+
+      it { should be_false }
+    end
+  end
+
   describe "#load_configurations_from_disk" do
     subject do
       config.send(:load_configurations_from_disk)
@@ -57,12 +102,37 @@ describe Appsignal::Config do
     end
 
     context "when the file is not present" do
-      before do
-        config.should_receive(:carefully_log_error)
-        config.stub(:project_path => '/non/existing')
-      end
+      before { config.stub(:project_path => '/non/existing') }
 
       it { should be_empty }
+    end
+  end
+
+  describe "#load_configurations_from_env" do
+    subject do
+      config.send(:load_configurations_from_env)
+      config.configurations
+    end
+
+    context "when the ENV api_key variable is present" do
+      before { ENV['APPSIGNAL_API_KEY'] = 'ghi' }
+
+      it { should == {:test => {:api_key => "ghi", :active => true}} }
+    end
+
+    context "when the ENV api_key variable is not present" do
+      before { ENV['APPSIGNAL_API_KEY'] = nil }
+
+      it { should be_empty }
+    end
+
+    context "when the RAILS env is not present" do
+      before do
+        ENV['APPSIGNAL_API_KEY'] = 'ghi'
+        ENV['RAILS_ENV'] = nil
+      end
+
+      it { should == {:production => {:api_key => "ghi", :active => true}} }
     end
   end
 

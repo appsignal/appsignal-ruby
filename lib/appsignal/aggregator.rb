@@ -1,10 +1,11 @@
 module Appsignal
   class Aggregator
-    attr_reader :queue, :slowness_index
+    attr_reader :queue, :slowness_index, :counts
 
     def initialize(queue = [], slowness_index = {})
       @queue = queue
       @slowness_index = slowness_index
+      @counts = {:regular_request => 0, :slow_request => 0, :exception => 0}
     end
 
     # truncates or reduces the size of event values of the transaction, and
@@ -20,6 +21,7 @@ module Appsignal
       when :exception
         transaction.convert_values_to_primitives!
       end
+      counts[transaction.type] += 1
       queue << transaction
     end
 
@@ -34,6 +36,7 @@ module Appsignal
     #
     # @returns [ Array ] Array of post processed Appsignal::Transaction objects
     def post_processed_queue!
+      Appsignal.logger.debug("Post processing queue: #{counts.inspect}")
       Appsignal::PostProcessor.new(queue).post_processed_queue!
     end
 

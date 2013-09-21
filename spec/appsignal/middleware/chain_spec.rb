@@ -7,8 +7,8 @@ describe Appsignal::Middleware do
   let(:entry) { entry_klass.new(object, {:foo => :bar}) }
 
   describe Appsignal::Middleware::Chain do
-    let(:object) { mock(:object) }
-    let(:other_object) { mock(:other_object) }
+    let(:object) { double(:object) }
+    let(:other_object) { double(:other_object) }
 
     describe "#initialize" do
       it "yields itself when passing a block" do
@@ -156,7 +156,7 @@ describe Appsignal::Middleware do
   describe Appsignal::Middleware::Entry do
 
     describe "#make_new" do
-      let(:object) { mock }
+      let(:object) { double }
       subject { entry.make_new }
 
       it "initializes the passed object" do

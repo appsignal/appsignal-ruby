@@ -2,6 +2,7 @@ require 'delegate'
 
 module Appsignal
   class TransactionFormatter < SimpleDelegator
+
     def initialize(transaction)
       super(transaction)
     end
@@ -12,7 +13,10 @@ module Appsignal
 
     def to_hash
       merge_process_action_event_with_log_entry! if process_action_event
-      add_exception_to_hash! if exception?
+      if exception?
+        add_exception_to_hash!
+        add_tags_to_hash!
+      end
       add_events_to_hash! if slow_request?
       hash
     end
@@ -21,7 +25,7 @@ module Appsignal
 
     def default_hash
       {
-        :request_id => id,
+        :request_id => request_id,
         :log_entry => {
           :path => fullpath,
           :kind => 'http_request',
@@ -40,6 +44,10 @@ module Appsignal
         o[:action] = "#{o.delete(:controller)}##{o.delete(:action)}"
         o.delete(:name)
       end
+    end
+
+    def add_tags_to_hash!
+      hash[:log_entry][:tags] = tags
     end
 
     def add_exception_to_hash!

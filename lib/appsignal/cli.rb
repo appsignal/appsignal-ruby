@@ -1,23 +1,19 @@
 require 'optparse'
 require 'logger'
 require 'yaml'
-require 'rails'
-require 'appsignal/version'
-require 'appsignal/config'
-require 'appsignal/auth_check'
-require 'appsignal/marker'
-require 'appsignal/transmitter'
+require 'appsignal'
 
 module Appsignal
   class CLI
     AVAILABLE_COMMANDS = %w(notify_of_deploy api_check).freeze
-    PROJECT_ROOT = File.join(File.dirname(__FILE__), '..', '..').freeze
+    PROJECT_ROOT = ENV['PWD']
 
     class << self
       def run(argv=ARGV)
-        unless File.exists?(File.join(ENV['PWD'], 'config/appsignal.yml'))
+        unless File.exists?(File.join(PROJECT_ROOT, 'config/appsignal.yml'))
           puts 'No config file present at config/appsignal.yml'
-          puts 'Log in to https://appsignal.com to get instructions on how to generate the config file.'
+          puts 'Log in to https://appsignal.com to get instructions on how to '\
+            'generate the config file.'
           exit(1)
         end
         options = {}
@@ -36,7 +32,8 @@ module Appsignal
               api_check
             end
           else
-            puts "Command '#{command}' does not exist, run appsignal -h to see the help"
+            puts "Command '#{command}' does not exist, run appsignal -h to "\
+              "see the help"
             exit(1)
           end
         else
@@ -108,7 +105,7 @@ module Appsignal
             :repository => options[:repository],
             :user => options[:user]
           },
-          ENV['PWD'],
+          PROJECT_ROOT,
           options[:environment],
           logger
         ).transmit
@@ -126,21 +123,8 @@ module Appsignal
           )
           puts "[#{env}]"
           puts '  * Configured not to monitor this environment' unless config[:active]
-          begin
-            result = auth_check.perform
-            case result
-            when '200'
-              puts '  * AppSignal has confirmed authorisation!'
-            when '401'
-              puts '  * API key not valid with AppSignal...'
-            else
-              puts '  * Could not confirm authorisation: '\
-                "#{result.nil? ? 'nil' : result}"
-            end
-          rescue Exception => e
-            puts "Something went wrong while trying to "\
-              "authenticate with AppSignal: #{e}"
-          end
+          status, result = auth_check.perform_with_result
+          puts "  * #{result}"
         end
       end
 

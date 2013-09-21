@@ -16,4 +16,5 @@ rerun.txt
 pickle-email-*.html
 *.gem
 Gemfile.lock
+gemfiles/*.lock
 .DS_Store

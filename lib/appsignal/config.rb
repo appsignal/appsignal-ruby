@@ -16,22 +16,25 @@ module Appsignal
     attr_reader :configurations, :project_path, :env
 
     def initialize(project_path, env, logger=Appsignal.logger)
-      @project_path = project_path
+      @project_path = project_path || ENV['PWD']
       @env = env.to_sym
       @logger = logger
       @configurations = {}
     end
 
     def load
-      return unless load_configurations_from_disk
+      return unless load_configurations
       return unless used_unique_api_keys
       return unless current_environment_present
 
+      if Appsignal.respond_to?(:logger) && @logger == Appsignal.logger
+        @logger.level = Logger::DEBUG if configurations[env][:debug]
+      end
       DEFAULT_CONFIG.merge(configurations[env])
     end
 
     def load_all
-      return unless load_configurations_from_disk
+      return unless load_configurations
       return unless used_unique_api_keys
 
       {}.tap do |result|
@@ -43,16 +46,39 @@ module Appsignal
 
     protected
 
+    def config_file
+      File.join(project_path, 'config', 'appsignal.yml')
+    end
+
+    def load_configurations
+      unless load_configurations_from_disk || load_configurations_from_env
+        carefully_log_error "no config file found at '#{config_file}'
+          and no APPSIGNAL_API_KEY found in ENV"
+        return false
+      end
+      true
+    end
+
     def load_configurations_from_disk
-      file = File.join(project_path, 'config', 'appsignal.yml')
+      file = config_file
       unless File.exists?(file)
-        carefully_log_error "config not found at: '#{file}'"
         return false
       end
       @configurations = YAML.load(ERB.new(IO.read(file)).result)
       configurations.each { |k,v| v.symbolize_keys! }
       configurations.symbolize_keys!
       true
+    end
+
+    def load_configurations_from_env
+      api_key = ENV['APPSIGNAL_API_KEY']
+      env = ENV['RAILS_ENV'] || :production
+      if api_key.present?
+        @configurations = {env.to_sym => {:api_key => api_key, :active => true}}
+        true
+      else
+        false
+      end
     end
 
     def used_unique_api_keys

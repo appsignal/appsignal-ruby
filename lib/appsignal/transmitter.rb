@@ -1,11 +1,15 @@
 require 'net/http'
 require 'net/https'
 require 'uri'
-require 'json'
 require 'rack/utils'
 
 module Appsignal
   class Transmitter
+    CONTENT_TYPE = 'application/json; charset=UTF-8'.freeze
+    CONTENT_ENCODING = 'gzip'.freeze
+    CA_FILE_PATH = File.
+      expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
+
     attr_reader :endpoint, :action, :api_key
 
     def initialize(endpoint, action, api_key, logger=nil)
@@ -30,14 +34,12 @@ module Appsignal
 
     protected
 
-    def ca_file_path
-      File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
-    end
-
     def http_post(payload)
-      Net::HTTP::Post.new(uri.request_uri).tap do |post|
-        post['Content-Type'] = 'application/json; charset=UTF-8'
-        post.body = JSON.generate(payload)
+      Net::HTTP::Post.new(uri.request_uri).tap do |request|
+        request['Content-Type'] = CONTENT_TYPE
+        request['Content-Encoding'] = CONTENT_ENCODING
+        request.body = Zlib::Deflate.
+          deflate(Appsignal.json.encode(payload), Zlib::BEST_SPEED)
       end
     end
 
@@ -46,7 +48,7 @@ module Appsignal
         if uri.scheme == 'https'
           http.use_ssl = true
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-          http.ca_file = ca_file_path
+          http.ca_file = CA_FILE_PATH
         end
       end
     end

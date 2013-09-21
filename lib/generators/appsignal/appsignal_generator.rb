@@ -44,20 +44,12 @@ class AppsignalGenerator < Rails::Generators::Base
   end
 
   def check_key
-    begin
-      auth_check = ::Appsignal::AuthCheck.new(environment)
-      result = auth_check.perform
-      if result == '200'
-        say_status :success, "AppSignal has confirmed authorisation!"
-      elsif result == '401'
-        say_status :error, "Push key not valid with AppSignal...", :red
-      else
-        say_status :error, "Could not confirm authorisation: "\
-          "#{result.nil? ? 'nil' : result}", :red
-      end
-    rescue Exception => e
-      say_status :error, "Something went wrong while trying to authenticate "\
-        "with AppSignal: #{e}", :red
+    auth_check = ::Appsignal::AuthCheck.new(environment)
+    status, result = auth_check.perform_with_result
+    if status == '200'
+      say_status :success, result
+    else
+      say_status :error, result, :red
     end
   end
 
@@ -68,19 +60,6 @@ class AppsignalGenerator < Rails::Generators::Base
   def environments
     @environments ||= Dir.glob(
       File.join(%w(. config environments *.rb))
-    ).map { |o| File.basename(o, ".rb").to_sym } - EXCLUDED_ENVIRONMENTS
-  end
-
-  def environment_setup?(config_file)
-    file_contents = File.read(config_file)
-    file_contents =~ Regexp.new("#{environment}:")
-  end
-
-  # As based on Thor's template method
-  def new_template_content(template_file)
-    source  = File.expand_path(find_in_source_paths(template_file.to_s))
-    context = instance_eval('binding')
-    content = ERB.new(::File.binread(source), nil, '-', '@output_buffer').
-      result(context)
+    ).map { |o| File.basename(o, ".rb") } - EXCLUDED_ENVIRONMENTS
   end
 end

@@ -14,6 +14,28 @@ describe Appsignal do
     end
   end
 
+  describe ".tag_request" do
+    before { Appsignal::Transaction.stub(:current => transaction) }
+
+    context "with transaction" do
+      let(:transaction) { double }
+
+      it "should call set_tags on transaction" do
+        transaction.should_receive(:set_tags).with({'a' => 'b'})
+      end
+
+      after { Appsignal.tag_request({'a' => 'b'}) }
+    end
+
+    context "without transaction" do
+      let(:transaction) { nil }
+
+      it "should call set_tags on transaction" do
+        Appsignal.tag_request.should be_false
+      end
+    end
+  end
+
   describe ".transactions" do
     subject { Appsignal.transactions }
 
@@ -41,7 +63,7 @@ describe Appsignal do
     end
 
     it 'should return the api key' do
-      subject[:api_key].should eq 'abc'
+      subject[:api_key].should eq 'ghi'
     end
 
     it 'should return ignored exceptions' do
@@ -51,6 +73,12 @@ describe Appsignal do
     it 'should return the slow request threshold' do
       subject[:slow_request_threshold].should eq 200
     end
+  end
+
+  describe ".json" do
+    subject { Appsignal.json }
+
+    it { should == ActiveSupport::JSON }
   end
 
   describe ".post_processing_middleware" do
@@ -94,6 +122,34 @@ describe Appsignal do
       before { Appsignal.stub(:config => {:active => true}) }
 
       it { should be_true }
+    end
+  end
+
+  describe ".send_exception" do
+    it "should raise exception" do
+      agent = double
+      Appsignal.should_receive(:agent).exactly(3).times.and_return(agent)
+      agent.should_receive(:send_queue)
+      agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
+
+      Appsignal::Transaction.should_receive(:create).and_call_original
+
+      begin
+        raise "I am an exception"
+      rescue Exception => e
+        Appsignal.send_exception(e)
+      end
+    end
+  end
+
+  describe ".listen_for_exception" do
+    it "should raise exception" do
+      Appsignal.should_receive(:send_exception).with(kind_of(Exception))
+      lambda {
+        Appsignal.listen_for_exception do
+          raise "I am an exception"
+        end
+      }.should raise_error(RuntimeError, "I am an exception")
     end
   end
 end

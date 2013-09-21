@@ -7,9 +7,18 @@ describe Appsignal::Middleware::ActiveRecordSanitizer do
   let(:sql_event_sanitizer) { klass.new }
   let(:connection_config) { {} }
   before do
-    ActiveRecord::Base.stub(
-      :connection_config => connection_config
-    )
+    if ActiveRecord::Base.respond_to?(:connection_config)
+      # Rails 3.1+
+      ActiveRecord::Base.stub(
+        :connection_config => connection_config
+      )
+    else
+      # Rails 3.0
+      spec = double(:config => connection_config)
+      ActiveRecord::Base.stub(
+        :connection_pool => double(:spec => spec)
+      )
+    end
   end
 
   describe "#call" do

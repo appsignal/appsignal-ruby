@@ -1,5 +1,5 @@
+ENV["RAILS_ENV"] ||= 'test'
 require 'rspec'
-require 'pry'
 require 'rails'
 require 'action_controller/railtie'
 
@@ -13,6 +13,7 @@ end
 module MyApp
   class Application < Rails::Application
     config.active_support.deprecation = proc { |message, stack| }
+    config.eager_load = false
   end
 end
 
@@ -21,6 +22,7 @@ def log_file
 end
 
 require 'appsignal'
+require 'appsignal/cli'
 
 RSpec.configure do |config|
   config.include TransactionHelpers

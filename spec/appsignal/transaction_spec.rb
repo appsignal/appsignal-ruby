@@ -48,8 +48,16 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#set_tags" do
+      it "should add tags to transaction" do
+        expect {
+          transaction.set_tags({'a' => 'b'})
+        }.to change(transaction, :tags).to({'a' => 'b'})
+      end
+    end
+
     describe '#add_event' do
-      let(:event) { mock(:event, :name => 'test') }
+      let(:event) { double(:event, :name => 'test') }
 
       it 'should add an event' do
         expect {
@@ -59,7 +67,7 @@ describe Appsignal::Transaction do
     end
 
     context "using exceptions" do
-      let(:exception) { mock(:exception, :name => 'test') }
+      let(:exception) { double(:exception, :name => 'test') }
 
       describe '#add_exception' do
         it 'should add an exception' do
@@ -102,7 +110,7 @@ describe Appsignal::Transaction do
         end
 
         context "when the request took too long" do
-          let(:duration) { 0.200 } # in seconds
+          let(:duration) { 0.201 } # in seconds
 
           it { should be_true }
         end
@@ -141,12 +149,14 @@ describe Appsignal::Transaction do
 
     describe "#truncate!" do
       subject { slow_transaction }
+      before { subject.set_tags('a' => 'b') }
 
       it "should clear the process action payload and events" do
         subject.truncate!
 
         subject.process_action_event.payload.should be_empty
         subject.events.should be_empty
+        subject.tags.should be_empty
       end
     end
 
@@ -225,7 +235,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#complete!' do
-      let(:event) { mock(:event) }
+      let(:event) { double(:event) }
       before { transaction.set_process_action_event(notification_event) }
 
       it 'should remove transaction from the list' do
@@ -280,6 +290,7 @@ describe Appsignal::Transaction do
       it "delegates to sanitize_environment! and sanitize_session_data!" do
         transaction.should_receive(:sanitize_environment!)
         transaction.should_receive(:sanitize_session_data!)
+        transaction.should_receive(:sanitize_tags!)
         subject
       end
 
@@ -298,19 +309,49 @@ describe Appsignal::Transaction do
       subject { transaction.sanitized_environment }
       before { transaction.send(:sanitize_environment!) }
 
-      its(:keys) { should == whitelisted_keys }
+      its(:keys) { should =~ whitelisted_keys }
+    end
+
+    describe '#sanitize_tags!' do
+      let(:transaction) { Appsignal::Transaction.create('1', {}) }
+      before do
+        transaction.set_tags(
+          {
+            :valid_key => 'valid_value',
+            'valid_string_key' => 'valid_value',
+            :both_symbols => :valid_value,
+            :integer_value => 1,
+            :hash_value => {'invalid' => 'hash'},
+            :array_value => ['invalid', 'array'],
+            :to_long_value => SecureRandom.urlsafe_base64(101),
+            :object => Object.new,
+            SecureRandom.urlsafe_base64(101) => 'to_long_key'
+          }
+        )
+        transaction.send(:sanitize_tags!)
+      end
+      subject { transaction.tags.keys }
+
+      it "should only return whitelisted data" do
+        should =~ [
+          :valid_key,
+          'valid_string_key',
+          :both_symbols,
+          :integer_value
+        ]
+      end
     end
 
     describe '#sanitize_session_data!' do
       subject { transaction.send(:sanitize_session_data!) }
       before do
         transaction.should respond_to(:request)
-        transaction.stub_chain(:request, :session => :foo)
+        transaction.stub_chain(:request, :session => {:foo => :bar})
         transaction.stub_chain(:request, :fullpath => :bar)
       end
 
       it "passes the session data into the params sanitizer" do
-        Appsignal::ParamsSanitizer.should_receive(:sanitize).with(:foo).
+        Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
           and_return(:sanitized_foo)
         subject
         transaction.sanitized_session_data.should == :sanitized_foo
@@ -318,6 +359,30 @@ describe Appsignal::Transaction do
 
       it "sets the fullpath of the request" do
         expect { subject }.to change(transaction, :fullpath).to(:bar)
+      end
+
+      if defined? ActionDispatch::Request::Session
+        context "with ActionDispatch::Request::Session" do
+          before do
+            transaction.should respond_to(:request)
+            transaction.stub_chain(:request, :session => action_dispatch_session)
+            transaction.stub_chain(:request, :fullpath => :bar)
+          end
+
+          it "should return an session hash" do
+            Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
+              and_return(:sanitized_foo)
+            subject
+          end
+
+          def action_dispatch_session
+            store = Class.new {
+              def load_session(env); [1, {:foo => :bar}]; end
+              def session_exists?(env); true; end
+            }.new
+            ActionDispatch::Request::Session.create(store, {}, {})
+          end
+        end
       end
     end
   end

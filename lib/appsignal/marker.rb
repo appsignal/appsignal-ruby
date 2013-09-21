@@ -18,10 +18,10 @@ module Appsignal
         transmitter = Transmitter.new(
           @config[:endpoint], ACTION, @config[:api_key]
         )
-        @logger.info "Notifying Appsignal of deploy..."
+        @logger.info("Notifying Appsignal of deploy...")
         result = transmitter.transmit(marker_data)
         if result == '200'
-          @logger.info "Appsignal has been notified of this deploy!"
+          @logger.info("Appsignal has been notified of this deploy!")
         else
           raise "#{result} at #{transmitter.uri}"
         end

@@ -13,7 +13,7 @@ Gem::Specification.new do |gem|
   gem.description   = 'The official appsignal.com gem'
   gem.summary       = 'Logs performance and exception data from your app to'\
                       'appsignal.com'
-  gem.homepage      = 'http://github.com/80beans/appsignal'
+  gem.homepage      = 'http://github.com/appsignal/appsignal'
 
   gem.files         = `git ls-files`.split($\)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
@@ -22,7 +22,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
   gem.version       = Appsignal::VERSION
 
-  gem.add_dependency 'rails', '~> 3.0'
+  gem.add_dependency 'rails', '>= 3.0'
   gem.add_dependency 'rake'
   gem.add_dependency 'json'
 

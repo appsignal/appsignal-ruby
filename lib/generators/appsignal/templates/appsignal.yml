@@ -3,7 +3,7 @@
 # Active environments count towards the account plan limit.
 <%- environments.each do |environment| -%>
 <%= environment %>:
-  <%- if selected_environment.to_sym == environment -%>
+  <%- if selected_environment == environment -%>
   # The API key used by the AppSignal gem to push this specific environment to
   # AppSignal.  (required)
   #
