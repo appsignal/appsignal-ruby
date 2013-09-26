@@ -18,8 +18,7 @@ module Appsignal
       if Appsignal.active?
         Appsignal.logger.info("Activating appsignal-#{Appsignal::VERSION}")
         at_exit { Appsignal.agent.shutdown(true) }
-        app.middleware.
-          insert_before(ActionDispatch::RemoteIp, Appsignal::Listener)
+        app.middleware.insert_before(ActionDispatch::RemoteIp, Appsignal::Listener)
 
         Appsignal.subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
           if Appsignal::Transaction.current

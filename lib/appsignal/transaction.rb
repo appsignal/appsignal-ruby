@@ -16,6 +16,7 @@ module Appsignal
     HTTP_PRAGMA HTTP_REFERER).freeze
 
     def self.create(key, env)
+      Appsignal.logger.debug("Creating transaction: #{key}")
       Thread.current[:appsignal_transaction_id] = key
       Appsignal.transactions[key] = Appsignal::Transaction.new(key, env)
     end
@@ -108,10 +109,13 @@ module Appsignal
     end
 
     def complete!
+      Appsignal.logger.debug("Completing transaction: #{@request_id}")
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         Appsignal.enqueue(current_transaction)
+      else
+        Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
       end
     end
 
