@@ -1,3 +1,6 @@
+# 0.6.4
+* More comprehensive debug logging
+
 # 0.6.3
 * Use a mutex around access to the aggregator
 * Bugfix for accessing connection config in Rails 3.0
