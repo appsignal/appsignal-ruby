@@ -24,8 +24,8 @@ module Appsignal
 
     def load
       return unless load_configurations
-      return unless used_unique_api_keys
       return unless current_environment_present
+      warn_if_duplicate_api_keys
 
       if Appsignal.respond_to?(:logger) && @logger == Appsignal.logger
         @logger.level = Logger::DEBUG if configurations[env][:debug]
@@ -35,7 +35,7 @@ module Appsignal
 
     def load_all
       return unless load_configurations
-      return unless used_unique_api_keys
+      warn_if_duplicate_api_keys
 
       {}.tap do |result|
         configurations.each do |env, config|
@@ -81,13 +81,10 @@ module Appsignal
       end
     end
 
-    def used_unique_api_keys
+    def warn_if_duplicate_api_keys
       keys = configurations.each_value.map { |config| config[:api_key] }.compact
       if keys.uniq.count < keys.count
-        carefully_log_error('Duplicate API keys found in appsignal.yml')
-        false
-      else
-        true
+        carefully_log_error('Warning: Duplicate API keys found in appsignal.yml')
       end
     end
 

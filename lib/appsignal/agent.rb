@@ -22,7 +22,7 @@ module Appsignal
         ACTION,
         Appsignal.config.fetch(:api_key)
       )
-      Appsignal.logger.info("Started the Appsignal agent")
+      Appsignal.logger.info("Started Appsignal agent version #{Appsignal::VERSION}")
     end
 
     def enqueue(transaction)
@@ -93,6 +93,5 @@ module Appsignal
           "'#{code}'"
       end
     end
-
   end
 end

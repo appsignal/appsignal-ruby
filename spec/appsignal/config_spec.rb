@@ -48,12 +48,6 @@ describe Appsignal::Config do
 
       it { should be_nil }
     end
-
-    context "when an api key is used for more then one environment" do
-      before { config.stub(:used_unique_api_keys => false) }
-
-      it { should be_nil }
-    end
   end
 
   # protected
@@ -136,28 +130,26 @@ describe Appsignal::Config do
     end
   end
 
-  describe "#used_unique_api_keys" do
+  describe "#warn_if_duplicate_api_keys" do
     let(:env) { {:api_key => :foo} }
-    subject { config.send(:used_unique_api_keys) }
+    subject { config.send(:warn_if_duplicate_api_keys) }
 
     context "when using all unique keys" do
       before do
         config.should_not_receive(:carefully_log_error)
         config.stub(:configurations => {1 => env})
       end
-
-      it { should be_true }
     end
 
     context "when using non-unique keys" do
       before do
         config.should_receive(:carefully_log_error).
-          with("Duplicate API keys found in appsignal.yml")
+          with("Warning: Duplicate API keys found in appsignal.yml")
         config.stub(:configurations => {:production => env, :staging => env})
       end
-
-      it { should be_false }
     end
+
+    after { subject }
   end
 
   describe "#current_environment_present" do
