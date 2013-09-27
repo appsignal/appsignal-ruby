@@ -12,6 +12,7 @@ module Appsignal
     end
 
     def to_hash
+
       merge_process_action_event_with_log_entry! if process_action_event
       if exception?
         add_exception_to_hash!
@@ -41,8 +42,10 @@ module Appsignal
       hash[:log_entry].merge!(process_action_event.to_appsignal_hash)
       hash[:log_entry].tap do |o|
         o.merge!(o.delete(:payload))
-        o[:action] = "#{o.delete(:controller)}##{o.delete(:action)}"
+        o.delete(:action)
+        o.delete(:controller)
         o.delete(:name)
+        o[:action] = action
       end
     end
 

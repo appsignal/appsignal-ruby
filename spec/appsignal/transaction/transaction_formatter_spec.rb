@@ -12,6 +12,7 @@ describe Appsignal::TransactionFormatter do
 
     context "with a regular request" do
       let(:transaction) { regular_transaction }
+      before { transaction.truncate! }
 
       its(:keys) { should =~ [:request_id, :log_entry, :failed] }
       its([:request_id]) { should == '1' }

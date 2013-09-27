@@ -1,5 +1,4 @@
 module TransactionHelpers
-
   def fixed_time
     @fixed_time ||= Time.at(978364860.0)
   end
@@ -64,5 +63,4 @@ module TransactionHelpers
       events.each { |event| o.add_event(event) }
     end
   end
-
 end
