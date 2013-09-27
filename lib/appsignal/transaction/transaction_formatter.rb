@@ -12,7 +12,6 @@ module Appsignal
     end
 
     def to_hash
-
       merge_process_action_event_with_log_entry! if process_action_event
       if exception?
         add_exception_to_hash!
