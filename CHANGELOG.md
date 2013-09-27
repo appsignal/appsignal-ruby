@@ -1,3 +1,6 @@
+# 0.6.5
+* Fix bug where fast requests are tracked with wrong action
+
 # 0.6.4
 * More comprehensive debug logging
 
