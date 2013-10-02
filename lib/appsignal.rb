@@ -34,6 +34,13 @@ module Appsignal
       Appsignal.agent.send_queue
     end
 
+    def add_exception(exception)
+      return unless Appsignal::Transaction.current
+      unless is_ignored_exception?(exception)
+        Appsignal::Transaction.current.add_exception(exception)
+      end
+    end
+
     def tag_request(params={})
       transaction = Appsignal::Transaction.current
       return false unless transaction

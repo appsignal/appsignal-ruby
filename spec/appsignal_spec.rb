@@ -2,9 +2,9 @@ require 'spec_helper'
 
 describe Appsignal do
   it { should respond_to :subscriber }
+  let(:transaction) { regular_transaction }
 
   describe ".enqueue" do
-    let(:transaction) { regular_transaction }
     subject { Appsignal.enqueue(transaction) }
 
     it "forwards the call to the agent" do
@@ -157,6 +157,33 @@ describe Appsignal do
           raise "I am an exception"
         end
       }.should raise_error(RuntimeError, "I am an exception")
+    end
+  end
+
+  describe ".add_exception" do
+    before { Appsignal::Transaction.stub(:current => transaction) }
+    let(:exception) { RuntimeError.new('I am an exception') }
+
+    it "should add the exception to the current transaction" do
+      transaction.should_receive(:add_exception).with(exception)
+
+      Appsignal.add_exception(exception)
+    end
+
+    it "should do nothing if there is no current transaction" do
+      Appsignal::Transaction.stub(:current => nil)
+
+      transaction.should_not_receive(:add_exception).with(exception)
+
+      Appsignal.add_exception(exception)
+    end
+
+    it "should not add the exception if it's in the ignored list" do
+      Appsignal.stub(:is_ignored_exception? => true)
+
+      transaction.should_not_receive(:add_exception).with(exception)
+
+      Appsignal.add_exception(exception)
     end
   end
 end
