@@ -27,14 +27,17 @@ module Appsignal
     end
 
     def send_exception(exception)
-      unless is_ignored_exception?(exception)
-        Appsignal.agent
-        env = ENV.to_hash
+      return if is_ignored_exception?(exception)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+      transaction.add_exception(exception)
+      transaction.complete!
+      Appsignal.agent.send_queue
+    end
 
-        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
-        transaction.add_exception(exception)
-        transaction.complete!
-        Appsignal.agent.send_queue
+    def add_exception(exception)
+      return unless Appsignal::Transaction.current
+      unless is_ignored_exception?(exception)
+        Appsignal::Transaction.current.add_exception(exception)
       end
     end
 
