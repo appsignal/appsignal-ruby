@@ -185,5 +185,11 @@ describe Appsignal do
 
       Appsignal.add_exception(exception)
     end
+
+    it "should do nothing if the exception is nil" do
+      transaction.should_not_receive(:add_exception)
+
+      Appsignal.add_exception(nil)
+    end
   end
 end

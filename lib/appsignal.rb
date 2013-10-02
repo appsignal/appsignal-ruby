@@ -35,7 +35,7 @@ module Appsignal
     end
 
     def add_exception(exception)
-      return unless Appsignal::Transaction.current
+      return if Appsignal::Transaction.current.nil? || exception.nil?
       unless is_ignored_exception?(exception)
         Appsignal::Transaction.current.add_exception(exception)
       end
