@@ -27,15 +27,11 @@ module Appsignal
     end
 
     def send_exception(exception)
-      unless is_ignored_exception?(exception)
-        Appsignal.agent
-        env = ENV.to_hash
-
-        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
-        transaction.add_exception(exception)
-        transaction.complete!
-        Appsignal.agent.send_queue
-      end
+      return if is_ignored_exception?(exception)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+      transaction.add_exception(exception)
+      transaction.complete!
+      Appsignal.agent.send_queue
     end
 
     def tag_request(params={})

@@ -126,14 +126,21 @@ describe Appsignal do
   end
 
   describe ".send_exception" do
-    it "should raise exception" do
+    it "should send the exception to AppSignal" do
       agent = double
-      Appsignal.should_receive(:agent).exactly(3).times.and_return(agent)
+      Appsignal.stub(:agent).and_return(agent)
       agent.should_receive(:send_queue)
       agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
 
       Appsignal::Transaction.should_receive(:create).and_call_original
+    end
 
+    it "should not send the exception if it's in the ignored list" do
+      Appsignal.stub(:is_ignored_exception? => true)
+      Appsignal::Transaction.should_not_receive(:create)
+    end
+
+    after do
       begin
         raise "I am an exception"
       rescue Exception => e
@@ -143,7 +150,7 @@ describe Appsignal do
   end
 
   describe ".listen_for_exception" do
-    it "should raise exception" do
+    it "should call send_exception and re-raise" do
       Appsignal.should_receive(:send_exception).with(kind_of(Exception))
       lambda {
         Appsignal.listen_for_exception do
