@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Appsignal::Transaction do
+  before :all do
+    start_agent
+  end
+
   describe '.create' do
     before { Appsignal::Transaction.create('1', {}) }
 

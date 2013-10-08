@@ -1,25 +1,9 @@
----
-# Unlisted environments will not be visible on the AppSignal site,
-# Active environments count towards the account plan limit.
-<%- environments.each do |environment| -%>
+default: &defaults
+  push_api_key: "<%= push_api_key %>"
+  name: "<%= Rails.application.class.parent_name %>"
+  slow_request_threshold: 200
+<%- environments.each do |environment| %>
 <%= environment %>:
-  <%- if selected_environment == environment -%>
-  # The API key used by the AppSignal gem to push this specific environment to
-  # AppSignal.  (required)
-  #
-  # It is possible to use ERB.
-  # api_key: "<%%= ENV['APPSIGNAL_API_KEY'] %>"
-  api_key: "<%= push_key %>"
-
-  # The cuttoff point above which a request is considered slow. (default: 200)
-  # slow_request_threshold: 200
-
-  # Change whether this environment should be monitored. (default: false)
+  <<: *defaults
   active: true
-  <%- else -%>
-  # Go to https://appsignal.com if you want to monitor your <%= environment %>
-  # environment to obtain an api key.
-  # api_key: <<%= environment.upcase %>-API-KEY>
-  active: false
-  <%- end -%>
 <%- end -%>

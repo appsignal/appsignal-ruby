@@ -1,21 +1,21 @@
 require 'spec_helper'
 
 describe Appsignal::Transmitter do
-  let(:_80beans_) { 'http://www.80beans.com' }
+  let(:config) { project_fixture_config }
   let(:action) { 'action' }
-  let(:klass) { Appsignal::Transmitter }
-  let(:instance) { klass.new(_80beans_, action, :the_api_key) }
-  subject { instance }
+  let(:instance) { Appsignal::Transmitter.new(action, config) }
 
   describe "#uri" do
-    it "returns the uri" do
-      Socket.stub(:gethostname => 'app1.local')
-      uri = subject.uri.to_s
-      uri.should include "http://www.80beans.com/action?"
-      uri.should include "api_key=the_api_key"
-      uri.should include "hostname=app1.local"
-      uri.should include "gem_version=#{Appsignal::VERSION}"
-    end
+    before { Socket.stub(:gethostname => 'app1.local') }
+
+    subject { instance.uri.to_s }
+
+    it { should include 'https://push.appsignal.com/1/action?' }
+    it { should include 'api_key=abc' }
+    it { should include 'hostname=app1.local' }
+    it { should include 'name=TestApp' }
+    it { should include 'environment=production' }
+    it { should include "gem_version=#{Appsignal::VERSION}" }
   end
 
   describe "#transmit" do
@@ -31,12 +31,17 @@ describe Appsignal::Transmitter do
   describe "#http_post" do
     it "calls Net::HTTP.post_form with the correct params" do
       post = double(:post)
-      post.should_receive(:[]=).
-        with('Content-Type', 'application/json; charset=UTF-8')
-      post.should_receive(:[]=).
-        with('Content-Encoding', 'gzip')
-      post.should_receive(:body=).
-        with(Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED))
+      post.should_receive(:[]=).with(
+        'Content-Type',
+        'application/json; charset=UTF-8'
+      )
+      post.should_receive(:[]=).with(
+        'Content-Encoding',
+        'gzip'
+      )
+      post.should_receive(:body=).with(
+        Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED)
+      )
       Socket.stub(:gethostname => 'app1.local')
 
       Net::HTTP::Post.should_receive(:new).with(
@@ -57,14 +62,16 @@ describe Appsignal::Transmitter do
     subject { instance.send(:http_client) }
 
     context "with a http uri" do
-      it { should be_instance_of(Net::HTTP) }
+      let(:config) { project_fixture_config('test') }
 
+      it { should be_instance_of(Net::HTTP) }
       its(:use_ssl?) { should be_false }
     end
 
     context "with a https uri" do
-      let(:instance) { klass.new('https://www.80beans.com', action, :the_api_key) }
+      let(:config) { project_fixture_config('production') }
 
+      it { should be_instance_of(Net::HTTP) }
       its(:use_ssl?) { should be_true }
       its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
       its(:ca_file) { Appsignal::Transmitter::CA_FILE_PATH }

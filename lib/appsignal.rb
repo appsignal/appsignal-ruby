@@ -1,13 +1,27 @@
-begin
-  require "rails" unless defined?(Rails)
-rescue
-  raise 'This appsignal gem only works with rails'
-end
+require 'rails'
 
 module Appsignal
   class << self
-    attr_accessor :subscriber
-    attr_reader :in_memory_log
+    attr_accessor :logger, :subscriber, :agent
+    attr_reader :in_memory_log, :config
+
+    def config=(c)
+      @config = c
+    end
+
+    def start
+      if config
+        if config[:debug]
+          logger.level = Logger::DEBUG
+        else
+          logger.level = Logger::INFO
+        end
+        logger.info("Starting appsignal-#{Appsignal::VERSION}")
+        @agent = Appsignal::Agent.new
+      else
+        logger.error("Can't start, no config loaded")
+      end
+    end
 
     # Convenience method for adding a transaction to the queue. This queue is
     # managed and is periodically pushed to Appsignal.
@@ -51,10 +65,6 @@ module Appsignal
       @transactions ||= {}
     end
 
-    def agent
-      @agent ||= Appsignal::Agent.new
-    end
-
     def logger
       @in_memory_log = StringIO.new unless @in_memory_log
       @logger ||= Logger.new(@in_memory_log).tap do |l|
@@ -71,14 +81,6 @@ module Appsignal
       ActiveSupport::JSON
     end
 
-    def logger=(l)
-      @logger = l
-    end
-
-    def config
-      @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
-    end
-
     def post_processing_middleware
       @post_processing_chain ||= PostProcessor.default_middleware
       yield @post_processing_chain if block_given?
@@ -90,8 +92,7 @@ module Appsignal
     end
 
     def is_ignored_exception?(exception)
-      Array.wrap(Appsignal.config[:ignore_exceptions]).
-        include?(exception.class.name)
+      Array.wrap(Appsignal.config[:ignore_exceptions]).include?(exception.class.name)
     end
   end
 end
@@ -101,10 +102,10 @@ require 'appsignal/aggregator'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/integrations/passenger'
-require 'appsignal/listener'
 require 'appsignal/marker'
 require 'appsignal/middleware'
 require 'appsignal/railtie'
+require 'appsignal/rack/listener'
 require 'appsignal/transaction'
 require 'appsignal/transmitter'
 require 'appsignal/version'

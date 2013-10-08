@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Appsignal::Aggregator do
+  before :all do
+    start_agent
+  end
+
   let(:aggregator) { Appsignal::Aggregator.new }
 
   describe "#add" do
@@ -178,5 +182,4 @@ describe Appsignal::Aggregator do
       end
     end
   end
-
 end

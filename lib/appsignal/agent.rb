@@ -18,11 +18,7 @@ module Appsignal
           sleep(sleep_time)
         end
       end
-      @transmitter = Transmitter.new(
-        Appsignal.config.fetch(:endpoint),
-        ACTION,
-        Appsignal.config.fetch(:api_key)
-      )
+      @transmitter = Transmitter.new(ACTION)
       Appsignal.logger.info('Started Appsignal agent')
     end
 

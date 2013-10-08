@@ -6,24 +6,28 @@ require './lib/generators/appsignal/appsignal_generator'
 # So change the path while running the generator
 # Change it back upon completion
 def run_generator_in_tmp(args=[])
-  FileUtils.cd("spec/tmp") do
+  FileUtils.cd(tmp_dir) do
     @output = run_generator(args)
   end
 end
 
 describe AppsignalGenerator do
   include GeneratorSpec::TestCase
-  destination File.expand_path("../../../tmp", __FILE__)
+  destination tmp_dir
+
+  before do
+    FileUtils.rm_rf(tmp_dir)
+  end
 
   context "with key" do
     context "known key" do
       before do
-        prepare_destination
         authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform_with_result).
-          and_return(['200', 'everything ok'])
-        run_generator_in_tmp %w(production my_app_key)
+        authcheck.should_receive(:perform_with_result).and_return(['200', 'everything ok'])
+
+        prepare_destination
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "should mention successful auth check" do
@@ -33,12 +37,12 @@ describe AppsignalGenerator do
 
     context "invalid key" do
       before do
-        prepare_destination
         authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform_with_result).
-          and_return(['401', 'unauthorized'])
-        run_generator_in_tmp %w(production my_app_key)
+        authcheck.should_receive(:perform_with_result).and_return(['401', 'unauthorized'])
+
+        prepare_destination
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "should mention invalid key" do
@@ -48,12 +52,12 @@ describe AppsignalGenerator do
 
     context "failed check" do
       before do
-        prepare_destination
         authcheck = double
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform_with_result).
-          and_return(['500', 'error!'])
-        run_generator_in_tmp %w(production my_app_key)
+        authcheck.should_receive(:perform_with_result).and_return(['500', 'error!'])
+
+        prepare_destination
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "should mention failed check" do
@@ -63,17 +67,19 @@ describe AppsignalGenerator do
 
     context "internal failure" do
       before do
-        prepare_destination
-        authcheck = Appsignal::AuthCheck.new
+        authcheck = Appsignal::AuthCheck.new(nil, nil)
+        authcheck.stub(:perform).and_throw(:error)
         Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-        authcheck.should_receive(:perform).
-          and_throw(:error)
-        run_generator_in_tmp %w(production my_app_key)
+
+        prepare_destination
+        run_generator_in_tmp %w(my_app_key)
       end
 
       specify "should mention internal failure" do
-        @output.should include('Something went wrong while trying to '\
-          'authenticate with AppSignal:')
+        @output.should include(
+          'Something went wrong while trying to '\
+          'authenticate with AppSignal:'
+        )
       end
     end
   end
@@ -95,9 +101,9 @@ describe AppsignalGenerator do
   end
 
   context "without capistrano" do
-    before :all do
+    before do
       prepare_destination
-      run_generator_in_tmp %w(production my_app_key)
+      run_generator_in_tmp %w(my_app_key)
     end
 
     specify "config file is created" do
@@ -116,15 +122,15 @@ describe AppsignalGenerator do
   end
 
   context "with capistrano" do
-    before :all do
+    before do
+      cap_file = File.join(destination_root, 'Capfile')
+      deploy_file = File.join(destination_root, 'config', 'deploy.rb')
+
       prepare_destination
-      cap_file = File.expand_path('Capfile', destination_root)
       File.open(cap_file, 'w') {}
-      FileUtils.mkdir(File.expand_path('config', destination_root))
-      deploy_file = File.expand_path(File.join('config', 'deploy.rb'),
-        destination_root)
+      FileUtils.mkdir(File.join(destination_root, 'config'))
       File.open(deploy_file, 'w') {}
-      run_generator_in_tmp %w(production my_app_key)
+      run_generator_in_tmp %w(my_app_key)
     end
 
     specify "config file is created and capistrano deploy file modified" do
@@ -142,40 +148,6 @@ describe AppsignalGenerator do
     specify "should not mention the deploy task" do
       @output.should_not include('No capistrano setup detected!')
       @output.should_not include('appsignal notify_of_deploy -h')
-    end
-  end
-
-  context "with custom environment" do
-    before do
-      prepare_destination
-      run_generator_in_tmp %w(development my_app_key)
-    end
-
-    specify "config file is created" do
-      destination_root.should have_structure {
-        directory 'config' do
-          file 'appsignal.yml'
-          no_file 'deploy.rb'
-        end
-      }
-    end
-  end
-
-  context "with multiple environments" do
-    context "with new environment" do
-      before :all do
-        prepare_destination
-        FileUtils.mkdir(File.expand_path('config', destination_root))
-        config_file = File.join('config', 'appsignal.yml')
-        File.open(File.expand_path(config_file, destination_root), 'w') do |f|
-          f.write("production:\n  api_key: 111")
-        end
-        run_generator_in_tmp %w(development my_app_key)
-      end
-
-      it "exits and tells to manually edit config/appsignal.yml" do
-        @output.should include('error  Looks like you already have a config file')
-      end
     end
   end
 end

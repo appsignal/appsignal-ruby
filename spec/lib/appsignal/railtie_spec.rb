@@ -3,19 +3,16 @@ require 'action_controller/railtie'
 require 'appsignal/railtie'
 
 describe Appsignal::Railtie do
-  it "should log to the in memory log before init" do
-    Appsignal.logger.error('Log something before init')
-    Appsignal.in_memory_log.string.should include('Log something before init')
-  end
-
   context "after initializing the app" do
-    before(:all) { MyApp::Application.initialize! }
+    before :all do
+      MyApp::Application.config.root = project_fixture_path
+      MyApp::Application.initialize!
+    end
 
-    it "should start logging to file and have written the in memory log" do
-      Appsignal.logger.should be_instance_of(Logger)
-      File.open(log_file).read.should include(
-        'Log something before init'
-      )
+    context "logger" do
+      subject { Appsignal.logger }
+
+      it { should be_a Logger }
     end
 
     it "should have set the appsignal subscriber" do
@@ -30,8 +27,8 @@ describe Appsignal::Railtie do
       end
     end
 
-    it "should have added the listener middleware for exceptions" do
-      MyApp::Application.middleware.to_a.should include Appsignal::Listener
+    it "should have added the listener middleware" do
+      MyApp::Application.middleware.to_a.should include Appsignal::Rack::Listener
     end
 
     context "non action_controller event" do

@@ -4,6 +4,10 @@ class PostProcessingException < Exception
 end
 
 describe Appsignal::Agent do
+  before :all do
+    start_agent
+  end
+
   let(:transaction) { regular_transaction }
 
   describe "#enqueue" do

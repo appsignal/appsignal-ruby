@@ -7,21 +7,21 @@ module Appsignal
   class Transmitter
     CONTENT_TYPE = 'application/json; charset=UTF-8'.freeze
     CONTENT_ENCODING = 'gzip'.freeze
-    CA_FILE_PATH = File.
-      expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
+    CA_FILE_PATH = File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
 
-    attr_reader :endpoint, :action, :api_key
+    attr_reader :config, :action
 
-    def initialize(endpoint, action, api_key, logger=nil)
-      @endpoint = endpoint
+    def initialize(action, config=Appsignal.config)
       @action = action
-      @api_key = api_key
+      @config = config
     end
 
     def uri
-      @uri ||= URI("#{@endpoint}/#{@action}").tap do |uri|
-        uri.query = Rack::Utils.build_query({
-          :api_key => api_key,
+      @uri ||= URI("#{config[:endpoint]}/#{action}").tap do |uri|
+        uri.query = ::Rack::Utils.build_query({
+          :api_key => config[:push_api_key],
+          :name => config[:name],
+          :environment => config.env,
           :hostname => Socket.gethostname,
           :gem_version => Appsignal::VERSION
         })
