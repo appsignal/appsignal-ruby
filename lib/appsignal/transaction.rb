@@ -1,5 +1,4 @@
-require 'socket'
-require 'appsignal/transaction/transaction_formatter'
+require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
 
 module Appsignal
@@ -105,7 +104,7 @@ module Appsignal
     end
 
     def to_hash
-      TransactionFormatter.new(self).to_hash
+      Formatter.new(self).to_hash
     end
 
     def complete!

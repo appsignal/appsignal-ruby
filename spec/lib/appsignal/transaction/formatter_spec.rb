@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Appsignal::TransactionFormatter do
-  let(:klass) { Appsignal::TransactionFormatter }
+describe Appsignal::Formatter do
+  let(:klass) { Appsignal::Formatter }
   let(:formatter) { klass.new(transaction) }
   subject { formatter }
   before { transaction.stub(:fullpath => '/foo') }

@@ -1,8 +1,7 @@
 require 'delegate'
 
 module Appsignal
-  class TransactionFormatter < SimpleDelegator
-
+  class Formatter < SimpleDelegator
     def initialize(transaction)
       super(transaction)
     end
@@ -38,7 +37,7 @@ module Appsignal
     end
 
     def merge_process_action_event_with_log_entry!
-      hash[:log_entry].merge!(process_action_event.to_appsignal_hash)
+      hash[:log_entry].merge!(event_to_hash(process_action_event))
       hash[:log_entry].tap do |o|
         o.merge!(o.delete(:payload))
         o.delete(:action)
@@ -61,7 +60,19 @@ module Appsignal
     end
 
     def add_events_to_hash!
-      hash[:events] = events.map(&:to_appsignal_hash)
+      hash[:events] = events.map do |event|
+        event_to_hash(event)
+      end
+    end
+
+    def event_to_hash(event)
+      {
+        :name => event.name,
+        :duration => event.duration,
+        :time => event.time.to_f,
+        :end => event.end.to_f,
+        :payload => event.payload
+      }
     end
   end
 end
