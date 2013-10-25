@@ -2,12 +2,12 @@ require 'spec_helper'
 require 'appsignal/capistrano'
 require 'capistrano/configuration'
 
-describe Appsignal::Capistrano do
+describe Appsignal::Integrations::Capistrano do
   let(:config) { project_fixture_config }
 
   before :all do
     @capistrano_config = Capistrano::Configuration.new
-    Appsignal::Capistrano.tasks(@capistrano_config)
+    Appsignal::Integrations::Capistrano.tasks(@capistrano_config)
   end
 
   it "should have a deploy task" do

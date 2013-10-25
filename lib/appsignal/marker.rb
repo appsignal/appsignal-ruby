@@ -1,4 +1,4 @@
-require 'appsignal/careful_logger'
+require 'appsignal/integrations/capistrano/careful_logger'
 
 module Appsignal
   class Marker
