@@ -2,12 +2,8 @@ require 'rails'
 
 module Appsignal
   class << self
-    attr_accessor :logger, :subscriber, :agent
-    attr_reader :in_memory_log, :config
-
-    def config=(c)
-      @config = c
-    end
+    attr_accessor :config, :logger, :subscriber, :agent
+    attr_reader :in_memory_log
 
     def start
       if config
