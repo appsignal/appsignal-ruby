@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'action_controller/railtie'
-require 'appsignal/railtie'
+require 'appsignal/integrations/rails'
 
-describe Appsignal::Railtie do
+describe Appsignal::Integrations::Railtie do
   context "after initializing the app" do
     before :all do
       MyApp::Application.config.root = project_fixture_path
