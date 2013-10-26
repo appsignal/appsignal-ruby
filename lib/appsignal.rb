@@ -78,7 +78,7 @@ module Appsignal
     end
 
     def post_processing_middleware
-      @post_processing_chain ||= PostProcessor.default_middleware
+      @post_processing_chain ||= Appsignal::Aggregator::PostProcessor.default_middleware
       yield @post_processing_chain if block_given?
       @post_processing_chain
     end
@@ -95,6 +95,7 @@ end
 
 require 'appsignal/agent'
 require 'appsignal/aggregator'
+require 'appsignal/aggregator/post_processor'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/integrations/passenger'
@@ -103,5 +104,7 @@ require 'appsignal/marker'
 require 'appsignal/middleware'
 require 'appsignal/rack/listener'
 require 'appsignal/transaction'
+require 'appsignal/transaction/formatter'
+require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/version'

@@ -37,7 +37,7 @@ module Appsignal
     # @returns [ Array ] Array of post processed Appsignal::Transaction objects
     def post_processed_queue!
       Appsignal.logger.debug("Post processing queue: #{counts.inspect}")
-      Appsignal::PostProcessor.new(queue).post_processed_queue!
+      Appsignal::Aggregator::PostProcessor.new(queue).post_processed_queue!
     end
 
     protected
@@ -64,4 +64,3 @@ module Appsignal
   end
 end
 
-require 'appsignal/aggregator/post_processor'

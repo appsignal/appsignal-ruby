@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Appsignal::PostProcessor do
-  let(:klass) { Appsignal::PostProcessor }
+describe Appsignal::Aggregator::PostProcessor do
+  let(:klass) { Appsignal::Aggregator::PostProcessor }
   let(:post_processor) { klass.new(transactions) }
 
   describe "#initialize" do

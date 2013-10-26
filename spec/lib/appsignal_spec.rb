@@ -142,7 +142,7 @@ describe Appsignal do
       before { Appsignal.instance_variable_set(:@post_processing_chain, nil) }
 
       it "returns the default middleware stack" do
-        Appsignal::PostProcessor.should_receive(:default_middleware)
+        Appsignal::Aggregator::PostProcessor.should_receive(:default_middleware)
         Appsignal.post_processing_middleware
       end
 

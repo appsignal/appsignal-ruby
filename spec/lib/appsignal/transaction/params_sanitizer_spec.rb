@@ -1,6 +1,7 @@
 require 'spec_helper'
 
-describe Appsignal::ParamsSanitizer do
+describe Appsignal::Transaction::ParamsSanitizer do
+  let(:klass) { Appsignal::Transaction::ParamsSanitizer }
   let(:file) { ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp') }
   let(:params) do
     {
@@ -20,12 +21,12 @@ describe Appsignal::ParamsSanitizer do
       }
     }
   end
-  let(:sanitized_params) { Appsignal::ParamsSanitizer.sanitize(params) }
-  let(:scrubbed_params) { Appsignal::ParamsSanitizer.scrub(params) }
+  let(:sanitized_params) { klass.sanitize(params) }
+  let(:scrubbed_params) { klass.scrub(params) }
 
   describe ".sanitize!" do
     subject { params }
-    before { Appsignal::ParamsSanitizer.sanitize!(subject) }
+    before { klass.sanitize!(subject) }
 
     it { should be_instance_of Hash }
     its([:text]) { should == 'string' }
@@ -102,7 +103,7 @@ describe Appsignal::ParamsSanitizer do
 
   describe ".scrub!" do
     subject { params }
-    before { Appsignal::ParamsSanitizer.scrub!(subject) }
+    before { klass.scrub!(subject) }
 
     it { should be_instance_of Hash }
     its([:text]) { should == '?' }

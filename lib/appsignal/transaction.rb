@@ -1,6 +1,3 @@
-require 'appsignal/transaction/formatter'
-require 'appsignal/transaction/params_sanitizer'
-
 module Appsignal
   class Transaction
     # Based on what Rails uses + some variables we'd like to show
@@ -92,8 +89,8 @@ module Appsignal
     end
 
     def convert_values_to_primitives!
-      Appsignal::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
-      @events.each { |o| Appsignal::ParamsSanitizer.sanitize!(o.payload) }
+      Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
+      @events.each { |o| Appsignal::Transaction::ParamsSanitizer.sanitize!(o.payload) }
       add_sanitized_context!
     end
 
@@ -146,7 +143,7 @@ module Appsignal
 
     def sanitize_session_data!
       @sanitized_session_data =
-        Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
+        Appsignal::Transaction::ParamsSanitizer.sanitize(request.session.to_hash)
       @fullpath = request.fullpath
     end
   end
