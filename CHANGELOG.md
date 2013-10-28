@@ -1,3 +1,6 @@
+# 0.6.7
+* Send HTTP_X_FORWARDED_FOR env var
+
 # 0.6.6
 * Add Appsignal.add_exception
 
