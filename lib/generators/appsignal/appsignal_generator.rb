@@ -1,7 +1,7 @@
 require 'appsignal'
 
 class AppsignalGenerator < Rails::Generators::Base
-  EXCLUDED_ENVIRONMENTS = ['test', 'development'].freeze
+  EXCLUDED_ENVIRONMENTS = ['test'].freeze
 
   source_root File.expand_path('../templates', __FILE__)
   argument :push_api_key, :type => :string
@@ -40,7 +40,7 @@ class AppsignalGenerator < Rails::Generators::Base
   def config
     Appsignal::Config.new(
       Rails.root,
-      'production'
+      'development'
     )
   end
 

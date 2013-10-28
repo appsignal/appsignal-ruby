@@ -21,6 +21,10 @@ def tmp_dir
   @tmp_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'tmp'))
 end
 
+def fixtures_dir
+  @fixtures_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'support/fixtures'))
+end
+
 require 'appsignal'
 
 RSpec.configure do |config|

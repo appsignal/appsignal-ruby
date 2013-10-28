@@ -7,6 +7,9 @@ require './lib/generators/appsignal/appsignal_generator'
 # Change it back upon completion
 def run_generator_in_tmp(args=[])
   FileUtils.cd(tmp_dir) do
+    FileUtils.mkdir_p('config/environments')
+    FileUtils.touch('config/environments/development.rb')
+    FileUtils.touch('config/environments/production.rb')
     @output = run_generator(args)
   end
 end
@@ -30,7 +33,14 @@ describe AppsignalGenerator do
         run_generator_in_tmp %w(my_app_key)
       end
 
-      specify "should mention successful auth check" do
+      it "should generate a correct config file" do
+        fixture_config_file = File.open(File.join(fixtures_dir, 'generated_config.yml')).read
+        generated_config_file = File.open(File.join(tmp_dir, 'config/appsignal.yml')).read
+
+        generated_config_file.should == fixture_config_file
+      end
+
+      it "should mention successful auth check" do
         @output.should include('success  everything ok')
       end
     end
@@ -45,7 +55,7 @@ describe AppsignalGenerator do
         run_generator_in_tmp %w(my_app_key)
       end
 
-      specify "should mention invalid key" do
+      it "should mention invalid key" do
         @output.should include('error  unauthorized')
       end
     end
@@ -60,7 +70,7 @@ describe AppsignalGenerator do
         run_generator_in_tmp %w(my_app_key)
       end
 
-      specify "should mention failed check" do
+      it "should mention failed check" do
         @output.should include('error  error!')
       end
     end
@@ -75,7 +85,7 @@ describe AppsignalGenerator do
         run_generator_in_tmp %w(my_app_key)
       end
 
-      specify "should mention internal failure" do
+      it "should mention internal failure" do
         @output.should include(
           'Something went wrong while trying to '\
           'authenticate with AppSignal:'
@@ -90,7 +100,7 @@ describe AppsignalGenerator do
       run_generator_in_tmp %w()
     end
 
-    specify "no config files are created" do
+    it "should not create a config file" do
       destination_root.should have_structure {
         directory 'config' do
           no_file 'appsignal.yml'
@@ -106,7 +116,7 @@ describe AppsignalGenerator do
       run_generator_in_tmp %w(my_app_key)
     end
 
-    specify "config file is created" do
+    it "should create a config file" do
       destination_root.should have_structure {
         directory 'config' do
           file 'appsignal.yml'
@@ -115,7 +125,7 @@ describe AppsignalGenerator do
       }
     end
 
-    specify "should mention the deploy task" do
+    it "should mention the deploy task" do
       @output.should include('No capistrano setup detected!')
       @output.should include('appsignal notify_of_deploy -h')
     end
@@ -133,7 +143,7 @@ describe AppsignalGenerator do
       run_generator_in_tmp %w(my_app_key)
     end
 
-    specify "config file is created and capistrano deploy file modified" do
+    it "should create a config file and modify the capistrano deploy file" do
       destination_root.should have_structure {
         file 'Capfile'
         directory 'config' do
@@ -145,7 +155,7 @@ describe AppsignalGenerator do
       }
     end
 
-    specify "should not mention the deploy task" do
+    it "should not mention the deploy task" do
       @output.should_not include('No capistrano setup detected!')
       @output.should_not include('appsignal notify_of_deploy -h')
     end
