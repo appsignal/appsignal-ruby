@@ -3,6 +3,14 @@ module TransactionHelpers
     @fixed_time ||= Time.at(978364860.0)
   end
 
+  def uploaded_file
+    if rails_present?
+      ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp')
+    else
+      ::Rack::Multipart::UploadedFile.new(File.join(fixtures_dir, '/uploaded_file.txt'))
+    end
+  end
+
   def transaction_with_exception
     appsignal_transaction.tap do |o|
       o.set_tags('user_id' => 123)
@@ -10,7 +18,7 @@ module TransactionHelpers
         raise ArgumentError, 'oh no'
       rescue ArgumentError => exception
         exception.stub(:backtrace => [
-          Rails.root.join('app/controllers/somethings_controller.rb:10').to_s,
+          File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10').to_s,
           '/user/local/ruby/path.rb:8'
         ])
         o.add_exception(exception)

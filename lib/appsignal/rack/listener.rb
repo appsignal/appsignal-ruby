@@ -1,5 +1,3 @@
-require 'action_dispatch'
-
 module Appsignal
   module Rack
     class Listener

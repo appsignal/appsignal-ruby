@@ -42,7 +42,7 @@ module Appsignal
     end
 
     def request
-      ActionDispatch::Request.new(@env)
+      ::Rack::Request.new(@env)
     end
 
     def set_tags(given_tags={})

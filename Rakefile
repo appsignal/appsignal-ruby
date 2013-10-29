@@ -58,6 +58,14 @@ task :publish do
   end
 end
 
+task :bundle do
+  puts `bundle --gemfile gemfiles/rack.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.0.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.1.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.2.gemfile`
+  puts `bundle --gemfile gemfiles/rails-4.0.gemfile`
+end
+
 task :spec do
   puts 'Running rack'
   puts `env BUNDLE_GEMFILE=gemfiles/rack.gemfile bundle exec rspec`

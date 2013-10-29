@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Appsignal::Transaction::Formatter do
+  before :all do
+    start_agent
+  end
+
   let(:klass) { Appsignal::Transaction::Formatter }
   let(:formatter) { klass.new(transaction) }
   subject { formatter }
@@ -53,10 +57,18 @@ describe Appsignal::Transaction::Formatter do
         its(:keys) { should =~ [:exception, :message, :backtrace] }
         its([:exception]) { should == 'ArgumentError' }
         its([:message]) { should == 'oh no' }
-        its([:backtrace]) { should == [
-          'app/controllers/somethings_controller.rb:10',
-          '/user/local/ruby/path.rb:8'
-        ] }
+
+        if rails_present?
+          its([:backtrace]) { should == [
+            'app/controllers/somethings_controller.rb:10',
+            '/user/local/ruby/path.rb:8'
+          ] }
+        else
+          its([:backtrace]) { should == [
+            File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10'),
+            '/user/local/ruby/path.rb:8'
+          ] }
+        end
       end
     end
 

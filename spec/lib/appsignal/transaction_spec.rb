@@ -39,7 +39,7 @@ describe Appsignal::Transaction do
     describe '#request' do
       subject { transaction.request }
 
-      it { should be_a ActionDispatch::Request }
+      it { should be_a ::Rack::Request }
     end
 
     describe '#set_process_action_event' do

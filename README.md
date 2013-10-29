@@ -55,7 +55,7 @@ end
 
 ## Development
 
-Run bundle install for all Gemfiles:
+Run rake bundle or, or run bundle install for all Gemfiles:
 
 ```
 bundle --gemfile gemfiles/rack.gemfile
