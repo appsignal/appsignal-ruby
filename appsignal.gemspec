@@ -24,12 +24,11 @@ Gem::Specification.new do |gem|
   gem.version       = Appsignal::VERSION
 
   gem.add_dependency 'activesupport', '>= 3.0'
-  gem.add_dependency 'json'
+  gem.add_dependency 'rack'
   gem.add_dependency 'thread_safe'
 
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency 'capistrano', '< 3.0'
-  gem.add_development_dependency 'generator_spec'
   gem.add_development_dependency 'pry'
 end

@@ -52,3 +52,27 @@ class RemoveBoringPayload
   end
 end
 ```
+
+## Development
+
+Run bundle install for all Gemfiles:
+
+```
+bundle --gemfile gemfiles/rack.gemfile
+bundle --gemfile gemfiles/rails-3.0.gemfile
+bundle --gemfile gemfiles/rails-3.1.gemfile
+bundle --gemfile gemfiles/rails-3.2.gemfile
+bundle --gemfile gemfiles/rails-4.0.gemfile
+```
+
+To run the spec suite with a specific Gemfile:
+
+```
+BUNDLE_GEMFILE=gemfiles/rack.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec
+```
+
+Or run `rake spec` to run specs for all Gemfiles. Travis will run specs for these Gemfiles as well.
