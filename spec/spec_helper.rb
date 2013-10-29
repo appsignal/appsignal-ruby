@@ -1,9 +1,9 @@
-ENV["RAILS_ENV"] ||= 'test'
+ENV['RAILS_ENV'] ||= 'test'
 require 'rspec'
 require 'rails'
 require 'action_controller/railtie'
 
-Dir[File.expand_path(File.join(File.dirname(__FILE__),'support','**','*.rb'))].each {|f| require f}
+Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support','**','*.rb'))].each {|f| require f}
 
 module Rails
   class Application
@@ -17,18 +17,25 @@ module MyApp
   end
 end
 
-def log_file
-  File.join(File.dirname(__FILE__), '../log/appsignal.log')
+def tmp_dir
+  @tmp_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'tmp'))
+end
+
+def fixtures_dir
+  @fixtures_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'support/fixtures'))
 end
 
 require 'appsignal'
-require 'appsignal/cli'
 
 RSpec.configure do |config|
-  config.include TransactionHelpers
+  config.include ConfigHelpers
   config.include NotificationHelpers
+  config.include TransactionHelpers
 
-  config.before :all do
-    FileUtils.rm(log_file) if File.exists?(log_file)
+  config.before do
+    ENV['PWD'] = File.expand_path(File.join(File.dirname(__FILE__), '../'))
+    ENV['RAILS_ENV'] = 'test'
+    ENV.delete('APPSIGNAL_PUSH_API_KEY')
+    ENV.delete('APPSIGNAL_API_KEY')
   end
 end

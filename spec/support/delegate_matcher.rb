@@ -35,5 +35,4 @@ RSpec::Matchers.define :delegate do |method|
 
   chain(:to) { |receiver| @to = receiver }
   chain(:with_prefix) { @prefix = true }
-
 end

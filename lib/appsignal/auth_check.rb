@@ -2,29 +2,15 @@ module Appsignal
   class AuthCheck
     ACTION = 'auth'.freeze
 
-    attr_reader :environment, :logger
-    attr_accessor :transmitter
+    attr_reader :config, :logger
 
-    def initialize(*args)
-      @environment = args.shift
-      options = args.empty? ? {} : args.last
-      @config = options[:config]
-      @logger = options[:logger]
-    end
-
-    def uri
-      transmitter.uri
-    end
-
-    def config
-      @config ||= Appsignal::Config.new(Rails.root, environment, logger).load
+    def initialize(config, logger)
+      @config = config
+      @logger = logger
     end
 
     def perform
-      self.transmitter = Appsignal::Transmitter.new(
-        config[:endpoint], ACTION, config[:api_key]
-      )
-      transmitter.transmit({})
+      Appsignal::Transmitter.new(ACTION, config).transmit({})
     end
 
     def perform_with_result
@@ -37,12 +23,12 @@ module Appsignal
           result = 'API key not valid with AppSignal...'
         else
           result = 'Could not confirm authorization: '\
-            "#{status.nil? ? 'nil' : status}"
+                   "#{status.nil? ? 'nil' : status}"
         end
         [status, result]
       rescue Exception => e
         result = 'Something went wrong while trying to '\
-          "authenticate with AppSignal: #{e}"
+                 "authenticate with AppSignal: #{e}"
         [nil, result]
       end
     end

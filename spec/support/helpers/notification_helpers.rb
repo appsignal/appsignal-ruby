@@ -1,5 +1,4 @@
 module NotificationHelpers
-
   def notification_event(args={})
     args = {
       :name => 'process_action.action_controller',
@@ -25,5 +24,4 @@ module NotificationHelpers
       :db_runtime => 500
     }.merge(args)
   end
-
 end

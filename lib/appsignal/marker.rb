@@ -1,4 +1,4 @@
-require 'appsignal/careful_logger'
+require 'appsignal/integrations/capistrano/careful_logger'
 
 module Appsignal
   class Marker
@@ -7,27 +7,26 @@ module Appsignal
     attr_reader :marker_data, :config, :logger
     ACTION = 'markers'
 
-    def initialize(marker_data, root_path, rails_env, logger)
+    def initialize(marker_data, config, logger)
       @marker_data = marker_data
-      @config = Appsignal::Config.new(root_path, rails_env, logger).load
+      @config = config
       @logger = logger
     end
 
     def transmit
       begin
-        transmitter = Transmitter.new(
-          @config[:endpoint], ACTION, @config[:api_key]
-        )
-        @logger.info("Notifying Appsignal of deploy...")
+        transmitter = Transmitter.new(ACTION, config)
+        logger.info('Notifying Appsignal of deploy...')
         result = transmitter.transmit(marker_data)
         if result == '200'
-          @logger.info("Appsignal has been notified of this deploy!")
+          logger.info('Appsignal has been notified of this deploy!')
         else
           raise "#{result} at #{transmitter.uri}"
         end
       rescue Exception => e
-        message = "Something went wrong while trying to notify Appsignal: #{e}"
-        carefully_log_error message
+        carefully_log_error(
+          "Something went wrong while trying to notify Appsignal: #{e}"
+        )
       end
     end
   end
