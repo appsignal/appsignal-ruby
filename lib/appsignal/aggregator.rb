@@ -2,7 +2,7 @@ module Appsignal
   class Aggregator
     attr_reader :queue, :slowness_index, :counts
 
-    def initialize(queue = [], slowness_index = {})
+    def initialize(queue=ThreadSafe::Array.new, slowness_index={})
       @queue = queue
       @slowness_index = slowness_index
       @counts = {:regular_request => 0, :slow_request => 0, :exception => 0}
