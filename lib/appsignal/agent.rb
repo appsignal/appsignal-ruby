@@ -2,13 +2,12 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter, :aggregator_semaphore
+    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter
 
     def initialize
       return unless Appsignal.active?
       @sleep_time = 60.0
       @aggregator = Aggregator.new
-      @aggregator_semaphore = Mutex.new
       @retry_request = true
       @thread = Thread.new do
         Appsignal.logger.debug('Starting agent thread')
@@ -24,18 +23,20 @@ module Appsignal
 
     def enqueue(transaction)
       Appsignal.logger.debug('Enqueueing transaction')
-      aggregator_semaphore.synchronize do
-        aggregator.add(transaction)
-      end
+      aggregator.add(transaction)
     end
 
     def send_queue
       Appsignal.logger.debug('Sending queue')
+
+      # Replace aggregator while making sure no thread
+      # is adding to it's queue
       aggregator_to_be_sent = nil
-      aggregator_semaphore.synchronize do
+      Thread.exclusive do
         aggregator_to_be_sent = aggregator
         @aggregator = Aggregator.new
       end
+
       begin
         handle_result(
           transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
