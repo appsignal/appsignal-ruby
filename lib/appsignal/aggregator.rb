@@ -63,4 +63,3 @@ module Appsignal
     end
   end
 end
-
