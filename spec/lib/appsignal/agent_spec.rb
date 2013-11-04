@@ -10,6 +10,20 @@ describe Appsignal::Agent do
 
   let(:transaction) { regular_transaction }
 
+  describe "#sleep_time" do
+    subject { Appsignal::Agent.new.sleep_time }
+
+    it { should == 60 }
+
+    context "for development" do
+      before do
+        Appsignal.config.stub(:env => 'development')
+      end
+
+      it { should == 10 }
+    end
+  end
+
   describe "#enqueue" do
     it "forwards to the aggregator" do
       subject.aggregator.should respond_to(:add)

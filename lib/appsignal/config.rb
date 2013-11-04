@@ -38,12 +38,12 @@ module Appsignal
     end
 
     def loaded?
-      !! @config_hash
+      !! config_hash
     end
 
     def [](key)
       return unless loaded?
-      @config_hash[key]
+      config_hash[key]
     end
 
     protected
