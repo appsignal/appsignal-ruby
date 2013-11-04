@@ -1,4 +1,7 @@
-require 'rails'
+require 'logger'
+require 'rack'
+require 'thread_safe'
+require 'active_support/json'
 
 module Appsignal
   class << self
@@ -88,7 +91,7 @@ module Appsignal
     end
 
     def is_ignored_exception?(exception)
-      Array.wrap(Appsignal.config[:ignore_exceptions]).include?(exception.class.name)
+      Appsignal.config[:ignore_exceptions].include?(exception.class.name)
     end
   end
 end
@@ -99,7 +102,7 @@ require 'appsignal/aggregator/post_processor'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/integrations/passenger'
-require 'appsignal/integrations/rails'
+require 'appsignal/integrations/rails' if defined?(Rails)
 require 'appsignal/marker'
 require 'appsignal/middleware'
 require 'appsignal/rack/listener'

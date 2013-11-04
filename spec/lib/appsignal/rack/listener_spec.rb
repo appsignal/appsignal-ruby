@@ -11,6 +11,10 @@ class AppWithError
 end
 
 describe Appsignal::Rack::Listener do
+  before :all do
+    start_agent
+  end
+
   describe '#call' do
     let(:app) { double(:call => true) }
     let(:env) { {'action_dispatch.request_id' => '1'} }

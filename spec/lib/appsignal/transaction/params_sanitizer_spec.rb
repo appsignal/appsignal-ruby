@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Appsignal::Transaction::ParamsSanitizer do
   let(:klass) { Appsignal::Transaction::ParamsSanitizer }
-  let(:file) { ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp') }
+  let(:file) { uploaded_file }
   let(:params) do
     {
       :text => 'string',
@@ -31,7 +31,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
     it { should be_instance_of Hash }
     its([:text]) { should == 'string' }
     its([:file]) { should be_instance_of String }
-    its([:file]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+    its([:file]) { should include '::UploadedFile' }
 
     context "hash" do
       subject { params[:hash] }
@@ -46,7 +46,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
         its([0]) { should == 'something' }
         its([1]) { should == 'else' }
         its([2]) { should be_instance_of String }
-        its([2]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+        its([2]) { should include '::UploadedFile' }
 
         context "nested hash" do
           subject { params[:hash][:nested_array][3] }
@@ -54,7 +54,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
           it { should be_instance_of Hash }
           its([:key]) { should == 'value' }
           its([:file]) { should be_instance_of String }
-          its([:file]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+          its([:file]) { should include '::UploadedFile' }
         end
       end
     end
@@ -66,7 +66,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
     it { should be_instance_of Hash }
     its([:text]) { should == 'string' }
     its([:file]) { should be_instance_of String }
-    its([:file]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+    its([:file]) { should include '::UploadedFile' }
 
     it "does not change the original params" do
       subject
@@ -87,7 +87,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
         its([0]) { should == 'something' }
         its([1]) { should == 'else' }
         its([2]) { should be_instance_of String }
-        its([2]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+        its([2]) { should include '::UploadedFile' }
 
         context "nested hash" do
           subject { sanitized_params[:hash][:nested_array][3] }
@@ -95,7 +95,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
           it { should be_instance_of Hash }
           its([:key]) { should == 'value' }
           its([:file]) { should be_instance_of String }
-          its([:file]) { should include '#<ActionDispatch::Http::UploadedFile:' }
+          its([:file]) { should include '::UploadedFile' }
         end
       end
     end

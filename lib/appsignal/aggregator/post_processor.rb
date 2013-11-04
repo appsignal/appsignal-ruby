@@ -19,9 +19,10 @@ module Appsignal
       def self.default_middleware
         Middleware::Chain.new do |chain|
           chain.add Appsignal::Middleware::DeleteBlanks
-          chain.add Appsignal::Middleware::ActionViewSanitizer
-          if defined?(ActiveRecord)
-            require 'appsignal/middleware/active_record_sanitizer'
+          if defined?(::ActionView)
+            chain.add Appsignal::Middleware::ActionViewSanitizer
+          end
+          if defined?(::ActiveRecord)
             chain.add Appsignal::Middleware::ActiveRecordSanitizer
           end
         end

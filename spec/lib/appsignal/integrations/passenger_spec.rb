@@ -1,6 +1,5 @@
 require 'spec_helper'
 
-
 describe "Passenger integration" do
   let(:file) { File.expand_path('lib/appsignal/integrations/passenger.rb') }
   before(:all) { module PhusionPassenger ; end }

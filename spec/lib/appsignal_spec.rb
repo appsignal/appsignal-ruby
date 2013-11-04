@@ -4,7 +4,7 @@ describe Appsignal do
   before do
     # Make sure we have a clean state because we want to test
     # initialization here.
-    Appsignal.agent.try(:shutdown)
+    Appsignal.agent.shutdown if Appsignal.agent
     Appsignal.config = nil
     Appsignal.agent = nil
   end

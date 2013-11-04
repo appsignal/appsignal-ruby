@@ -1,21 +1,23 @@
 ENV['RAILS_ENV'] ||= 'test'
 require 'rspec'
-require 'rails'
-require 'action_controller/railtie'
+require 'pry'
+require 'active_support/notifications'
+require 'appsignal'
 
-Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support','**','*.rb'))].each {|f| require f}
-
-module Rails
-  class Application
-  end
+begin
+  require 'rails'
+  Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/rails','*.rb'))].each {|f| require f}
+  RAILS_PRESENT = true
+rescue LoadError
+  puts 'Rails not present, skipping Rails specific specs'
+  RAILS_PRESENT = false
 end
 
-module MyApp
-  class Application < Rails::Application
-    config.active_support.deprecation = proc { |message, stack| }
-    config.eager_load = false
-  end
+def rails_present?
+  RAILS_PRESENT
 end
+
+Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
 
 def tmp_dir
   @tmp_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'tmp'))
@@ -24,8 +26,6 @@ end
 def fixtures_dir
   @fixtures_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'support/fixtures'))
 end
-
-require 'appsignal'
 
 RSpec.configure do |config|
   config.include ConfigHelpers

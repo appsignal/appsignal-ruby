@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Appsignal::Aggregator::PostProcessor do
+  before :all do
+    start_agent
+  end
+
   let(:klass) { Appsignal::Aggregator::PostProcessor }
   let(:post_processor) { klass.new(transactions) }
 
@@ -77,8 +81,13 @@ describe Appsignal::Aggregator::PostProcessor do
 
     it "should include the default middleware stack" do
       subject.exists?(Appsignal::Middleware::DeleteBlanks).should be_true
-      subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_true
-      subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_true
+      if rails_present?
+        subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_true
+        subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_true
+      else
+        subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_false
+        subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_false
+      end
     end
   end
 end
