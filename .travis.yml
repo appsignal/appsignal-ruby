@@ -13,4 +13,8 @@ gemfile:
   - "gemfiles/rails-3.2.gemfile"
   - "gemfiles/rails-4.0.gemfile"
 
+matrix:
+  allow_failures:
+    - rvm: "jruby-19mode"
+
 script: "RAILS_ENV=test bundle exec rspec spec"
