@@ -1,6 +1,6 @@
-require 'appsignal/version'
-
 task :publish do
+  require 'appsignal/version'
+
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
   CHANGELOG_FILE = 'CHANGELOG.md'
