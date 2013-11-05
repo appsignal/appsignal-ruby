@@ -29,6 +29,7 @@ module Appsignal
     end
 
     def transmit(payload)
+      Appsignal.logger.debug "Transmitting payload to #{uri}"
       http_client.request(http_post(payload)).code
     end
 
