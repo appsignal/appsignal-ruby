@@ -2,11 +2,11 @@ ENV['RAILS_ENV'] ||= 'test'
 require 'rspec'
 require 'pry'
 require 'active_support/notifications'
-require 'appsignal'
 
 begin
   require 'rails'
   Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/rails','*.rb'))].each {|f| require f}
+  puts 'Rails present, running Rails specific specs'
   RAILS_PRESENT = true
 rescue LoadError
   puts 'Rails not present, skipping Rails specific specs'
@@ -16,6 +16,8 @@ end
 def rails_present?
   RAILS_PRESENT
 end
+
+require 'appsignal'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
 

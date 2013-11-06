@@ -59,16 +59,17 @@ task :publish do
 end
 
 task :bundle do
-  puts `bundle --gemfile gemfiles/rack.gemfile`
+  puts `bundle --gemfile gemfiles/no_dependencies.gemfile`
   puts `bundle --gemfile gemfiles/rails-3.0.gemfile`
   puts `bundle --gemfile gemfiles/rails-3.1.gemfile`
   puts `bundle --gemfile gemfiles/rails-3.2.gemfile`
   puts `bundle --gemfile gemfiles/rails-4.0.gemfile`
+  puts `bundle --gemfile gemfiles/sinatra.gemfile`
 end
 
 task :spec do
-  puts 'Running rack'
-  puts `env BUNDLE_GEMFILE=gemfiles/rack.gemfile bundle exec rspec`
+  puts 'Running no dependencies'
+  puts `env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec`
 
   puts 'Running rails-3.0'
   puts `env BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec`
@@ -81,4 +82,7 @@ task :spec do
 
   puts 'Running rails-4.0'
   puts `env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec`
+
+  puts 'Running sinatra'
+  puts `env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec`
 end

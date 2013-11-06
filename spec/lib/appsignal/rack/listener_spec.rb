@@ -14,13 +14,16 @@ describe Appsignal::Rack::Listener do
   before :all do
     start_agent
   end
+  let(:app) { double(:call => true) }
+  let(:middleware) { Appsignal::Rack::Listener.new(app, {})}
+  let(:env) { {} }
 
   describe '#call' do
-    let(:app) { double(:call => true) }
-    let(:env) { {'action_dispatch.request_id' => '1'} }
-    let(:middleware) { Appsignal::Rack::Listener.new(app, {})}
     let(:current) { double(:complete! => true, :add_exception => true) }
-    before { Appsignal::Transaction.stub(:current => current) }
+    before do
+      middleware.stub(:request_id => '1')
+      Appsignal::Transaction.stub(:current => current)
+    end
 
     describe 'around call' do
       it 'should create an appsignal transaction' do
@@ -78,6 +81,24 @@ describe Appsignal::Rack::Listener do
 
         after { middleware.call(env) rescue nil }
       end
+    end
+  end
+
+  describe "#request_id" do
+    subject { middleware.request_id(env) }
+
+    context "when Rails provides a request_id" do
+      let(:env) { {'action_dispatch.request_id' => '1'} }
+
+      it { should == '1' }
+    end
+
+    context "when Rails does not provide a request_id" do
+      before do
+        SecureRandom.stub(:uuid => '2')
+      end
+
+      it { should == '2' }
     end
   end
 end

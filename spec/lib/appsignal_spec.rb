@@ -10,7 +10,6 @@ describe Appsignal do
   end
 
   let(:transaction) { regular_transaction }
-  it { should respond_to :subscriber }
 
   describe ".config=" do
     it "should set the config" do

@@ -5,7 +5,7 @@ require 'active_support/json'
 
 module Appsignal
   class << self
-    attr_accessor :config, :logger, :subscriber, :agent
+    attr_accessor :config, :logger, :agent
     attr_reader :in_memory_log
 
     def start
@@ -101,13 +101,15 @@ require 'appsignal/aggregator'
 require 'appsignal/aggregator/post_processor'
 require 'appsignal/auth_check'
 require 'appsignal/config'
-require 'appsignal/integrations/passenger'
-require 'appsignal/integrations/rails' if defined?(Rails)
 require 'appsignal/marker'
 require 'appsignal/middleware'
 require 'appsignal/rack/listener'
+require 'appsignal/rack/instrumentation'
 require 'appsignal/transaction'
 require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/version'
+
+require 'appsignal/integrations/passenger'
+require 'appsignal/integrations/rails'
