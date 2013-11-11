@@ -116,6 +116,17 @@ module Appsignal
 
     protected
 
+    def http_queue_start
+      return unless env
+      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
+      if env_var
+        value = env_var.tr('^0-9', '')
+        unless value.empty?
+          value.to_f / 1_000_000
+        end
+      end
+    end
+
     def add_sanitized_context!
       sanitize_environment!
       sanitize_session_data!
