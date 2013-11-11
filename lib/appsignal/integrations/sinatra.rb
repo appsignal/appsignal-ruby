@@ -1,3 +1,5 @@
+require 'appsignal'
+
 Appsignal.logger.info('Loading Sinatra integration')
 
 app_settings = ::Sinatra::Application.settings
