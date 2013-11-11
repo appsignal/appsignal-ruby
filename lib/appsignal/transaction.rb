@@ -22,7 +22,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-      :env, :fullpath, :time, :tags
+                :env, :fullpath, :time, :tags
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -50,6 +50,7 @@ module Appsignal
     end
 
     def set_process_action_event(event)
+      binding.pry
       @process_action_event = event
       if event && event.payload
         @action = "#{event.payload[:controller]}##{event.payload[:action]}"
@@ -71,8 +72,7 @@ module Appsignal
 
     def slow_request?
       return false unless process_action_event && process_action_event.payload
-      Appsignal.config[:slow_request_threshold] <=
-        process_action_event.duration
+      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
     end
 
     def slower?(transaction)
