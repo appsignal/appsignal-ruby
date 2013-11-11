@@ -2,7 +2,7 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter
+    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter, :subscriber
 
     def initialize
       return unless Appsignal.active?
@@ -12,17 +12,37 @@ module Appsignal
         @sleep_time = 60.0
       end
       @aggregator = Aggregator.new
-      @retry_request = true
+      @transmitter = Transmitter.new(ACTION)
+      subscribe
+      start_thread
+      # Shutdown at exit. This does not work in passenger, see integrations/passenger
+      #at_exit { Appsignal.agent.shutdown(true) }
+      Appsignal.logger.info('Started Appsignal agent')
+    end
+
+    def start_thread
+      Appsignal.logger.debug('Starting agent thread')
       @thread = Thread.new do
-        Appsignal.logger.debug('Starting agent thread')
-        while true do
+        loop do
           send_queue if aggregator.has_transactions?
           Appsignal.logger.debug("Sleeping #{sleep_time}")
           sleep(sleep_time)
         end
       end
-      @transmitter = Transmitter.new(ACTION)
-      Appsignal.logger.info('Started Appsignal agent')
+    end
+
+    def subscribe
+      Appsignal.logger.debug('Subscribing to notifications')
+      # Subscribe to notifications that don't start with a !
+      @subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
+        if Appsignal::Transaction.current
+          event = ActiveSupport::Notifications::Event.new(*args)
+          if event.name.start_with?('process_action')
+            Appsignal::Transaction.current.set_process_action_event(event)
+          end
+          Appsignal::Transaction.current.add_event(event)
+        end
+      end
     end
 
     def enqueue(transaction)
@@ -32,7 +52,6 @@ module Appsignal
 
     def send_queue
       Appsignal.logger.debug('Sending queue')
-
       # Replace aggregator while making sure no thread
       # is adding to it's queue
       aggregator_to_be_sent = nil
@@ -63,7 +82,7 @@ module Appsignal
 
     def shutdown(send_current_queue=false)
       Appsignal.logger.info('Shutting down the agent')
-      ActiveSupport::Notifications.unsubscribe(Appsignal.subscriber)
+      ActiveSupport::Notifications.unsubscribe(subscriber)
       Thread.kill(thread) if thread
       send_queue if send_current_queue && @aggregator.has_transactions?
     end

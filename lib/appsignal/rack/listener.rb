@@ -14,7 +14,7 @@ module Appsignal
       end
 
       def call_with_appsignal_monitoring(env)
-        Appsignal::Transaction.create(env['action_dispatch.request_id'], env)
+        Appsignal::Transaction.create(request_id(env), env)
         @app.call(env)
       rescue Exception => exception
         unless Appsignal.is_ignored_exception?(exception)
@@ -23,6 +23,10 @@ module Appsignal
         raise exception
       ensure
         Appsignal::Transaction.current.complete!
+      end
+
+      def request_id(env)
+        env['action_dispatch.request_id'] || SecureRandom.uuid
       end
     end
   end

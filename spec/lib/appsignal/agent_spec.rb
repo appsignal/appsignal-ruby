@@ -24,6 +24,56 @@ describe Appsignal::Agent do
     end
   end
 
+  describe "#start_thread" do
+    it "should have started a background thread" do
+      subject.thread.should be_a(Thread)
+    end
+  end
+
+  describe "#subscribe" do
+    it "should have set the appsignal subscriber" do
+      if defined? ActiveSupport::Notifications::Fanout::Subscribers::Timed
+        # ActiveSupport 4
+        subject.subscriber.should be_a ActiveSupport::Notifications::Fanout::Subscribers::Timed
+      else
+        # ActiveSupport 3
+        subject.subscriber.should be_a ActiveSupport::Notifications::Fanout::Subscriber
+      end
+    end
+
+    context "handling events" do
+      before do
+        Appsignal::Transaction.create('123', {})
+      end
+
+      it "should should not listen to events that start with a bang" do
+        Appsignal::Transaction.current.should_not receive(:add_event)
+
+        ActiveSupport::Notifications.instrument '!render_template'
+      end
+
+      it "should add a normal event" do
+        Appsignal::Transaction.current.should_not receive(:set_process_action_event)
+        Appsignal::Transaction.current.should receive(:add_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+
+        ActiveSupport::Notifications.instrument 'render_template'
+      end
+
+      it "should add and set a process action event" do
+        Appsignal::Transaction.current.should receive(:set_process_action_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+        Appsignal::Transaction.current.should receive(:add_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+
+        ActiveSupport::Notifications.instrument 'process_action.rack'
+      end
+    end
+  end
+
   describe "#enqueue" do
     it "forwards to the aggregator" do
       subject.aggregator.should respond_to(:add)
@@ -75,7 +125,7 @@ describe Appsignal::Agent do
 
   describe "#shutdown" do
     before do
-      ActiveSupport::Notifications.should_receive(:unsubscribe).with(Appsignal.subscriber)
+      ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject.subscriber)
       Thread.should_receive(:kill).with(subject.thread)
     end
 
