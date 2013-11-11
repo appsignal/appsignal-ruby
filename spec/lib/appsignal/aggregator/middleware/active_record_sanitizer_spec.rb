@@ -2,10 +2,10 @@ require 'spec_helper'
 
 if rails_present?
   require 'active_record'
-  require 'appsignal/middleware/active_record_sanitizer'
+  require 'appsignal/aggregator/middleware/active_record_sanitizer'
 
-  describe Appsignal::Middleware::ActiveRecordSanitizer do
-    let(:klass) { Appsignal::Middleware::ActiveRecordSanitizer }
+  describe Appsignal::Aggregator::Middleware::ActiveRecordSanitizer do
+    let(:klass) { Appsignal::Aggregator::Middleware::ActiveRecordSanitizer }
     let(:sql_event_sanitizer) { klass.new }
     let(:connection_config) { {} }
     before do

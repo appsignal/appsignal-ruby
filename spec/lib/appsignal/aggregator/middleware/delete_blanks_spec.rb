@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Appsignal::Middleware::DeleteBlanks do
-  let(:klass) { Appsignal::Middleware::DeleteBlanks }
+describe Appsignal::Aggregator::Middleware::DeleteBlanks do
+  let(:klass) { Appsignal::Aggregator::Middleware::DeleteBlanks }
   let(:delete_blanks) { klass.new }
 
   describe "#call" do

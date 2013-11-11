@@ -18,12 +18,12 @@ module Appsignal
 
       def self.default_middleware
         Middleware::Chain.new do |chain|
-          chain.add Appsignal::Middleware::DeleteBlanks
-          if defined?(::Rails)
-            chain.add Appsignal::Middleware::ActionViewSanitizer
+          chain.add Appsignal::Aggregator::Middleware::DeleteBlanks
+          if defined?(::ActionView)
+            chain.add Appsignal::Aggregator::Middleware::ActionViewSanitizer
           end
           if defined?(::ActiveRecord)
-            chain.add Appsignal::Middleware::ActiveRecordSanitizer
+            chain.add Appsignal::Aggregator::Middleware::ActiveRecordSanitizer
           end
         end
       end

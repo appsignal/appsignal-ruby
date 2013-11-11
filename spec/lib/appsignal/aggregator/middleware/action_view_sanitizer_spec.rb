@@ -1,8 +1,11 @@
 require 'spec_helper'
 
 if rails_present?
-  describe Appsignal::Middleware::ActionViewSanitizer do
-    let(:klass) { Appsignal::Middleware::ActionViewSanitizer }
+  require 'action_view'
+  require 'appsignal/aggregator/middleware/action_view_sanitizer'
+
+  describe Appsignal::Aggregator::Middleware::ActionViewSanitizer do
+    let(:klass) { Appsignal::Aggregator::Middleware::ActionViewSanitizer }
     let(:sanitizer) { klass.new }
 
     describe "#call" do

@@ -77,16 +77,16 @@ describe Appsignal::Aggregator::PostProcessor do
   describe ".default_middleware" do
     subject { klass.default_middleware }
 
-    it { should be_instance_of Appsignal::Middleware::Chain }
+    it { should be_instance_of Appsignal::Aggregator::Middleware::Chain }
 
     it "should include the default middleware stack" do
-      subject.exists?(Appsignal::Middleware::DeleteBlanks).should be_true
+      subject.exists?(Appsignal::Aggregator::Middleware::DeleteBlanks).should be_true
       if rails_present?
-        subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_true
-        subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_true
+        subject.exists?(Appsignal::Aggregator::Middleware::ActionViewSanitizer).should be_true
+        subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_true
       else
-        subject.exists?(Appsignal::Middleware::ActionViewSanitizer).should be_false
-        subject.exists?(Appsignal::Middleware::ActiveRecordSanitizer).should be_false
+        subject.exists?(Appsignal::Aggregator::Middleware::ActionViewSanitizer).should be_false
+        subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_false
       end
     end
   end

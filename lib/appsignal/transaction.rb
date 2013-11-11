@@ -50,7 +50,6 @@ module Appsignal
     end
 
     def set_process_action_event(event)
-      binding.pry
       @process_action_event = event
       if event && event.payload
         @action = "#{event.payload[:controller]}##{event.payload[:action]}"

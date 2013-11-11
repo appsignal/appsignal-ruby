@@ -147,13 +147,13 @@ describe Appsignal do
 
       it "returns a chain when called without a block" do
         instance = Appsignal.post_processing_middleware
-        instance.should be_an_instance_of Appsignal::Middleware::Chain
+        instance.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
       end
 
       context "when passing a block" do
         it "yields an appsignal middleware chain" do
           Appsignal.post_processing_middleware do |o|
-            o.should be_an_instance_of Appsignal::Middleware::Chain
+            o.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
           end
         end
       end

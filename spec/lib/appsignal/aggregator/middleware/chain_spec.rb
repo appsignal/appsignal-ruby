@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Appsignal::Middleware do
-  let(:chain_klass) { Appsignal::Middleware::Chain }
-  let(:entry_klass) { Appsignal::Middleware::Entry }
+describe Appsignal::Aggregator::Middleware do
+  let(:chain_klass) { Appsignal::Aggregator::Middleware::Chain }
+  let(:entry_klass) { Appsignal::Aggregator::Middleware::Entry }
   let(:chain) { chain_klass.new }
   let(:entry) { entry_klass.new(object, {:foo => :bar}) }
 
-  describe Appsignal::Middleware::Chain do
+  describe Appsignal::Aggregator::Middleware::Chain do
     let(:object) { double(:object) }
     let(:other_object) { double(:other_object) }
 
@@ -153,7 +153,7 @@ describe Appsignal::Middleware do
     end
   end
 
-  describe Appsignal::Middleware::Entry do
+  describe Appsignal::Aggregator::Middleware::Entry do
 
     describe "#make_new" do
       let(:object) { double }
