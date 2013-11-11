@@ -1,5 +1,20 @@
+# 0.6.7
+* Send HTTP_X_FORWARDED_FOR env var
+
+# 0.6.6
+* Add Appsignal.add_exception
+
+# 0.6.5
+* Fix bug where fast requests are tracked with wrong action
+
+# 0.6.4
+* More comprehensive debug logging
+
 # 0.6.3
 * Use a mutex around access to the aggregator
+* Bugfix for accessing connection config in Rails 3.0
+* Add Appsignal.tag_request
+* Only warn if there are duplicate push keys
 
 # 0.6.2
 * Bugfix in backtrace cleaner usage for Rails 4

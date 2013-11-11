@@ -2,7 +2,7 @@ module Appsignal
   class Aggregator
     attr_reader :queue, :slowness_index, :counts
 
-    def initialize(queue = [], slowness_index = {})
+    def initialize(queue=::ThreadSafe::Array.new, slowness_index={})
       @queue = queue
       @slowness_index = slowness_index
       @counts = {:regular_request => 0, :slow_request => 0, :exception => 0}
@@ -37,7 +37,7 @@ module Appsignal
     # @returns [ Array ] Array of post processed Appsignal::Transaction objects
     def post_processed_queue!
       Appsignal.logger.debug("Post processing queue: #{counts.inspect}")
-      Appsignal::PostProcessor.new(queue).post_processed_queue!
+      Appsignal::Aggregator::PostProcessor.new(queue).post_processed_queue!
     end
 
     protected
@@ -63,5 +63,3 @@ module Appsignal
     end
   end
 end
-
-require 'appsignal/aggregator/post_processor'

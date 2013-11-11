@@ -1,7 +1,3 @@
-require 'socket'
-require 'appsignal/transaction/transaction_formatter'
-require 'appsignal/transaction/params_sanitizer'
-
 module Appsignal
   class Transaction
     # Based on what Rails uses + some variables we'd like to show
@@ -13,9 +9,10 @@ module Appsignal
     HTTP_X_QUEUE_TIME HTTP_X_HEROKU_QUEUE_WAIT_TIME HTTP_X_APPLICATION_START
     HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE
     HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
-    HTTP_PRAGMA HTTP_REFERER).freeze
+    HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR).freeze
 
     def self.create(key, env)
+      Appsignal.logger.debug("Creating transaction: #{key}")
       Thread.current[:appsignal_transaction_id] = key
       Appsignal.transactions[key] = Appsignal::Transaction.new(key, env)
     end
@@ -25,7 +22,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-      :env, :fullpath, :time, :tags
+                :env, :fullpath, :time, :tags
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -45,7 +42,7 @@ module Appsignal
     end
 
     def request
-      ActionDispatch::Request.new(@env)
+      ::Rack::Request.new(@env)
     end
 
     def set_tags(given_tags={})
@@ -74,8 +71,7 @@ module Appsignal
 
     def slow_request?
       return false unless process_action_event && process_action_event.payload
-      Appsignal.config[:slow_request_threshold] <=
-        process_action_event.duration
+      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
     end
 
     def slower?(transaction)
@@ -92,8 +88,8 @@ module Appsignal
     end
 
     def convert_values_to_primitives!
-      Appsignal::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
-      @events.each { |o| Appsignal::ParamsSanitizer.sanitize!(o.payload) }
+      Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
+      @events.each { |o| Appsignal::Transaction::ParamsSanitizer.sanitize!(o.payload) }
       add_sanitized_context!
     end
 
@@ -104,18 +100,32 @@ module Appsignal
     end
 
     def to_hash
-      TransactionFormatter.new(self).to_hash
+      Formatter.new(self).to_hash
     end
 
     def complete!
+      Appsignal.logger.debug("Completing transaction: #{@request_id}")
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         Appsignal.enqueue(current_transaction)
+      else
+        Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
       end
     end
 
     protected
+
+    def http_queue_start
+      return unless env
+      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
+      if env_var
+        value = env_var.tr('^0-9', '')
+        unless value.empty?
+          value.to_f / 1_000_000
+        end
+      end
+    end
 
     def add_sanitized_context!
       sanitize_environment!
@@ -143,7 +153,7 @@ module Appsignal
 
     def sanitize_session_data!
       @sanitized_session_data =
-        Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
+        Appsignal::Transaction::ParamsSanitizer.sanitize(request.session.to_hash)
       @fullpath = request.fullpath
     end
   end

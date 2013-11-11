@@ -1,27 +1,30 @@
 module Appsignal
-  class PostProcessor
-    attr_reader :transactions
+  class Aggregator
+    class PostProcessor
+      attr_reader :transactions
 
-    def initialize(transactions)
-      @transactions = transactions
-    end
-
-    def post_processed_queue!
-      transactions.map do |transaction|
-        transaction.events.each do |event|
-          Appsignal.post_processing_middleware.invoke(event)
-        end
-        transaction.to_hash
+      def initialize(transactions)
+        @transactions = transactions
       end
-    end
 
-    def self.default_middleware
-      Middleware::Chain.new do |chain|
-        chain.add Appsignal::Middleware::DeleteBlanks
-        chain.add Appsignal::Middleware::ActionViewSanitizer
-        if defined?(ActiveRecord)
-          require 'appsignal/middleware/active_record_sanitizer'
-          chain.add Appsignal::Middleware::ActiveRecordSanitizer
+      def post_processed_queue!
+        transactions.map do |transaction|
+          transaction.events.each do |event|
+            Appsignal.post_processing_middleware.invoke(event)
+          end
+          transaction.to_hash
+        end
+      end
+
+      def self.default_middleware
+        Middleware::Chain.new do |chain|
+          chain.add Appsignal::Aggregator::Middleware::DeleteBlanks
+          if defined?(::ActionView)
+            chain.add Appsignal::Aggregator::Middleware::ActionViewSanitizer
+          end
+          if defined?(::ActiveRecord)
+            chain.add Appsignal::Aggregator::Middleware::ActiveRecordSanitizer
+          end
         end
       end
     end

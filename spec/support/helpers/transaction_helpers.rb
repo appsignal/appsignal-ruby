@@ -1,7 +1,14 @@
 module TransactionHelpers
-
   def fixed_time
     @fixed_time ||= Time.at(978364860.0)
+  end
+
+  def uploaded_file
+    if rails_present?
+      ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp')
+    else
+      ::Rack::Multipart::UploadedFile.new(File.join(fixtures_dir, '/uploaded_file.txt'))
+    end
   end
 
   def transaction_with_exception
@@ -10,16 +17,24 @@ module TransactionHelpers
       begin
         raise ArgumentError, 'oh no'
       rescue ArgumentError => exception
-        env = {}
-        o.add_exception(
-          Appsignal::ExceptionNotification.new(env, exception)
-        )
+        exception.stub(:backtrace => [
+          File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10').to_s,
+          '/user/local/ruby/path.rb:8'
+        ])
+        o.add_exception(exception)
       end
     end
   end
 
   def regular_transaction
     appsignal_transaction(:process_action_event => notification_event)
+  end
+
+  def regular_transaction_with_x_request_start
+    appsignal_transaction(
+      :process_action_event => notification_event,
+      'HTTP_X_REQUEST_START' => "t=#{((fixed_time.to_f - 40.0) * 1_000_000).to_i}"
+    )
   end
 
   def slow_transaction(args={})
@@ -44,7 +59,7 @@ module TransactionHelpers
     )
   end
 
-  def appsignal_transaction(args = {})
+  def appsignal_transaction(args={})
     process_action_event = args.delete(:process_action_event)
     events = args.delete(:events) || [
       notification_event(:name => 'query.mongoid')
@@ -63,5 +78,4 @@ module TransactionHelpers
       events.each { |event| o.add_event(event) }
     end
   end
-
 end

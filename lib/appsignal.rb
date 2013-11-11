@@ -1,13 +1,26 @@
-begin
-  require "rails" unless defined?(Rails)
-rescue
-  raise 'This appsignal gem only works with rails'
-end
+require 'logger'
+require 'rack'
+require 'thread_safe'
+require 'active_support/json'
 
 module Appsignal
   class << self
-    attr_accessor :subscriber
+    attr_accessor :config, :logger, :agent
     attr_reader :in_memory_log
+
+    def start
+      if config
+        if config[:debug]
+          logger.level = Logger::DEBUG
+        else
+          logger.level = Logger::INFO
+        end
+        logger.info("Starting appsignal-#{Appsignal::VERSION}")
+        @agent = Appsignal::Agent.new
+      else
+        logger.error("Can't start, no config loaded")
+      end
+    end
 
     # Convenience method for adding a transaction to the queue. This queue is
     # managed and is periodically pushed to Appsignal.
@@ -27,16 +40,17 @@ module Appsignal
     end
 
     def send_exception(exception)
-      unless is_ignored_exception?(exception)
-        Appsignal.agent
-        env = ENV.to_hash
+      return if is_ignored_exception?(exception)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+      transaction.add_exception(exception)
+      transaction.complete!
+      Appsignal.agent.send_queue
+    end
 
-        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
-        transaction.add_exception(
-          Appsignal::ExceptionNotification.new(env, exception, false)
-        )
-        transaction.complete!
-        Appsignal.agent.send_queue
+    def add_exception(exception)
+      return if Appsignal::Transaction.current.nil? || exception.nil?
+      unless is_ignored_exception?(exception)
+        Appsignal::Transaction.current.add_exception(exception)
       end
     end
 
@@ -48,10 +62,6 @@ module Appsignal
 
     def transactions
       @transactions ||= {}
-    end
-
-    def agent
-      @agent ||= Appsignal::Agent.new
     end
 
     def logger
@@ -70,16 +80,8 @@ module Appsignal
       ActiveSupport::JSON
     end
 
-    def logger=(l)
-      @logger = l
-    end
-
-    def config
-      @config ||= Appsignal::Config.new(Rails.root, Rails.env).load
-    end
-
     def post_processing_middleware
-      @post_processing_chain ||= PostProcessor.default_middleware
+      @post_processing_chain ||= Appsignal::Aggregator::PostProcessor.default_middleware
       yield @post_processing_chain if block_given?
       @post_processing_chain
     end
@@ -89,22 +91,25 @@ module Appsignal
     end
 
     def is_ignored_exception?(exception)
-      Array.wrap(Appsignal.config[:ignore_exceptions]).
-        include?(exception.class.name)
+      Appsignal.config[:ignore_exceptions].include?(exception.class.name)
     end
   end
 end
 
 require 'appsignal/agent'
 require 'appsignal/aggregator'
+require 'appsignal/aggregator/post_processor'
+require 'appsignal/aggregator/middleware'
 require 'appsignal/auth_check'
 require 'appsignal/config'
-require 'appsignal/exception_notification'
-require 'appsignal/integrations/passenger'
-require 'appsignal/listener'
 require 'appsignal/marker'
-require 'appsignal/middleware'
-require 'appsignal/railtie'
+require 'appsignal/rack/listener'
+require 'appsignal/rack/instrumentation'
 require 'appsignal/transaction'
+require 'appsignal/transaction/formatter'
+require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/version'
+
+require 'appsignal/integrations/passenger'
+require 'appsignal/integrations/rails'

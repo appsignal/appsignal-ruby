@@ -1,33 +1,27 @@
 require 'appsignal'
 
 class AppsignalGenerator < Rails::Generators::Base
-  EXCLUDED_ENVIRONMENTS = [:test].freeze
+  EXCLUDED_ENVIRONMENTS = ['test'].freeze
 
   source_root File.expand_path('../templates', __FILE__)
-  argument :environment, :type => :string
-  argument :push_key, :type => :string
-  desc "Install the config file for AppSignal with your PUSH_KEY."
+  argument :push_api_key, :type => :string
+  desc 'Generate a config file for AppSignal'
 
   def copy_config_file
     template_file = 'appsignal.yml'
-    appsignal_file = File.join('config', template_file)
-    if File.exists?(appsignal_file)
-      say_status(:error, "Looks like you already have a config file.", :red)
-      say_status(:error, "Add the following to config/appsignal.yml:\n\n", :red)
-      say_status(:error, "#{environment}:", :red)
-      say_status(:error, "  api_key: #{push_key}\n\n", :red)
-      say_status(:info, "Then run:\n\n", :red)
-      say_status(:info, "  appsignal api_check", :red)
+    destination_file = File.join('config', template_file)
+    if File.exists?(destination_file)
+      say_status(:error, 'Looks like you already have a config file', :red)
     else
-      template template_file, appsignal_file
-      capyistrano_install
-      check_key
+      template(template_file, destination_file)
+      add_appsignal_require_for_capistrano
+      check_push_api_key
     end
   end
 
   protected
 
-  def capyistrano_install
+  def add_appsignal_require_for_capistrano
     deploy_file = File.expand_path(File.join('config', 'deploy.rb'))
     cap_file = File.expand_path('Capfile')
     if [deploy_file, cap_file].all? { |file| File.exists?(file) }
@@ -43,8 +37,15 @@ class AppsignalGenerator < Rails::Generators::Base
     end
   end
 
-  def check_key
-    auth_check = ::Appsignal::AuthCheck.new(environment)
+  def config
+    Appsignal::Config.new(
+      Rails.root,
+      'development'
+    )
+  end
+
+  def check_push_api_key
+    auth_check = ::Appsignal::AuthCheck.new(config, Appsignal.logger)
     status, result = auth_check.perform_with_result
     if status == '200'
       say_status :success, result
@@ -55,11 +56,9 @@ class AppsignalGenerator < Rails::Generators::Base
 
   private
 
-  alias :selected_environment :environment
-
   def environments
     @environments ||= Dir.glob(
       File.join(%w(. config environments *.rb))
-    ).map { |o| File.basename(o, ".rb") } - EXCLUDED_ENVIRONMENTS
+    ).map { |o| File.basename(o, ".rb") }.sort - EXCLUDED_ENVIRONMENTS
   end
 end

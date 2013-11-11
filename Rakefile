@@ -1,6 +1,6 @@
-require 'appsignal/version'
-
 task :publish do
+  require 'appsignal/version'
+
   NAME = 'appsignal'
   VERSION_FILE = 'lib/appsignal/version.rb'
   CHANGELOG_FILE = 'CHANGELOG.md'
@@ -29,7 +29,7 @@ task :publish do
   end
 
   def changes
-    git_status_to_array(`git status -s -u `)
+    git_status_to_array(`git status -s -u`)
   end
 
   def gem_version
@@ -56,4 +56,33 @@ task :publish do
   else
     raise "Actually change the version in: #{VERSION_FILE}"
   end
+end
+
+task :bundle do
+  puts `bundle --gemfile gemfiles/no_dependencies.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.0.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.1.gemfile`
+  puts `bundle --gemfile gemfiles/rails-3.2.gemfile`
+  puts `bundle --gemfile gemfiles/rails-4.0.gemfile`
+  puts `bundle --gemfile gemfiles/sinatra.gemfile`
+end
+
+task :spec do
+  puts 'Running no dependencies'
+  puts `env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec`
+
+  puts 'Running rails-3.0'
+  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec`
+
+  puts 'Running rails-3.1'
+  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec`
+
+  puts 'Running rails-3.2'
+  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec`
+
+  puts 'Running rails-4.0'
+  puts `env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec`
+
+  puts 'Running sinatra'
+  puts `env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec`
 end

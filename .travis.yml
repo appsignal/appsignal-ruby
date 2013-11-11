@@ -1,20 +1,20 @@
 language: ruby
 
 rvm:
-  - 1.8.7
-  - 1.9.3
-  - 2.0.0
-  - jruby-19mode
+  - "1.9.3"
+  - "2.0.0"
+  - "jruby-19mode"
+  - "rbx-2.1.1"
 
 gemfile:
-  - gemfiles/3.0.gemfile
-  - gemfiles/3.1.gemfile
-  - gemfiles/3.2.gemfile
-  - gemfiles/4.0.gemfile
+  - "gemfiles/rack.gemfile"
+  - "gemfiles/rails-3.0.gemfile"
+  - "gemfiles/rails-3.1.gemfile"
+  - "gemfiles/rails-3.2.gemfile"
+  - "gemfiles/rails-4.0.gemfile"
 
 matrix:
   allow_failures:
-    - rvm: 1.8.7
-    - rvm: jruby-19mode
+    - rvm: "jruby-19mode"
 
-script: RAILS_ENV=test bundle exec rspec spec
+script: "RAILS_ENV=test bundle exec rspec spec"

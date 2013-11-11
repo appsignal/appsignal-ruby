@@ -5,21 +5,15 @@ require 'appsignal'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(notify_of_deploy api_check).freeze
-    PROJECT_ROOT = ENV['PWD']
+    AVAILABLE_COMMANDS = %w(notify_of_deploy).freeze
 
     class << self
-      def run(argv=ARGV)
-        unless File.exists?(File.join(PROJECT_ROOT, 'config/appsignal.yml'))
-          puts 'No config file present at config/appsignal.yml'
-          puts 'Log in to https://appsignal.com to get instructions on how to '\
-            'generate the config file.'
-          exit(1)
-        end
-        options = {}
-        global = global_option_parser(options)
-        commands = command_option_parser(options)
+      attr_accessor :options, :config
 
+      def run(argv=ARGV)
+        @options = {}
+        global = global_option_parser
+        commands = command_option_parser
         global.order!(argv)
         command = argv.shift
         if command
@@ -27,9 +21,7 @@ module Appsignal
             commands[command].parse!(argv)
             case command.to_sym
             when :notify_of_deploy
-              notify_of_deploy(options)
-            when :api_check
-              api_check
+              notify_of_deploy
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -47,7 +39,15 @@ module Appsignal
         Logger.new($stdout)
       end
 
-      def global_option_parser(options)
+      def config
+        @config ||= Appsignal::Config.new(
+          ENV['PWD'],
+          options[:environment],
+          logger
+        )
+      end
+
+      def global_option_parser
         OptionParser.new do |o|
           o.banner = 'Usage: appsignal <command> [options]'
 
@@ -66,7 +66,7 @@ module Appsignal
         end
       end
 
-      def command_option_parser(options)
+      def command_option_parser
         {
           'notify_of_deploy' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal notify_of_deploy [options]'
@@ -86,56 +86,40 @@ module Appsignal
             o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
-          end,
-          'api_check' => OptionParser.new do |o|
-            o.banner = %q(Usage: appsignal api_check
-
-            This command checks the config file in config/appsignal.yml
-            and tries to use the api_keys available in each environment to
-            see if they work.)
           end
         }
       end
 
-      def notify_of_deploy(options)
-        validate_required_options([:revision, :repository, :user, :environment], options)
+      def notify_of_deploy
+        validate_config_loaded
+        validate_required_options([:revision, :repository, :user, :environment])
+
         Appsignal::Marker.new(
           {
             :revision => options[:revision],
             :repository => options[:repository],
             :user => options[:user]
           },
-          PROJECT_ROOT,
-          options[:environment],
+          config,
           logger
         ).transmit
       end
 
-      def api_check
-        puts "\nReading config/appsignal.yml and attempting to use the config "\
-          "in order to check if it is set up the way it should be.\n\n"
-        Appsignal::Config.new(
-          PROJECT_ROOT, '', logger
-        ).load_all.each do |env, config|
-          auth_check = ::Appsignal::AuthCheck.new(
-            env,
-            {:config => config, :logger => logger}
-          )
-          puts "[#{env}]"
-          puts '  * Configured not to monitor this environment' unless config[:active]
-          status, result = auth_check.perform_with_result
-          puts "  * #{result}"
-        end
-      end
-
       protected
 
-      def validate_required_options(required_options, options)
+      def validate_required_options(required_options)
         missing = required_options.select do |required_option|
           options[required_option].blank?
         end
         if missing.any?
           puts "Missing options: #{missing.join(', ')}"
+          exit(1)
+        end
+      end
+
+      def validate_config_loaded
+        unless config.loaded?
+          puts 'Exiting: No config file or push api key env var found'
           exit(1)
         end
       end

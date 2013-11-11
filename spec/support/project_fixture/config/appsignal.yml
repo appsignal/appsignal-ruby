@@ -1,0 +1,18 @@
+default: &defaults
+  push_api_key: "abc"
+  name: "TestApp"
+  slow_request_threshold: 200
+
+production:
+  <<: *defaults
+  active: true
+
+test:
+  <<: *defaults
+  endpoint: "http://localhost:3000/1"
+  debug: true
+  active: true
+
+old_api_key:
+  api_key: "def"
+  active: true

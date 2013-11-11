@@ -1,0 +1,20 @@
+default: &defaults
+  # Your push api key, it is possible to set this dynamically using ERB:
+  # push_api_key: "<%= ENV['APPSIGNAL_PUSH_API_KEY'] %>"
+  push_api_key: "my_app_key"
+
+  # Your app's name
+  name: "MyApp"
+
+  # The cuttoff point in ms above which a request is considered slow, default is 200
+  # slow_request_threshold: 200
+
+# Configuration per environment, leave out an environment or set active
+# to false to not push metrics for that environment.
+development:
+  <<: *defaults
+  active: true
+
+production:
+  <<: *defaults
+  active: true
