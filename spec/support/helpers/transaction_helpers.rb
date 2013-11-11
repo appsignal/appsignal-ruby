@@ -30,6 +30,13 @@ module TransactionHelpers
     appsignal_transaction(:process_action_event => notification_event)
   end
 
+  def regular_transaction_with_x_request_start
+    appsignal_transaction(
+      :process_action_event => notification_event,
+      'HTTP_X_REQUEST_START' => "t=#{((fixed_time.to_f - 40.0) * 1_000_000).to_i}"
+    )
+  end
+
   def slow_transaction(args={})
     appsignal_transaction(
       {
@@ -52,7 +59,7 @@ module TransactionHelpers
     )
   end
 
-  def appsignal_transaction(args = {})
+  def appsignal_transaction(args={})
     process_action_event = args.delete(:process_action_event)
     events = args.delete(:events) || [
       notification_event(:name => 'query.mongoid')

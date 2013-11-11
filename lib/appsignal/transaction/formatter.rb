@@ -13,6 +13,7 @@ module Appsignal
 
       def to_hash
         merge_process_action_event_with_log_entry! if process_action_event
+        add_http_queue_duration_to_hash!
         if exception?
           add_exception_to_hash!
           add_tags_to_hash!
@@ -45,6 +46,13 @@ module Appsignal
           o.delete(:controller)
           o.delete(:name)
           o[:action] = action
+        end
+      end
+
+      def add_http_queue_duration_to_hash!
+        start = http_queue_start
+        if start
+          hash[:log_entry][:queue_duration] = hash[:log_entry][:time] - start
         end
       end
 

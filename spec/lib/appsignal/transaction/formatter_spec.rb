@@ -38,6 +38,17 @@ describe Appsignal::Transaction::Formatter do
       its([:failed]) { should be_false }
     end
 
+    context "with a regular request when queue time is present" do
+      let(:transaction) { regular_transaction_with_x_request_start }
+      before { transaction.truncate! }
+
+      context "log_entry content" do
+        subject { formatter.hash[:log_entry] }
+
+        its([:queue_duration]) { should be_within(0.01).of(40.0) }
+      end
+    end
+
     context "with an exception request" do
       let(:transaction) { transaction_with_exception }
 

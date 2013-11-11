@@ -27,14 +27,15 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe 'transaction instance' do
-    let(:transaction) do
-      Appsignal::Transaction.create('1', {
+  context "with transaction instance" do
+    let(:env) do
+      {
         'HTTP_USER_AGENT' => 'IE6',
         'SERVER_NAME' => 'localhost',
         'action_dispatch.routes' => 'not_available'
-      })
+      }
     end
+    let(:transaction) { Appsignal::Transaction.create('1', env) }
 
     describe '#request' do
       subject { transaction.request }
@@ -287,6 +288,46 @@ describe Appsignal::Transaction do
     end
 
     # protected
+
+    describe "#http_queue_start" do
+      let(:slightly_earlier_time) { fixed_time - 10.0 }
+      let(:slightly_earlier_time_in_msec) { (slightly_earlier_time.to_f * 1_000_000).to_i }
+      subject { transaction.send(:http_queue_start) }
+
+      context "without the env" do
+        let(:env) { nil }
+
+        it { should be_nil }
+      end
+
+      context "with no relevant header set" do
+        it { should be_nil }
+      end
+
+      context "with the HTTP_X_REQUEST_START header set" do
+        let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_msec}"} }
+
+        it { should == 978364850.0 }
+
+        context "with unparsable content" do
+          let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
+
+          it { should be_nil }
+        end
+
+        context "with some cruft" do
+          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_msec}aaaa"} }
+
+          it { should == 978364850.0 }
+        end
+
+        context "with the alternate HTTP_X_QUEUE_START header set" do
+          let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_msec}"} }
+
+          it { should == 978364850.0 }
+        end
+      end
+    end
 
     describe '#add_sanitized_context!' do
       subject { transaction.send(:add_sanitized_context!) }
