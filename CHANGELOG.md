@@ -1,3 +1,9 @@
+# 0.7.0
+* Mayor refactor and cleanup
+* New easier onboarding process
+* Support for Rack apps, including experimental Sinatra integration
+* Monitor HTTP queue times
+
 # 0.6.7
 * Send HTTP_X_FORWARDED_FOR env var
 
