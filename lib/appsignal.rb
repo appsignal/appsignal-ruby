@@ -72,8 +72,15 @@ module Appsignal
       end
     end
 
-    def flush_in_memory_log
-      Appsignal.logger << @in_memory_log.string
+    def start_logger(path)
+      if path && File.writable?(path) && !ENV['DYNO']
+        @logger = Logger.new(File.join(path, 'appsignal.log'))
+        @logger.formatter = Logger::Formatter.new
+      else
+        @logger = Logger.new($stdout)
+      end
+      @logger.level = Logger::INFO
+      @logger << @in_memory_log.string
     end
 
     def json

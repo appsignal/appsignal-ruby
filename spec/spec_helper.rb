@@ -40,4 +40,9 @@ RSpec.configure do |config|
     ENV.delete('APPSIGNAL_PUSH_API_KEY')
     ENV.delete('APPSIGNAL_API_KEY')
   end
+
+  config.after do
+    FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
+    Appsignal.logger = nil
+  end
 end

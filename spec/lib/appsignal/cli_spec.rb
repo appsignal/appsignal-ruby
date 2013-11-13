@@ -3,18 +3,16 @@ require 'appsignal/cli'
 
 describe Appsignal::CLI do
   let(:out_stream) { StringIO.new }
-  let(:error_stream) { StringIO.new }
   let(:cli) { Appsignal::CLI }
   before do
-    @original_stdout, @original_stderr = $stdout, $stderr
-    $stdout, $stderr = out_stream, error_stream
+    @original_stdout = $stdout
+    $stdout = out_stream
     ENV['PWD'] = project_fixture_path
     cli.config = nil
     cli.options = {:environment => 'production'}
   end
-  after :each do
+  after do
     $stdout = @original_stdout
-    $stderr = @original_stderr
   end
 
   describe "#logger" do

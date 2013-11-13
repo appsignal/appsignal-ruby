@@ -122,6 +122,51 @@ describe Appsignal do
       it { should be_a Logger }
     end
 
+    describe ".start_logger" do
+      let(:out_stream) { StringIO.new }
+      let(:log_file) { File.join(path, 'appsignal.log') }
+      before do
+        @original_stdout = $stdout
+        $stdout = out_stream
+        Appsignal.logger.error('Log something')
+      end
+      after do
+        $stdout = @original_stdout
+      end
+
+      context "when the log path is writable" do
+        let(:path) { File.join(project_fixture_path, 'log') }
+        before { Appsignal.start_logger(path) }
+
+        it "should log to file" do
+          File.exists?(log_file).should be_true
+          File.open(log_file).read.should include 'Log something'
+        end
+      end
+
+      context "when the log path is not writable" do
+        let(:path) { '/nonsense/log' }
+        before { Appsignal.start_logger(path) }
+
+        it "should log to stdout" do
+          out_stream.string.should include 'Log something'
+        end
+      end
+
+      context "when we're on Heroku" do
+        let(:path) { File.join(project_fixture_path, 'log') }
+        before do
+          ENV['DYNO'] = 'dyno1'
+          Appsignal.start_logger(path)
+        end
+        after { ENV.delete('DYNO') }
+
+        it "should log to stdout" do
+          out_stream.string.should include 'Log something'
+        end
+      end
+    end
+
     describe '.config' do
       subject { Appsignal.config }
 
