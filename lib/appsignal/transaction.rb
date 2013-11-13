@@ -114,8 +114,6 @@ module Appsignal
       end
     end
 
-    protected
-
     def http_queue_start
       return unless env
       env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
@@ -126,6 +124,8 @@ module Appsignal
         end
       end
     end
+
+    protected
 
     def add_sanitized_context!
       sanitize_environment!

@@ -3,10 +3,6 @@ require 'delegate'
 module Appsignal
   class Transaction
     class Formatter < SimpleDelegator
-      def initialize(transaction)
-        super(transaction)
-      end
-
       def hash
         @hash ||= default_hash
       end
