@@ -3,6 +3,7 @@
 * New easier onboarding process
 * Support for Rack apps, including experimental Sinatra integration
 * Monitor HTTP queue times
+* Always log to stdout on Heroku
 
 # 0.6.7
 * Send HTTP_X_FORWARDED_FOR env var
