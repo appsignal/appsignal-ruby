@@ -5,8 +5,7 @@ require 'active_support/json'
 
 module Appsignal
   class << self
-    attr_accessor :config, :logger, :agent
-    attr_reader :in_memory_log
+    attr_accessor :config, :logger, :agent, :in_memory_log
 
     def start
       if config
@@ -80,7 +79,7 @@ module Appsignal
         @logger = Logger.new($stdout)
       end
       @logger.level = Logger::INFO
-      @logger << @in_memory_log.string
+      @logger << @in_memory_log.string if @in_memory_log
     end
 
     def json

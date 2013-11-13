@@ -165,6 +165,13 @@ describe Appsignal do
           out_stream.string.should include 'Log something'
         end
       end
+
+      context "when there is no in memory log" do
+        it "should not crash" do
+          Appsignal.in_memory_log = nil
+          Appsignal.start_logger(nil)
+        end
+      end
     end
 
     describe '.config' do
