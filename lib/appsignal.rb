@@ -5,8 +5,7 @@ require 'active_support/json'
 
 module Appsignal
   class << self
-    attr_accessor :config, :logger, :agent
-    attr_reader :in_memory_log
+    attr_accessor :config, :logger, :agent, :in_memory_log
 
     def start
       if config
@@ -72,8 +71,15 @@ module Appsignal
       end
     end
 
-    def flush_in_memory_log
-      Appsignal.logger << @in_memory_log.string
+    def start_logger(path)
+      if path && File.writable?(path) && !ENV['DYNO']
+        @logger = Logger.new(File.join(path, 'appsignal.log'))
+        @logger.formatter = Logger::Formatter.new
+      else
+        @logger = Logger.new($stdout)
+      end
+      @logger.level = Logger::INFO
+      @logger << @in_memory_log.string if @in_memory_log
     end
 
     def json
