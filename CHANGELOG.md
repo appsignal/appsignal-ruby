@@ -1,3 +1,6 @@
+# 0.7.1
+* Better support for forking webservers
+
 # 0.7.0
 * Mayor refactor and cleanup
 * New easier onboarding process
