@@ -25,8 +25,56 @@ describe Appsignal::Agent do
   end
 
   describe "#start_thread" do
-    it "should have started a background thread" do
+    before { subject.thread = nil }
+
+    it "should start a background thread" do
+      subject.start_thread
+
       subject.thread.should be_a(Thread)
+      subject.thread.should be_alive
+    end
+  end
+
+  describe "#restart_thread" do
+    context "if there is no thread" do
+      before { subject.thread = nil }
+
+      it "should start a thread" do
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+      end
+    end
+
+    context "if there is an inactive thread" do
+      before do
+        Thread.kill(subject.thread)
+        sleep 0.1 # We need to wait for the thread to exit
+      end
+
+      it "should start a thread" do
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+      end
+    end
+
+    context "if there is an active thread" do
+      it "should kill the current thread and start a new one" do
+        previous_thread = subject.thread
+        previous_thread.should be_alive
+
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+        subject.thread.should_not == previous_thread
+
+        sleep 0.1 # We need to wait for the thread to exit
+        previous_thread.should_not be_alive
+      end
     end
   end
 

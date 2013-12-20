@@ -2,7 +2,10 @@ require 'spec_helper'
 
 describe "Passenger integration" do
   let(:file) { File.expand_path('lib/appsignal/integrations/passenger.rb') }
-  before(:all) { module PhusionPassenger ; end }
+  before(:all) do
+    module PhusionPassenger
+    end
+  end
 
   it "adds behavior to stopping_worker_process and starting_worker_process" do
     PhusionPassenger.should_receive(:on_event).with(:starting_worker_process)
