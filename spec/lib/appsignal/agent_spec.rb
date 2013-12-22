@@ -171,6 +171,21 @@ describe Appsignal::Agent do
     after { subject.send_queue }
   end
 
+  describe "#forked!" do
+    its(:forked?) { should be_false }
+
+    it "should create a new aggregator and restart the thread" do
+      previous_aggregator = subject.aggregator
+      subject.should_receive(:restart_thread)
+
+      subject.forked!
+
+      subject.forked?.should be_true
+      subject.aggregator.should_not == previous_aggregator
+      subject.aggregator.should be_a Appsignal::Aggregator
+    end
+  end
+
   describe "#shutdown" do
     before do
       ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject.subscriber)
@@ -207,15 +222,6 @@ describe Appsignal::Agent do
         it "should send the queue and shutdown" do
           subject.enqueue(slow_transaction)
           subject.should_receive(:send_queue)
-
-          subject.shutdown(true)
-        end
-      end
-
-      context "when we're a child process" do
-        it "should shutdown" do
-          subject.stub(:forked? => true)
-          subject.should_not_receive(:send_queue)
 
           subject.shutdown(true)
         end
@@ -298,16 +304,10 @@ describe Appsignal::Agent do
     end
   end
 
-  describe "#shutdown" do
-    it "does not raise exceptions" do
-      expect { subject.send(:shutdown) }.not_to raise_error
-    end
-  end
-
-  describe "when inactive" do
+  context "when inactive" do
     before { Appsignal.stub(:active? => false) }
 
-    it "should not start a new thread" do
+    it "should not start a thread" do
       Thread.should_not_receive(:new)
     end
 
