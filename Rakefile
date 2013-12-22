@@ -64,6 +64,7 @@ task :bundle do
   system 'bundle --gemfile gemfiles/rails-3.1.gemfile'
   system 'bundle --gemfile gemfiles/rails-3.2.gemfile'
   system 'bundle --gemfile gemfiles/rails-4.0.gemfile'
+  system 'bundle --gemfile gemfiles/rails-4.1.gemfile'
   system 'bundle --gemfile gemfiles/sinatra.gemfile'
 end
 
@@ -82,6 +83,9 @@ task :spec do
 
   puts 'Running rails-4.0'
   system 'env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec'
+
+  puts 'Running rails-4.1'
+  system 'env BUNDLE_GEMFILE=gemfiles/rails-4.1.gemfile bundle exec rspec'
 
   puts 'Running sinatra'
   system 'env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec'
