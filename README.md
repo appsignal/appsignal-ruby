@@ -63,6 +63,7 @@ bundle --gemfile gemfiles/rails-3.0.gemfile
 bundle --gemfile gemfiles/rails-3.1.gemfile
 bundle --gemfile gemfiles/rails-3.2.gemfile
 bundle --gemfile gemfiles/rails-4.0.gemfile
+bundle --gemfile gemfiles/rails-4.1.gemfile
 bundle --gemfile gemfiles/sinatra.gemfile
 ```
 
@@ -74,6 +75,7 @@ BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/rails-4.1.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec
 ```
 
