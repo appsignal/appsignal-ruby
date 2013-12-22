@@ -59,30 +59,30 @@ task :publish do
 end
 
 task :bundle do
-  puts `bundle --gemfile gemfiles/no_dependencies.gemfile`
-  puts `bundle --gemfile gemfiles/rails-3.0.gemfile`
-  puts `bundle --gemfile gemfiles/rails-3.1.gemfile`
-  puts `bundle --gemfile gemfiles/rails-3.2.gemfile`
-  puts `bundle --gemfile gemfiles/rails-4.0.gemfile`
-  puts `bundle --gemfile gemfiles/sinatra.gemfile`
+  system 'bundle --gemfile gemfiles/no_dependencies.gemfile'
+  system 'bundle --gemfile gemfiles/rails-3.0.gemfile'
+  system 'bundle --gemfile gemfiles/rails-3.1.gemfile'
+  system 'bundle --gemfile gemfiles/rails-3.2.gemfile'
+  system 'bundle --gemfile gemfiles/rails-4.0.gemfile'
+  system 'bundle --gemfile gemfiles/sinatra.gemfile'
 end
 
 task :spec do
   puts 'Running no dependencies'
-  puts `env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec'
 
   puts 'Running rails-3.0'
-  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec'
 
   puts 'Running rails-3.1'
-  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec'
 
   puts 'Running rails-3.2'
-  puts `env BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec'
 
   puts 'Running rails-4.0'
-  puts `env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec'
 
   puts 'Running sinatra'
-  puts `env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec`
+  system 'env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec'
 end
