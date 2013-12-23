@@ -2,7 +2,7 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_reader :aggregator, :thread, :active, :sleep_time, :transmitter, :subscriber
+    attr_accessor :aggregator, :thread, :active, :sleep_time, :transmitter, :subscriber
 
     def initialize
       return unless Appsignal.active?
@@ -15,8 +15,6 @@ module Appsignal
       @transmitter = Transmitter.new(ACTION)
       subscribe
       start_thread
-      # Shutdown at exit. This does not work in passenger, see integrations/passenger
-      #at_exit { Appsignal.agent.shutdown(true) }
       Appsignal.logger.info('Started Appsignal agent')
     end
 
@@ -29,6 +27,14 @@ module Appsignal
           sleep(sleep_time)
         end
       end
+    end
+
+    def restart_thread
+      if @thread && @thread.alive?
+        Appsignal.logger.debug 'Killing agent thread'
+        Thread.kill(@thread)
+      end
+      start_thread
     end
 
     def subscribe
@@ -71,9 +77,12 @@ module Appsignal
     end
 
     def forked!
+      Appsignal.logger.debug('Forked worker process')
       @forked = true
-      @aggregator = Aggregator.new
-      Appsignal.logger.info('Forked the Appsignal agent')
+      Thread.exclusive do
+        @aggregator = Aggregator.new
+      end
+      restart_thread
     end
 
     def forked?
@@ -81,7 +90,7 @@ module Appsignal
     end
 
     def shutdown(send_current_queue=false)
-      Appsignal.logger.info('Shutting down the agent')
+      Appsignal.logger.info('Shutting down agent')
       ActiveSupport::Notifications.unsubscribe(subscriber)
       Thread.kill(thread) if thread
       send_queue if send_current_queue && @aggregator.has_transactions?

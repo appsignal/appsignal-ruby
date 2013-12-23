@@ -1,3 +1,3 @@
 module Appsignal
-  VERSION = '0.7.0.alpha.4'
+  VERSION = '0.7.1'
 end

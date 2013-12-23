@@ -16,6 +16,7 @@ module Appsignal
         end
         logger.info("Starting appsignal-#{Appsignal::VERSION}")
         @agent = Appsignal::Agent.new
+        at_exit { @agent.shutdown(true) }
       else
         logger.error("Can't start, no config loaded")
       end
@@ -118,4 +119,5 @@ require 'appsignal/transmitter'
 require 'appsignal/version'
 
 require 'appsignal/integrations/passenger'
+require 'appsignal/integrations/unicorn'
 require 'appsignal/integrations/rails'

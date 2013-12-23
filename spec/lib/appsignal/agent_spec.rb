@@ -25,8 +25,56 @@ describe Appsignal::Agent do
   end
 
   describe "#start_thread" do
-    it "should have started a background thread" do
+    before { subject.thread = nil }
+
+    it "should start a background thread" do
+      subject.start_thread
+
       subject.thread.should be_a(Thread)
+      subject.thread.should be_alive
+    end
+  end
+
+  describe "#restart_thread" do
+    context "if there is no thread" do
+      before { subject.thread = nil }
+
+      it "should start a thread" do
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+      end
+    end
+
+    context "if there is an inactive thread" do
+      before do
+        Thread.kill(subject.thread)
+        sleep 0.1 # We need to wait for the thread to exit
+      end
+
+      it "should start a thread" do
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+      end
+    end
+
+    context "if there is an active thread" do
+      it "should kill the current thread and start a new one" do
+        previous_thread = subject.thread
+        previous_thread.should be_alive
+
+        subject.restart_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+        subject.thread.should_not == previous_thread
+
+        sleep 0.1 # We need to wait for the thread to exit
+        previous_thread.should_not be_alive
+      end
     end
   end
 
@@ -123,6 +171,21 @@ describe Appsignal::Agent do
     after { subject.send_queue }
   end
 
+  describe "#forked!" do
+    its(:forked?) { should be_false }
+
+    it "should create a new aggregator and restart the thread" do
+      previous_aggregator = subject.aggregator
+      subject.should_receive(:restart_thread)
+
+      subject.forked!
+
+      subject.forked?.should be_true
+      subject.aggregator.should_not == previous_aggregator
+      subject.aggregator.should be_a Appsignal::Aggregator
+    end
+  end
+
   describe "#shutdown" do
     before do
       ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject.subscriber)
@@ -159,15 +222,6 @@ describe Appsignal::Agent do
         it "should send the queue and shutdown" do
           subject.enqueue(slow_transaction)
           subject.should_receive(:send_queue)
-
-          subject.shutdown(true)
-        end
-      end
-
-      context "when we're a child process" do
-        it "should shutdown" do
-          subject.stub(:forked? => true)
-          subject.should_not_receive(:send_queue)
 
           subject.shutdown(true)
         end
@@ -250,16 +304,10 @@ describe Appsignal::Agent do
     end
   end
 
-  describe "#shutdown" do
-    it "does not raise exceptions" do
-      expect { subject.send(:shutdown) }.not_to raise_error
-    end
-  end
-
-  describe "when inactive" do
+  context "when inactive" do
     before { Appsignal.stub(:active? => false) }
 
-    it "should not start a new thread" do
+    it "should not start a thread" do
       Thread.should_not_receive(:new)
     end
 
