@@ -45,6 +45,8 @@ module Appsignal
           event = ActiveSupport::Notifications::Event.new(*args)
           if event.name.start_with?('process_action')
             Appsignal::Transaction.current.set_process_action_event(event)
+          elsif event.name.start_with?('perform_job')
+            Appsignal::Transaction.current.set_perform_job_event(event)
           end
           Appsignal::Transaction.current.add_event(event)
         end

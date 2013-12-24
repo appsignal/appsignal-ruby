@@ -59,6 +59,23 @@ module TransactionHelpers
     )
   end
 
+  def background_job_transaction(args={})
+    Appsignal::Transaction.create(
+      '1',
+      {
+        'SERVER_NAME' => 'localhost',
+        'action_dispatch.routes' => 'not_available'
+      }.merge(args)
+    ).tap do |o|
+      o.set_perform_job_event(
+        notification_event(
+          :name => 'perform_job.delayed_job',
+          :payload => create_background_payload
+        )
+      )
+    end
+  end
+
   def appsignal_transaction(args={})
     process_action_event = args.delete(:process_action_event)
     events = args.delete(:events) || [

@@ -22,7 +22,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags
+                :env, :fullpath, :time, :tags, :kind
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -51,9 +51,16 @@ module Appsignal
 
     def set_process_action_event(event)
       @process_action_event = event
-      if event && event.payload
-        @action = "#{event.payload[:controller]}##{event.payload[:action]}"
-      end
+      return unless event && event.payload
+      @action = "#{event.payload[:controller]}##{event.payload[:action]}"
+      @kind = 'http_request'
+    end
+
+    def set_perform_job_event(event)
+      @process_action_event = event
+      return unless event && event.payload
+      @action = "#{event.payload[:class]}##{event.payload[:method]}"
+      @kind = 'background_job'
     end
 
     def add_event(event)
@@ -111,6 +118,14 @@ module Appsignal
         Appsignal.enqueue(current_transaction)
       else
         Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
+      end
+    end
+
+    def queue_start
+      if @kind == 'background_job'
+        @process_action_event.payload[:queue_start].to_f
+      else
+        http_queue_start
       end
     end
 
