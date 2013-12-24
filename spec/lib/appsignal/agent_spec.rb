@@ -119,6 +119,17 @@ describe Appsignal::Agent do
 
         ActiveSupport::Notifications.instrument 'process_action.rack'
       end
+
+      it "should add and set a perform job event" do
+        Appsignal::Transaction.current.should_receive(:set_perform_job_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+        Appsignal::Transaction.current.should_receive(:add_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+
+        ActiveSupport::Notifications.instrument 'perform_job.processor'
+      end
     end
   end
 

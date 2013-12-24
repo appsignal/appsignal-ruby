@@ -32,6 +32,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency 'capistrano', '< 3.0'
   gem.add_development_dependency 'pry'
+  gem.add_development_dependency 'timecop'
 
   if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
     gem.add_development_dependency 'racc'

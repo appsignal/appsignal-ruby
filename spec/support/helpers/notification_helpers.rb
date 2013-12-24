@@ -24,4 +24,15 @@ module NotificationHelpers
       :db_runtime => 500
     }.merge(args)
   end
+
+  def create_background_payload(args={})
+    {
+      :class => 'BackgroundJob',
+      :method => 'perform',
+      :priority => 1,
+      :attempts => 0,
+      :queue => 'default',
+      :queue_start => fixed_time - 10,
+    }
+  end
 end

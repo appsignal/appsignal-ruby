@@ -9,7 +9,7 @@ module Appsignal
 
       def to_hash
         merge_process_action_event_with_log_entry! if process_action_event
-        add_http_queue_duration_to_hash!
+        add_queue_duration_to_hash!
         if exception?
           add_exception_to_hash!
           add_tags_to_hash!
@@ -25,7 +25,7 @@ module Appsignal
           :request_id => request_id,
           :log_entry => {
             :path => fullpath,
-            :kind => 'http_request',
+            :kind => kind,
             :time => time,
             :environment => sanitized_environment,
             :session_data => sanitized_session_data
@@ -38,15 +38,18 @@ module Appsignal
         hash[:log_entry].merge!(event_to_hash(process_action_event))
         hash[:log_entry].tap do |o|
           o.merge!(o.delete(:payload))
-          o.delete(:action)
           o.delete(:controller)
+          o.delete(:action)
           o.delete(:name)
+          o.delete(:class)
+          o.delete(:method)
+          o.delete(:queue_start)
           o[:action] = action
         end
       end
 
-      def add_http_queue_duration_to_hash!
-        start = http_queue_start
+      def add_queue_duration_to_hash!
+        start = queue_start
         if start
           hash[:log_entry][:queue_duration] = hash[:log_entry][:time] - start
         end

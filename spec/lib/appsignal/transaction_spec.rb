@@ -44,12 +44,41 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_process_action_event' do
+      before { transaction.set_process_action_event(process_action_event) }
       let(:process_action_event) { notification_event }
 
       it 'should add a process action event' do
-        transaction.set_process_action_event(process_action_event)
-
         transaction.process_action_event.should == process_action_event
+      end
+
+      it "should set the action" do
+        transaction.action.should == 'BlogPostsController#show'
+      end
+
+      it "should set the kind" do
+        transaction.kind.should == 'http_request'
+      end
+    end
+
+    describe "set_perform_job_event" do
+      before { transaction.set_perform_job_event(perform_job_event) }
+      let(:perform_job_event) do
+        notification_event(
+          :name => 'perform_job.delayed_job',
+          :payload => create_background_payload
+        )
+      end
+
+      it 'should add a process action event' do
+        transaction.process_action_event.should == perform_job_event
+      end
+
+      it "should set the action" do
+        transaction.action.should == 'BackgroundJob#perform'
+      end
+
+      it "should set the kind" do
+        transaction.kind.should == 'background_job'
       end
     end
 
@@ -287,7 +316,26 @@ describe Appsignal::Transaction do
       end
     end
 
-    # protected
+    describe "#queue_start" do
+      subject { transaction.queue_start }
+
+      context "for a http request" do
+        let(:transaction) { regular_transaction }
+
+        it "should call http_queue_start" do
+          transaction.should_receive(:http_queue_start)
+          subject
+        end
+      end
+
+      context "for a background job" do
+        let(:transaction) { background_job_transaction }
+
+        it "should get the queue start from the payload" do
+          subject.should == 978364850.0
+        end
+      end
+    end
 
     describe "#http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 10.0 }
@@ -328,6 +376,8 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    # protected
 
     describe '#add_sanitized_context!' do
       subject { transaction.send(:add_sanitized_context!) }
