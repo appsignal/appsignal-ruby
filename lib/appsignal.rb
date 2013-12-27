@@ -7,6 +7,18 @@ module Appsignal
   class << self
     attr_accessor :config, :logger, :agent, :in_memory_log
 
+    def extensions
+      @extensions ||= []
+    end
+
+    def initialize_extensions
+      Appsignal.logger.debug('Initializing extensions')
+      @extensions.each do |extension|
+        Appsignal.logger.debug("Initializing #{extension}")
+        extension.initializer
+      end
+    end
+
     def start
       if config
         if config[:debug]
@@ -15,6 +27,7 @@ module Appsignal
           logger.level = Logger::INFO
         end
         logger.info("Starting appsignal-#{Appsignal::VERSION}")
+        initialize_extensions
         @agent = Appsignal::Agent.new
         at_exit { @agent.shutdown(true) }
       else
