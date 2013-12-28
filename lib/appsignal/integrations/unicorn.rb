@@ -1,5 +1,5 @@
 if defined?(::Unicorn) && defined?(::Unicorn::HttpServer)
-  Appsignal.logger.info('Using Unicorn')
+  Appsignal.logger.info('Loading Unicorn integration')
 
   # We'd love to be able to hook this into Unicorn in a less
   # intrusive way, but this is the best we can do given the

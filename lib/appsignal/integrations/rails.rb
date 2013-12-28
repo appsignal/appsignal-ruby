@@ -1,4 +1,6 @@
 if defined?(::Rails)
+  Appsignal.logger.info('Loading Rails integration')
+
   module Appsignal
     module Integrations
       class Railtie < ::Rails::Railtie

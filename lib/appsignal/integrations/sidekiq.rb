@@ -1,4 +1,6 @@
 if defined?(::Sidekiq)
+  Appsignal.logger.info('Loading Sidekiq integration')
+
   module Appsignal
     module Integrations
       class SidekiqPlugin
