@@ -131,6 +131,7 @@ require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/version'
 
+require 'appsignal/integrations/delayed_job'
 require 'appsignal/integrations/passenger'
 require 'appsignal/integrations/unicorn'
 require 'appsignal/integrations/rails'
