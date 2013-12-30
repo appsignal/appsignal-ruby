@@ -7,13 +7,20 @@ module Appsignal
   class << self
     attr_accessor :config, :logger, :agent, :in_memory_log
 
+    def load_integrations
+      require 'appsignal/integrations/delayed_job'
+      require 'appsignal/integrations/passenger'
+      require 'appsignal/integrations/unicorn'
+      require 'appsignal/integrations/sidekiq'
+    end
+
     def extensions
       @extensions ||= []
     end
 
     def initialize_extensions
       Appsignal.logger.debug('Initializing extensions')
-      @extensions.each do |extension|
+      extensions.each do |extension|
         Appsignal.logger.debug("Initializing #{extension}")
         extension.initializer
       end
@@ -27,6 +34,7 @@ module Appsignal
           logger.level = Logger::INFO
         end
         logger.info("Starting appsignal-#{Appsignal::VERSION}")
+        load_integrations
         initialize_extensions
         @agent = Appsignal::Agent.new
         at_exit { @agent.shutdown(true) }
@@ -130,9 +138,4 @@ require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/version'
-
-require 'appsignal/integrations/delayed_job'
-require 'appsignal/integrations/passenger'
-require 'appsignal/integrations/unicorn'
 require 'appsignal/integrations/rails'
-require 'appsignal/integrations/sidekiq'
