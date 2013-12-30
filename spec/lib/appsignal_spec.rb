@@ -49,6 +49,11 @@ describe Appsignal do
         Appsignal.logger.level.should == Logger::INFO
       end
 
+      it "should load integrations" do
+        Appsignal.should_receive(:load_integrations)
+        Appsignal.start
+      end
+
       context "with an extension" do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
