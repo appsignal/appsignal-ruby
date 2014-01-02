@@ -29,6 +29,10 @@ module Appsignal
         load_default_config_with_push_api_key(
           ENV['APPSIGNAL_API_KEY']
         )
+        @logger.info(
+          'The APPSIGNAL_API_KEY environment variable has been deprecated, ' \
+          'please switch to APPSIGNAL_PUSH_API_KEY'
+        )
       else
         carefully_log_error(
           "Not loading: No config file found at '#{config_file}' " \
