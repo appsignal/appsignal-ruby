@@ -6,14 +6,13 @@ if defined?(::Sidekiq)
       class SidekiqPlugin
         def call(worker, item, queue)
           Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
-
           ActiveSupport::Notifications.instrument(
             'perform_job.sidekiq',
             :class => item['class'],
             :method => 'perform',
             :attempts => item['retry_count'],
             :queue => item['queue'],
-            :queue_time => (Time.now.to_f - item['enqueued_at'].to_f) * 1000
+            :queue_start => item['enqueued_at']
           ) do
             yield
           end

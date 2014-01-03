@@ -39,7 +39,7 @@ describe "Sidekiq integration" do
         :method => 'perform',
         :attempts => 0,
         :queue => 'default',
-        :queue_time => 60_000
+        :queue_start => Time.parse('01-01-2001 10:00:00UTC')
       )
     end
 
