@@ -1,5 +1,5 @@
 if defined?(::PhusionPassenger)
-  Appsignal.logger.info('Using Passenger')
+  Appsignal.logger.info('Loading Passenger integration')
 
   ::PhusionPassenger.on_event(:starting_worker_process) do |forked|
     Appsignal.logger.debug('starting worker process')

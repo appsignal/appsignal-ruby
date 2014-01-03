@@ -95,14 +95,14 @@ describe Appsignal::Agent do
       end
 
       it "should should not listen to events that start with a bang" do
-        Appsignal::Transaction.current.should_not receive(:add_event)
+        Appsignal::Transaction.current.should_not_receive(:add_event)
 
         ActiveSupport::Notifications.instrument '!render_template'
       end
 
       it "should add a normal event" do
-        Appsignal::Transaction.current.should_not receive(:set_process_action_event)
-        Appsignal::Transaction.current.should receive(:add_event).with(
+        Appsignal::Transaction.current.should_not_receive(:set_process_action_event)
+        Appsignal::Transaction.current.should_receive(:add_event).with(
           kind_of(ActiveSupport::Notifications::Event)
         ).at_least(:once)
 
@@ -110,14 +110,25 @@ describe Appsignal::Agent do
       end
 
       it "should add and set a process action event" do
-        Appsignal::Transaction.current.should receive(:set_process_action_event).with(
+        Appsignal::Transaction.current.should_receive(:set_process_action_event).with(
           kind_of(ActiveSupport::Notifications::Event)
         ).at_least(:once)
-        Appsignal::Transaction.current.should receive(:add_event).with(
+        Appsignal::Transaction.current.should_receive(:add_event).with(
           kind_of(ActiveSupport::Notifications::Event)
         ).at_least(:once)
 
         ActiveSupport::Notifications.instrument 'process_action.rack'
+      end
+
+      it "should add and set a perform job event" do
+        Appsignal::Transaction.current.should_receive(:set_perform_job_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+        Appsignal::Transaction.current.should_receive(:add_event).with(
+          kind_of(ActiveSupport::Notifications::Event)
+        ).at_least(:once)
+
+        ActiveSupport::Notifications.instrument 'perform_job.processor'
       end
     end
   end

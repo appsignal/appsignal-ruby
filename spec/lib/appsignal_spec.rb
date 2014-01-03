@@ -1,4 +1,5 @@
 require 'spec_helper'
+require './spec/support/mocks/mock_extension'
 
 describe Appsignal do
   before do
@@ -7,6 +8,7 @@ describe Appsignal do
     Appsignal.agent.shutdown if Appsignal.agent
     Appsignal.config = nil
     Appsignal.agent = nil
+    Appsignal.extensions.clear
   end
 
   let(:transaction) { regular_transaction }
@@ -18,6 +20,14 @@ describe Appsignal do
 
       Appsignal.config = config
       Appsignal.config.should == config
+    end
+  end
+
+  describe ".extensions" do
+    it "should keep a list of extensions" do
+      Appsignal.extensions.should be_empty
+      Appsignal.extensions << Appsignal::MockExtension
+      Appsignal.extensions.should have(1).item
     end
   end
 
@@ -37,6 +47,20 @@ describe Appsignal do
         Appsignal.start
         Appsignal.agent.should be_a Appsignal::Agent
         Appsignal.logger.level.should == Logger::INFO
+      end
+
+      it "should load integrations" do
+        Appsignal.should_receive(:load_integrations)
+        Appsignal.start
+      end
+
+      context "with an extension" do
+        before { Appsignal.extensions << Appsignal::MockExtension }
+
+        it "should call the extension's initializer" do
+          Appsignal::MockExtension.should_receive(:initializer)
+          Appsignal.start
+        end
       end
     end
 

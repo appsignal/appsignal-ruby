@@ -112,5 +112,28 @@ describe Appsignal::Transaction::Formatter do
         } }
       end
     end
+
+    context "with a background request" do
+      let(:transaction) { background_job_transaction }
+      before { transaction.truncate! }
+
+      its(:keys) { should =~ [:request_id, :log_entry, :failed] }
+      its([:request_id]) { should == '1' }
+      its([:log_entry]) { should == {
+        :action => "BackgroundJob#perform",
+        :duration => be_within(0.01).of(100.0),
+        :end => 978364860.1,
+        :queue_duration => 10.0,
+        :priority => 1,
+        :attempts => 0,
+        :queue => 'default',
+        :environment => {},
+        :kind => "background_job",
+        :path => "/foo",
+        :session_data => {},
+        :time => 978364860.0,
+      } }
+      its([:failed]) { should be_false }
+    end
   end
 end

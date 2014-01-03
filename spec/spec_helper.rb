@@ -1,6 +1,7 @@
 ENV['RAILS_ENV'] ||= 'test'
 require 'rspec'
 require 'pry'
+require 'timecop'
 require 'active_support/notifications'
 
 begin

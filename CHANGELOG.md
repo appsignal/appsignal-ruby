@@ -1,3 +1,6 @@
+# 0.8.0
+* Support for background processors (Delayed Job and Sidekiq)
+
 # 0.7.1
 * Better support for forking webservers
 
