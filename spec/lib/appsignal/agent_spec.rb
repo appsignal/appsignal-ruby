@@ -182,6 +182,14 @@ describe Appsignal::Agent do
     after { subject.send_queue }
   end
 
+  describe "#clear_queue" do
+    it "starts a new aggregator" do
+      Appsignal::Aggregator.should_receive(:new).twice # once on start, once on clear
+    end
+
+    after { subject.clear_queue }
+  end
+
   describe "#forked!" do
     its(:forked?) { should be_false }
 
@@ -308,6 +316,10 @@ describe Appsignal::Agent do
 
         it "logs the event" do
           Appsignal.logger.should_receive(:error)
+        end
+
+        it "clears the queue" do
+          subject.should_receive(:clear_queue)
         end
       end
 

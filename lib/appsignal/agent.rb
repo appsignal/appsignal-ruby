@@ -78,6 +78,15 @@ module Appsignal
       end
     end
 
+    def clear_queue
+      Appsignal.logger.debug('Clearing queue')
+      # Replace aggregator while making sure no thread
+      # is adding to it's queue
+      Thread.exclusive do
+        @aggregator = Aggregator.new
+      end
+    end
+
     def forked!
       Appsignal.logger.debug('Forked worker process')
       @forked = true
@@ -124,6 +133,7 @@ module Appsignal
         shutdown
       else
         Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
+        clear_queue
       end
     end
   end
