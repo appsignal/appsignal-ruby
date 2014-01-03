@@ -80,6 +80,10 @@ describe Appsignal::Transaction do
       it "should set the kind" do
         transaction.kind.should == 'background_job'
       end
+
+      it "should set the queue time" do
+        transaction.background_queue_start.should == 978364850.0
+      end
     end
 
     describe "#set_tags" do

@@ -22,7 +22,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind
+                :env, :fullpath, :time, :tags, :kind, :background_queue_start
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -61,6 +61,7 @@ module Appsignal
       return unless event && event.payload
       @action = "#{event.payload[:class]}##{event.payload[:method]}"
       @kind = 'background_job'
+      @background_queue_start = @process_action_event.payload[:queue_start].to_f
     end
 
     def add_event(event)
@@ -123,7 +124,7 @@ module Appsignal
 
     def queue_start
       if @kind == 'background_job'
-        @process_action_event.payload[:queue_start].to_f
+        background_queue_start
       else
         http_queue_start
       end
