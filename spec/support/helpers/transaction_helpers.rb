@@ -59,7 +59,7 @@ module TransactionHelpers
     )
   end
 
-  def background_job_transaction(args={})
+  def background_job_transaction(args={}, payload=create_background_payload)
     Appsignal::Transaction.create(
       '1',
       {
@@ -70,7 +70,7 @@ module TransactionHelpers
       o.set_perform_job_event(
         notification_event(
           :name => 'perform_job.delayed_job',
-          :payload => create_background_payload
+          :payload => payload
         )
       )
     end
