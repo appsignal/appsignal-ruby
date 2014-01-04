@@ -12,7 +12,7 @@ module NotificationHelpers
     )
   end
 
-  def create_payload(args = {})
+  def create_payload(args={})
     {
       :path => '/blog',
       :action => 'show',
@@ -33,6 +33,6 @@ module NotificationHelpers
       :attempts => 0,
       :queue => 'default',
       :queue_start => fixed_time - 10,
-    }
+    }.merge(args)
   end
 end
