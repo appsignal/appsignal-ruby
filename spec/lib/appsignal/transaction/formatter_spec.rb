@@ -114,7 +114,8 @@ describe Appsignal::Transaction::Formatter do
     end
 
     context "with a background request" do
-      let(:transaction) { background_job_transaction }
+      let(:payload) { create_background_payload }
+      let(:transaction) { background_job_transaction({}, payload) }
       before { transaction.truncate! }
 
       its(:keys) { should =~ [:request_id, :log_entry, :failed] }
@@ -134,6 +135,16 @@ describe Appsignal::Transaction::Formatter do
         :time => 978364860.0,
       } }
       its([:failed]) { should be_false }
+
+      context "when queue_time is zero" do
+        let(:payload) { create_background_payload(:queue_start => 0) }
+
+        context "log entry" do
+          subject { formatter.hash[:log_entry] }
+
+          its([:queue_duration]) { should be_nil }
+        end
+      end
     end
   end
 end
