@@ -61,6 +61,7 @@ module Appsignal
       return unless event && event.payload
       @action = "#{event.payload[:class]}##{event.payload[:method]}"
       @kind = 'background_job'
+      return unless @process_action_event.payload[:queue_start]
       @background_queue_start = @process_action_event.payload[:queue_start].to_f
     end
 
