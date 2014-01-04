@@ -32,7 +32,8 @@ describe Appsignal::Transaction do
       {
         'HTTP_USER_AGENT' => 'IE6',
         'SERVER_NAME' => 'localhost',
-        'action_dispatch.routes' => 'not_available'
+        'action_dispatch.routes' => 'not_available',
+        'HTTP_X_REQUEST_START' => '1000000'
       }
     end
     let(:transaction) { Appsignal::Transaction.create('1', env) }
@@ -45,6 +46,7 @@ describe Appsignal::Transaction do
 
     describe '#set_process_action_event' do
       before { transaction.set_process_action_event(process_action_event) }
+
       let(:process_action_event) { notification_event }
 
       it 'should add a process action event' do
@@ -57,6 +59,10 @@ describe Appsignal::Transaction do
 
       it "should set the kind" do
         transaction.kind.should == 'http_request'
+      end
+
+      it "should call set_http_queue_start" do
+        transaction.queue_start.should_not be_nil
       end
     end
 
@@ -83,16 +89,8 @@ describe Appsignal::Transaction do
         transaction.kind.should == 'background_job'
       end
 
-      it "should set the queue time" do
-        transaction.background_queue_start.should == 978364850.0
-      end
-
-      context "when the queue start is nil" do
-        let(:payload) { create_background_payload(:queue_start => nil) }
-
-        it "should set a nil queue time" do
-          transaction.background_queue_start.should be_nil
-        end
+      it "should set call set_background_queue_start" do
+        transaction.queue_start.should_not be_nil
       end
     end
 
@@ -330,39 +328,46 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#queue_start" do
+    describe "#set_background_queue_start" do
+      before do
+        transaction.stub(:process_action_event =>
+          notification_event(
+            :name => 'perform_job.delayed_job',
+            :payload => payload
+          )
+        )
+        transaction.set_background_queue_start
+      end
       subject { transaction.queue_start }
 
-      context "for a http request" do
-        let(:transaction) { regular_transaction }
+      context "when queue start is nil" do
+        let(:payload) { create_background_payload(:queue_start => nil) }
 
-        it "should call http_queue_start" do
-          transaction.should_receive(:http_queue_start)
-          subject
-        end
+        it { should be_nil }
       end
 
-      context "for a background job" do
-        let(:transaction) { background_job_transaction }
+      context "when queue start is set" do
+        let(:payload) { create_background_payload }
 
-        it "should get the queue start from the payload" do
-          subject.should == 978364850.0
-        end
+        it { should == 978364850.0 }
       end
     end
 
-    describe "#http_queue_start" do
+    describe "#set_http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 10.0 }
       let(:slightly_earlier_time_in_msec) { (slightly_earlier_time.to_f * 1_000_000).to_i }
-      subject { transaction.send(:http_queue_start) }
+      before { transaction.set_http_queue_start }
+      subject { transaction.queue_start }
 
-      context "without the env" do
+      context "without env" do
         let(:env) { nil }
 
         it { should be_nil }
       end
 
       context "with no relevant header set" do
+        let(:env) { {} }
+
         it { should be_nil }
       end
 
