@@ -62,10 +62,12 @@ describe Appsignal::Transaction do
 
     describe "set_perform_job_event" do
       before { transaction.set_perform_job_event(perform_job_event) }
+
+      let(:payload) { create_background_payload }
       let(:perform_job_event) do
         notification_event(
           :name => 'perform_job.delayed_job',
-          :payload => create_background_payload
+          :payload => payload
         )
       end
 
@@ -83,6 +85,14 @@ describe Appsignal::Transaction do
 
       it "should set the queue time" do
         transaction.background_queue_start.should == 978364850.0
+      end
+
+      context "when the queue start is nil" do
+        let(:payload) { create_background_payload(:queue_start => nil) }
+
+        it "should set a nil queue time" do
+          transaction.background_queue_start.should be_nil
+        end
       end
     end
 
