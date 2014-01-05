@@ -24,7 +24,7 @@ describe Appsignal::Transaction::Formatter do
           :action => "BlogPostsController#show",
           :db_runtime => 500,
           :duration => be_within(0.01).of(100.0),
-          :end => 978364860.1,
+          :end => 1389783600.1,
           :environment => {},
           :kind => "http_request",
           :path => "/blog",
@@ -32,7 +32,7 @@ describe Appsignal::Transaction::Formatter do
           :request_method => "GET",
           :session_data => {},
           :status => "200",
-          :time => 978364860.0,
+          :time => 1389783600.0,
           :view_runtime => 500
       } }
       its([:failed]) { should be_false }
@@ -97,8 +97,8 @@ describe Appsignal::Transaction::Formatter do
         its(:first) { should == {
           :name => "query.mongoid",
           :duration => be_within(0.01).of(100.0),
-          :time => 978364860.0,
-          :end => 978364860.1,
+          :time => 1389783600.0,
+          :end => 1389783600.1,
           :payload => {
             :path => "/blog",
             :action => "show",
@@ -123,7 +123,7 @@ describe Appsignal::Transaction::Formatter do
       its([:log_entry]) { should == {
         :action => "BackgroundJob#perform",
         :duration => be_within(0.01).of(100.0),
-        :end => 978364860.1,
+        :end => 1389783600.1,
         :queue_duration => 10.0,
         :priority => 1,
         :attempts => 0,
@@ -132,7 +132,7 @@ describe Appsignal::Transaction::Formatter do
         :kind => "background_job",
         :path => "/foo",
         :session_data => {},
-        :time => 978364860.0,
+        :time => 1389783600.0,
       } }
       its([:failed]) { should be_false }
 

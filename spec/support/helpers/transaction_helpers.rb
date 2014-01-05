@@ -1,6 +1,6 @@
 module TransactionHelpers
   def fixed_time
-    @fixed_time ||= Time.at(978364860.0)
+    @fixed_time ||= Time.new(2014, 01, 15, 12, 0).to_f
   end
 
   def uploaded_file
@@ -33,7 +33,7 @@ module TransactionHelpers
   def regular_transaction_with_x_request_start
     appsignal_transaction(
       :process_action_event => notification_event,
-      'HTTP_X_REQUEST_START' => "t=#{((fixed_time.to_f - 40.0) * 1000).to_i}"
+      'HTTP_X_REQUEST_START' => "t=#{(fixed_time - 40.0).to_i}"
     )
   end
 
