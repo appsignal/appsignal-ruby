@@ -124,17 +124,20 @@ module Appsignal
     end
 
     def set_background_queue_start
-      return unless process_action_event.payload[:queue_start]
-      @queue_start = process_action_event.payload[:queue_start].to_f
+      queue_start = process_action_event.payload[:queue_start]
+      return unless queue_start
+      Appsignal.logger.debug("Setting background queue start: #{queue_start}")
+      @queue_start = queue_start.to_f
     end
 
     def set_http_queue_start
       return unless env
       env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
       if env_var
+        Appsignal.logger.debug("Setting http queue start: #{env_var}")
         value = env_var.tr('^0-9', '')
         unless value.empty?
-          @queue_start = value.to_f / 1_000_000
+          @queue_start = value.to_f / 1000
         end
       end
     end
