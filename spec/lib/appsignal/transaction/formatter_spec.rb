@@ -124,7 +124,7 @@ describe Appsignal::Transaction::Formatter do
         :action => "BackgroundJob#perform",
         :duration => be_within(0.01).of(100.0),
         :end => 1389783600.1,
-        :queue_duration => 10.0,
+        :queue_duration => 10000.0,
         :priority => 1,
         :attempts => 0,
         :queue => 'default',

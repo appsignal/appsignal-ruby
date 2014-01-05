@@ -32,7 +32,7 @@ module NotificationHelpers
       :priority => 1,
       :attempts => 0,
       :queue => 'default',
-      :queue_start => fixed_time - 10,
+      :queue_start => fixed_time - 10.0,
     }.merge(args)
   end
 end
