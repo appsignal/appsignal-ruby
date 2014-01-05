@@ -349,13 +349,13 @@ describe Appsignal::Transaction do
       context "when queue start is set" do
         let(:payload) { create_background_payload }
 
-        it { should == 978364850.0 }
+        it { should == 1389783590.0 }
       end
     end
 
     describe "#set_http_queue_start" do
-      let(:slightly_earlier_time) { fixed_time - 10.0 }
-      let(:slightly_earlier_time_in_msec) { (slightly_earlier_time.to_f * 1000).to_i }
+      let(:slightly_earlier_time) { fixed_time - 10 }
+      let(:slightly_earlier_time_in_ms) { slightly_earlier_time.to_i }
       before { transaction.set_http_queue_start }
       subject { transaction.queue_start }
 
@@ -372,9 +372,9 @@ describe Appsignal::Transaction do
       end
 
       context "with the HTTP_X_REQUEST_START header set" do
-        let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_msec}"} }
+        let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}"} }
 
-        it { should == 978364850.0 }
+        it { should == 1389783590.0 }
 
         context "with unparsable content" do
           let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
@@ -383,15 +383,15 @@ describe Appsignal::Transaction do
         end
 
         context "with some cruft" do
-          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_msec}aaaa"} }
+          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}aaaa"} }
 
-          it { should == 978364850.0 }
+          it { should == 1389783590.0 }
         end
 
         context "with the alternate HTTP_X_QUEUE_START header set" do
-          let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_msec}"} }
+          let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_ms}"} }
 
-          it { should == 978364850.0 }
+          it { should == 1389783590.0 }
         end
       end
     end
