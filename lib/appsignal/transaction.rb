@@ -137,7 +137,7 @@ module Appsignal
         Appsignal.logger.debug("Setting http queue start: #{env_var}")
         value = env_var.tr('^0-9', '')
         unless value.empty?
-          @queue_start = value.to_f / 1000
+          @queue_start = value.to_f / 1000.0
         end
       end
     end
