@@ -355,7 +355,7 @@ describe Appsignal::Transaction do
 
     describe "#set_http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 10.0 }
-      let(:slightly_earlier_time_in_msec) { (slightly_earlier_time.to_f * 1_000_000).to_i }
+      let(:slightly_earlier_time_in_msec) { (slightly_earlier_time.to_f * 1000).to_i }
       before { transaction.set_http_queue_start }
       subject { transaction.queue_start }
 

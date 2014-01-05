@@ -33,7 +33,7 @@ module TransactionHelpers
   def regular_transaction_with_x_request_start
     appsignal_transaction(
       :process_action_event => notification_event,
-      'HTTP_X_REQUEST_START' => "t=#{((fixed_time.to_f - 40.0) * 1_000_000).to_i}"
+      'HTTP_X_REQUEST_START' => "t=#{((fixed_time.to_f - 40.0) * 1000).to_i}"
     )
   end
 
