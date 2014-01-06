@@ -22,6 +22,7 @@ module Appsignal
       Appsignal.logger.debug('Starting agent thread')
       @thread = Thread.new do
         loop do
+          Appsignal.logger.debug aggregator.queue.inspect
           send_queue if aggregator.has_transactions?
           Appsignal.logger.debug("Sleeping #{sleep_time}")
           sleep(sleep_time)

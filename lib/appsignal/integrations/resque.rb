@@ -1,20 +1,19 @@
+Appsignal.logger.debug('moo')
 if defined?(::Resque)
   Appsignal.logger.info('Loading Resque integration')
 
   module Appsignal
     module Integrations
-      class ResquePlugin
-        def around_perform(worker, item, queue, proc)
+      module ResquePlugin
+
+        def around_perform_resque_plugin(*args)
           Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
           ActiveSupport::Notifications.instrument(
             'perform_job.resque',
-            :class => item['class'],
-            :method => 'perform',
-            :attempts => item['retry_count'],
-            :queue => item['queue'],
-            :queue_start => item['enqueued_at']
+            :class => self.to_s,
+            :method => 'perform'
           ) do
-            proc.call
+            yield
           end
         rescue Exception => exception
           unless Appsignal.is_ignored_exception?(exception)
@@ -23,11 +22,6 @@ if defined?(::Resque)
           raise exception
         ensure
           Appsignal::Transaction.current.complete!
-        end
-
-        def on_failure(exception, worker, queue, payload)
-          return unless Appsignal.is_ignored_exception?(exception)
-          Appsignal::Transaction.current.add_exception(exception)
         end
       end
     end

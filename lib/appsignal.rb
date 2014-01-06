@@ -12,6 +12,7 @@ module Appsignal
       require 'appsignal/integrations/passenger'
       require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
+      require 'appsignal/integrations/resque'
     end
 
     def extensions
