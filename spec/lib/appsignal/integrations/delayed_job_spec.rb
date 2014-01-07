@@ -54,7 +54,7 @@ describe "Delayed Job integration" do
           Appsignal::Transaction.any_instance.should_receive(:complete!)
 
           Timecop.freeze(time) do
-            plugin.invoke_with_instrumentation(job, &invoked_block)
+            plugin.invoke_with_instrumentation(job, invoked_block)
           end
         end
       end
@@ -66,7 +66,7 @@ describe "Delayed Job integration" do
           Appsignal::Transaction.any_instance.should_receive(:complete!)
 
           lambda {
-            plugin.invoke_with_instrumentation(job, &invoked_block)
+            plugin.invoke_with_instrumentation(job, invoked_block)
           }.should raise_error(StandardError)
         end
       end

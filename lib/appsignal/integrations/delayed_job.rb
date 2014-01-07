@@ -10,7 +10,7 @@ if defined?(::Delayed::Plugin)
           end
         end
 
-        def self.invoke_with_instrumentation(job, &block)
+        def self.invoke_with_instrumentation(job, block)
           begin
             Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
             class_name, method_name = job.name.split('#')
