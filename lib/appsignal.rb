@@ -95,7 +95,9 @@ module Appsignal
     end
 
     def start_logger(path)
-      if path && File.writable?(path) && !ENV['DYNO']
+      if path && File.writable?(path) &&
+         !ENV['DYNO'] &&
+         !ENV['SHELLYCLOUD_DEPLOYMENT']
         @logger = Logger.new(File.join(path, 'appsignal.log'))
         @logger.formatter = Logger::Formatter.new
       else
