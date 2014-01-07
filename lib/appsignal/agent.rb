@@ -2,7 +2,8 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_accessor :aggregator, :thread, :active, :sleep_time, :transmitter, :subscriber
+    attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
+                  :transmitter, :subscriber
 
     def initialize
       return unless Appsignal.active?
@@ -11,6 +12,8 @@ module Appsignal
       else
         @sleep_time = 60.0
       end
+      @master_pid = Process.pid
+      @pid = @master_pid
       @aggregator = Aggregator.new
       @transmitter = Transmitter.new(ACTION)
       subscribe
@@ -57,6 +60,7 @@ module Appsignal
     def enqueue(transaction)
       Appsignal.logger.debug('Enqueueing transaction')
       aggregator.add(transaction)
+      forked! if @pid != Process.pid
     end
 
     def send_queue
@@ -90,15 +94,11 @@ module Appsignal
 
     def forked!
       Appsignal.logger.debug('Forked worker process')
-      @forked = true
+      @pid = Process.pid
       Thread.exclusive do
         @aggregator = Aggregator.new
       end
       restart_thread
-    end
-
-    def forked?
-      @forked ||= false
     end
 
     def shutdown(send_current_queue=false)
