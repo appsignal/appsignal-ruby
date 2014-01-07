@@ -49,10 +49,8 @@ module Appsignal
       end
 
       def add_queue_duration_to_hash!
-        start = queue_start || 0.0
-        if start > 0
-          hash[:log_entry][:queue_duration] = hash[:log_entry][:time] - start
-        end
+        return unless queue_start && queue_start > 0
+        hash[:log_entry][:queue_duration] = 1000.0 * (hash[:log_entry][:time] - queue_start)
       end
 
       def add_tags_to_hash!

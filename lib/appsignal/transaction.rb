@@ -22,7 +22,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :background_queue_start
+                :env, :fullpath, :time, :tags, :kind, :queue_start
 
     def initialize(request_id, env)
       @request_id = request_id
@@ -54,6 +54,7 @@ module Appsignal
       return unless event && event.payload
       @action = "#{event.payload[:controller]}##{event.payload[:action]}"
       @kind = 'http_request'
+      set_http_queue_start
     end
 
     def set_perform_job_event(event)
@@ -61,8 +62,7 @@ module Appsignal
       return unless event && event.payload
       @action = "#{event.payload[:class]}##{event.payload[:method]}"
       @kind = 'background_job'
-      return unless @process_action_event.payload[:queue_start]
-      @background_queue_start = @process_action_event.payload[:queue_start].to_f
+      set_background_queue_start
     end
 
     def add_event(event)
@@ -123,21 +123,21 @@ module Appsignal
       end
     end
 
-    def queue_start
-      if @kind == 'background_job'
-        background_queue_start
-      else
-        http_queue_start
-      end
+    def set_background_queue_start
+      queue_start = process_action_event.payload[:queue_start]
+      return unless queue_start
+      Appsignal.logger.debug("Setting background queue start: #{queue_start}")
+      @queue_start = queue_start.to_f
     end
 
-    def http_queue_start
+    def set_http_queue_start
       return unless env
       env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
       if env_var
+        Appsignal.logger.debug("Setting http queue start: #{env_var}")
         value = env_var.tr('^0-9', '')
         unless value.empty?
-          value.to_f / 1_000_000
+          @queue_start = value.to_f / 1000.0
         end
       end
     end

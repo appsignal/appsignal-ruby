@@ -1,3 +1,6 @@
+# 0.8.1
+* Fix in monitoring of queue times
+
 # 0.8.0
 * Support for background processors (Delayed Job and Sidekiq)
 
