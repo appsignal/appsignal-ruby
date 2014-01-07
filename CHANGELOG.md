@@ -1,3 +1,8 @@
+# 0.8.2
+* Bugfix in Delayed Job integration
+* appsignal prefix when logging to stdout
+* Log to stdout on Shelly Cloud
+
 # 0.8.1
 * Fix in monitoring of queue times
 
