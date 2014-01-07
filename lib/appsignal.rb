@@ -100,6 +100,9 @@ module Appsignal
         @logger.formatter = Logger::Formatter.new
       else
         @logger = Logger.new($stdout)
+        @logger.formatter = lambda do |severity, datetime, progname, msg|
+          "appsignal: #{msg}\n"
+         end
       end
       @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
