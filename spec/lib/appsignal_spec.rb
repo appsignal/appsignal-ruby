@@ -173,7 +173,8 @@ describe Appsignal do
         before { Appsignal.start_logger(path) }
 
         it "should log to stdout" do
-          out_stream.string.should include 'Log something'
+          Appsignal.logger.error('Log to stdout')
+          out_stream.string.should include 'appsignal: Log to stdout'
         end
       end
 
@@ -186,7 +187,8 @@ describe Appsignal do
         after { ENV.delete('DYNO') }
 
         it "should log to stdout" do
-          out_stream.string.should include 'Log something'
+          Appsignal.logger.error('Log to stdout')
+          out_stream.string.should include 'appsignal: Log to stdout'
         end
       end
 
