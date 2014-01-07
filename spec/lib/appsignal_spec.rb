@@ -192,6 +192,20 @@ describe Appsignal do
         end
       end
 
+      context "when we're on Shelly Cloud" do
+        let(:path) { File.join(project_fixture_path, 'log') }
+        before do
+          ENV['SHELLYCLOUD_DEPLOYMENT'] = 'true'
+          Appsignal.start_logger(path)
+        end
+        after { ENV.delete('SHELLYCLOUD_DEPLOYMENT') }
+
+        it "should log to stdout" do
+          Appsignal.logger.error('Log to stdout')
+          out_stream.string.should include 'appsignal: Log to stdout'
+        end
+      end
+
       context "when there is no in memory log" do
         it "should not crash" do
           Appsignal.in_memory_log = nil
