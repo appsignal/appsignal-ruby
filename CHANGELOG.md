@@ -1,3 +1,6 @@
+# 0.8.3
+* Restart thread when we've been forked
+
 # 0.8.2
 * Bugfix in Delayed Job integration
 * appsignal prefix when logging to stdout
