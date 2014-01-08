@@ -10,6 +10,11 @@ describe Appsignal::Agent do
 
   let(:transaction) { regular_transaction }
 
+  context "pid" do
+    its(:master_pid) { should == Process.pid }
+    its(:pid) { should == Process.pid }
+  end
+
   describe "#sleep_time" do
     subject { Appsignal::Agent.new.sleep_time }
 
@@ -134,9 +139,21 @@ describe Appsignal::Agent do
   end
 
   describe "#enqueue" do
+    subject { Appsignal.agent }
+
     it "forwards to the aggregator" do
       subject.aggregator.should respond_to(:add)
       subject.aggregator.should_receive(:add).with(:foo)
+      subject.should_not_receive(:forked!)
+    end
+
+    context "if we have been forked" do
+      before { Process.stub(:pid => 9000000002) }
+
+      it "should call forked!" do
+        subject.aggregator.should_receive(:add).with(:foo)
+        subject.should_receive(:forked!)
+      end
     end
 
     after { subject.enqueue(:foo) }
@@ -191,17 +208,23 @@ describe Appsignal::Agent do
   end
 
   describe "#forked!" do
-    its(:forked?) { should be_false }
+    subject { Appsignal.agent }
 
-    it "should create a new aggregator and restart the thread" do
-      previous_aggregator = subject.aggregator
+    it "should create a new aggregator, set the new pid and restart the thread" do
+      master_pid = subject.master_pid
+      subject.pid.should == master_pid
+
+      Process.stub(:pid => 9000000001)
       subject.should_receive(:restart_thread)
+      previous_aggregator = subject.aggregator
 
       subject.forked!
 
-      subject.forked?.should be_true
       subject.aggregator.should_not == previous_aggregator
       subject.aggregator.should be_a Appsignal::Aggregator
+
+      subject.master_pid.should == master_pid
+      subject.pid.should == 9000000001
     end
   end
 
