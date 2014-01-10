@@ -43,6 +43,7 @@ module Appsignal
         @config ||= Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
+          {},
           logger
         )
       end
