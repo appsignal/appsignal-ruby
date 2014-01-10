@@ -16,7 +16,7 @@ module Appsignal
 
     def initialize(root_path, env, logger=Appsignal.logger)
       @root_path = root_path
-      @env = env
+      @env = env.to_s
       @logger = logger
 
       if File.exists?(config_file)

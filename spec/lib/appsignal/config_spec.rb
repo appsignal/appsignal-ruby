@@ -40,6 +40,16 @@ describe Appsignal::Config do
       it { should be_true }
     end
 
+    context "if the env is passed as a symbol" do
+      let(:config) { project_fixture_config(:production) }
+
+      describe "#active?" do
+        subject { config.active? }
+
+        it { should be_true }
+      end
+    end
+
     context "and there's also an env var present" do
       before do
         ENV['APPSIGNAL_PUSH_API_KEY'] = 'push_api_key'
