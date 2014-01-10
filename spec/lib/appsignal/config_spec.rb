@@ -12,6 +12,7 @@ describe Appsignal::Config do
     end
 
     its(:loaded?) { should be_true }
+    its(:active?) { should be_true }
 
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
@@ -34,20 +35,10 @@ describe Appsignal::Config do
       end
     end
 
-    describe "#active?" do
-      subject { config.active? }
-
-      it { should be_true }
-    end
-
     context "if the env is passed as a symbol" do
       let(:config) { project_fixture_config(:production) }
 
-      describe "#active?" do
-        subject { config.active? }
-
-        it { should be_true }
-      end
+      its(:active?) { should be_true }
     end
 
     context "and there's also an env var present" do
@@ -57,6 +48,15 @@ describe Appsignal::Config do
 
       it "should ignore the env var" do
         subject[:push_api_key].should == 'abc'
+      end
+    end
+
+    context "and there is an initial config" do
+      let(:config) { project_fixture_config('production', :name => 'Initial name', :initial_key => 'value') }
+
+      it "should merge with the config" do
+        subject[:name].should == 'TestApp'
+        subject[:initial_key].should == 'value'
       end
     end
 
@@ -80,10 +80,12 @@ describe Appsignal::Config do
     end
 
     its(:loaded?) { should be_false }
+    its(:active?) { should be_false }
   end
 
   context "when there is no config file" do
-    let(:config) { Appsignal::Config.new('/nothing', 'production') }
+    let(:initial_config) { {} }
+    let(:config) { Appsignal::Config.new('/nothing', 'production', initial_config) }
 
     it "should log an error" do
       Appsignal::Config.any_instance.should_receive(:carefully_log_error).with(
@@ -94,17 +96,12 @@ describe Appsignal::Config do
     end
 
     its(:loaded?) { should be_false }
+    its(:active?) { should be_false }
 
     describe "#[]" do
       it "should return nil" do
         subject[:endpoint].should be_nil
       end
-    end
-
-    describe "#active?" do
-      subject { config.active? }
-
-      it { should be_false }
     end
 
     context "and an env var is present" do
@@ -118,12 +115,7 @@ describe Appsignal::Config do
       end
 
       its(:loaded?) { should be_true }
-
-      describe "#active?" do
-        subject { config.active? }
-
-        it { should be_true }
-      end
+      its(:active?) { should be_true }
 
       it "should merge with the default config and fill the config hash" do
         subject.config_hash.should == {
@@ -133,6 +125,14 @@ describe Appsignal::Config do
           :slow_request_threshold => 200,
           :active => true
         }
+      end
+
+      context "and an initial config is present" do
+        let(:initial_config) { {:name => 'Initial Name'} }
+
+        it "should merge with the config" do
+          subject[:name].should == 'Initial Name'
+        end
       end
 
       context "with only APPSIGNAL_API_KEY" do

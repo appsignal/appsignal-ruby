@@ -7,6 +7,10 @@ production:
   <<: *defaults
   active: true
 
+development:
+  <<: *defaults
+  active: true
+
 test:
   <<: *defaults
   endpoint: "http://localhost:3000/1"

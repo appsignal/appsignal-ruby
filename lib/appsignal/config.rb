@@ -12,11 +12,12 @@ module Appsignal
       :slow_request_threshold => 200
     }.freeze
 
-    attr_reader :root_path, :env, :config_hash
+    attr_reader :root_path, :env, :initial_config, :config_hash
 
-    def initialize(root_path, env, logger=Appsignal.logger)
+    def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
       @root_path = root_path
       @env = env.to_s
+      @initial_config = initial_config
       @logger = logger
 
       if File.exists?(config_file)
@@ -74,17 +75,21 @@ module Appsignal
           config_for_this_env[:push_api_key] = config_for_this_env[:api_key]
         end
 
-        @config_hash = DEFAULT_CONFIG.merge(config_for_this_env)
+        @config_hash = merge_config(config_for_this_env)
       else
         carefully_log_error("Not loading: config for '#{env}' not found")
       end
     end
 
     def load_default_config_with_push_api_key(key)
-      @config_hash = DEFAULT_CONFIG.merge(
+      @config_hash = merge_config(
         :push_api_key => key,
         :active => true
       )
+    end
+
+    def merge_config(config)
+      DEFAULT_CONFIG.merge(initial_config).merge(config)
     end
   end
 end

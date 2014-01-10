@@ -18,6 +18,16 @@ if rails_present?
         subject { Appsignal.config }
 
         it { should be_a(Appsignal::Config) }
+
+        its(:root_path) { should == Pathname.new(project_fixture_path) }
+        its(:env) { should == 'test' }
+        its([:name]) { should == 'TestApp' }
+
+        context "initial config" do
+          subject { Appsignal.config.initial_config }
+
+          its([:name]) { should == 'MyApp' }
+        end
       end
 
       context "agent" do
