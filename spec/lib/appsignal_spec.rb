@@ -78,19 +78,19 @@ describe Appsignal do
     subject { Appsignal.active? }
 
     context "without config" do
-      before { Appsignal.stub(:config => nil) }
+      before { Appsignal.config = nil }
 
       it { should be_false }
     end
 
     context "with config but inactive" do
-      before { Appsignal.stub(:config => {:active => false}) }
+      before { Appsignal.config = project_fixture_config('nonsense') }
 
       it { should be_false }
     end
 
     context "with active config" do
-      before { Appsignal.stub(:config => {:active => true}) }
+      before { Appsignal.config = project_fixture_config }
 
       it { should be_true }
     end

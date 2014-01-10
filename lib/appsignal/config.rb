@@ -50,6 +50,10 @@ module Appsignal
       config_hash[key]
     end
 
+    def active?
+      !! self[:active]
+    end
+
     protected
 
     def config_file

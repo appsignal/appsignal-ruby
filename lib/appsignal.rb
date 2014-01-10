@@ -121,7 +121,7 @@ module Appsignal
     end
 
     def active?
-      config && config[:active] == true
+      config && config.active?
     end
 
     def is_ignored_exception?(exception)
