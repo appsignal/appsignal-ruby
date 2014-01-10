@@ -34,6 +34,12 @@ describe Appsignal::Config do
       end
     end
 
+    describe "#active?" do
+      subject { config.active? }
+
+      it { should be_true }
+    end
+
     context "and there's also an env var present" do
       before do
         ENV['APPSIGNAL_PUSH_API_KEY'] = 'push_api_key'
@@ -85,6 +91,12 @@ describe Appsignal::Config do
       end
     end
 
+    describe "#active?" do
+      subject { config.active? }
+
+      it { should be_false }
+    end
+
     context "and an env var is present" do
       before do
         ENV['APPSIGNAL_PUSH_API_KEY'] = 'push_api_key'
@@ -96,6 +108,12 @@ describe Appsignal::Config do
       end
 
       its(:loaded?) { should be_true }
+
+      describe "#active?" do
+        subject { config.active? }
+
+        it { should be_true }
+      end
 
       it "should merge with the default config and fill the config hash" do
         subject.config_hash.should == {
