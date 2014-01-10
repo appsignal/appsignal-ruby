@@ -15,7 +15,7 @@ module Appsignal
 
               appsignal_config = Appsignal::Config.new(
                 ENV['PWD'],
-                env,
+                env.to_s,
                 logger
               )
 

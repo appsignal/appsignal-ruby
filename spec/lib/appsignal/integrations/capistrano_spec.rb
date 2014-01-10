@@ -52,6 +52,20 @@ describe Appsignal::Integrations::Capistrano do
         end
       end
 
+      context "when env is a symbol instead of a string" do
+        before do
+          @capistrano_config.set(:rails_env, :production)
+        end
+
+        it "should be instantiated with the right params" do
+          Appsignal::Config.should_receive(:new).with(
+            ENV['PWD'],
+            'production',
+            kind_of(Capistrano::Logger)
+          )
+        end
+      end
+
       after { @capistrano_config.find_and_execute_task('appsignal:deploy') }
     end
 
