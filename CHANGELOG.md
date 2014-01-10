@@ -1,5 +1,7 @@
 # 0.8.3
 * Restart thread when we've been forked
+* Only notify of deploy when active in capistrano
+* Make sure env is a string in config
 
 # 0.8.2
 * Bugfix in Delayed Job integration
