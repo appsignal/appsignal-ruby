@@ -16,7 +16,11 @@ if defined?(::Rails)
           Appsignal.start_logger(Rails.root.join('log'))
 
           # Load config
-          Appsignal.config = Appsignal::Config.new(Rails.root, Rails.env)
+          Appsignal.config = Appsignal::Config.new(
+            Rails.root,
+            Rails.env,
+            :name => Rails.application.class.parent_name
+          )
 
           # Start agent if config for this env is present
           Appsignal.start if Appsignal.active?
