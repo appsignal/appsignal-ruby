@@ -19,17 +19,19 @@ module Appsignal
                 logger
               )
 
-              marker_data = {
-                :revision => current_revision,
-                :repository => repository,
-                :user => user
-              }
+              if appsignal_config && appsignal_config.active?
+                marker_data = {
+                  :revision => current_revision,
+                  :repository => repository,
+                  :user => user
+                }
 
-              marker = Marker.new(marker_data, appsignal_config, logger)
-              if config.dry_run
-                logger.info('Dry run: Deploy marker not actually sent.')
-              else
-                marker.transmit
+                marker = Marker.new(marker_data, appsignal_config, logger)
+                if config.dry_run
+                  logger.info('Dry run: Deploy marker not actually sent.')
+                else
+                  marker.transmit
+                end
               end
             end
           end
