@@ -146,7 +146,7 @@ module Appsignal
 
     def add_sanitized_context!
       sanitize_environment!
-      sanitize_session_data!
+      sanitize_session_data! if kind == 'http_request'
       sanitize_tags!
       @env = nil
     end
@@ -169,8 +169,9 @@ module Appsignal
     end
 
     def sanitize_session_data!
-      @sanitized_session_data =
-        Appsignal::Transaction::ParamsSanitizer.sanitize(request.session.to_hash)
+      @sanitized_session_data = Appsignal::Transaction::ParamsSanitizer.sanitize(
+        request.session.to_hash
+      )
       @fullpath = request.fullpath
     end
   end

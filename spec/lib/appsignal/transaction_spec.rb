@@ -401,11 +401,26 @@ describe Appsignal::Transaction do
     describe '#add_sanitized_context!' do
       subject { transaction.send(:add_sanitized_context!) }
 
-      it "delegates to sanitize_environment! and sanitize_session_data!" do
-        transaction.should_receive(:sanitize_environment!)
-        transaction.should_receive(:sanitize_session_data!)
-        transaction.should_receive(:sanitize_tags!)
-        subject
+      context "for a http request" do
+        before { transaction.stub(:kind => 'http_request') }
+
+        it "should call sanitize_environment!, sanitize_session_data! and sanitize_tags!" do
+          transaction.should_receive(:sanitize_environment!)
+          transaction.should_receive(:sanitize_session_data!)
+          transaction.should_receive(:sanitize_tags!)
+          subject
+        end
+      end
+
+      context "for a non-web request" do
+        before { transaction.stub(:kind => 'background_job') }
+
+        it "should not call sanitize_session_data!" do
+          transaction.should_receive(:sanitize_environment!)
+          transaction.should_not_receive(:sanitize_session_data!)
+          transaction.should_receive(:sanitize_tags!)
+          subject
+        end
       end
 
       specify { expect { subject }.to change(transaction, :env).to(nil) }
