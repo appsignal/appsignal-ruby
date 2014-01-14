@@ -1,3 +1,6 @@
+# 0.8.4
+* Skip session sanitize if not a http request
+
 # 0.8.3
 * Restart thread when we've been forked
 * Only notify of deploy when active in capistrano
