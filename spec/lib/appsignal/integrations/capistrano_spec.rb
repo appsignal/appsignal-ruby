@@ -33,6 +33,7 @@ describe Appsignal::Integrations::Capistrano do
         Appsignal::Config.should_receive(:new).with(
           project_fixture_path,
           'production',
+          {},
           kind_of(Capistrano::Logger)
         )
       end
@@ -47,6 +48,7 @@ describe Appsignal::Integrations::Capistrano do
           Appsignal::Config.should_receive(:new).with(
             project_fixture_path,
             'rack_production',
+            {},
             kind_of(Capistrano::Logger)
           )
         end
