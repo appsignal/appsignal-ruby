@@ -17,7 +17,6 @@ describe Appsignal::Integrations::Capistrano do
   describe "appsignal:deploy task" do
     before do
       @capistrano_config.set(:rails_env, 'production')
-      @capistrano_config.set(:rails_env, 'production')
       @capistrano_config.set(:repository, 'master')
       @capistrano_config.set(:deploy_to, '/home/username/app')
       @capistrano_config.set(:current_release, '')
