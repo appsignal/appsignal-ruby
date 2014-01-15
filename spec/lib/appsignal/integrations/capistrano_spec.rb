@@ -17,6 +17,7 @@ describe Appsignal::Integrations::Capistrano do
   describe "appsignal:deploy task" do
     before do
       @capistrano_config.set(:rails_env, 'production')
+      @capistrano_config.set(:rails_env, 'production')
       @capistrano_config.set(:repository, 'master')
       @capistrano_config.set(:deploy_to, '/home/username/app')
       @capistrano_config.set(:current_release, '')
@@ -27,7 +28,9 @@ describe Appsignal::Integrations::Capistrano do
     end
 
     context "config" do
-      before { @capistrano_config.dry_run = true }
+      before do
+        @capistrano_config.dry_run = true
+      end
 
       it "should be instantiated with the right params" do
         Appsignal::Config.should_receive(:new).with(
@@ -38,19 +41,34 @@ describe Appsignal::Integrations::Capistrano do
         )
       end
 
-      context "when rack_env is used instead of rails_env" do
+      context "when appsignal_config is available" do
         before do
-          @capistrano_config.unset(:rails_env)
-          @capistrano_config.set(:rack_env, 'rack_production')
+          @capistrano_config.set(:appsignal_config, :name => 'AppName')
         end
 
         it "should be instantiated with the right params" do
           Appsignal::Config.should_receive(:new).with(
             project_fixture_path,
-            'rack_production',
-            {},
+            'production',
+            {:name => 'AppName'},
             kind_of(Capistrano::Logger)
           )
+        end
+
+        context "when rack_env is used instead of rails_env" do
+          before do
+            @capistrano_config.unset(:rails_env)
+            @capistrano_config.set(:rack_env, 'rack_production')
+          end
+
+          it "should be instantiated with the right params" do
+            Appsignal::Config.should_receive(:new).with(
+              project_fixture_path,
+              'rack_production',
+              {:name => 'AppName'},
+              kind_of(Capistrano::Logger)
+            )
+          end
         end
       end
 
