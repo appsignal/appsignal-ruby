@@ -63,7 +63,7 @@ describe Appsignal::CLI do
     it "should validate that the config has been loaded and all options have been supplied" do
       cli.should_receive(:validate_config_loaded)
       cli.should_receive(:validate_required_options).with(
-        [:revision, :repository, :user, :environment]
+        [:revision, :user, :environment]
       )
       Appsignal::Marker.should_receive(:new).and_return(double(:transmit => true))
 
@@ -87,6 +87,27 @@ describe Appsignal::CLI do
         'notify_of_deploy',
         '--revision=aaaaa',
         '--repository=git@github.com:our/project.git',
+        '--user=thijs',
+        '--environment=production'
+      ])
+    end
+
+    it "should notify of a deploy without repository" do
+      marker = double
+      Appsignal::Marker.should_receive(:new).with(
+        {
+          :revision => 'aaaaa',
+          :repository => nil,
+          :user => 'thijs'
+        },
+        kind_of(Appsignal::Config),
+        kind_of(Logger)
+      ).and_return(marker)
+      marker.should_receive(:transmit)
+
+      cli.run([
+        'notify_of_deploy',
+        '--revision=aaaaa',
         '--user=thijs',
         '--environment=production'
       ])

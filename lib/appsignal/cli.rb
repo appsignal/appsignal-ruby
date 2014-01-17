@@ -93,7 +93,7 @@ module Appsignal
 
       def notify_of_deploy
         validate_config_loaded
-        validate_required_options([:revision, :repository, :user, :environment])
+        validate_required_options([:revision, :user, :environment])
 
         Appsignal::Marker.new(
           {
