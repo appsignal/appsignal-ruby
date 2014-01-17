@@ -1,4 +1,4 @@
-module Appsignal
+ module Appsignal
   class Transaction
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
@@ -117,7 +117,11 @@ module Appsignal
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
-        Appsignal.enqueue(current_transaction)
+        if Appsignal::Pipe.current
+          Appsignal::Pipe.current.write(self)
+        else
+          Appsignal.enqueue(current_transaction)
+        end
       else
         Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
       end
