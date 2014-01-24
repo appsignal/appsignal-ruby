@@ -1,3 +1,6 @@
+# 0.8.5
+* Don't require revision in CLI notify_of_deploy
+
 # 0.8.4
 * Skip session sanitize if not a http request
 * Use appsignal_config in Capistrano as initial config
