@@ -252,6 +252,8 @@ describe Appsignal do
     end
 
     describe ".send_exception" do
+      let(:tags) { {some: 'additional', tags: 'can be given'} }
+
       it "should send the exception to AppSignal" do
         agent = double
         Appsignal.stub(:agent).and_return(agent)
@@ -259,6 +261,12 @@ describe Appsignal do
         agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
 
         Appsignal::Transaction.should_receive(:create).and_call_original
+      end
+
+      it 'should tag the new transaction with provided tags' do
+        transaction = Appsignal::Transaction.create(SecureRandom.uuid, {})
+        Appsignal::Transaction.stub(create: transaction)
+        transaction.should_receive(:set_tags).with(tags)
       end
 
       it "should not send the exception if it's in the ignored list" do
@@ -270,7 +278,7 @@ describe Appsignal do
         begin
           raise "I am an exception"
         rescue Exception => e
-          Appsignal.send_exception(e)
+          Appsignal.send_exception(e, tags)
         end
       end
     end
