@@ -34,11 +34,15 @@ module Appsignal
     end
 
     def restart_thread
+      stop_thread
+      start_thread
+    end
+
+    def stop_thread
       if @thread && @thread.alive?
         Appsignal.logger.debug 'Killing agent thread'
         Thread.kill(@thread)
       end
-      start_thread
     end
 
     def subscribe
