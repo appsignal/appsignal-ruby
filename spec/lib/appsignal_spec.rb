@@ -252,8 +252,10 @@ describe Appsignal do
     end
 
     describe ".send_exception" do
+      before { Appsignal::Pipe.stub(:current => false) }
+
       it "should send the exception to AppSignal" do
-        agent = double
+        agent = double(:shutdown => true)
         Appsignal.stub(:agent).and_return(agent)
         agent.should_receive(:send_queue)
         agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
