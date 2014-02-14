@@ -1,3 +1,6 @@
+# 0.8.6
+* Resque support
+
 # 0.8.5
 * Don't require revision in CLI notify_of_deploy
 
