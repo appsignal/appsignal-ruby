@@ -12,6 +12,7 @@ module Appsignal
       require 'appsignal/integrations/passenger'
       require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
+      require 'appsignal/integrations/resque'
     end
 
     def extensions
@@ -142,5 +143,6 @@ require 'appsignal/transaction'
 require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
+require 'appsignal/pipe'
 require 'appsignal/version'
 require 'appsignal/integrations/rails'

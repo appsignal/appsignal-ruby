@@ -282,7 +282,10 @@ describe Appsignal::Transaction do
 
     describe '#complete!' do
       let(:event) { double(:event) }
-      before { transaction.set_process_action_event(notification_event) }
+      before do
+        Appsignal::Pipe.stub(:current => nil)
+        transaction.set_process_action_event(notification_event)
+      end
 
       it 'should remove transaction from the list' do
         expect { transaction.complete! }.
@@ -325,6 +328,17 @@ describe Appsignal::Transaction do
         it 'should reset the thread transaction id' do
           Thread.current[:appsignal_transaction_id].should be_nil
         end
+      end
+
+      context 'when using pipes' do
+        let(:pipe) { double }
+        before { Appsignal::Pipe.stub(:current => pipe) }
+
+        it "should send itself trough the pipe" do
+          pipe.should_receive(:write).with(transaction)
+        end
+
+        after { transaction.complete! }
       end
     end
 
