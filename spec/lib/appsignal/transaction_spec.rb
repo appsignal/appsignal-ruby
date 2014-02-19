@@ -453,6 +453,12 @@ describe Appsignal::Transaction do
       before { transaction.send(:sanitize_environment!) }
 
       its(:keys) { should =~ whitelisted_keys }
+
+      context "when env is nil" do
+        let(:env) { nil }
+
+        it { should be_empty }
+      end
     end
 
     describe '#sanitize_tags!' do
