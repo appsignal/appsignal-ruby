@@ -62,9 +62,9 @@ module Appsignal
     end
 
     def enqueue(transaction)
+      forked! if @pid != Process.pid
       Appsignal.logger.debug('Enqueueing transaction')
       aggregator.add(transaction)
-      forked! if @pid != Process.pid
     end
 
     def send_queue
