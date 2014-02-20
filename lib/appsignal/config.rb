@@ -8,6 +8,7 @@ module Appsignal
 
     DEFAULT_CONFIG = {
       :ignore_exceptions => [],
+      :send_params => true,
       :endpoint => 'https://push.appsignal.com/1',
       :slow_request_threshold => 200
     }.freeze
