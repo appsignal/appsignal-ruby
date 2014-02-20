@@ -81,6 +81,7 @@ module Appsignal
       return false unless transaction
       transaction.set_tags(params)
     end
+    alias :tag_job :tag_request
 
     def transactions
       @transactions ||= {}

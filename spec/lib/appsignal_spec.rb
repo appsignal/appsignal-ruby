@@ -132,6 +132,10 @@ describe Appsignal do
           Appsignal.tag_request.should be_false
         end
       end
+
+      it "should also listen to tag_job" do
+        Appsignal.should respond_to(:tag_job)
+      end
     end
 
     describe ".transactions" do
