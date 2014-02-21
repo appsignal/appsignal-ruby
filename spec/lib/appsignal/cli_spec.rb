@@ -75,29 +75,6 @@ describe Appsignal::CLI do
       Appsignal::Marker.should_receive(:new).with(
         {
           :revision => 'aaaaa',
-          :repository => 'git@github.com:our/project.git',
-          :user => 'thijs'
-        },
-        kind_of(Appsignal::Config),
-        kind_of(Logger)
-      ).and_return(marker)
-      marker.should_receive(:transmit)
-
-      cli.run([
-        'notify_of_deploy',
-        '--revision=aaaaa',
-        '--repository=git@github.com:our/project.git',
-        '--user=thijs',
-        '--environment=production'
-      ])
-    end
-
-    it "should notify of a deploy without repository" do
-      marker = double
-      Appsignal::Marker.should_receive(:new).with(
-        {
-          :revision => 'aaaaa',
-          :repository => nil,
           :user => 'thijs'
         },
         kind_of(Appsignal::Config),

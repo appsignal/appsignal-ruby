@@ -76,10 +76,6 @@ module Appsignal
               options[:revision] = arg
             end
 
-            o.on '--repository=<repository>', "The location of the main code repository" do |arg|
-              options[:repository] = arg
-            end
-
             o.on '--user=<user>', "The name of the user that's deploying" do |arg|
               options[:user] = arg
             end
@@ -98,7 +94,6 @@ module Appsignal
         Appsignal::Marker.new(
           {
             :revision => options[:revision],
-            :repository => options[:repository],
             :user => options[:user]
           },
           config,
