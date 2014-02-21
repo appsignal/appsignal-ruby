@@ -93,7 +93,7 @@ module Appsignal
       end
 
       def notify_of_deploy
-        validate_config_loaded
+        validate_active_config
         validate_required_options([:revision, :user, :environment])
 
         Appsignal::Marker.new(
@@ -118,8 +118,8 @@ module Appsignal
         end
       end
 
-      def validate_config_loaded
-        unless config.loaded?
+      def validate_active_config
+        unless config.active?
           puts 'Exiting: No config file or push api key env var found'
           exit(1)
         end
