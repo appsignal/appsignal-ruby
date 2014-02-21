@@ -17,6 +17,11 @@ module NotificationHelpers
       :path => '/blog',
       :action => 'show',
       :controller => 'BlogPostsController',
+      :params => {
+        'controller' => 'blog_posts',
+        'action' => 'show',
+        'id' => '1'
+      },
       :request_format => 'html',
       :request_method => "GET",
       :status => '200',
