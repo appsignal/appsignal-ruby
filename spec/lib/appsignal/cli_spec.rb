@@ -9,6 +9,7 @@ describe Appsignal::CLI do
     $stdout = out_stream
     ENV['PWD'] = project_fixture_path
     cli.config = nil
+    cli.initial_config = {}
     cli.options = {:environment => 'production'}
   end
   after do
@@ -61,7 +62,7 @@ describe Appsignal::CLI do
 
   describe "#notify_of_deploy" do
     it "should validate that the config has been loaded and all options have been supplied" do
-      cli.should_receive(:validate_config_loaded)
+      cli.should_receive(:validate_active_config)
       cli.should_receive(:validate_required_options).with(
         [:revision, :user, :environment]
       )
@@ -75,7 +76,6 @@ describe Appsignal::CLI do
       Appsignal::Marker.should_receive(:new).with(
         {
           :revision => 'aaaaa',
-          :repository => 'git@github.com:our/project.git',
           :user => 'thijs'
         },
         kind_of(Appsignal::Config),
@@ -86,18 +86,19 @@ describe Appsignal::CLI do
       cli.run([
         'notify_of_deploy',
         '--revision=aaaaa',
-        '--repository=git@github.com:our/project.git',
         '--user=thijs',
         '--environment=production'
       ])
     end
 
-    it "should notify of a deploy without repository" do
+    it "should notify of a deploy with no config file and a name specified" do
+      ENV['PWD'] = '/nonsense'
+      ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
+
       marker = double
       Appsignal::Marker.should_receive(:new).with(
         {
           :revision => 'aaaaa',
-          :repository => nil,
           :user => 'thijs'
         },
         kind_of(Appsignal::Config),
@@ -107,10 +108,13 @@ describe Appsignal::CLI do
 
       cli.run([
         'notify_of_deploy',
+        '--name=project-production',
         '--revision=aaaaa',
         '--user=thijs',
         '--environment=production'
       ])
+
+      cli.config[:name].should == 'project-production'
     end
   end
 
@@ -161,10 +165,10 @@ describe Appsignal::CLI do
     end
   end
 
-  describe "#validate_config_loaded" do
+  describe "#validate_active_config" do
     context "when config is present" do
       it "should do nothing" do
-        cli.send(:validate_config_loaded)
+        cli.send(:validate_active_config)
         out_stream.string.should be_empty
       end
     end
@@ -174,7 +178,18 @@ describe Appsignal::CLI do
 
       it "should print a message and exit" do
         lambda {
-          cli.send(:validate_config_loaded)
+          cli.send(:validate_active_config)
+        }.should raise_error(SystemExit)
+        out_stream.string.should include('Exiting: No config file or push api key env var found')
+      end
+    end
+
+    context "when config is not active" do
+      before { ENV['PWD'] = '/nonsense' }
+
+      it "should print a message and exit" do
+        lambda {
+          cli.send(:validate_active_config)
         }.should raise_error(SystemExit)
         out_stream.string.should include('Exiting: No config file or push api key env var found')
       end
