@@ -12,7 +12,7 @@ if defined?(::Delayed::Plugin)
 
         def self.invoke_with_instrumentation(job, block)
           begin
-            Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+            Appsignal::Transaction.create(SecureRandom.uuid, ENV)
             class_name, method_name = job.name.split('#')
             ActiveSupport::Notifications.instrument(
               'perform_job.delayed_job',

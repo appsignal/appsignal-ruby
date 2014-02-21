@@ -6,7 +6,7 @@ if defined?(::Resque)
       module ResquePlugin
 
         def around_perform_resque_plugin(*args)
-          Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+          Appsignal::Transaction.create(SecureRandom.uuid, ENV)
           ActiveSupport::Notifications.instrument(
             'perform_job.resque',
             :class => self.to_s,
