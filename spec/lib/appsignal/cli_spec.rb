@@ -89,6 +89,32 @@ describe Appsignal::CLI do
         '--environment=production'
       ])
     end
+
+    it "should notify of a deploy with no config file and a name specified" do
+      ENV['PWD'] = '/nonsense'
+      ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
+
+      marker = double
+      Appsignal::Marker.should_receive(:new).with(
+        {
+          :revision => 'aaaaa',
+          :user => 'thijs'
+        },
+        kind_of(Appsignal::Config),
+        kind_of(Logger)
+      ).and_return(marker)
+      marker.should_receive(:transmit)
+
+      cli.run([
+        'notify_of_deploy',
+        '--name=project-production',
+        '--revision=aaaaa',
+        '--user=thijs',
+        '--environment=production'
+      ])
+
+      cli.config[:name].should == 'project-production'
+    end
   end
 
   # protected

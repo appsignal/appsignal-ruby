@@ -8,10 +8,11 @@ module Appsignal
     AVAILABLE_COMMANDS = %w(notify_of_deploy).freeze
 
     class << self
-      attr_accessor :options, :config
+      attr_accessor :options, :config, :initial_config
 
       def run(argv=ARGV)
         @options = {}
+        @initial_config = {}
         global = global_option_parser
         commands = command_option_parser
         global.order!(argv)
@@ -43,7 +44,7 @@ module Appsignal
         @config ||= Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
-          {},
+          @initial_config,
           logger
         )
       end
@@ -82,6 +83,10 @@ module Appsignal
 
             o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
+            end
+
+            o.on '--name=<name>', "The name of the app (optional)" do |arg|
+              initial_config[:name] = arg
             end
           end
         }
