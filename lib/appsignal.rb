@@ -12,6 +12,7 @@ module Appsignal
       require 'appsignal/integrations/passenger'
       require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
+      require 'appsignal/integrations/resque'
     end
 
     def extensions
@@ -60,10 +61,11 @@ module Appsignal
       raise exception
     end
 
-    def send_exception(exception)
+    def send_exception(exception, tags=nil)
       return if is_ignored_exception?(exception)
       transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
       transaction.add_exception(exception)
+      transaction.set_tags(tags) if tags
       transaction.complete!
       Appsignal.agent.send_queue
     end
@@ -80,6 +82,7 @@ module Appsignal
       return false unless transaction
       transaction.set_tags(params)
     end
+    alias :tag_job :tag_request
 
     def transactions
       @transactions ||= {}
@@ -142,5 +145,6 @@ require 'appsignal/transaction'
 require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
+require 'appsignal/pipe'
 require 'appsignal/version'
 require 'appsignal/integrations/rails'

@@ -12,7 +12,7 @@ module TransactionHelpers
   end
 
   def transaction_with_exception
-    appsignal_transaction.tap do |o|
+    appsignal_transaction(:process_action_event => notification_event).tap do |o|
       o.set_tags('user_id' => 123)
       begin
         raise ArgumentError, 'oh no'

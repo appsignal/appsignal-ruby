@@ -25,6 +25,7 @@ module Appsignal
       Appsignal.logger.debug('Starting agent thread')
       @thread = Thread.new do
         loop do
+          Appsignal.logger.debug aggregator.queue.inspect
           send_queue if aggregator.has_transactions?
           Appsignal.logger.debug("Sleeping #{sleep_time}")
           sleep(sleep_time)
@@ -33,11 +34,15 @@ module Appsignal
     end
 
     def restart_thread
+      stop_thread
+      start_thread
+    end
+
+    def stop_thread
       if @thread && @thread.alive?
         Appsignal.logger.debug 'Killing agent thread'
         Thread.kill(@thread)
       end
-      start_thread
     end
 
     def subscribe
@@ -57,9 +62,9 @@ module Appsignal
     end
 
     def enqueue(transaction)
+      forked! if @pid != Process.pid
       Appsignal.logger.debug('Enqueueing transaction')
       aggregator.add(transaction)
-      forked! if @pid != Process.pid
     end
 
     def send_queue

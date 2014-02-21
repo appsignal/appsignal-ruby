@@ -1,3 +1,10 @@
+# 0.8.6
+* Resque support
+* Support tags in Appsignal.send_exception
+* Alias tag_request to tag_job, for background jobs
+* Skip sanitization of env if env is nil
+* Small bugfix in forking logic
+
 # 0.8.5
 * Don't require revision in CLI notify_of_deploy
 

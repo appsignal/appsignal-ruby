@@ -17,6 +17,7 @@ describe Appsignal::Config do
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
         :ignore_exceptions => [],
+        :send_params => true,
         :endpoint => 'https://push.appsignal.com/1',
         :slow_request_threshold => 200,
         :push_api_key => 'abc',
@@ -121,6 +122,7 @@ describe Appsignal::Config do
         subject.config_hash.should == {
           :push_api_key => 'push_api_key',
           :ignore_exceptions => [],
+          :send_params => true,
           :endpoint => 'https://push.appsignal.com/1',
           :slow_request_threshold => 200,
           :active => true

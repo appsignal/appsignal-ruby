@@ -44,6 +44,7 @@ module Appsignal
           o.delete(:class)
           o.delete(:method)
           o.delete(:queue_start)
+          o.delete(:params) unless Appsignal.config[:send_params]
           o[:action] = action
         end
       end

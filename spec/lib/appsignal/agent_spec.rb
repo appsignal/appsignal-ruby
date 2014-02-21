@@ -41,14 +41,24 @@ describe Appsignal::Agent do
   end
 
   describe "#restart_thread" do
+
+    it "should stop thread" do
+      subject.should_receive(:stop_thread)
+    end
+
+    it "should start a thread" do
+      subject.should_receive(:start_thread)
+    end
+
+    after { subject.restart_thread }
+  end
+
+  describe "#stop_thread" do
     context "if there is no thread" do
       before { subject.thread = nil }
 
-      it "should start a thread" do
-        subject.restart_thread
-
-        subject.thread.should be_a(Thread)
-        subject.thread.should be_alive
+      it "should not do anything" do
+        Thread.should_not_receive(:kill)
       end
     end
 
@@ -59,28 +69,17 @@ describe Appsignal::Agent do
       end
 
       it "should start a thread" do
-        subject.restart_thread
-
-        subject.thread.should be_a(Thread)
-        subject.thread.should be_alive
+        Thread.should_not_receive(:kill)
       end
     end
 
     context "if there is an active thread" do
-      it "should kill the current thread and start a new one" do
-        previous_thread = subject.thread
-        previous_thread.should be_alive
-
-        subject.restart_thread
-
-        subject.thread.should be_a(Thread)
-        subject.thread.should be_alive
-        subject.thread.should_not == previous_thread
-
-        sleep 0.1 # We need to wait for the thread to exit
-        previous_thread.should_not be_alive
+      it "should kill the current thread " do
+        Thread.should_receive(:kill)
       end
     end
+
+    after { subject.stop_thread }
   end
 
   describe "#subscribe" do
