@@ -28,7 +28,7 @@ describe Appsignal::Integrations::Capistrano do
 
     context "config" do
       before do
-        @capistrano_config.dry_run = true
+        # @capistrano_config.dry_run = true
       end
 
       it "should be instantiated with the right params" do
@@ -123,16 +123,6 @@ describe Appsignal::Integrations::Capistrano do
           @io.string.should include('** Notifying Appsignal of deploy...')
           @io.string.should include('** Something went wrong while trying to notify Appsignal:')
         end
-
-        context "dry run" do
-          before { @capistrano_config.dry_run = true }
-
-          it "should not send deploy marker" do
-            @marker.should_not_receive(:transmit)
-            @capistrano_config.find_and_execute_task('appsignal:deploy')
-            @io.string.should include('** Dry run: Deploy marker not actually sent.')
-          end
-        end
       end
 
       context "when not active for this environment" do
@@ -144,6 +134,21 @@ describe Appsignal::Integrations::Capistrano do
           Appsignal::Marker.should_not_receive(:new)
           @capistrano_config.find_and_execute_task('appsignal:deploy')
           @io.string.should include('Not loading:')
+        end
+      end
+
+      context "dry run" do
+        before do
+          @capistrano_config.dry_run = true
+          Appsignal::Marker.should_not_receive(:new)
+        end
+
+        it "should not send deploy marker" do
+          if Appsignal::Integrations::Capistrano.capistrano2?
+            @marker.should_not_receive(:transmit)
+            @capistrano_config.find_and_execute_task('appsignal:deploy')
+            @io.string.should include('** Dry run: Deploy marker not actually sent.')
+          end
         end
       end
     end
