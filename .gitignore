@@ -19,3 +19,4 @@ pickle-email-*.html
 Gemfile.lock
 gemfiles/*.lock
 .DS_Store
+.ruby-version
