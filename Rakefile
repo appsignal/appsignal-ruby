@@ -90,3 +90,12 @@ task :spec do
   puts 'Running sinatra'
   system 'env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec'
 end
+
+task :console do
+  require 'irb'
+  require 'irb/completion'
+  require 'appsignal'
+
+  ARGV.clear
+  IRB.start
+end
