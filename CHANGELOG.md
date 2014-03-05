@@ -1,9 +1,14 @@
 # 0.8.6
-* Resque support
+* Resque support (beta)
 * Support tags in Appsignal.send_exception
 * Alias tag_request to tag_job, for background jobs
 * Skip sanitization of env if env is nil
 * Small bugfix in forking logic
+* Don't send params if send_params is off in config 
+* Remove --repository option in CLI
+* Name option in appsignal notify_of_deploy CLI
+* Don't call to_hash on ENV
+* Get error message in CLI when config is not active
 
 # 0.8.5
 * Don't require revision in CLI notify_of_deploy

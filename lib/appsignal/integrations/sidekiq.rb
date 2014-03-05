@@ -5,7 +5,7 @@ if defined?(::Sidekiq)
     module Integrations
       class SidekiqPlugin
         def call(worker, item, queue)
-          Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+          Appsignal::Transaction.create(SecureRandom.uuid, ENV)
           ActiveSupport::Notifications.instrument(
             'perform_job.sidekiq',
             :class => item['class'],

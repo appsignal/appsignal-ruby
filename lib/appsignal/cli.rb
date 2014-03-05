@@ -8,10 +8,11 @@ module Appsignal
     AVAILABLE_COMMANDS = %w(notify_of_deploy).freeze
 
     class << self
-      attr_accessor :options, :config
+      attr_accessor :options, :config, :initial_config
 
       def run(argv=ARGV)
         @options = {}
+        @initial_config = {}
         global = global_option_parser
         commands = command_option_parser
         global.order!(argv)
@@ -43,7 +44,7 @@ module Appsignal
         @config ||= Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
-          {},
+          @initial_config,
           logger
         )
       end
@@ -76,10 +77,6 @@ module Appsignal
               options[:revision] = arg
             end
 
-            o.on '--repository=<repository>', "The location of the main code repository" do |arg|
-              options[:repository] = arg
-            end
-
             o.on '--user=<user>', "The name of the user that's deploying" do |arg|
               options[:user] = arg
             end
@@ -87,18 +84,21 @@ module Appsignal
             o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
+
+            o.on '--name=<name>', "The name of the app (optional)" do |arg|
+              initial_config[:name] = arg
+            end
           end
         }
       end
 
       def notify_of_deploy
-        validate_config_loaded
+        validate_active_config
         validate_required_options([:revision, :user, :environment])
 
         Appsignal::Marker.new(
           {
             :revision => options[:revision],
-            :repository => options[:repository],
             :user => options[:user]
           },
           config,
@@ -118,8 +118,8 @@ module Appsignal
         end
       end
 
-      def validate_config_loaded
-        unless config.loaded?
+      def validate_active_config
+        unless config.active?
           puts 'Exiting: No config file or push api key env var found'
           exit(1)
         end
