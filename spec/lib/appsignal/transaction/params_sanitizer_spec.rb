@@ -1,5 +1,11 @@
 require 'spec_helper'
 
+class ErrorOnInspect
+  def inspect
+    raise 'Error'
+  end
+end
+
 describe Appsignal::Transaction::ParamsSanitizer do
   let(:klass) { Appsignal::Transaction::ParamsSanitizer }
   let(:file) { uploaded_file }
@@ -16,7 +22,8 @@ describe Appsignal::Transaction::ParamsSanitizer do
           {
             :key => 'value',
             :file => file,
-          }
+          },
+          ErrorOnInspect.new
         ]
       }
     }
@@ -47,6 +54,7 @@ describe Appsignal::Transaction::ParamsSanitizer do
         its([1]) { should == 'else' }
         its([2]) { should be_instance_of String }
         its([2]) { should include '::UploadedFile' }
+        its([4]) { should == '#<ErrorOnInspect/>' }
 
         context "nested hash" do
           subject { params[:hash][:nested_array][3] }

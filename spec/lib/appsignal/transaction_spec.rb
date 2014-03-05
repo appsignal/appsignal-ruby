@@ -50,7 +50,8 @@ describe Appsignal::Transaction do
       let(:process_action_event) { notification_event }
 
       it 'should add a process action event' do
-        transaction.process_action_event.should == process_action_event
+        transaction.process_action_event.name.should == process_action_event.name
+        transaction.process_action_event.payload.should == process_action_event.payload
       end
 
       it "should set the action" do
@@ -77,8 +78,9 @@ describe Appsignal::Transaction do
         )
       end
 
-      it 'should add a process action event' do
-        transaction.process_action_event.should == perform_job_event
+      it 'should add a perform job event' do
+        transaction.process_action_event.name.should == perform_job_event.name
+        transaction.process_action_event.payload.should == perform_job_event.payload
       end
 
       it "should set the action" do
@@ -233,7 +235,7 @@ describe Appsignal::Transaction do
             transaction.convert_values_to_primitives!
           end
 
-          it { should == {:weird => weird_class.inspect} }
+          its([:weird]) { should be_a(Class) }
         end
       end
 

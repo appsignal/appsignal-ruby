@@ -20,8 +20,15 @@ if rails_present?
     include GeneratorSpec::TestCase
     destination tmp_dir
 
+    let(:err_stream) { StringIO.new }
+
     before do
       FileUtils.rm_rf(tmp_dir)
+      @original_stderr = $stderr
+      $stderr = err_stream
+    end
+    after do
+      $stderr = @original_stderr
     end
 
     context "with key" do
@@ -109,6 +116,7 @@ if rails_present?
             no_file 'deploy.rb'
           end
         }
+        err_stream.string.should include "No value provided for required arguments 'push_api_key'"
       end
     end
 

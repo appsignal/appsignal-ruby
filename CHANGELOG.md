@@ -1,3 +1,6 @@
+# 0.8.7
+* Dup process action event to avoid threading issue
+
 # 0.8.6
 * Resque support (beta)
 * Support tags in Appsignal.send_exception
