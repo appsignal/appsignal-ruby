@@ -335,5 +335,23 @@ describe Appsignal do
         Appsignal.add_exception(nil)
       end
     end
+
+    describe ".without_instrumentation" do
+      let(:agent) { double }
+      before do
+        Appsignal.stub(:agent => agent)
+      end
+
+      it "should pause and unpause the agent around the block" do
+        agent.should_receive(:paused=).with(true)
+        agent.should_receive(:paused=).with(false)
+      end
+
+      after do
+        Appsignal.without_instrumentation do
+          # nothing
+        end
+      end
+    end
   end
 end
