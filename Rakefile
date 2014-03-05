@@ -96,6 +96,8 @@ task :console do
   require 'irb/completion'
   require 'appsignal'
 
+  Appsignal.config = Appsignal::Config.new('.', :console)
+
   ARGV.clear
   IRB.start
 end
