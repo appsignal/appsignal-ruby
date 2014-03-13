@@ -44,7 +44,7 @@ describe Appsignal::Marker do
 
           marker.transmit
 
-          log.string.should include('Notifying Appsignal of deploy...')
+          log.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, repository: master, user: batman')
           log.string.should include('Appsignal has been notified of this deploy!')
         end
 
@@ -54,7 +54,7 @@ describe Appsignal::Marker do
 
           marker.transmit
 
-          log.string.should include('Notifying Appsignal of deploy...')
+          log.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, repository: master, user: batman')
           log.string.should include(
             'Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/1/markers'
           )

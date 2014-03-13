@@ -12,6 +12,7 @@ module Appsignal
             task :deploy do
               env = fetch(:rails_env, fetch(:rack_env, 'production'))
               user = ENV['USER'] || ENV['USERNAME']
+              revision = fetch(:appsignal_revision, fetch(:current_revision))
 
               appsignal_config = Appsignal::Config.new(
                 ENV['PWD'],
@@ -22,7 +23,7 @@ module Appsignal
 
               if appsignal_config && appsignal_config.active?
                 marker_data = {
-                  :revision => current_revision,
+                  :revision => revision,
                   :repository => repository,
                   :user => user
                 }
