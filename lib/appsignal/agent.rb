@@ -3,7 +3,7 @@ module Appsignal
     ACTION = 'log_entries'.freeze
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber
+                  :transmitter, :subscriber, :paused
 
     def initialize
       return unless Appsignal.active?
@@ -56,7 +56,7 @@ module Appsignal
           elsif event.name.start_with?('perform_job')
             Appsignal::Transaction.current.set_perform_job_event(event)
           end
-          Appsignal::Transaction.current.add_event(event)
+          Appsignal::Transaction.current.add_event(event) unless paused
         end
       end
     end

@@ -94,7 +94,14 @@ describe Appsignal::Agent do
     end
 
     context "handling events" do
-      before do
+      before(:each) do
+        # Unsubscribe previous notification subscribers
+        ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).
+          reject { |sub| sub.instance_variable_get(:@pattern).is_a? String }.
+          each { |sub| ActiveSupport::Notifications.unsubscribe(sub) }
+        # And re-subscribe with just one subscriber
+        Appsignal.agent.subscribe
+
         Appsignal::Transaction.create('123', {})
       end
 
@@ -111,6 +118,16 @@ describe Appsignal::Agent do
         ).at_least(:once)
 
         ActiveSupport::Notifications.instrument 'render_template'
+      end
+
+      context "when paused" do
+        it "should add a normal event" do
+          Appsignal::Transaction.current.should_not_receive(:add_event)
+
+          Appsignal.without_instrumentation do
+            ActiveSupport::Notifications.instrument 'moo'
+          end
+        end
       end
 
       it "should add and set a process action event" do

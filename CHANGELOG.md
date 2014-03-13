@@ -1,3 +1,8 @@
+# 0.8.7
+* Dup process action event to avoid threading issue
+* Rescue failing inspects in param sanitizer
+* Add option to pause instrumentation
+
 # 0.8.6
 * Resque support (beta)
 * Support tags in Appsignal.send_exception

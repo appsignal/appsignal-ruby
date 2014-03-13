@@ -50,17 +50,17 @@
     end
 
     def set_process_action_event(event)
-      @process_action_event = event
       return unless event && event.payload
-      @action = "#{event.payload[:controller]}##{event.payload[:action]}"
+      @process_action_event = event.dup
+      @action = "#{@process_action_event.payload[:controller]}##{@process_action_event.payload[:action]}"
       @kind = 'http_request'
       set_http_queue_start
     end
 
     def set_perform_job_event(event)
-      @process_action_event = event
       return unless event && event.payload
-      @action = "#{event.payload[:class]}##{event.payload[:method]}"
+      @process_action_event = event.dup
+      @action = "#{@process_action_event.payload[:class]}##{@process_action_event.payload[:method]}"
       @kind = 'background_job'
       set_background_queue_start
     end
@@ -98,7 +98,9 @@
 
     def convert_values_to_primitives!
       Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
-      @events.each { |o| Appsignal::Transaction::ParamsSanitizer.sanitize!(o.payload) }
+      @events.map do |o|
+        Appsignal::Transaction::ParamsSanitizer.sanitize(o.payload)
+      end
       add_sanitized_context!
     end
 

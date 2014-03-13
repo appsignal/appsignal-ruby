@@ -129,6 +129,16 @@ module Appsignal
     def is_ignored_exception?(exception)
       Appsignal.config[:ignore_exceptions].include?(exception.class.name)
     end
+
+    # Convenience method for skipping instrumentations around a block of code.
+    #
+    # @since 0.8.7
+    def without_instrumentation
+      agent.paused = true
+      yield
+    ensure
+      agent.paused = false
+    end
   end
 end
 
