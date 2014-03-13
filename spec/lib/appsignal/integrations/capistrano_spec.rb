@@ -97,11 +97,7 @@ describe Appsignal::Integrations::Capistrano do
             config,
             @logger
           )
-          Appsignal::Marker.should_receive(:new).with(
-            marker_data,
-            kind_of(Appsignal::Config),
-            kind_of(Capistrano::Logger)
-          ).and_return(@marker)
+          Appsignal::Marker.stub(:new => @marker)
         end
 
         context "proper setup" do
@@ -110,17 +106,46 @@ describe Appsignal::Integrations::Capistrano do
             Appsignal::Transmitter.should_receive(:new).and_return(@transmitter)
           end
 
+          it "should add the correct marker data" do
+            Appsignal::Marker.should_receive(:new).with(
+              marker_data,
+              kind_of(Appsignal::Config),
+              kind_of(Capistrano::Logger)
+            ).and_return(@marker)
+
+            @capistrano_config.find_and_execute_task('appsignal:deploy')
+          end
+
           it "should transmit data" do
             @transmitter.should_receive(:transmit).and_return('200')
             @capistrano_config.find_and_execute_task('appsignal:deploy')
-            @io.string.should include('** Notifying Appsignal of deploy...')
+            @io.string.should include('** Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, repository: master, user: batman')
             @io.string.should include('** Appsignal has been notified of this deploy!')
+          end
+
+          context "with overridden revision" do
+            before do
+              @capistrano_config.set(:appsignal_revision, 'abc123')
+            end
+            it "should add the correct marker data" do
+              Appsignal::Marker.should_receive(:new).with(
+                {
+                  :revision => 'abc123',
+                  :repository => 'master',
+                  :user => 'batman'
+                },
+                kind_of(Appsignal::Config),
+                kind_of(Capistrano::Logger)
+              ).and_return(@marker)
+
+              @capistrano_config.find_and_execute_task('appsignal:deploy')
+            end
           end
         end
 
         it "should not transmit data" do
           @capistrano_config.find_and_execute_task('appsignal:deploy')
-          @io.string.should include('** Notifying Appsignal of deploy...')
+          @io.string.should include('** Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, repository: master, user: batman')
           @io.string.should include('** Something went wrong while trying to notify Appsignal:')
         end
 
