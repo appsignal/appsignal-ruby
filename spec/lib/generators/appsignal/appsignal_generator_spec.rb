@@ -20,9 +20,11 @@ if rails_present?
     include GeneratorSpec::TestCase
     destination tmp_dir
 
+    let(:authcheck) { Appsignal::AuthCheck.new(nil, nil) }
     let(:err_stream) { StringIO.new }
 
     before do
+      Appsignal::AuthCheck.stub(:new => authcheck)
       FileUtils.rm_rf(tmp_dir)
       @original_stderr = $stderr
       $stderr = err_stream
@@ -34,9 +36,7 @@ if rails_present?
     context "with key" do
       context "known key" do
         before do
-          authcheck = double
-          Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-          authcheck.should_receive(:perform_with_result).and_return(['200', 'everything ok'])
+          authcheck.should_receive(:perform).and_return('200')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -50,45 +50,42 @@ if rails_present?
         end
 
         it "should mention successful auth check" do
-          @output.should include('success  everything ok')
+          @output.should include('success')
+          @output.should include('AppSignal has confirmed authorization!')
         end
       end
 
       context "invalid key" do
         before do
-          authcheck = double
-          Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-          authcheck.should_receive(:perform_with_result).and_return(['401', 'unauthorized'])
+          authcheck.should_receive(:perform).and_return('401')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
         end
 
         it "should mention invalid key" do
-          @output.should include('error  unauthorized')
+          @output.should include('error')
+          @output.should include('API key not valid with AppSignal...')
         end
       end
 
       context "failed check" do
         before do
-          authcheck = double
-          Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
-          authcheck.should_receive(:perform_with_result).and_return(['500', 'error!'])
+          authcheck.should_receive(:perform).and_return('500')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
         end
 
         it "should mention failed check" do
-          @output.should include('error  error!')
+          @output.should include('error')
+          @output.should include('Could not confirm authorization')
         end
       end
 
       context "internal failure" do
         before do
-          authcheck = Appsignal::AuthCheck.new(nil, nil)
           authcheck.stub(:perform).and_throw(:error)
-          Appsignal::AuthCheck.should_receive(:new).and_return(authcheck)
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -123,6 +120,7 @@ if rails_present?
     context "without capistrano" do
       before do
         prepare_destination
+        authcheck.stub(:perform).and_return(['200', 'everything ok'])
         run_generator_in_tmp %w(my_app_key)
       end
 
@@ -150,6 +148,7 @@ if rails_present?
         File.open(cap_file, 'w') {}
         FileUtils.mkdir(File.join(destination_root, 'config'))
         File.open(deploy_file, 'w') {}
+        authcheck.stub(:perform).and_return(['200', 'everything ok'])
         run_generator_in_tmp %w(my_app_key)
       end
 
