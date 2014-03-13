@@ -1,6 +1,7 @@
 require 'logger'
 require 'rack'
 require 'thread_safe'
+require 'securerandom'
 require 'active_support/json'
 
 module Appsignal
