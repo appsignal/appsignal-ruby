@@ -134,10 +134,10 @@ module Appsignal
     #
     # @since 0.8.7
     def without_instrumentation
-      agent.paused = true
+      agent.paused = true if agent
       yield
     ensure
-      agent.paused = false
+      agent.paused = false if agent
     end
   end
 end

@@ -347,6 +347,15 @@ describe Appsignal do
         agent.should_receive(:paused=).with(false)
       end
 
+      context "without agent" do
+        let(:agent) { nil }
+
+        it "should not change paused state on agent" do
+          agent.should_not_receive(:paused=).with(true)
+          agent.should_not_receive(:paused=).with(false)
+        end
+      end
+
       after do
         Appsignal.without_instrumentation do
           # nothing
