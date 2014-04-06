@@ -22,7 +22,7 @@ module Appsignal
         end
         raise exception
       ensure
-        Appsignal::Transaction.current.complete!
+        Appsignal::Transaction.complete!
       end
 
       def request_id(env)

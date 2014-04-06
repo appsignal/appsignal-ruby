@@ -265,15 +265,15 @@ describe Appsignal do
         agent.should_receive(:send_queue)
         agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
 
-        Appsignal::Transaction.should_receive(:create).and_call_original
+        Appsignal::Transaction.should_receive(:new).and_call_original
       end
 
       context "with tags" do
         let(:tags) { {:a => 'a', :b => 'b'} }
 
         it "should tag the request before sending" do
-          transaction = Appsignal::Transaction.create(SecureRandom.uuid, {})
-          Appsignal::Transaction.stub(:create => transaction)
+          transaction = Appsignal::Transaction.new(SecureRandom.uuid, {})
+          Appsignal::Transaction.stub(:new => transaction)
           transaction.should_receive(:set_tags).with(tags)
         end
       end

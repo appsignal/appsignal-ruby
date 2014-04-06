@@ -17,6 +17,13 @@
       Appsignal.transactions[key] = Appsignal::Transaction.new(key, env)
     end
 
+    def self.complete!
+      Appsignal.logger.debug("Completing transaction: #{current.request_id}")
+      Thread.current[:appsignal_transaction_id] = nil
+      current_transaction = Appsignal.transactions.delete(current.request_id)
+      current_transaction.complete_without_current!
+    end
+
     def self.current
       Appsignal.transactions[Thread.current[:appsignal_transaction_id]]
     end
@@ -118,11 +125,15 @@
       Appsignal.logger.debug("Completing transaction: #{@request_id}")
       Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@request_id)
+      complete_without_current!
+    end
+
+    def complete_without_current!
       if process_action_event || exception?
         if Appsignal::Pipe.current
           Appsignal::Pipe.current.write(self)
         else
-          Appsignal.enqueue(current_transaction)
+          Appsignal.enqueue(self)
         end
       else
         Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")

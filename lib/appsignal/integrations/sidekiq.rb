@@ -22,7 +22,7 @@ if defined?(::Sidekiq)
           end
           raise exception
         ensure
-          Appsignal::Transaction.current.complete!
+          Appsignal::Transaction.complete!
         end
       end
     end
