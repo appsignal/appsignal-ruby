@@ -29,7 +29,7 @@ describe "ResquePlugin" do
       let(:job) { Resque::Job }
       let(:invoked_job) { nil }
       before do
-        transaction.stub(:complete! => true)
+        Appsignal::Transaction.stub(:complete! => true)
         Appsignal::Transaction.stub(:current => transaction)
       end
 
@@ -47,7 +47,7 @@ describe "ResquePlugin" do
         end
 
         it "should close the transaction" do
-          transaction.should_receive(:complete!)
+          Appsignal::Transaction.should_receive(:complete!)
         end
 
         after { job.around_perform_resque_plugin { invoked_job }  }
