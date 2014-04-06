@@ -39,7 +39,7 @@ class MiddlewareTemplate
   end
 end
 
-Appsignal.postprocessing_middleware.add MiddlewareTemplate
+Appsignal.post_processing_middleware.add MiddlewareTemplate
 ```
 
 #### Remove boring payloads
