@@ -63,7 +63,7 @@ module Appsignal
 
     def send_exception(exception, tags=nil)
       return if is_ignored_exception?(exception)
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+      transaction = Appsignal::Transaction.new(SecureRandom.uuid, ENV)
       transaction.add_exception(exception)
       transaction.set_tags(tags) if tags
       transaction.complete!
