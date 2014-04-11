@@ -1,3 +1,6 @@
+# 0.8.8
+* Explicitely require securerandom
+
 # 0.8.7
 * Dup process action event to avoid threading issue
 * Rescue failing inspects in param sanitizer
