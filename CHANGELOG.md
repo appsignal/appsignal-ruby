@@ -1,7 +1,9 @@
-# 0.8.8
+# 0.8.9
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
-* Require securerandom to make sure it's always available
+
+# 0.8.8
+* Explicitely require securerandom
 
 # 0.8.7
 * Dup process action event to avoid threading issue
