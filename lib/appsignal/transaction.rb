@@ -126,16 +126,17 @@
 
     def complete!
       Appsignal.logger.debug("Completing transaction: #{@request_id}")
-      current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         if Appsignal::Pipe.current
           Appsignal::Pipe.current.write(self)
         else
-          Appsignal.enqueue(current_transaction)
+          Appsignal.enqueue(self)
         end
       else
         Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
       end
+    ensure
+      Appsignal.transactions.delete(@request_id)
     end
 
     def set_background_queue_start
