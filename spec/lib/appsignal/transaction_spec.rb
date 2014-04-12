@@ -27,6 +27,26 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "complete_current!" do
+    before { Thread.current[:appsignal_transaction_id] = nil }
+
+    context "with a current transaction" do
+      before { Appsignal::Transaction.create('2', {}) }
+
+      it "should complete the current transaction" do
+        Appsignal::Transaction.current.should_receive(:complete!)
+
+        Appsignal::Transaction.complete_current!
+      end
+    end
+
+    context "without a current transaction" do
+      it "should not raise an error" do
+        Appsignal::Transaction.complete_current!
+      end
+    end
+  end
+
   context "with transaction instance" do
     let(:env) do
       {

@@ -21,6 +21,14 @@
       Appsignal.transactions[Thread.current[:appsignal_transaction_id]]
     end
 
+    def self.complete_current!
+      if current
+        current.complete!
+      else
+        Appsignal.logger.error('Trying to complete current, but no transaction present')
+      end
+    end
+
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
                 :env, :fullpath, :time, :tags, :kind, :queue_start
 
