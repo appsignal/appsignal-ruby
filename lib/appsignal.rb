@@ -16,6 +16,10 @@ module Appsignal
       require 'appsignal/integrations/resque'
     end
 
+    def load_instrumentations
+      require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
+    end
+
     def extensions
       @extensions ||= []
     end
@@ -37,6 +41,7 @@ module Appsignal
         end
         logger.info("Starting appsignal-#{Appsignal::VERSION}")
         load_integrations
+        load_instrumentations
         initialize_extensions
         @agent = Appsignal::Agent.new
         at_exit { @agent.shutdown(true) }
