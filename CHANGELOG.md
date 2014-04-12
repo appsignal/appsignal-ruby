@@ -1,6 +1,7 @@
 # 0.8.9
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
+* Random first sleep in background thread
 
 # 0.8.8
 * Explicitely require securerandom
