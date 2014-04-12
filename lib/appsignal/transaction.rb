@@ -11,10 +11,10 @@
     HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR).freeze
 
-    def self.create(key, env)
-      Appsignal.logger.debug("Creating transaction: #{key}")
-      Thread.current[:appsignal_transaction_id] = key
-      Appsignal.transactions[key] = Appsignal::Transaction.new(key, env)
+    def self.create(request_id, env)
+      Appsignal.logger.debug("Creating transaction: #{request_id}")
+      Thread.current[:appsignal_transaction_id] = request_id
+      Appsignal::Transaction.new(request_id, env)
     end
 
     def self.current
@@ -24,6 +24,7 @@
     def self.complete_current!
       if current
         current.complete!
+        Thread.current[:appsignal_transaction_id] = nil
       else
         Appsignal.logger.error('Trying to complete current, but no transaction present')
       end
@@ -33,6 +34,7 @@
                 :env, :fullpath, :time, :tags, :kind, :queue_start
 
     def initialize(request_id, env)
+      Appsignal.transactions[request_id] = self
       @request_id = request_id
       @events = []
       @process_action_event = nil
@@ -124,7 +126,6 @@
 
     def complete!
       Appsignal.logger.debug("Completing transaction: #{@request_id}")
-      Thread.current[:appsignal_transaction_id] = nil
       current_transaction = Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         if Appsignal::Pipe.current
