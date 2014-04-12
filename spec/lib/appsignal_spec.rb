@@ -350,9 +350,8 @@ describe Appsignal do
       context "without agent" do
         let(:agent) { nil }
 
-        it "should not change paused state on agent" do
-          agent.should_not_receive(:paused=).with(true)
-          agent.should_not_receive(:paused=).with(false)
+        it "should not crash" do
+          # just execute the after block
         end
       end
 
