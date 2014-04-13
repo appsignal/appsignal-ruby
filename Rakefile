@@ -59,6 +59,8 @@ task :publish do
 end
 
 task :bundle do
+  system 'bundle --gemfile gemfiles/capistrano2.gemfile'
+  system 'bundle --gemfile gemfiles/capistrano3.gemfile'
   system 'bundle --gemfile gemfiles/no_dependencies.gemfile'
   system 'bundle --gemfile gemfiles/rails-3.0.gemfile'
   system 'bundle --gemfile gemfiles/rails-3.1.gemfile'
@@ -69,6 +71,12 @@ task :bundle do
 end
 
 task :spec do
+  puts 'Running capistrano2'
+  system 'env BUNDLE_GEMFILE=gemfiles/capistrano2.gemfile bundle exec rspec'
+
+  puts 'Running capistrano3'
+  system 'env BUNDLE_GEMFILE=gemfiles/capistrano3.gemfile bundle exec rspec'
+
   puts 'Running no dependencies'
   system 'env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec'
 

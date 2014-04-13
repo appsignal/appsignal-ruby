@@ -18,6 +18,20 @@ def rails_present?
   RAILS_PRESENT
 end
 
+def capistrano_present?
+  !! Gem.loaded_specs['capistrano']
+end
+
+def capistrano2_present?
+  capistrano_present? &&
+    Gem.loaded_specs['capistrano'].version < Gem::Version.new('3.0')
+end
+
+def capistrano3_present?
+  capistrano_present? &&
+    Gem.loaded_specs['capistrano'].version >= Gem::Version.new('3.0')
+end
+
 require 'appsignal'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
