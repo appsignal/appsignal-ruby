@@ -17,9 +17,7 @@ if defined?(::Sidekiq)
             yield
           end
         rescue Exception => exception
-          unless Appsignal.is_ignored_exception?(exception)
-            Appsignal::Transaction.current.add_exception(exception)
-          end
+          Appsignal.add_exception(exception)
           raise exception
         ensure
           Appsignal::Transaction.complete_current!
