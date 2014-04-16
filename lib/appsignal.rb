@@ -3,6 +3,7 @@ require 'rack'
 require 'thread_safe'
 require 'securerandom'
 require 'active_support/json'
+require 'active_support/notifications'
 
 module Appsignal
   class << self
