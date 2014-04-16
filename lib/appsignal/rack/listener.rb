@@ -2,6 +2,7 @@ module Appsignal
   module Rack
     class Listener
       def initialize(app, options = {})
+        Appsignal.logger.debug 'Initializing Appsignal::Rack::Listener'
         @app, @options = app, options
       end
 

@@ -2,6 +2,7 @@ module Appsignal
   module Rack
     class Instrumentation
       def initialize(app, options = {})
+        Appsignal.logger.debug 'Initializing Appsignal::Rack::Instrumentation'
         @app, @options = app, options
       end
 
