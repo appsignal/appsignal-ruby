@@ -78,10 +78,10 @@ module Appsignal
     end
 
     def add_exception(exception)
-      return if Appsignal::Transaction.current.nil? || exception.nil?
-      unless is_ignored_exception?(exception)
-        Appsignal::Transaction.current.add_exception(exception)
-      end
+      return if Appsignal::Transaction.current.nil? ||
+                exception.nil? ||
+                is_ignored_exception?(exception)
+      Appsignal::Transaction.current.add_exception(exception)
     end
 
     def tag_request(params={})
