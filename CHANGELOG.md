@@ -2,6 +2,7 @@
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
 * Random first sleep in background thread
+* Refactor of usage of Thread.local
 
 # 0.8.10
 * Bugfix: Don't pause agent when it's not active
