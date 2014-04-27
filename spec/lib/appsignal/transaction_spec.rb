@@ -6,14 +6,16 @@ describe Appsignal::Transaction do
   end
 
   describe '.create' do
-    before { Appsignal::Transaction.create('1', {}) }
+    subject { Appsignal::Transaction.create('1', {}) }
 
-    it 'should add the id to the thread' do
+    it 'should add the request id to the thread local' do
+      subject
       Thread.current[:appsignal_transaction_id].should == '1'
     end
 
-    it 'should add the transaction to the list' do
-      Appsignal.transactions['1'].should be_a Appsignal::Transaction
+    it "should create a transaction" do
+      subject.should be_a Appsignal::Transaction
+      subject.request_id.should == '1'
     end
   end
 
@@ -33,10 +35,12 @@ describe Appsignal::Transaction do
     context "with a current transaction" do
       before { Appsignal::Transaction.create('2', {}) }
 
-      it "should complete the current transaction" do
+      it "should complete the current transaction and reset the thread appsignal_transaction_id" do
         Appsignal::Transaction.current.should_receive(:complete!)
 
         Appsignal::Transaction.complete_current!
+
+        Thread.current[:appsignal_transaction_id].should be_nil
       end
     end
 
@@ -56,7 +60,12 @@ describe Appsignal::Transaction do
         'HTTP_X_REQUEST_START' => '1000000'
       }
     end
-    let(:transaction) { Appsignal::Transaction.create('1', env) }
+    let(:transaction) { Appsignal::Transaction.create('3', env) }
+
+    it "should add the transaction to the list" do
+      transaction
+      Appsignal.transactions['3'].should == transaction
+    end
 
     describe '#request' do
       subject { transaction.request }
@@ -342,14 +351,6 @@ describe Appsignal::Transaction do
         end
 
         after { transaction.complete! }
-      end
-
-      context 'thread' do
-        before { transaction.complete! }
-
-        it 'should reset the thread transaction id' do
-          Thread.current[:appsignal_transaction_id].should be_nil
-        end
       end
 
       context 'when using pipes' do
