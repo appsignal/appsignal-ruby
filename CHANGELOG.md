@@ -1,7 +1,13 @@
-# 0.8.9
+# 0.9.0
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
 * Random first sleep in background thread
+
+# 0.8.10
+* Bugfix: Don't pause agent when it's not active
+
+# 0.8.9
+Yanked
 
 # 0.8.8
 * Explicitely require securerandom
