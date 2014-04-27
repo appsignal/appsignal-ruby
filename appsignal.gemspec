@@ -30,7 +30,7 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'rspec'
-  gem.add_development_dependency 'capistrano', '< 3.0'
+  gem.add_development_dependency 'capistrano'
   gem.add_development_dependency 'pry'
   gem.add_development_dependency 'timecop'
 
