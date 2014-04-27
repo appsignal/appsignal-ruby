@@ -3,6 +3,7 @@
 * Expanded deploy message in Capistrano
 * Random first sleep in background thread
 * Refactor of usage of Thread.local
+* Net::HTTP instrumentation
 
 # 0.8.10
 * Bugfix: Don't pause agent when it's not active
