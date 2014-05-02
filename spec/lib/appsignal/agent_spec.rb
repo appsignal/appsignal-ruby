@@ -47,7 +47,7 @@ describe Appsignal::Agent do
       before do
         subject.stub(
           :aggregator => double(:has_transactions? => true),
-          :sleep_time => 0.1
+          :sleep_time => 0.01
         )
       end
 
