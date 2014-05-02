@@ -10,13 +10,15 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should instrument request" do
-    Net::HTTP.any_instance.should_receive(:request_without_appsignal)
+    # We want to be absolutely sure the original method gets called correctly,
+    # so we actually do a HTTP request.
+    response = Net::HTTP.get_response(URI.parse('https://www.google.com'))
 
-    Net::HTTP.get_response(URI.parse('https://appsignal.com/'))
+    response.body.should include('google')
 
     event = events.last
     event.name.should == 'request.net_http'
-    event.payload[:host].should == 'appsignal.com'
+    event.payload[:host].should == 'www.google.com'
     event.payload[:scheme].should == 'https'
     event.payload[:path].should == '/'
     event.payload[:method].should == 'GET'
