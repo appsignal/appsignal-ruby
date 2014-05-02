@@ -1,5 +1,3 @@
-require 'capistrano'
-
 module Appsignal
   module Integrations
     class Capistrano
@@ -24,7 +22,6 @@ module Appsignal
               if appsignal_config && appsignal_config.active?
                 marker_data = {
                   :revision => revision,
-                  :repository => repository,
                   :user => user
                 }
 
