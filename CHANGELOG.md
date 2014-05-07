@@ -1,3 +1,11 @@
+# 0.9.0
+* Add option to override Capistrano revision
+* Expanded deploy message in Capistrano
+* Random first sleep in background thread
+* Refactor of usage of Thread.local
+* Net::HTTP instrumentation
+* Capistrano 3 support
+
 # 0.8.10
 * Bugfix: Don't pause agent when it's not active
 

@@ -54,6 +54,11 @@ describe Appsignal do
         Appsignal.start
       end
 
+      it "should load instrumentations" do
+        Appsignal.should_receive(:load_instrumentations)
+        Appsignal.start
+      end
+
       context "with an extension" do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
@@ -62,6 +67,36 @@ describe Appsignal do
           Appsignal.start
         end
       end
+    end
+
+    describe ".load_integrations" do
+      it "should require the integrations" do
+        Appsignal.should_receive(:require).at_least(:once)
+      end
+
+      after { Appsignal.load_integrations }
+    end
+
+    describe ".load_instrumentations" do
+      before { Appsignal.config = project_fixture_config }
+
+      context "Net::HTTP" do
+        context "if on in the config" do
+          it "should require net_http" do
+            Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http')
+          end
+        end
+
+        context "if off in the config" do
+          before { Appsignal.config.config_hash[:instrument_net_http] = false }
+
+          it "should not require net_http" do
+            Appsignal.should_not_receive(:require).with('appsignal/instrumentations/net_http')
+          end
+        end
+      end
+
+      after { Appsignal.load_instrumentations }
     end
 
     context "with debug logging" do
@@ -350,9 +385,8 @@ describe Appsignal do
       context "without agent" do
         let(:agent) { nil }
 
-        it "should not change paused state on agent" do
-          agent.should_not_receive(:paused=).with(true)
-          agent.should_not_receive(:paused=).with(false)
+        it "should not crash" do
+          # just execute the after block
         end
       end
 

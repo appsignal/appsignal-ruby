@@ -32,16 +32,35 @@ describe Appsignal::Agent do
   describe "#start_thread" do
     before { subject.thread = nil }
 
-    it "should start a background thread" do
-      subject.start_thread
+    context "without transactions" do
+      it "should start and run a background thread" do
+        subject.should_not_receive(:send_queue)
 
-      subject.thread.should be_a(Thread)
-      subject.thread.should be_alive
+        subject.start_thread
+
+        subject.thread.should be_a(Thread)
+        subject.thread.should be_alive
+      end
+    end
+
+    context "with transactions" do
+      before do
+        subject.stub(
+          :aggregator => double(:has_transactions? => true),
+          :sleep_time => 0.01
+        )
+      end
+
+      it "should send the queue and sleep" do
+        subject.should_receive(:send_queue).at_least(:twice)
+
+        subject.start_thread
+        sleep 1
+      end
     end
   end
 
   describe "#restart_thread" do
-
     it "should stop thread" do
       subject.should_receive(:stop_thread)
     end

@@ -40,7 +40,7 @@ class MiddlewareTemplate
   end
 end
 
-Appsignal.postprocessing_middleware.add MiddlewareTemplate
+Appsignal.post_processing_middleware.add MiddlewareTemplate
 ```
 
 #### Remove boring payloads
@@ -59,6 +59,8 @@ end
 Run rake bundle or, or run bundle install for all Gemfiles:
 
 ```
+bundle --gemfile gemfiles/capistrano2.gemfile
+bundle --gemfile gemfiles/capistrano3.gemfile
 bundle --gemfile gemfiles/no_dependencies.gemfile
 bundle --gemfile gemfiles/rails-3.0.gemfile
 bundle --gemfile gemfiles/rails-3.1.gemfile
@@ -71,6 +73,8 @@ bundle --gemfile gemfiles/sinatra.gemfile
 To run the spec suite with a specific Gemfile:
 
 ```
+BUNDLE_GEMFILE=gemfiles/capistrano2.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/capistrano3.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec

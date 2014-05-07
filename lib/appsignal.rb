@@ -3,6 +3,7 @@ require 'rack'
 require 'thread_safe'
 require 'securerandom'
 require 'active_support/json'
+require 'active_support/notifications'
 
 module Appsignal
   class << self
@@ -14,6 +15,10 @@ module Appsignal
       require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
+    end
+
+    def load_instrumentations
+      require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
     end
 
     def extensions
@@ -37,6 +42,7 @@ module Appsignal
         end
         logger.info("Starting appsignal-#{Appsignal::VERSION}")
         load_integrations
+        load_instrumentations
         initialize_extensions
         @agent = Appsignal::Agent.new
         at_exit { @agent.shutdown(true) }
@@ -72,10 +78,10 @@ module Appsignal
     end
 
     def add_exception(exception)
-      return if Appsignal::Transaction.current.nil? || exception.nil?
-      unless is_ignored_exception?(exception)
-        Appsignal::Transaction.current.add_exception(exception)
-      end
+      return if Appsignal::Transaction.current.nil? ||
+                exception.nil? ||
+                is_ignored_exception?(exception)
+      Appsignal::Transaction.current.add_exception(exception)
     end
 
     def tag_request(params={})

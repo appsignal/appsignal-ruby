@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "ResquePlugin" do
+describe "Resque integration" do
   let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }
 
   context "with resque" do
