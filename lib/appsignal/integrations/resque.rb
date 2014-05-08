@@ -4,23 +4,15 @@ if defined?(::Resque)
   module Appsignal
     module Integrations
       module ResquePlugin
-
         def around_perform_resque_plugin(*args)
-          Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-          ActiveSupport::Notifications.instrument(
+          Appsignal.monitor_transaction(
             'perform_job.resque',
             :class => self.to_s,
             :method => 'perform'
           ) do
             yield
           end
-        rescue Exception => exception
-          Appsignal.add_exception(exception)
-          raise exception
-        ensure
-          Appsignal::Transaction.complete_current!
         end
-
       end
     end
   end

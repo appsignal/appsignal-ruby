@@ -61,3 +61,6 @@ RSpec.configure do |config|
     Appsignal.logger = nil
   end
 end
+
+class VerySpecificError < RuntimeError
+end

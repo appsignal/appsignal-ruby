@@ -1,8 +1,5 @@
 require 'spec_helper'
 
-class VerySpecificError < RuntimeError
-end
-
 describe "Sidekiq integration" do
   let(:file) { File.expand_path('lib/appsignal/integrations/sidekiq.rb') }
   before :all do
@@ -32,8 +29,8 @@ describe "Sidekiq integration" do
   end
 
   context "with a performance call" do
-    it "should create an instrumentation with the correct params" do
-      ActiveSupport::Notifications.should_receive(:instrument).with(
+    it "should wrap in a transaction with the correct params" do
+      Appsignal.should_receive(:monitor_transaction).with(
         'perform_job.sidekiq',
         :class => 'TestClass',
         :method => 'perform',
@@ -54,7 +51,7 @@ describe "Sidekiq integration" do
 
   context "with an erroring call" do
     let(:error) { VerySpecificError.new('the roof') }
-    it "should add exception to appsignal" do
+    it "should add the exception to appsignal" do
       current_transaction.should_receive(:add_exception).with(error)
     end
 

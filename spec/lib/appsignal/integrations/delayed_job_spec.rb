@@ -41,8 +41,8 @@ describe "Delayed Job integration" do
       let(:error) { StandardError.new }
 
       context "with a normal call" do
-        it "should create an instrumentation with the correct params" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+        it "should wrap in a transaction with the correct params" do
+          Appsignal.should_receive(:monitor_transaction).with(
             'perform_job.delayed_job',
             :class => 'TestClass',
             :method => 'perform',
@@ -51,7 +51,6 @@ describe "Delayed Job integration" do
             :queue => 'default',
             :queue_start => time - 60_000
           )
-          Appsignal::Transaction.any_instance.should_receive(:complete!)
 
           Timecop.freeze(time) do
             plugin.invoke_with_instrumentation(job, invoked_block)
