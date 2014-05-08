@@ -1,3 +1,6 @@
+# 0.8.11
+* Skip enqueue, send_exception and add_exception if not active
+
 # 0.8.10
 * Bugfix: Don't pause agent when it's not active
 
