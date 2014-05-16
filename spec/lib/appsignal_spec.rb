@@ -131,6 +131,52 @@ describe Appsignal do
     end
   end
 
+  context "not active" do
+    describe "#enqueue" do
+      it "should do nothing" do
+        lambda {
+          Appsignal.enqueue(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
+        }.should_not raise_error
+      end
+    end
+
+    describe "#listen_for_exception" do
+      it "should do nothing" do
+        error = RuntimeError.new('specific error')
+        lambda {
+          Appsignal.listen_for_exception do
+            raise error
+          end
+        }.should raise_error(error)
+      end
+    end
+
+    describe "#send_exception" do
+      it "should do nothing" do
+        lambda {
+          Appsignal.send_exception(RuntimeError.new)
+        }.should_not raise_error
+      end
+    end
+
+    describe "#add_exception" do
+      it "should do nothing" do
+        lambda {
+          Appsignal.add_exception(RuntimeError.new)
+        }.should_not raise_error
+      end
+    end
+
+    describe "#tag_request" do
+      it "should do nothing" do
+        lambda {
+          Appsignal.tag_request(:tag => 'tag')
+        }.should_not raise_error
+      end
+    end
+  end
+
+
   context "with config and started" do
     before do
       Appsignal.config = project_fixture_config

@@ -58,6 +58,7 @@ module Appsignal
     #
     # @since 0.5.0
     def enqueue(transaction)
+      return unless active?
       agent.enqueue(transaction)
     end
 
@@ -69,7 +70,7 @@ module Appsignal
     end
 
     def send_exception(exception, tags=nil)
-      return if is_ignored_exception?(exception)
+      return if !active? || is_ignored_exception?(exception)
       transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
       transaction.add_exception(exception)
       transaction.set_tags(tags) if tags
@@ -78,13 +79,15 @@ module Appsignal
     end
 
     def add_exception(exception)
-      return if Appsignal::Transaction.current.nil? ||
+      return if !active? ||
+                Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
                 is_ignored_exception?(exception)
       Appsignal::Transaction.current.add_exception(exception)
     end
 
     def tag_request(params={})
+      return unless active?
       transaction = Appsignal::Transaction.current
       return false unless transaction
       transaction.set_tags(params)

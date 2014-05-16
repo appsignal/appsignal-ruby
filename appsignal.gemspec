@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   ]
   gem.email                 = ['support@appsignal.com']
   gem.description           = 'The official appsignal.com gem'
-  gem.summary               = 'Logs performance and exception data from your app to'\
+  gem.summary               = 'Logs performance and exception data from your app to '\
                               'appsignal.com'
   gem.homepage              = 'https://github.com/appsignal/appsignal'
   gem.license               = 'MIT'
