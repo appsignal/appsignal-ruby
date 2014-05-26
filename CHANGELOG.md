@@ -1,3 +1,6 @@
+# 0.8.13
+* Random sleep time before first transmission of queue
+
 # 0.8.12
 * Workaround for frozen string in Notification events
 * Require ActiveSupport::Notifications to be sure it's available
