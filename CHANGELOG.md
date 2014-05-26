@@ -1,3 +1,7 @@
+# 0.8.12
+* Workaround for frozen string in Notification events
+* Require ActiveSupport::Notifications to be sure it's available
+
 # 0.8.11
 * Skip enqueue, send_exception and add_exception if not active
 
