@@ -8,7 +8,7 @@ module Appsignal
           if event.name.end_with?(TARGET_EVENT_CATEGORY)
             identifier = event.payload[:identifier]
             if identifier
-              identifier.gsub!(root_path, '')
+              event.payload[:identifier] = identifier.gsub(root_path, '')
             end
           end
           yield

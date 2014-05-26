@@ -1,10 +1,16 @@
 # 0.9.0
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
-* Random first sleep in background thread
 * Refactor of usage of Thread.local
 * Net::HTTP instrumentation
 * Capistrano 3 support
+
+# 0.8.13
+* Random sleep time before first transmission of queue
+
+# 0.8.12
+* Workaround for frozen string in Notification events
+* Require ActiveSupport::Notifications to be sure it's available
 
 # 0.8.11
 * Skip enqueue, send_exception and add_exception if not active

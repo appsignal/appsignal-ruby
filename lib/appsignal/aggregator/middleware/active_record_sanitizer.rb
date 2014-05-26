@@ -16,7 +16,7 @@ module Appsignal
         def call(event)
           if event.name == TARGET_EVENT_NAME
             unless schema_query?(event) || adapter_uses_prepared_statements?
-              query_string = event.payload[:sql]
+              query_string = event.payload[:sql].dup
               if query_string
                 if adapter_uses_double_quoted_table_names?
                   query_string.gsub!(SINGLE_QUOTE, SANITIZED_VALUE)
@@ -28,6 +28,7 @@ module Appsignal
                 end
                 query_string.gsub!(IN_ARRAY, SANITIZED_VALUE)
                 query_string.gsub!(NUMERIC_DATA, SANITIZED_VALUE)
+                event.payload[:sql] = query_string
               end
             end
             event.payload.delete(:connection_id)

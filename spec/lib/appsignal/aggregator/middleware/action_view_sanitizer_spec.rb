@@ -25,7 +25,19 @@ if rails_present?
       before { sanitizer.call(event) { } }
 
       it "should strip Rails root from the path" do
-        payload[:identifier].should == 'app/views/home/index/html.erb'
+        subject[:identifier].should == 'app/views/home/index/html.erb'
+      end
+
+      context "with a frozen identifier" do
+        let(:payload) do
+          {
+            :identifier => '/var/www/app/20130101/app/views/home/index/html.erb'.freeze
+          }
+        end
+
+        it "should strip Rails root from the path" do
+          subject[:identifier].should == 'app/views/home/index/html.erb'
+        end
       end
     end
   end

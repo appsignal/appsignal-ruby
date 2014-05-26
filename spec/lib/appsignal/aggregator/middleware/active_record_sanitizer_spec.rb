@@ -142,6 +142,12 @@ if rails_present?
 
         it { should == 'SET client_min_messages TO 22' }
       end
+
+      context "with a a frozen sql string" do
+        let(:sql) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret'".freeze }
+
+        it { should == "SELECT `table`.* FROM `table` WHERE `id` = ?" }
+      end
     end
 
     describe "#schema_query?" do
