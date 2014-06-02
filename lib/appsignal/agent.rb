@@ -34,13 +34,14 @@ module Appsignal
     end
 
     def restart_thread
+      Appsignal.logger.debug 'Restarting agent thread'
       stop_thread
       start_thread
     end
 
     def stop_thread
       if @thread && @thread.alive?
-        Appsignal.logger.debug 'Killing agent thread'
+        Appsignal.logger.debug 'Stopping agent thread'
         Thread.kill(@thread)
       end
     end
@@ -63,7 +64,6 @@ module Appsignal
 
     def enqueue(transaction)
       forked! if @pid != Process.pid
-      Appsignal.logger.debug('Enqueueing transaction')
       aggregator.add(transaction)
     end
 
