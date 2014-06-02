@@ -117,12 +117,12 @@
     def complete!
       Appsignal.logger.debug("Completing transaction: #{@request_id}")
       Thread.current[:appsignal_transaction_id] = nil
-      current_transaction = Appsignal.transactions.delete(@request_id)
+      Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         if Appsignal::Pipe.current
           Appsignal::Pipe.current.write(self)
         else
-          Appsignal.enqueue(current_transaction)
+          Appsignal.enqueue(self)
         end
       else
         Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
