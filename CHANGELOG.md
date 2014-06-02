@@ -1,3 +1,7 @@
+# 0.8.14
+* Few tweaks in logging
+* Clarify Appsignal::Transaction.complete! code
+
 # 0.8.13
 * Random sleep time before first transmission of queue
 
