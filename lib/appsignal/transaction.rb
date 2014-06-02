@@ -115,17 +115,18 @@
     end
 
     def complete!
-      Appsignal.logger.debug("Completing transaction: #{@request_id}")
       Thread.current[:appsignal_transaction_id] = nil
       Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
         if Appsignal::Pipe.current
+          Appsignal.logger.debug("Writing transaction to pipe: #{@request_id}")
           Appsignal::Pipe.current.write(self)
         else
+          Appsignal.logger.debug("Enqueueing transaction: #{@request_id}")
           Appsignal.enqueue(self)
         end
       else
-        Appsignal.logger.debug("No process_action_event or exception: #{@request_id}")
+        Appsignal.logger.debug("Not processing transaction: #{@request_id}")
       end
     end
 
