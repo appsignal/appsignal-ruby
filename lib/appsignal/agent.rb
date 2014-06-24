@@ -24,11 +24,16 @@ module Appsignal
     def start_thread
       Appsignal.logger.debug('Starting agent thread')
       @thread = Thread.new do
-        sleep(rand(sleep_time))
-        loop do
-          send_queue if aggregator.has_transactions?
-          Appsignal.logger.debug("Sleeping #{sleep_time}")
-          sleep(sleep_time)
+        begin
+          sleep(rand(sleep_time))
+          loop do
+            send_queue if aggregator.has_transactions?
+            Appsignal.logger.debug("Sleeping #{sleep_time}")
+            sleep(sleep_time)
+          end
+        rescue Exception=>ex
+          Appsignal.logger.error "#{ex.class} in agent thread: '#{ex.message}'"
+          Appsignal.logger.error ex.backtrace.join('\n')
         end
       end
     end

@@ -58,6 +58,28 @@ describe Appsignal::Agent do
         sleep 1
       end
     end
+
+    context "when an exception occurs in the thread" do
+      before do
+        aggregator = double
+        aggregator.stub(:has_transactions?).and_raise(
+          RuntimeError.new('error')
+        )
+        subject.stub(
+          :aggregator => aggregator,
+          :sleep_time => 0.1
+        )
+      end
+
+      it "should log the error" do
+        Appsignal.logger.should_receive(:error).
+          with("RuntimeError in agent thread: 'error'").
+          once
+
+        subject.start_thread
+        sleep 1
+      end
+    end
   end
 
   describe "#restart_thread" do
