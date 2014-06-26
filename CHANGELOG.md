@@ -5,6 +5,9 @@
 * Net::HTTP instrumentation
 * Capistrano 3 support
 
+# 0.8.15
+* Exception logging in agent thread
+
 # 0.8.14
 * Few tweaks in logging
 * Clarify Appsignal::Transaction.complete! code
