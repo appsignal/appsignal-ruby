@@ -102,7 +102,7 @@ module Appsignal
     end
 
     def forked!
-      Appsignal.logger.debug('Forked worker process')
+      Appsignal.logger.info('Forked worker process')
       @pid = Process.pid
       Thread.exclusive do
         @aggregator = Aggregator.new

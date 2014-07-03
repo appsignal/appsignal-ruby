@@ -45,7 +45,10 @@ module Appsignal
         load_instrumentations
         initialize_extensions
         @agent = Appsignal::Agent.new
-        at_exit { @agent.shutdown(true) }
+        at_exit do
+          logger.debug('Running at_exit block')
+          @agent.shutdown(true)
+        end
       else
         logger.error("Can't start, no config loaded")
       end
