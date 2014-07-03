@@ -1,3 +1,6 @@
+# 0.9.1
+* Some debug logging tweaks
+
 # 0.9.0
 * Add option to override Capistrano revision
 * Expanded deploy message in Capistrano
