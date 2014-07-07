@@ -140,6 +140,10 @@ module Appsignal
       Appsignal.config[:ignore_exceptions].include?(exception.class.name)
     end
 
+    def is_ignored_action?(action)
+      Appsignal.config[:ignore_actions].include?(action)
+    end
+
     # Convenience method for skipping instrumentations around a block of code.
     #
     # @since 0.8.7

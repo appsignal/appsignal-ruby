@@ -8,6 +8,7 @@ module Appsignal
 
     DEFAULT_CONFIG = {
       :ignore_exceptions => [],
+      :ignore_actions => [],
       :send_params => true,
       :endpoint => 'https://push.appsignal.com/1',
       :slow_request_threshold => 200,

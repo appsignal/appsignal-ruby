@@ -196,11 +196,12 @@ describe Appsignal::Agent do
   end
 
   describe "#enqueue" do
+    let(:transaction) { double(:action => 'test#test') }
     subject { Appsignal.agent }
 
     it "forwards to the aggregator" do
       subject.aggregator.should respond_to(:add)
-      subject.aggregator.should_receive(:add).with(:foo)
+      subject.aggregator.should_receive(:add).with(transaction)
       subject.should_not_receive(:forked!)
     end
 
@@ -208,12 +209,20 @@ describe Appsignal::Agent do
       before { Process.stub(:pid => 9000000002) }
 
       it "should call forked!" do
-        subject.aggregator.should_receive(:add).with(:foo)
+        subject.aggregator.should_receive(:add).with(transaction)
         subject.should_receive(:forked!)
       end
     end
 
-    after { subject.enqueue(:foo) }
+    context "with ignored action" do
+      before { Appsignal.stub(:is_ignored_action? => true) }
+
+      it "should not add item to queue" do
+        subject.aggregator.should_not_receive(:add)
+      end
+    end
+
+    after { subject.enqueue(transaction) }
   end
 
   describe "#send_queue" do
