@@ -1,3 +1,23 @@
+GEMFILES = %w(
+  capistrano2
+  capistrano3
+  no_dependencies
+  rails-3.0
+  rails-3.1
+  rails-3.2
+  rails-4.0
+  rails-4.1
+  sinatra
+)
+
+RUBY_VERSIONS = %w(
+  1.9.3-p429
+  2.0.0-p451
+  2.1.2
+  jruby-1.7.9
+  rbx-2.2.9
+)
+
 task :publish do
   require 'appsignal/version'
 
@@ -59,44 +79,32 @@ task :publish do
 end
 
 task :bundle do
-  system 'bundle --gemfile gemfiles/capistrano2.gemfile'
-  system 'bundle --gemfile gemfiles/capistrano3.gemfile'
-  system 'bundle --gemfile gemfiles/no_dependencies.gemfile'
-  system 'bundle --gemfile gemfiles/rails-3.0.gemfile'
-  system 'bundle --gemfile gemfiles/rails-3.1.gemfile'
-  system 'bundle --gemfile gemfiles/rails-3.2.gemfile'
-  system 'bundle --gemfile gemfiles/rails-4.0.gemfile'
-  system 'bundle --gemfile gemfiles/rails-4.1.gemfile'
-  system 'bundle --gemfile gemfiles/sinatra.gemfile'
+  GEMFILES.each do |gemfile|
+    system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
+  end
 end
 
 task :spec do
-  puts 'Running capistrano2'
-  system 'env BUNDLE_GEMFILE=gemfiles/capistrano2.gemfile bundle exec rspec'
+  GEMFILES.each do |gemfile|
+    puts "Running #{gemfile}"
+    raise 'Not successful' unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+  end
+end
 
-  puts 'Running capistrano3'
-  system 'env BUNDLE_GEMFILE=gemfiles/capistrano3.gemfile bundle exec rspec'
-
-  puts 'Running no dependencies'
-  system 'env BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec'
-
-  puts 'Running rails-3.0'
-  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.0.gemfile bundle exec rspec'
-
-  puts 'Running rails-3.1'
-  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.1.gemfile bundle exec rspec'
-
-  puts 'Running rails-3.2'
-  system 'env BUNDLE_GEMFILE=gemfiles/rails-3.2.gemfile bundle exec rspec'
-
-  puts 'Running rails-4.0'
-  system 'env BUNDLE_GEMFILE=gemfiles/rails-4.0.gemfile bundle exec rspec'
-
-  puts 'Running rails-4.1'
-  system 'env BUNDLE_GEMFILE=gemfiles/rails-4.1.gemfile bundle exec rspec'
-
-  puts 'Running sinatra'
-  system 'env BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec'
+task :bundle_and_spec_all do
+  start_time = Time.now
+  RUBY_VERSIONS.each do |version|
+    puts "Switching to #{version}"
+    system "rbenv local #{version}"
+    GEMFILES.each do |gemfile|
+      puts "Bundling #{gemfile} in #{version}"
+      system "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile"
+      puts "Running #{gemfile} in #{version}"
+      raise 'Not successful' unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+    end
+  end
+  system 'rm .ruby-version'
+  puts "Successfully ran specs for all environments in #{Time.now - start_time} seconds"
 end
 
 task :console do
