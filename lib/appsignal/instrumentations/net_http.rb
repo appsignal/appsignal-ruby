@@ -4,7 +4,7 @@ Net::HTTP.class_eval do
   def request(request, body=nil, &block)
     ActiveSupport::Notifications.instrument(
       'request.net_http',
-      :host => request['host'],
+      :host => request['host'] || self.address,
       :scheme => use_ssl? ? 'https' : 'http',
       :path => request.path,
       :method => request.method
