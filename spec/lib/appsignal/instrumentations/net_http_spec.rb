@@ -12,7 +12,7 @@ describe "Net::HTTP instrumentation" do
   it "should instrument request" do
     # We want to be absolutely sure the original method gets called correctly,
     # so we actually do a HTTP request.
-    response = Net::HTTP.get_response(URI.parse('https://www.google.com'))
+    response = Net::HTTP.get_response(URI.parse('https://www.google.com/robots.txt'))
 
     response.body.should include('google')
 
@@ -20,7 +20,7 @@ describe "Net::HTTP instrumentation" do
     event.name.should == 'request.net_http'
     event.payload[:host].should == 'www.google.com'
     event.payload[:scheme].should == 'https'
-    event.payload[:path].should == '/'
+    event.payload[:path].should == '/robots.txt'
     event.payload[:method].should == 'GET'
   end
 end
