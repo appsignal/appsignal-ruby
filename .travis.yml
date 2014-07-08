@@ -8,6 +8,8 @@ rvm:
   - "rbx"
 
 gemfile:
+  - "gemfiles/capistrano2.gemfile"
+  - "gemfiles/capistrano3.gemfile"
   - "gemfiles/no_dependencies.gemfile"
   - "gemfiles/rails-3.0.gemfile"
   - "gemfiles/rails-3.1.gemfile"
