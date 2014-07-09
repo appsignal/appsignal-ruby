@@ -18,11 +18,6 @@ gemfile:
   - "gemfiles/rails-4.1.gemfile"
   - "gemfiles/sinatra.gemfile"
 
-matrix:
-  allow_failures:
-    - rvm: "jruby-19mode"
-    - rvm: "rbx"
-
 env:
   global: "RAILS_ENV=test"
 
