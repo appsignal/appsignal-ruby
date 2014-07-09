@@ -10,11 +10,9 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should instrument request" do
-    # We want to be absolutely sure the original method gets called correctly,
-    # so we actually do a HTTP request.
-    response = Net::HTTP.get_response(URI.parse('http://www.google.com/robots.txt'))
+    Net::HTTP.any_instance.should_receive(:request_without_appsignal)
 
-    response.body.should include('google')
+    Net::HTTP.get_response(URI.parse('http://www.google.com/robots.txt'))
 
     event = events.last
     event.name.should == 'request.net_http'
