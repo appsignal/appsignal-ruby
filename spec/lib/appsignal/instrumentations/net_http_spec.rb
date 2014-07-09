@@ -10,7 +10,7 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should instrument request" do
-    Net::HTTP.any_instance.should_receive(:request_without_appsignal)
+    Net::HTTP.any_instance.should_receive(:request_without_appsignal).once
 
     Net::HTTP.get_response(URI.parse('http://www.google.com/robots.txt'))
 
