@@ -32,6 +32,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec', '~> 2.14.1'
   gem.add_development_dependency 'pry'
   gem.add_development_dependency 'timecop'
+  gem.add_development_dependency 'webmock'
 
   if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
     gem.add_development_dependency 'racc'

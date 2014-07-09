@@ -19,11 +19,22 @@ describe Appsignal::Transmitter do
   end
 
   describe "#transmit" do
-    let(:response) { double(:response, :code => '200') }
-    let(:http_client) { double(:request, :request => response) }
-    before { instance.stub(:http_client => http_client) }
+    before do
+      stub_request(
+        :post,
+        'https://push.appsignal.com/1/action?api_key=abc&environment=production&gem_version=0.9.1&hostname=thijsair&name=TestApp'
+      ).with(
+        :body => Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED),
+        :headers => {
+          'Content-Encoding' => 'gzip',
+          'Content-Type' => 'application/json; charset=UTF-8',
+        }
+      ).to_return(
+        :status => 200
+      )
+    end
 
-    subject { instance.transmit(:shipit => :payload) }
+    subject { instance.transmit(:the => :payload) }
 
     it { should == '200' }
   end

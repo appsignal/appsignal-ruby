@@ -10,15 +10,15 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should instrument request" do
-    Net::HTTP.any_instance.should_receive(:request_without_appsignal).once
+    stub_request(:any, 'www.google.com')
 
-    Net::HTTP.get_response(URI.parse('http://www.google.com/robots.txt'))
+    Net::HTTP.get_response(URI.parse('http://www.google.com'))
 
     event = events.last
     event.name.should == 'request.net_http'
     event.payload[:host].should == 'www.google.com'
     event.payload[:scheme].should == 'http'
-    event.payload[:path].should == '/robots.txt'
+    event.payload[:path].should == '/'
     event.payload[:method].should == 'GET'
   end
 end
