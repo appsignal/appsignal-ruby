@@ -93,8 +93,10 @@ end
 
 task :bundle_and_spec_all do
   if system 'rvm > /dev/null'
+    puts 'Using rvm'
     switch_command = 'rvm use'
   else
+    puts 'Using rbenv'
     switch_command = 'rbenv local'
   end
 
