@@ -1,6 +1,6 @@
 module TransactionHelpers
   def fixed_time
-    @fixed_time ||= Time.new(2014, 01, 15, 12, 0).to_f
+    @fixed_time ||= Time.utc(2014, 01, 15, 11, 0, 0).to_f
   end
 
   def uploaded_file
