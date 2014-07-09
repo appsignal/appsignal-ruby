@@ -22,7 +22,7 @@ describe Appsignal::Transmitter do
     before do
       stub_request(
         :post,
-        'https://push.appsignal.com/1/action?api_key=abc&environment=production&gem_version=0.9.1&hostname=thijsair&name=TestApp'
+        "https://push.appsignal.com/1/action?api_key=abc&environment=production&gem_version=#{Appsignal::VERSION}&hostname=#{Socket.gethostname}&name=TestApp"
       ).with(
         :body => Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED),
         :headers => {
