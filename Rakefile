@@ -92,10 +92,16 @@ task :spec do
 end
 
 task :bundle_and_spec_all do
+  if system 'rvm'
+    switch_command = 'rvm use'
+  else
+    switch_command = 'rbenv local'
+  end
+
   start_time = Time.now
   RUBY_VERSIONS.each do |version|
     puts "Switching to #{version}"
-    raise "Error using #{version}" unless system "rbenv local #{version}"
+    raise "Error using #{version}" unless system "#{switch_command} #{version}"
     GEMFILES.each do |gemfile|
       puts "Bundling #{gemfile} in #{version}"
       system "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile"
