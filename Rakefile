@@ -95,7 +95,7 @@ task :bundle_and_spec_all do
   start_time = Time.now
   RUBY_VERSIONS.each do |version|
     puts "Switching to #{version}"
-    system "rbenv local #{version}"
+    raise "Error using #{version}" unless system "rbenv local #{version}"
     GEMFILES.each do |gemfile|
       puts "Bundling #{gemfile} in #{version}"
       system "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile"
