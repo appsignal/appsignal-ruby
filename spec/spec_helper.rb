@@ -5,6 +5,8 @@ require 'timecop'
 require 'webmock/rspec'
 require 'active_support/notifications'
 
+puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+
 begin
   require 'rails'
   Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/rails','*.rb'))].each {|f| require f}
