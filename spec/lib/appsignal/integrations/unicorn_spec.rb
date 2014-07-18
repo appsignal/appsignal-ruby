@@ -33,7 +33,7 @@ describe "Unicorn integration" do
   it "should add behavior to Unicorn::Worker#close" do
     worker = Unicorn::Worker.new
 
-    Appsignal.agent.should_receive(:shutdown).with(true)
+    Appsignal.agent.should_receive(:shutdown).with(true, 'stopping Unicorn worker process')
     worker.should_receive(:original_close)
 
     worker.close

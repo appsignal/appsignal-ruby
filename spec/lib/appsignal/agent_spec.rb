@@ -292,6 +292,11 @@ describe Appsignal::Agent do
     end
 
     context "when not sending the current queue" do
+      it "should log the reason for shutting down" do
+          Appsignal.logger.should_receive(:info).with('Shutting down agent (shutting down)')
+          subject.shutdown(false, 'shutting down')
+      end
+
       context "with an empty queue" do
         it "should shutdown" do
           subject.shutdown
@@ -313,7 +318,7 @@ describe Appsignal::Agent do
         it "should shutdown" do
           subject.should_not_receive(:send_queue)
 
-          subject.shutdown(true)
+          subject.shutdown(true, nil)
         end
       end
 
@@ -322,7 +327,7 @@ describe Appsignal::Agent do
           subject.enqueue(slow_transaction)
           subject.should_receive(:send_queue)
 
-          subject.shutdown(true)
+          subject.shutdown(true, nil)
         end
       end
     end
