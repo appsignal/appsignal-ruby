@@ -1,3 +1,7 @@
+# 0.9.2
+* Log Ruby version and platform on startup
+* Log reason of shutting down agent
+
 # 0.9.1
 * Some debug logging tweaks
 
