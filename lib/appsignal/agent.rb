@@ -110,8 +110,8 @@ module Appsignal
       restart_thread
     end
 
-    def shutdown(send_current_queue=false)
-      Appsignal.logger.info('Shutting down agent')
+    def shutdown(send_current_queue=false, reason=nil)
+      Appsignal.logger.info("Shutting down agent (#{reason})")
       ActiveSupport::Notifications.unsubscribe(subscriber)
       Thread.kill(thread) if thread
       send_queue if send_current_queue && @aggregator.has_transactions?
@@ -131,16 +131,16 @@ module Appsignal
         @sleep_time = sleep_time / 1.5
       when 429
         Appsignal.logger.error 'Too many requests sent'
-        shutdown
+        shutdown(false, 429)
       when 406
         Appsignal.logger.error 'Your appsignal gem cannot communicate with the API anymore, please upgrade.'
-        shutdown
+        shutdown(false, 406)
       when 402
         Appsignal.logger.error 'Payment required'
-        shutdown
+        shutdown(false, 402)
       when 401
         Appsignal.logger.error 'API token cannot be authorized'
-        shutdown
+        shutdown(false, 401)
       else
         Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
         clear_queue

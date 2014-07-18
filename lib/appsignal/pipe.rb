@@ -17,7 +17,7 @@ module Appsignal
       Marshal::dump(transaction, @writer)
     rescue IOError
       Appsignal.logger.debug "Broken pipe in #{$$}"
-      Appsignal.agent.shutdown
+      Appsignal.agent.shutdown(true, 'broken pipe')
     end
 
     def stop_listening!

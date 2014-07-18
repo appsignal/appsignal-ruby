@@ -8,6 +8,6 @@ if defined?(::PhusionPassenger)
 
   ::PhusionPassenger.on_event(:stopping_worker_process) do
     Appsignal.logger.debug('stopping worker process')
-    Appsignal.agent.shutdown(true)
+    Appsignal.agent.shutdown(true, 'stopping Passenger worker process')
   end
 end

@@ -18,7 +18,7 @@ if defined?(::Unicorn)
     alias_method :original_close, :close
 
     def close
-      Appsignal.agent.shutdown(true)
+      Appsignal.agent.shutdown(true, 'stopping Unicorn worker process')
       original_close
     end
   end
