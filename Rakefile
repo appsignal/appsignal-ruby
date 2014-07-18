@@ -18,6 +18,11 @@ RUBY_VERSIONS = %w(
   rbx-2.2.9
 )
 
+VERSION_MANAGERS = {
+  :rbenv => 'rbenv local',
+  :rvm => 'rvm use'
+}
+
 task :publish do
   require 'appsignal/version'
 
@@ -91,28 +96,33 @@ task :spec do
   end
 end
 
-task :bundle_and_spec_all do
-  if system 'rvm > /dev/null'
-    puts 'Using rvm'
-    switch_command = 'rvm use'
-  else
-    puts 'Using rbenv'
-    switch_command = 'rbenv local'
-  end
+task :generate_bundle_and_spec_all do
+  VERSION_MANAGERS.each do |version_manager, switch_command|
+    out = []
+    out << '#!/bin/sh'
+    out << 'rm -f .ruby-version'
 
-  start_time = Time.now
-  RUBY_VERSIONS.each do |version|
-    puts "Switching to #{version}"
-    raise "Error using #{version}" unless system "#{switch_command} #{version}"
-    GEMFILES.each do |gemfile|
-      puts "Bundling #{gemfile} in #{version}"
-      system "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile"
-      puts "Running #{gemfile} in #{version}"
-      raise 'Not successful' unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+    out << "echo 'Using #{version_manager}'"
+    RUBY_VERSIONS.each do |version|
+      out << "echo 'Switching to #{version}'"
+      out << "#{switch_command} #{version} || { echo 'Switching Ruby failed'; exit 1; }"
+      GEMFILES.each do |gemfile|
+        out << "echo 'Bundling #{gemfile} in #{version}'"
+        out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
+        out << "echo 'Running #{gemfile} in #{version}'"
+        out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
+      end
     end
+    out << 'rm .ruby-version'
+    out << "echo 'Successfully ran specs for all environments'"
+
+    script = "bundle_and_spec_all_#{version_manager}.sh"
+    File.open(script, 'w') do |file|
+      file.write out.join("\n")
+    end
+    File.chmod(0775, script)
+    puts "Generated #{script}"
   end
-  system 'rm .ruby-version'
-  puts "Successfully ran specs for all environments in #{Time.now - start_time} seconds"
 end
 
 task :console do

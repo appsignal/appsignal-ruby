@@ -84,5 +84,6 @@ BUNDLE_GEMFILE=gemfiles/rails-4.1.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec
 ```
 
-Or run `rake bundle_and_spec_all` to run specs for all Ruby versions and gem combinations we support.
+Or run `rake generate_bundle_and_spec_all` to generate a script that runs specs for all
+Ruby versions and gem combinations we support.
 You need Rvm or Rbenv to do this. Travis will run specs for these combinations as well.
