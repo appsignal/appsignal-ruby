@@ -308,12 +308,6 @@ describe Appsignal do
       end
     end
 
-    describe ".json" do
-      subject { Appsignal.json }
-
-      it { should == ActiveSupport::JSON }
-    end
-
     describe ".post_processing_middleware" do
       before { Appsignal.instance_variable_set(:@post_processing_chain, nil) }
 
