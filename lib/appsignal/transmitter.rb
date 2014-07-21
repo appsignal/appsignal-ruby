@@ -10,6 +10,17 @@ module Appsignal
     CONTENT_ENCODING = 'gzip'.freeze
     CA_FILE_PATH = File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
 
+    HTTP_ERRORS = [
+      EOFError,
+      Errno::ECONNRESET,
+      Errno::EINVAL,
+      Net::HTTPBadResponse,
+      Net::HTTPHeaderSyntaxError,
+      Net::ProtocolError,
+      Timeout::Error,
+      OpenSSL::SSL::SSLError
+    ]
+
     attr_reader :config, :action
 
     def initialize(action, config=Appsignal.config)

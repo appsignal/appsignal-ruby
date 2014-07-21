@@ -32,7 +32,16 @@ describe Appsignal::Agent do
   end
 
   describe "#start_thread" do
-    before { subject.thread = nil }
+    before do
+      subject.thread = nil
+      subject.stub(:sleep_time => 0.1)
+    end
+
+    it "should truncate the aggregator queue" do
+      subject.should_receive(:truncate_aggregator_queue).at_least(1).times
+      subject.start_thread
+      sleep 1
+    end
 
     context "without transactions" do
       it "should start and run a background thread" do
@@ -47,10 +56,7 @@ describe Appsignal::Agent do
 
     context "with transactions" do
       before do
-        subject.stub(
-          :aggregator => double(:has_transactions? => true),
-          :sleep_time => 0.01
-        )
+        subject.stub(:aggregator => double(:has_transactions? => true))
       end
 
       it "should send the queue and sleep" do
@@ -67,10 +73,7 @@ describe Appsignal::Agent do
         aggregator.stub(:has_transactions?).and_raise(
           RuntimeError.new('error')
         )
-        subject.stub(
-          :aggregator => aggregator,
-          :sleep_time => 0.1
-        )
+        subject.stub(:aggregator => aggregator)
       end
 
       it "should log the error" do
@@ -250,20 +253,51 @@ describe Appsignal::Agent do
   end
 
   describe "#send_queue" do
-    context "without transactions" do
-      it "does not transmit" do
-        subject.should_not_receive(:handle_result)
-      end
+    it "adds aggregator to queue" do
+      subject.aggregator.stub(:post_processed_queue! => :foo)
+      subject.should_receive(:add_to_aggregator_queue).with(:foo)
     end
 
-    context "with transactions" do
-      before do
-        subject.aggregator.stub(:has_transactions? => true)
-      end
+    it "sends aggregators" do
+      subject.should_receive(:send_aggregators)
+    end
 
-      it "transmits" do
-        subject.aggregator.stub(:post_processed_queue! => :foo)
-        subject.transmitter.should_receive(:transmit).with(:foo)
+    it "handle exceptions in post processing" do
+      subject.aggregator.stub(:post_processed_queue!).and_raise(
+        PostProcessingException.new('Message')
+      )
+
+      Appsignal.logger.should_receive(:error).
+        with('PostProcessingException while sending queue: Message').
+        once
+      Appsignal.logger.should_receive(:error).
+        with(kind_of(String)).
+        once
+    end
+
+    it "handles exceptions in transmit" do
+      subject.stub(:send_aggregators).and_raise(
+        Exception.new('Message')
+      )
+
+      Appsignal.logger.should_receive(:error).
+        with('Exception while sending queue: Message').
+        once
+      Appsignal.logger.should_receive(:error).
+        with(kind_of(String)).
+        once
+    end
+
+    after { subject.send_queue }
+  end
+
+  describe "#send_aggregators" do
+    let(:aggregator_hash) { double }
+    before { subject.add_to_aggregator_queue(aggregator_hash) }
+
+    context "sending aggreagotor hashes" do
+      it "sends each item in the aggregators_to_be_sent array" do
+        subject.transmitter.should_receive(:transmit).with(aggregator_hash)
       end
 
       it "handles the return code" do
@@ -271,43 +305,63 @@ describe Appsignal::Agent do
         subject.should_receive(:handle_result).with('200')
       end
 
-      it "handle exceptions in post processing" do
-        subject.aggregator.stub(:post_processed_queue!).and_raise(
-          PostProcessingException.new('Message')
-        )
-
-        Appsignal.logger.should_receive(:error).
-          with('PostProcessingException while sending queue: Message').
-          once
-        Appsignal.logger.should_receive(:error).
-          with(kind_of(String)).
-          once
-      end
-
-      it "handles exceptions in transmit" do
-        subject.transmitter.stub(:transmit).and_raise(
-          Exception.new('Message')
-        )
-
-        Appsignal.logger.should_receive(:error).
-          with('Exception while sending queue: Message').
-          once
-        Appsignal.logger.should_receive(:error).
-          with(kind_of(String)).
-          once
-      end
-
-      it "handles an OpenSSL error in transmit" do
-        subject.transmitter.stub(:transmit).and_raise(
-          OpenSSL::SSL::SSLError.new('Message')
-        )
-
-        Appsignal.logger.should_receive(:error).
-          with('OpenSSL::SSL::SSLError: Message').once
-      end
+      after { subject.send_aggregators }
     end
 
-    after { subject.send_queue }
+    context "managing the queue" do
+      before { subject.transmitter.stub(:transmit => '200') }
+
+      context "when successfully sent" do
+        before { subject.stub(:handle_result => true) }
+
+        it "should remove only successfully sent item from the queue" do
+          expect {
+            subject.send_aggregators
+          }.to change(subject, :aggregator_queue).from([aggregator_hash]).to([])
+        end
+      end
+
+      context "when failed to sent" do
+        before { subject.stub(:handle_result => false) }
+
+        it "should remove only successfully sent item from the queue" do
+          expect {
+            subject.send_aggregators
+          }.to_not change(subject, :aggregator_queue)
+        end
+      end
+
+      context "when an exception occurred during sending" do
+        before { subject.stub(:transmitter).and_raise(OpenSSL::SSL::SSLError.new) }
+
+        it "should remove only successfully sent item from the queue" do
+          expect {
+            subject.send_aggregators
+          }.to_not change(subject, :aggregator_queue)
+        end
+
+      end
+    end
+  end
+
+  describe "#truncate_aggregator_queue" do
+    before do
+      5.times { |i| subject.add_to_aggregator_queue(i) }
+    end
+
+    it "should truncate the queue to the given limit" do
+      expect {
+        subject.truncate_aggregator_queue(2)
+      }.to change(subject, :aggregator_queue).from([4, 3, 2, 1, 0]).to([4,3])
+    end
+
+    it "should log this event as an error" do
+      Appsignal.logger.should_receive(:error).
+        with('Aggregator queue to large, removing items').
+        once
+
+      subject.truncate_aggregator_queue(2)
+    end
   end
 
   describe "#clear_queue" do
@@ -441,13 +495,23 @@ describe Appsignal::Agent do
         it "logs the event" do
           Appsignal.logger.should_receive(:error)
         end
-
-        it "clears the queue" do
-          subject.should_receive(:clear_queue)
-        end
       end
 
       after { subject.send(:handle_result, code) }
+    end
+
+    context "return values" do
+      %w( 200 420 413 429 406 402 401 ).each do |code|
+        it "should return true for '#{code}'" do
+          subject.send(:handle_result, code).should be_true
+        end
+      end
+
+      %w( 500 502 ).each do |code|
+        it "should return false for '#{code}'" do
+          subject.send(:handle_result, code).should be_false
+        end
+      end
     end
   end
 
