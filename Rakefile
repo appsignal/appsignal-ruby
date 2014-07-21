@@ -99,7 +99,7 @@ end
 task :generate_bundle_and_spec_all do
   VERSION_MANAGERS.each do |version_manager, switch_command|
     out = []
-    out << '#!/bin/sh'
+    out << '#!/bin/bash'
     out << 'rm -f .ruby-version'
 
     out << "echo 'Using #{version_manager}'"
