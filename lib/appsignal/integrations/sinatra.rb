@@ -10,8 +10,9 @@ Appsignal.config = Appsignal::Config.new(
 
 Appsignal.start_logger(app_settings.root)
 
+Appsignal.start
+
 if Appsignal.active?
-  Appsignal.start
   ::Sinatra::Application.use(Appsignal::Rack::Listener)
   ::Sinatra::Application.use(Appsignal::Rack::Instrumentation)
 end

@@ -40,17 +40,21 @@ module Appsignal
         else
           logger.level = Logger::INFO
         end
-        logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
-        load_integrations
-        load_instrumentations
-        initialize_extensions
-        @agent = Appsignal::Agent.new
-        at_exit do
-          logger.debug('Running at_exit block')
-          @agent.shutdown(true, 'ran at_exit')
+        if config.active?
+          logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
+          load_integrations
+          load_instrumentations
+          initialize_extensions
+          @agent = Appsignal::Agent.new
+          at_exit do
+            logger.debug('Running at_exit block')
+            @agent.shutdown(true, 'ran at_exit')
+          end
+        else
+          logger.info("Not starting, not active for #{config.env}")
         end
       else
-        logger.error("Can't start, no config loaded")
+        logger.error('Can\'t start, no config loaded')
       end
     end
 

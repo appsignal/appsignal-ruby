@@ -22,8 +22,7 @@ if defined?(::Rails)
             :name => Rails.application.class.parent_name
           )
 
-          # Start agent if config for this env is present
-          Appsignal.start if Appsignal.active?
+          Appsignal.start
         end
       end
     end
