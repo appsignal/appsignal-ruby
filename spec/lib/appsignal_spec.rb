@@ -59,6 +59,18 @@ describe Appsignal do
         Appsignal.start
       end
 
+      context "when not active for this environment" do
+        before { Appsignal.config = project_fixture_config('staging') }
+
+        it "should do nothing" do
+          Appsignal.logger.should_receive(:info).with(
+            'Not starting, not active for staging'
+          )
+          Appsignal.start
+          Appsignal.agent.should be_nil
+        end
+      end
+
       context "with an extension" do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
