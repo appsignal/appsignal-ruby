@@ -1,3 +1,6 @@
+# 0.9.3
+* Log if appsignal is not active for an environment
+
 # 0.9.2
 * Log Ruby version and platform on startup
 * Log reason of shutting down agent
