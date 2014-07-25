@@ -2,6 +2,7 @@ require 'net/http'
 require 'net/https'
 require 'uri'
 require 'rack/utils'
+require 'json'
 
 module Appsignal
   class Transmitter
@@ -40,7 +41,7 @@ module Appsignal
         request['Content-Type'] = CONTENT_TYPE
         request['Content-Encoding'] = CONTENT_ENCODING
         request.body = Zlib::Deflate.deflate(
-          Appsignal.json.encode(payload),
+          JSON.generate(payload, :quirks_mode => true),
           Zlib::BEST_SPEED
         )
       end

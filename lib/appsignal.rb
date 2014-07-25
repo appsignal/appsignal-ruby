@@ -2,8 +2,12 @@ require 'logger'
 require 'rack'
 require 'thread_safe'
 require 'securerandom'
-require 'active_support/json'
-require 'active_support/notifications'
+
+begin
+  require 'active_support/notifications'
+rescue LoadError
+  require 'vendor/active_support/notifications'
+end
 
 module Appsignal
   class << self
@@ -127,10 +131,6 @@ module Appsignal
       end
       @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
-    end
-
-    def json
-      ActiveSupport::JSON
     end
 
     def post_processing_middleware

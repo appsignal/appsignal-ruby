@@ -3,7 +3,6 @@ require 'rspec'
 require 'pry'
 require 'timecop'
 require 'webmock/rspec'
-require 'active_support/notifications'
 
 puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}"
 
