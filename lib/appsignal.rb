@@ -73,6 +73,25 @@ module Appsignal
       agent.enqueue(transaction)
     end
 
+    def monitor_transaction(name, payload={})
+      unless active?
+        yield
+        return
+      end
+
+      begin
+        Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+        ActiveSupport::Notifications.instrument(name, payload) do
+          yield
+        end
+      rescue Exception => exception
+        Appsignal.add_exception(exception)
+        raise exception
+      ensure
+        Appsignal::Transaction.complete_current!
+      end
+    end
+
     def listen_for_exception(&block)
       yield
     rescue Exception => exception

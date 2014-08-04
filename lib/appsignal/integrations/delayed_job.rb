@@ -11,25 +11,17 @@ if defined?(::Delayed::Plugin)
         end
 
         def self.invoke_with_instrumentation(job, block)
-          begin
-            Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-            class_name, method_name = job.name.split('#')
-            ActiveSupport::Notifications.instrument(
-              'perform_job.delayed_job',
-              :class => class_name,
-              :method => method_name,
-              :priority => job.priority,
-              :attempts => job.attempts,
-              :queue => job.queue,
-              :queue_start => job.created_at
-            ) do
-              block.call(job)
-            end
-          rescue Exception => exception
-            Appsignal.add_exception(exception)
-            raise exception
-          ensure
-            Appsignal::Transaction.complete_current!
+          class_name, method_name = job.name.split('#')
+          Appsignal.monitor_transaction(
+            'perform_job.delayed_job',
+            :class => class_name,
+            :method => method_name,
+            :priority => job.priority,
+            :attempts => job.attempts,
+            :queue => job.queue,
+            :queue_start => job.created_at
+          ) do
+            block.call(job)
           end
         end
       end

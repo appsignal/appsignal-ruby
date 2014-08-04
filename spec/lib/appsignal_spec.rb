@@ -144,7 +144,7 @@ describe Appsignal do
   end
 
   context "not active" do
-    describe "#enqueue" do
+    describe ".enqueue" do
       it "should do nothing" do
         lambda {
           Appsignal.enqueue(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
@@ -152,7 +152,22 @@ describe Appsignal do
       end
     end
 
-    describe "#listen_for_exception" do
+    describe ".monitor_transaction" do
+      it "should do nothing but still yield the block" do
+        Appsignal::Transaction.should_not_receive(:create)
+        ActiveSupport::Notifications.should_not_receive(:instrument)
+        object = double
+        object.should_receive(:some_method)
+
+        lambda {
+          Appsignal.monitor_transaction('perform_job.nothing') do
+            object.some_method
+          end
+        }.should_not raise_error
+      end
+    end
+
+    describe ".listen_for_exception" do
       it "should do nothing" do
         error = RuntimeError.new('specific error')
         lambda {
@@ -163,7 +178,7 @@ describe Appsignal do
       end
     end
 
-    describe "#send_exception" do
+    describe ".send_exception" do
       it "should do nothing" do
         lambda {
           Appsignal.send_exception(RuntimeError.new)
@@ -171,7 +186,7 @@ describe Appsignal do
       end
     end
 
-    describe "#add_exception" do
+    describe ".add_exception" do
       it "should do nothing" do
         lambda {
           Appsignal.add_exception(RuntimeError.new)
@@ -179,7 +194,7 @@ describe Appsignal do
       end
     end
 
-    describe "#tag_request" do
+    describe ".tag_request" do
       it "should do nothing" do
         lambda {
           Appsignal.tag_request(:tag => 'tag')
@@ -187,7 +202,6 @@ describe Appsignal do
       end
     end
   end
-
 
   context "with config and started" do
     before do
@@ -202,6 +216,43 @@ describe Appsignal do
         Appsignal.agent.should respond_to(:enqueue)
         Appsignal.agent.should_receive(:enqueue).with(transaction)
         subject
+      end
+    end
+
+    describe ".monitor_transaction" do
+      context "with a normall call" do
+        it "should instrument and complete" do
+          Appsignal::Transaction.stub(:current => transaction)
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'perform_job.something',
+            :class => 'Something'
+          ).and_yield
+          transaction.should_receive(:complete!)
+          object = double
+          object.should_receive(:some_method)
+
+          Appsignal.monitor_transaction(
+            'perform_job.something',
+            :class => 'Something'
+          ) do
+            object.some_method
+          end
+        end
+      end
+
+      context "with an erroring call" do
+        let(:error) { VerySpecificError.new('the roof') }
+
+        it "should add the error to the current transaction and complete" do
+          Appsignal.should_receive(:add_exception).with(error)
+          Appsignal::Transaction.should_receive(:complete_current!)
+
+          lambda {
+            Appsignal.monitor_transaction('perform_job.something') do
+              raise error
+            end
+          }.should raise_error(error)
+        end
       end
     end
 

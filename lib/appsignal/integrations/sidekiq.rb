@@ -5,8 +5,7 @@ if defined?(::Sidekiq)
     module Integrations
       class SidekiqPlugin
         def call(worker, item, queue)
-          Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-          ActiveSupport::Notifications.instrument(
+          Appsignal.monitor_transaction(
             'perform_job.sidekiq',
             :class => item['class'],
             :method => 'perform',
@@ -16,11 +15,6 @@ if defined?(::Sidekiq)
           ) do
             yield
           end
-        rescue Exception => exception
-          Appsignal.add_exception(exception)
-          raise exception
-        ensure
-          Appsignal::Transaction.complete_current!
         end
       end
     end

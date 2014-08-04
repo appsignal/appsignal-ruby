@@ -38,8 +38,8 @@ describe "Resque integration" do
           Appsignal::Transaction.should_receive(:create).and_return(transaction)
         end
 
-        it "should instrument with correct params" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+        it "should wrap in a transaction with the correct params" do
+          Appsignal.should_receive(:monitor_transaction).with(
             'perform_job.resque',
             :class => 'Resque::Job',
             :method => 'perform'
