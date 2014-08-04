@@ -69,6 +69,10 @@ module Appsignal
 
     def enqueue(transaction)
       forked! if @pid != Process.pid
+      if Appsignal.is_ignored_action?(transaction.action)
+        Appsignal.logger.debug("Ignoring transaction: #{transaction.request_id} (#{transaction.action})")
+        return
+      end
       aggregator.add(transaction)
     end
 

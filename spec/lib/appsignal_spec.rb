@@ -499,5 +499,51 @@ describe Appsignal do
         end
       end
     end
+
+    describe ".is_ignored_exception?" do
+      let(:exception) { StandardError.new }
+      before do
+        Appsignal.stub(
+          :config => {:ignore_exceptions => 'StandardError'}
+        )
+      end
+
+      subject { Appsignal.is_ignored_exception?(exception) }
+
+      it "should return true if it's in the ignored list" do
+        should be_true
+      end
+
+      context "when exception is not in the ingore list" do
+        let(:exception) { Object.new }
+
+        it "should return false" do
+          should be_false
+        end
+      end
+    end
+
+    describe ".is_ignored_action?" do
+      let(:action) { 'TestController#isup' }
+      before do
+        Appsignal.stub(
+          :config => {:ignore_actions => 'TestController#isup'}
+        )
+      end
+
+      subject { Appsignal.is_ignored_action?(action) }
+
+      it "should return true if it's in the ignored list" do
+        should be_true
+      end
+
+      context "when action is not in the ingore list" do
+        let(:action) { 'TestController#other_action' }
+
+        it "should return false" do
+          should be_false
+        end
+      end
+    end
   end
 end
