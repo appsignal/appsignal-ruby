@@ -196,7 +196,7 @@ describe Appsignal::Agent do
   end
 
   describe "#enqueue" do
-    let(:transaction) { double(:action => 'test#test') }
+    let(:transaction) { double(:action => 'test#test', :request_id => 'id') }
     subject { Appsignal.agent }
 
     it "forwards to the aggregator" do
