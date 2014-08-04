@@ -4,10 +4,10 @@
 * Update bundled CA certificates
 * Fix issue where backtrace can be nil
 * Use Appsignal.monitor_transaction to instrument and log errors for
-  custom actions.
+  custom actions
 * Add option to ignore a specific action
 
-ssue where backtrace can be nil# 0.9.3
+# 0.9.3
 * Log if appsignal is not active for an environment
 
 # 0.9.2
