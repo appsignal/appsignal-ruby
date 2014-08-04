@@ -186,4 +186,22 @@ describe Appsignal::Transaction::Formatter do
       end
     end
   end
+
+  describe "#clean_backtrace" do
+    let(:transaction) { regular_transaction }
+
+    context "when backtrace is nil" do
+      let(:error) { double(:backtrace => nil) }
+
+      it "should not raise an error when backtrace is `nil`" do
+        expect {
+          formatter.send(:clean_backtrace, error)
+        }.to_not raise_error
+      end
+
+      it "should always return an array" do
+        expect( formatter.send(:clean_backtrace, error) ).to be_a(Array)
+      end
+    end
+  end
 end

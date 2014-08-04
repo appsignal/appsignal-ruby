@@ -67,6 +67,7 @@ module Appsignal
       end
 
       def clean_backtrace(exception)
+        return [] unless exception.backtrace.is_a?(Array)
         if defined?(::Rails)
           ::Rails.backtrace_cleaner.clean(exception.backtrace, nil)
         else
