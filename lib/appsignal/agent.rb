@@ -2,8 +2,8 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
 
-    attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused
+    attr_accessor :aggregator, :mutex, :thread, :master_pid, :pid, :active,
+                  :sleep_time, :transmitter, :subscriber, :paused
 
     def initialize
       return unless Appsignal.active?
@@ -16,6 +16,7 @@ module Appsignal
       @pid = @master_pid
       @aggregator = Aggregator.new
       @transmitter = Transmitter.new(ACTION)
+      @mutex = Mutex.new
       subscribe
       start_thread
       Appsignal.logger.info('Started Appsignal agent')
@@ -81,7 +82,7 @@ module Appsignal
       # Replace aggregator while making sure no thread
       # is adding to it's queue
       aggregator_to_be_sent = nil
-      Thread.exclusive do
+      mutex.synchronize do
         aggregator_to_be_sent = aggregator
         @aggregator = Aggregator.new
       end
@@ -100,7 +101,7 @@ module Appsignal
       Appsignal.logger.debug('Clearing queue')
       # Replace aggregator while making sure no thread
       # is adding to it's queue
-      Thread.exclusive do
+      mutex.synchronize do
         @aggregator = Aggregator.new
       end
     end
@@ -108,7 +109,7 @@ module Appsignal
     def forked!
       Appsignal.logger.info('Forked worker process')
       @pid = Process.pid
-      Thread.exclusive do
+      mutex.synchronize do
         @aggregator = Aggregator.new
       end
       restart_thread

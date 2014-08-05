@@ -10,6 +10,12 @@ describe Appsignal::Agent do
 
   let(:transaction) { regular_transaction }
 
+  context "supporting objects" do
+    its(:mutex) { should be_a(Mutex) }
+    its(:aggregator) { should be_a(Appsignal::Aggregator) }
+    its(:transmitter) { should be_a(Appsignal::Transmitter) }
+  end
+
   context "pid" do
     its(:master_pid) { should == Process.pid }
     its(:pid) { should == Process.pid }
