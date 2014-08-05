@@ -40,25 +40,18 @@ describe Appsignal::Transmitter do
   end
 
   describe "#http_post" do
-    it "calls Net::HTTP.post_form with the correct params" do
-      post = double(:post)
-      post.should_receive(:[]=).with(
-        'Content-Type',
-        'application/json; charset=UTF-8'
-      )
-      post.should_receive(:[]=).with(
-        'Content-Encoding',
-        'gzip'
-      )
-      post.should_receive(:body=).with(
-        Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED)
-      )
+    before do
       Socket.stub(:gethostname => 'app1.local')
+    end
 
-      Net::HTTP::Post.should_receive(:new).with(
-        instance.uri.request_uri
-      ).and_return(post)
-      instance.send(:http_post, :the => :payload)
+    subject { instance.send(:http_post, 'the' => 'payload') }
+
+    its(:body) { should == Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED) }
+    its(:path) { should == instance.uri.request_uri }
+
+    it "should have the correct headers" do
+      subject['Content-Type'].should == 'application/json; charset=UTF-8'
+      subject['Content-Encoding'].should == 'gzip'
     end
   end
 
