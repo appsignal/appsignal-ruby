@@ -1,5 +1,5 @@
 if defined?(::Rails)
-  Appsignal.logger.info('Loading Rails integration')
+  Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
   module Appsignal
     module Integrations

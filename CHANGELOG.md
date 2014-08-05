@@ -8,6 +8,10 @@
 * Add option to ignore a specific action
 * Use a Mutex in agent instead of Thread.exclusive
 
+# 0.9.4
+* Log Rails and Sinatra version
+* Resubscribe to notifications after fork
+
 # 0.9.3
 * Log if appsignal is not active for an environment
 

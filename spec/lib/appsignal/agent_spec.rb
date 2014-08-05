@@ -89,11 +89,8 @@ describe Appsignal::Agent do
   end
 
   describe "#restart_thread" do
-    it "should stop thread" do
+    it "should stop and start the thread" do
       subject.should_receive(:stop_thread)
-    end
-
-    it "should start a thread" do
       subject.should_receive(:start_thread)
     end
 
@@ -141,7 +138,7 @@ describe Appsignal::Agent do
     end
 
     context "handling events" do
-      before(:each) do
+      before :each do
         # Unsubscribe previous notification subscribers
         ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).
           reject { |sub| sub.instance_variable_get(:@pattern).is_a? String }.
@@ -199,6 +196,31 @@ describe Appsignal::Agent do
         ActiveSupport::Notifications.instrument 'perform_job.processor'
       end
     end
+
+    describe "#unsubscribe" do
+      before :each do
+        Appsignal.agent.unsubscribe
+      end
+
+      it "should not have a subscriber" do
+        Appsignal.agent.subscriber.should be_nil
+      end
+
+      it "should add a normal event" do
+        Appsignal::Transaction.current.should_not_receive(:add_event)
+
+        ActiveSupport::Notifications.instrument 'moo'
+      end
+    end
+  end
+
+  describe "#resubscribe" do
+    it "should stop and start the thread" do
+      subject.should_receive(:unsubscribe)
+      subject.should_receive(:subscribe)
+    end
+
+    after { subject.resubscribe }
   end
 
   describe "#enqueue" do
@@ -287,6 +309,7 @@ describe Appsignal::Agent do
       subject.pid.should == master_pid
 
       Process.stub(:pid => 9000000001)
+      subject.should_receive(:resubscribe)
       subject.should_receive(:restart_thread)
       previous_aggregator = subject.aggregator
 

@@ -1,6 +1,6 @@
 require 'appsignal'
 
-Appsignal.logger.info('Loading Sinatra integration')
+Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
 
 app_settings = ::Sinatra::Application.settings
 Appsignal.config = Appsignal::Config.new(
