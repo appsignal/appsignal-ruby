@@ -136,7 +136,7 @@
           Appsignal.enqueue(self)
         end
       else
-        Appsignal.logger.debug("Not processing transaction: #{@request_id}")
+        Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")
       end
     ensure
       Appsignal.transactions.delete(@request_id)

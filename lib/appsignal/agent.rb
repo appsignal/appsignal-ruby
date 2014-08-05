@@ -67,6 +67,18 @@ module Appsignal
       end
     end
 
+    def resubscribe
+      Appsignal.logger.debug('Resubscribing to notifications')
+      unsubscribe
+      subscribe
+    end
+
+    def unsubscribe
+      Appsignal.logger.debug('Unsubscribing from notifications')
+      ActiveSupport::Notifications.unsubscribe(@subscriber)
+      @subscriber = nil
+    end
+
     def enqueue(transaction)
       forked! if @pid != Process.pid
       aggregator.add(transaction)
@@ -107,12 +119,13 @@ module Appsignal
       Thread.exclusive do
         @aggregator = Aggregator.new
       end
+      resubscribe
       restart_thread
     end
 
     def shutdown(send_current_queue=false, reason=nil)
       Appsignal.logger.info("Shutting down agent (#{reason})")
-      ActiveSupport::Notifications.unsubscribe(subscriber)
+      unsubscribe
       Thread.kill(thread) if thread
       send_queue if send_current_queue && @aggregator.has_transactions?
     end
