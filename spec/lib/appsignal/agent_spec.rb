@@ -55,7 +55,7 @@ describe Appsignal::Agent do
         subject.should_receive(:send_queue).at_least(:twice)
 
         subject.start_thread
-        sleep 1
+        sleep 2
       end
     end
 
