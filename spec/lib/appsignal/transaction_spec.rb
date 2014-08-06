@@ -355,10 +355,18 @@ describe Appsignal::Transaction do
 
       context 'when using pipes' do
         let(:pipe) { double }
-        before { Appsignal::Pipe.stub(:current => pipe) }
+        before do
+          Appsignal::Pipe.stub(:current => pipe)
+          pipe.stub(:write => true)
+          transaction.stub(:convert_values_to_primitives! => true)
+        end
 
         it "should send itself trough the pipe" do
           pipe.should_receive(:write).with(transaction)
+        end
+
+        it "should convert itself to primitives" do
+          transaction.should_receive(:convert_values_to_primitives!)
         end
 
         after { transaction.complete! }
