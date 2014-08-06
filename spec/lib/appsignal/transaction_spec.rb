@@ -234,6 +234,15 @@ describe Appsignal::Transaction do
         subject.process_action_event.payload.should be_empty
         subject.events.should be_empty
         subject.tags.should be_empty
+        subject.truncated?.should be_true
+      end
+
+      it "should not truncate twice" do
+        subject.process_action_event.payload.should_receive(:clear).once
+        subject.events.should_receive(:clear).once
+
+        subject.truncate!
+        subject.truncate!
       end
     end
 
@@ -281,6 +290,14 @@ describe Appsignal::Transaction do
           before = event_payload.dup
           subject
           event_payload.should == before
+        end
+
+        it "should not covert to primitives twice" do
+          transaction.convert_values_to_primitives!
+          transaction.have_values_been_converted_to_primitives?.should be_true
+
+          Appsignal::Transaction::ParamsSanitizer.should_not_receive(:sanitize!)
+          transaction.convert_values_to_primitives!
         end
       end
     end
@@ -355,10 +372,18 @@ describe Appsignal::Transaction do
 
       context 'when using pipes' do
         let(:pipe) { double }
-        before { Appsignal::Pipe.stub(:current => pipe) }
+        before do
+          Appsignal::Pipe.stub(:current => pipe)
+          pipe.stub(:write => true)
+          transaction.stub(:convert_values_to_primitives! => true)
+        end
 
         it "should send itself trough the pipe" do
           pipe.should_receive(:write).with(transaction)
+        end
+
+        it "should convert itself to primitives" do
+          transaction.should_receive(:convert_values_to_primitives!)
         end
 
         after { transaction.complete! }

@@ -130,7 +130,7 @@ module Appsignal
     def shutdown(send_current_queue=false, reason=nil)
       Appsignal.logger.info("Shutting down agent (#{reason})")
       unsubscribe
-      Thread.kill(thread) if thread
+      stop_thread
       send_queue if send_current_queue && @aggregator.has_transactions?
     end
 
