@@ -6,7 +6,6 @@
 * Use Appsignal.monitor_transaction to instrument and log errors for
   custom actions
 * Add option to ignore a specific action
-* Use a Mutex in agent instead of Thread.exclusive
 
 # 0.9.4
 * Log Rails and Sinatra version
