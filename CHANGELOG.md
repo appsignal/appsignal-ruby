@@ -1,4 +1,4 @@
-# 0.9.5
+# 0.9.6
 * Convert to primitives before sending through pipe
 
 # 0.9.4
@@ -59,7 +59,7 @@ Yanked
 * Alias tag_request to tag_job, for background jobs
 * Skip sanitization of env if env is nil
 * Small bugfix in forking logic
-* Don't send params if send_params is off in config 
+* Don't send params if send_params is off in config
 * Remove --repository option in CLI
 * Name option in appsignal notify_of_deploy CLI
 * Don't call to_hash on ENV
