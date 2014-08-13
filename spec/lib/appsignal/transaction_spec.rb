@@ -224,6 +224,16 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "clear_events!" do
+      let(:transaction) { slow_transaction }
+
+      it "should remove events from the transaction" do
+        expect {
+          transaction.clear_events!
+        }.to change(transaction.events, :length).from(1).to(0)
+      end
+    end
+
     describe "#truncate!" do
       subject { slow_transaction }
       before { subject.set_tags('a' => 'b') }

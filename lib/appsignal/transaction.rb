@@ -97,6 +97,10 @@
       process_action_event.duration > transaction.process_action_event.duration
     end
 
+    def clear_events!
+      events.clear
+    end
+
     def truncate!
       return if truncated?
       process_action_event.payload.clear

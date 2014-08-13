@@ -19,6 +19,7 @@ module Appsignal
       when :slow_request
         pre_process_slowness!(transaction)
       when :exception
+        transaction.clear_events!
         transaction.convert_values_to_primitives!
       end
       counts[transaction.type] += 1
