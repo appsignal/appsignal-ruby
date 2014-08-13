@@ -1,6 +1,9 @@
 # 0.9.6
 * Convert to primitives before sending through pipe
 
+# 0.9.5
+Yanked
+
 # 0.9.4
 * Log Rails and Sinatra version
 * Resubscribe to notifications after fork
