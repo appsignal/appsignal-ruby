@@ -1,3 +1,6 @@
+# 0.10.1
+* Bugfix in event payload sanitization
+
 # 0.10.0
 * Remove ActiveSupport dependency
 * Use vendored notifications if ActiveSupport is not present
