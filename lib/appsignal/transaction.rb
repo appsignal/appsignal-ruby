@@ -116,7 +116,7 @@
       return if have_values_been_converted_to_primitives?
       Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
       @events.map do |o|
-        Appsignal::Transaction::ParamsSanitizer.sanitize(o.payload)
+        Appsignal::Transaction::ParamsSanitizer.sanitize!(o.payload)
       end
       add_sanitized_context!
       @have_values_been_converted_to_primitives = true

@@ -273,7 +273,8 @@ describe Appsignal::Transaction do
             transaction.convert_values_to_primitives!
           end
 
-          its([:weird]) { should be_a(Class) }
+          its([:weird]) { should be_a(String) }
+          its([:weird]) { should match(/#<Class:(.*)>/) }
         end
       end
 
