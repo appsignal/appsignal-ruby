@@ -56,7 +56,7 @@ module Appsignal
       # Subscribe to notifications that don't start with a !
       @subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
         if Appsignal::Transaction.current
-          event = ActiveSupport::Notifications::Event.new(*args)
+          event = Appsignal::Event.new(*args)
           if event.name.start_with?('process_action')
             Appsignal::Transaction.current.set_process_action_event(event)
           elsif event.name.start_with?('perform_job')
