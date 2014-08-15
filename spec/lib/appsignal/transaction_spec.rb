@@ -1,5 +1,11 @@
 require 'spec_helper'
 
+class Smash < Hash
+  def []=(key, val)
+    raise 'the roof'
+  end
+end
+
 describe Appsignal::Transaction do
   before :all do
     start_agent
@@ -251,30 +257,40 @@ describe Appsignal::Transaction do
       let(:action_event_payload) { transaction.process_action_event.payload }
       let(:event_payload) { transaction.events.first.payload }
       let(:weird_class) { Class.new }
+      let(:smash) { Smash.new.merge!(:foo => 'bar') }
 
       context "with values that need to be converted" do
         context "process action event payload" do
           subject { action_event_payload }
           before do
             action_event_payload.clear
-            action_event_payload.
-              merge!(:model => {:with => [:weird, weird_class]})
+            action_event_payload.merge!(
+              :model => {:with => [:weird, weird_class]},
+            )
             transaction.convert_values_to_primitives!
           end
 
-          it { should == {:model => {:with => [:weird, weird_class.inspect]}} }
+          it "should convert all payloads to primitives" do
+            should == {
+              :model => {:with => [:weird, weird_class.inspect]},
+            }
+          end
         end
 
         context "payload of events" do
           subject { event_payload }
           before do
             event_payload.clear
-            event_payload.merge!(:weird => weird_class)
+            event_payload.merge!(
+              :weird => weird_class,
+              :smash => smash
+              )
             transaction.convert_values_to_primitives!
           end
 
           its([:weird]) { should be_a(String) }
           its([:weird]) { should match(/#<Class:(.*)>/) }
+          its([:smash]) { should == {:foo => 'bar'} }
         end
       end
 
