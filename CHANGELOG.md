@@ -1,3 +1,6 @@
+# 0.10.2
+* Bugfix in event payload sanitization
+
 # 0.10.1
 * Bugfix in event payload sanitization
 
