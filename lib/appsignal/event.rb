@@ -1,17 +1,11 @@
 class Appsignal::Event < ActiveSupport::Notifications:: Event
 
-  def set_payload(payload)
-    @payload = payload
+  def sanitize!
+    @payload = Appsignal::ParamsSanitizer.sanitize(@payload)
   end
 
-  def to_hash
-    {
-      :name           => @name
-      :payload        => @payload
-      :time           => @start
-      :transaction_id => @transaction_id
-      :end            => @end
-      :duration       => @duration
-    }
+  def truncate!
+    @payload = {}
   end
+
 end
