@@ -7,7 +7,7 @@ module NotificationHelpers
       :tid => '1',
       :payload => create_payload
     }.merge(args)
-    ActiveSupport::Notifications::Event.new(
+    Appsignal::Event.new(
       args[:name], args[:start], args[:ending], args[:tid], args[:payload]
     )
   end

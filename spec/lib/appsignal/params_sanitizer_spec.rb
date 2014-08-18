@@ -6,8 +6,8 @@ class ErrorOnInspect
   end
 end
 
-describe Appsignal::Transaction::ParamsSanitizer do
-  let(:klass) { Appsignal::Transaction::ParamsSanitizer }
+describe Appsignal::ParamsSanitizer do
+  let(:klass) { Appsignal::ParamsSanitizer }
   let(:file) { uploaded_file }
   let(:params) do
     {
