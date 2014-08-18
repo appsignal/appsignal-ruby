@@ -1,4 +1,4 @@
- module Appsignal
+module Appsignal
   class Transaction
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
@@ -99,7 +99,7 @@
 
     def truncate!
       return if truncated?
-      process_action_event.payload.clear
+      process_action_event.truncate!
       events.clear
       tags.clear
       sanitized_environment.clear
@@ -114,12 +114,8 @@
 
     def convert_values_to_primitives!
       return if have_values_been_converted_to_primitives?
-      Appsignal::Transaction::ParamsSanitizer.sanitize!(@process_action_event.payload) if @process_action_event
-      @events.map do |o|
-        o.payload.each do |key, value|
-          o.payload[key] = Appsignal::Transaction::ParamsSanitizer.sanitize(value)
-        end
-      end
+      @process_action_event.sanitize! if @process_action_event
+      @events.each { |event| event.sanitize! }
       add_sanitized_context!
       @have_values_been_converted_to_primitives = true
     end
@@ -204,7 +200,7 @@
     end
 
     def sanitize_session_data!
-      @sanitized_session_data = Appsignal::Transaction::ParamsSanitizer.sanitize(
+      @sanitized_session_data = Appsignal::ParamsSanitizer.sanitize(
         request.session.to_hash
       )
       @fullpath = request.fullpath

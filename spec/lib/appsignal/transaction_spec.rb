@@ -244,7 +244,7 @@ describe Appsignal::Transaction do
       end
 
       it "should not truncate twice" do
-        subject.process_action_event.payload.should_receive(:clear).once
+        subject.process_action_event.should_receive(:truncate!).once
         subject.events.should_receive(:clear).once
 
         subject.truncate!
@@ -254,17 +254,17 @@ describe Appsignal::Transaction do
 
     describe "#convert_values_to_primitives!" do
       let(:transaction) { slow_transaction }
-      let(:action_event_payload) { transaction.process_action_event.payload }
-      let(:event_payload) { transaction.events.first.payload }
+      let(:action_event) { transaction.process_action_event }
+      let(:event) { transaction.events.first }
       let(:weird_class) { Class.new }
       let(:smash) { Smash.new.merge!(:foo => 'bar') }
 
       context "with values that need to be converted" do
         context "process action event payload" do
-          subject { action_event_payload }
+          subject { action_event.payload }
           before do
-            action_event_payload.clear
-            action_event_payload.merge!(
+            action_event.payload.clear
+            action_event.payload.merge!(
               :model => {:with => [:weird, weird_class]},
             )
             transaction.convert_values_to_primitives!
@@ -278,10 +278,10 @@ describe Appsignal::Transaction do
         end
 
         context "payload of events" do
-          subject { event_payload }
+          subject { event.payload }
           before do
-            event_payload.clear
-            event_payload.merge!(
+            event.payload.clear
+            event.payload.merge!(
               :weird => weird_class,
               :smash => smash
               )
@@ -298,22 +298,22 @@ describe Appsignal::Transaction do
         subject { transaction.convert_values_to_primitives! }
 
         it "doesn't change the action event payload" do
-          before = action_event_payload.dup
+          before = action_event.payload.dup
           subject
-          action_event_payload.should == before
+          action_event.payload.should == before
         end
 
         it " doesn't change the event payloads" do
-          before = event_payload.dup
+          before = event.payload.dup
           subject
-          event_payload.should == before
+          event.payload.should == before
         end
 
         it "should not covert to primitives twice" do
           transaction.convert_values_to_primitives!
           transaction.have_values_been_converted_to_primitives?.should be_true
 
-          Appsignal::Transaction::ParamsSanitizer.should_not_receive(:sanitize!)
+          Appsignal::ParamsSanitizer.should_not_receive(:sanitize!)
           transaction.convert_values_to_primitives!
         end
       end
@@ -565,7 +565,7 @@ describe Appsignal::Transaction do
       end
 
       it "passes the session data into the params sanitizer" do
-        Appsignal::Transaction::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
+        Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
           and_return(:sanitized_foo)
         subject
         transaction.sanitized_session_data.should == :sanitized_foo
@@ -584,7 +584,7 @@ describe Appsignal::Transaction do
           end
 
           it "should return an session hash" do
-            Appsignal::Transaction::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
+            Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
               and_return(:sanitized_foo)
             subject
           end

@@ -183,6 +183,7 @@ module Appsignal
 end
 
 require 'appsignal/agent'
+require 'appsignal/event'
 require 'appsignal/aggregator'
 require 'appsignal/aggregator/post_processor'
 require 'appsignal/aggregator/middleware'
@@ -191,6 +192,7 @@ require 'appsignal/config'
 require 'appsignal/marker'
 require 'appsignal/rack/listener'
 require 'appsignal/rack/instrumentation'
+require 'appsignal/params_sanitizer'
 require 'appsignal/transaction'
 require 'appsignal/transaction/formatter'
 require 'appsignal/transaction/params_sanitizer'
