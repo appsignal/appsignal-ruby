@@ -10,6 +10,8 @@ describe Appsignal::Agent do
 
   let(:transaction) { regular_transaction }
 
+  its(:active?) { should be_true }
+
   context "pid" do
     its(:master_pid) { should == Process.pid }
     its(:pid) { should == Process.pid }
@@ -298,16 +300,19 @@ describe Appsignal::Agent do
   describe "#forked!" do
     subject { Appsignal.agent }
 
-    it "should create a new aggregator, set the new pid and restart the thread" do
+    it "should set active to true, create a new aggregator, set the new pid and restart the thread" do
       master_pid = subject.master_pid
       subject.pid.should == master_pid
 
       Process.stub(:pid => 9000000001)
+      subject.active = false
       subject.should_receive(:resubscribe)
       subject.should_receive(:restart_thread)
       previous_aggregator = subject.aggregator
 
       subject.forked!
+
+      subject.active?.should be_true
 
       subject.aggregator.should_not == previous_aggregator
       subject.aggregator.should be_a Appsignal::Aggregator
@@ -323,10 +328,15 @@ describe Appsignal::Agent do
       Thread.should_receive(:kill).with(subject.thread)
     end
 
+    it "should not be active anymore" do
+      subject.shutdown
+      subject.active?.should be_false
+    end
+
     context "when not sending the current queue" do
       it "should log the reason for shutting down" do
-          Appsignal.logger.should_receive(:info).with('Shutting down agent (shutting down)')
-          subject.shutdown(false, 'shutting down')
+        Appsignal.logger.should_receive(:info).with('Shutting down agent (shutting down)')
+        subject.shutdown(false, 'shutting down')
       end
 
       context "with an empty queue" do
@@ -445,7 +455,7 @@ describe Appsignal::Agent do
   end
 
   context "when inactive" do
-    before { Appsignal.stub(:active? => false) }
+    before { Appsignal.config.stub(:active? => false) }
 
     it "should not start a thread" do
       Thread.should_not_receive(:new)
