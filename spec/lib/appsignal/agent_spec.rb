@@ -286,6 +286,15 @@ describe Appsignal::Agent do
         once
     end
 
+    it "handles an OpenSSL error in transmit" do
+      subject.transmitter.stub(:transmit).and_raise(
+        OpenSSL::SSL::SSLError.new('Message')
+      )
+
+      Appsignal.logger.should_receive(:error).
+        with('OpenSSL::SSL::SSLError: Message').once
+    end
+
     after { subject.send_queue }
   end
 

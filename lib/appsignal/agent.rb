@@ -107,6 +107,8 @@ module Appsignal
         handle_result(
           transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
         )
+      rescue OpenSSL::SSL::SSLError => ex
+        Appsignal.logger.error "OpenSSL::SSL::SSLError: #{ex.message}"
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
         Appsignal.logger.error ex.backtrace.join('\n')
