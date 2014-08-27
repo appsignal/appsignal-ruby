@@ -124,20 +124,29 @@ describe Appsignal do
   describe '.active?' do
     subject { Appsignal.active? }
 
-    context "without config" do
-      before { Appsignal.config = nil }
+    context "without config and agent" do
+      before do
+        Appsignal.config = nil
+        Appsignal.agent = nil
+      end
 
       it { should be_false }
     end
 
-    context "with config but inactive" do
-      before { Appsignal.config = project_fixture_config('nonsense') }
+    context "with agent and inactive config" do
+      before do
+        Appsignal.config = project_fixture_config('nonsense')
+        Appsignal.agent = Appsignal::Agent.new
+      end
 
       it { should be_false }
     end
 
-    context "with active config" do
-      before { Appsignal.config = project_fixture_config }
+    context "with active agent and config" do
+      before do
+        Appsignal.config = project_fixture_config
+        Appsignal.agent = Appsignal::Agent.new
+      end
 
       it { should be_true }
     end
@@ -398,7 +407,7 @@ describe Appsignal do
       let(:tags) { nil }
 
       it "should send the exception to AppSignal" do
-        agent = double(:shutdown => true)
+        agent = double(:shutdown => true, :active? => true)
         Appsignal.stub(:agent).and_return(agent)
         agent.should_receive(:send_queue)
         agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))

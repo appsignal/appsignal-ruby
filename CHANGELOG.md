@@ -1,3 +1,7 @@
+# 0.10.3
+* Shut down all operations when agent is not active
+* Separately rescue OpenSSL::SSL::SSLError
+
 # 0.10.2
 * Bugfix in event payload sanitization
 
