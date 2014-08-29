@@ -14,7 +14,6 @@ describe Appsignal::Pipe do
   its(:listening?) { should be_true }
 
   describe "#write" do
-
     context "with a regular request" do
       let(:transaction) { regular_transaction }
 
