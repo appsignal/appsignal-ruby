@@ -27,6 +27,7 @@ describe Appsignal::Aggregator do
     context "adding a transaction with an exception" do
       let(:transaction) { transaction_with_exception }
 
+      specify { transaction.should_receive(:clear_events!) }
       specify { transaction.should_receive(:convert_values_to_primitives!) }
     end
 
