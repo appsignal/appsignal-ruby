@@ -1,3 +1,6 @@
+# 0.10.4
+* Add REQUEST_URI and PATH_INFO to env params whitelist
+
 # 0.10.3
 * Shut down all operations when agent is not active
 * Separately rescue OpenSSL::SSL::SSLError
