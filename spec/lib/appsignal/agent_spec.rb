@@ -250,49 +250,61 @@ describe Appsignal::Agent do
   end
 
   describe "#send_queue" do
-    it "transmits" do
-      subject.aggregator.stub(:post_processed_queue! => :foo)
-      subject.transmitter.should_receive(:transmit).with(:foo)
+    context "without transactions" do
+      it "does not transmit" do
+        subject.should_not_receive(:handle_result)
+      end
     end
 
-    it "handles the return code" do
-      subject.transmitter.stub(:transmit => '200')
-      subject.should_receive(:handle_result).with('200')
-    end
+    context "with transactions" do
+      before do
+        subject.aggregator.stub(:has_transactions? => true)
+      end
 
-    it "handle exceptions in post processing" do
-      subject.aggregator.stub(:post_processed_queue!).and_raise(
-        PostProcessingException.new('Message')
-      )
+      it "transmits" do
+        subject.aggregator.stub(:post_processed_queue! => :foo)
+        subject.transmitter.should_receive(:transmit).with(:foo)
+      end
 
-      Appsignal.logger.should_receive(:error).
-        with('PostProcessingException while sending queue: Message').
-        once
-      Appsignal.logger.should_receive(:error).
-        with(kind_of(String)).
-        once
-    end
+      it "handles the return code" do
+        subject.transmitter.stub(:transmit => '200')
+        subject.should_receive(:handle_result).with('200')
+      end
 
-    it "handles exceptions in transmit" do
-      subject.transmitter.stub(:transmit).and_raise(
-        Exception.new('Message')
-      )
+      it "handle exceptions in post processing" do
+        subject.aggregator.stub(:post_processed_queue!).and_raise(
+          PostProcessingException.new('Message')
+        )
 
-      Appsignal.logger.should_receive(:error).
-        with('Exception while sending queue: Message').
-        once
-      Appsignal.logger.should_receive(:error).
-        with(kind_of(String)).
-        once
-    end
+        Appsignal.logger.should_receive(:error).
+          with('PostProcessingException while sending queue: Message').
+          once
+        Appsignal.logger.should_receive(:error).
+          with(kind_of(String)).
+          once
+      end
 
-    it "handles an OpenSSL error in transmit" do
-      subject.transmitter.stub(:transmit).and_raise(
-        OpenSSL::SSL::SSLError.new('Message')
-      )
+      it "handles exceptions in transmit" do
+        subject.transmitter.stub(:transmit).and_raise(
+          Exception.new('Message')
+        )
 
-      Appsignal.logger.should_receive(:error).
-        with('OpenSSL::SSL::SSLError: Message').once
+        Appsignal.logger.should_receive(:error).
+          with('Exception while sending queue: Message').
+          once
+        Appsignal.logger.should_receive(:error).
+          with(kind_of(String)).
+          once
+      end
+
+      it "handles an OpenSSL error in transmit" do
+        subject.transmitter.stub(:transmit).and_raise(
+          OpenSSL::SSL::SSLError.new('Message')
+        )
+
+        Appsignal.logger.should_receive(:error).
+          with('OpenSSL::SSL::SSLError: Message').once
+      end
     end
 
     after { subject.send_queue }
@@ -337,50 +349,26 @@ describe Appsignal::Agent do
       Thread.should_receive(:kill).with(subject.thread)
     end
 
-    it "should not be active anymore" do
+    it "should not be active anymore after shutting down" do
       subject.shutdown
       subject.active?.should be_false
     end
 
-    context "when not sending the current queue" do
-      it "should log the reason for shutting down" do
-        Appsignal.logger.should_receive(:info).with('Shutting down agent (shutting down)')
-        subject.shutdown(false, 'shutting down')
-      end
-
-      context "with an empty queue" do
-        it "should shutdown" do
-          subject.shutdown
-        end
-      end
-
-      context "with a queue with transactions" do
-        it "should shutdown" do
-          subject.enqueue(slow_transaction)
-          subject.should_not_receive(:send_queue)
-
-          subject.shutdown
-        end
-      end
+    it "should log the reason for shutting down" do
+      Appsignal.logger.should_receive(:info).with('Shutting down agent (shutting down)')
+      subject.shutdown(false, 'shutting down')
     end
 
-    context "when the queue is to be sent" do
-      context "with an empty queue" do
-        it "should shutdown" do
-          subject.should_not_receive(:send_queue)
+    it "should send the queue and shut down if the queue is to be sent" do
+      subject.should_receive(:send_queue)
 
-          subject.shutdown(true, nil)
-        end
-      end
+      subject.shutdown(true, nil)
+    end
 
-      context "with a queue with transactions" do
-        it "should send the queue and shutdown" do
-          subject.enqueue(slow_transaction)
-          subject.should_receive(:send_queue)
+    it "should only shutdown if the queue is not be sent" do
+      subject.should_not_receive(:send_queue)
 
-          subject.shutdown(true, nil)
-        end
-      end
+      subject.shutdown(false, nil)
     end
   end
 
