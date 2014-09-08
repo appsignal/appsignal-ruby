@@ -104,6 +104,7 @@ module Appsignal
       end
 
       begin
+        return unless aggregator_to_be_sent.has_transactions?
         handle_result(
           transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
         )
@@ -140,7 +141,7 @@ module Appsignal
       @active = false
       unsubscribe
       stop_thread
-      send_queue if send_current_queue && @aggregator.has_transactions?
+      send_queue if send_current_queue
     end
 
     protected

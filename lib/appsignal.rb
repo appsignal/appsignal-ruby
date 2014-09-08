@@ -52,7 +52,7 @@ module Appsignal
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')
-            @agent.shutdown(true, 'ran at_exit')
+            @agent.send_queue
           end
         else
           logger.info("Not starting, not active for #{config.env}")
