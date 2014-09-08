@@ -1,3 +1,7 @@
+# 0.10.5
+* Don't shutdown in `at_exit`
+* Debug log about missing name in config
+
 # 0.10.4
 * Add REQUEST_URI and PATH_INFO to env params whitelist
 
