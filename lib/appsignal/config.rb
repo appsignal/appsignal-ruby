@@ -43,6 +43,12 @@ module Appsignal
           "and no APPSIGNAL_PUSH_API_KEY env var present"
         )
       end
+      if config_hash && !config_hash[:name]
+        @logger.debug(
+          "There's no name defined in the config, " \
+          "unless you're using the Heroku add-on you probably want to do this."
+        )
+      end
     end
 
     def loaded?
