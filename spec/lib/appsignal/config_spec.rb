@@ -122,7 +122,7 @@ describe Appsignal::Config do
 
       it "should merge with the default config, fill the config hash and log about the missing name" do
         Appsignal.logger.should_receive(:debug).with(
-          "There's no name defined in the config, unless you're using the Heroku add-on you probably want to do this."
+          "There's no application name set in your config file. You should set one unless your app runs on Heroku."
         )
 
         subject.config_hash.should == {

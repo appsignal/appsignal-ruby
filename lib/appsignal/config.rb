@@ -45,8 +45,8 @@ module Appsignal
       end
       if config_hash && !config_hash[:name]
         @logger.debug(
-          "There's no name defined in the config, " \
-          "unless you're using the Heroku add-on you probably want to do this."
+          "There's no application name set in your config file. " \
+          "You should set one unless your app runs on Heroku."
         )
       end
     end
