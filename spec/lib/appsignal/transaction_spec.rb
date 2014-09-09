@@ -598,6 +598,18 @@ describe Appsignal::Transaction do
           end
         end
       end
+
+      context "when skipping session data" do
+        before do
+          Appsignal.config = {:skip_session_data => true}
+        end
+
+        it "does not pass the session data into the params sanitizer" do
+          Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+          subject
+          transaction.sanitized_session_data.should == {}
+        end
+      end
     end
   end
 end

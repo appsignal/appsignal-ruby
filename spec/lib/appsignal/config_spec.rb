@@ -19,6 +19,7 @@ describe Appsignal::Config do
         :ignore_exceptions => [],
         :ignore_actions => [],
         :instrument_net_http => true,
+        :skip_session_data => false,
         :send_params => true,
         :endpoint => 'https://push.appsignal.com/1',
         :slow_request_threshold => 200,
@@ -131,6 +132,7 @@ describe Appsignal::Config do
           :ignore_actions => [],
           :send_params => true,
           :instrument_net_http => true,
+          :skip_session_data => false,
           :endpoint => 'https://push.appsignal.com/1',
           :slow_request_threshold => 200,
           :active => true
