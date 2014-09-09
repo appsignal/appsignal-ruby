@@ -7,12 +7,13 @@ module Appsignal
     include Appsignal::CarefulLogger
 
     DEFAULT_CONFIG = {
-      :ignore_exceptions => [],
-      :ignore_actions => [],
-      :send_params => true,
-      :endpoint => 'https://push.appsignal.com/1',
+      :ignore_exceptions      => [],
+      :ignore_actions         => [],
+      :send_params            => true,
+      :endpoint               => 'https://push.appsignal.com/1',
       :slow_request_threshold => 200,
-      :instrument_net_http => true
+      :instrument_net_http    => true,
+      :skip_session_data      => false
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
