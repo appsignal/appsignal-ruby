@@ -6,7 +6,7 @@ module Appsignal
                   :transmitter, :subscriber, :paused
 
     def initialize
-      return unless Appsignal.active?
+      return unless Appsignal.config.active?
       if Appsignal.config.env == 'development'
         @sleep_time = 10.0
       else
@@ -18,7 +18,12 @@ module Appsignal
       @transmitter = Transmitter.new(ACTION)
       subscribe
       start_thread
+      @active = true
       Appsignal.logger.info('Started Appsignal agent')
+    end
+
+    def active?
+      !! @active
     end
 
     def start_thread
@@ -99,9 +104,12 @@ module Appsignal
       end
 
       begin
+        return unless aggregator_to_be_sent.has_transactions?
         handle_result(
           transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
         )
+      rescue OpenSSL::SSL::SSLError => ex
+        Appsignal.logger.error "OpenSSL::SSL::SSLError: #{ex.message}"
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
         Appsignal.logger.error ex.backtrace.join('\n')
@@ -119,6 +127,7 @@ module Appsignal
 
     def forked!
       Appsignal.logger.info('Forked worker process')
+      @active = true
       @pid = Process.pid
       Thread.exclusive do
         @aggregator = Aggregator.new
@@ -129,9 +138,10 @@ module Appsignal
 
     def shutdown(send_current_queue=false, reason=nil)
       Appsignal.logger.info("Shutting down agent (#{reason})")
+      @active = false
       unsubscribe
       stop_thread
-      send_queue if send_current_queue && @aggregator.has_transactions?
+      send_queue if send_current_queue
     end
 
     protected

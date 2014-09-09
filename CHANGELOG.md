@@ -1,3 +1,14 @@
+# 0.10.5
+* Don't shutdown in `at_exit`
+* Debug log about missing name in config
+
+# 0.10.4
+* Add REQUEST_URI and PATH_INFO to env params whitelist
+
+# 0.10.3
+* Shut down all operations when agent is not active
+* Separately rescue OpenSSL::SSL::SSLError
+
 # 0.10.2
 * Bugfix in event payload sanitization
 

@@ -52,7 +52,7 @@ module Appsignal
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')
-            @agent.shutdown(true, 'ran at_exit')
+            @agent.send_queue
           end
         else
           logger.info("Not starting, not active for #{config.env}")
@@ -146,7 +146,7 @@ module Appsignal
         @logger = Logger.new($stdout)
         @logger.formatter = lambda do |severity, datetime, progname, msg|
           "appsignal: #{msg}\n"
-         end
+        end
       end
       @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
@@ -159,7 +159,8 @@ module Appsignal
     end
 
     def active?
-      config && config.active?
+      config && config.active? &&
+        agent && agent.active?
     end
 
     def is_ignored_exception?(exception)

@@ -99,7 +99,11 @@ end
 task :generate_bundle_and_spec_all do
   VERSION_MANAGERS.each do |version_manager, switch_command|
     out = []
-    out << '#!/bin/bash --login'
+    if version_manager == 'rvm use'
+      out << '#!/bin/bash --login'
+    else
+      out << '#!/bin/sh'
+    end
     out << 'rm -f .ruby-version'
 
     out << "echo 'Using #{version_manager}'"

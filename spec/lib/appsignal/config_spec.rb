@@ -120,7 +120,11 @@ describe Appsignal::Config do
       its(:loaded?) { should be_true }
       its(:active?) { should be_true }
 
-      it "should merge with the default config and fill the config hash" do
+      it "should merge with the default config, fill the config hash and log about the missing name" do
+        Appsignal.logger.should_receive(:debug).with(
+          "There's no application name set in your config file. You should set one unless your app runs on Heroku."
+        )
+
         subject.config_hash.should == {
           :push_api_key => 'push_api_key',
           :ignore_exceptions => [],
@@ -133,10 +137,11 @@ describe Appsignal::Config do
         }
       end
 
-      context "and an initial config is present" do
+      context "and an initial config with a name is present" do
         let(:initial_config) { {:name => 'Initial Name'} }
 
         it "should merge with the config" do
+          Appsignal.logger.should_not_receive(:debug)
           subject[:name].should == 'Initial Name'
         end
       end

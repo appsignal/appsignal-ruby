@@ -43,6 +43,12 @@ module Appsignal
           "and no APPSIGNAL_PUSH_API_KEY env var present"
         )
       end
+      if config_hash && !config_hash[:name]
+        @logger.debug(
+          "There's no application name set in your config file. " \
+          "You should set one unless your app runs on Heroku."
+        )
+      end
     end
 
     def loaded?
