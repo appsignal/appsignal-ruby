@@ -358,7 +358,7 @@ describe Appsignal::Transaction do
     describe '#complete!' do
       let(:event) { double(:event) }
       before do
-        Appsignal::Pipe.stub(:current => nil)
+        Appsignal::IPC.stub(:current => nil)
         transaction.set_process_action_event(notification_event)
       end
 
@@ -400,7 +400,7 @@ describe Appsignal::Transaction do
       context 'when using pipes' do
         let(:pipe) { double }
         before do
-          Appsignal::Pipe.stub(:current => pipe)
+          Appsignal::IPC.stub(:current => pipe)
           pipe.stub(:write => true)
           transaction.stub(:convert_values_to_primitives! => true)
         end

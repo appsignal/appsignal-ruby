@@ -1,9 +1,9 @@
 module Appsignal
-  class Pipe
+  class IPC
     attr_reader :reader, :writer, :listener
 
     def initialize
-      Appsignal.logger.debug "Initializing pipe in #{$$}"
+      Appsignal.logger.debug "Initializing IPC in #{$$}"
       @reader, @writer = IO.pipe
       @listener = Thread.new do
         loop do
@@ -32,7 +32,7 @@ module Appsignal
 
     class << self
       def init
-        Thread.current[:appsignal_pipe] = Appsignal::Pipe.new
+        Thread.current[:appsignal_pipe] = Appsignal::IPC.new
       end
 
       def current
@@ -41,4 +41,3 @@ module Appsignal
     end
   end
 end
-

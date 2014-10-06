@@ -142,10 +142,10 @@ module Appsignal
       Thread.current[:appsignal_transaction_id] = nil
       Appsignal.transactions.delete(@request_id)
       if process_action_event || exception?
-        if Appsignal::Pipe.current
+        if Appsignal::IPC.current
           convert_values_to_primitives!
           Appsignal.logger.debug("Writing transaction to pipe: #{@request_id}")
-          Appsignal::Pipe.current.write(self)
+          Appsignal::IPC.current.write(self)
         else
           Appsignal.logger.debug("Enqueueing transaction: #{@request_id}")
           Appsignal.enqueue(self)

@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-describe Appsignal::Pipe do
+describe Appsignal::IPC do
   before :all do
-    Appsignal::Pipe.init
+    Appsignal::IPC.init
   end
   let(:agent) { double }
 
-  subject { Appsignal::Pipe.current }
+  subject { Appsignal::IPC.current }
 
   its(:reader) { should be_instance_of(IO) }
   its(:writer) { should be_instance_of(IO) }
@@ -27,12 +27,12 @@ describe Appsignal::Pipe do
       before { Appsignal.stub(:agent => agent) }
 
       it "should shutdown" do
-        Appsignal::Pipe.current.writer.close
+        Appsignal::IPC.current.writer.close
         agent.should_receive(:shutdown)
       end
     end
 
-    after { Appsignal::Pipe.current.write(transaction) }
+    after { Appsignal::IPC.current.write(transaction) }
   end
 
   describe "#stop_listening!" do
