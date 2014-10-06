@@ -17,16 +17,15 @@ if defined?(::Resque)
     end
   end
 
-  # Create a pipe for the workers to write to
+  # Set up IPC
   Resque.before_first_fork do
-    Appsignal::IPC.init
+    Appsignal::IPC::Server.start
   end
 
   # In the fork, stop the normal agent startup
-  # and stop listening to the pipe (we'll only use it for writing)
+  # and stop listening to the server
   Resque.after_fork do |job|
-    Appsignal.agent.stop_thread
-    Appsignal::IPC.current.stop_listening!
+    Appsignal::IPC.forked!
   end
 
   # Extend the default job class with AppSignal instrumentation

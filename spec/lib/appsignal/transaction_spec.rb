@@ -397,20 +397,18 @@ describe Appsignal::Transaction do
         after { transaction.complete! }
       end
 
-      context 'when using pipes' do
-        let(:pipe) { double }
+      context 'when using IPC' do
         before do
-          Appsignal::IPC.stub(:current => pipe)
-          pipe.stub(:write => true)
+          Appsignal::IPC::Client.start
           transaction.stub(:convert_values_to_primitives! => true)
         end
-
-        it "should send itself trough the pipe" do
-          pipe.should_receive(:write).with(transaction)
+        after do
+          Appsignal::IPC::Client.stop
         end
 
-        it "should convert itself to primitives" do
+        it "should convert to primitves and send itself trough the pipe" do
           transaction.should_receive(:convert_values_to_primitives!)
+          Appsignal::IPC::Client.should_receive(:enqueue).with(transaction)
         end
 
         after { transaction.complete! }

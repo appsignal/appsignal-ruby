@@ -20,6 +20,10 @@ def rails_present?
   RAILS_PRESENT
 end
 
+def running_jruby?
+  defined?(RUBY_ENGINE) && RUBY_ENGINE == 'jruby'
+end
+
 def capistrano_present?
   !! Gem.loaded_specs['capistrano']
 end

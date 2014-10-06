@@ -1,42 +1,67 @@
+require 'drb/drb'
+
 module Appsignal
   class IPC
-    attr_reader :reader, :writer, :listener
+    class << self
+      def forked!
+        Server.stop
+        Client.start
+        Appsignal.agent.stop_thread
+      end
+    end
 
-    def initialize
-      Appsignal.logger.debug "Initializing IPC in #{$$}"
-      @reader, @writer = IO.pipe
-      @listener = Thread.new do
-        loop do
-          Appsignal.agent.enqueue(Marshal::load(@reader))
+    class Server
+      class << self
+        attr_reader :uri
+
+        def start
+          local_tmp_path = File.join(Appsignal.config.root_path, 'tmp')
+          if File.exists?(local_tmp_path)
+            @uri = 'drbunix:' + File.join(local_tmp_path, "appsignal-#{Process.pid}")
+          else
+            @uri = "drbunix:/tmp/appsignal-#{Process.pid}"
+          end
+
+          Appsignal.logger.info("Starting IPC server, listening on #{uri}")
+          DRb.start_service(uri, Appsignal::IPC::Server)
+        end
+
+        def stop
+          Appsignal.logger.debug('Stopping IPC server')
+          DRb.stop_service
+        end
+
+        def enqueue(transaction)
+          Appsignal.logger.debug("Receiving transaction #{transaction.request_id} in IPC server")
+          Appsignal.enqueue(transaction)
         end
       end
-      @listening = true
     end
 
-    def write(transaction)
-      Marshal::dump(transaction, @writer)
-    rescue IOError
-      Appsignal.logger.debug "Broken pipe in #{$$}"
-      Appsignal.agent.shutdown(true, 'broken pipe')
-    end
+    class Client
+      class << self
+        attr_reader :server
 
-    def stop_listening!
-      Thread.kill(@listener)
-      @reader.close unless @reader.closed?
-      @listening = false
-    end
+        def start
+          Appsignal.logger.debug('Starting IPC client')
+          @server = DRbObject.new_with_uri(Appsignal::IPC::Server.uri)
+          @active = true
+        end
 
-    def listening?
-      !! @listening
-    end
+        def stop
+          Appsignal.logger.debug('Stopping IPC client')
+          @server = nil
+          @active = false
+        end
 
-    class << self
-      def init
-        Thread.current[:appsignal_pipe] = Appsignal::IPC.new
-      end
+        def enqueue(transaction)
+          Appsignal.logger.debug("Sending transaction #{transaction.request_id} in IPC client")
+          @server.enqueue(transaction)
+        end
 
-      def current
-        Thread.current[:appsignal_pipe]
+        def active?
+          !! @active
+        end
       end
     end
   end
