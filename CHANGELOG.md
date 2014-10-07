@@ -1,3 +1,6 @@
+# 0.10.6
+* Add config option to skip session data
+
 # 0.10.5
 * Don't shutdown in `at_exit`
 * Debug log about missing name in config

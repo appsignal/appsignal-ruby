@@ -206,7 +206,7 @@ module Appsignal
     def sanitize_session_data!
       @sanitized_session_data = Appsignal::ParamsSanitizer.sanitize(
         request.session.to_hash
-      )
+      ) if Appsignal.config[:skip_session_data] == false
       @fullpath = request.fullpath
     end
   end
