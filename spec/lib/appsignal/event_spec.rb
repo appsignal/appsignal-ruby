@@ -29,4 +29,20 @@ describe Appsignal::Event do
       }.to change(event, :payload).from(:foo => 'bar').to({})
     end
   end
+
+  describe ".event_for_instrumentation" do
+    context "with non-moped event" do
+      it "should instantiate a new Appsignal::Event" do
+        expect( Appsignal::Event ).to receive(:new)
+        Appsignal::Event.event_for_instrumentation('query.active_record')
+      end
+    end
+
+    context "with moped event" do
+      it "should instantiate a moped event" do
+        expect( Appsignal::Event::MopedEvent ).to receive(:new)
+        Appsignal::Event.event_for_instrumentation('query.moped')
+      end
+    end
+  end
 end
