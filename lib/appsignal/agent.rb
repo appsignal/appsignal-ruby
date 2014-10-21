@@ -1,9 +1,10 @@
 module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
+    AGGREGATOR_LIMIT = 5 # Five minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused
+                  :transmitter, :subscriber, :paused, :aggregator_queue
 
     def initialize
       return unless Appsignal.config.active?
@@ -12,10 +13,12 @@ module Appsignal
       else
         @sleep_time = 60.0
       end
-      @master_pid = Process.pid
-      @pid = @master_pid
-      @aggregator = Aggregator.new
-      @transmitter = Transmitter.new(ACTION)
+      @master_pid       = Process.pid
+      @pid              = @master_pid
+      @aggregator       = Aggregator.new
+      @transmitter      = Transmitter.new(ACTION)
+      @aggregator_queue = []
+
       subscribe
       start_thread
       @active = true
@@ -33,6 +36,7 @@ module Appsignal
           sleep(rand(sleep_time))
           loop do
             send_queue if aggregator.has_transactions?
+            truncate_aggregator_queue
             Appsignal.logger.debug("Sleeping #{sleep_time}")
             sleep(sleep_time)
           end
@@ -104,16 +108,36 @@ module Appsignal
       end
 
       begin
-        return unless aggregator_to_be_sent.has_transactions?
-        handle_result(
-          transmitter.transmit(aggregator_to_be_sent.post_processed_queue!)
-        )
-      rescue OpenSSL::SSL::SSLError => ex
-        Appsignal.logger.error "OpenSSL::SSL::SSLError: #{ex.message}"
+        add_to_aggregator_queue(aggregator_to_be_sent.post_processed_queue!)
+        send_aggregators
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
         Appsignal.logger.error ex.backtrace.join('\n')
       end
+    end
+
+    def add_to_aggregator_queue(aggregator)
+      @aggregator_queue.unshift(aggregator)
+    end
+
+    def send_aggregators
+      @aggregator_queue.map! do |payload|
+        begin
+          if handle_result(transmitter.transmit(payload))
+            nil
+          else
+            payload
+          end
+        rescue *Transmitter::HTTP_ERRORS
+          payload
+        end
+      end.compact!
+    end
+
+    def truncate_aggregator_queue(limit = AGGREGATOR_LIMIT)
+      return unless @aggregator_queue.length > limit
+      Appsignal.logger.error "Aggregator queue to large, removing items"
+      @aggregator_queue = @aggregator_queue.first(limit)
     end
 
     def clear_queue
@@ -150,27 +174,34 @@ module Appsignal
       Appsignal.logger.debug "Queue sent, response code: #{code}"
       case code.to_i
       when 200 # ok
+        true
       when 420 # Enhance Your Calm
         Appsignal.logger.info 'Increasing sleep time since the server told us to'
         @sleep_time = sleep_time * 1.5
+        true
       when 413 # Request Entity Too Large
         Appsignal.logger.info 'Decreasing sleep time since our last push was too large'
         @sleep_time = sleep_time / 1.5
+        true
       when 429
         Appsignal.logger.error 'Too many requests sent'
         shutdown(false, 429)
+        true
       when 406
         Appsignal.logger.error 'Your appsignal gem cannot communicate with the API anymore, please upgrade.'
         shutdown(false, 406)
+        true
       when 402
         Appsignal.logger.error 'Payment required'
         shutdown(false, 402)
+        true
       when 401
         Appsignal.logger.error 'API token cannot be authorized'
         shutdown(false, 401)
+        true
       else
         Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
-        clear_queue
+        false
       end
     end
   end
