@@ -122,6 +122,22 @@ describe Appsignal::Event::MopedEvent do
       end
     end
 
+    context "Moped::Protocol::KillCursors" do
+      let(:payload) do
+        double(
+          :number_of_cursor_ids => 2,
+          :class                => double(:to_s => 'Moped::Protocol::KillCursors')
+        )
+      end
+
+      it "should transform the payload" do
+        expect( event.payload_from_op(payload) ).to eq(
+          :type                 => "KillCursors",
+          :number_of_cursor_ids => 2
+        )
+      end
+    end
+
     context "Moped::Protocol::Other" do
       let(:payload) do
         double(
@@ -133,22 +149,6 @@ describe Appsignal::Event::MopedEvent do
       it "should transform the payload" do
         expect( event.payload_from_op(payload) ).to eq(
           :type     => "Other",
-          :database => "database.collection"
-        )
-      end
-    end
-
-    context "Moped::Protocol::KillCursors" do
-      let(:payload) do
-        double(
-          :full_collection_name => 'database.collection',
-          :class                => double(:to_s => 'Moped::Protocol::KillCursors')
-        )
-      end
-
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "KillCursors",
           :database => "database.collection"
         )
       end
