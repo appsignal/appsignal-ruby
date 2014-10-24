@@ -1,5 +1,4 @@
 class Appsignal::Event::MopedEvent < Appsignal::Event
-
   def initialize(name, start, ending, transaction_id, payload)
     super(name, start, ending, transaction_id, transform_payload(payload))
   end
