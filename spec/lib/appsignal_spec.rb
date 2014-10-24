@@ -403,7 +403,7 @@ describe Appsignal do
     end
 
     describe ".send_exception" do
-      before { Appsignal::Pipe.stub(:current => false) }
+      before { Appsignal::IPC.stub(:current => false) }
       let(:tags) { nil }
 
       it "should send the exception to AppSignal" do
