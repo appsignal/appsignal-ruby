@@ -55,6 +55,11 @@ class Appsignal::Event::MopedEvent < Appsignal::Event
         :update   => sanitize(payload.update),
         :flags    => payload.flags,
       }
+    when 'Moped::Protocol::KillCursors'
+      {
+        :type                 => 'KillCursors',
+        :number_of_cursor_ids => payload.number_of_cursor_ids
+      }
     else
       {
         :type     => payload.class.to_s.gsub('Moped::Protocol::', ''),
