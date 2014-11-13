@@ -128,7 +128,8 @@ module Appsignal
           else
             payload
           end
-        rescue *Transmitter::HTTP_ERRORS
+        rescue *Transmitter::HTTP_ERRORS => ex
+          Appsignal.logger.error "#{ex} while sending aggregators"
           payload
         end
       end.compact!

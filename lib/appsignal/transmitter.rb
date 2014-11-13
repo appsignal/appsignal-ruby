@@ -12,6 +12,7 @@ module Appsignal
 
     HTTP_ERRORS = [
       EOFError,
+      Errno::ECONNREFUSED,
       Errno::ECONNRESET,
       Errno::EINVAL,
       Net::HTTPBadResponse,

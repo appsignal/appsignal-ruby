@@ -338,10 +338,14 @@ describe Appsignal::Agent do
         end
       end
 
-      context "when an exception occurred during sending" do
+      context "when an exception related to connection problems occurred during sending" do
         before { subject.stub(:transmitter).and_raise(OpenSSL::SSL::SSLError.new) }
 
         it "should remove only successfully sent item from the queue" do
+          Appsignal.logger.should_receive(:error).
+            with(kind_of(String)).
+            once
+
           expect {
             subject.send_aggregators
           }.to_not change(subject, :aggregator_queue)
