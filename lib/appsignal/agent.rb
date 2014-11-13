@@ -35,7 +35,9 @@ module Appsignal
         begin
           sleep(rand(sleep_time))
           loop do
-            send_queue if aggregator.has_transactions?
+            if aggregator.has_transactions? || aggregator_queue.any?
+              send_queue
+            end
             truncate_aggregator_queue
             Appsignal.logger.debug("Sleeping #{sleep_time}")
             sleep(sleep_time)

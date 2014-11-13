@@ -67,6 +67,19 @@ describe Appsignal::Agent do
       end
     end
 
+    context "with items in the aggregator queue" do
+      before do
+        subject.aggregator_queue.stub(:any? => true)
+      end
+
+      it "should send the queue and sleep" do
+        subject.should_receive(:send_queue).at_least(:twice)
+
+        subject.start_thread
+        sleep 2
+      end
+    end
+
     context "when an exception occurs in the thread" do
       before do
         aggregator = double
