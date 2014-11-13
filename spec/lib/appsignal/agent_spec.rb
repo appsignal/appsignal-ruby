@@ -78,7 +78,7 @@ describe Appsignal::Agent do
 
       it "should log the error" do
         Appsignal.logger.should_receive(:error).
-          with("RuntimeError in agent thread: 'error'").
+          with(kind_of(String)).
           once
 
         subject.start_thread
@@ -268,9 +268,6 @@ describe Appsignal::Agent do
       )
 
       Appsignal.logger.should_receive(:error).
-        with('PostProcessingException while sending queue: Message').
-        once
-      Appsignal.logger.should_receive(:error).
         with(kind_of(String)).
         once
     end
@@ -280,9 +277,6 @@ describe Appsignal::Agent do
         Exception.new('Message')
       )
 
-      Appsignal.logger.should_receive(:error).
-        with('Exception while sending queue: Message').
-        once
       Appsignal.logger.should_receive(:error).
         with(kind_of(String)).
         once

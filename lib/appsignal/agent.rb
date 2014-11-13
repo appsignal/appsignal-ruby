@@ -41,8 +41,7 @@ module Appsignal
             sleep(sleep_time)
           end
         rescue Exception=>ex
-          Appsignal.logger.error "#{ex.class} in agent thread: '#{ex.message}'"
-          Appsignal.logger.error ex.backtrace.join('\n')
+          Appsignal.logger.error "#{ex.class} in agent thread: '#{ex.message}'\n#{ex.backtrace.join("\n")}"
         end
       end
     end
@@ -111,8 +110,7 @@ module Appsignal
         add_to_aggregator_queue(aggregator_to_be_sent.post_processed_queue!)
         send_aggregators
       rescue Exception => ex
-        Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}"
-        Appsignal.logger.error ex.backtrace.join('\n')
+        Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}\n#{ex.backtrace.join("\n")}"
       end
     end
 
