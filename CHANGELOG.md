@@ -3,6 +3,7 @@
 * Retry sending data when the push api is not reachable
 * Our own event handling to allow for more flexibility and reliability
   when using a threaded environment
+* Resque officially supported!
 
 # 0.10.6
 * Add config option to skip session data
