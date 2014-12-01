@@ -197,8 +197,8 @@ module Appsignal
 
     def sanitize_environment!
       return unless env
-      env.each do |key, value|
-        sanitized_environment[key] = value if ENV_METHODS.include?(key)
+      ENV_METHODS.each do |key|
+        sanitized_environment[key] = env[key]
       end
     end
 
