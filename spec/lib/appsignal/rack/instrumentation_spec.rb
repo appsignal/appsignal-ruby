@@ -46,4 +46,28 @@ describe Appsignal::Rack::Instrumentation do
       :path => '/homepage'
     } }
   end
+
+  describe "use a custom request class and parameters method" do
+    let(:request_class) do
+      double(
+        new: double(
+          request_method: 'POST',
+          path: '/somewhere',
+          filtered_params: {'param' => 'changed_something'}
+        )
+      )
+    end
+    let(:options) do
+      { request_class: request_class, params_method: :filtered_params }
+    end
+    let(:middleware) { Appsignal::Rack::Instrumentation.new(app, options) }
+    subject { middleware.raw_payload(env) }
+
+    it { should == {
+      :action => 'POST:/somewhere',
+      :params => {'param' => 'changed_something'},
+      :method => 'POST',
+      :path => '/somewhere'
+    } }
+  end
 end

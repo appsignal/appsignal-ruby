@@ -16,10 +16,11 @@ module Appsignal
       end
 
       def raw_payload(env)
-        request = ::Rack::Request.new(env)
+        request = @options.fetch(:request_class, ::Rack::Request).new(env)
+        params = request.public_send(@options.fetch(:params_method, :params))
         {
           :action => "#{request.request_method}:#{request.path}",
-          :params => request.params,
+          :params => params,
           :method => request.request_method,
           :path   => request.path
         }
