@@ -11,22 +11,23 @@ module Appsignal
     HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP).freeze
 
-    def self.create(request_id, env)
-      Appsignal.logger.debug("Creating transaction: #{request_id}")
-      Thread.current[:appsignal_transaction_id] = request_id
-      Appsignal::Transaction.new(request_id, env)
-    end
+    class << self
+      def create(request_id, env)
+        Appsignal.logger.debug("Creating transaction: #{request_id}")
+        Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
+      end
 
-    def self.current
-      Appsignal.transactions[Thread.current[:appsignal_transaction_id]]
-    end
+      def current
+        Thread.current[:appsignal_transaction]
+      end
 
-    def self.complete_current!
-      if current
-        current.complete!
-        Thread.current[:appsignal_transaction_id] = nil
-      else
-        Appsignal.logger.error('Trying to complete current, but no transaction present')
+      def complete_current!
+        if current
+          current.complete!
+          Thread.current[:appsignal_transaction] = nil
+        else
+          Appsignal.logger.error('Trying to complete current, but no transaction present')
+        end
       end
     end
 
@@ -34,7 +35,6 @@ module Appsignal
                 :env, :fullpath, :time, :tags, :kind, :queue_start
 
     def initialize(request_id, env)
-      Appsignal.transactions[request_id] = self
       @request_id = request_id
       @events = []
       @process_action_event = nil
@@ -139,8 +139,7 @@ module Appsignal
     end
 
     def complete!
-      Thread.current[:appsignal_transaction_id] = nil
-      Appsignal.transactions.delete(@request_id)
+      Thread.current[:appsignal_transaction] = nil
       if process_action_event || exception?
         if Appsignal::IPC::Client.active?
           convert_values_to_primitives!
@@ -152,8 +151,6 @@ module Appsignal
       else
         Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")
       end
-    ensure
-      Appsignal.transactions.delete(@request_id)
     end
 
     def set_background_queue_start

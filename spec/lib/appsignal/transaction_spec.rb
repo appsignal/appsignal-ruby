@@ -14,9 +14,9 @@ describe Appsignal::Transaction do
   describe '.create' do
     subject { Appsignal::Transaction.create('1', {}) }
 
-    it 'should add the request id to the thread local' do
+    it 'should add the transaction to thread local' do
       subject
-      Thread.current[:appsignal_transaction_id].should == '1'
+      Thread.current[:appsignal_transaction].should == subject
     end
 
     it "should create a transaction" do
@@ -36,17 +36,17 @@ describe Appsignal::Transaction do
   end
 
   describe "complete_current!" do
-    before { Thread.current[:appsignal_transaction_id] = nil }
+    before { Thread.current[:appsignal_transaction] = nil }
 
     context "with a current transaction" do
       before { Appsignal::Transaction.create('2', {}) }
 
-      it "should complete the current transaction and reset the thread appsignal_transaction_id" do
+      it "should complete the current transaction and set the thread appsignal_ transaction to nil" do
         Appsignal::Transaction.current.should_receive(:complete!)
 
         Appsignal::Transaction.complete_current!
 
-        Thread.current[:appsignal_transaction_id].should be_nil
+        Thread.current[:appsignal_transaction].should be_nil
       end
     end
 
@@ -67,11 +67,6 @@ describe Appsignal::Transaction do
       }
     end
     let(:transaction) { Appsignal::Transaction.create('3', env) }
-
-    it "should add the transaction to the list" do
-      transaction
-      Appsignal.transactions['3'].should == transaction
-    end
 
     describe '#request' do
       subject { transaction.request }
@@ -362,9 +357,10 @@ describe Appsignal::Transaction do
         transaction.set_process_action_event(notification_event)
       end
 
-      it 'should remove transaction from the list' do
-        expect { transaction.complete! }.
-          to change(Appsignal.transactions, :length).by(-1)
+      it 'should remove transaction from the thread local variable' do
+        Appsignal::Transaction.current.should be_present
+        transaction.complete!
+        Appsignal::Transaction.current.should be_nil
       end
 
       context 'enqueueing' do

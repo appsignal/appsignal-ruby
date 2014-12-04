@@ -291,12 +291,6 @@ describe Appsignal do
       end
     end
 
-    describe ".transactions" do
-      subject { Appsignal.transactions }
-
-      it { should be_a Hash }
-    end
-
     describe '.logger' do
       subject { Appsignal.logger }
 

@@ -124,10 +124,6 @@ module Appsignal
     end
     alias :tag_job :tag_request
 
-    def transactions
-      @transactions ||= {}
-    end
-
     def logger
       @in_memory_log = StringIO.new unless @in_memory_log
       @logger ||= Logger.new(@in_memory_log).tap do |l|
