@@ -53,6 +53,7 @@ end
 RSpec.configure do |config|
   config.include ConfigHelpers
   config.include NotificationHelpers
+  config.include TimeHelpers
   config.include TransactionHelpers
 
   config.before do
@@ -65,6 +66,13 @@ RSpec.configure do |config|
   config.after do
     FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
     Appsignal.logger = nil
+  end
+
+  config.after :all do
+    # Unsubscribe if we've started the agent
+    if Appsignal.agent && Appsignal.agent.subscriber
+      Appsignal.agent.subscriber.unsubscribe
+    end
   end
 end
 

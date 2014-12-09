@@ -92,7 +92,8 @@ module TransactionHelpers
     ).tap do |o|
       o.set_process_action_event(process_action_event)
       o.add_exception(exception)
-      events.each { |event| o.add_event(event) }
+      # TODO replace with new call
+      #events.each { |event| o.add_event(event) }
     end
   end
 end

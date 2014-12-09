@@ -41,7 +41,7 @@ describe Appsignal::Transaction do
     context "with a current transaction" do
       before { Appsignal::Transaction.create('2', {}) }
 
-      it "should complete the current transaction and set the thread appsignal_ transaction to nil" do
+      it "should complete the current transaction and set the thread appsignal_transaction to nil" do
         Appsignal::Transaction.current.should_receive(:complete!)
 
         Appsignal::Transaction.complete_current!

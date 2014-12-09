@@ -75,8 +75,15 @@ module Appsignal
       set_background_queue_start
     end
 
-    def add_event(event)
-      @events << event
+    def add_event(digest, name, started, duration, child_duration, level)
+      @events << {
+        :digest         => digest,
+        :name           => name,
+        :started        => started,
+        :duration       => duration,
+        :child_duration => child_duration,
+        :level          => level
+      }
     end
 
     def add_exception(ex)

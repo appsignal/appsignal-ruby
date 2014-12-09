@@ -1,23 +1,25 @@
 require 'spec_helper'
 
-describe Appsignal::Event::MopedEvent do
-  let(:event) do
-    Appsignal::Event::MopedEvent.new('query.moped', 1, 2, 123, {})
+describe Appsignal::EventFormatter::Moped::QueryFormatter do
+  let(:klass) { Appsignal::EventFormatter::Moped::QueryFormatter }
+  let(:formatter) { klass.new }
+
+  it "should register query.moped" do
+    Appsignal::EventFormatter.registered?('query.moped', klass).should be_true
   end
 
-  describe "#transform_payload" do
-    before { event.stub(:payload_from_op => {'foo' => 'bar'}) }
+  describe "#transform" do
+    let(:payload) { {:ops => [op]} }
+    subject { formatter.transform(payload) }
 
-    it "should map the operations to a normalized payload" do
-      expect( event.transform_payload(:ops => [{}]) ).to eq(
-        :ops => [{'foo' => 'bar'}]
-      )
+    context "without ops in the payload" do
+      let(:payload) { {} }
+
+      it { should be_nil }
     end
-  end
 
-  describe "#payload_from_op" do
-    context "Moped::Protocol::Query" do
-      let(:payload) do
+    context "Moped::Protocol::Command" do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :selector             => {'_id' => 'abc'},
@@ -25,17 +27,11 @@ describe Appsignal::Event::MopedEvent do
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "Command",
-          :database => "database.collection",
-          :selector => {"_id" => "?"}
-        )
-      end
+      it { should == ['Command', '{:database=>"database.collection", :selector=>{"_id"=>"?"}}'] }
     end
 
     context "Moped::Protocol::Query" do
-      let(:payload) do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :selector             => {'_id' => 'abc'},
@@ -47,21 +43,11 @@ describe Appsignal::Event::MopedEvent do
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "Query",
-          :database => "database.collection",
-          :selector => {"_id" => "?"},
-          :flags    => [],
-          :limit    => 0,
-          :skip     => 0,
-          :fields   => nil,
-        )
-      end
+      it { should == ['Query', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[], :limit=>0, :skip=>0, :fields=>nil}'] }
     end
 
     context "Moped::Protocol::Delete" do
-      let(:payload) do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :selector             => {'_id' => 'abc'},
@@ -70,18 +56,11 @@ describe Appsignal::Event::MopedEvent do
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "Delete",
-          :database => "database.collection",
-          :selector => {"_id" => "?"},
-          :flags    => []
-        )
-      end
+      it { should == ['Delete', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Insert" do
-      let(:payload) do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :flags                => [],
@@ -90,18 +69,11 @@ describe Appsignal::Event::MopedEvent do
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type      => "Insert",
-          :database  => "database.collection",
-          :flags     => [],
-          :documents => [{"_id" => "?"}, {"_id" => "?"}]
-        )
-      end
+      it { should == ['Insert', '{:database=>"database.collection", :documents=>[{"_id"=>"?"}, {"_id"=>"?"}], :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Update" do
-      let(:payload) do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :selector             => {'_id' => 'abc'},
@@ -111,47 +83,29 @@ describe Appsignal::Event::MopedEvent do
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "Update",
-          :database => "database.collection",
-          :selector => {"_id" => "?"},
-          :update   => {"name" => "?"},
-          :flags    => []
-        )
-      end
+      it { should == ['Update', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"name"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::KillCursors" do
-      let(:payload) do
+      let(:op) do
         double(
           :number_of_cursor_ids => 2,
           :class                => double(:to_s => 'Moped::Protocol::KillCursors')
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type                 => "KillCursors",
-          :number_of_cursor_ids => 2
-        )
-      end
+      it { should == ['KillCursors', '{:number_of_cursor_ids=>2}'] }
     end
 
     context "Moped::Protocol::Other" do
-      let(:payload) do
+      let(:op) do
         double(
           :full_collection_name => 'database.collection',
           :class                => double(:to_s => 'Moped::Protocol::Other')
         )
       end
 
-      it "should transform the payload" do
-        expect( event.payload_from_op(payload) ).to eq(
-          :type     => "Other",
-          :database => "database.collection"
-        )
-      end
+      it { should == ['Other', '{:database=>"database.collection"}'] }
     end
   end
 
@@ -160,7 +114,7 @@ describe Appsignal::Event::MopedEvent do
       let(:params) { {'foo' => 'bar'} }
 
       it "should sanitize all hash values with a questionmark" do
-        expect( event.sanitize(params) ).to eq('foo' => '?')
+        expect( formatter.send(:sanitize, params) ).to eq('foo' => '?')
       end
     end
 
@@ -168,7 +122,7 @@ describe Appsignal::Event::MopedEvent do
       let(:params) { [{'foo' => 'bar'}] }
 
       it "should sanitize all hash values with a questionmark" do
-        expect( event.sanitize(params) ).to eq([{'foo' => '?'}])
+        expect( formatter.send(:sanitize, params) ).to eq([{'foo' => '?'}])
       end
     end
 
@@ -176,14 +130,14 @@ describe Appsignal::Event::MopedEvent do
       let(:params) { ['foo', 'bar'] }
 
       it "should sanitize all hash values with a single questionmark" do
-        expect( event.sanitize(params) ).to eq(['?'])
+        expect( formatter.send(:sanitize, params) ).to eq(['?'])
       end
     end
     context "when params is a string" do
       let(:params) { 'bar'}
 
       it "should sanitize all hash values with a questionmark" do
-        expect( event.sanitize(params) ).to eq('?')
+        expect( formatter.send(:sanitize, params) ).to eq('?')
       end
     end
   end

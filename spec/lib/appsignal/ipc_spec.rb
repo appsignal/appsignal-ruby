@@ -64,9 +64,9 @@ unless running_jruby?
         let(:transaction) { regular_transaction }
 
         it "should enqueue" do
-          Appsignal.agent.aggregator.has_transactions?.should be_false
+          Appsignal.agent.aggregator.any?.should be_false
           subject.enqueue(transaction)
-          Appsignal.agent.aggregator.has_transactions?.should be_true
+          Appsignal.agent.aggregator.any?.should be_true
         end
       end
     end

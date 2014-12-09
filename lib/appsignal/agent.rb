@@ -4,24 +4,26 @@ module Appsignal
     AGGREGATOR_LIMIT = 5 # Five minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused, :aggregator_queue
+                  :transmitter, :subscriber, :paused, :aggregator_queue, :added_event_digests
 
     def initialize
       return unless Appsignal.config.active?
+
       if Appsignal.config.env == 'development'
         @sleep_time = 10.0
       else
         @sleep_time = 60.0
       end
-      @master_pid       = Process.pid
-      @pid              = @master_pid
-      @aggregator       = Aggregator.new
-      @transmitter      = Transmitter.new(ACTION)
-      @aggregator_queue = []
-
-      subscribe
+      @master_pid          = Process.pid
+      @pid                 = @master_pid
+      @aggregator          = Appsignal::Agent::Aggregator.new
+      @transmitter         = Appsignal::Transmitter.new(ACTION)
+      @aggregator_queue    = []
+      @added_event_digests = {}
+      @subscriber          = Appsignal::Agent::Subscriber.new(self)
       start_thread
       @active = true
+
       Appsignal.logger.info('Started Appsignal agent')
     end
 
@@ -35,7 +37,7 @@ module Appsignal
         begin
           sleep(rand(sleep_time))
           loop do
-            if aggregator.has_transactions? || aggregator_queue.any?
+            if aggregator.any? || aggregator_queue.any?
               send_queue
             end
             truncate_aggregator_queue
@@ -61,41 +63,20 @@ module Appsignal
       end
     end
 
-    def subscribe
-      Appsignal.logger.debug('Subscribing to notifications')
-      # Subscribe to notifications that don't start with a !
-      @subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
-        if Appsignal::Transaction.current
-          event = Appsignal::Event.event_for_instrumentation(*args)
-          if event.name.start_with?('process_action')
-            Appsignal::Transaction.current.set_process_action_event(event)
-          elsif event.name.start_with?('perform_job')
-            Appsignal::Transaction.current.set_perform_job_event(event)
-          end
-          Appsignal::Transaction.current.add_event(event) unless paused
-        end
-      end
-    end
-
-    def resubscribe
-      Appsignal.logger.debug('Resubscribing to notifications')
-      unsubscribe
-      subscribe
-    end
-
-    def unsubscribe
-      Appsignal.logger.debug('Unsubscribing from notifications')
-      ActiveSupport::Notifications.unsubscribe(@subscriber)
-      @subscriber = nil
-    end
-
     def enqueue(transaction)
       forked! if @pid != Process.pid
       if Appsignal.is_ignored_action?(transaction.action)
         Appsignal.logger.debug("Ignoring transaction: #{transaction.request_id} (#{transaction.action})")
         return
       end
-      aggregator.add(transaction)
+      aggregator.add_transaction(transaction)
+    end
+
+    def add_event_details(digest, name, title, body)
+      unless added_event_digests[digest]
+        added_event_digests[digest] = true
+        aggregator.add_event_details(digest, name, title, body)
+      end
     end
 
     def send_queue
@@ -105,7 +86,7 @@ module Appsignal
       aggregator_to_be_sent = nil
       Thread.exclusive do
         aggregator_to_be_sent = aggregator
-        @aggregator = Aggregator.new
+        @aggregator = Appsignal::Agent::Aggregator.new
       end
 
       begin
@@ -146,7 +127,7 @@ module Appsignal
       # Replace aggregator while making sure no thread
       # is adding to it's queue
       Thread.exclusive do
-        @aggregator = Aggregator.new
+        @aggregator = Appsignal::Agent::Aggregator.new
       end
     end
 
@@ -157,14 +138,14 @@ module Appsignal
       Thread.exclusive do
         @aggregator = Aggregator.new
       end
-      resubscribe
+      subscriber.resubscribe
       restart_thread
     end
 
     def shutdown(send_current_queue=false, reason=nil)
       Appsignal.logger.info("Shutting down agent (#{reason})")
       @active = false
-      unsubscribe
+      subscriber.unsubscribe if subscriber
       stop_thread
       send_queue if send_current_queue
     end

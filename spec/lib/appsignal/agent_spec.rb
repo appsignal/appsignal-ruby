@@ -10,25 +10,34 @@ describe Appsignal::Agent do
 
   let(:transaction) { regular_transaction }
 
-  its(:active?) { should be_true }
+  context "initialization" do
+    describe "#sleep_time" do
+      subject { Appsignal::Agent.new.sleep_time }
 
-  context "pid" do
-    its(:master_pid) { should == Process.pid }
-    its(:pid) { should == Process.pid }
-  end
+      it { should == 60 }
 
-  describe "#sleep_time" do
-    subject { Appsignal::Agent.new.sleep_time }
+      context "for development" do
+        before do
+          Appsignal.config.stub(:env => 'development')
+        end
 
-    it { should == 60 }
-
-    context "for development" do
-      before do
-        Appsignal.config.stub(:env => 'development')
+        it { should == 10 }
       end
-
-      it { should == 10 }
     end
+
+    context "pid" do
+      its(:master_pid) { should == Process.pid }
+      its(:pid) { should == Process.pid }
+    end
+
+    its(:aggregator) { should be_instance_of(Appsignal::Agent::Aggregator) }
+    its(:transmitter) { should be_instance_of(Appsignal::Transmitter) }
+    its(:aggregator_queue) { should == [] }
+    its(:added_event_digests) { should == {} }
+    its(:subscriber) { should be_instance_of(Appsignal::Agent::Subscriber) }
+    its(:thread) { should be_instance_of(Thread) }
+
+    its(:active?) { should be_true }
   end
 
   describe "#start_thread" do
@@ -56,7 +65,8 @@ describe Appsignal::Agent do
 
     context "with transactions" do
       before do
-        subject.stub(:aggregator => double(:has_transactions? => true))
+        subject.aggregator.should respond_to(:any?)
+        subject.aggregator.stub(:any? => true)
       end
 
       it "should send the queue and sleep" do
@@ -138,110 +148,13 @@ describe Appsignal::Agent do
     after { subject.stop_thread }
   end
 
-  describe "#subscribe" do
-    it "should have set the appsignal subscriber" do
-      if defined? ActiveSupport::Notifications::Fanout::Subscribers::Timed
-        # ActiveSupport 4
-        subject.subscriber.should be_a ActiveSupport::Notifications::Fanout::Subscribers::Timed
-      else
-        # ActiveSupport 3
-        subject.subscriber.should be_a ActiveSupport::Notifications::Fanout::Subscriber
-      end
-    end
-
-    context "handling events" do
-      before :each do
-        # Unsubscribe previous notification subscribers
-        ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).
-          reject { |sub| sub.instance_variable_get(:@pattern).is_a? String }.
-          each { |sub| ActiveSupport::Notifications.unsubscribe(sub) }
-        # And re-subscribe with just one subscriber
-        Appsignal.agent.subscribe
-
-        Appsignal::Transaction.create('123', {})
-      end
-
-      it "should should not listen to events that start with a bang" do
-        Appsignal::Transaction.current.should_not_receive(:add_event)
-
-        ActiveSupport::Notifications.instrument '!render_template'
-      end
-
-      it "should add a normal event" do
-        Appsignal::Transaction.current.should_not_receive(:set_process_action_event)
-        Appsignal::Transaction.current.should_receive(:add_event).with(
-          kind_of(ActiveSupport::Notifications::Event)
-        ).at_least(:once)
-
-        ActiveSupport::Notifications.instrument 'render_template'
-      end
-
-      context "when paused" do
-        it "should add a normal event" do
-          Appsignal::Transaction.current.should_not_receive(:add_event)
-
-          Appsignal.without_instrumentation do
-            ActiveSupport::Notifications.instrument 'moo'
-          end
-        end
-      end
-
-      it "should add and set a process action event" do
-        Appsignal::Transaction.current.should_receive(:set_process_action_event).with(
-          kind_of(ActiveSupport::Notifications::Event)
-        ).at_least(:once)
-        Appsignal::Transaction.current.should_receive(:add_event).with(
-          kind_of(ActiveSupport::Notifications::Event)
-        ).at_least(:once)
-
-        ActiveSupport::Notifications.instrument 'process_action.rack'
-      end
-
-      it "should add and set a perform job event" do
-        Appsignal::Transaction.current.should_receive(:set_perform_job_event).with(
-          kind_of(ActiveSupport::Notifications::Event)
-        ).at_least(:once)
-        Appsignal::Transaction.current.should_receive(:add_event).with(
-          kind_of(ActiveSupport::Notifications::Event)
-        ).at_least(:once)
-
-        ActiveSupport::Notifications.instrument 'perform_job.processor'
-      end
-    end
-
-    describe "#unsubscribe" do
-      before :each do
-        Appsignal.agent.unsubscribe
-      end
-
-      it "should not have a subscriber" do
-        Appsignal.agent.subscriber.should be_nil
-      end
-
-      it "should add a normal event" do
-        Appsignal::Transaction.current.should_not_receive(:add_event)
-
-        ActiveSupport::Notifications.instrument 'moo'
-      end
-    end
-  end
-
-  describe "#resubscribe" do
-    it "should stop and start the thread" do
-      subject.should_receive(:unsubscribe)
-      subject.should_receive(:subscribe)
-    end
-
-    after { subject.resubscribe }
-  end
-
   describe "#enqueue" do
     let(:transaction) { double(:action => 'test#test', :request_id => 'id') }
     subject { Appsignal.agent }
 
     it "forwards to the aggregator" do
-      subject.aggregator.should respond_to(:add)
-      subject.aggregator.should_receive(:add).with(transaction)
+      subject.aggregator.should respond_to(:add_transaction)
+      subject.aggregator.should_receive(:add_transaction).with(transaction)
       subject.should_not_receive(:forked!)
     end
 
@@ -249,7 +162,7 @@ describe Appsignal::Agent do
       before { Process.stub(:pid => 9000000002) }
 
       it "should call forked!" do
-        subject.aggregator.should_receive(:add).with(transaction)
+        subject.aggregator.should_receive(:add_transaction).with(transaction)
         subject.should_receive(:forked!)
       end
     end
@@ -263,6 +176,33 @@ describe Appsignal::Agent do
     end
 
     after { subject.enqueue(transaction) }
+  end
+
+  describe "#add_event_details" do
+    it "should add event details" do
+      subject.aggregator.should_receive(:add_event_details).with('digest', 'name', 'title', 'body')
+
+      subject.add_event_details('digest', 'name', 'title', 'body')
+    end
+
+    context "when there are details present" do
+      before do
+        subject.aggregator.should_receive(:add_event_details).once
+        subject.add_event_details('digest', 'name', 'title', 'body')
+      end
+
+      it "should not add the event details again" do
+        subject.aggregator.should_not_receive(:add_event_details)
+
+        subject.add_event_details('digest', 'name', 'title', 'body')
+      end
+
+      it "should add event details for a different event" do
+        subject.aggregator.should_receive(:add_event_details).with('digest2', 'name', 'title', 'body')
+
+        subject.add_event_details('digest2', 'name', 'title', 'body')
+      end
+    end
   end
 
   describe "#send_queue" do
@@ -377,7 +317,7 @@ describe Appsignal::Agent do
 
   describe "#clear_queue" do
     it "starts a new aggregator" do
-      Appsignal::Aggregator.should_receive(:new).twice # once on start, once on clear
+      Appsignal::Agent::Aggregator.should_receive(:new).twice # once on start, once on clear
     end
 
     after { subject.clear_queue }
@@ -392,7 +332,7 @@ describe Appsignal::Agent do
 
       Process.stub(:pid => 9000000001)
       subject.active = false
-      subject.should_receive(:resubscribe)
+      subject.subscriber.should_receive(:resubscribe)
       subject.should_receive(:restart_thread)
       previous_aggregator = subject.aggregator
 
@@ -401,7 +341,7 @@ describe Appsignal::Agent do
       subject.active?.should be_true
 
       subject.aggregator.should_not == previous_aggregator
-      subject.aggregator.should be_a Appsignal::Aggregator
+      subject.aggregator.should be_a Appsignal::Agent::Aggregator
 
       subject.master_pid.should == master_pid
       subject.pid.should == 9000000001
@@ -438,7 +378,7 @@ describe Appsignal::Agent do
   end
 
   describe '#handle_result' do
-    before { subject.aggregator.add(transaction) }
+    before { subject.aggregator.add_transaction(transaction) }
     before { subject.instance_variable_set(:@sleep_time, 3.0) }
 
     context "good responses" do

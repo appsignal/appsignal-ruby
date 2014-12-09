@@ -37,6 +37,7 @@ module Appsignal
       end
     end
 
+    # TODO spec
     def start
       if config
         if config[:debug]
@@ -49,6 +50,7 @@ module Appsignal
           load_integrations
           load_instrumentations
           initialize_extensions
+          Appsignal::EventFormatter.initialize_formatters
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')
@@ -180,7 +182,9 @@ module Appsignal
 end
 
 require 'appsignal/agent'
-require 'appsignal/event'
+require 'appsignal/agent/aggregator'
+require 'appsignal/agent/subscriber'
+require 'appsignal/event_formatter'
 require 'appsignal/aggregator'
 require 'appsignal/aggregator/post_processor'
 require 'appsignal/aggregator/middleware'
