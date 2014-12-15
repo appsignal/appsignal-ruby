@@ -1,3 +1,8 @@
+# 0.11.1
+* Allow a custom request_class and params_method on  Rack instrumentation
+* Loop through env methods instead of env
+* Add HTTP_CLIENT_IP to env methods
+
 # 0.11.0
 * Improved inter process communication
 * Retry sending data when the push api is not reachable
