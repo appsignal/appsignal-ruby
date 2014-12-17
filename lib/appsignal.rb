@@ -37,7 +37,6 @@ module Appsignal
       end
     end
 
-    # TODO spec
     def start
       if config
         if config[:debug]
@@ -49,8 +48,8 @@ module Appsignal
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
           load_integrations
           load_instrumentations
-          initialize_extensions
           Appsignal::EventFormatter.initialize_formatters
+          initialize_extensions
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')

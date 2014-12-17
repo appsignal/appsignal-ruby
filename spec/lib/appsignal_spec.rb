@@ -59,6 +59,11 @@ describe Appsignal do
         Appsignal.start
       end
 
+      it "should initialize formatters" do
+        Appsignal::EventFormatter.should_receive(:initialize_formatters)
+        Appsignal.start
+      end
+
       context "when not active for this environment" do
         before { Appsignal.config = project_fixture_config('staging') }
 
