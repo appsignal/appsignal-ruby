@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Appsignal::Agent::Aggregator do
   let(:aggregator) { Appsignal::Agent::Aggregator.new }
+  let(:transaction) { double }
 
   context "initialization" do
     its(:transactions) { should == [] }
@@ -9,7 +10,12 @@ describe Appsignal::Agent::Aggregator do
   end
 
   describe "#add_transaction" do
-    pending
+    it "should add the transaction" do
+      aggregator.add_transaction(transaction)
+
+      aggregator.transactions.should have(1).item
+      aggregator.transactions.first.should == transaction
+    end
   end
 
   describe "#add_event_details" do
