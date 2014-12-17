@@ -150,10 +150,10 @@ module Appsignal
       if process_action_event || exception?
         if Appsignal::IPC::Client.active?
           convert_values_to_primitives!
-          Appsignal::IPC::Client.enqueue(self)
+          Appsignal::IPC::Client.add_transaction(self)
         else
-          Appsignal.logger.debug("Enqueueing transaction: #{@request_id}")
-          Appsignal.enqueue(self)
+          Appsignal.logger.debug("Adding transaction: #{@request_id}")
+          Appsignal.add_transaction(self)
         end
       else
         Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")

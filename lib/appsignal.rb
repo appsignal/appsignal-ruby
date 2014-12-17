@@ -54,7 +54,7 @@ module Appsignal
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')
-            @agent.send_queue
+            @agent.replace_aggregator_and_transmit
           end
         else
           logger.info("Not starting, not active for #{config.env}")
@@ -70,9 +70,9 @@ module Appsignal
     # @return [ true ] True.
     #
     # @since 0.5.0
-    def enqueue(transaction)
+    def add_transaction(transaction)
       return unless active?
-      agent.enqueue(transaction)
+      agent.add_transaction(transaction)
     end
 
     def monitor_transaction(name, payload={})
@@ -107,7 +107,7 @@ module Appsignal
       transaction.add_exception(exception)
       transaction.set_tags(tags) if tags
       transaction.complete!
-      Appsignal.agent.send_queue
+      Appsignal.agent.replace_aggregator_and_transmit
     end
 
     def add_exception(exception)
@@ -183,6 +183,7 @@ end
 
 require 'appsignal/agent'
 require 'appsignal/agent/aggregator'
+require 'appsignal/agent/aggregator_transmitter'
 require 'appsignal/agent/subscriber'
 require 'appsignal/event_formatter'
 require 'appsignal/aggregator'

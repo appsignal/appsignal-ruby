@@ -21,7 +21,7 @@ describe Appsignal::Config do
         :instrument_net_http => true,
         :skip_session_data => false,
         :send_params => true,
-        :endpoint => 'https://push.appsignal.com/1',
+        :endpoint => 'https://push.appsignal.com/2',
         :slow_request_threshold => 200,
         :push_api_key => 'abc',
         :name => 'TestApp',
@@ -133,7 +133,7 @@ describe Appsignal::Config do
           :send_params => true,
           :instrument_net_http => true,
           :skip_session_data => false,
-          :endpoint => 'https://push.appsignal.com/1',
+          :endpoint => 'https://push.appsignal.com/2',
           :slow_request_threshold => 200,
           :active => true
         }

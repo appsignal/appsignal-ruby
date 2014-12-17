@@ -10,7 +10,7 @@ describe Appsignal::Transmitter do
 
     subject { instance.uri.to_s }
 
-    it { should include 'https://push.appsignal.com/1/action?' }
+    it { should include 'https://push.appsignal.com/2/action?' }
     it { should include 'api_key=abc' }
     it { should include 'hostname=app1.local' }
     it { should include 'name=TestApp' }
@@ -22,7 +22,7 @@ describe Appsignal::Transmitter do
     before do
       stub_request(
         :post,
-        "https://push.appsignal.com/1/action?api_key=abc&environment=production&gem_version=#{Appsignal::VERSION}&hostname=#{Socket.gethostname}&name=TestApp"
+        "https://push.appsignal.com/2/action?api_key=abc&environment=production&gem_version=#{Appsignal::VERSION}&hostname=#{Socket.gethostname}&name=TestApp"
       ).with(
         :body => Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED),
         :headers => {

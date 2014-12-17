@@ -363,14 +363,14 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.current.should be_nil
       end
 
-      context 'enqueueing' do
+      context 'adding transaction' do
         context 'sanity check' do
           specify { Appsignal.should respond_to(:enqueue) }
         end
 
         context 'without events and without exception' do
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:enqueue).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(transaction)
           end
         end
 
@@ -378,7 +378,7 @@ describe Appsignal::Transaction do
           before { transaction.add_event(event) }
 
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:enqueue).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(transaction)
           end
         end
 
@@ -386,7 +386,7 @@ describe Appsignal::Transaction do
           before { transaction.add_exception(event) }
 
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:enqueue).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(transaction)
           end
         end
 

@@ -153,10 +153,10 @@ describe Appsignal do
   end
 
   context "not active" do
-    describe ".enqueue" do
+    describe ".add_transaction" do
       it "should do nothing" do
         lambda {
-          Appsignal.enqueue(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
+          Appsignal.add_transaction(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
         }.should_not raise_error
       end
     end
@@ -218,12 +218,12 @@ describe Appsignal do
       Appsignal.start
     end
 
-    describe ".enqueue" do
-      subject { Appsignal.enqueue(transaction) }
+    describe ".add_transaction" do
+      subject { Appsignal.add_transaction(transaction) }
 
       it "forwards the call to the agent" do
-        Appsignal.agent.should respond_to(:enqueue)
-        Appsignal.agent.should_receive(:enqueue).with(transaction)
+        Appsignal.agent.should respond_to(:add_transaction)
+        Appsignal.agent.should_receive(:add_transaction).with(transaction)
         subject
       end
     end
@@ -370,7 +370,7 @@ describe Appsignal do
 
       it { should be_a Appsignal::Config }
       it 'should return configuration' do
-        subject[:endpoint].should == 'https://push.appsignal.com/1'
+        subject[:endpoint].should == 'https://push.appsignal.com/2'
       end
     end
 
@@ -403,8 +403,8 @@ describe Appsignal do
       it "should send the exception to AppSignal" do
         agent = double(:shutdown => true, :active? => true)
         Appsignal.stub(:agent).and_return(agent)
-        agent.should_receive(:send_queue)
-        agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
+        agent.should_receive(:add_transaction).with(kind_of(Appsignal::Transaction))
+        agent.should_receive(:replace_aggregator_and_transmit)
 
         Appsignal::Transaction.should_receive(:create).and_call_original
       end
