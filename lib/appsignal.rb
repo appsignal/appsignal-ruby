@@ -150,12 +150,6 @@ module Appsignal
       @logger << @in_memory_log.string if @in_memory_log
     end
 
-    def post_processing_middleware
-      @post_processing_chain ||= Appsignal::Aggregator::PostProcessor.default_middleware
-      yield @post_processing_chain if block_given?
-      @post_processing_chain
-    end
-
     def active?
       config && config.active? &&
         agent && agent.active?
@@ -186,9 +180,6 @@ require 'appsignal/agent/aggregator'
 require 'appsignal/agent/aggregator_transmitter'
 require 'appsignal/agent/subscriber'
 require 'appsignal/event_formatter'
-require 'appsignal/aggregator'
-require 'appsignal/aggregator/post_processor'
-require 'appsignal/aggregator/middleware'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/marker'

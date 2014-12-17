@@ -374,28 +374,6 @@ describe Appsignal do
       end
     end
 
-    describe ".post_processing_middleware" do
-      before { Appsignal.instance_variable_set(:@post_processing_chain, nil) }
-
-      it "returns the default middleware stack" do
-        Appsignal::Aggregator::PostProcessor.should_receive(:default_middleware)
-        Appsignal.post_processing_middleware
-      end
-
-      it "returns a chain when called without a block" do
-        instance = Appsignal.post_processing_middleware
-        instance.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-      end
-
-      context "when passing a block" do
-        it "yields an appsignal middleware chain" do
-          Appsignal.post_processing_middleware do |o|
-            o.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-          end
-        end
-      end
-    end
-
     describe ".send_exception" do
       before { Appsignal::IPC.stub(:current => false) }
       let(:tags) { nil }
