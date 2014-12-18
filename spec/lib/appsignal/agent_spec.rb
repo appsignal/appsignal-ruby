@@ -111,7 +111,7 @@ describe Appsignal::Agent do
   end
 
   describe "#add_transaction" do
-    let(:transaction) { double(:action => 'test#test', :request_id => 'id') }
+    let(:transaction) { {:action => 'test#test', :request_id => 'id'} }
     subject { Appsignal.agent }
 
     it "forwards to the aggregator" do

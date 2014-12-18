@@ -197,9 +197,33 @@ describe Appsignal::Agent::Subscriber do
         transaction.events.first[:name].should == 'outside'
       end
 
-      pending "should do something with process action event"
+      context "root event" do
+        it "should not set the root event for normal events" do
+          transaction.should_not_receive(:set_root_event)
 
-      pending "should do something with perform job event"
+          ActiveSupport::Notifications.instrument 'something'
+        end
+
+        it "should set the root event when the name starts with process_action" do
+          transaction.respond_to?(:set_root_event).should be_true
+          transaction.should_receive(:set_root_event).with(
+            'process_action.action_controller',
+            :params => {}
+          )
+
+          ActiveSupport::Notifications.instrument 'process_action.action_controller', {:params => {}}
+        end
+
+        it "should set the root event when the name starts with perform_job" do
+          transaction.respond_to?(:set_root_event).should be_true
+          transaction.should_receive(:set_root_event).with(
+            'perform_job.resque',
+            :params => {}
+          )
+
+          ActiveSupport::Notifications.instrument 'perform_job.resque', {:params => {}}
+        end
+      end
     end
   end
 end

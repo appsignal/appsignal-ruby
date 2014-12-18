@@ -56,7 +56,12 @@ describe Appsignal::Agent::Aggregator do
     it { should == {'transactions' => [], 'event_details' => []} }
 
     context "with transactions" do
-      pending
+      before { aggregator.add_transaction({:action => 'something'}) }
+
+      it { should == {
+        'transactions'  => [{'action' => 'something'}],
+        'event_details' => []
+      } }
     end
 
     context "with event details" do

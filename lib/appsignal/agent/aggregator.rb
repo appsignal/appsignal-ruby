@@ -29,7 +29,7 @@ module Appsignal
       end
 
       def to_json
-        JSON.generate(
+        JSON.fast_generate(
           :transactions  => @transactions,
           :event_details => @event_details,
         )

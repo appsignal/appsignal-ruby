@@ -58,8 +58,8 @@ module Appsignal
 
     def add_transaction(transaction)
       forked! if @pid != Process.pid
-      if Appsignal.is_ignored_action?(transaction.action)
-        Appsignal.logger.debug("Ignoring transaction: #{transaction.request_id} (#{transaction.action})")
+      if Appsignal.is_ignored_action?(transaction[:action])
+        Appsignal.logger.debug("Ignoring transaction: #{transaction[:request_id]} (#{transaction[:action]})")
         return
       end
       aggregator.add_transaction(transaction)

@@ -11,48 +11,55 @@ describe Appsignal::Transaction do
     start_agent
   end
 
-  describe '.create' do
-    subject { Appsignal::Transaction.create('1', {}) }
+  let(:time) { Time.at(fixed_time) }
 
-    it 'should add the transaction to thread local' do
-      subject
-      Thread.current[:appsignal_transaction].should == subject
-    end
+  before { Timecop.freeze(time) }
+  after  { Timecop.return }
 
-    it "should create a transaction" do
-      subject.should be_a Appsignal::Transaction
-      subject.request_id.should == '1'
-    end
-  end
+  context "class methods" do
+    describe '.create' do
+      subject { Appsignal::Transaction.create('1', {}) }
 
-  describe '.current' do
-    let(:transaction) { Appsignal::Transaction.create('1', {}) }
-    before { transaction }
-    subject { Appsignal::Transaction.current }
+      it 'should add the transaction to thread local' do
+        subject
+        Thread.current[:appsignal_transaction].should == subject
+      end
 
-    it 'should return the correct transaction' do
-      should eq transaction
-    end
-  end
-
-  describe "complete_current!" do
-    before { Thread.current[:appsignal_transaction] = nil }
-
-    context "with a current transaction" do
-      before { Appsignal::Transaction.create('2', {}) }
-
-      it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-        Appsignal::Transaction.current.should_receive(:complete!)
-
-        Appsignal::Transaction.complete_current!
-
-        Thread.current[:appsignal_transaction].should be_nil
+      it "should create a transaction" do
+        subject.should be_a Appsignal::Transaction
+        subject.request_id.should == '1'
       end
     end
 
-    context "without a current transaction" do
-      it "should not raise an error" do
-        Appsignal::Transaction.complete_current!
+    describe '.current' do
+      let(:transaction) { Appsignal::Transaction.create('1', {}) }
+      before { transaction }
+      subject { Appsignal::Transaction.current }
+
+      it 'should return the correct transaction' do
+        should eq transaction
+      end
+    end
+
+    describe "complete_current!" do
+      before { Thread.current[:appsignal_transaction] = nil }
+
+      context "with a current transaction" do
+        before { Appsignal::Transaction.create('2', {}) }
+
+        it "should complete the current transaction and set the thread appsignal_transaction to nil" do
+          Appsignal::Transaction.current.should_receive(:complete!)
+
+          Appsignal::Transaction.complete_current!
+
+          Thread.current[:appsignal_transaction].should be_nil
+        end
+      end
+
+      context "without a current transaction" do
+        it "should not raise an error" do
+          Appsignal::Transaction.complete_current!
+        end
       end
     end
   end
@@ -68,62 +75,24 @@ describe Appsignal::Transaction do
     end
     let(:transaction) { Appsignal::Transaction.create('3', env) }
 
+    context "initialization" do
+      subject { transaction }
+
+      its(:request_id)         { should == '3' }
+      its(:events)             { should == [] }
+      its(:root_event_payload) { should be_nil }
+      its(:exception)          { should be_nil }
+      its(:env)                { should == env }
+      its(:tags)               { should == {} }
+      its(:time)               { should == fixed_time }
+      its(:duration)           { should be_nil }
+      its(:timestack)          { should == [] }
+    end
+
     describe '#request' do
       subject { transaction.request }
 
       it { should be_a ::Rack::Request }
-    end
-
-    describe '#set_process_action_event' do
-      before { transaction.set_process_action_event(process_action_event) }
-
-      let(:process_action_event) { notification_event }
-
-      it 'should add a process action event' do
-        transaction.process_action_event.name.should == process_action_event.name
-        transaction.process_action_event.payload.should == process_action_event.payload
-      end
-
-      it "should set the action" do
-        transaction.action.should == 'BlogPostsController#show'
-      end
-
-      it "should set the kind" do
-        transaction.kind.should == 'http_request'
-      end
-
-      it "should call set_http_queue_start" do
-        transaction.queue_start.should_not be_nil
-      end
-    end
-
-    describe "set_perform_job_event" do
-      before { transaction.set_perform_job_event(perform_job_event) }
-
-      let(:payload) { create_background_payload }
-      let(:perform_job_event) do
-        notification_event(
-          :name => 'perform_job.delayed_job',
-          :payload => payload
-        )
-      end
-
-      it 'should add a perform job event' do
-        transaction.process_action_event.name.should == perform_job_event.name
-        transaction.process_action_event.payload.should == perform_job_event.payload
-      end
-
-      it "should set the action" do
-        transaction.action.should == 'BackgroundJob#perform'
-      end
-
-      it "should set the kind" do
-        transaction.kind.should == 'background_job'
-      end
-
-      it "should set call set_background_queue_start" do
-        transaction.queue_start.should_not be_nil
-      end
     end
 
     describe "#set_tags" do
@@ -134,17 +103,68 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#add_event' do
-      let(:event) { double(:event, :name => 'test') }
+    describe '#set_root_event' do
+      before { transaction.set_root_event(name, payload) }
 
-      it 'should add an event' do
-        expect {
-          transaction.add_event(event)
-        }.to change(transaction, :events).to([event])
+      context "for a process_action event" do
+        let(:name)    { 'process_action.action_controller' }
+        let(:payload) { create_payload }
+
+        it "should set the root event payload" do
+          transaction.root_event_payload.should == payload
+        end
+
+        it "should set the action" do
+          transaction.action.should == 'BlogPostsController#show'
+        end
+
+        it "should set the kind" do
+          transaction.kind.should == 'http_request'
+        end
+
+        it "should call set_http_queue_start" do
+          transaction.queue_start.should_not be_nil
+        end
+      end
+
+      context "for a perform_job event" do
+        let(:name)    { 'perform_job.delayed_job' }
+        let(:payload) { create_background_payload }
+
+        it "should set the root event payload" do
+          transaction.root_event_payload.should == payload
+        end
+
+        it "should set the action" do
+          transaction.action.should == 'BackgroundJob#perform'
+        end
+
+        it "should set the kind" do
+          transaction.kind.should == 'background_job'
+        end
+
+        it "should set call set_background_queue_start" do
+          transaction.queue_start.should_not be_nil
+        end
       end
     end
 
-    context "using exceptions" do
+    describe '#add_event' do
+      it 'should add an event' do
+        expect {
+          transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0)
+        }.to change(transaction, :events).to([{
+          :digest         => 'digest',
+          :name           => 'name',
+          :started        => 0.0,
+          :duration       => 0.0,
+          :child_duration => 0.0,
+          :level          => 0
+        }])
+      end
+    end
+
+    context "adding exception" do
       let(:exception) { double(:exception, :name => 'test') }
 
       describe '#add_exception' do
@@ -170,191 +190,78 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#slow_request?' do
-      let(:start) { Time.now }
-      subject { transaction.slow_request? }
-
-      context "duration" do
-        before do
-          transaction.set_process_action_event(
-            notification_event(:start => start, :ending => start + duration)
-          )
-        end
-
-        context "when it reasonably fast" do
-          let(:duration) { 0.199 } # in seconds
-
-          it { should be_false }
-        end
-
-        context "when the request took too long" do
-          let(:duration) { 0.201 } # in seconds
-
-          it { should be_true }
-        end
-      end
-
-      context "when process action event is empty" do
-        before { transaction.set_process_action_event(nil) }
-
-        it { should be_false }
-      end
-
-      context "when process action event does not have a payload" do
-        let(:event) { notification_event }
-        before do
-          event.instance_variable_set(:@payload, nil)
-          transaction.set_process_action_event(event)
-        end
-
-        it { should be_false }
-      end
-    end
-
-    describe "#slower?" do
-      context "comparing to a slower transaction" do
-        subject { regular_transaction.slower?(slow_transaction) }
-
-        it { should be_false }
-      end
-
-      context "comparing to a faster transaction" do
-        subject { slow_transaction.slower?(regular_transaction) }
-
-        it { should be_true }
-      end
-    end
-
-    describe "clear_events!" do
-      let(:transaction) { slow_transaction }
-
-      it "should remove events from the transaction" do
-        expect {
-          transaction.clear_events!
-        }.to change(transaction.events, :length).from(1).to(0)
-      end
-    end
-
-    describe "#truncate!" do
-      subject { slow_transaction }
-      before { subject.set_tags('a' => 'b') }
-
-      it "should clear the process action payload and events" do
-        subject.truncate!
-
-        subject.process_action_event.payload.should be_empty
-        subject.events.should be_empty
-        subject.tags.should be_empty
-        subject.truncated?.should be_true
-      end
-
-      it "should not truncate twice" do
-        subject.process_action_event.should_receive(:truncate!).once
-        subject.events.should_receive(:clear).once
-
-        subject.truncate!
-        subject.truncate!
-      end
-    end
-
-    describe "#convert_values_to_primitives!" do
-      let(:transaction) { slow_transaction }
-      let(:action_event) { transaction.process_action_event }
-      let(:event) { transaction.events.first }
-      let(:weird_class) { Class.new }
-      let(:smash) { Smash.new.merge!(:foo => 'bar') }
-
-      context "with values that need to be converted" do
-        context "process action event payload" do
-          subject { action_event.payload }
-          before do
-            action_event.payload.clear
-            action_event.payload.merge!(
-              :model => {:with => [:weird, weird_class]},
-            )
-            transaction.convert_values_to_primitives!
-          end
-
-          it "should convert all payloads to primitives" do
-            should == {
-              :model => {:with => [:weird, weird_class.inspect]},
-            }
-          end
-        end
-
-        context "payload of events" do
-          subject { event.payload }
-          before do
-            event.payload.clear
-            event.payload.merge!(
-              :weird => weird_class,
-              :smash => smash
-              )
-            transaction.convert_values_to_primitives!
-          end
-
-          its([:weird]) { should be_a(String) }
-          its([:weird]) { should match(/#<Class:(.*)>/) }
-          its([:smash]) { should == {:foo => 'bar'} }
-        end
-      end
-
-      context "without values that need to be converted" do
-        subject { transaction.convert_values_to_primitives! }
-
-        it "doesn't change the action event payload" do
-          before = action_event.payload.dup
-          subject
-          action_event.payload.should == before
-        end
-
-        it " doesn't change the event payloads" do
-          before = event.payload.dup
-          subject
-          event.payload.should == before
-        end
-
-        it "should not covert to primitives twice" do
-          transaction.convert_values_to_primitives!
-          transaction.have_values_been_converted_to_primitives?.should be_true
-
-          Appsignal::ParamsSanitizer.should_not_receive(:sanitize!)
-          transaction.convert_values_to_primitives!
-        end
-      end
-    end
-
-    describe "#type" do
-      context "with a regular transaction" do
-        subject { regular_transaction.type }
-
-        it { should == :regular_request }
-      end
-
-      context "with a slow transaction" do
-        subject { slow_transaction.type }
-
-        it { should == :slow_request }
-      end
-
-      context "with an exception transaction" do
-        subject { transaction_with_exception.type }
-
-        it { should == :exception }
-      end
-    end
-
     describe '#to_hash' do
+      before do
+        transaction.set_root_event('process_action.action_controller', create_payload)
+      end
+
       subject { transaction.to_hash }
 
-      it { should be_instance_of Hash }
+      context "regular" do
+        before do
+          transaction.instance_variable_set(:@duration, 0.1)
+          transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0)
+          transaction.instance_variable_set(:@queue_start, nil)
+        end
+
+        its([:action])         { should == 'BlogPostsController#show' }
+        its([:time])           { should == time.to_f }
+        its([:kind])           { should == 'http_request' }
+        its([:duration])       { should == 0.1 }
+        its([:queue_duration]) { should be_nil }
+        its([:events])         { should == [{
+          :digest         => 'digest',
+          :name           => 'name',
+          :started        => 0.0,
+          :duration       => 0.0,
+          :child_duration => 0.0,
+          :level          => 0
+        }] }
+
+        context "with queue time set" do
+          before { transaction.instance_variable_set(:@queue_start, fixed_time - 0.1) }
+
+          its([:queue_duration]) { should be_within(0.01).of(0.1) }
+        end
+      end
+
+      context "with exception" do
+        before do
+          error = StandardError.new('test error')
+          error.set_backtrace(['line 1'])
+          transaction.add_exception(error)
+          transaction.set_tags(:user_id => 1)
+        end
+
+        its([:action])       { should == 'BlogPostsController#show' }
+        its([:time])         { should == time.to_f }
+        its([:kind])         { should == 'http_request' }
+        its([:overview])     { should == {
+          :path           => '/blog',
+          :request_format => 'html',
+          :request_method => 'GET'
+        } }
+        its([:params])       { should == {
+          'controller' => 'blog_posts',
+          'action'     => 'show',
+          'id'         => '1'
+        } }
+        its([:environment])  { should be_a(Hash) }
+        its([:environment])  { should include('SERVER_NAME') }
+        its([:session_data]) { should == {} }
+        its([:tags])         { should == {:user_id => 1} }
+        its([:exception])    { should == {
+          :exception => 'StandardError',
+          :message   => 'test error',
+          :backtrace => ['line 1']
+        } }
+      end
     end
 
     describe '#complete!' do
-      let(:event) { double(:event) }
       before do
         Appsignal::IPC.stub(:current => nil)
-        transaction.set_process_action_event(notification_event)
+        transaction.set_root_event('process_action.action_controller', {})
       end
 
       it 'should remove transaction from the thread local variable' do
@@ -363,30 +270,37 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.current.should be_nil
       end
 
+      it "should set the duration" do
+        advance_frozen_time(time, 0.5)
+        transaction.complete!
+
+        transaction.duration.should == 0.5
+      end
+
       context 'adding transaction' do
         context 'sanity check' do
-          specify { Appsignal.should respond_to(:enqueue) }
+          specify { Appsignal.should respond_to(:add_transaction) }
         end
 
         context 'without events and without exception' do
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
           end
         end
 
         context 'with events' do
-          before { transaction.add_event(event) }
+          before { transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0) }
 
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
           end
         end
 
         context 'with exception' do
-          before { transaction.add_exception(event) }
+          before { transaction.add_exception(StandardError.new) }
 
           it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(transaction)
+            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
           end
         end
 
@@ -396,31 +310,27 @@ describe Appsignal::Transaction do
       context 'when using IPC' do
         before do
           Appsignal::IPC::Client.start
-          transaction.stub(:convert_values_to_primitives! => true)
         end
         after do
           Appsignal::IPC::Client.stop
         end
 
-        it "should convert to primitves and send itself trough the pipe" do
-          transaction.should_receive(:convert_values_to_primitives!)
-          Appsignal::IPC::Client.should_receive(:enqueue).with(transaction)
+        it "should send itself through the rabbit hole" do
+          Appsignal::IPC::Client.should_receive(:add_transaction).with(instance_of(Hash))
         end
 
         after { transaction.complete! }
       end
     end
 
+    # protected
+
     describe "#set_background_queue_start" do
       before do
-        transaction.stub(:process_action_event =>
-          notification_event(
-            :name => 'perform_job.delayed_job',
-            :payload => payload
-          )
-        )
-        transaction.set_background_queue_start
+        transaction.stub(:root_event_payload => payload)
+        transaction.send(:set_background_queue_start)
       end
+
       subject { transaction.queue_start }
 
       context "when queue start is nil" do
@@ -439,7 +349,7 @@ describe Appsignal::Transaction do
     describe "#set_http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 0.4 }
       let(:slightly_earlier_time_in_ms) { (slightly_earlier_time.to_f * 1000).to_i }
-      before { transaction.set_http_queue_start }
+      before { transaction.send(:set_http_queue_start) }
       subject { transaction.queue_start }
 
       context "without env" do
@@ -479,89 +389,70 @@ describe Appsignal::Transaction do
       end
     end
 
-    # protected
+    describe "#queue_duration" do
+      subject { transaction.send(:queue_duration) }
 
-    describe '#add_sanitized_context!' do
-      subject { transaction.send(:add_sanitized_context!) }
+      context "with no queue start set" do
+        let(:transaction) { regular_transaction }
 
-      context "for a http request" do
-        before { transaction.stub(:kind => 'http_request') }
-
-        it "should call sanitize_environment!, sanitize_session_data! and sanitize_tags!" do
-          transaction.should_receive(:sanitize_environment!)
-          transaction.should_receive(:sanitize_session_data!)
-          transaction.should_receive(:sanitize_tags!)
-          subject
-        end
+        it { should be_nil }
       end
 
-      context "for a non-web request" do
-        before { transaction.stub(:kind => 'background_job') }
+      context "with queue start set" do
+        let(:transaction) { regular_transaction_with_x_request_start }
 
-        it "should not call sanitize_session_data!" do
-          transaction.should_receive(:sanitize_environment!)
-          transaction.should_not_receive(:sanitize_session_data!)
-          transaction.should_receive(:sanitize_tags!)
-          subject
-        end
+        it { should be_within(0.001).of(0.04) }
+
+        pending "double check this calculation"
       end
-
-      specify { expect { subject }.to change(transaction, :env).to(nil) }
     end
 
-    describe '#sanitize_environment!' do
-      let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
-      let(:transaction) { Appsignal::Transaction.create('1', env) }
-      let(:env) do
-        Hash.new.tap do |hash|
-          whitelisted_keys.each { |o| hash[o] = 1 } # use all whitelisted keys
-          hash[:not_whitelisted] = 'I will be sanitized'
+    describe "#sanitized_params" do
+      subject { transaction.send(:sanitized_params) }
+
+      context "without a root event payload" do
+        it { should be_nil }
+      end
+
+      context "with a root event payload" do
+        before { transaction.stub(:root_event_payload => create_payload) }
+
+        it "should call the params sanitizer" do
+          Appsignal::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({:id => 1})
+
+          subject.should == {:id => 1}
         end
       end
-      subject { transaction.sanitized_environment }
-      before { transaction.send(:sanitize_environment!) }
+    end
 
-      its(:keys) { should =~ whitelisted_keys }
+    describe "#sanitized_environment" do
+      let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
+      let(:transaction) { Appsignal::Transaction.create('1', env) }
+
+      subject { transaction.send(:sanitized_environment) }
 
       context "when env is nil" do
         let(:env) { nil }
 
-        it { should be_empty }
+        it { should be_nil }
+      end
+
+      context "when env is present" do
+        let(:env) do
+          Hash.new.tap do |hash|
+            whitelisted_keys.each { |o| hash[o] = 1 } # use all whitelisted keys
+            hash[whitelisted_keys] = nil # don't add if nil
+            hash[:not_whitelisted] = 'I will be sanitized'
+          end
+        end
+
+        its(:keys) { should =~ whitelisted_keys[0, whitelisted_keys.length] }
       end
     end
 
-    describe '#sanitize_tags!' do
-      let(:transaction) { Appsignal::Transaction.create('1', {}) }
-      before do
-        transaction.set_tags(
-          {
-            :valid_key => 'valid_value',
-            'valid_string_key' => 'valid_value',
-            :both_symbols => :valid_value,
-            :integer_value => 1,
-            :hash_value => {'invalid' => 'hash'},
-            :array_value => ['invalid', 'array'],
-            :to_long_value => SecureRandom.urlsafe_base64(101),
-            :object => Object.new,
-            SecureRandom.urlsafe_base64(101) => 'to_long_key'
-          }
-        )
-        transaction.send(:sanitize_tags!)
-      end
-      subject { transaction.tags.keys }
+    describe '#sanitized_session_data' do
+      subject { transaction.send(:sanitized_session_data) }
 
-      it "should only return whitelisted data" do
-        should =~ [
-          :valid_key,
-          'valid_string_key',
-          :both_symbols,
-          :integer_value
-        ]
-      end
-    end
-
-    describe '#sanitize_session_data!' do
-      subject { transaction.send(:sanitize_session_data!) }
       before do
         transaction.should respond_to(:request)
         transaction.stub_chain(:request, :session => {:foo => :bar})
@@ -571,12 +462,7 @@ describe Appsignal::Transaction do
       it "passes the session data into the params sanitizer" do
         Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
           and_return(:sanitized_foo)
-        subject
-        transaction.sanitized_session_data.should == :sanitized_foo
-      end
-
-      it "sets the fullpath of the request" do
-        expect { subject }.to change(transaction, :fullpath).to(:bar)
+        subject.should == :sanitized_foo
       end
 
       if defined? ActionDispatch::Request::Session
@@ -610,10 +496,60 @@ describe Appsignal::Transaction do
 
         it "does not pass the session data into the params sanitizer" do
           Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
-          subject
-          transaction.sanitized_session_data.should == {}
+          subject.should be_nil
         end
       end
+    end
+
+    describe '#sanitized_tags' do
+      let(:transaction) { Appsignal::Transaction.create('1', {}) }
+      before do
+        transaction.set_tags(
+          {
+            :valid_key => 'valid_value',
+            'valid_string_key' => 'valid_value',
+            :both_symbols => :valid_value,
+            :integer_value => 1,
+            :hash_value => {'invalid' => 'hash'},
+            :array_value => ['invalid', 'array'],
+            :to_long_value => SecureRandom.urlsafe_base64(101),
+            :object => Object.new,
+            SecureRandom.urlsafe_base64(101) => 'to_long_key'
+          }
+        )
+      end
+      subject { transaction.send(:sanitized_tags).keys }
+
+      it "should only return whitelisted data" do
+        should =~ [
+          :valid_key,
+          'valid_string_key',
+          :both_symbols,
+          :integer_value
+        ]
+      end
+    end
+
+    describe "#cleaned_backtrace" do
+      let(:transaction) { regular_transaction }
+
+      subject { transaction.send(:cleaned_backtrace) }
+
+      context "without an exception" do
+        it { should be_nil }
+      end
+
+      context "with an exception" do
+        before do
+          error = StandardError.new('test error')
+          error.set_backtrace(['line 1'])
+          transaction.add_exception(error)
+        end
+
+        it { should be_a(Array) }
+      end
+
+      pending "calls Rails backtrace cleaner if Rails is present"
     end
   end
 end

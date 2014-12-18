@@ -31,48 +31,38 @@ module Appsignal
       end
     end
 
-    attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :queue_start
+    attr_reader :request_id, :events, :root_event_payload, :action, :exception,
+                :env, :fullpath, :tags, :kind, :queue_start, :time, :duration,
+                :timestack
 
     def initialize(request_id, env)
       @request_id = request_id
-      @events = []
-      @process_action_event = nil
-      @exception = nil
-      @env = env
-      @tags = {}
-    end
-
-    def sanitized_environment
-      @sanitized_environment ||= {}
-    end
-
-    def sanitized_session_data
-      @sanitized_session_data ||= {}
+      @events     = []
+      @env        = env
+      @tags       = {}
+      @time       = Time.now.to_f
+      @timestack  = []
     end
 
     def request
-      ::Rack::Request.new(@env)
+      @request ||= ::Rack::Request.new(env)
     end
 
     def set_tags(given_tags={})
       @tags.merge!(given_tags)
     end
 
-    def set_process_action_event(event)
-      return unless event && event.payload
-      @process_action_event = event.dup
-      @action = "#{@process_action_event.payload[:controller]}##{@process_action_event.payload[:action]}"
-      @kind = 'http_request'
-      set_http_queue_start
-    end
-
-    def set_perform_job_event(event)
-      return unless event && event.payload
-      @process_action_event = event.dup
-      @action = "#{@process_action_event.payload[:class]}##{@process_action_event.payload[:method]}"
-      @kind = 'background_job'
-      set_background_queue_start
+    def set_root_event(name, payload)
+      @root_event_payload = payload
+      if name.start_with?(Agent::Subscriber::PROCESS_ACTION_PREFIX)
+        @action = "#{@root_event_payload[:controller]}##{@root_event_payload[:action]}"
+        @kind = 'http_request'
+        set_http_queue_start
+      elsif name.start_with?(Agent::Subscriber::PERFORM_JOB_PREFIX)
+        @action = "#{@root_event_payload[:class]}##{@root_event_payload[:method]}"
+        @kind = 'background_job'
+        set_background_queue_start
+      end
     end
 
     def add_event(digest, name, started, duration, child_duration, level)
@@ -86,131 +76,123 @@ module Appsignal
       }
     end
 
-    def add_exception(ex)
-      @time = Time.now.utc.to_f
-      @exception = ex
+    # TODO rename to set_exception
+    def add_exception(exception)
+      @exception = exception
     end
 
     def exception?
       !! exception
     end
 
-    def slow_request?
-      return false unless process_action_event && process_action_event.payload
-      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
-    end
-
-    def slower?(transaction)
-      process_action_event.duration > transaction.process_action_event.duration
-    end
-
-    def clear_events!
-      events.clear
-    end
-
-    def truncate!
-      return if truncated?
-      process_action_event.truncate!
-      events.clear
-      tags.clear
-      sanitized_environment.clear
-      sanitized_session_data.clear
-      @env = nil
-      @truncated = true
-    end
-
-    def truncated?
-      !! @truncated
-    end
-
-    def convert_values_to_primitives!
-      return if have_values_been_converted_to_primitives?
-      @process_action_event.sanitize! if @process_action_event
-      @events.each { |event| event.sanitize! }
-      add_sanitized_context!
-      @have_values_been_converted_to_primitives = true
-    end
-
-    def have_values_been_converted_to_primitives?
-      !! @have_values_been_converted_to_primitives
-    end
-
-    def type
-      return :exception if exception?
-      return :slow_request if slow_request?
-      :regular_request
-    end
-
     def to_hash
-      Formatter.new(self).to_hash
+      {
+        :action => action,
+        :time   => time,
+        :kind   => kind
+      }.tap do |out|
+        if exception?
+          out[:overview]       = {
+            :path           => root_event_payload[:path],
+            :request_format => root_event_payload[:request_format],
+            :request_method => root_event_payload[:request_method]
+          }
+          out[:params]         = sanitized_params
+          out[:environment]    = sanitized_environment
+          out[:session_data]   = sanitized_session_data
+          out[:tags]           = sanitized_tags
+          out[:exception]      = {
+            :exception => exception.class.name,
+            :message   => exception.message,
+            :backtrace => cleaned_backtrace
+          }
+        else
+          out[:duration]       = duration
+          out[:queue_duration] = queue_duration
+          out[:events]         = events
+        end
+      end
     end
 
     def complete!
+      @duration = Time.now.to_f - time
       Thread.current[:appsignal_transaction] = nil
-      if process_action_event || exception?
+
+      if root_event_payload || exception?
         if Appsignal::IPC::Client.active?
-          convert_values_to_primitives!
-          Appsignal::IPC::Client.add_transaction(self)
+          Appsignal::IPC::Client.add_transaction(self.to_hash)
         else
           Appsignal.logger.debug("Adding transaction: #{@request_id}")
-          Appsignal.add_transaction(self)
+          Appsignal.add_transaction(self.to_hash)
         end
       else
         Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")
       end
     end
 
-    def set_background_queue_start
-      queue_start = process_action_event.payload[:queue_start]
-      return unless queue_start
-      Appsignal.logger.debug("Setting background queue start: #{queue_start}")
-      @queue_start = queue_start.to_f
-    end
-
-    def set_http_queue_start
-      return unless env
-      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
-      if env_var
-        Appsignal.logger.debug("Setting http queue start: #{env_var}")
-        value = env_var.tr('^0-9', '')
-        unless value.empty?
-          @queue_start = value.to_f / 1000.0
-        end
-      end
-    end
-
     protected
 
-    def add_sanitized_context!
-      sanitize_environment!
-      sanitize_session_data! if kind == 'http_request'
-      sanitize_tags!
-      @env = nil
-    end
-
-    # Only keep tags if they meet the following criteria:
-    # * Key is a symbol or string with less then 100 chars
-    # * Value is a symbol or string with less then 100 chars
-    # * Value is an integer
-    def sanitize_tags!
-      @tags.keep_if do |k,v|
-        (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
-        (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+      def set_background_queue_start
+        queue_start = root_event_payload[:queue_start]
+        return unless queue_start
+        Appsignal.logger.debug("Setting background queue start: #{queue_start}")
+        @queue_start = queue_start.to_f
       end
-    end
 
-    def sanitize_environment!
-      return unless env
-      ENV_METHODS.each do |key|
-        sanitized_environment[key] = env[key]
+      def set_http_queue_start
+        return unless env
+        env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
+        if env_var
+          Appsignal.logger.debug("Setting http queue start: #{env_var}")
+          value = env_var.tr('^0-9', '')
+          unless value.empty?
+            @queue_start = value.to_f / 1000.0
+          end
+        end
       end
-    end
 
-    def sanitize_session_data!
-      @sanitized_session_data = Appsignal::ParamsSanitizer.sanitize(
-        request.session.to_hash
-      ) if Appsignal.config[:skip_session_data] == false
-      @fullpath = request.fullpath
-    end
+      def queue_duration
+        return unless queue_start && queue_start > 0
+        time - queue_start
+      end
+
+      def sanitized_params
+        return unless root_event_payload
+        Appsignal::ParamsSanitizer.sanitize(root_event_payload[:params])
+      end
+
+      def sanitized_environment
+        return unless env
+        {}.tap do |out|
+          ENV_METHODS.each do |key|
+            out[key] = env[key] if env[key]
+          end
+        end
+      end
+
+      def sanitized_session_data
+        return if Appsignal.config[:skip_session_data]
+        Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
+      end
+
+      # Only keep tags if they meet the following criteria:
+      # * Key is a symbol or string with less then 100 chars
+      # * Value is a symbol or string with less then 100 chars
+      # * Value is an integer
+      def sanitized_tags
+        @tags.select do |k, v|
+          (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
+          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+        end
+      end
+
+      def cleaned_backtrace
+        return unless exception && exception.backtrace.is_a?(Array)
+        if defined?(::Rails)
+          ::Rails.backtrace_cleaner.clean(exception.backtrace, nil)
+        else
+          exception.backtrace
+        end
+      end
   end
 end

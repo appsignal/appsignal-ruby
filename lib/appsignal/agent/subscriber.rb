@@ -1,6 +1,9 @@
 module Appsignal
   class Agent
     class Subscriber
+      PROCESS_ACTION_PREFIX = 'process_action'.freeze
+      PERFORM_JOB_PREFIX    = 'perform_job'.freeze
+
       attr_reader :agent
 
       def initialize(agent)
@@ -30,32 +33,39 @@ module Appsignal
       end
 
       def start(name, id, payload)
-        return if !Appsignal::Transaction.current || agent.paused
+        return if agent.paused
+        transaction = Appsignal::Transaction.current
+        return if !transaction
 
-        timestack = Thread.current[:appsignal_timestack] ||= []
-        timestack.push([Time.now, 0.0])
+        transaction.timestack.push([Time.now, 0.0])
       end
 
       def finish(name, id, payload)
-        return if !Appsignal::Transaction.current || agent.paused
+        return if agent.paused
+        transaction = Appsignal::Transaction.current
+        return if !transaction
 
-        timestack = Thread.current[:appsignal_timestack]
-        started, child_duration = timestack.pop
+        started, child_duration = transaction.timestack.pop
         duration = Time.now - started
-        timestack_length = timestack.length
+        timestack_length = transaction.timestack.length
         if timestack_length > 0
-          timestack[timestack_length - 1][1] += duration
+          transaction.timestack[timestack_length - 1][1] += duration
         end
 
-        formatted = Appsignal::EventFormatter.format(name, payload)
-        if formatted
-          digest = Digest::MD5.hexdigest("#{name}-#{formatted[0]}-#{formatted[1]}")
-          agent.add_event_details(digest, name, formatted[0], formatted[1])
-        else
+        if timestack_length == 0 && name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
+          transaction.set_root_event(name, payload)
           digest = nil
+        else
+          formatted = Appsignal::EventFormatter.format(name, payload)
+          if formatted
+            digest = Digest::MD5.hexdigest("#{name}-#{formatted[0]}-#{formatted[1]}")
+            agent.add_event_details(digest, name, formatted[0], formatted[1])
+          else
+            digest = nil
+          end
         end
 
-        Appsignal::Transaction.current.add_event(
+        transaction.add_event(
           digest,
           name,
           started.to_f,
