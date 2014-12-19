@@ -1,26 +1,21 @@
 require 'spec_helper'
 
-# We want to get at this info the test
-class ActiveSupport::Notifications::Fanout
-  attr_reader :subscribers
-  class Subscribers::Evented
-    attr_reader :delegate
-  end
-end
-
 describe Appsignal::Agent::Subscriber do
   before :all do
     start_agent
   end
 
   let(:subscriber) { Appsignal.agent.subscriber }
+  let(:aggregator) { Appsignal.agent.aggregator }
   subject { subscriber }
 
   context "initialization" do
     its(:agent) { should == Appsignal.agent }
 
     it "should be in the subscriber list" do
-      ActiveSupport::Notifications.notifier.subscribers.first.delegate.should be_a(Appsignal::Agent::Subscriber)
+      ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
+        s.instance_variable_get(:@delegate).is_a?(Appsignal::Agent::Subscriber)
+      end.count == 1
     end
   end
 
@@ -102,52 +97,67 @@ describe Appsignal::Agent::Subscriber do
           end
         end
 
-        subject { transaction.events }
+        context "its events" do
+          subject { transaction.events }
 
-        it { should have(4).items }
+          it { should have(4).items }
 
-        context "event one" do
-          subject { transaction.events[3] }
+          context "event one" do
+            subject { transaction.events[3] }
 
-          its([:digest])         { should be_nil }
-          its([:name])           { should == 'one' }
-          its([:started])        { should == 1418660000.0 }
-          its([:duration])       { should be_within(0.02).of(0.7) }
-          its([:child_duration]) { should be_within(0.02).of(0.6) }
-          its([:level])          { should == 0 }
+            its([:digest])         { should be_nil }
+            its([:name])           { should == 'one' }
+            its([:started])        { should == 1418660000.0 }
+            its([:duration])       { should be_within(0.02).of(0.7) }
+            its([:child_duration]) { should be_within(0.02).of(0.6) }
+            its([:level])          { should == 0 }
+          end
+
+          context "event two" do
+            subject { transaction.events[2] }
+
+            its([:digest])         { should be_nil }
+            its([:name])           { should == 'two' }
+            its([:started])        { should == 1418660000.1 }
+            its([:duration])       { should be_within(0.02).of(0.6) }
+            its([:child_duration]) { should be_within(0.02).of(0.2) }
+            its([:level])          { should == 1 }
+          end
+
+          context "event two.three" do
+            subject { transaction.events[1] }
+
+            its([:digest])         { should be_nil }
+            its([:name])           { should == 'two.three' }
+            its([:started])        { should == 1418660000.6 }
+            its([:duration])       { should be_within(0.02).of(0.1) }
+            its([:child_duration]) { should == 0.0 }
+            its([:level])          { should == 2 }
+          end
+
+          context "event one.three" do
+            subject { transaction.events[0] }
+
+            its([:digest])         { should be_nil }
+            its([:name])           { should == 'one.three' }
+            its([:started])        { should == 1418660000.5 }
+            its([:duration])       { should be_within(0.02).of(0.1) }
+            its([:child_duration]) { should == 0.0 }
+            its([:level])          { should == 2 }
+          end
         end
 
-        context "event two" do
-          subject { transaction.events[2] }
+        pending "measurements in the aggregator" do
+          subject { aggregator.measurements }
 
-          its([:digest])         { should be_nil }
-          its([:name])           { should == 'two' }
-          its([:started])        { should == 1418660000.1 }
-          its([:duration])       { should be_within(0.02).of(0.6) }
-          its([:child_duration]) { should be_within(0.02).of(0.2) }
-          its([:level])          { should == 1 }
-        end
+          it { should have(3).items }
 
-        context "event two.three" do
-          subject { transaction.events[1] }
+          context "one" do
+            subject { aggregator.measurements['_one'] }
 
-          its([:digest])         { should be_nil }
-          its([:name])           { should == 'two.three' }
-          its([:started])        { should == 1418660000.6 }
-          its([:duration])       { should be_within(0.02).of(0.1) }
-          its([:child_duration]) { should == 0.0 }
-          its([:level])          { should == 2 }
-        end
+            it { should == '' }
+          end
 
-        context "event one.three" do
-          subject { transaction.events[0] }
-
-          its([:digest])         { should be_nil }
-          its([:name])           { should == 'one.three' }
-          its([:started])        { should == 1418660000.5 }
-          its([:duration])       { should be_within(0.02).of(0.1) }
-          its([:child_duration]) { should == 0.0 }
-          its([:level])          { should == 2 }
         end
       end
 

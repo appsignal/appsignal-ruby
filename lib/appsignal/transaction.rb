@@ -92,11 +92,13 @@ module Appsignal
         :kind   => kind
       }.tap do |out|
         if exception?
-          out[:overview]       = {
-            :path           => root_event_payload[:path],
-            :request_format => root_event_payload[:request_format],
-            :request_method => root_event_payload[:request_method]
-          }
+          if root_event_payload
+            out[:overview]       = {
+              :path           => root_event_payload[:path],
+              :request_format => root_event_payload[:request_format],
+              :request_method => root_event_payload[:request_method]
+            }
+          end
           out[:params]         = sanitized_params
           out[:environment]    = sanitized_environment
           out[:session_data]   = sanitized_session_data

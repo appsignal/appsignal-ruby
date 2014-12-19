@@ -41,7 +41,7 @@ module Appsignal
         formatter_classes.each do |name, formatter|
           begin
             formatters[name] = formatter.new
-          rescue NameError => ex
+          rescue Exception => ex
             formatter_classes.delete(name)
             formatters.delete(name)
             Appsignal.logger.debug("'#{ex.message}' when initializing #{name} event formatter")

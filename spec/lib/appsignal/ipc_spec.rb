@@ -65,7 +65,7 @@ unless running_jruby?
 
         it "should add transaction" do
           Appsignal.agent.aggregator.any?.should be_false
-          subject.add_transaction(transaction)
+          subject.add_transaction(transaction.to_hash)
           Appsignal.agent.aggregator.any?.should be_true
         end
       end
@@ -104,8 +104,8 @@ unless running_jruby?
 
         it "should send the transaction to the server" do
           subject.start
-          subject.server.should_receive(:add_transaction).with(transaction)
-          subject.add_transaction(transaction)
+          subject.server.should_receive(:add_transaction).with(transaction.to_hash)
+          subject.add_transaction(transaction.to_hash)
         end
       end
     end
@@ -116,10 +116,10 @@ unless running_jruby?
 
         fork do
           Appsignal::IPC.forked!
-          Appsignal::IPC::Client.add_transaction(regular_transaction)
+          Appsignal::IPC::Client.add_transaction(regular_transaction.to_hash)
         end
 
-        Appsignal.agent.should_receive(:add_transaction).with(instance_of(Appsignal::Transaction))
+        Appsignal.agent.should_receive(:add_transaction).with(instance_of(Hash))
 
         sleep 1 # Wait for the forked process to do it's work
       end

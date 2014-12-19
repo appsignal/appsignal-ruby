@@ -167,6 +167,14 @@ describe Appsignal::Agent do
     end
   end
 
+  describe "#add_measurement" do
+    it "should add a measurement to the aggregator" do
+      subject.aggregator.should_receive(:add_measurement).with('digest', 'name', 100, {})
+
+      subject.add_measurement('digest', 'name', 100, {})
+    end
+  end
+
   describe "#replace_aggregator_and_transmit" do
     it "adds the aggregator to the transmitter if it has content" do
       subject.aggregator.stub(:any? => true)

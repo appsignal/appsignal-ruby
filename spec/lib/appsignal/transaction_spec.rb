@@ -255,6 +255,14 @@ describe Appsignal::Transaction do
           :message   => 'test error',
           :backtrace => ['line 1']
         } }
+
+        context "without a root event" do
+          before do
+            transaction.instance_variable_set(:@root_event_payload, nil)
+          end
+
+          its([:overview]) { should be_nil }
+        end
       end
     end
 
@@ -265,7 +273,7 @@ describe Appsignal::Transaction do
       end
 
       it 'should remove transaction from the thread local variable' do
-        Appsignal::Transaction.current.should be_present
+        Appsignal::Transaction.current.should be_a(Appsignal::Transaction)
         transaction.complete!
         Appsignal::Transaction.current.should be_nil
       end

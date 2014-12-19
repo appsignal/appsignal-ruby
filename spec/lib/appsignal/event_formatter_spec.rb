@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'active_record' # TODO check how we handle dependencies
 
 class MockFormatter < Appsignal::EventFormatter
   register 'mock'

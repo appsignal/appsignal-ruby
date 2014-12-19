@@ -37,7 +37,7 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         return if !transaction
 
-        transaction.timestack.push([Time.now, 0.0])
+        transaction.timestack.push([Time.now.to_f, 0.0])
       end
 
       def finish(name, id, payload)
@@ -46,7 +46,8 @@ module Appsignal
         return if !transaction
 
         started, child_duration = transaction.timestack.pop
-        duration = Time.now - started
+        now = Time.now.to_f
+        duration = now - started
         timestack_length = transaction.timestack.length
         if timestack_length > 0
           transaction.timestack[timestack_length - 1][1] += duration
@@ -65,6 +66,7 @@ module Appsignal
           end
         end
 
+        agent.add_measurement(digest, name, now.to_i, :c => 1, :d => duration - child_duration)
         transaction.add_event(
           digest,
           name,

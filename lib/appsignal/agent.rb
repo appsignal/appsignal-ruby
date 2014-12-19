@@ -72,6 +72,10 @@ module Appsignal
       end
     end
 
+    def add_measurement(digest, name, time, duration)
+      aggregator.add_measurement(digest, name, time, duration)
+    end
+
     def replace_aggregator_and_transmit
       Appsignal.logger.debug('Sending queue')
       # Replace aggregator while making sure no thread

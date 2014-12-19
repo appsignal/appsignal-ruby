@@ -32,7 +32,7 @@ module Appsignal
         end
 
         def add_transaction(transaction)
-          Appsignal.logger.debug("Receiving transaction #{transaction.request_id} in IPC server")
+          Appsignal.logger.debug("Receiving transaction #{transaction[:request_id]} in IPC server")
           Appsignal.add_transaction(transaction)
         end
       end
@@ -55,7 +55,7 @@ module Appsignal
         end
 
         def add_transaction(transaction)
-          Appsignal.logger.debug("Sending transaction #{transaction.request_id} in IPC client")
+          Appsignal.logger.debug("Sending transaction #{transaction[:request_id]} in IPC client")
           @server.add_transaction(transaction)
         end
 

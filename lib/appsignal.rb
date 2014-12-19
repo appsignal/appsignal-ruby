@@ -5,7 +5,8 @@ require 'securerandom'
 
 begin
   require 'active_support/notifications'
-rescue LoadError
+  ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
+rescue LoadError, NameError
   require 'vendor/active_support/notifications'
 end
 
