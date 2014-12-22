@@ -31,9 +31,9 @@ module Appsignal
           DRb.stop_service
         end
 
-        def enqueue(transaction)
-          Appsignal.logger.debug("Receiving transaction #{transaction.request_id} in IPC server")
-          Appsignal.enqueue(transaction)
+        def add_transaction(transaction)
+          Appsignal.logger.debug("Receiving transaction #{transaction[:request_id]} in IPC server")
+          Appsignal.add_transaction(transaction)
         end
       end
     end
@@ -54,9 +54,9 @@ module Appsignal
           @active = false
         end
 
-        def enqueue(transaction)
-          Appsignal.logger.debug("Sending transaction #{transaction.request_id} in IPC client")
-          @server.enqueue(transaction)
+        def add_transaction(transaction)
+          Appsignal.logger.debug("Sending transaction #{transaction[:request_id]} in IPC client")
+          @server.add_transaction(transaction)
         end
 
         def active?

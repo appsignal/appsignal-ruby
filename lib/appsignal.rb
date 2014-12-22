@@ -5,7 +5,8 @@ require 'securerandom'
 
 begin
   require 'active_support/notifications'
-rescue LoadError
+  ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
+rescue LoadError, NameError
   require 'vendor/active_support/notifications'
 end
 
@@ -48,11 +49,12 @@ module Appsignal
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
           load_integrations
           load_instrumentations
+          Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
           @agent = Appsignal::Agent.new
           at_exit do
             logger.debug('Running at_exit block')
-            @agent.send_queue
+            @agent.replace_aggregator_and_transmit
           end
         else
           logger.info("Not starting, not active for #{config.env}")
@@ -68,9 +70,9 @@ module Appsignal
     # @return [ true ] True.
     #
     # @since 0.5.0
-    def enqueue(transaction)
+    def add_transaction(transaction)
       return unless active?
-      agent.enqueue(transaction)
+      agent.add_transaction(transaction)
     end
 
     def monitor_transaction(name, payload={})
@@ -105,7 +107,7 @@ module Appsignal
       transaction.add_exception(exception)
       transaction.set_tags(tags) if tags
       transaction.complete!
-      Appsignal.agent.send_queue
+      Appsignal.agent.replace_aggregator_and_transmit
     end
 
     def add_exception(exception)
@@ -123,10 +125,6 @@ module Appsignal
       transaction.set_tags(params)
     end
     alias :tag_job :tag_request
-
-    def transactions
-      @transactions ||= {}
-    end
 
     def logger
       @in_memory_log = StringIO.new unless @in_memory_log
@@ -150,12 +148,6 @@ module Appsignal
       end
       @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
-    end
-
-    def post_processing_middleware
-      @post_processing_chain ||= Appsignal::Aggregator::PostProcessor.default_middleware
-      yield @post_processing_chain if block_given?
-      @post_processing_chain
     end
 
     def active?
@@ -184,10 +176,10 @@ module Appsignal
 end
 
 require 'appsignal/agent'
-require 'appsignal/event'
-require 'appsignal/aggregator'
-require 'appsignal/aggregator/post_processor'
-require 'appsignal/aggregator/middleware'
+require 'appsignal/agent/aggregator'
+require 'appsignal/agent/aggregator_transmitter'
+require 'appsignal/agent/subscriber'
+require 'appsignal/event_formatter'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/marker'
@@ -195,8 +187,6 @@ require 'appsignal/rack/listener'
 require 'appsignal/rack/instrumentation'
 require 'appsignal/params_sanitizer'
 require 'appsignal/transaction'
-require 'appsignal/transaction/formatter'
-require 'appsignal/transaction/params_sanitizer'
 require 'appsignal/transmitter'
 require 'appsignal/ipc'
 require 'appsignal/version'

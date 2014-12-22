@@ -59,6 +59,11 @@ describe Appsignal do
         Appsignal.start
       end
 
+      it "should initialize formatters" do
+        Appsignal::EventFormatter.should_receive(:initialize_formatters)
+        Appsignal.start
+      end
+
       context "when not active for this environment" do
         before { Appsignal.config = project_fixture_config('staging') }
 
@@ -153,10 +158,10 @@ describe Appsignal do
   end
 
   context "not active" do
-    describe ".enqueue" do
+    describe ".add_transaction" do
       it "should do nothing" do
         lambda {
-          Appsignal.enqueue(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
+          Appsignal.add_transaction(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
         }.should_not raise_error
       end
     end
@@ -218,12 +223,12 @@ describe Appsignal do
       Appsignal.start
     end
 
-    describe ".enqueue" do
-      subject { Appsignal.enqueue(transaction) }
+    describe ".add_transaction" do
+      subject { Appsignal.add_transaction(transaction) }
 
       it "forwards the call to the agent" do
-        Appsignal.agent.should respond_to(:enqueue)
-        Appsignal.agent.should_receive(:enqueue).with(transaction)
+        Appsignal.agent.should respond_to(:add_transaction)
+        Appsignal.agent.should_receive(:add_transaction).with(transaction)
         subject
       end
     end
@@ -289,12 +294,6 @@ describe Appsignal do
       it "should also listen to tag_job" do
         Appsignal.should respond_to(:tag_job)
       end
-    end
-
-    describe ".transactions" do
-      subject { Appsignal.transactions }
-
-      it { should be_a Hash }
     end
 
     describe '.logger' do
@@ -376,29 +375,7 @@ describe Appsignal do
 
       it { should be_a Appsignal::Config }
       it 'should return configuration' do
-        subject[:endpoint].should == 'https://push.appsignal.com/1'
-      end
-    end
-
-    describe ".post_processing_middleware" do
-      before { Appsignal.instance_variable_set(:@post_processing_chain, nil) }
-
-      it "returns the default middleware stack" do
-        Appsignal::Aggregator::PostProcessor.should_receive(:default_middleware)
-        Appsignal.post_processing_middleware
-      end
-
-      it "returns a chain when called without a block" do
-        instance = Appsignal.post_processing_middleware
-        instance.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-      end
-
-      context "when passing a block" do
-        it "yields an appsignal middleware chain" do
-          Appsignal.post_processing_middleware do |o|
-            o.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-          end
-        end
+        subject[:endpoint].should == 'https://push.appsignal.com/2'
       end
     end
 
@@ -406,11 +383,11 @@ describe Appsignal do
       before { Appsignal::IPC.stub(:current => false) }
       let(:tags) { nil }
 
-      it "should send the exception to AppSignal" do
+      pending "should send the exception to AppSignal" do
         agent = double(:shutdown => true, :active? => true)
         Appsignal.stub(:agent).and_return(agent)
-        agent.should_receive(:send_queue)
-        agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
+        agent.should_receive(:add_transaction).with(kind_of(Appsignal::Transaction))
+        agent.should_receive(:replace_aggregator_and_transmit)
 
         Appsignal::Transaction.should_receive(:create).and_call_original
       end

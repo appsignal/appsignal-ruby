@@ -60,13 +60,13 @@ unless running_jruby?
         end
       end
 
-      describe ".enqueue" do
+      describe ".add_transaction" do
         let(:transaction) { regular_transaction }
 
-        it "should enqueue" do
-          Appsignal.agent.aggregator.has_transactions?.should be_false
-          subject.enqueue(transaction)
-          Appsignal.agent.aggregator.has_transactions?.should be_true
+        it "should add transaction" do
+          Appsignal.agent.aggregator.any?.should be_false
+          subject.add_transaction(transaction.to_hash)
+          Appsignal.agent.aggregator.any?.should be_true
         end
       end
     end
@@ -99,27 +99,27 @@ unless running_jruby?
         end
       end
 
-      describe ".enqueue" do
+      describe ".add_transaction" do
         let(:transaction) { regular_transaction }
 
         it "should send the transaction to the server" do
           subject.start
-          subject.server.should_receive(:enqueue).with(transaction)
-          subject.enqueue(transaction)
+          subject.server.should_receive(:add_transaction).with(transaction.to_hash)
+          subject.add_transaction(transaction.to_hash)
         end
       end
     end
 
     describe "integration between client and server" do
-      it "should enqueue a transaction on the master" do
+      it "should add a transaction on the master" do
         Appsignal::IPC::Server.start
 
         fork do
           Appsignal::IPC.forked!
-          Appsignal::IPC::Client.enqueue(regular_transaction)
+          Appsignal::IPC::Client.add_transaction(regular_transaction.to_hash)
         end
 
-        Appsignal.agent.should_receive(:enqueue).with(instance_of(Appsignal::Transaction))
+        Appsignal.agent.should_receive(:add_transaction).with(instance_of(Hash))
 
         sleep 1 # Wait for the forked process to do it's work
       end
