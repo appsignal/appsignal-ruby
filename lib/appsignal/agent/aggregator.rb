@@ -8,7 +8,7 @@ module Appsignal
       def initialize
         @transactions  = []
         @event_details = []
-        @measurements  = Hash.new(Hash.new(Hash.new(0.0)))
+        @measurements  = {}
       end
 
       def add_transaction(transaction)
@@ -27,8 +27,8 @@ module Appsignal
       def add_measurement(digest, name, timestamp, values)
         key       = "#{digest}_#{name}"
         t         = rounded_timestamp(timestamp)
-        m_for_t   = @measurements[t]
-        v_for_key = m_for_t[key]
+        m_for_t   = @measurements[t] || {}
+        v_for_key = m_for_t[key] || Hash.new(0.0)
 
         v_for_key[:digest] = digest
         v_for_key[:name]   = name

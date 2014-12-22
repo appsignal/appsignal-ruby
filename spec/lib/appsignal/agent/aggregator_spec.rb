@@ -38,6 +38,7 @@ describe Appsignal::Agent::Aggregator do
       timestamp = 1210
       aggregator.add_measurement('digest', 'name', timestamp, :c => 1, :d => 20.0)
 
+      aggregator.measurements[1200].should have(1).item
       aggregator.measurements[1200]['digest_name'].should == {
         :digest => 'digest',
         :name   => 'name',
@@ -46,16 +47,37 @@ describe Appsignal::Agent::Aggregator do
       }
     end
 
-    it "should add a new measurement" do
+    it "should add a measurement that already has data" do
       timestamp = 1210
       aggregator.add_measurement('digest', 'name', timestamp, :c => 1, :d => 20.0)
       aggregator.add_measurement('digest', 'name', timestamp, :c => 1, :d => 50.0)
 
+      aggregator.measurements[1200].should have(1).item
       aggregator.measurements[1200]['digest_name'].should == {
         :digest => 'digest',
         :name   => 'name',
         :c      => 2,
         :d      => 70.0
+      }
+    end
+
+    it "should add a second new measurement" do
+      timestamp = 1210
+      aggregator.add_measurement('digest', 'name', timestamp, :c => 1, :d => 20.0)
+      aggregator.add_measurement('digest2', 'name2', timestamp, :c => 2, :d => 40.0)
+
+      aggregator.measurements[1200].should have(2).items
+      aggregator.measurements[1200]['digest_name'].should == {
+        :digest => 'digest',
+        :name   => 'name',
+        :c      => 1,
+        :d      => 20.0
+      }
+      aggregator.measurements[1200]['digest2_name2'].should == {
+        :digest => 'digest2',
+        :name   => 'name2',
+        :c      => 2,
+        :d      => 40.0
       }
     end
   end

@@ -82,6 +82,9 @@ describe Appsignal::Agent::Subscriber do
 
       context "with some events" do
         before do
+          # Clear aggregator so we get a fresh measurements hash
+          Appsignal.agent.aggregator = Appsignal::Agent::Aggregator.new
+
           current_time = start_time
           ActiveSupport::Notifications.instrument('one') do
             current_time = advance_frozen_time(current_time, 0.1)
@@ -147,17 +150,27 @@ describe Appsignal::Agent::Subscriber do
           end
         end
 
-        pending "measurements in the aggregator" do
-          subject { aggregator.measurements }
+        context "measurements in the aggregator" do
+          let(:measurements) { aggregator.measurements[1418659980] }
+          subject { measurements }
 
-          it { should have(3).items }
+          it { should have(4).items }
 
-          context "one" do
-            subject { aggregator.measurements['_one'] }
+          context "event with children" do
+            subject { measurements['_one'] }
 
-            it { should == '' }
+            its([:name]) { should == 'one' }
+            its([:c])    { should == 1.0 }
+            its([:d])    { should == be_within(0.02).of(0.1) }
           end
 
+          context "event without children" do
+            subject { measurements['_one.three'] }
+
+            its([:name]) { should == 'one.three' }
+            its([:c])    { should == 1.0 }
+            its([:d])    { should == be_within(0.02).of(0.1) }
+          end
         end
       end
 
