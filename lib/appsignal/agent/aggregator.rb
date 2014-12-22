@@ -38,6 +38,7 @@ module Appsignal
 
         m_for_t[key] = v_for_key
         @measurements[t] = m_for_t
+        nil
       end
 
       def rounded_timestamp(timestamp)

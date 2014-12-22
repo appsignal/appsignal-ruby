@@ -34,6 +34,10 @@ describe Appsignal::Agent::Aggregator do
   end
 
   describe "#add_measurement" do
+    it "should return nil" do
+      aggregator.add_measurement('digest', 'name', 0, {}).should be_nil
+    end
+
     it "should add a new measurement" do
       timestamp = 1210
       aggregator.add_measurement('digest', 'name', timestamp, :c => 1, :d => 20.0)
