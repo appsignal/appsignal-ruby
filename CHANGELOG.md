@@ -1,4 +1,4 @@
-# 0.12.
+# 0.12.0
 * New version of event formatting and collection
 * Refacor of agent and aggregator
 * Use API V2
