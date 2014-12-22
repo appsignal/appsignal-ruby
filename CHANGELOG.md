@@ -1,3 +1,8 @@
+# 0.12.
+* New version of event formatting and collection
+* Refacor of agent and aggregator
+* Use API V2
+
 # 0.11.1
 * Allow a custom request_class and params_method on  Rack instrumentation
 * Loop through env methods instead of env
