@@ -40,7 +40,12 @@ module Appsignal
       def initialize_formatters
         formatter_classes.each do |name, formatter|
           begin
-            formatters[name] = formatter.new
+            format_method = formatter.instance_method(:format)
+            if format_method && format_method.arity == 1
+              formatters[name] = formatter.new
+            else
+             raise "#{f} does not have a format(payload) method"
+            end
           rescue Exception => ex
             formatter_classes.delete(name)
             formatters.delete(name)
@@ -53,10 +58,6 @@ module Appsignal
         formatter = formatters[name]
         formatter.format(payload) unless formatter.nil?
       end
-    end
-
-    def format(payload)
-      raise NotImplementedError
     end
   end
 end

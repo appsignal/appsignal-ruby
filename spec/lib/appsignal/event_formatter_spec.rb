@@ -14,6 +14,16 @@ class MockFormatter < Appsignal::EventFormatter
   end
 end
 
+class MissingFormatMockFormatter < Appsignal::EventFormatter
+  def transform(payload)
+  end
+end
+
+class IncorrectFormatMockFormatter < Appsignal::EventFormatter
+  def format
+  end
+end
+
 class MockDependentFormatter < Appsignal::EventFormatter
   register 'mock.dependent'
 
@@ -43,6 +53,16 @@ describe Appsignal::EventFormatter do
 
     it "doesn't register formatters that raise a name error in the initializer" do
       klass.registered?('mock.dependent').should be_false
+    end
+
+    it "doesn't register formatters that don't have a format(payload) method" do
+      klass.register('mock.missing_format', MissingFormatMockFormatter)
+      klass.register('mock.incorrect_format', IncorrectFormatMockFormatter)
+
+      Appsignal::EventFormatter.initialize_formatters
+
+      klass.registered?('mock.missing_format').should be_false
+      klass.registered?('mock.incorrect_format').should be_false
     end
 
     it "should register a custom formatter" do

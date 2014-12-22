@@ -8,9 +8,9 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
     Appsignal::EventFormatter.registered?('query.moped', klass).should be_true
   end
 
-  describe "#transform" do
+  describe "#format" do
     let(:payload) { {:ops => [op]} }
-    subject { formatter.transform(payload) }
+    subject { formatter.format(payload) }
 
     context "without ops in the payload" do
       let(:payload) { {} }

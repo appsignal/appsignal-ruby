@@ -4,7 +4,7 @@ module Appsignal
       class QueryFormatter < Appsignal::EventFormatter
         register 'query.moped'
 
-        def transform(payload)
+        def format(payload)
           if payload[:ops] && payload[:ops].length > 0
             op = payload[:ops].first
             case op.class.to_s
