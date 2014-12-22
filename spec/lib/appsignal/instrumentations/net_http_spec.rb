@@ -10,7 +10,7 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should generate an event for a http request" do
-    stub_request(:any, 'http://www.google.com')
+    stub_request(:any, 'http://www.google.com/')
 
     Net::HTTP.get_response(URI.parse('http://www.google.com'))
 
@@ -21,9 +21,12 @@ describe "Net::HTTP instrumentation" do
   end
 
   it "should generate an event for a https request" do
-    stub_request(:any, 'https://www.google.com')
+    stub_request(:any, 'https://www.google.com/')
 
-    Net::HTTP.get_response(URI.parse('https://www.google.com'))
+    uri = URI.parse('https://www.google.com')
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.get(uri.request_uri)
 
     event = events.last
     event.name.should == 'request.net_http'
