@@ -53,7 +53,7 @@ module Appsignal
         request['Content-Type'] = CONTENT_TYPE
         request['Content-Encoding'] = CONTENT_ENCODING
         request.body = Zlib::Deflate.deflate(
-          JSON.generate(payload, :quirks_mode => true),
+          JSON.fast_generate(payload, :quirks_mode => true),
           Zlib::BEST_SPEED
         )
       end

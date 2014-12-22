@@ -128,18 +128,18 @@ describe Appsignal::Agent::Aggregator do
     end
   end
 
-  describe "#to_json" do
-    subject { JSON.parse(aggregator.to_json) }
+  describe "#to_hash" do
+    subject { aggregator.to_hash }
 
-    it { should == {'transactions' => [], 'event_details' => [], 'measurements' => {}} }
+    it { should == {:transactions => [], :event_details => [], :measurements => {}} }
 
     context "with transactions" do
       before { aggregator.add_transaction({:action => 'something'}) }
 
       it { should == {
-        'transactions'  => [{'action' => 'something'}],
-        'event_details' => [],
-        'measurements' => {}
+        :transactions  => [{:action => 'something'}],
+        :event_details => [],
+        :measurements  => {}
       } }
     end
 
@@ -147,9 +147,9 @@ describe Appsignal::Agent::Aggregator do
       before { aggregator.add_event_details('digest', 'name', 'title', 'body') }
 
       it { should == {
-        'transactions'  => [],
-        'event_details' => [{"digest" => "digest", "name" => "name", "title" => "title", "body" => "body"}],
-        'measurements' => {}
+        :transactions  => [],
+        :event_details => [{:digest => 'digest', :name => 'name', :title => 'title', :body => 'body'}],
+        :measurements  => {}
       } }
     end
 
@@ -157,9 +157,9 @@ describe Appsignal::Agent::Aggregator do
       before { aggregator.add_measurement('digest', 'name', 1200, :c => 1, :d => 20.0) }
 
       it { should == {
-        'transactions'  => [],
-        'event_details' => [],
-        'measurements' => {"1200" => [{"digest" => "digest", "name" => "name", "c" => 1, "d" => 20.0}]}
+        :transactions  => [],
+        :event_details => [],
+        :measurements   => {1200 => [{:digest => 'digest', :name => 'name', :c => 1, :d => 20.0}]}
       } }
     end
   end

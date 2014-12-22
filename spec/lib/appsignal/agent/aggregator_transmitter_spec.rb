@@ -7,7 +7,7 @@ describe Appsignal::Agent::AggregatorTransmitter do
 
   let(:aggregator_transmitter) { Appsignal::Agent::AggregatorTransmitter.new(Appsignal.agent) }
   subject { aggregator_transmitter }
-  let(:aggregator) { double(:to_json => '{}') }
+  let(:aggregator) { double(:to_hash => {}) }
 
   context "initialization" do
     its(:agent) { should == Appsignal.agent }
@@ -29,7 +29,7 @@ describe Appsignal::Agent::AggregatorTransmitter do
 
     context "transmitting aggregators" do
       it "sends each item in the aggregators array" do
-        subject.transmitter.should_receive(:transmit).with('{}')
+        subject.transmitter.should_receive(:transmit).with({})
       end
 
       it "handles the return code" do

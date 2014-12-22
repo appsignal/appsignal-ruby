@@ -61,12 +61,12 @@ module Appsignal
         end
       end
 
-      def to_json
-        JSON.fast_generate(
+      def to_hash
+        {
           :transactions  => @transactions,
           :event_details => @event_details,
           :measurements  => measurements_hash,
-        )
+        }
       end
     end
   end

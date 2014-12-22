@@ -18,7 +18,7 @@ module Appsignal
       def transmit
         @aggregators.map! do |aggregator|
           begin
-            if handle_result(transmitter.transmit(aggregator.to_json))
+            if handle_result(transmitter.transmit(aggregator.to_hash))
               nil
             else
               aggregator
