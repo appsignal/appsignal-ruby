@@ -47,8 +47,8 @@ task :publish do
       puts `git tag #{version}`
       puts `git push origin #{version}`
       puts `git push appsignal #{version}`
-      puts `git push origin master`
-      puts `git push appsignal master`
+      puts `git push origin #{branch}`
+      puts `git push appsignal #{branch}`
     rescue
       raise "Tag: '#{version}' already exists"
     end
@@ -64,6 +64,16 @@ task :publish do
 
   def version
     @version ||= 'v' << gem_version
+  end
+
+  def branch
+    if gem_version.include?('alpha') ||
+         gem_version.include?('beta') ||
+         gem_version.include?('rc')
+      'develop'
+    else
+      'master'
+    end
   end
 
   def git_status_to_array(changes)
