@@ -44,7 +44,7 @@ module Appsignal
             if format_method && format_method.arity == 1
               formatters[name] = formatter.new
             else
-             raise "#{f} does not have a format(payload) method"
+              raise "#{f} does not have a format(payload) method"
             end
           rescue Exception => ex
             formatter_classes.delete(name)
