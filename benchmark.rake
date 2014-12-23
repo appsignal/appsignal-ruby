@@ -35,14 +35,16 @@ def run_benchmark
       Appsignal::Transaction.create("transaction_#{i}", {})
 
       ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
-      5.times do
+      10.times do
         ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
       end
 
       ActiveSupport::Notifications.instrument('render_template.action_view', :identifier => 'app/views/home/show.html.erb') do
         5.times do
           ActiveSupport::Notifications.instrument('render_partial.action_view', :identifier => 'app/views/home/_piece.html.erb') do
-            ActiveSupport::Notifications.instrument('cache.read')
+            3.times do
+              ActiveSupport::Notifications.instrument('cache.read')
+            end
           end
         end
       end
