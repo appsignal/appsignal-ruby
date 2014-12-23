@@ -61,7 +61,7 @@ def run_benchmark
   if Appsignal.active?
     puts "Running aggregator to_hash for #{Appsignal.agent.aggregator.transactions.length} transactions"
     puts(Benchmark.measure do
-      Appsignal.agent.aggregator.to_hash
+      Appsignal.agent.aggregator.to_json
     end)
   end
 end
