@@ -475,38 +475,46 @@ describe Appsignal::Transaction do
     describe '#sanitized_session_data' do
       subject { transaction.send(:sanitized_session_data) }
 
-      before do
-        transaction.should respond_to(:request)
-        transaction.stub_chain(:request, :session => {:foo => :bar})
-        transaction.stub_chain(:request, :fullpath => :bar)
+      context "when there is no env" do
+       let(:transaction) { Appsignal::Transaction.create('1', nil) }
+
+        it { should be_nil }
       end
 
-      it "passes the session data into the params sanitizer" do
-        Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
-          and_return(:sanitized_foo)
-        subject.should == :sanitized_foo
-      end
+      context "when there is a session" do
+        before do
+          transaction.should respond_to(:request)
+          transaction.stub_chain(:request, :session => {:foo => :bar})
+          transaction.stub_chain(:request, :fullpath => :bar)
+        end
 
-      if defined? ActionDispatch::Request::Session
-        context "with ActionDispatch::Request::Session" do
-          before do
-            transaction.should respond_to(:request)
-            transaction.stub_chain(:request, :session => action_dispatch_session)
-            transaction.stub_chain(:request, :fullpath => :bar)
-          end
+        it "passes the session data into the params sanitizer" do
+          Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
+            and_return(:sanitized_foo)
+          subject.should == :sanitized_foo
+        end
 
-          it "should return an session hash" do
-            Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
-              and_return(:sanitized_foo)
-            subject
-          end
+        if defined? ActionDispatch::Request::Session
+          context "with ActionDispatch::Request::Session" do
+            before do
+              transaction.should respond_to(:request)
+              transaction.stub_chain(:request, :session => action_dispatch_session)
+              transaction.stub_chain(:request, :fullpath => :bar)
+            end
 
-          def action_dispatch_session
-            store = Class.new {
-              def load_session(env); [1, {:foo => :bar}]; end
-              def session_exists?(env); true; end
-            }.new
-            ActionDispatch::Request::Session.create(store, {}, {})
+            it "should return an session hash" do
+              Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
+                and_return(:sanitized_foo)
+              subject
+            end
+
+            def action_dispatch_session
+              store = Class.new {
+                def load_session(env); [1, {:foo => :bar}]; end
+                def session_exists?(env); true; end
+              }.new
+              ActionDispatch::Request::Session.create(store, {}, {})
+            end
           end
         end
       end

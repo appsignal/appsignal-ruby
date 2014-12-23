@@ -180,7 +180,7 @@ module Appsignal
       end
 
       def sanitized_session_data
-        return if Appsignal.config[:skip_session_data]
+        return if Appsignal.config[:skip_session_data] || !env
         Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
       end
 
