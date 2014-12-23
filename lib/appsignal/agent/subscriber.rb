@@ -29,7 +29,7 @@ module Appsignal
       end
 
       def make_digest(name, title, body)
-        Zlib::crc32("#{name}-#{title}-#{body}")
+        Digest::MD5.hexdigest("#{name}-#{title}-#{body}")
       end
 
       def publish(name, *args)

@@ -47,7 +47,7 @@ describe Appsignal::Agent::Subscriber do
   describe "#make_digest" do
     subject { subscriber.make_digest('name', 'title', 'body') }
 
-    it { should == 763386322 }
+    it { should == '45fc44943fef673eedc08c1322c04784' }
   end
 
   describe "#publish" do
@@ -199,7 +199,7 @@ describe Appsignal::Agent::Subscriber do
           subject { transaction.events.first }
 
           its([:name]) { should == 'request.net_http' }
-          its([:digest]) { should == 2597790053 }
+          its([:digest]) { should == '41771902b526b4a972581ce2a606fb39' }
         end
 
         context "event details" do
@@ -208,7 +208,7 @@ describe Appsignal::Agent::Subscriber do
           context "first" do
             subject { Appsignal.agent.aggregator.event_details.first }
 
-            its([:digest]) { should == 2597790053 }
+            its([:digest]) { should == '41771902b526b4a972581ce2a606fb39' }
             its([:name])   { should == 'request.net_http' }
             its([:title])  { should == 'GET http://www.google.com' }
             its([:body])   { should be_nil }
