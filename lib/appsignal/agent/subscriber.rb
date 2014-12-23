@@ -28,6 +28,10 @@ module Appsignal
         subscribe
       end
 
+      def make_digest(name, title, body)
+        Zlib::crc32("#{name}-#{title}-#{body}")
+      end
+
       def publish(name, *args)
         # Not used
       end
@@ -59,7 +63,7 @@ module Appsignal
         else
           formatted = Appsignal::EventFormatter.format(name, payload)
           if formatted
-            digest = Digest::MD5.hexdigest("#{name}-#{formatted[0]}-#{formatted[1]}")
+            digest = make_digest(name, formatted[0], formatted[1])
             agent.add_event_details(digest, name, formatted[0], formatted[1])
           else
             digest = nil
