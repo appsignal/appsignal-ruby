@@ -86,33 +86,31 @@ module Appsignal
     end
 
     def to_hash
-      {
-        :action => action,
-        :time   => time,
-        :kind   => kind
-      }.tap do |out|
-        if exception?
-          if root_event_payload
-            out[:overview]       = {
-              :path           => root_event_payload[:path],
-              :request_format => root_event_payload[:request_format],
-              :request_method => root_event_payload[:request_method]
-            }
-          end
-          out[:params]         = sanitized_params
-          out[:environment]    = sanitized_environment
-          out[:session_data]   = sanitized_session_data
-          out[:tags]           = sanitized_tags
-          out[:exception]      = {
+      if exception?
+        {
+          :action         => action,
+          :time           => time,
+          :kind           => kind,
+          :overview       => overview,
+          :params         => sanitized_params,
+          :environment    => sanitized_environment,
+          :session_data   => sanitized_session_data,
+          :tags           => sanitized_tags,
+          :exception      => {
             :exception => exception.class.name,
             :message   => exception.message,
             :backtrace => cleaned_backtrace
           }
-        else
-          out[:duration]       = duration
-          out[:queue_duration] = queue_duration
-          out[:events]         = events
-        end
+        }
+      else
+        {
+          :action         => action,
+          :time           => time,
+          :kind           => kind,
+          :duration       => duration,
+          :queue_duration => queue_duration,
+          :events         => events
+        }
       end
     end
 
@@ -156,6 +154,15 @@ module Appsignal
       def queue_duration
         return unless queue_start && queue_start > 0
         time - queue_start
+      end
+
+      def overview
+        return unless root_event_payload
+        {
+          :path           => root_event_payload[:path],
+          :request_format => root_event_payload[:request_format],
+          :request_method => root_event_payload[:request_method]
+        }
       end
 
       def sanitized_params

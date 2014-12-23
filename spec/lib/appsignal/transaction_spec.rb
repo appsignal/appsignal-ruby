@@ -415,6 +415,20 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#overview" do
+      subject { transaction.send(:overview) }
+
+      context "without a root event payload" do
+        it { should be_nil }
+      end
+
+      context "with a root event payload" do
+        before { transaction.stub(:root_event_payload => create_payload) }
+
+        it { should == {:path => '/blog', :request_format => 'html', :request_method => 'GET'} }
+      end
+    end
+
     describe "#sanitized_params" do
       subject { transaction.send(:sanitized_params) }
 
