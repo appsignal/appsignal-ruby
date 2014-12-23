@@ -29,7 +29,9 @@ end
 def run_benchmark
   no_transactions = 10_000
 
-  puts 'Initializing'
+  total_objects = ObjectSpace.count_objects[:TOTAL]
+  puts "Initializing, currently #{total_objects} objects"
+
   Appsignal.config = Appsignal::Config.new('', 'production')
   Appsignal.start
   puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
@@ -71,4 +73,6 @@ def run_benchmark
       Appsignal.agent.aggregator.to_json
     end)
   end
+
+  puts "Done, currently #{ObjectSpace.count_objects[:TOTAL] - total_objects} objects created"
 end
