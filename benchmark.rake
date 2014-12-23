@@ -1,6 +1,9 @@
 require 'appsignal'
 require 'benchmark'
-require 'pry'
+
+class ::Appsignal::EventFormatter::ActiveRecord::SqlFormatter
+  def connection_config; {:adapter => 'mysql'}; end
+end
 
 namespace :benchmark do
   task :all => [:run_inactive, :run_active] do
