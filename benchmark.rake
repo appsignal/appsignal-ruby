@@ -27,14 +27,16 @@ namespace :benchmark do
 end
 
 def run_benchmark
+  no_transactions = 10_000
+
   puts 'Initializing'
   Appsignal.config = Appsignal::Config.new('', 'production')
   Appsignal.start
   puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
 
-  puts 'Running 10_000 normal transactions'
+  puts "Running #{no_transactions} normal transactions"
   puts(Benchmark.measure do
-    10_000.times do |i|
+    no_transactions.times do |i|
       Appsignal::Transaction.create("transaction_#{i}", {})
 
       ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
