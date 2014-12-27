@@ -5,6 +5,8 @@ class ::Appsignal::EventFormatter::ActiveRecord::SqlFormatter
   def connection_config; {:adapter => 'mysql'}; end
 end
 
+GC.disable
+
 namespace :benchmark do
   task :all => [:run_inactive, :run_active] do
   end
@@ -12,11 +14,7 @@ namespace :benchmark do
   task :run_inactive do
     puts 'Running with appsignal off'
     ENV['APPSIGNAL_PUSH_API_KEY'] = nil
-    subscriber = ActiveSupport::Notifications.subscribe do |*args|
-      # Add a subscriber so we can track the overhead of just appsignal
-    end
     run_benchmark
-    ActiveSupport::Notifications.unsubscribe(subscriber)
   end
 
   task :run_active do
@@ -27,7 +25,7 @@ namespace :benchmark do
 end
 
 def run_benchmark
-  no_transactions = 10_000
+  no_transactions = 100
 
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
@@ -39,9 +37,12 @@ def run_benchmark
   puts "Running #{no_transactions} normal transactions"
   puts(Benchmark.measure do
     no_transactions.times do |i|
+      transaction_id = "transaction_#{i}"
+      ActiveSupport::Notifications.instrumenter.instance_variable_set(:@id, transaction_id)
       Appsignal::Transaction.create("transaction_#{i}", {})
 
-      ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
+      ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users`
+                                                                            WHERE `users`.`id` = ?')
       10.times do
         ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
       end
@@ -63,8 +64,13 @@ def run_benchmark
         :params     => {:id => 1}
       )
 
+      if i == 10 || i == 60
+        puts 'Sleeping'
+        sleep(2)
+      end
       Appsignal::Transaction.complete_current!
     end
+    puts 'Finished'
   end)
 
   if Appsignal.active?

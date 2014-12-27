@@ -47,6 +47,7 @@ module Appsignal
         end
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
+          Appsignal::Native.start
           load_integrations
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters
@@ -183,6 +184,7 @@ require 'appsignal/event_formatter'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/marker'
+require 'appsignal/native'
 require 'appsignal/rack/listener'
 require 'appsignal/rack/instrumentation'
 require 'appsignal/params_sanitizer'

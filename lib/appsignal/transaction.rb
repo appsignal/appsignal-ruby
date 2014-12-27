@@ -13,6 +13,7 @@ module Appsignal
 
     class << self
       def create(request_id, env)
+        Appsignal::Native.start_transaction(request_id)
         Appsignal.logger.debug("Creating transaction: #{request_id}")
         Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
       end
@@ -63,6 +64,12 @@ module Appsignal
         @kind = 'background_job'
         set_background_queue_start
       end
+      Appsignal::Native.set_transaction_metadata(
+        request_id,
+        action,
+        kind,
+        0
+      )
     end
 
     def add_event(digest, name, started, duration, child_duration, level)
@@ -115,6 +122,8 @@ module Appsignal
     end
 
     def complete!
+      Appsignal::Native.finish_transaction(request_id)
+
       @duration = Time.now.to_f - time
       Thread.current[:appsignal_transaction] = nil
 

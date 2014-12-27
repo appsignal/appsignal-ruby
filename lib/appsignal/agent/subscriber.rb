@@ -3,6 +3,7 @@ module Appsignal
     class Subscriber
       PROCESS_ACTION_PREFIX = 'process_action'.freeze
       PERFORM_JOB_PREFIX    = 'perform_job'.freeze
+      BLANK                 = ''.freeze
 
       attr_reader :agent
 
@@ -37,48 +38,22 @@ module Appsignal
       end
 
       def start(name, id, payload)
-        return if agent.paused
-        transaction = Appsignal::Transaction.current
-        return if !transaction
-
-        transaction.timestack.push([Time.now.to_f, 0.0])
+        Appsignal::Native.start_event(id)
       end
 
       def finish(name, id, payload)
-        return if agent.paused
-        transaction = Appsignal::Transaction.current
-        return if !transaction
-
-        started, child_duration = transaction.timestack.pop
-        now = Time.now.to_f
-        duration = now - started
-        timestack_length = transaction.timestack.length
-        if timestack_length > 0
-          transaction.timestack[timestack_length - 1][1] += duration
-        end
-
-        if timestack_length == 0 && name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
-          transaction.set_root_event(name, payload)
-          digest = nil
-        else
-          formatted = Appsignal::EventFormatter.format(name, payload)
-          if formatted
-            digest = make_digest(name, formatted[0], formatted[1])
-            agent.add_event_details(digest, name, formatted[0], formatted[1])
-          else
-            digest = nil
-          end
-        end
-
-        agent.add_measurement(digest, name, now.to_i, :c => 1, :d => duration - child_duration)
-        transaction.add_event(
-          digest,
+        title, body = Appsignal::EventFormatter.format(name, payload)
+        Appsignal::Native.finish_event(
+          id,
           name,
-          started.to_f,
-          duration,
-          child_duration,
-          timestack_length
+          title || BLANK,
+          body || BLANK
         )
+
+        if Appsignal::Transaction.current &&
+           name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
+          Appsignal::Transaction.current.set_root_event(name, payload)
+        end
       end
     end
   end
