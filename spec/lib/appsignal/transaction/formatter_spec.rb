@@ -27,6 +27,7 @@ describe Appsignal::Transaction::Formatter do
           :kind => "http_request",
           :path => "/foo",
           :session_data => {},
+          :revision => nil,
           :time => 1389783600.0,
       } }
       its([:events]) { should be_nil }
@@ -41,6 +42,17 @@ describe Appsignal::Transaction::Formatter do
         subject { formatter.to_hash[:log_entry] }
 
         its([:queue_duration]) { should be_within(0.01).of(40.0) }
+      end
+    end
+
+    context "when the APP_REVISION environment variable is present" do
+      let(:transaction) { regular_transaction }
+      before do
+        Appsignal.agent.stub(:revision => 'foo')
+      end
+
+      it "should store the APP_REVISION" do
+        subject.to_hash[:log_entry][:revision].should == 'foo'
       end
     end
 
@@ -107,6 +119,7 @@ describe Appsignal::Transaction::Formatter do
           :kind => "http_request",
           :path => "/blog",
           :session_data => {},
+          :revision => nil,
           :time => 1389783600.0,
           :db_runtime => 500,
           :view_runtime => 500,
@@ -171,6 +184,7 @@ describe Appsignal::Transaction::Formatter do
         :kind => "background_job",
         :path => "/foo",
         :session_data => {},
+        :revision => nil,
         :time => 1389783600.0,
       } }
       its([:failed]) { should be_false }

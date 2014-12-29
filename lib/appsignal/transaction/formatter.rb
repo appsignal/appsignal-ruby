@@ -28,7 +28,8 @@ module Appsignal
             :kind => kind,
             :time => time,
             :environment => sanitized_environment,
-            :session_data => sanitized_session_data
+            :session_data => sanitized_session_data,
+            :revision => Appsignal.agent.revision
           },
           :failed => exception?
         }
