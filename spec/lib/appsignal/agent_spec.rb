@@ -98,6 +98,19 @@ describe Appsignal::Agent do
         sleep 1
       end
     end
+
+    context "with revision" do
+      around do |sample|
+        ENV['APP_REVISION'] = 'abc'
+        sample.run
+        ENV['APP_REVISION'] = nil
+      end
+
+      it "should set the revision" do
+        subject.start_thread
+        expect( subject.revision ).to eql 'abc'
+      end
+    end
   end
 
   describe "#restart_thread" do

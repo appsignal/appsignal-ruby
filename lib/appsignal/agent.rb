@@ -4,7 +4,7 @@ module Appsignal
     AGGREGATOR_LIMIT = 5 # Five minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused, :aggregator_queue
+                  :transmitter, :subscriber, :paused, :aggregator_queue, :revision
 
     def initialize
       return unless Appsignal.config.active?
@@ -31,7 +31,8 @@ module Appsignal
 
     def start_thread
       Appsignal.logger.debug('Starting agent thread')
-      @thread = Thread.new do
+      @revision = ENV['APP_REVISION']
+      @thread   = Thread.new do
         begin
           sleep(rand(sleep_time))
           loop do
