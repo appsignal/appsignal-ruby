@@ -25,7 +25,7 @@ namespace :benchmark do
 end
 
 def run_benchmark
-  no_transactions = 100
+  no_transactions = 10_000
 
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
@@ -64,10 +64,6 @@ def run_benchmark
         :params     => {:id => 1}
       )
 
-      if i == 10 || i == 60
-        puts 'Sleeping'
-        sleep(2)
-      end
       Appsignal::Transaction.complete_current!
     end
     puts 'Finished'
