@@ -1,3 +1,6 @@
+# 0.11.2
+* If APP_REVISION environment variable is set, send it with the log entry.
+
 # 0.11.1
 * Allow a custom request_class and params_method on  Rack instrumentation
 * Loop through env methods instead of env
