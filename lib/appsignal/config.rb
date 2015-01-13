@@ -65,6 +65,11 @@ module Appsignal
       !! self[:active]
     end
 
+    # TODO test
+    def tmp_path
+      File.join(root_path, 'tmp')
+    end
+
     protected
 
     def config_file

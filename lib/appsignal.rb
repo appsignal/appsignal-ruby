@@ -47,7 +47,13 @@ module Appsignal
         end
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
-          Appsignal::Native.start
+          Appsignal::Native.start(
+            config.tmp_path,
+            config[:endpoint],
+            config[:push_api_key],
+            config[:name] || '',
+            config.env
+          )
           load_integrations
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters

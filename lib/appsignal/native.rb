@@ -9,7 +9,7 @@ module Appsignal
     attach_function(
       :start,
       :appsignal_start,
-      [],
+      [:string, :string, :string, :string, :string],
       :void
     )
 
