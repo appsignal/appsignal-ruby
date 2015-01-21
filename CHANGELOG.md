@@ -1,3 +1,6 @@
+# 0.11.3
+* Support Ruby 1.9 and up instead of 1.9.3 and up
+
 # 0.11.2
 * If APP_REVISION environment variable is set, send it with the log entry.
 
