@@ -5,6 +5,8 @@ class ::Appsignal::Event::ActiveRecordEvent
   def connection_config; {:adapter => 'mysql'}; end
 end
 
+GC.disable
+
 namespace :benchmark do
   task :all => [:run_inactive, :run_active] do
   end

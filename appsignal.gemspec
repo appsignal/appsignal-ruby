@@ -22,7 +22,7 @@ Gem::Specification.new do |gem|
   gem.name                  = 'appsignal'
   gem.require_paths         = ['lib']
   gem.version               = Appsignal::VERSION
-  gem.required_ruby_version = '>= 1.9.3'
+  gem.required_ruby_version = '>= 1.9'
 
   gem.add_dependency 'rack'
   gem.add_dependency 'thread_safe'
