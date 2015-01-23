@@ -30,7 +30,7 @@ def run_benchmark
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
 
-  Appsignal.config = Appsignal::Config.new('', 'production')
+  Appsignal.config = Appsignal::Config.new('', 'production', :endpoint => 'http://localhost:8080')
   Appsignal.start
   puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
 

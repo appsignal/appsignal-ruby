@@ -48,7 +48,8 @@ module Appsignal
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
           Appsignal::Native.start(
-            config.tmp_path,
+            config.root_path.to_s,
+            File.expand_path("../../ext", __FILE__).to_s,
             config[:endpoint],
             config[:push_api_key],
             config[:name] || '',
