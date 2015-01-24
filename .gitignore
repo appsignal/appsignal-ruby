@@ -21,4 +21,5 @@ gemfiles/*.lock
 .ruby-version
 bundle_and_spec_all_rbenv.sh
 bundle_and_spec_all_rvm.sh
-ext
+ext/libappsignal.*
+ext/appsignal-agent
