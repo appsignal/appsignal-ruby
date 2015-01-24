@@ -9,8 +9,15 @@ module Appsignal
     attach_function(
       :start,
       :appsignal_start,
-      [:string, :string, :string, :string, :string, :string],
-      :void
+      [],
+      :bool
+    )
+
+    attach_function(
+      :forked,
+      :appsignal_forked,
+      [],
+      :bool
     )
 
     attach_function(

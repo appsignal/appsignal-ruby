@@ -97,6 +97,7 @@ module Appsignal
 
     def forked!
       Appsignal.logger.info('Forked worker process')
+      Appsignal::Native.forked
       @active = true
       @pid = Process.pid
       Thread.exclusive do

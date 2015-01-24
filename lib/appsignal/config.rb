@@ -70,6 +70,16 @@ module Appsignal
       File.join(root_path, 'tmp')
     end
 
+    # TODO test
+    def set_env
+      ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
+      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path("../../../ext", __FILE__).to_s
+      ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
+      ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
+      ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
+      ENV['APPSIGNAL_ENVIRONMENT']       = env
+    end
+
     protected
 
     def config_file
