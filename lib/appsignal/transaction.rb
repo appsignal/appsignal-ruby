@@ -24,7 +24,7 @@ module Appsignal
 
       def complete_current!
         if current
-          current.complete!
+          Appsignal::Native.finish_transaction(current.request_id)
           Thread.current[:appsignal_transaction] = nil
         else
           Appsignal.logger.error('Trying to complete current, but no transaction present')
@@ -32,13 +32,12 @@ module Appsignal
       end
     end
 
-    attr_reader :request_id, :events, :root_event_payload, :action, :exception,
+    attr_reader :request_id, :root_event_payload, :action, :exception,
                 :env, :fullpath, :tags, :kind, :queue_start, :time, :duration,
                 :timestack
 
     def initialize(request_id, env)
       @request_id = request_id
-      @events     = []
       @env        = env
       @tags       = {}
       @time       = Time.now.to_f
@@ -70,17 +69,6 @@ module Appsignal
         kind,
         0
       )
-    end
-
-    def add_event(digest, name, started, duration, child_duration, level)
-      @events << {
-        :digest         => digest,
-        :name           => name,
-        :started        => started,
-        :duration       => duration,
-        :child_duration => child_duration,
-        :level          => level
-      }
     end
 
     # TODO rename to set_exception
@@ -118,20 +106,6 @@ module Appsignal
           :queue_duration => queue_duration,
           :events         => events
         }
-      end
-    end
-
-    def complete!
-      Appsignal::Native.finish_transaction(request_id)
-
-      @duration = Time.now.to_f - time
-      Thread.current[:appsignal_transaction] = nil
-
-      if root_event_payload || exception?
-        Appsignal.logger.debug("Adding transaction: #{@request_id}")
-        Appsignal.add_transaction(self.to_hash)
-      else
-        Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")
       end
     end
 

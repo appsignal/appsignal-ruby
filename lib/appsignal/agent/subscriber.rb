@@ -29,10 +29,6 @@ module Appsignal
         subscribe
       end
 
-      def make_digest(name, title, body)
-        Digest::MD5.hexdigest("#{name}-#{title}-#{body}")
-      end
-
       def publish(name, *args)
         # Not used
       end

@@ -52,10 +52,6 @@ module Appsignal
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
           @agent = Appsignal::Agent.new
-          at_exit do
-            logger.debug('Running at_exit block')
-            @agent.replace_aggregator_and_transmit
-          end
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -176,8 +172,6 @@ module Appsignal
 end
 
 require 'appsignal/agent'
-require 'appsignal/agent/aggregator'
-require 'appsignal/agent/aggregator_transmitter'
 require 'appsignal/agent/subscriber'
 require 'appsignal/event_formatter'
 require 'appsignal/auth_check'
