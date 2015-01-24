@@ -16,8 +16,6 @@ module Appsignal
 
     def load_integrations
       require 'appsignal/integrations/delayed_job'
-      require 'appsignal/integrations/passenger'
-      require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
     end
@@ -191,6 +189,5 @@ require 'appsignal/rack/instrumentation'
 require 'appsignal/params_sanitizer'
 require 'appsignal/transaction'
 require 'appsignal/transmitter'
-require 'appsignal/ipc'
 require 'appsignal/version'
 require 'appsignal/integrations/rails'

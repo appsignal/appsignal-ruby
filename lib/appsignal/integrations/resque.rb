@@ -17,17 +17,6 @@ if defined?(::Resque)
     end
   end
 
-  # Set up IPC
-  Resque.before_first_fork do
-    Appsignal::IPC::Server.start
-  end
-
-  # In the fork, stop the normal agent startup
-  # and stop listening to the server
-  Resque.after_fork do |job|
-    Appsignal::IPC.forked!
-  end
-
   # Extend the default job class with AppSignal instrumentation
   Resque::Job.send(:extend, Appsignal::Integrations::ResquePlugin)
 end

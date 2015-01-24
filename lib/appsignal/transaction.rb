@@ -128,12 +128,8 @@ module Appsignal
       Thread.current[:appsignal_transaction] = nil
 
       if root_event_payload || exception?
-        if Appsignal::IPC::Client.active?
-          Appsignal::IPC::Client.add_transaction(self.to_hash)
-        else
-          Appsignal.logger.debug("Adding transaction: #{@request_id}")
-          Appsignal.add_transaction(self.to_hash)
-        end
+        Appsignal.logger.debug("Adding transaction: #{@request_id}")
+        Appsignal.add_transaction(self.to_hash)
       else
         Appsignal.logger.debug("Not processing transaction: #{@request_id} (#{events.length} events recorded)")
       end

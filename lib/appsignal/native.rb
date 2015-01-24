@@ -14,13 +14,6 @@ module Appsignal
     )
 
     attach_function(
-      :forked,
-      :appsignal_forked,
-      [],
-      :bool
-    )
-
-    attach_function(
       :start_transaction,
       :appsignal_start_transaction,
       [:string],

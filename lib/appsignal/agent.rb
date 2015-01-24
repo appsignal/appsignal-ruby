@@ -57,7 +57,6 @@ module Appsignal
     end
 
     def add_transaction(transaction)
-      forked! if @pid != Process.pid
       if Appsignal.is_ignored_action?(transaction[:action])
         Appsignal.logger.debug("Ignoring transaction: #{transaction[:request_id]} (#{transaction[:action]})")
         return
@@ -93,18 +92,6 @@ module Appsignal
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while transmitting aggregators: #{ex.message}\n#{ex.backtrace.join("\n")}"
       end
-    end
-
-    def forked!
-      Appsignal.logger.info('Forked worker process')
-      Appsignal::Native.forked
-      @active = true
-      @pid = Process.pid
-      Thread.exclusive do
-        @aggregator = Aggregator.new
-      end
-      subscriber.resubscribe
-      restart_thread
     end
 
     def shutdown(transmit=false, reason=nil)
