@@ -4,7 +4,16 @@ module Appsignal
   module Native
    extend FFI::Library
 
-    ffi_lib File.expand_path(File.join(File.dirname(__FILE__), '../../ext/libappsignal.dylib'))
+    def self.libappsignal_path
+      extension = if Gem::Platform.local.os == 'darwin'
+        'dylib'
+      else
+        'so'
+      end
+      File.expand_path("../../../ext/libappsignal.#{extension}", __FILE__)
+    end
+
+    ffi_lib libappsignal_path
 
     attach_function(
       :start,
@@ -52,6 +61,13 @@ module Appsignal
       :finish_transaction,
       :appsignal_finish_transaction,
       [:string],
+      :void
+    )
+
+    attach_function(
+      :transmit_marker,
+      :appsignal_transmit_marker,
+      [:string, :string],
       :void
     )
   end

@@ -3,7 +3,7 @@ require 'open-uri'
 require 'zlib'
 require 'rubygems/package'
 
-AGENT_VERSION   = '083e838'
+AGENT_VERSION   = 'f223b9d'
 HOST            = 'd135dj0rjqvssy.cloudfront.net'
 SUPPORTED_ARCHS = %w(x86_64-linux x86_64-darwin)
 

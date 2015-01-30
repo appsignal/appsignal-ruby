@@ -11,15 +11,6 @@ describe Appsignal do
     Appsignal.extensions.clear
   end
 
-  it "should have installed the agent and native library" do
-    File.exists?('ext/appsignal-agent').should be_true
-    if Gem::Platform.local.os == 'darwin'
-      File.exists?('ext/libappsignal.dylib').should be_true
-    else
-      File.exists?('ext/libappsignal.so').should be_true
-    end
-  end
-
   let(:transaction) { regular_transaction }
 
   describe ".config=" do
