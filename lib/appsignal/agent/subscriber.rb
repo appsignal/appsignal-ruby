@@ -34,21 +34,24 @@ module Appsignal
       end
 
       def start(name, id, payload)
-        Appsignal::Native.start_event(id)
+        return unless transaction = Appsignal::Transaction.current
+
+        Appsignal::Native.start_event(transaction.request_id)
       end
 
       def finish(name, id, payload)
+        return unless transaction = Appsignal::Transaction.current
+
         title, body = Appsignal::EventFormatter.format(name, payload)
         Appsignal::Native.finish_event(
-          id,
+          transaction.request_id,
           name,
           title || BLANK,
           body || BLANK
         )
 
-        if Appsignal::Transaction.current &&
-           name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
-          Appsignal::Transaction.current.set_root_event(name, payload)
+        if name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
+          transaction.set_root_event(name, payload)
         end
       end
     end
