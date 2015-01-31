@@ -21,6 +21,7 @@ describe Appsignal::Transaction do
       subject { Appsignal::Transaction.create('1', {}) }
 
       it 'should add the transaction to thread local' do
+        Appsignal::Native.should_receive(:start_transaction).with('1')
         subject
         Thread.current[:appsignal_transaction].should == subject
       end
@@ -37,7 +38,7 @@ describe Appsignal::Transaction do
       subject { Appsignal::Transaction.current }
 
       it 'should return the correct transaction' do
-        should eq transaction
+        should == transaction
       end
     end
 
@@ -48,7 +49,7 @@ describe Appsignal::Transaction do
         before { Appsignal::Transaction.create('2', {}) }
 
         it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-          Appsignal::Transaction.current.should_receive(:complete!)
+          Appsignal::Native.should_receive(:finish_transaction).with('2')
 
           Appsignal::Transaction.complete_current!
 
@@ -79,14 +80,10 @@ describe Appsignal::Transaction do
       subject { transaction }
 
       its(:request_id)         { should == '3' }
-      its(:events)             { should == [] }
       its(:root_event_payload) { should be_nil }
       its(:exception)          { should be_nil }
       its(:env)                { should == env }
       its(:tags)               { should == {} }
-      its(:time)               { should == fixed_time }
-      its(:duration)           { should be_nil }
-      its(:timestack)          { should == [] }
     end
 
     describe '#request' do
@@ -104,26 +101,24 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_root_event' do
-      before { transaction.set_root_event(name, payload) }
-
       context "for a process_action event" do
         let(:name)    { 'process_action.action_controller' }
         let(:payload) { create_payload }
 
-        it "should set the root event payload" do
+        it "should set the meta data in the transaction and native" do
+          Appsignal::Native.should_receive(:set_transaction_metadata).with(
+            '3',
+            'BlogPostsController#show',
+            'http_request',
+            kind_of(Integer)
+          )
+
+          transaction.set_root_event(name, payload)
+
           transaction.root_event_payload.should == payload
-        end
-
-        it "should set the action" do
           transaction.action.should == 'BlogPostsController#show'
-        end
-
-        it "should set the kind" do
           transaction.kind.should == 'http_request'
-        end
-
-        it "should call set_http_queue_start" do
-          transaction.queue_start.should_not be_nil
+          transaction.queue_start.should be_kind_of(Integer)
         end
       end
 
@@ -131,47 +126,39 @@ describe Appsignal::Transaction do
         let(:name)    { 'perform_job.delayed_job' }
         let(:payload) { create_background_payload }
 
-        it "should set the root event payload" do
+        it "should set the meta data in the transaction and native" do
+          Appsignal::Native.should_receive(:set_transaction_metadata).with(
+            '3',
+            'BackgroundJob#perform',
+            'background_job',
+            kind_of(Integer)
+          )
+
+          transaction.set_root_event(name, payload)
+
           transaction.root_event_payload.should == payload
-        end
-
-        it "should set the action" do
           transaction.action.should == 'BackgroundJob#perform'
-        end
-
-        it "should set the kind" do
           transaction.kind.should == 'background_job'
-        end
-
-        it "should set call set_background_queue_start" do
-          transaction.queue_start.should_not be_nil
+          transaction.queue_start.should be_kind_of(Integer)
         end
       end
     end
 
-    describe '#add_event' do
-      it 'should add an event' do
-        expect {
-          transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0)
-        }.to change(transaction, :events).to([{
-          :digest         => 'digest',
-          :name           => 'name',
-          :started        => 0.0,
-          :duration       => 0.0,
-          :child_duration => 0.0,
-          :level          => 0
-        }])
-      end
-    end
+    context "setting exception" do
+      let(:exception) { double(:exception, :name => 'test', :message => 'test', :backtrace => []) }
 
-    context "adding exception" do
-      let(:exception) { double(:exception, :name => 'test') }
+      describe '#set_exception' do
+        it 'should set an exception' do
+          Appsignal::Native.should_receive(:set_exception_for_transaction).with(
+            '3',
+            kind_of(String),
+            'json'
+          )
 
-      describe '#add_exception' do
-        it 'should add an exception' do
-          expect {
-            transaction.add_exception(exception)
-          }.to change(transaction, :exception).to(exception)
+          transaction.set_exception(exception)
+
+          transaction.time.should == 1389783600
+          transaction.exception.should == exception
         end
       end
 
@@ -183,151 +170,61 @@ describe Appsignal::Transaction do
         end
 
         context "without an exception" do
-          before { transaction.add_exception(exception) }
+          before { transaction.set_exception(exception) }
 
           it { should be_true }
         end
       end
     end
 
-    describe '#to_hash' do
+    describe '#exception_hash' do
       before do
         transaction.set_root_event('process_action.action_controller', create_payload)
+        error = StandardError.new('test error')
+        error.set_backtrace(['line 1'])
+        transaction.set_exception(error)
+        transaction.set_tags(:user_id => 1)
       end
 
-      subject { transaction.to_hash }
+      subject { transaction.exception_hash }
 
-      context "regular" do
+      its([:action])       { should == 'BlogPostsController#show' }
+      its([:time])         { should == time.to_f }
+      its([:kind])         { should == 'http_request' }
+      its([:overview])     { should == {
+        :path           => '/blog',
+        :request_format => 'html',
+        :request_method => 'GET'
+      } }
+      its([:params])       { should == {
+        'controller' => 'blog_posts',
+        'action'     => 'show',
+        'id'         => '1'
+      } }
+      its([:environment])  { should be_a(Hash) }
+      its([:environment])  { should include('SERVER_NAME') }
+      its([:session_data]) { should == {} }
+      its([:tags])         { should == {:user_id => 1} }
+      its([:exception])    { should == {
+        :exception => 'StandardError',
+        :message   => 'test error',
+        :backtrace => ['line 1']
+      } }
+
+      context "without a root event" do
         before do
-          transaction.instance_variable_set(:@duration, 0.1)
-          transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0)
-          transaction.instance_variable_set(:@queue_start, nil)
+          transaction.instance_variable_set(:@root_event_payload, nil)
         end
 
-        its([:action])         { should == 'BlogPostsController#show' }
-        its([:time])           { should == time.to_f }
-        its([:kind])           { should == 'http_request' }
-        its([:duration])       { should == 0.1 }
-        its([:queue_duration]) { should be_nil }
-        its([:events])         { should == [{
-          :digest         => 'digest',
-          :name           => 'name',
-          :started        => 0.0,
-          :duration       => 0.0,
-          :child_duration => 0.0,
-          :level          => 0
-        }] }
-
-        context "with queue time set" do
-          before { transaction.instance_variable_set(:@queue_start, fixed_time - 0.1) }
-
-          its([:queue_duration]) { should be_within(0.01).of(0.1) }
-        end
+        its([:overview]) { should be_nil }
       end
 
-      context "with exception" do
+      context "without an exception" do
         before do
-          error = StandardError.new('test error')
-          error.set_backtrace(['line 1'])
-          transaction.add_exception(error)
-          transaction.set_tags(:user_id => 1)
+          transaction.set_exception(nil)
         end
 
-        its([:action])       { should == 'BlogPostsController#show' }
-        its([:time])         { should == time.to_f }
-        its([:kind])         { should == 'http_request' }
-        its([:overview])     { should == {
-          :path           => '/blog',
-          :request_format => 'html',
-          :request_method => 'GET'
-        } }
-        its([:params])       { should == {
-          'controller' => 'blog_posts',
-          'action'     => 'show',
-          'id'         => '1'
-        } }
-        its([:environment])  { should be_a(Hash) }
-        its([:environment])  { should include('SERVER_NAME') }
-        its([:session_data]) { should == {} }
-        its([:tags])         { should == {:user_id => 1} }
-        its([:exception])    { should == {
-          :exception => 'StandardError',
-          :message   => 'test error',
-          :backtrace => ['line 1']
-        } }
-
-        context "without a root event" do
-          before do
-            transaction.instance_variable_set(:@root_event_payload, nil)
-          end
-
-          its([:overview]) { should be_nil }
-        end
-      end
-    end
-
-    describe '#complete!' do
-      before do
-        Appsignal::IPC.stub(:current => nil)
-        transaction.set_root_event('process_action.action_controller', {})
-      end
-
-      it 'should remove transaction from the thread local variable' do
-        Appsignal::Transaction.current.should be_a(Appsignal::Transaction)
-        transaction.complete!
-        Appsignal::Transaction.current.should be_nil
-      end
-
-      it "should set the duration" do
-        advance_frozen_time(time, 0.5)
-        transaction.complete!
-
-        transaction.duration.should == 0.5
-      end
-
-      context 'adding transaction' do
-        context 'sanity check' do
-          specify { Appsignal.should respond_to(:add_transaction) }
-        end
-
-        context 'without events and without exception' do
-          it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
-          end
-        end
-
-        context 'with events' do
-          before { transaction.add_event('digest', 'name', 0.0, 0.0, 0.0, 0) }
-
-          it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
-          end
-        end
-
-        context 'with exception' do
-          before { transaction.add_exception(StandardError.new) }
-
-          it 'should add transaction to the agent' do
-            Appsignal.should_receive(:add_transaction).with(instance_of(Hash))
-          end
-        end
-
-        after { transaction.complete! }
-      end
-
-      context 'when using IPC' do
-        before do
-          Appsignal::IPC::Client.start
-        end
-        after do
-          Appsignal::IPC::Client.stop
-        end
-
-        it "should send itself through the rabbit hole" do
-          Appsignal::IPC::Client.should_receive(:add_transaction).with(instance_of(Hash))
-        end
-
-        after { transaction.complete! }
+        it { should be_nil }
       end
     end
 
@@ -573,7 +470,7 @@ describe Appsignal::Transaction do
         before do
           error = StandardError.new('test error')
           error.set_backtrace(['line 1'])
-          transaction.add_exception(error)
+          transaction.set_exception(error)
         end
 
         it { should be_a(Array) }

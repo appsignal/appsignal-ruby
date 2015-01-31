@@ -51,7 +51,6 @@ module Appsignal
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
-          @agent = Appsignal::Agent.new
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -83,7 +82,7 @@ module Appsignal
           yield
         end
       rescue Exception => exception
-        Appsignal.add_exception(exception)
+        Appsignal.set_exception(exception)
         raise exception
       ensure
         Appsignal::Transaction.complete_current!
@@ -100,18 +99,18 @@ module Appsignal
     def send_exception(exception, tags=nil)
       return if !active? || is_ignored_exception?(exception)
       transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-      transaction.add_exception(exception)
+      transaction.set_exception(exception)
       transaction.set_tags(tags) if tags
       transaction.complete!
       Appsignal.agent.replace_aggregator_and_transmit
     end
 
-    def add_exception(exception)
+    def set_exception(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
                 is_ignored_exception?(exception)
-      Appsignal::Transaction.current.add_exception(exception)
+      Appsignal::Transaction.current.set_exception(exception)
     end
 
     def tag_request(params={})
@@ -171,17 +170,16 @@ module Appsignal
   end
 end
 
-require 'appsignal/agent'
-require 'appsignal/agent/subscriber'
-require 'appsignal/event_formatter'
 require 'appsignal/auth_check'
 require 'appsignal/config'
+require 'appsignal/event_formatter'
 require 'appsignal/marker'
 require 'appsignal/native'
-require 'appsignal/rack/listener'
-require 'appsignal/rack/instrumentation'
 require 'appsignal/params_sanitizer'
+require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/transmitter'
 require 'appsignal/version'
+require 'appsignal/rack/listener'
+require 'appsignal/rack/instrumentation'
 require 'appsignal/integrations/rails'

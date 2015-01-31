@@ -1,5 +1,8 @@
 module Appsignal
   class Transaction
+    HTTP_REQUEST   = 'http_request'.freeze
+    BACKGROUND_JOB = 'background_job'.freeze
+
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
     PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
@@ -13,8 +16,8 @@ module Appsignal
 
     class << self
       def create(request_id, env)
-        Appsignal::Native.start_transaction(request_id)
         Appsignal.logger.debug("Creating transaction: #{request_id}")
+        Appsignal::Native.start_transaction(request_id)
         Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
       end
 
@@ -32,16 +35,13 @@ module Appsignal
       end
     end
 
-    attr_reader :request_id, :root_event_payload, :action, :exception,
-                :env, :fullpath, :tags, :kind, :queue_start, :time, :duration,
-                :timestack
+    attr_reader :request_id, :root_event_payload, :action, :exception, :env, :fullpath, :tags,
+                :kind, :queue_start, :time
 
     def initialize(request_id, env)
       @request_id = request_id
       @env        = env
       @tags       = {}
-      @time       = Time.now.to_f
-      @timestack  = []
     end
 
     def request
@@ -54,13 +54,13 @@ module Appsignal
 
     def set_root_event(name, payload)
       @root_event_payload = payload
-      if name.start_with?(Agent::Subscriber::PROCESS_ACTION_PREFIX)
+      if name.start_with?(Subscriber::PROCESS_ACTION_PREFIX)
         @action = "#{@root_event_payload[:controller]}##{@root_event_payload[:action]}"
-        @kind = 'http_request'
+        @kind = HTTP_REQUEST
         set_http_queue_start
-      elsif name.start_with?(Agent::Subscriber::PERFORM_JOB_PREFIX)
+      elsif name.start_with?(Subscriber::PERFORM_JOB_PREFIX)
         @action = "#{@root_event_payload[:class]}##{@root_event_payload[:method]}"
-        @kind = 'background_job'
+        @kind = BACKGROUND_JOB
         set_background_queue_start
       end
       Appsignal::Native.set_transaction_metadata(
@@ -71,42 +71,37 @@ module Appsignal
       )
     end
 
-    # TODO rename to set_exception
-    def add_exception(exception)
+    def set_exception(exception)
+      @time = Time.now.to_i
       @exception = exception
+      Appsignal::Native.set_exception_for_transaction(
+        request_id,
+        exception_hash.to_json,
+        'json'
+      )
     end
 
     def exception?
       !! exception
     end
 
-    def to_hash
-      if exception?
-        {
-          :action         => action,
-          :time           => time,
-          :kind           => kind,
-          :overview       => overview,
-          :params         => sanitized_params,
-          :environment    => sanitized_environment,
-          :session_data   => sanitized_session_data,
-          :tags           => sanitized_tags,
-          :exception      => {
-            :exception => exception.class.name,
-            :message   => exception.message,
-            :backtrace => cleaned_backtrace
-          }
+    def exception_hash
+      return unless exception
+      {
+        :action         => action,
+        :time           => time,
+        :kind           => kind,
+        :overview       => overview,
+        :params         => sanitized_params,
+        :environment    => sanitized_environment,
+        :session_data   => sanitized_session_data,
+        :tags           => sanitized_tags,
+        :exception      => {
+          :exception => exception.class.name,
+          :message   => exception.message,
+          :backtrace => cleaned_backtrace
         }
-      else
-        {
-          :action         => action,
-          :time           => time,
-          :kind           => kind,
-          :duration       => duration,
-          :queue_duration => queue_duration,
-          :events         => events
-        }
-      end
+      }
     end
 
     protected

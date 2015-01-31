@@ -17,7 +17,7 @@ module TransactionHelpers
           File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10').to_s,
           '/user/local/ruby/path.rb:8'
         ])
-        o.add_exception(exception)
+        o.set_exception(exception)
       end
     end
   end
@@ -82,7 +82,7 @@ module TransactionHelpers
       }.merge(args)
     ).tap do |o|
       o.set_root_event(process_action_event.name, process_action_event.payload)
-      o.add_exception(exception)
+      o.set_exception(exception)
       # TODO replace with new call
       #events.each { |event| o.add_event(event) }
     end

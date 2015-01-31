@@ -19,7 +19,7 @@ describe Appsignal::Rack::Listener do
   let(:env) { {} }
 
   describe '#call' do
-    let(:current) { double(:complete! => true, :add_exception => true) }
+    let(:current) { double(:complete! => true, :set_exception => true) }
     before do
       middleware.stub(:request_id => '1')
       Appsignal::Transaction.stub(:current => current)
@@ -55,7 +55,7 @@ describe Appsignal::Rack::Listener do
       end
 
       it 'should catch the exception and notify the transaction of it' do
-        current.should_receive(:add_exception)
+        current.should_receive(:set_exception)
         middleware.call(env) rescue nil
       end
 
@@ -69,7 +69,7 @@ describe Appsignal::Rack::Listener do
         end
 
         it 'should ignore the error' do
-          current.should_not_receive(:add_exception)
+          current.should_not_receive(:set_exception)
           middleware.call(env) rescue nil
         end
       end

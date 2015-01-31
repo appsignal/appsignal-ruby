@@ -200,10 +200,10 @@ describe Appsignal do
       end
     end
 
-    describe ".add_exception" do
+    describe ".set_exception" do
       it "should do nothing" do
         lambda {
-          Appsignal.add_exception(RuntimeError.new)
+          Appsignal.set_exception(RuntimeError.new)
         }.should_not raise_error
       end
     end
@@ -258,7 +258,7 @@ describe Appsignal do
         let(:error) { VerySpecificError.new('the roof') }
 
         it "should add the error to the current transaction and complete" do
-          Appsignal.should_receive(:add_exception).with(error)
+          Appsignal.should_receive(:set_exception).with(error)
           Appsignal::Transaction.should_receive(:complete_current!)
 
           lambda {
@@ -427,36 +427,36 @@ describe Appsignal do
       end
     end
 
-    describe ".add_exception" do
+    describe ".set_exception" do
       before { Appsignal::Transaction.stub(:current => transaction) }
       let(:exception) { RuntimeError.new('I am an exception') }
 
       it "should add the exception to the current transaction" do
-        transaction.should_receive(:add_exception).with(exception)
+        transaction.should_receive(:set_exception).with(exception)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_exception(exception)
       end
 
       it "should do nothing if there is no current transaction" do
         Appsignal::Transaction.stub(:current => nil)
 
-        transaction.should_not_receive(:add_exception).with(exception)
+        transaction.should_not_receive(:set_exception).with(exception)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_exception(exception)
       end
 
       it "should not add the exception if it's in the ignored list" do
         Appsignal.stub(:is_ignored_exception? => true)
 
-        transaction.should_not_receive(:add_exception).with(exception)
+        transaction.should_not_receive(:set_exception).with(exception)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_exception(exception)
       end
 
       it "should do nothing if the exception is nil" do
-        transaction.should_not_receive(:add_exception)
+        transaction.should_not_receive(:set_exception)
 
-        Appsignal.add_exception(nil)
+        Appsignal.set_exception(nil)
       end
     end
 

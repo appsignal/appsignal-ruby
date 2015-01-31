@@ -60,7 +60,7 @@ describe "Delayed Job integration" do
 
       context "with an erroring call" do
         it "should add the error to the transaction" do
-          Appsignal::Transaction.any_instance.should_receive(:add_exception).with(error)
+          Appsignal::Transaction.any_instance.should_receive(:set_exception).with(error)
           invoked_block.stub(:call).and_raise(error)
           Appsignal::Transaction.any_instance.should_receive(:complete!)
 

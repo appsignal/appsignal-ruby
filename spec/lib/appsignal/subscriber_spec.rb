@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Appsignal::Agent::Subscriber do
+describe Appsignal::Subscriber do
   before :all do
     start_agent
   end

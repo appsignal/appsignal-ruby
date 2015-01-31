@@ -55,7 +55,7 @@ describe "Resque integration" do
 
       context "with exception" do
         it "should set the exception" do
-          transaction.should_receive(:add_exception)
+          transaction.should_receive(:set_exception)
         end
 
         after do
