@@ -10,8 +10,7 @@ module Appsignal
       :ignore_exceptions      => [],
       :ignore_actions         => [],
       :send_params            => true,
-      :endpoint               => 'https://push.appsignal.com/2',
-      :slow_request_threshold => 200,
+      :endpoint               => 'https://push.appsignal.com',
       :instrument_net_http    => true,
       :skip_session_data      => false
     }.freeze
@@ -65,13 +64,8 @@ module Appsignal
       !! self[:active]
     end
 
-    # TODO test
-    def tmp_path
-      File.join(root_path, 'tmp')
-    end
-
-    # TODO test
-    def set_env
+    def write_config_to_environment
+      ENV['APPSIGNAL_ACTIVE']            = active?.to_s
       ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
       ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path("../../../ext", __FILE__).to_s
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]

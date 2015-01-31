@@ -23,7 +23,7 @@ describe Appsignal::Native do
 
     context "with a valid config" do
       before do
-        project_fixture_config.set_env
+        project_fixture_config.write_config_to_environment
       end
 
       it "should have a start method" do
