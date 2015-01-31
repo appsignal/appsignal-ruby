@@ -43,10 +43,14 @@ describe Appsignal do
     context "when config is loaded" do
       before { Appsignal.config = project_fixture_config }
 
-      it "should start an agent" do
+      it "should initialize logging" do
         Appsignal.start
-        Appsignal.agent.should be_a Appsignal::Agent
         Appsignal.logger.level.should == Logger::INFO
+      end
+
+      it "should start native" do
+        Appsignal::Native.should_receive(:start)
+        Appsignal.start
       end
 
       it "should load integrations" do
@@ -129,28 +133,25 @@ describe Appsignal do
   describe '.active?' do
     subject { Appsignal.active? }
 
-    context "without config and agent" do
+    context "without config" do
       before do
         Appsignal.config = nil
-        Appsignal.agent = nil
       end
 
       it { should be_false }
     end
 
-    context "with agent and inactive config" do
+    context "with inactive config" do
       before do
         Appsignal.config = project_fixture_config('nonsense')
-        Appsignal.agent = Appsignal::Agent.new
       end
 
       it { should be_false }
     end
 
-    context "with active agent and config" do
+    context "with active config" do
       before do
         Appsignal.config = project_fixture_config
-        Appsignal.agent = Appsignal::Agent.new
       end
 
       it { should be_true }
@@ -158,14 +159,6 @@ describe Appsignal do
   end
 
   context "not active" do
-    describe ".add_transaction" do
-      it "should do nothing" do
-        lambda {
-          Appsignal.add_transaction(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
-        }.should_not raise_error
-      end
-    end
-
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
         Appsignal::Transaction.should_not_receive(:create)
@@ -223,16 +216,6 @@ describe Appsignal do
       Appsignal.start
     end
 
-    describe ".add_transaction" do
-      subject { Appsignal.add_transaction(transaction) }
-
-      it "forwards the call to the agent" do
-        Appsignal.agent.should respond_to(:add_transaction)
-        Appsignal.agent.should_receive(:add_transaction).with(transaction)
-        subject
-      end
-    end
-
     describe ".monitor_transaction" do
       context "with a normall call" do
         it "should instrument and complete" do
@@ -241,7 +224,7 @@ describe Appsignal do
             'perform_job.something',
             :class => 'Something'
           ).and_yield
-          transaction.should_receive(:complete!)
+          Appsignal::Transaction.should_receive(:complete_current!)
           object = double
           object.should_receive(:some_method)
 
@@ -375,20 +358,14 @@ describe Appsignal do
 
       it { should be_a Appsignal::Config }
       it 'should return configuration' do
-        subject[:endpoint].should == 'https://push.appsignal.com/2'
+        subject[:endpoint].should == 'https://push.appsignal.com'
       end
     end
 
     describe ".send_exception" do
-      before { Appsignal::IPC.stub(:current => false) }
       let(:tags) { nil }
 
-      pending "should send the exception to AppSignal" do
-        agent = double(:shutdown => true, :active? => true)
-        Appsignal.stub(:agent).and_return(agent)
-        agent.should_receive(:add_transaction).with(kind_of(Appsignal::Transaction))
-        agent.should_receive(:replace_aggregator_and_transmit)
-
+      it "should send the exception to AppSignal" do
         Appsignal::Transaction.should_receive(:create).and_call_original
       end
 
@@ -399,6 +376,7 @@ describe Appsignal do
           transaction = Appsignal::Transaction.create(SecureRandom.uuid, {})
           Appsignal::Transaction.stub(:create => transaction)
           transaction.should_receive(:set_tags).with(tags)
+          Appsignal::Transaction.should_receive(:complete_current!)
         end
       end
 

@@ -59,17 +59,6 @@ module Appsignal
       end
     end
 
-    # Convenience method for adding a transaction to the queue. This queue is
-    # managed and is periodically pushed to Appsignal.
-    #
-    # @return [ true ] True.
-    #
-    # @since 0.5.0
-    def add_transaction(transaction)
-      return unless active?
-      agent.add_transaction(transaction)
-    end
-
     def monitor_transaction(name, payload={})
       unless active?
         yield
@@ -101,8 +90,7 @@ module Appsignal
       transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
       transaction.set_exception(exception)
       transaction.set_tags(tags) if tags
-      transaction.complete!
-      Appsignal.agent.replace_aggregator_and_transmit
+      Appsignal::Transaction.complete_current!
     end
 
     def set_exception(exception)
@@ -146,8 +134,7 @@ module Appsignal
     end
 
     def active?
-      config && config.active? &&
-        agent && agent.active?
+      config && config.active?
     end
 
     def is_ignored_exception?(exception)
