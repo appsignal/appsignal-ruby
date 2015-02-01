@@ -25,8 +25,6 @@ VERSION_MANAGERS = {
   :rvm => 'rvm use'
 }
 
-load 'benchmark.rake'
-
 task :publish do
   require 'appsignal/version'
 
