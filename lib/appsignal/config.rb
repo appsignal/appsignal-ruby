@@ -64,7 +64,7 @@ module Appsignal
       !! self[:active]
     end
 
-    def write_config_to_environment
+    def write_to_environment
       ENV['APPSIGNAL_ACTIVE']            = active?.to_s
       ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
       ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path("../../../ext", __FILE__).to_s

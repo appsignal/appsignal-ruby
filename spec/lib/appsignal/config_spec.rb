@@ -38,9 +38,9 @@ describe Appsignal::Config do
       end
     end
 
-    describe "#write_config_to_environment" do
+    describe "#write_to_environment" do
       before do
-        subject.write_config_to_environment
+        subject.write_to_environment
       end
 
       it "should write the current config to env vars" do

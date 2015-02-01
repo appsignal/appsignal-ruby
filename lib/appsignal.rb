@@ -45,7 +45,7 @@ module Appsignal
         end
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
-          config.write_config_to_environment
+          config.write_to_environment
           Appsignal::Native.start
           load_integrations
           load_instrumentations
