@@ -26,7 +26,9 @@ module Appsignal
     end
 
     def publish(name, *args)
-      # Not used
+      # Not used, it's part of AS notifications but is not used in Rails
+      # and it seems to be unclear what it's function is. See:
+      # https://github.com/rails/rails/blob/master/activesupport/lib/active_support/notifications/fanout.rb#L49
     end
 
     def start(name, id, payload)
