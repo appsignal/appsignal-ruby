@@ -36,7 +36,7 @@ if rails_present?
     context "with key" do
       context "known key" do
         before do
-          authcheck.should_receive(:perform).and_return('200')
+          authcheck.should_receive(:perform).and_return(200)
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -50,14 +50,13 @@ if rails_present?
         end
 
         it "should mention successful auth check" do
-          @output.should include('success')
           @output.should include('AppSignal has confirmed authorization!')
         end
       end
 
       context "invalid key" do
         before do
-          authcheck.should_receive(:perform).and_return('401')
+          authcheck.should_receive(:perform).and_return(401)
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -71,7 +70,7 @@ if rails_present?
 
       context "failed check" do
         before do
-          authcheck.should_receive(:perform).and_return('500')
+          authcheck.should_receive(:perform).and_return(500)
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -80,22 +79,6 @@ if rails_present?
         it "should mention failed check" do
           @output.should include('error')
           @output.should include('Could not confirm authorization')
-        end
-      end
-
-      context "internal failure" do
-        before do
-          authcheck.stub(:perform).and_throw(:error)
-
-          prepare_destination
-          run_generator_in_tmp %w(my_app_key)
-        end
-
-        it "should mention internal failure" do
-          @output.should include(
-            'Something went wrong while trying to '\
-            'authenticate with AppSignal:'
-          )
         end
       end
     end

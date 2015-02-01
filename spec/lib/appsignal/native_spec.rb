@@ -69,7 +69,11 @@ describe Appsignal::Native do
       end
 
       it "should have a transmit_marker method" do
-        subject.transmit_marker('{}', 'json')
+        subject.transmit_marker('{}', 'json').should == 200
+      end
+
+      it "should have a check_push_api_auth method" do
+        subject.check_push_api_auth().should be_true
       end
     end
   end
