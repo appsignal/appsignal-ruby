@@ -72,12 +72,13 @@ module Appsignal
       )
     end
 
-    def set_exception(exception)
+    def set_exception(ex)
+      @exception = ex
+      return unless @exception
       @time = Time.now.to_i
-      @exception = exception
       Appsignal::Native.set_exception_for_transaction(
         request_id,
-        exception_hash.to_json,
+        JSON.generate(exception_hash),
         'json'
       )
     end
@@ -87,7 +88,7 @@ module Appsignal
     end
 
     def exception_hash
-      return unless exception
+      return unless exception?
       {
         :action         => action,
         :time           => time,

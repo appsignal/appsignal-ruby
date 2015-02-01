@@ -2,6 +2,7 @@ require 'logger'
 require 'rack'
 require 'thread_safe'
 require 'securerandom'
+require 'json'
 
 begin
   require 'active_support/notifications'

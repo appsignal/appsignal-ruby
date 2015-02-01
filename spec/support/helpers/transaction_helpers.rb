@@ -82,9 +82,7 @@ module TransactionHelpers
       }.merge(args)
     ).tap do |o|
       o.set_root_event(process_action_event.name, process_action_event.payload)
-      o.set_exception(exception)
-      # TODO replace with new call
-      #events.each { |event| o.add_event(event) }
+      o.set_exception(exception) if exception
     end
   end
 end
