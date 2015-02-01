@@ -84,6 +84,7 @@ describe Appsignal::Transaction do
       its(:exception)          { should be_nil }
       its(:env)                { should == env }
       its(:tags)               { should == {} }
+      its(:queue_start)        { should == -1 }
     end
 
     describe '#request' do
@@ -241,13 +242,13 @@ describe Appsignal::Transaction do
       context "when queue start is nil" do
         let(:payload) { create_background_payload(:queue_start => nil) }
 
-        it { should be_nil }
+        it { should == -1 }
       end
 
       context "when queue start is set" do
         let(:payload) { create_background_payload }
 
-        it { should == 1389783590.0 }
+        it { should == 1389783590000 }
       end
     end
 
@@ -260,55 +261,37 @@ describe Appsignal::Transaction do
       context "without env" do
         let(:env) { nil }
 
-        it { should be_nil }
+        it { should == -1 }
       end
 
       context "with no relevant header set" do
         let(:env) { {} }
 
-        it { should be_nil }
+        it { should == -1 }
       end
 
       context "with the HTTP_X_REQUEST_START header set" do
         let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}"} }
 
-        it { should == 1389783599.6 }
+        it { should == 1389783599600 }
 
         context "with unparsable content" do
           let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
 
-          it { should be_nil }
+          it { should == -1 }
         end
 
         context "with some cruft" do
           let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}aaaa"} }
 
-          it { should == 1389783599.6 }
+          it { should == 1389783599600 }
         end
 
         context "with the alternate HTTP_X_QUEUE_START header set" do
           let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_ms}"} }
 
-          it { should == 1389783599.6 }
+          it { should == 1389783599600 }
         end
-      end
-    end
-
-    describe "#queue_duration" do
-      subject { transaction.send(:queue_duration) }
-
-      context "with no queue start set" do
-        let(:transaction) { regular_transaction }
-
-        it { should be_nil }
-      end
-
-      context "with queue start set" do
-        let(:transaction) { regular_transaction_with_x_request_start }
-
-        it { should be_within(0.001).of(0.04) }
-
-        pending "double check this calculation"
       end
     end
 

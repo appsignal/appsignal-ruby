@@ -39,9 +39,10 @@ module Appsignal
                 :kind, :queue_start, :time
 
     def initialize(request_id, env)
-      @request_id = request_id
-      @env        = env
-      @tags       = {}
+      @request_id  = request_id
+      @env         = env
+      @tags        = {}
+      @queue_start = -1
     end
 
     def request
@@ -67,7 +68,7 @@ module Appsignal
         request_id,
         action,
         kind,
-        0
+        queue_start
       )
     end
 
@@ -110,7 +111,7 @@ module Appsignal
         queue_start = root_event_payload[:queue_start]
         return unless queue_start
         Appsignal.logger.debug("Setting background queue start: #{queue_start}")
-        @queue_start = queue_start.to_f
+        @queue_start = (queue_start.to_f * 1000.0).to_i
       end
 
       def set_http_queue_start
@@ -120,14 +121,9 @@ module Appsignal
           Appsignal.logger.debug("Setting http queue start: #{env_var}")
           value = env_var.tr('^0-9', '')
           unless value.empty?
-            @queue_start = value.to_f / 1000.0
+            @queue_start = value.to_i
           end
         end
-      end
-
-      def queue_duration
-        return unless queue_start && queue_start > 0
-        time - queue_start
       end
 
       def overview
