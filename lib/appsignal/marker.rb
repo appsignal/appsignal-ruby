@@ -19,7 +19,7 @@ module Appsignal
       if result == 200
         logger.info('Appsignal has been notified of this deploy!')
       else
-        logger.error("#{result} when transmitting marker to #{config[:endpoint]}")
+        carefully_log_error("#{result} when transmitting marker to #{config[:endpoint]}")
       end
     end
   end
