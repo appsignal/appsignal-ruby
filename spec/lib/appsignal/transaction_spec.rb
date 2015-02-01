@@ -355,13 +355,20 @@ describe Appsignal::Transaction do
     describe '#sanitized_session_data' do
       subject { transaction.send(:sanitized_session_data) }
 
-      context "when there is no env" do
+      context "when env is nil" do
        let(:transaction) { Appsignal::Transaction.create('1', nil) }
 
         it { should be_nil }
       end
 
+      context "when env is empty" do
+       let(:transaction) { Appsignal::Transaction.create('1', {}) }
+
+        it { should == {} }
+      end
+
       context "when there is a session" do
+       let(:transaction) { Appsignal::Transaction.create('1', {}) }
         before do
           transaction.should respond_to(:request)
           transaction.stub_chain(:request, :session => {:foo => :bar})

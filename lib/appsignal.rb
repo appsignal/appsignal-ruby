@@ -66,7 +66,7 @@ module Appsignal
       end
 
       begin
-        Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+        Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
         ActiveSupport::Notifications.instrument(name, payload) do
           yield
         end
@@ -87,7 +87,7 @@ module Appsignal
 
     def send_exception(exception, tags=nil)
       return if !active? || is_ignored_exception?(exception)
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
       transaction.set_exception(exception)
       transaction.set_tags(tags) if tags
       Appsignal::Transaction.complete_current!
