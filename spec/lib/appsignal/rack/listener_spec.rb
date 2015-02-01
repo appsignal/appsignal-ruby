@@ -19,7 +19,7 @@ describe Appsignal::Rack::Listener do
   let(:env) { {} }
 
   describe '#call' do
-    let(:current) { double(:complete! => true, :set_exception => true) }
+    let(:current) { double(:request_id => '1', :set_exception => true) }
     before do
       middleware.stub(:request_id => '1')
       Appsignal::Transaction.stub(:current => current)
@@ -31,7 +31,7 @@ describe Appsignal::Rack::Listener do
       end
 
       it 'should call complete! after the call' do
-        current.should_receive(:complete!)
+        Appsignal::Transaction.should_receive(:complete_current!)
       end
 
       context "when not active" do
@@ -75,8 +75,8 @@ describe Appsignal::Rack::Listener do
       end
 
       describe 'after an error' do
-        it 'should call complete! after the call' do
-          current.should_receive(:complete!)
+        it 'should call complete_current! after the call' do
+          Appsignal::Transaction.should_receive(:complete_current!)
         end
 
         after { middleware.call(env) rescue nil }
