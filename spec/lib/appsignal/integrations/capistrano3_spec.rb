@@ -139,12 +139,6 @@ if capistrano3_present?
               end
             end
           end
-
-          it "should not transmit data" do
-            invoke('appsignal:deploy')
-            io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-            io.string.should include('Something went wrong while trying to notify Appsignal:')
-          end
         end
 
         context "when not active for this environment" do
