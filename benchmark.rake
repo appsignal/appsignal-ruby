@@ -30,7 +30,7 @@ def run_benchmark
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
 
-  Appsignal.config = Appsignal::Config.new('', 'production', :endpoint => 'http://localhost:8080')
+  Appsignal.config = Appsignal::Config.new(Dir.pwd, 'production', :endpoint => 'http://localhost:8080')
   Appsignal.start
   puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
 
@@ -68,13 +68,6 @@ def run_benchmark
     end
     puts 'Finished'
   end)
-
-  if Appsignal.active?
-    puts "Running aggregator to_hash for #{Appsignal.agent.aggregator.transactions.length} transactions"
-    puts(Benchmark.measure do
-      Appsignal.agent.aggregator.to_json
-    end)
-  end
 
   puts "Done, currently #{ObjectSpace.count_objects[:TOTAL] - total_objects} objects created"
 end
