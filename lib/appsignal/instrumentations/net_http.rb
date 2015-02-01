@@ -1,3 +1,5 @@
+require 'net/http'
+
 Net::HTTP.class_eval do
   alias request_without_appsignal request
 
