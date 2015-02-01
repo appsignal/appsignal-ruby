@@ -12,7 +12,7 @@ end
 
 module Appsignal
   class << self
-    attr_accessor :config, :logger, :agent, :in_memory_log
+    attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log
 
     def load_integrations
       require 'appsignal/integrations/delayed_job'
@@ -51,6 +51,7 @@ module Appsignal
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
+          @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")
         end

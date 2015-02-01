@@ -5,49 +5,46 @@ describe Appsignal::Subscriber do
     start_agent
   end
 
-  let(:subscriber) { Appsignal.agent.subscriber }
-  let(:aggregator) { Appsignal.agent.aggregator }
+  before do
+    Thread.current[:appsignal_transaction] = nil
+  end
+
+  let(:subscriber) { Appsignal.subscriber }
   subject { subscriber }
 
   context "initialization" do
-    its(:agent) { should == Appsignal.agent }
-
     it "should be in the subscriber list" do
       ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
-        s.instance_variable_get(:@delegate).is_a?(Appsignal::Agent::Subscriber)
+        s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
       end.count == 1
     end
   end
 
-  describe "subscribe" do
-    it "should subscribe" do
-      ActiveSupport::Notifications.should_receive(:subscribe).with(/^[^!]/, subject).at_least(:once)
+  context "subscriptions" do
+    describe "subscribe" do
+      it "should subscribe" do
+        ActiveSupport::Notifications.should_receive(:subscribe).with(/^[^!]/, subject).at_least(:once)
 
-      subject.subscribe
+        subject.subscribe
+      end
     end
-  end
 
-  describe "#unsubscribe" do
-    it "should unsubscribe" do
-      ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject).at_least(:once)
+    describe "#unsubscribe" do
+      it "should unsubscribe" do
+        ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject).at_least(:once)
 
-      subject.unsubscribe
+        subject.unsubscribe
+      end
     end
-  end
 
-  describe "#resubscribe" do
-    it "should unsubscribe and subscribe" do
-      subject.should_receive(:unsubscribe).at_least(:once)
-      subject.should_receive(:subscribe)
+    describe "#resubscribe" do
+      it "should unsubscribe and subscribe" do
+        subject.should_receive(:unsubscribe).at_least(:once)
+        subject.should_receive(:subscribe)
 
-      subject.resubscribe
+        subject.resubscribe
+      end
     end
-  end
-
-  describe "#make_digest" do
-    subject { subscriber.make_digest('name', 'title', 'body') }
-
-    it { should == '45fc44943fef673eedc08c1322c04784' }
   end
 
   describe "#publish" do
@@ -67,163 +64,52 @@ describe Appsignal::Subscriber do
     end
 
     it "should not record events when there is no current transaction" do
+      Appsignal::Native.should_not_receive(:start_event)
+      Appsignal::Native.should_not_receive(:finish_event)
+
       lambda {
         ActiveSupport::Notifications.instrument 'something'
       }.should_not raise_error
     end
 
-    context "with a current transaction and frozen time" do
+    context "with a current transaction" do
       let(:transaction) { Appsignal::Transaction.current }
-      let(:start_time) { Time.at(1418660000.0) }
 
       before do
-        Timecop.freeze(start_time)
         Appsignal::Transaction.create('request-id', {})
       end
 
-      after do
-        Thread.current[:appsignal_transaction] = nil
-        Timecop.return
-      end
+      it "should call native start and finish event for every event" do
+        Appsignal::Native.should_receive(:start_event).exactly(4).times
+        Appsignal::Native.should_receive(:finish_event).with('request-id', 'one', '', '').once
+        Appsignal::Native.should_receive(:finish_event).with('request-id', 'two', '', '').once
+        Appsignal::Native.should_receive(:finish_event).with('request-id', 'two.three', '', '').once
+        Appsignal::Native.should_receive(:finish_event).with('request-id', 'one.three', '', '').once
 
-      context "with some events" do
-        before do
-          # Clear aggregator so we get a fresh measurements hash
-          Appsignal.agent.aggregator = Appsignal::Agent::Aggregator.new
-
-          current_time = start_time
-          ActiveSupport::Notifications.instrument('one') do
-            current_time = advance_frozen_time(current_time, 0.1)
-            ActiveSupport::Notifications.instrument('two') do
-              current_time = advance_frozen_time(current_time, 0.4)
-              ActiveSupport::Notifications.instrument('one.three') do
-                current_time = advance_frozen_time(current_time, 0.1)
-              end
-              ActiveSupport::Notifications.instrument('two.three') do
-                current_time = advance_frozen_time(current_time, 0.1)
-              end
+        ActiveSupport::Notifications.instrument('one') do
+          ActiveSupport::Notifications.instrument('two') do
+            ActiveSupport::Notifications.instrument('one.three') do
+            end
+            ActiveSupport::Notifications.instrument('two.three') do
             end
           end
         end
-
-        context "its events" do
-          subject { transaction.events }
-
-          it { should have(4).items }
-
-          context "event one" do
-            subject { transaction.events[3] }
-
-            its([:digest])         { should be_nil }
-            its([:name])           { should == 'one' }
-            its([:started])        { should == 1418660000.0 }
-            its([:duration])       { should be_within(0.02).of(0.7) }
-            its([:child_duration]) { should be_within(0.02).of(0.6) }
-            its([:level])          { should == 0 }
-          end
-
-          context "event two" do
-            subject { transaction.events[2] }
-
-            its([:digest])         { should be_nil }
-            its([:name])           { should == 'two' }
-            its([:started])        { should == 1418660000.1 }
-            its([:duration])       { should be_within(0.02).of(0.6) }
-            its([:child_duration]) { should be_within(0.02).of(0.2) }
-            its([:level])          { should == 1 }
-          end
-
-          context "event two.three" do
-            subject { transaction.events[1] }
-
-            its([:digest])         { should be_nil }
-            its([:name])           { should == 'two.three' }
-            its([:started])        { should == 1418660000.6 }
-            its([:duration])       { should be_within(0.02).of(0.1) }
-            its([:child_duration]) { should == 0.0 }
-            its([:level])          { should == 2 }
-          end
-
-          context "event one.three" do
-            subject { transaction.events[0] }
-
-            its([:digest])         { should be_nil }
-            its([:name])           { should == 'one.three' }
-            its([:started])        { should == 1418660000.5 }
-            its([:duration])       { should be_within(0.02).of(0.1) }
-            its([:child_duration]) { should == 0.0 }
-            its([:level])          { should == 2 }
-          end
-        end
-
-        context "measurements in the aggregator" do
-          let(:measurements) { aggregator.measurements[1418659980] }
-          subject { measurements }
-
-          it { should have(4).items }
-
-          context "event with children" do
-            subject { measurements['_one'] }
-
-            its([:name]) { should == 'one' }
-            its([:c])    { should == 1.0 }
-            its([:d])    { should == be_within(0.02).of(0.1) }
-          end
-
-          context "event without children" do
-            subject { measurements['_one.three'] }
-
-            its([:name]) { should == 'one.three' }
-            its([:c])    { should == 1.0 }
-            its([:d])    { should == be_within(0.02).of(0.1) }
-          end
-        end
       end
 
-      context "with an event with a formatter" do
-        before do
-          3.times do
-            ActiveSupport::Notifications.instrument(
-              'request.net_http',
-              :url => 'http://www.google.com',
-              :method => 'GET'
-            )
-          end
-        end
+      it "should call finish with title and body if there is a formatter" do
+          Appsignal::Native.should_receive(:start_event).once
+          Appsignal::Native.should_receive(:finish_event).with(
+            'request-id',
+            'request.net_http',
+            'GET http://www.google.com',
+            ''
+          ).once
 
-        subject { transaction.events }
-
-        it { should have(3).items }
-
-        context "first event" do
-          subject { transaction.events.first }
-
-          its([:name]) { should == 'request.net_http' }
-          its([:digest]) { should == '41771902b526b4a972581ce2a606fb39' }
-        end
-
-        context "event details" do
-          subject { Appsignal.agent.aggregator.event_details }
-
-          context "first" do
-            subject { Appsignal.agent.aggregator.event_details.first }
-
-            its([:digest]) { should == '41771902b526b4a972581ce2a606fb39' }
-            its([:name])   { should == 'request.net_http' }
-            its([:title])  { should == 'GET http://www.google.com' }
-            its([:body])   { should be_nil }
-          end
-        end
-      end
-
-      it "should not record events when paused" do
-        ActiveSupport::Notifications.instrument 'outside'
-        Appsignal.without_instrumentation do
-          ActiveSupport::Notifications.instrument 'inside'
-        end
-
-        transaction.events.should have(1).item
-        transaction.events.first[:name].should == 'outside'
+          ActiveSupport::Notifications.instrument(
+            'request.net_http',
+            :url => 'http://www.google.com',
+            :method => 'GET'
+          )
       end
 
       context "root event" do

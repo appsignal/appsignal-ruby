@@ -68,6 +68,11 @@ describe Appsignal do
         Appsignal.start
       end
 
+      it "should create a subscriber" do
+        Appsignal.start
+        Appsignal.subscriber.should be_a(Appsignal::Subscriber)
+      end
+
       context "when not active for this environment" do
         before { Appsignal.config = project_fixture_config('staging') }
 

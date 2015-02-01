@@ -53,7 +53,7 @@ module Appsignal
     attach_function(
       :set_transaction_metadata,
       :appsignal_set_transaction_metadata,
-      [:string, :string, :string, :int],
+      [:string, :string, :string, :int64],
       :void
     )
 
