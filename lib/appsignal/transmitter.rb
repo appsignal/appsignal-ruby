@@ -62,9 +62,10 @@ module Appsignal
     def http_client
       Net::HTTP.new(uri.host, uri.port).tap do |http|
         if uri.scheme == 'https'
-          http.use_ssl = true
+          http.use_ssl     = true
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-          http.ca_file = CA_FILE_PATH
+          http.ssl_version = :TLSv1
+          http.ca_file     = CA_FILE_PATH
         end
       end
     end
