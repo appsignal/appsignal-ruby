@@ -51,6 +51,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
         ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::AGENT_VERSION
       end
     end
 

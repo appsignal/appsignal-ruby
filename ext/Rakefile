@@ -2,13 +2,13 @@ require 'fileutils'
 require 'open-uri'
 require 'zlib'
 require 'rubygems/package'
+require File.expand_path('../../lib/appsignal/version.rb', __FILE__)
 
-AGENT_VERSION   = '83d9394'
 HOST            = 'd135dj0rjqvssy.cloudfront.net'
 SUPPORTED_ARCHS = %w(x86_64-linux x86_64-darwin)
 
 def ext_path(path)
-  File.join(File.expand_path("..", __FILE__), path)
+  File.join(File.expand_path('..', __FILE__), path)
 end
 
 task :default do
@@ -20,7 +20,7 @@ task :default do
   arch = "#{Gem::Platform.local.cpu}-#{Gem::Platform.local.os}"
 
   if SUPPORTED_ARCHS.include?(arch)
-    archive_url = "https://#{HOST}/#{AGENT_VERSION}/appsignal-agent-#{arch}.tar.gz"
+    archive_url = "https://#{HOST}/#{Appsignal::AGENT_VERSION}/appsignal-agent-#{arch}.tar.gz"
     Gem::Package::TarReader.new(Zlib::GzipReader.open(open(archive_url))) do |tar|
       tar.each do |entry|
         if entry.file?

@@ -67,11 +67,12 @@ module Appsignal
     def write_to_environment
       ENV['APPSIGNAL_ACTIVE']            = active?.to_s
       ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
-      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path("../../../ext", __FILE__).to_s
+      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
       ENV['APPSIGNAL_ENVIRONMENT']       = env
+      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::AGENT_VERSION
     end
 
     protected
