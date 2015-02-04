@@ -1,6 +1,6 @@
 # 0.12.0
 * New version of event formatting and collection
-* Refacor of agent and aggregator
+* Use native library and agent
 * Use API V2
 
 # 0.11.1
