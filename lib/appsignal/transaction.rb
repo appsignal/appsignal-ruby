@@ -31,7 +31,7 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :queue_start
+                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused
 
     def initialize(request_id, env)
       Appsignal.transactions[request_id] = self
@@ -41,6 +41,7 @@ module Appsignal
       @exception = nil
       @env = env
       @tags = {}
+      @paused = false
     end
 
     def sanitized_environment
@@ -57,6 +58,14 @@ module Appsignal
 
     def set_tags(given_tags={})
       @tags.merge!(given_tags)
+    end
+
+    def pause!
+      @paused = true
+    end
+
+    def resume!
+      @paused = false
     end
 
     def set_process_action_event(event)
@@ -76,7 +85,7 @@ module Appsignal
     end
 
     def add_event(event)
-      @events << event
+      @events << event unless @paused == true
     end
 
     def add_exception(ex)

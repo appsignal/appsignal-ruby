@@ -484,18 +484,16 @@ describe Appsignal do
     end
 
     describe ".without_instrumentation" do
-      let(:agent) { double }
-      before do
-        Appsignal.stub(:agent => agent)
+      let(:transaction) { double }
+      before { Appsignal::Transaction.stub(:current => transaction) }
+
+      it "should pause and unpause the transaction around the block" do
+        transaction.should_receive(:pause!)
+        transaction.should_receive(:resume!)
       end
 
-      it "should pause and unpause the agent around the block" do
-        agent.should_receive(:paused=).with(true)
-        agent.should_receive(:paused=).with(false)
-      end
-
-      context "without agent" do
-        let(:agent) { nil }
+      context "without transaction" do
+        let(:transaction) { nil }
 
         it "should not crash" do
           # just execute the after block

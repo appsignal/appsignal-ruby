@@ -189,16 +189,6 @@ describe Appsignal::Agent do
         ActiveSupport::Notifications.instrument 'render_template'
       end
 
-      context "when paused" do
-        it "should add a normal event" do
-          Appsignal::Transaction.current.should_not_receive(:add_event)
-
-          Appsignal.without_instrumentation do
-            ActiveSupport::Notifications.instrument 'moo'
-          end
-        end
-      end
-
       it "should add and set a process action event" do
         Appsignal::Transaction.current.should_receive(:set_process_action_event).with(
           kind_of(ActiveSupport::Notifications::Event)

@@ -175,10 +175,10 @@ module Appsignal
     #
     # @since 0.8.7
     def without_instrumentation
-      agent.paused = true if agent
+      Appsignal::Transaction.current.pause! if Appsignal::Transaction.current
       yield
     ensure
-      agent.paused = false if agent
+      Appsignal::Transaction.current.resume! if Appsignal::Transaction.current
     end
   end
 end

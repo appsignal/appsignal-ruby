@@ -147,6 +147,34 @@ describe Appsignal::Transaction do
           transaction.add_event(event)
         }.to change(transaction, :events).to([event])
       end
+
+      context "when paused" do
+        before { transaction.pause! }
+
+        it 'should add an event' do
+          expect {
+            transaction.add_event(event)
+          }.to_not change(transaction, :events)
+        end
+      end
+    end
+
+    describe "#pause!" do
+      it "should change the pause flag to true" do
+        expect{
+          transaction.pause!
+        }.to change(transaction, :paused).from(false).to(true)
+      end
+    end
+
+    describe "#resume!" do
+      before { transaction.pause! }
+
+      it "should change the pause flag to false" do
+        expect{
+          transaction.resume!
+        }.to change(transaction, :paused).from(true).to(false)
+      end
     end
 
     context "using exceptions" do
