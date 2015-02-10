@@ -40,6 +40,10 @@ if rails_present?
         MyApp::Application.middleware.to_a.should include Appsignal::Rack::Listener
       end
 
+      it "should have added the js exception catcher middleware" do
+        MyApp::Application.middleware.to_a.should include Appsignal::Rack::JSExceptionCatcher
+      end
+
       it "should not have added the instrumentation middleware" do
         MyApp::Application.middleware.to_a.should_not include Appsignal::Rack::Instrumentation
       end
