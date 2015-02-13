@@ -33,7 +33,6 @@ describe Appsignal::Rack::Instrumentation do
         'rack.input' => StringIO.new,
         'REQUEST_METHOD' => 'GET',
         'PATH_INFO' => '/homepage',
-        'REQUEST_METHOD' => 'GET',
         'QUERY_STRING' => 'param=something'
       }
     end
