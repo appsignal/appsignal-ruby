@@ -7,7 +7,7 @@ if defined?(::Sequel)
         # Add query instrumentation
         def log_yield(sql, args = nil)
           name    = 'sql.sequel'
-          payload = {sql: sql, args: args}
+          payload = {:sql => sql, :args => args}
 
           ActiveSupport::Notifications.instrument(name, payload) { yield }
         end
