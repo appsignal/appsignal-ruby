@@ -9,7 +9,6 @@ if sequel_present?
 
     before do
       load file
-      db.extension :appsignal_instrumentation
       start_agent
     end
 

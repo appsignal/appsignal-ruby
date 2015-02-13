@@ -14,4 +14,13 @@ if defined?(::Sequel)
       end # Sequel
     end # Integrations
   end # Appsignal
+
+  # Register the extension...
+  Sequel::Database.register_extension(
+    :appsignal_integration,
+    Appsignal::Integrations::Sequel
+  )
+
+  # ... and automatically add it to future instances.
+  Sequel::Database.extension(:appsignal_integration)
 end
