@@ -1,3 +1,6 @@
+# 0.11.5
+* Add Sequel gem support (https://github.com/jeremyevans/sequel)
+
 # 0.11.4
 * Make `without_instrumentation` thread safe
 
