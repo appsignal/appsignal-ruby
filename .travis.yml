@@ -17,6 +17,7 @@ gemfile:
   - "gemfiles/rails-3.2.gemfile"
   - "gemfiles/rails-4.0.gemfile"
   - "gemfiles/rails-4.1.gemfile"
+  - "gemfiles/sequel.gemfile"
   - "gemfiles/sinatra.gemfile"
 
 matrix:
