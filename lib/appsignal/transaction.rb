@@ -71,7 +71,11 @@ module Appsignal
     def set_process_action_event(event)
       return unless event && event.payload
       @process_action_event = event.dup
-      @action = "#{@process_action_event.payload[:controller]}##{@process_action_event.payload[:action]}"
+      if @process_action_event.payload[:controller]
+        @action = "#{@process_action_event.payload[:controller]}##{@process_action_event.payload[:action]}"
+      else
+        @action = @process_action_event.payload[:action]
+      end
       @kind = 'http_request'
       set_http_queue_start
     end

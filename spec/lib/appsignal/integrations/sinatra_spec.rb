@@ -36,7 +36,7 @@ if defined?(::Sinatra)
 
     it "should have added the instrumentation middleware" do
       Sinatra::Application.middleware.to_a.should include(
-        [Appsignal::Rack::Instrumentation, [], nil]
+        [Appsignal::Rack::SinatraInstrumentation, [], nil]
       )
     end
   end
