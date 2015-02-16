@@ -27,11 +27,11 @@ module Appsignal
       if File.exists?(config_file)
         load_config_from_disk
       elsif ENV['APPSIGNAL_PUSH_API_KEY']
-        load_default_config_with_push_api_key(
+        load_default_config_with_push_api_key_and_name_from_env(
           ENV['APPSIGNAL_PUSH_API_KEY']
         )
       elsif ENV['APPSIGNAL_API_KEY']
-        load_default_config_with_push_api_key(
+        load_default_config_with_push_api_key_and_name_from_env(
           ENV['APPSIGNAL_API_KEY']
         )
         @logger.info(
@@ -46,7 +46,7 @@ module Appsignal
       end
       if config_hash && !config_hash[:name]
         @logger.debug(
-          "There's no application name set in your config file. " \
+          "There's no application name set in your config file or in the APPSIGNAL_APP_NAME env var. " \
           "You should set one unless your app runs on Heroku."
         )
       end
@@ -91,11 +91,14 @@ module Appsignal
       end
     end
 
-    def load_default_config_with_push_api_key(key)
+    def load_default_config_with_push_api_key_and_name_from_env(key)
+      # Get base config by doing the default merge and adding the push api key.
       @config_hash = merge_config(
         :push_api_key => key,
         :active => true
       )
+      @config_hash[:name]   = ENV['APPSIGNAL_APP_NAME'] if ENV['APPSIGNAL_APP_NAME']
+      @config_hash[:active] = ENV['APPSIGNAL_ACTIVE'] == 'true' if ENV['APPSIGNAL_ACTIVE']
     end
 
     def merge_config(config)
