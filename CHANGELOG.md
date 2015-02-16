@@ -1,3 +1,7 @@
+# 0.11.6
+* Use `APPSIGNAL_APP_NAME` and `APPSIGNAL_ACTIVE` env vars in config
+* Better Sinatra support: Use route as action and set session data for Sinatra
+
 # 0.11.5
 * Add Sequel gem support (https://github.com/jeremyevans/sequel)
 
