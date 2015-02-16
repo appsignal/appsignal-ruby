@@ -100,6 +100,18 @@ describe Appsignal::Transaction do
       it "should call set_http_queue_start" do
         transaction.queue_start.should_not be_nil
       end
+
+      context "if there is no controller" do
+        before do
+          process_action_event.payload[:action] = 'GET /items/:id'
+          process_action_event.payload.delete(:controller)
+          transaction.set_process_action_event(process_action_event)
+        end
+
+        it "should set the action without a #" do
+          transaction.action.should == 'GET /items/:id'
+        end
+      end
     end
 
     describe "set_perform_job_event" do
