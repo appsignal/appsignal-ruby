@@ -7,22 +7,24 @@ module Appsignal
     include Appsignal::CarefulLogger
 
     DEFAULT_CONFIG = {
-      :ignore_exceptions      => [],
-      :ignore_actions         => [],
-      :send_params            => true,
-      :endpoint               => 'https://push.appsignal.com/1',
-      :slow_request_threshold => 200,
-      :instrument_net_http    => true,
-      :skip_session_data      => false
+      :ignore_exceptions              => [],
+      :ignore_actions                 => [],
+      :send_params                    => true,
+      :endpoint                       => 'https://push.appsignal.com/1',
+      :slow_request_threshold         => 200,
+      :instrument_net_http            => true,
+      :skip_session_data              => false,
+      :enable_frontend_error_catching => false,
+      :frontend_error_catching_path   => '/appsignal_error_catcher'
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
 
     def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
-      @root_path = root_path
-      @env = env.to_s
+      @root_path      = root_path
+      @env            = env.to_s
       @initial_config = initial_config
-      @logger = logger
+      @logger         = logger
 
       if File.exists?(config_file)
         load_config_from_disk

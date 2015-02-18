@@ -1,12 +1,16 @@
 require 'spec_helper'
 
 describe Appsignal::Rack::JSExceptionCatcher do
-  let(:app)     { double }
-  let(:options) { double }
-  let(:active)  { true }
-  let(:config)  { double(:active? => active) }
+  let(:app)            { double(:call => true) }
+  let(:options)        { double }
+  let(:active)         { true }
+  let(:config_options) { {:enable_frontend_error_catching => true} }
+  let(:config)         { project_fixture_config('production', config_options) }
 
-  before { Appsignal.stub(:config => config) }
+  before do
+    Appsignal.stub(:config => config)
+    config.stub(:active? => active)
+  end
 
   describe "#initialize" do
     it "should log to the logger" do
@@ -25,8 +29,6 @@ describe Appsignal::Rack::JSExceptionCatcher do
 
       it "should call the next middleware" do
         expect( app ).to receive(:call).with(env)
-
-        catcher.call(env)
       end
     end
 
@@ -45,18 +47,43 @@ describe Appsignal::Rack::JSExceptionCatcher do
           .and_return(transaction)
 
         expect( transaction ).to receive(:complete!)
+      end
 
-        catcher.call(env)
+      context "when appsignal is not active" do
+        let(:active)  { false }
+
+        it "should not create a transaction" do
+          expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
+        end
+      end
+
+      context "when `enable_frontend_error_catching` is disabled" do
+        let(:config_options) { {:enable_frontend_error_catching => false} }
+
+        it "should not create a transaction" do
+          expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
+        end
+      end
+
+      context "when `frontend_error_catching_path` is different" do
+        let(:config_options) do
+          {
+            :enable_frontend_error_catching => true,
+            :frontend_error_catching_path   => '/foo'
+          }
+        end
+
+        it "should not create a transaction" do
+          expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
+        end
+
+        it "should call the next middleware" do
+          expect( app ).to receive(:call).with(env)
+        end
       end
     end
 
-    context "when appsignal is not active" do
-      let(:active)  { true }
-
-      it "should not create a transaction" do
-        expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
-      end
-    end
+    after { catcher.call(env) }
   end
 
 end
