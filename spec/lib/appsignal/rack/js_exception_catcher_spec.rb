@@ -3,6 +3,10 @@ require 'spec_helper'
 describe Appsignal::Rack::JSExceptionCatcher do
   let(:app)     { double }
   let(:options) { double }
+  let(:active)  { true }
+  let(:config)  { double(:active? => active) }
+
+  before { Appsignal.stub(:config => config) }
 
   describe "#initialize" do
     it "should log to the logger" do
@@ -43,6 +47,14 @@ describe Appsignal::Rack::JSExceptionCatcher do
         expect( transaction ).to receive(:complete!)
 
         catcher.call(env)
+      end
+    end
+
+    context "when appsignal is not active" do
+      let(:active)  { true }
+
+      it "should not create a transaction" do
+        expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
       end
     end
   end

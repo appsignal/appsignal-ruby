@@ -8,9 +8,11 @@ module Appsignal
 
       def call(env)
         if env['PATH_INFO'] == '/appsignal_error_catcher'
-          body        = JSON.parse(env['rack.input'].read)
-          transaction = JSExceptionTransaction.new(body)
-          transaction.complete!
+          if Appsignal.config.active?
+            body        = JSON.parse(env['rack.input'].read)
+            transaction = JSExceptionTransaction.new(body)
+            transaction.complete!
+          end
           return [ 200, {}, []]
         else
           @app.call(env)
