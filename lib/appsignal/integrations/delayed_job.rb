@@ -11,7 +11,13 @@ if defined?(::Delayed::Plugin)
         end
 
         def self.invoke_with_instrumentation(job, block)
-          class_name, method_name = job.name.split('#')
+          class_and_method_name = if job.payload_object.respond_to?(:appsignal_name)
+            job.payload_object.appsignal_name
+          else
+            job.name
+          end
+          class_name, method_name = class_and_method_name.split('#')
+
           Appsignal.monitor_transaction(
             'perform_job.delayed_job',
             :class => class_name,
