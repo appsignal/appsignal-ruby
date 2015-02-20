@@ -1,3 +1,6 @@
+# 0.11.7
+* Add option to override Job name in Delayed Job
+
 # 0.11.6
 * Use `APPSIGNAL_APP_NAME` and `APPSIGNAL_ACTIVE` env vars in config
 * Better Sinatra support: Use route as action and set session data for Sinatra
