@@ -6,8 +6,10 @@ Net::HTTP.class_eval do
   def request(request, body=nil, &block)
     ActiveSupport::Notifications.instrument(
       'request.net_http',
-      :url => "#{use_ssl? ? 'https' : 'http'}://#{request['host'] || self.address}#{request.path}",
-      :method => request.method
+      :protocol => use_ssl? ? 'https' : 'http',
+      :domain   => request['host'] || self.address,
+      :path     => request.path,
+      :method   => request.method
     ) do
       request_without_appsignal(request, body, &block)
     end

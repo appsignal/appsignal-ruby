@@ -16,7 +16,9 @@ describe "Net::HTTP instrumentation" do
 
     event = events.last
     event.name.should == 'request.net_http'
-    event.payload[:url].should == 'http://www.google.com/'
+    event.payload[:protocol].should == 'http'
+    event.payload[:domain].should == 'www.google.com'
+    event.payload[:path].should == '/'
     event.payload[:method].should == 'GET'
   end
 
@@ -30,7 +32,9 @@ describe "Net::HTTP instrumentation" do
 
     event = events.last
     event.name.should == 'request.net_http'
-    event.payload[:url].should == 'https://www.google.com/'
+    event.payload[:protocol].should == 'https'
+    event.payload[:domain].should == 'www.google.com'
+    event.payload[:path].should == '/'
     event.payload[:method].should == 'GET'
   end
 end

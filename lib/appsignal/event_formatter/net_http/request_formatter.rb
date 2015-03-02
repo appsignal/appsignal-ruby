@@ -5,7 +5,7 @@ module Appsignal
         register 'request.net_http'
 
         def format(payload)
-          ["#{payload[:method]} #{payload[:url]}", nil]
+          ["#{payload[:method]} #{payload[:protocol]}://#{payload[:domain]}", nil]
         end
       end
     end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Appsignal::EventFormatter::NetHttp::RequestFormatter do
-  let(:klass) { Appsignal::EventFormatter::NetHttp::RequestFormatter }
+  let(:klass)     { Appsignal::EventFormatter::NetHttp::RequestFormatter }
   let(:formatter) { klass.new }
 
   it "should register request.net_http" do
@@ -9,9 +9,18 @@ describe Appsignal::EventFormatter::NetHttp::RequestFormatter do
   end
 
   describe "#format" do
-    let(:payload) { {:url => 'http://appsignal.com/about', :method => 'GET'} }
+    let(:payload) do
+      {
+        :protocol => 'http',
+        :url      => 'appsignal.com',
+        :domain   => 'appsignal.com',
+        :path     => '/about',
+        :method   => 'GET'
+      }
+    end
+
     subject { formatter.format(payload) }
 
-    it { should == ['GET http://appsignal.com/about', nil] }
+    it { should == ['GET http://appsignal.com', nil] }
   end
 end
