@@ -1,3 +1,6 @@
+# 0.11.8
+* Add frontend error catcher
+
 # 0.11.7
 * Add option to override Job name in Delayed Job
 
