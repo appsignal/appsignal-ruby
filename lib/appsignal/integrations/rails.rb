@@ -7,6 +7,10 @@ if defined?(::Rails)
         initializer 'appsignal.configure_rails_initialization' do |app|
           app.middleware.insert_before(
             ActionDispatch::RemoteIp,
+            Appsignal::Rack::JSExceptionCatcher
+          )
+          app.middleware.insert_after(
+            Appsignal::Rack::JSExceptionCatcher,
             Appsignal::Rack::Listener
           )
         end
