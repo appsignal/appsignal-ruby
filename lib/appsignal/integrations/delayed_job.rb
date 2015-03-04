@@ -22,9 +22,11 @@ if defined?(::Delayed::Plugin)
             'perform_job.delayed_job',
             :class => class_name,
             :method => method_name,
-            :priority => job.priority,
-            :attempts => job.attempts,
-            :queue => job.queue,
+            :metadata => {
+              :priority => job.priority,
+              :attempts => job.attempts,
+              :queue    => job.queue,
+            },
             :queue_start => job.created_at
           ) do
             block.call(job)
