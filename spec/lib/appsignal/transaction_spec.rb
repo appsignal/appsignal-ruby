@@ -109,8 +109,12 @@ describe Appsignal::Transaction do
         it "should set the meta data in the transaction and native" do
           Appsignal::Native.should_receive(:set_transaction_metadata).with(
             '3',
-            'BlogPostsController#show',
             'http_request',
+            'BlogPostsController#show',
+            '',
+            '',
+            0,
+            '',
             kind_of(Integer)
           )
 
@@ -130,8 +134,12 @@ describe Appsignal::Transaction do
         it "should set the meta data in the transaction and native" do
           Appsignal::Native.should_receive(:set_transaction_metadata).with(
             '3',
-            'BackgroundJob#perform',
             'background_job',
+            'BackgroundJob#perform',
+            '',
+            '',
+            0,
+            '',
             kind_of(Integer)
           )
 
@@ -150,7 +158,7 @@ describe Appsignal::Transaction do
 
       describe '#set_exception' do
         it 'should set an exception' do
-          Appsignal::Native.should_receive(:set_exception_for_transaction).with(
+          Appsignal::Native.should_receive(:set_transaction_exception).with(
             '3',
             kind_of(String),
             'json'

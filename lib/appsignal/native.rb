@@ -44,8 +44,8 @@ module Appsignal
     )
 
     attach_function(
-      :set_exception_for_transaction,
-      :appsignal_set_exception_for_transaction,
+      :set_transaction_exception,
+      :appsignal_set_transaction_exception,
       [:string, :string, :string],
       :void
     )
@@ -53,7 +53,7 @@ module Appsignal
     attach_function(
       :set_transaction_metadata,
       :appsignal_set_transaction_metadata,
-      [:string, :string, :string, :int64],
+      [:string, :string, :string, :string, :string, :int32, :string, :int64],
       :void
     )
 

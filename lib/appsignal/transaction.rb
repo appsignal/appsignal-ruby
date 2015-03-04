@@ -66,8 +66,12 @@ module Appsignal
       end
       Appsignal::Native.set_transaction_metadata(
         request_id,
-        action,
         kind,
+        action,
+        '',
+        '',
+        0,
+        '',
         queue_start
       )
     end
@@ -76,7 +80,7 @@ module Appsignal
       @exception = ex
       return unless @exception
       @time = Time.now.to_i
-      Appsignal::Native.set_exception_for_transaction(
+      Appsignal::Native.set_transaction_exception(
         request_id,
         JSON.generate(exception_hash),
         'json'
