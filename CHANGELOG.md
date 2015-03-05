@@ -1,5 +1,7 @@
 # 0.11.8
 * Add frontend error catcher
+* Add background job metadata (queue, priority etc.) to transaction overview
+* Add APPSIGNAL_APP_ENV variable to Rails config, so you can override the environment
 
 # 0.11.7
 * Add option to override Job name in Delayed Job
