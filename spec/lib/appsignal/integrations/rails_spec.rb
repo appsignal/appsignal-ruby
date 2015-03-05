@@ -20,8 +20,8 @@ if rails_present?
         it { should be_a(Appsignal::Config) }
 
         its(:root_path) { should == Pathname.new(project_fixture_path) }
-        its(:env) { should == 'test' }
-        its([:name]) { should == 'TestApp' }
+        its(:env)       { should == 'test' }
+        its([:name])    { should == 'TestApp' }
 
         context "initial config" do
           subject { Appsignal.config.initial_config }
@@ -47,6 +47,22 @@ if rails_present?
       it "should not have added the instrumentation middleware" do
         MyApp::Application.middleware.to_a.should_not include Appsignal::Rack::Instrumentation
       end
+    end
+
+    context "with APPSIGNAL_APP_ENV ENV var set" do
+      around do |sample|
+        ENV['APPSIGNAL_APP_ENV'] = 'env_test'
+
+        MyEnvApp::Application.config.root = project_fixture_path
+        MyEnvApp::Application.initialize!
+
+        sample.run
+
+        ENV.delete('APPSIGNAL_APP_ENV')
+      end
+      subject { Appsignal.config }
+
+      its(:env) { should == 'env_test' }
     end
   end
 end

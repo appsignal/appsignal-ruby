@@ -22,7 +22,7 @@ if defined?(::Rails)
           # Load config
           Appsignal.config = Appsignal::Config.new(
             Rails.root,
-            Rails.env,
+            ENV.fetch('APPSIGNAL_APP_ENV', Rails.env),
             :name => Rails.application.class.parent_name
           )
 
