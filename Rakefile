@@ -141,3 +141,5 @@ task :console do
   ARGV.clear
   IRB.start
 end
+
+task :default => [:generate_bundle_and_spec_all, :spec]
