@@ -30,6 +30,7 @@ describe "Delayed Job integration" do
       let(:time) { Time.parse('01-01-2001 10:01:00UTC') }
       let(:job) do
         double(
+          :id             => 123,
           :name           => 'TestClass#perform',
           :priority       => 1,
           :attempts       => 1,
@@ -51,6 +52,7 @@ describe "Delayed Job integration" do
               :priority => 1,
               :attempts => 1,
               :queue    => 'default',
+              :id       => 123
             },
             :queue_start => time - 60_000,
           )
@@ -66,10 +68,11 @@ describe "Delayed Job integration" do
               :payload_object => double(
                 :appsignal_name => 'CustomClass#perform'
               ),
-              :name => 'TestClass#perform',
-              :priority => 1,
-              :attempts => 1,
-              :queue    => 'default',
+              :id         => 123,
+              :name       => 'TestClass#perform',
+              :priority   => 1,
+              :attempts   => 1,
+              :queue      => 'default',
               :created_at => time - 60_000
             )
           end
@@ -82,6 +85,7 @@ describe "Delayed Job integration" do
                 :priority => 1,
                 :attempts => 1,
                 :queue    => 'default',
+                :id       => 123
               },
               :queue_start => time - 60_000
             )

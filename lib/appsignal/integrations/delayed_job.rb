@@ -20,12 +20,13 @@ if defined?(::Delayed::Plugin)
 
           Appsignal.monitor_transaction(
             'perform_job.delayed_job',
-            :class => class_name,
-            :method => method_name,
+            :class    => class_name,
+            :method   => method_name,
             :metadata => {
-              :priority => job.priority,
-              :attempts => job.attempts,
+              :id       => job.id,
               :queue    => job.queue,
+              :priority => job.priority || 0,
+              :attempts => job.attempts || 0
             },
             :queue_start => job.created_at
           ) do
