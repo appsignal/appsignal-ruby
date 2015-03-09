@@ -64,31 +64,21 @@ module Appsignal
         @kind = BACKGROUND_JOB
         set_background_queue_start
       end
-      Appsignal::Native.set_transaction_metadata(
+      Appsignal::Native.set_transaction_basedata(
         request_id,
         kind,
         action,
-        '',
-        '',
-        0,
-        '',
         queue_start
       )
     end
 
     def set_exception(ex)
-      @exception = ex
-      return unless @exception
-      @time = Time.now.to_i
-      Appsignal::Native.set_transaction_exception(
+      return unless ex
+      Appsignal::Native.set_transaction_error(
         request_id,
-        JSON.generate(exception_hash),
-        'json'
+        ex.class.name,
+        ex.message
       )
-    end
-
-    def exception?
-      !! exception
     end
 
     def exception_hash

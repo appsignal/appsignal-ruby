@@ -44,16 +44,30 @@ module Appsignal
     )
 
     attach_function(
-      :set_transaction_exception,
-      :appsignal_set_transaction_exception,
+      :set_transaction_error,
+      :appsignal_set_transaction_error,
       [:string, :string, :string],
+      :void
+    )
+
+    attach_function(
+      :set_transaction_error_data,
+      :appsignal_set_transaction_error_data,
+      [:string, :string, :string],
+      :void
+    )
+
+    attach_function(
+      :set_transaction_basedata,
+      :appsignal_set_transaction_basedata,
+      [:string, :string, :string, :int64],
       :void
     )
 
     attach_function(
       :set_transaction_metadata,
       :appsignal_set_transaction_metadata,
-      [:string, :string, :string, :string, :string, :int32, :string, :int64],
+      [:string, :string, :string],
       :void
     )
 

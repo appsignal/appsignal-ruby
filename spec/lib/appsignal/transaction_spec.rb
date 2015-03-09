@@ -107,14 +107,10 @@ describe Appsignal::Transaction do
         let(:payload) { create_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Native.should_receive(:set_transaction_metadata).with(
+          Appsignal::Native.should_receive(:set_transaction_basedata).with(
             '3',
             'http_request',
             'BlogPostsController#show',
-            '',
-            '',
-            0,
-            '',
             kind_of(Integer)
           )
 
@@ -132,14 +128,10 @@ describe Appsignal::Transaction do
         let(:payload) { create_background_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Native.should_receive(:set_transaction_metadata).with(
+          Appsignal::Native.should_receive(:set_transaction_basedata).with(
             '3',
             'background_job',
             'BackgroundJob#perform',
-            '',
-            '',
-            0,
-            '',
             kind_of(Integer)
           )
 
@@ -154,34 +146,17 @@ describe Appsignal::Transaction do
     end
 
     context "setting exception" do
-      let(:exception) { double(:exception, :name => 'test', :message => 'test', :backtrace => []) }
+      let(:exception) { double(:exception, :message => 'test message', :backtrace => []) }
 
       describe '#set_exception' do
         it 'should set an exception' do
-          Appsignal::Native.should_receive(:set_transaction_exception).with(
+          Appsignal::Native.should_receive(:set_transaction_error).with(
             '3',
-            kind_of(String),
-            'json'
+            'RSpec::Mocks::Mock',
+            'test message'
           )
 
           transaction.set_exception(exception)
-
-          transaction.time.should == 1389783600
-          transaction.exception.should == exception
-        end
-      end
-
-      describe "#exception?" do
-        subject { transaction.exception? }
-
-        context "without an exception" do
-          it { should be_false }
-        end
-
-        context "without an exception" do
-          before { transaction.set_exception(exception) }
-
-          it { should be_true }
         end
       end
     end
