@@ -415,7 +415,7 @@ describe Appsignal do
       let(:exception) { RuntimeError.new('I am an exception') }
 
       it "should add the exception to the current transaction" do
-        transaction.should_receive(:set_exception).with(exception)
+        transaction.should_receive(:set_error).with(exception)
 
         Appsignal.set_exception(exception)
       end

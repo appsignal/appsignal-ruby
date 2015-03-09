@@ -100,7 +100,7 @@ module Appsignal
                 Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
                 is_ignored_exception?(exception)
-      Appsignal::Transaction.current.set_exception(exception)
+      Appsignal::Transaction.current.set_error(exception)
     end
 
     def tag_request(params={})
