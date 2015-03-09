@@ -47,24 +47,36 @@ describe Appsignal::Native do
         )
       end
 
-      it "should have a set_transaction_exception method" do
-        subject.set_transaction_exception(
+      it "should have a set_transaction_error method" do
+        subject.set_transaction_error(
           'request_id',
-          '{}',
-          'json'
+          'name',
+          'message'
+        )
+      end
+
+      it "should have a set_transaction_error_data method" do
+        subject.set_transaction_error_data(
+          'request_id',
+          'params',
+          '{}'
+        )
+      end
+
+      it "should have a set_transaction_basedata method" do
+        subject.set_transaction_basedata(
+          'request_id',
+          'kind',
+          'action',
+          100
         )
       end
 
       it "should have a set_transaction_metadata method" do
         subject.set_transaction_metadata(
           'request_id',
-          'kind',
-          'action',
-          'uri',
-          'request_format',
-          200,
-          'request_method',
-          100
+          'key',
+          'value'
         )
       end
 

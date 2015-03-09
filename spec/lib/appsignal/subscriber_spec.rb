@@ -107,8 +107,9 @@ describe Appsignal::Subscriber do
 
           ActiveSupport::Notifications.instrument(
             'request.net_http',
-            :url => 'http://www.google.com',
-            :method => 'GET'
+            :protocol => 'http',
+            :domain   => 'www.google.com',
+            :method   => 'GET'
           )
       end
 

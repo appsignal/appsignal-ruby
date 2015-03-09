@@ -367,7 +367,7 @@ describe Appsignal do
       end
     end
 
-    describe ".send_exception" do
+    describe ".send_error" do
       let(:tags) { nil }
 
       it "should send the exception to AppSignal" do

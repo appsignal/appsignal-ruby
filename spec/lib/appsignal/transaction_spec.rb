@@ -114,6 +114,16 @@ describe Appsignal::Transaction do
             kind_of(Integer)
           )
 
+          metadata = {
+            'path'           => '/blog',
+            'request_format' => 'html',
+            'request_method' => 'GET',
+            'status'         => '200'
+          }
+          metadata.each do |key, value|
+            transaction.should_receive(:set_metadata).with(key, value).once
+          end
+
           transaction.set_root_event(name, payload)
 
           transaction.root_event_payload.should == payload
@@ -145,70 +155,75 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "setting exception" do
-      let(:exception) { double(:exception, :message => 'test message', :backtrace => []) }
+    describe "#set_metadata" do
+      it "should set the metdata in native" do
+        Appsignal::Native.should_receive(:set_transaction_metadata).with(
+          '3',
+          'request_method',
+          'GET'
+        ).once
 
-      describe '#set_exception' do
-        it 'should set an exception' do
-          Appsignal::Native.should_receive(:set_transaction_error).with(
-            '3',
-            'RSpec::Mocks::Mock',
-            'test message'
-          )
+        transaction.set_metadata('request_method', 'GET')
+      end
 
-          transaction.set_exception(exception)
-        end
+      it "should set the metdata in native when value is nil" do
+        Appsignal::Native.should_not_receive(:set_transaction_metadata)
+
+        transaction.set_metadata('request_method', nil)
       end
     end
 
-    describe '#exception_hash' do
-      before do
-        transaction.set_root_event('process_action.action_controller', create_payload)
-        error = StandardError.new('test error')
-        error.set_backtrace(['line 1'])
-        transaction.set_exception(error)
-        transaction.set_tags(:user_id => 1)
+    describe '#set_error' do
+      let(:error) { double(:error, :message => 'test message', :backtrace => []) }
+
+      it "should also respond to add_exception for backwords compatibility" do
+        transaction.should respond_to(:add_exception)
       end
 
-      subject { transaction.exception_hash }
+      it "should set an error and it's data in native" do
+        Appsignal::Native.should_receive(:set_transaction_error).with(
+          '3',
+          'RSpec::Mocks::Mock',
+          'test message'
+        )
+        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          '3',
+          'environment',
+          "{\"SERVER_NAME\":\"localhost\",\"HTTP_X_REQUEST_START\":\"1000000\",\"HTTP_USER_AGENT\":\"IE6\"}"
+        ).once
+        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          '3',
+          'session_data',
+          "{}"
+        ).once
+        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          '3',
+          'tags',
+          "{}"
+        ).once
 
-      its([:action])       { should == 'BlogPostsController#show' }
-      its([:time])         { should == time.to_f }
-      its([:kind])         { should == 'http_request' }
-      its([:overview])     { should == {
-        :path           => '/blog',
-        :request_format => 'html',
-        :request_method => 'GET'
-      } }
-      its([:params])       { should == {
-        'controller' => 'blog_posts',
-        'action'     => 'show',
-        'id'         => '1'
-      } }
-      its([:environment])  { should be_a(Hash) }
-      its([:environment])  { should include('SERVER_NAME') }
-      its([:session_data]) { should == {} }
-      its([:tags])         { should == {:user_id => 1} }
-      its([:exception])    { should == {
-        :exception => 'StandardError',
-        :message   => 'test error',
-        :backtrace => ['line 1']
-      } }
-
-      context "without a root event" do
-        before do
-          transaction.instance_variable_set(:@root_event_payload, nil)
-        end
-
-        its([:overview]) { should be_nil }
+        transaction.set_error(error)
       end
 
-      context "without an exception" do
+      context "with root event payload" do
         before do
-          transaction.set_exception(nil)
+          transaction.set_root_event('process_action.action_controller', create_payload)
         end
 
-        it { should be_nil }
+        it "should also set params" do
+          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+            '3',
+            'params',
+            '{"controller":"blog_posts","action":"show","id":"1"}'
+          ).once
+          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+            '3',
+            kind_of(String),
+            kind_of(String)
+          ).exactly(3).times
+
+          transaction.set_error(error)
+        end
       end
     end
 
@@ -275,20 +290,6 @@ describe Appsignal::Transaction do
 
           it { should == 1389783599600 }
         end
-      end
-    end
-
-    describe "#overview" do
-      subject { transaction.send(:overview) }
-
-      context "without a root event payload" do
-        it { should be_nil }
-      end
-
-      context "with a root event payload" do
-        before { transaction.stub(:root_event_payload => create_payload) }
-
-        it { should == {:path => '/blog', :request_format => 'html', :request_method => 'GET'} }
       end
     end
 
@@ -431,23 +432,9 @@ describe Appsignal::Transaction do
     end
 
     describe "#cleaned_backtrace" do
-      let(:transaction) { regular_transaction }
+      subject { transaction.send(:cleaned_backtrace, ['line 1']) }
 
-      subject { transaction.send(:cleaned_backtrace) }
-
-      context "without an exception" do
-        it { should be_nil }
-      end
-
-      context "with an exception" do
-        before do
-          error = StandardError.new('test error')
-          error.set_backtrace(['line 1'])
-          transaction.set_exception(error)
-        end
-
-        it { should be_a(Array) }
-      end
+      it { should == ['line 1'] }
 
       pending "calls Rails backtrace cleaner if Rails is present"
     end

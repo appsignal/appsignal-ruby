@@ -59,6 +59,10 @@ module Appsignal
         @action = "#{@root_event_payload[:controller]}##{@root_event_payload[:action]}"
         @kind = HTTP_REQUEST
         set_http_queue_start
+        set_metadata('path', payload[:path])
+        set_metadata('request_format', payload[:request_format])
+        set_metadata('request_method', payload[:request_method])
+        set_metadata('status', payload[:status].to_s)
       elsif name.start_with?(Subscriber::PERFORM_JOB_PREFIX)
         @action = "#{@root_event_payload[:class]}##{@root_event_payload[:method]}"
         @kind = BACKGROUND_JOB
@@ -72,33 +76,34 @@ module Appsignal
       )
     end
 
-    def set_exception(ex)
-      return unless ex
-      Appsignal::Native.set_transaction_error(
-        request_id,
-        ex.class.name,
-        ex.message
-      )
+    def set_metadata(key, value)
+      return unless value
+      Appsignal::Native.set_transaction_metadata(request_id, key, value)
     end
 
-    def exception_hash
-      return unless exception?
+    def set_error(error)
+      return unless error
+      Appsignal::Native.set_transaction_error(
+        request_id,
+        error.class.name,
+        error.message
+      )
+
       {
-        :action         => action,
-        :time           => time,
-        :kind           => kind,
-        :overview       => overview,
-        :params         => sanitized_params,
-        :environment    => sanitized_environment,
-        :session_data   => sanitized_session_data,
-        :tags           => sanitized_tags,
-        :exception      => {
-          :exception => exception.class.name,
-          :message   => exception.message,
-          :backtrace => cleaned_backtrace
-        }
-      }
+        :params       => sanitized_params,
+        :environment  => sanitized_environment,
+        :session_data => sanitized_session_data,
+        :tags         => sanitized_tags,
+      }.each do |key, data|
+        next if data.nil?
+        Appsignal::Native.set_transaction_error_data(
+          request_id,
+          key.to_s,
+          JSON.generate(data)
+        )
+      end
     end
+    alias_method :add_exception, :set_error
 
     protected
 
@@ -119,15 +124,6 @@ module Appsignal
             @queue_start = value.to_i
           end
         end
-      end
-
-      def overview
-        return unless root_event_payload
-        {
-          :path           => root_event_payload[:path],
-          :request_format => root_event_payload[:request_format],
-          :request_method => root_event_payload[:request_method]
-        }
       end
 
       def sanitized_params
@@ -160,12 +156,11 @@ module Appsignal
         end
       end
 
-      def cleaned_backtrace
-        return unless exception && exception.backtrace.is_a?(Array)
+      def cleaned_backtrace(backtrace)
         if defined?(::Rails)
-          ::Rails.backtrace_cleaner.clean(exception.backtrace, nil)
+          ::Rails.backtrace_cleaner.clean(backtrace, nil)
         else
-          exception.backtrace
+          backtrace
         end
       end
   end
