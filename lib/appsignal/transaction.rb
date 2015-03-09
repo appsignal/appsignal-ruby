@@ -93,14 +93,18 @@ module Appsignal
         :params       => sanitized_params,
         :environment  => sanitized_environment,
         :session_data => sanitized_session_data,
-        :tags         => sanitized_tags,
+        :tags         => sanitized_tags
       }.each do |key, data|
         next if data.nil?
-        Appsignal::Native.set_transaction_error_data(
-          request_id,
-          key.to_s,
-          JSON.generate(data)
-        )
+        begin
+          Appsignal::Native.set_transaction_error_data(
+            request_id,
+            key.to_s,
+            JSON.generate(data)
+          )
+        rescue JSON::GeneratorError=>e
+          Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
+        end
       end
     end
     alias_method :add_exception, :set_error
