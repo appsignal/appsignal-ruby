@@ -482,44 +482,58 @@ describe Appsignal::Transaction do
 
     describe "#set_http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 0.4 }
-      let(:slightly_earlier_time_in_ms) { (slightly_earlier_time.to_f * 1000).to_i }
+      let(:slightly_earlier_time_value) { (slightly_earlier_time * factor).to_i }
       before { transaction.set_http_queue_start }
       subject { transaction.queue_start }
 
-      context "without env" do
-        let(:env) { nil }
-
-        it { should be_nil }
-      end
-
-      context "with no relevant header set" do
-        let(:env) { {} }
-
-        it { should be_nil }
-      end
-
-      context "with the HTTP_X_REQUEST_START header set" do
-        let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}"} }
-
-        it { should == 1389783599.6 }
-
-        context "with unparsable content" do
-          let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
+      shared_examples "http queue start" do
+        context "without env" do
+          let(:env) { nil }
 
           it { should be_nil }
         end
 
-        context "with some cruft" do
-          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}aaaa"} }
+        context "with no relevant header set" do
+          let(:env) { {} }
 
-          it { should == 1389783599.6 }
+          it { should be_nil }
         end
 
-        context "with the alternate HTTP_X_QUEUE_START header set" do
-          let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_ms}"} }
+        context "with the HTTP_X_REQUEST_START header set" do
+          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}"} }
 
           it { should == 1389783599.6 }
+
+          context "with unparsable content" do
+            let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
+
+            it { should be_nil }
+          end
+
+          context "with some cruft" do
+            let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}aaaa"} }
+
+            it { should == 1389783599.6 }
+          end
+
+          context "with the alternate HTTP_X_QUEUE_START header set" do
+            let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_value}"} }
+
+            it { should == 1389783599.6 }
+          end
         end
+      end
+
+      context "time in miliseconds" do
+        let(:factor) { 1_000 }
+
+        it_should_behave_like "http queue start"
+      end
+
+      context "time in microseconds" do
+        let(:factor) { 1_000_000 }
+
+        it_should_behave_like "http queue start"
       end
     end
 
