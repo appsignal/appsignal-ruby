@@ -181,9 +181,13 @@ module Appsignal
       env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
       if env_var
         Appsignal.logger.debug("Setting http queue start: #{env_var}")
-        value = env_var.tr('^0-9', '')
-        unless value.empty?
-          @queue_start = value.to_f / 1000.0
+        cleaned_value = env_var.tr('^0-9', '')
+        unless cleaned_value.empty?
+          value = cleaned_value.to_i
+          [1_000_000.0, 1_000.0].each do |factor|
+            @queue_start = value / factor
+            break if @queue_start > 946_681_200.0 # Ok if it's later than 2000
+          end
         end
       end
     end
