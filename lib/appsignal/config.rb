@@ -69,8 +69,6 @@ module Appsignal
       ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
       ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
       ENV['APPSIGNAL_LOG_PATH']          = File.join(root_path, 'log')
-      ENV['APPSIGNAL_PIDS_PATH']         = File.join(root_path, 'tmp/pids')
-      ENV['APPSIGNAL_SOCKETS_PATH']      = File.join(root_path, 'tmp/sockets')
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]

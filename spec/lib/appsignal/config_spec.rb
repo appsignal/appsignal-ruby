@@ -48,8 +48,6 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
         ENV['APPSIGNAL_LOG_PATH'].should          end_with('/log')
-        ENV['APPSIGNAL_PIDS_PATH'].should         end_with('/tmp/pids')
-        ENV['APPSIGNAL_SOCKETS_PATH'].should      end_with('/tmp/sockets')
         ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
