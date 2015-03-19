@@ -5,17 +5,6 @@ if defined?(::Rails)
     module Integrations
       class Railtie < ::Rails::Railtie
         initializer 'appsignal.configure_rails_initialization' do |app|
-          app.middleware.insert_before(
-            ActionDispatch::RemoteIp,
-            Appsignal::Rack::JSExceptionCatcher
-          )
-          app.middleware.insert_after(
-            Appsignal::Rack::JSExceptionCatcher,
-            Appsignal::Rack::Listener
-          )
-        end
-
-        config.after_initialize do
           # Start logger
           Appsignal.start_logger(Rails.root.join('log'))
 
@@ -25,6 +14,19 @@ if defined?(::Rails)
             ENV.fetch('APPSIGNAL_APP_ENV', Rails.env),
             :name => Rails.application.class.parent_name
           )
+
+          app.middleware.insert_before(
+            ActionDispatch::RemoteIp,
+            Appsignal::Rack::Listener
+          )
+
+          if Appsignal.config.active? &&
+            Appsignal.config[:enable_frontend_error_catching] == true
+            app.middleware.insert_before(
+              Appsignal::Rack::Listener,
+              Appsignal::Rack::JSExceptionCatcher,
+            )
+          end
 
           Appsignal.start
         end

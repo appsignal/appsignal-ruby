@@ -49,26 +49,9 @@ describe Appsignal::Rack::JSExceptionCatcher do
         expect( transaction ).to receive(:complete!)
       end
 
-      context "when appsignal is not active" do
-        let(:active)  { false }
-
-        it "should not create a transaction" do
-          expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
-        end
-      end
-
-      context "when `enable_frontend_error_catching` is disabled" do
-        let(:config_options) { {:enable_frontend_error_catching => false} }
-
-        it "should not create a transaction" do
-          expect( Appsignal::JSExceptionTransaction ).to_not receive(:new)
-        end
-      end
-
       context "when `frontend_error_catching_path` is different" do
         let(:config_options) do
           {
-            :enable_frontend_error_catching => true,
             :frontend_error_catching_path   => '/foo'
           }
         end
