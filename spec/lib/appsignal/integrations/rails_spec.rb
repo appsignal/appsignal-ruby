@@ -3,18 +3,27 @@ require 'spec_helper'
 if rails_present?
   describe Appsignal::Integrations::Railtie do
     context "after initializing the app" do
-      before :all do
+      it "should call initialize_appsignal" do
+        expect( Appsignal::Integrations::Railtie ).to receive(:initialize_appsignal)
+
         MyApp::Application.config.root = project_fixture_path
         MyApp::Application.initialize!
       end
+    end
+
+    describe "#initialize_appsignal" do
+      let(:app) { MyApp::Application }
+      before { app.middleware.stub(:insert_before => true) }
 
       context "logger" do
+        before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
         subject { Appsignal.logger }
 
         it { should be_a Logger }
       end
 
       context "config" do
+        before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
         subject { Appsignal.config }
 
         it { should be_a(Appsignal::Config) }
@@ -24,65 +33,67 @@ if rails_present?
         its([:name])    { should == 'TestApp' }
 
         context "initial config" do
+          before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
           subject { Appsignal.config.initial_config }
 
           its([:name]) { should == 'MyApp' }
         end
+
+        context "with APPSIGNAL_APP_ENV ENV var set" do
+          around do |sample|
+            ENV['APPSIGNAL_APP_ENV'] = 'env_test'
+            sample.run
+            ENV.delete('APPSIGNAL_APP_ENV')
+          end
+
+
+          its(:env) { should == 'env_test' }
+        end
       end
 
       context "agent" do
+        before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
         subject { Appsignal.agent }
 
         it { should be_a(Appsignal::Agent) }
       end
 
-      it "should have added the listener middleware" do
-        MyApp::Application.middleware.to_a.should include Appsignal::Rack::Listener
-      end
+      context "listener middleware" do
+        it "should have added the listener middleware" do
+          expect( app.middleware ).to receive(:insert_before).with(
+            ActionDispatch::RemoteIp,
+            Appsignal::Rack::Listener
+          )
+        end
 
-      it "should not have added the js exception catcher middleware" do
-        MyApp::Application.middleware.to_a.should_not include Appsignal::Rack::JSExceptionCatcher
-      end
+        context "when frontend_error_catching is enabled" do
+          let(:config) do
+            Appsignal::Config.new(
+              project_fixture_path,
+              'test',
+              :name => 'MyApp',
+              :enable_frontend_error_catching => true
+            )
+          end
 
-      it "should not have added the instrumentation middleware" do
-        MyApp::Application.middleware.to_a.should_not include Appsignal::Rack::Instrumentation
-      end
-    end
+          before do
+            Appsignal.stub(:config => config)
+          end
 
-    context "with APPSIGNAL_APP_ENV ENV var set" do
-      around do |sample|
-        ENV['APPSIGNAL_APP_ENV'] = 'env_test'
+          it "should have added the listener and JSExceptionCatcher middleware" do
+            expect( app.middleware ).to receive(:insert_before).with(
+              ActionDispatch::RemoteIp,
+              Appsignal::Rack::Listener
+            )
 
-        MyEnvApp::Application.config.root = project_fixture_path
-        MyEnvApp::Application.initialize!
+            expect( app.middleware ).to receive(:insert_before).with(
+              Appsignal::Rack::Listener,
+              Appsignal::Rack::JSExceptionCatcher
+            )
+          end
+        end
 
-        sample.run
-
-        ENV.delete('APPSIGNAL_APP_ENV')
-      end
-      subject { Appsignal.config }
-
-      its(:env) { should == 'env_test' }
-    end
-
-    context "when frontend_error_catching is enabled" do
-      let(:config) do
-        Appsignal::Config.new(
-          project_fixture_path,
-          'test',
-          :name => 'MyFrontendErrorCatcherApp',
-          :enable_frontend_error_catching => true
-        )
-      end
-
-      before do
-        Appsignal.stub(:config => config)
-        MyFrontendErrorCatcherApp::Application.config.root = project_fixture_path
-        MyFrontendErrorCatcherApp::Application.initialize!
-      end
-
-      it "should have added the js exception catcher middleware" do
-        MyFrontendErrorCatcherApp::Application.middleware.to_a.should include Appsignal::Rack::JSExceptionCatcher
+        after { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
       end
     end
   end

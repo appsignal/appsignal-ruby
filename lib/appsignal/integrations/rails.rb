@@ -5,6 +5,10 @@ if defined?(::Rails)
     module Integrations
       class Railtie < ::Rails::Railtie
         initializer 'appsignal.configure_rails_initialization' do |app|
+          Appsignal::Integrations::Railtie.initialize_appsignal(app)
+        end
+
+        def self.initialize_appsignal(app)
           # Start logger
           Appsignal.start_logger(Rails.root.join('log'))
 
