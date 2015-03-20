@@ -1,7 +1,7 @@
 module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
-    AGGREGATOR_LIMIT = 5 # Five minutes with a sleep time of 60 seconds
+    AGGREGATOR_LIMIT = 3 # Three minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
                   :transmitter, :subscriber, :paused, :aggregator_queue, :revision
