@@ -378,14 +378,6 @@ describe Appsignal::Agent do
     end
   end
 
-  describe "#clear_queue" do
-    it "starts a new aggregator" do
-      Appsignal::Aggregator.should_receive(:new).twice # once on start, once on clear
-    end
-
-    after { subject.clear_queue }
-  end
-
   describe "#forked!" do
     subject { Appsignal.agent }
 

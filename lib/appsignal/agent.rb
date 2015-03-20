@@ -142,15 +142,6 @@ module Appsignal
       @aggregator_queue = @aggregator_queue.first(limit)
     end
 
-    def clear_queue
-      Appsignal.logger.debug('Clearing queue')
-      # Replace aggregator while making sure no thread
-      # is adding to it's queue
-      Thread.exclusive do
-        @aggregator = Aggregator.new
-      end
-    end
-
     def forked!
       Appsignal.logger.info('Forked worker process')
       @active = true
