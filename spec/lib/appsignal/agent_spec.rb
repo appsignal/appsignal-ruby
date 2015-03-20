@@ -425,6 +425,15 @@ describe Appsignal::Agent do
       subject.shutdown(true, nil)
     end
 
+    it "should only shutdown if the queue is not be sent but there already is a full queue" do
+      subject.should_not_receive(:send_queue)
+
+      subject.add_to_aggregator_queue(1)
+      subject.add_to_aggregator_queue(2)
+      subject.add_to_aggregator_queue(3)
+      subject.shutdown(true, nil)
+    end
+
     it "should only shutdown if the queue is not be sent" do
       subject.should_not_receive(:send_queue)
 

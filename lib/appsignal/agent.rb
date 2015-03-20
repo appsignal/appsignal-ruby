@@ -158,7 +158,9 @@ module Appsignal
       @active = false
       unsubscribe
       stop_thread
-      send_queue if send_current_queue
+      if send_current_queue && @aggregator_queue.length < AGGREGATOR_LIMIT
+        send_queue
+      end
     end
 
     protected
