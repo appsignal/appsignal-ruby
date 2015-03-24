@@ -269,9 +269,17 @@ describe Appsignal::Agent do
   end
 
   describe "#send_queue" do
-    it "adds aggregator to queue" do
+    let(:zipped_payload) { double(:body => :zip) }
+
+    it "adds Zipped Payload to queue" do
       subject.aggregator.stub(:post_processed_queue! => :foo)
-      subject.should_receive(:add_to_aggregator_queue).with(:foo)
+
+      Appsignal::ZippedPayload
+        .should_receive(:new)
+        .with(:foo)
+        .and_return(zipped_payload)
+
+      subject.should_receive(:add_to_aggregator_queue).with(zipped_payload)
     end
 
     it "sends aggregators" do

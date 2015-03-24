@@ -41,7 +41,12 @@ module Appsignal
       end
     end
 
+    # Accepts a string or `Appsignal::ZippedPayload`
+    # If no `Appsignal::ZippedPayload` is given, it will convert it to one.
     def transmit(payload)
+      unless payload.is_a?(Appsignal::ZippedPayload)
+        payload = Appsignal::ZippedPayload.new(payload)
+      end
       Appsignal.logger.debug "Transmitting payload to #{uri}"
       http_client.request(http_post(payload)).code
     end
@@ -52,10 +57,7 @@ module Appsignal
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
         request['Content-Type'] = CONTENT_TYPE
         request['Content-Encoding'] = CONTENT_ENCODING
-        request.body = Zlib::Deflate.deflate(
-          JSON.generate(payload, :quirks_mode => true),
-          Zlib::BEST_SPEED
-        )
+        request.body = payload.body
       end
     end
 

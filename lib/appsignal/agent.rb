@@ -112,7 +112,8 @@ module Appsignal
       end
 
       begin
-        add_to_aggregator_queue(aggregator_to_be_sent.post_processed_queue!)
+        payload = Appsignal::ZippedPayload.new(aggregator_to_be_sent.post_processed_queue!)
+        add_to_aggregator_queue(payload)
         send_aggregators
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}\n#{ex.backtrace.join("\n")}"
