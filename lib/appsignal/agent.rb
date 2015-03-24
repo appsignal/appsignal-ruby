@@ -4,7 +4,8 @@ module Appsignal
     AGGREGATOR_LIMIT = 3 # Three minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused, :aggregator_queue, :revision
+                  :transmitter, :subscriber, :paused, :aggregator_queue, :revision,
+                  :transmission_successful
 
     def initialize
       return unless Appsignal.config.active?
@@ -13,11 +14,12 @@ module Appsignal
       else
         @sleep_time = 60.0
       end
-      @master_pid       = Process.pid
-      @pid              = @master_pid
-      @aggregator       = Aggregator.new
-      @transmitter      = Transmitter.new(ACTION)
-      @aggregator_queue = []
+      @master_pid              = Process.pid
+      @pid                     = @master_pid
+      @aggregator              = Aggregator.new
+      @transmitter             = Transmitter.new(ACTION)
+      @aggregator_queue        = []
+      @transmission_successful = true
 
       subscribe
       start_thread
@@ -134,6 +136,7 @@ module Appsignal
           payload
         end
       end.compact!
+      @transmission_successful = @aggregator_queue.empty?
     end
 
     def truncate_aggregator_queue(limit = AGGREGATOR_LIMIT)
@@ -158,9 +161,9 @@ module Appsignal
       @active = false
       unsubscribe
       stop_thread
-      if send_current_queue && @aggregator_queue.length < AGGREGATOR_LIMIT
-        send_queue
-      end
+
+      # Only attempt to send the queue on shutdown when there are no API issues
+      send_queue if @transmission_successful
     end
 
     protected

@@ -329,6 +329,11 @@ describe Appsignal::Agent do
             subject.send_aggregators
           }.to change(subject, :aggregator_queue).from([aggregator_hash]).to([])
         end
+
+        it "should set the transmission state to successful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_true
+        end
       end
 
       context "when failed to sent" do
@@ -338,6 +343,11 @@ describe Appsignal::Agent do
           expect {
             subject.send_aggregators
           }.to_not change(subject, :aggregator_queue)
+        end
+
+        it "should set the transmission state to unsuccessful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_false
         end
       end
 
@@ -354,6 +364,10 @@ describe Appsignal::Agent do
           }.to_not change(subject, :aggregator_queue)
         end
 
+        it "should set the transmission state to unsuccessful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_false
+        end
       end
     end
   end
@@ -420,21 +434,15 @@ describe Appsignal::Agent do
     end
 
     it "should send the queue and shut down if the queue is to be sent" do
+      subject.instance_variable_set(:@transmission_successful, true)
+
       subject.should_receive(:send_queue)
 
       subject.shutdown(true, nil)
     end
 
-    it "should only shutdown if the queue is not be sent but there already is a full queue" do
-      subject.should_not_receive(:send_queue)
-
-      subject.add_to_aggregator_queue(1)
-      subject.add_to_aggregator_queue(2)
-      subject.add_to_aggregator_queue(3)
-      subject.shutdown(true, nil)
-    end
-
     it "should only shutdown if the queue is not be sent" do
+      subject.instance_variable_set(:@transmission_successful, false)
       subject.should_not_receive(:send_queue)
 
       subject.shutdown(false, nil)
