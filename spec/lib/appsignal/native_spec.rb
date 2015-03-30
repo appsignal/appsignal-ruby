@@ -83,14 +83,6 @@ describe Appsignal::Native do
       it "should have a finish_transaction method" do
         subject.finish_transaction('request_id')
       end
-
-      it "should have a transmit_marker method" do
-        subject.transmit_marker('{}', 'json').should == 200
-      end
-
-      it "should have a check_push_api_auth method" do
-        subject.check_push_api_auth().should be_true
-      end
     end
   end
 end

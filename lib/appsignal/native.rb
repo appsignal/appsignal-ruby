@@ -77,19 +77,5 @@ module Appsignal
       [:string],
       :void
     )
-
-    attach_function(
-      :transmit_marker,
-      :appsignal_transmit_marker,
-      [:string, :string],
-      :int32
-    )
-
-    attach_function(
-      :check_push_api_auth,
-      :appsignal_check_push_api_auth,
-      [],
-      :int32
-    )
   end
 end
