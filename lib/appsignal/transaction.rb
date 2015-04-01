@@ -96,7 +96,7 @@ module Appsignal
         :backtrace    => cleaned_backtrace(error.backtrace),
         :tags         => sanitized_tags
       }.each do |key, data|
-        next if data.nil?
+        next unless data.is_a?(Array) || data.is_a?(Hash)
         begin
           Appsignal::Native.set_transaction_error_data(
             request_id,

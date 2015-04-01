@@ -230,6 +230,27 @@ describe Appsignal::Transaction do
           transaction.set_error(error)
         end
       end
+
+      context "with a non-json convertable type" do
+        before do
+          transaction.stub(:sanitized_params => 'a string')
+        end
+
+        it "should skip the field" do
+          Appsignal::Native.should_not_receive(:set_transaction_error_data).with(
+            '3',
+            'params',
+            kind_of(String)
+          )
+          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+            '3',
+            kind_of(String),
+            kind_of(String)
+          ).exactly(4).times
+
+          transaction.set_error(error)
+        end
+      end
     end
 
     # protected
