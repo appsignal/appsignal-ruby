@@ -269,9 +269,17 @@ describe Appsignal::Agent do
   end
 
   describe "#send_queue" do
-    it "adds aggregator to queue" do
+    let(:zipped_payload) { double(:body => :zip) }
+
+    it "adds Zipped Payload to queue" do
       subject.aggregator.stub(:post_processed_queue! => :foo)
-      subject.should_receive(:add_to_aggregator_queue).with(:foo)
+
+      Appsignal::ZippedPayload
+        .should_receive(:new)
+        .with(:foo)
+        .and_return(zipped_payload)
+
+      subject.should_receive(:add_to_aggregator_queue).with(zipped_payload)
     end
 
     it "sends aggregators" do
@@ -329,6 +337,11 @@ describe Appsignal::Agent do
             subject.send_aggregators
           }.to change(subject, :aggregator_queue).from([aggregator_hash]).to([])
         end
+
+        it "should set the transmission state to successful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_true
+        end
       end
 
       context "when failed to sent" do
@@ -338,6 +351,11 @@ describe Appsignal::Agent do
           expect {
             subject.send_aggregators
           }.to_not change(subject, :aggregator_queue)
+        end
+
+        it "should set the transmission state to unsuccessful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_false
         end
       end
 
@@ -354,6 +372,10 @@ describe Appsignal::Agent do
           }.to_not change(subject, :aggregator_queue)
         end
 
+        it "should set the transmission state to unsuccessful" do
+          subject.send_aggregators
+          expect( subject.transmission_successful ).to be_false
+        end
       end
     end
   end
@@ -376,14 +398,6 @@ describe Appsignal::Agent do
 
       subject.truncate_aggregator_queue(2)
     end
-  end
-
-  describe "#clear_queue" do
-    it "starts a new aggregator" do
-      Appsignal::Aggregator.should_receive(:new).twice # once on start, once on clear
-    end
-
-    after { subject.clear_queue }
   end
 
   describe "#forked!" do
@@ -428,12 +442,15 @@ describe Appsignal::Agent do
     end
 
     it "should send the queue and shut down if the queue is to be sent" do
+      subject.instance_variable_set(:@transmission_successful, true)
+
       subject.should_receive(:send_queue)
 
       subject.shutdown(true, nil)
     end
 
     it "should only shutdown if the queue is not be sent" do
+      subject.instance_variable_set(:@transmission_successful, false)
       subject.should_not_receive(:send_queue)
 
       subject.shutdown(false, nil)

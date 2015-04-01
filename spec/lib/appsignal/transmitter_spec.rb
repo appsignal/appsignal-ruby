@@ -4,6 +4,7 @@ describe Appsignal::Transmitter do
   let(:config) { project_fixture_config }
   let(:action) { 'action' }
   let(:instance) { Appsignal::Transmitter.new(action, config) }
+  let!(:payload)  { Appsignal::ZippedPayload.new({'the' => 'payload'}) }
 
   describe "#uri" do
     before { Socket.stub(:gethostname => 'app1.local') }
@@ -34,9 +35,25 @@ describe Appsignal::Transmitter do
       )
     end
 
-    subject { instance.transmit(:the => :payload) }
+    it "should post the ZippedPayload" do
+      instance.transmit(payload).should == '200'
+    end
 
-    it { should == '200' }
+    it "should not instantiate a new ZippedPayload" do
+      expect( Appsignal::ZippedPayload ).to_not receive(:new)
+      instance.transmit(payload)
+    end
+
+    context "when not given a ZippedPayload, but a hash" do
+      it "should post the ZippedPayload" do
+        instance.transmit({'the' => 'payload'}).should == '200'
+      end
+
+      it "should instantiate a new ZippedPayload" do
+        expect( Appsignal::ZippedPayload ).to receive(:new).and_return(payload)
+        instance.transmit({'the' => 'payload'})
+      end
+    end
   end
 
   describe "#http_post" do
@@ -44,7 +61,7 @@ describe Appsignal::Transmitter do
       Socket.stub(:gethostname => 'app1.local')
     end
 
-    subject { instance.send(:http_post, 'the' => 'payload') }
+    subject { instance.send(:http_post, payload) }
 
     its(:body) { should == Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED) }
     its(:path) { should == instance.uri.request_uri }

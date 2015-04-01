@@ -1,10 +1,11 @@
 module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
-    AGGREGATOR_LIMIT = 5 # Five minutes with a sleep time of 60 seconds
+    AGGREGATOR_LIMIT = 3 # Three minutes with a sleep time of 60 seconds
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
-                  :transmitter, :subscriber, :paused, :aggregator_queue, :revision
+                  :transmitter, :subscriber, :paused, :aggregator_queue, :revision,
+                  :transmission_successful
 
     def initialize
       return unless Appsignal.config.active?
@@ -13,11 +14,12 @@ module Appsignal
       else
         @sleep_time = 60.0
       end
-      @master_pid       = Process.pid
-      @pid              = @master_pid
-      @aggregator       = Aggregator.new
-      @transmitter      = Transmitter.new(ACTION)
-      @aggregator_queue = []
+      @master_pid              = Process.pid
+      @pid                     = @master_pid
+      @aggregator              = Aggregator.new
+      @transmitter             = Transmitter.new(ACTION)
+      @aggregator_queue        = []
+      @transmission_successful = true
 
       subscribe
       start_thread
@@ -110,7 +112,8 @@ module Appsignal
       end
 
       begin
-        add_to_aggregator_queue(aggregator_to_be_sent.post_processed_queue!)
+        payload = Appsignal::ZippedPayload.new(aggregator_to_be_sent.post_processed_queue!)
+        add_to_aggregator_queue(payload)
         send_aggregators
       rescue Exception => ex
         Appsignal.logger.error "#{ex.class} while sending queue: #{ex.message}\n#{ex.backtrace.join("\n")}"
@@ -134,21 +137,13 @@ module Appsignal
           payload
         end
       end.compact!
+      @transmission_successful = @aggregator_queue.empty?
     end
 
     def truncate_aggregator_queue(limit = AGGREGATOR_LIMIT)
       return unless @aggregator_queue.length > limit
       Appsignal.logger.error "Aggregator queue to large, removing items"
       @aggregator_queue = @aggregator_queue.first(limit)
-    end
-
-    def clear_queue
-      Appsignal.logger.debug('Clearing queue')
-      # Replace aggregator while making sure no thread
-      # is adding to it's queue
-      Thread.exclusive do
-        @aggregator = Aggregator.new
-      end
     end
 
     def forked!
@@ -167,7 +162,9 @@ module Appsignal
       @active = false
       unsubscribe
       stop_thread
-      send_queue if send_current_queue
+
+      # Only attempt to send the queue on shutdown when there are no API issues
+      send_queue if @transmission_successful
     end
 
     protected
