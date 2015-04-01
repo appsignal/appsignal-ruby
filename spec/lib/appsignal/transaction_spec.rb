@@ -174,7 +174,7 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_error' do
-      let(:error) { double(:error, :message => 'test message', :backtrace => []) }
+      let(:error) { double(:error, :message => 'test message', :backtrace => ['line 1']) }
 
       it "should also respond to add_exception for backwords compatibility" do
         transaction.should respond_to(:add_exception)
@@ -195,6 +195,11 @@ describe Appsignal::Transaction do
           '3',
           'session_data',
           "{}"
+        ).once
+        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          '3',
+          'backtrace',
+          "[\"line 1\"]"
         ).once
         Appsignal::Native.should_receive(:set_transaction_error_data).with(
           '3',
@@ -220,7 +225,7 @@ describe Appsignal::Transaction do
             '3',
             kind_of(String),
             kind_of(String)
-          ).exactly(3).times
+          ).exactly(4).times
 
           transaction.set_error(error)
         end

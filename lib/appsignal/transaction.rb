@@ -93,6 +93,7 @@ module Appsignal
         :params       => sanitized_params,
         :environment  => sanitized_environment,
         :session_data => sanitized_session_data,
+        :backtrace    => cleaned_backtrace(error.backtrace),
         :tags         => sanitized_tags
       }.each do |key, data|
         next if data.nil?
