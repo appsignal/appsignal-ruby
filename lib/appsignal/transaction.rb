@@ -35,13 +35,12 @@ module Appsignal
       end
     end
 
-    attr_reader :request_id, :events, :process_action_event, :action, :exception,
+    attr_reader :request_id, :process_action_event, :action, :exception,
                 :env, :fullpath, :time, :tags, :kind, :queue_start, :paused, :root_event_payload
 
     def initialize(request_id, env)
       @root_event_payload = nil
       @request_id = request_id
-      @events = []
       @process_action_event = nil
       @exception = nil
       @env = env
