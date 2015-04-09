@@ -36,10 +36,10 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused
+                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused, :root_event_payload
 
     def initialize(request_id, env)
-      Appsignal.transactions[request_id] = self
+      @root_event_payload = nil
       @request_id = request_id
       @events = []
       @process_action_event = nil
@@ -47,6 +47,7 @@ module Appsignal
       @env = env
       @tags = {}
       @paused = false
+      @queue_start = -1
     end
 
     def sanitized_environment
@@ -133,22 +134,11 @@ module Appsignal
     protected
 
     def set_background_queue_start
+      return unless root_event_payload
       queue_start = root_event_payload[:queue_start]
       return unless queue_start
       Appsignal.logger.debug("Setting background queue start: #{queue_start}")
       @queue_start = (queue_start.to_f * 1000.0).to_i
-    end
-
-    def set_http_queue_start
-      return unless env
-      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
-      if env_var
-        Appsignal.logger.debug("Setting http queue start: #{env_var}")
-        value = env_var.tr('^0-9', '')
-        unless value.empty?
-          @queue_start = value.to_i
-        end
-      end
     end
 
     def sanitized_params
@@ -168,6 +158,15 @@ module Appsignal
             @queue_start = value / factor
             break if @queue_start > 946_681_200.0 # Ok if it's later than 2000
           end
+        end
+      end
+    end
+
+    def sanitized_environment
+      return unless env
+      {}.tap do |out|
+        ENV_METHODS.each do |key|
+          out[key] = env[key] if env[key]
         end
       end
     end

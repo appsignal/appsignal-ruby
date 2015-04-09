@@ -73,7 +73,7 @@ module Appsignal
         ActiveSupport::Notifications.instrument(name, payload) do
           yield
         end
-      rescue Exception => exception
+      rescue => exception
         Appsignal.set_exception(exception)
         raise exception
       ensure
