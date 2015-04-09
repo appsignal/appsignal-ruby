@@ -51,17 +51,6 @@ if rails_present?
         end
       end
 
-      it "should have added the listener middleware" do
-        MyApp::Application.middleware.to_a.should include Appsignal::Rack::Listener
-      end
-
-      context "agent" do
-        before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-        subject { Appsignal.agent }
-
-        it { should be_a(Appsignal::Agent) }
-      end
-
       context "listener middleware" do
         it "should have added the listener middleware" do
           expect( app.middleware ).to receive(:insert_before).with(
