@@ -103,6 +103,11 @@ if capistrano2_present?
           end
 
           context "proper setup" do
+            before do
+              @transmitter = double
+              Appsignal::Transmitter.should_receive(:new).and_return(@transmitter)
+            end
+
             it "should add the correct marker data" do
               Appsignal::Marker.should_receive(:new).with(
                 marker_data,
@@ -114,7 +119,7 @@ if capistrano2_present?
             end
 
             it "should transmit data" do
-              Appsignal::Native.should_receive(:transmit_marker).and_return(200)
+              @transmitter.should_receive(:transmit).and_return('200')
               @capistrano_config.find_and_execute_task('appsignal:deploy')
               @io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
               @io.string.should include('Appsignal has been notified of this deploy!')
@@ -137,6 +142,12 @@ if capistrano2_present?
                 @capistrano_config.find_and_execute_task('appsignal:deploy')
               end
             end
+          end
+
+          it "should not transmit data" do
+            @capistrano_config.find_and_execute_task('appsignal:deploy')
+            @io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+            @io.string.should include('Something went wrong while trying to notify Appsignal:')
           end
 
           context "dry run" do
