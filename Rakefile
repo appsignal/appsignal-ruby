@@ -118,7 +118,7 @@ task :generate_bundle_and_spec_all do
       out << '#!/bin/sh'
     end
     out << 'rm -f .ruby-version'
-
+    out << 'rake -f ext/Rakefile'
     out << "echo 'Using #{version_manager}'"
     RUBY_VERSIONS.each do |version|
       out << "echo 'Switching to #{version}'"
