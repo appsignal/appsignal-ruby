@@ -155,7 +155,7 @@ module Appsignal
         unless cleaned_value.empty?
           value = cleaned_value.to_i
           [1_000_000.0, 1_000.0].each do |factor|
-            @queue_start = value / factor
+            @queue_start = (value / factor).to_i
             break if @queue_start > 946_681_200.0 # Ok if it's later than 2000
           end
         end
