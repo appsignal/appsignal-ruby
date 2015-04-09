@@ -3,6 +3,31 @@
 * Use native library and agent
 * Use API V2
 
+# 0.11.8
+* Add frontend error catcher
+* Add background job metadata (queue, priority etc.) to transaction overview
+* Add APPSIGNAL_APP_ENV variable to Rails config, so you can override the environment
+* Handle http queue times in microseconds too
+
+# 0.11.7
+* Add option to override Job name in Delayed Job
+
+# 0.11.6
+* Use `APPSIGNAL_APP_NAME` and `APPSIGNAL_ACTIVE` env vars in config
+* Better Sinatra support: Use route as action and set session data for Sinatra
+
+# 0.11.5
+* Add Sequel gem support (https://github.com/jeremyevans/sequel)
+
+# 0.11.4
+* Make `without_instrumentation` thread safe
+
+# 0.11.3
+* Support Ruby 1.9 and up instead of 1.9.3 and up
+
+# 0.11.2
+* If APP_REVISION environment variable is set, send it with the log entry.
+
 # 0.11.1
 * Allow a custom request_class and params_method on  Rack instrumentation
 * Loop through env methods instead of env

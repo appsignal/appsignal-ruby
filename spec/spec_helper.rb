@@ -38,6 +38,13 @@ def capistrano3_present?
     Gem.loaded_specs['capistrano'].version >= Gem::Version.new('3.0')
 end
 
+def sequel_present?
+  require 'sequel'
+  true
+rescue LoadError
+  false
+end
+
 require 'appsignal'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}

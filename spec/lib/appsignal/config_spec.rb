@@ -16,15 +16,18 @@ describe Appsignal::Config do
 
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
-        :ignore_exceptions => [],
-        :ignore_actions => [],
-        :instrument_net_http => true,
-        :skip_session_data => false,
-        :send_params => true,
-        :endpoint => 'https://push.appsignal.com',
-        :push_api_key => 'abc',
-        :name => 'TestApp',
-        :active => true
+        :ignore_exceptions              => [],
+        :ignore_actions                 => [],
+        :instrument_net_http            => true,
+        :skip_session_data              => false,
+        :send_params                    => true,
+        :endpoint                       => 'https://push.appsignal.com/1',
+        :slow_request_threshold         => 200,
+        :push_api_key                   => 'abc',
+        :name                           => 'TestApp',
+        :active                         => true,
+        :enable_frontend_error_catching => false,
+        :frontend_error_catching_path   => '/appsignal_error_catcher'
       }
     end
 
@@ -140,18 +143,21 @@ describe Appsignal::Config do
 
       it "should merge with the default config, fill the config hash and log about the missing name" do
         Appsignal.logger.should_receive(:debug).with(
-          "There's no application name set in your config file. You should set one unless your app runs on Heroku."
+          "There's no application name set in your config file or in the APPSIGNAL_APP_NAME env var. You should set one unless your app runs on Heroku."
         )
 
         subject.config_hash.should == {
-          :push_api_key => 'push_api_key',
-          :ignore_exceptions => [],
-          :ignore_actions => [],
-          :send_params => true,
-          :instrument_net_http => true,
-          :skip_session_data => false,
-          :endpoint => 'https://push.appsignal.com',
-          :active => true
+          :push_api_key                   => 'push_api_key',
+          :ignore_exceptions              => [],
+          :ignore_actions                 => [],
+          :send_params                    => true,
+          :instrument_net_http            => true,
+          :skip_session_data              => false,
+          :endpoint                       => 'https://push.appsignal.com/1',
+          :slow_request_threshold         => 200,
+          :active                         => true,
+          :enable_frontend_error_catching => false,
+          :frontend_error_catching_path   => '/appsignal_error_catcher'
         }
       end
 
@@ -161,6 +167,51 @@ describe Appsignal::Config do
         it "should merge with the config" do
           Appsignal.logger.should_not_receive(:debug)
           subject[:name].should == 'Initial Name'
+        end
+      end
+
+      context "more config in environment" do
+        context "APPSIGNAL_APP_NAME is set" do
+          before do
+            ENV['APPSIGNAL_APP_NAME'] = 'Name from env'
+          end
+
+          it "should set the name" do
+            Appsignal.logger.should_not_receive(:debug)
+            subject[:name].should == 'Name from env'
+          end
+        end
+
+        context "APPSIGNAL_ACTIVE" do
+          context "not present" do
+            before do
+              ENV.delete('APPSIGNAL_ACTIVE')
+            end
+
+            it "should still set active to true" do
+              subject[:active].should be_true
+            end
+          end
+
+          context "true" do
+            before do
+              ENV['APPSIGNAL_ACTIVE'] = 'true'
+            end
+
+            it "should set active to true" do
+              subject[:active].should be_true
+            end
+          end
+
+          context "false" do
+            before do
+              ENV['APPSIGNAL_ACTIVE'] = 'false'
+            end
+
+            it "should set active to false" do
+              subject[:active].should be_false
+            end
+          end
         end
       end
 

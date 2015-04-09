@@ -14,5 +14,5 @@ Appsignal.start
 
 if Appsignal.active?
   ::Sinatra::Application.use(Appsignal::Rack::Listener)
-  ::Sinatra::Application.use(Appsignal::Rack::Instrumentation)
+  ::Sinatra::Application.use(Appsignal::Rack::SinatraInstrumentation)
 end

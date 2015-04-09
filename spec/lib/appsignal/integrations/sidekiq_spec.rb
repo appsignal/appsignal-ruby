@@ -17,11 +17,14 @@ describe "Sidekiq integration" do
   let(:queue) { double }
   let(:current_transaction) { Appsignal::Transaction.create(SecureRandom.uuid, {}) }
   let(:item) {{
-    'class' => 'TestClass',
+    'class'       => 'TestClass',
     'retry_count' => 0,
-    'queue' => 'default',
-    'enqueued_at' => Time.parse('01-01-2001 10:00:00UTC')
+    'queue'       => 'default',
+    'enqueued_at' => Time.parse('01-01-2001 10:00:00UTC'),
+    'args'        => ['Model', 1],
+    'extra'       => 'data'
   }}
+  let(:plugin) { Appsignal::Integrations::SidekiqPlugin.new }
 
   before do
     Appsignal.stub(:is_ignored_exception? => false)
@@ -32,10 +35,14 @@ describe "Sidekiq integration" do
     it "should wrap in a transaction with the correct params" do
       Appsignal.should_receive(:monitor_transaction).with(
         'perform_job.sidekiq',
-        :class => 'TestClass',
-        :method => 'perform',
-        :attempts => 0,
-        :queue => 'default',
+        :class    => 'TestClass',
+        :method   => 'perform',
+        :metadata => {
+          'retry_count' => "0",
+          'queue'       => 'default',
+          'extra'       => 'data'
+        },
+        :params      => ['Model', "1"],
         :queue_start => Time.parse('01-01-2001 10:00:00UTC')
       )
     end
@@ -65,6 +72,67 @@ describe "Sidekiq integration" do
       rescue VerySpecificError
       end
     end
+  end
+
+  describe "#formatted_data" do
+    let(:item) do
+      {
+        'foo'   => 'bar',
+        'class' => 'TestClass',
+      }
+    end
+
+    it "should only add items to the hash that do not appear in JOB_KEYS" do
+      plugin.formatted_metadata(item).should == {'foo' => 'bar'}
+    end
+  end
+
+  describe "#format_args" do
+    let(:object) { Object.new }
+    let(:args) do
+      [
+        'Model',
+        1,
+        object
+      ]
+    end
+
+    it "should format the arguments" do
+      plugin.format_args(args).should == ['Model', '1', object.inspect]
+    end
+  end
+
+  describe "#truncate" do
+    let(:very_long_text) do
+      "a" * 200
+    end
+
+    it "should truncate the text to 100 chars max" do
+      plugin.truncate(very_long_text).should == "#{'a' * 97}..."
+    end
+  end
+
+  describe "#string_or_inspect" do
+    context "when string" do
+      it "should return the string" do
+        plugin.string_or_inspect('foo').should == 'foo'
+      end
+    end
+
+    context "when integer" do
+      it "should return the string" do
+        plugin.string_or_inspect(1).should == '1'
+      end
+    end
+
+    context "when object" do
+      let(:object) { Object.new }
+
+      it "should return the string" do
+        plugin.string_or_inspect(object).should == object.inspect
+      end
+    end
+
   end
 
   context "without sidekiq" do

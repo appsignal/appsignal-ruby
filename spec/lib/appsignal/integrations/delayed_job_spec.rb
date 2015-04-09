@@ -30,11 +30,13 @@ describe "Delayed Job integration" do
       let(:time) { Time.parse('01-01-2001 10:01:00UTC') }
       let(:job) do
         double(
-          :name => 'TestClass#perform',
-          :priority => 1,
-          :attempts => 1,
-          :queue => 'default',
-          :created_at => time - 60_000
+          :id             => 123,
+          :name           => 'TestClass#perform',
+          :priority       => 1,
+          :attempts       => 1,
+          :queue          => 'default',
+          :created_at     => time - 60_000,
+          :payload_object => double
         )
       end
       let(:invoked_block) { Proc.new { } }
@@ -44,16 +46,53 @@ describe "Delayed Job integration" do
         it "should wrap in a transaction with the correct params" do
           Appsignal.should_receive(:monitor_transaction).with(
             'perform_job.delayed_job',
-            :class => 'TestClass',
-            :method => 'perform',
-            :priority => 1,
-            :attempts => 1,
-            :queue => 'default',
-            :queue_start => time - 60_000
+            :class    => 'TestClass',
+            :method   => 'perform',
+            :metadata => {
+              :priority => 1,
+              :attempts => 1,
+              :queue    => 'default',
+              :id       => 123
+            },
+            :queue_start => time - 60_000,
           )
 
           Timecop.freeze(time) do
             plugin.invoke_with_instrumentation(job, invoked_block)
+          end
+        end
+
+        context "with custom name call" do
+          let(:job) do
+            double(
+              :payload_object => double(
+                :appsignal_name => 'CustomClass#perform'
+              ),
+              :id         => 123,
+              :name       => 'TestClass#perform',
+              :priority   => 1,
+              :attempts   => 1,
+              :queue      => 'default',
+              :created_at => time - 60_000
+            )
+          end
+          it "should wrap in a transaction with the correct params" do
+            Appsignal.should_receive(:monitor_transaction).with(
+              'perform_job.delayed_job',
+              :class => 'CustomClass',
+              :method => 'perform',
+              :metadata => {
+                :priority => 1,
+                :attempts => 1,
+                :queue    => 'default',
+                :id       => 123
+              },
+              :queue_start => time - 60_000
+            )
+
+            Timecop.freeze(time) do
+              plugin.invoke_with_instrumentation(job, invoked_block)
+            end
           end
         end
       end

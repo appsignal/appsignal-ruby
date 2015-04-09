@@ -93,6 +93,73 @@ describe Appsignal::Transaction do
       it { should be_a ::Rack::Request }
     end
 
+<<<<<<< HEAD
+=======
+    describe '#set_process_action_event' do
+      before { transaction.set_process_action_event(process_action_event) }
+
+      let(:process_action_event) { notification_event }
+
+      it 'should add a process action event' do
+        transaction.process_action_event.name.should == process_action_event.name
+        transaction.process_action_event.payload.should == process_action_event.payload
+      end
+
+      it "should set the action" do
+        transaction.action.should == 'BlogPostsController#show'
+      end
+
+      it "should set the kind" do
+        transaction.kind.should == 'http_request'
+      end
+
+      it "should call set_http_queue_start" do
+        transaction.queue_start.should_not be_nil
+      end
+
+      context "if there is no controller" do
+        before do
+          process_action_event.payload[:action] = 'GET /items/:id'
+          process_action_event.payload.delete(:controller)
+          transaction.set_process_action_event(process_action_event)
+        end
+
+        it "should set the action without a #" do
+          transaction.action.should == 'GET /items/:id'
+        end
+      end
+    end
+
+    describe "set_perform_job_event" do
+      before { transaction.set_perform_job_event(perform_job_event) }
+
+      let(:payload) { create_background_payload }
+      let(:perform_job_event) do
+        notification_event(
+          :name => 'perform_job.delayed_job',
+          :payload => payload
+        )
+      end
+
+      it 'should add a perform job event' do
+        transaction.process_action_event.name.should == perform_job_event.name
+        transaction.process_action_event.payload.should == perform_job_event.payload
+      end
+
+      it "should set the action" do
+        transaction.action.should == 'BackgroundJob#perform'
+      end
+
+      it "should set the kind" do
+        transaction.kind.should == 'background_job'
+      end
+
+      it "should set call set_background_queue_start" do
+        transaction.queue_start.should_not be_nil
+      end
+    end
+
+>>>>>>> master
     describe "#set_tags" do
       it "should add tags to transaction" do
         expect {
@@ -101,6 +168,7 @@ describe Appsignal::Transaction do
       end
     end
 
+<<<<<<< HEAD
     describe '#set_root_event' do
       context "for a process_action event" do
         let(:name)    { 'process_action.action_controller' }
@@ -112,6 +180,80 @@ describe Appsignal::Transaction do
             'http_request',
             'BlogPostsController#show',
             kind_of(Integer)
+=======
+    describe '#add_event' do
+      let(:event) { double(:event, :name => 'test') }
+
+      it 'should add an event' do
+        expect {
+          transaction.add_event(event)
+        }.to change(transaction, :events).to([event])
+      end
+
+      context "when paused" do
+        before { transaction.pause! }
+
+        it 'should add an event' do
+          expect {
+            transaction.add_event(event)
+          }.to_not change(transaction, :events)
+        end
+      end
+    end
+
+    describe "#pause!" do
+      it "should change the pause flag to true" do
+        expect{
+          transaction.pause!
+        }.to change(transaction, :paused).from(false).to(true)
+      end
+    end
+
+    describe "#resume!" do
+      before { transaction.pause! }
+
+      it "should change the pause flag to false" do
+        expect{
+          transaction.resume!
+        }.to change(transaction, :paused).from(true).to(false)
+      end
+    end
+
+    context "using exceptions" do
+      let(:exception) { double(:exception, :name => 'test') }
+
+      describe '#add_exception' do
+        it 'should add an exception' do
+          expect {
+            transaction.add_exception(exception)
+          }.to change(transaction, :exception).to(exception)
+        end
+      end
+
+      describe "#exception?" do
+        subject { transaction.exception? }
+
+        context "without an exception" do
+          it { should be_false }
+        end
+
+        context "without an exception" do
+          before { transaction.add_exception(exception) }
+
+          it { should be_true }
+        end
+      end
+    end
+
+    describe '#slow_request?' do
+      let(:start) { Time.now }
+      subject { transaction.slow_request? }
+
+      context "duration" do
+        before do
+          transaction.set_process_action_event(
+            notification_event(:start => start, :ending => start + duration)
+>>>>>>> master
           )
 
           metadata = {
@@ -278,44 +420,91 @@ describe Appsignal::Transaction do
 
     describe "#set_http_queue_start" do
       let(:slightly_earlier_time) { fixed_time - 0.4 }
+<<<<<<< HEAD
       let(:slightly_earlier_time_in_ms) { (slightly_earlier_time.to_f * 1000).to_i }
       before { transaction.send(:set_http_queue_start) }
+=======
+      let(:slightly_earlier_time_value) { (slightly_earlier_time * factor).to_i }
+      before { transaction.set_http_queue_start }
+>>>>>>> master
       subject { transaction.queue_start }
 
-      context "without env" do
-        let(:env) { nil }
+      shared_examples "http queue start" do
+        context "without env" do
+          let(:env) { nil }
 
+<<<<<<< HEAD
         it { should == -1 }
       end
+=======
+          it { should be_nil }
+        end
+>>>>>>> master
 
-      context "with no relevant header set" do
-        let(:env) { {} }
+        context "with no relevant header set" do
+          let(:env) { {} }
 
+<<<<<<< HEAD
         it { should == -1 }
       end
+=======
+          it { should be_nil }
+        end
+>>>>>>> master
 
-      context "with the HTTP_X_REQUEST_START header set" do
-        let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}"} }
+        context "with the HTTP_X_REQUEST_START header set" do
+          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}"} }
 
+<<<<<<< HEAD
         it { should == 1389783599600 }
+=======
+          it { should == 1389783599.6 }
+>>>>>>> master
 
-        context "with unparsable content" do
-          let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
+          context "with unparsable content" do
+            let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
 
+<<<<<<< HEAD
           it { should == -1 }
         end
+=======
+            it { should be_nil }
+          end
+>>>>>>> master
 
-        context "with some cruft" do
-          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_in_ms}aaaa"} }
+          context "with some cruft" do
+            let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}aaaa"} }
 
+<<<<<<< HEAD
           it { should == 1389783599600 }
         end
+=======
+            it { should == 1389783599.6 }
+          end
+>>>>>>> master
 
-        context "with the alternate HTTP_X_QUEUE_START header set" do
-          let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_in_ms}"} }
+          context "with the alternate HTTP_X_QUEUE_START header set" do
+            let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_value}"} }
 
+<<<<<<< HEAD
           it { should == 1389783599600 }
+=======
+            it { should == 1389783599.6 }
+          end
+>>>>>>> master
         end
+      end
+
+      context "time in miliseconds" do
+        let(:factor) { 1_000 }
+
+        it_should_behave_like "http queue start"
+      end
+
+      context "time in microseconds" do
+        let(:factor) { 1_000_000 }
+
+        it_should_behave_like "http queue start"
       end
     end
 

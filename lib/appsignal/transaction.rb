@@ -35,6 +35,7 @@ module Appsignal
       end
     end
 
+<<<<<<< HEAD
     attr_reader :request_id, :root_event_payload, :action, :exception, :env, :fullpath, :tags,
                 :kind, :queue_start, :time
 
@@ -43,6 +44,28 @@ module Appsignal
       @env         = env
       @tags        = {}
       @queue_start = -1
+=======
+    attr_reader :request_id, :events, :process_action_event, :action, :exception,
+                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused
+
+    def initialize(request_id, env)
+      Appsignal.transactions[request_id] = self
+      @request_id = request_id
+      @events = []
+      @process_action_event = nil
+      @exception = nil
+      @env = env
+      @tags = {}
+      @paused = false
+    end
+
+    def sanitized_environment
+      @sanitized_environment ||= {}
+    end
+
+    def sanitized_session_data
+      @sanitized_session_data ||= {}
+>>>>>>> master
     end
 
     def request
@@ -53,6 +76,7 @@ module Appsignal
       @tags.merge!(given_tags)
     end
 
+<<<<<<< HEAD
     def set_root_event(name, payload)
       @root_event_payload = payload
       if name.start_with?(Subscriber::PROCESS_ACTION_PREFIX)
@@ -107,6 +131,87 @@ module Appsignal
           Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
         end
       end
+=======
+    def pause!
+      @paused = true
+    end
+
+    def resume!
+      @paused = false
+    end
+
+    def set_process_action_event(event)
+      return unless event && event.payload
+      @process_action_event = event.dup
+      if @process_action_event.payload[:controller]
+        @action = "#{@process_action_event.payload[:controller]}##{@process_action_event.payload[:action]}"
+      else
+        @action = @process_action_event.payload[:action]
+      end
+      @kind = 'http_request'
+      set_http_queue_start
+    end
+
+    def set_perform_job_event(event)
+      return unless event && event.payload
+      @process_action_event = event.dup
+      @action = "#{@process_action_event.payload[:class]}##{@process_action_event.payload[:method]}"
+      @kind = 'background_job'
+      set_background_queue_start
+    end
+
+    def add_event(event)
+      @events << event unless @paused == true
+    end
+
+    def add_exception(ex)
+      @time = Time.now.utc.to_f
+      @exception = ex
+    end
+
+    def exception?
+      !! exception
+    end
+
+    def slow_request?
+      return false unless process_action_event && process_action_event.payload
+      Appsignal.config[:slow_request_threshold] <= process_action_event.duration
+    end
+
+    def slower?(transaction)
+      process_action_event.duration > transaction.process_action_event.duration
+    end
+
+    def clear_events!
+      events.clear
+    end
+
+    def truncate!
+      return if truncated?
+      process_action_event.truncate!
+      events.clear
+      tags.clear
+      sanitized_environment.clear
+      sanitized_session_data.clear
+      @env = nil
+      @truncated = true
+    end
+
+    def truncated?
+      !! @truncated
+    end
+
+    def convert_values_to_primitives!
+      return if have_values_been_converted_to_primitives?
+      @process_action_event.sanitize! if @process_action_event
+      @events.each { |event| event.sanitize! }
+      add_sanitized_context!
+      @have_values_been_converted_to_primitives = true
+    end
+
+    def have_values_been_converted_to_primitives?
+      !! @have_values_been_converted_to_primitives
+>>>>>>> master
     end
     alias_method :add_exception, :set_error
 
@@ -136,11 +241,25 @@ module Appsignal
         Appsignal::ParamsSanitizer.sanitize(root_event_payload[:params])
       end
 
+<<<<<<< HEAD
       def sanitized_environment
         return unless env
         {}.tap do |out|
           ENV_METHODS.each do |key|
             out[key] = env[key] if env[key]
+=======
+    def set_http_queue_start
+      return unless env
+      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
+      if env_var
+        Appsignal.logger.debug("Setting http queue start: #{env_var}")
+        cleaned_value = env_var.tr('^0-9', '')
+        unless cleaned_value.empty?
+          value = cleaned_value.to_i
+          [1_000_000.0, 1_000.0].each do |factor|
+            @queue_start = value / factor
+            break if @queue_start > 946_681_200.0 # Ok if it's later than 2000
+>>>>>>> master
           end
         end
       end
