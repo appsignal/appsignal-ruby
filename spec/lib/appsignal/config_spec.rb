@@ -21,7 +21,7 @@ describe Appsignal::Config do
         :instrument_net_http            => true,
         :skip_session_data              => false,
         :send_params                    => true,
-        :endpoint                       => 'https://push.appsignal.com/1',
+        :endpoint                       => 'https://push.appsignal.com',
         :slow_request_threshold         => 200,
         :push_api_key                   => 'abc',
         :name                           => 'TestApp',
@@ -108,6 +108,11 @@ describe Appsignal::Config do
   end
 
   context "when there is no config file" do
+    before do
+      ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
+        ENV[key] = nil
+      end
+    end
     let(:initial_config) { {} }
     let(:config) { Appsignal::Config.new('/nothing', 'production', initial_config) }
 
@@ -153,7 +158,7 @@ describe Appsignal::Config do
           :send_params                    => true,
           :instrument_net_http            => true,
           :skip_session_data              => false,
-          :endpoint                       => 'https://push.appsignal.com/1',
+          :endpoint                       => 'https://push.appsignal.com',
           :slow_request_threshold         => 200,
           :active                         => true,
           :enable_frontend_error_catching => false,

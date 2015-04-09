@@ -10,7 +10,7 @@ module Appsignal
       :ignore_exceptions              => [],
       :ignore_actions                 => [],
       :send_params                    => true,
-      :endpoint                       => 'https://push.appsignal.com/1',
+      :endpoint                       => 'https://push.appsignal.com',
       :slow_request_threshold         => 200,
       :instrument_net_http            => true,
       :skip_session_data              => false,
