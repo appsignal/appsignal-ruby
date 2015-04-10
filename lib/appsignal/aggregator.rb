@@ -24,6 +24,7 @@ module Appsignal
       end
       counts[transaction.type] += 1
       queue << transaction
+      return true
     end
 
     # Informs whether the queue has any transactions in it or not
