@@ -11,6 +11,7 @@ module Appsignal
           body        = JSON.parse(env['rack.input'].read)
           transaction = JSExceptionTransaction.new(body)
           transaction.complete!
+
           return [ 200, {}, []]
         else
           @app.call(env)
