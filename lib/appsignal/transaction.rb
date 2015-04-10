@@ -130,6 +130,10 @@ module Appsignal
       @paused = false
     end
 
+    def paused?
+      @paused == true
+    end
+
     protected
 
     def set_background_queue_start

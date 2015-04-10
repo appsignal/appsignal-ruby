@@ -11,7 +11,8 @@ describe Appsignal::Transaction do
     start_agent
   end
 
-  let(:time) { Time.at(fixed_time) }
+  let(:time)        { Time.at(fixed_time) }
+  let(:transaction) { Appsignal::Transaction.create('1', {}) }
 
   before { Timecop.freeze(time) }
   after  { Timecop.return }
@@ -61,6 +62,39 @@ describe Appsignal::Transaction do
         it "should not raise an error" do
           Appsignal::Transaction.complete_current!
         end
+      end
+    end
+  end
+
+  describe "#pause!" do
+    it "should change the pause flag to true" do
+      expect{
+        transaction.pause!
+      }.to change(transaction, :paused).from(false).to(true)
+    end
+  end
+
+  describe "#resume!" do
+    before { transaction.pause! }
+
+    it "should change the pause flag to false" do
+      expect{
+        transaction.resume!
+      }.to change(transaction, :paused).from(true).to(false)
+    end
+  end
+
+  describe "#paused?" do
+
+    it "should return the pasue state" do
+      expect( transaction.paused? ).to be_false
+    end
+
+    context "when paused" do
+      before { transaction.pause! }
+
+      it "should return the pasue state" do
+        expect( transaction.paused? ).to be_true
       end
     end
   end

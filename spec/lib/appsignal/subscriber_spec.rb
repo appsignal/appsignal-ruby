@@ -140,6 +140,23 @@ describe Appsignal::Subscriber do
           ActiveSupport::Notifications.instrument 'perform_job.resque', {:params => {}}
         end
       end
+
+      context "when paused" do
+        before { transaction.pause! }
+
+        it "should set a root event, but no other events" do
+          Appsignal::Native.should_not_receive(:start_event)
+          Appsignal::Native.should_not_receive(:finish_event)
+
+          transaction.respond_to?(:set_root_event).should be_true
+          transaction.should_receive(:set_root_event).with(
+            'perform_job.resque',
+            :params => {}
+          )
+
+          ActiveSupport::Notifications.instrument 'perform_job.resque', {:params => {}}
+        end
+      end
     end
   end
 end
