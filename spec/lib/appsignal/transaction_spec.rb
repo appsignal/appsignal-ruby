@@ -190,13 +190,56 @@ describe Appsignal::Transaction do
     end
 
     context "using exceptions" do
-      let(:exception) { double(:exception, :name => 'test') }
+      let(:exception) do
+        double(
+          :exception,
+          :class => double(:name => 'test'),
+          :message   => 'Broken',
+          :backtrace => [
+            File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10').to_s,
+            '/user/local/ruby/path.rb:8'
+          ]
+        )
+      end
 
       describe '#add_exception' do
-        it 'should add an exception' do
+        it 'should add an exception', :if => rails_present? do
+          if Gem::Version.new(Rails.version) >= Gem::Version.new('4.2.1')
+            expect {
+              transaction.add_exception(exception)
+            }.to change(transaction, :exception).to({
+              :exception => 'test',
+              :message   => 'Broken',
+              :backtrace => [
+                'spec/support/project_fixture/app/controllers/somethings_controller.rb:10',
+                '/user/local/ruby/path.rb:8'
+              ]
+            })
+          else
+            expect {
+              transaction.add_exception(exception)
+            }.to change(transaction, :exception).to({
+              :exception => 'test',
+              :message   => 'Broken',
+              :backtrace => [
+                'app/controllers/somethings_controller.rb:10',
+                '/user/local/ruby/path.rb:8'
+              ]
+            })
+          end
+        end
+
+        it 'should add an exception', :if => !rails_present? do
           expect {
             transaction.add_exception(exception)
-          }.to change(transaction, :exception).to(exception)
+          }.to change(transaction, :exception).to({
+            :exception => 'test',
+            :message   => 'Broken',
+            :backtrace => [
+              File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10'),
+              '/user/local/ruby/path.rb:8'
+            ]
+          })
         end
       end
 
@@ -397,6 +440,17 @@ describe Appsignal::Transaction do
 
     describe '#complete!' do
       let(:event) { double(:event) }
+      let(:exception) do
+        double(
+          :exception,
+          :class => double(:name => 'test'),
+          :message   => 'Broken',
+          :backtrace => [
+            'app/controllers/somethings_controller.rb:10',
+            '/user/local/ruby/path.rb:8'
+          ]
+        )
+      end
       before do
         Appsignal::IPC.stub(:current => nil)
         transaction.set_process_action_event(notification_event)
@@ -427,7 +481,7 @@ describe Appsignal::Transaction do
         end
 
         context 'with exception' do
-          before { transaction.add_exception(event) }
+          before { transaction.add_exception(exception) }
 
           it 'should add transaction to the agent' do
             Appsignal.should_receive(:enqueue).with(transaction)

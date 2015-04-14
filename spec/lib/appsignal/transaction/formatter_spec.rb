@@ -83,21 +83,12 @@ describe Appsignal::Transaction::Formatter do
       context "exception content" do
         subject { formatter.to_hash[:exception] }
 
+        it "should set the exception" do
+          subject.should eql(transaction_with_exception.exception)
+        end
         its(:keys) { should =~ [:exception, :message, :backtrace] }
         its([:exception]) { should == 'ArgumentError' }
         its([:message]) { should == 'oh no' }
-
-        if rails_present?
-          its([:backtrace]) { should == [
-            'app/controllers/somethings_controller.rb:10',
-            '/user/local/ruby/path.rb:8'
-          ] }
-        else
-          its([:backtrace]) { should == [
-            File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10'),
-            '/user/local/ruby/path.rb:8'
-          ] }
-        end
       end
     end
 

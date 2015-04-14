@@ -38,7 +38,7 @@ module Appsignal
       @request_id = request_id
       @events = []
       @process_action_event = nil
-      @exception = nil
+      @exception = {}
       @env = env
       @tags = {}
       @paused = false
@@ -92,13 +92,27 @@ module Appsignal
       @events << event unless @paused == true
     end
 
-    def add_exception(ex)
+    def add_exception(ex=nil)
+      return unless ex
       @time = Time.now.utc.to_f
-      @exception = ex
+      @exception = {
+        :exception  => ex.class.name,
+        :message    => ex.message,
+        :backtrace  => clean_backtrace(ex)
+      }
     end
 
     def exception?
-      !! exception
+      exception.any?
+    end
+
+    def clean_backtrace(exception)
+      return [] unless exception.backtrace.is_a?(Array)
+      if defined?(::Rails)
+        ::Rails.backtrace_cleaner.clean(exception.backtrace, nil)
+      else
+        exception.backtrace
+      end
     end
 
     def slow_request?
