@@ -21,7 +21,7 @@ describe Appsignal::Transaction do
       subject { Appsignal::Transaction.create('1', {}) }
 
       it 'should add the transaction to thread local' do
-        Appsignal::Native.should_receive(:start_transaction).with('1')
+        Appsignal::Extension.should_receive(:start_transaction).with('1')
         subject
         Thread.current[:appsignal_transaction].should == subject
       end
@@ -49,7 +49,7 @@ describe Appsignal::Transaction do
         before { Appsignal::Transaction.create('2', {}) }
 
         it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-          Appsignal::Native.should_receive(:finish_transaction).with('2')
+          Appsignal::Extension.should_receive(:finish_transaction).with('2')
 
           Appsignal::Transaction.complete_current!
 
@@ -107,7 +107,7 @@ describe Appsignal::Transaction do
         let(:payload) { create_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Native.should_receive(:set_transaction_basedata).with(
+          Appsignal::Extension.should_receive(:set_transaction_basedata).with(
             '3',
             'http_request',
             'BlogPostsController#show',
@@ -138,7 +138,7 @@ describe Appsignal::Transaction do
         let(:payload) { create_background_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Native.should_receive(:set_transaction_basedata).with(
+          Appsignal::Extension.should_receive(:set_transaction_basedata).with(
             '3',
             'background_job',
             'BackgroundJob#perform',
@@ -157,7 +157,7 @@ describe Appsignal::Transaction do
 
     describe "#set_metadata" do
       it "should set the metdata in native" do
-        Appsignal::Native.should_receive(:set_transaction_metadata).with(
+        Appsignal::Extension.should_receive(:set_transaction_metadata).with(
           '3',
           'request_method',
           'GET'
@@ -167,7 +167,7 @@ describe Appsignal::Transaction do
       end
 
       it "should set the metdata in native when value is nil" do
-        Appsignal::Native.should_not_receive(:set_transaction_metadata)
+        Appsignal::Extension.should_not_receive(:set_transaction_metadata)
 
         transaction.set_metadata('request_method', nil)
       end
@@ -181,27 +181,27 @@ describe Appsignal::Transaction do
       end
 
       it "should set an error and it's data in native" do
-        Appsignal::Native.should_receive(:set_transaction_error).with(
+        Appsignal::Extension.should_receive(:set_transaction_error).with(
           '3',
           'RSpec::Mocks::Mock',
           'test message'
         )
-        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
           '3',
           'environment',
           "{\"SERVER_NAME\":\"localhost\",\"HTTP_X_REQUEST_START\":\"1000000\",\"HTTP_USER_AGENT\":\"IE6\"}"
         ).once
-        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
           '3',
           'session_data',
           "{}"
         ).once
-        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
           '3',
           'backtrace',
           "[\"line 1\"]"
         ).once
-        Appsignal::Native.should_receive(:set_transaction_error_data).with(
+        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
           '3',
           'tags',
           "{}"
@@ -216,12 +216,12 @@ describe Appsignal::Transaction do
         end
 
         it "should also set params" do
-          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
             '3',
             'params',
             '{"controller":"blog_posts","action":"show","id":"1"}'
           ).once
-          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
             '3',
             kind_of(String),
             kind_of(String)
@@ -237,12 +237,12 @@ describe Appsignal::Transaction do
         end
 
         it "should skip the field" do
-          Appsignal::Native.should_not_receive(:set_transaction_error_data).with(
+          Appsignal::Extension.should_not_receive(:set_transaction_error_data).with(
             '3',
             'params',
             kind_of(String)
           )
-          Appsignal::Native.should_receive(:set_transaction_error_data).with(
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
             '3',
             kind_of(String),
             kind_of(String)

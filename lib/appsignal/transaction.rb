@@ -17,7 +17,7 @@ module Appsignal
     class << self
       def create(request_id, env)
         Appsignal.logger.debug("Creating transaction: #{request_id}")
-        Appsignal::Native.start_transaction(request_id)
+        Appsignal::Extension.start_transaction(request_id)
         Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
       end
 
@@ -27,7 +27,7 @@ module Appsignal
 
       def complete_current!
         if current
-          Appsignal::Native.finish_transaction(current.request_id)
+          Appsignal::Extension.finish_transaction(current.request_id)
           Thread.current[:appsignal_transaction] = nil
         else
           Appsignal.logger.error('Trying to complete current, but no transaction present')
@@ -68,7 +68,7 @@ module Appsignal
         @kind = BACKGROUND_JOB
         set_background_queue_start
       end
-      Appsignal::Native.set_transaction_basedata(
+      Appsignal::Extension.set_transaction_basedata(
         request_id,
         kind,
         action,
@@ -78,12 +78,12 @@ module Appsignal
 
     def set_metadata(key, value)
       return unless value
-      Appsignal::Native.set_transaction_metadata(request_id, key, value)
+      Appsignal::Extension.set_transaction_metadata(request_id, key, value)
     end
 
     def set_error(error)
       return unless error
-      Appsignal::Native.set_transaction_error(
+      Appsignal::Extension.set_transaction_error(
         request_id,
         error.class.name,
         error.message
@@ -98,7 +98,7 @@ module Appsignal
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
         begin
-          Appsignal::Native.set_transaction_error_data(
+          Appsignal::Extension.set_transaction_error_data(
             request_id,
             key.to_s,
             JSON.generate(data)

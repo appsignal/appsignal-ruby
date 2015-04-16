@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Appsignal::Native do
+describe Appsignal::Extension do
   describe ".libappsignal_path" do
-    subject { Appsignal::Native.libappsignal_path }
+    subject { Appsignal::Extension.libappsignal_path }
 
     it "should return the filename for the library" do
       (subject.include?('libappsignal.so') ||
@@ -15,7 +15,7 @@ describe Appsignal::Native do
   end
 
   context "call native methods without errors" do
-    subject { Appsignal::Native }
+    subject { Appsignal::Extension }
 
     it "should have a start method" do
       subject.start.should be_false

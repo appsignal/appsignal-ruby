@@ -114,7 +114,7 @@ if capistrano2_present?
             end
 
             it "should transmit data" do
-              Appsignal::Native.should_receive(:transmit_marker).and_return(200)
+              Appsignal::Extension.should_receive(:transmit_marker).and_return(200)
               @capistrano_config.find_and_execute_task('appsignal:deploy')
               @io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
               @io.string.should include('Appsignal has been notified of this deploy!')

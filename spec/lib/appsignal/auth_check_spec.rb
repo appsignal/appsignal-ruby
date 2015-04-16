@@ -7,7 +7,7 @@ describe Appsignal::AuthCheck do
 
   describe "#perform" do
     it "should call the native agent" do
-      Appsignal::Native.should_receive(:check_push_api_auth).and_return(200)
+      Appsignal::Extension.should_receive(:check_push_api_auth).and_return(200)
       auth_check.perform
     end
   end

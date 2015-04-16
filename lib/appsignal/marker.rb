@@ -15,7 +15,7 @@ module Appsignal
 
     def transmit
       logger.info("Notifying Appsignal of deploy with: revision: #{marker_data[:revision]}, user: #{marker_data[:user]}")
-      result = Appsignal::Native.transmit_marker(JSON.generate(marker_data), 'json')
+      puts "Not supported yet"
       if result == 200
         logger.info('Appsignal has been notified of this deploy!')
       else

@@ -10,7 +10,7 @@ module Appsignal
     end
 
     def perform
-      Appsignal::Native.check_push_api_auth
+      puts "Not supported yet"
     end
 
     def perform_with_result

@@ -49,7 +49,7 @@ describe Appsignal do
       end
 
       it "should start native" do
-        Appsignal::Native.should_receive(:start)
+        Appsignal::Extension.should_receive(:start)
         Appsignal.start
       end
 

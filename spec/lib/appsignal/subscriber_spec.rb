@@ -64,8 +64,8 @@ describe Appsignal::Subscriber do
     end
 
     it "should not record events when there is no current transaction" do
-      Appsignal::Native.should_not_receive(:start_event)
-      Appsignal::Native.should_not_receive(:finish_event)
+      Appsignal::Extension.should_not_receive(:start_event)
+      Appsignal::Extension.should_not_receive(:finish_event)
 
       lambda {
         ActiveSupport::Notifications.instrument 'something'
@@ -80,11 +80,11 @@ describe Appsignal::Subscriber do
       end
 
       it "should call native start and finish event for every event" do
-        Appsignal::Native.should_receive(:start_event).exactly(4).times
-        Appsignal::Native.should_receive(:finish_event).with('request-id', 'one', '', '').once
-        Appsignal::Native.should_receive(:finish_event).with('request-id', 'two', '', '').once
-        Appsignal::Native.should_receive(:finish_event).with('request-id', 'two.three', '', '').once
-        Appsignal::Native.should_receive(:finish_event).with('request-id', 'one.three', '', '').once
+        Appsignal::Extension.should_receive(:start_event).exactly(4).times
+        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'one', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'two', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'two.three', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'one.three', '', '').once
 
         ActiveSupport::Notifications.instrument('one') do
           ActiveSupport::Notifications.instrument('two') do
@@ -97,8 +97,8 @@ describe Appsignal::Subscriber do
       end
 
       it "should call finish with title and body if there is a formatter" do
-          Appsignal::Native.should_receive(:start_event).once
-          Appsignal::Native.should_receive(:finish_event).with(
+          Appsignal::Extension.should_receive(:start_event).once
+          Appsignal::Extension.should_receive(:finish_event).with(
             'request-id',
             'request.net_http',
             'GET http://www.google.com',

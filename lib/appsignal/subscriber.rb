@@ -34,14 +34,14 @@ module Appsignal
     def start(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
 
-      Appsignal::Native.start_event(transaction.request_id)
+      Appsignal::Extension.start_event(transaction.request_id)
     end
 
     def finish(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
 
       title, body = Appsignal::EventFormatter.format(name, payload)
-      Appsignal::Native.finish_event(
+      Appsignal::Extension.finish_event(
         transaction.request_id,
         name,
         title || BLANK,

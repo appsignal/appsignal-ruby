@@ -19,7 +19,7 @@ describe Appsignal::Marker do
 
   context "transmit" do
     it "should transmit data" do
-      Appsignal::Native.should_receive(:transmit_marker).with(
+      Appsignal::Extension.should_receive(:transmit_marker).with(
         '{"revision":"503ce0923ed177a3ce000005","repository":"master","user":"batman","rails_env":"production"}',
         'json'
       )
@@ -30,7 +30,7 @@ describe Appsignal::Marker do
     context "logs" do
       shared_examples_for "logging info and errors" do
         it "should log status 200" do
-          Appsignal::Native.should_receive(:transmit_marker).and_return(200)
+          Appsignal::Extension.should_receive(:transmit_marker).and_return(200)
 
           marker.transmit
 
@@ -39,7 +39,7 @@ describe Appsignal::Marker do
         end
 
         it "should log a status other than 200" do
-          Appsignal::Native.should_receive(:transmit_marker).and_return(401)
+          Appsignal::Extension.should_receive(:transmit_marker).and_return(401)
 
           marker.transmit
 
