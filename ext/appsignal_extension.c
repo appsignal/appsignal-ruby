@@ -17,7 +17,7 @@ void appsignal_add_distribution_value(char *, float);
 char * string(VALUE str) {
   // TODO we should use RSTRING_PTR and RSTRING_LEN, see:
   // https://github.com/ruby/ruby/blob/trunk/doc/extension.rdoc
-  return StringValueCStr(str);
+  return RSTRING_PTR(str);
 }
 
 VALUE start(VALUE self) {
