@@ -14,8 +14,7 @@ end
 
 # Clean up possibly stale agent and lib
 FileUtils.rm_f(ext_path('appsignal-agent'))
-FileUtils.rm_f(ext_path('libappsignal.dylib'))
-FileUtils.rm_f(ext_path('libappsignal.so'))
+FileUtils.rm_f(ext_path('libappsignal.a'))
 
 arch = "#{Gem::Platform.local.cpu}-#{Gem::Platform.local.os}"
 
