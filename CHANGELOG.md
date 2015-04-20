@@ -1,3 +1,6 @@
+# 0.11.9
+* Fix for infinite attempts to transmit if there is no valid api key
+
 # 0.11.8
 * Add frontend error catcher
 * Add background job metadata (queue, priority etc.) to transaction overview
