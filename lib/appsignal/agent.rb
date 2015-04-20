@@ -164,7 +164,9 @@ module Appsignal
       stop_thread
 
       # Only attempt to send the queue on shutdown when there are no API issues
-      send_queue if @transmission_successful
+      if send_current_queue && @transmission_successful
+        send_queue
+      end
     end
 
     protected

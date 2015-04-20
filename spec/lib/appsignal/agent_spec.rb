@@ -450,10 +450,16 @@ describe Appsignal::Agent do
     end
 
     it "should only shutdown if the queue is not be sent" do
-      subject.instance_variable_set(:@transmission_successful, false)
       subject.should_not_receive(:send_queue)
 
       subject.shutdown(false, nil)
+    end
+
+    it "should only shutdown if the last tranmission was not successfull" do
+      subject.instance_variable_set(:@transmission_successful, false)
+      subject.should_not_receive(:send_queue)
+
+      subject.shutdown(true, nil)
     end
   end
 
