@@ -26,16 +26,25 @@ VALUE start(VALUE self) {
 }
 
 VALUE start_transaction(VALUE self, VALUE transaction_id) {
+  Check_Type(transaction_id, T_STRING);
+
   appsignal_start_transaction(string(transaction_id));
   return Qnil;
 }
 
 VALUE start_event(VALUE self, VALUE transaction_id) {
+  Check_Type(transaction_id, T_STRING);
+
   appsignal_start_event(string(transaction_id));
   return Qnil;
 }
 
 VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VALUE body) {
+  Check_Type(transaction_id, T_STRING);
+  Check_Type(name, T_STRING);
+  Check_Type(title, T_STRING);
+  Check_Type(body, T_STRING);
+
   appsignal_finish_event(
       string(transaction_id),
       string(name),
@@ -46,6 +55,10 @@ VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VA
 }
 
 VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE message) {
+  Check_Type(transaction_id, T_STRING);
+  Check_Type(name, T_STRING);
+  Check_Type(message, T_STRING);
+
   appsignal_set_transaction_error(
       string(transaction_id),
       string(name),
@@ -55,6 +68,10 @@ VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE 
 }
 
 VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VALUE payload) {
+  Check_Type(transaction_id, T_STRING);
+  Check_Type(key, T_STRING);
+  Check_Type(payload, T_STRING);
+
   appsignal_set_transaction_error_data(
       string(transaction_id),
       string(key),
@@ -64,6 +81,11 @@ VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VA
 }
 
 VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace, VALUE action, VALUE queue_start) {
+  Check_Type(transaction_id, T_STRING);
+  Check_Type(namespace, T_STRING);
+  Check_Type(action, T_STRING);
+  Check_Type(queue_start, T_FIXNUM);
+
   appsignal_set_transaction_basedata(
       string(transaction_id),
       string(namespace),
@@ -74,6 +96,10 @@ VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace
 }
 
 VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALUE value) {
+  Check_Type(transaction_id, T_STRING);
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_STRING);
+
   appsignal_set_transaction_metadata(
       string(transaction_id),
       string(key),
@@ -83,11 +109,16 @@ VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALU
 }
 
 VALUE finish_transaction(VALUE self, VALUE transaction_id) {
+  Check_Type(transaction_id, T_STRING);
+
   appsignal_finish_transaction(string(transaction_id));
   return Qnil;
 }
 
 VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_FLOAT);
+
   appsignal_set_gauge(
       string(key),
       NUM2DBL(value)
@@ -96,6 +127,9 @@ VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
 }
 
 VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_FLOAT);
+
   appsignal_set_process_gauge(
       string(key),
       NUM2DBL(value)
@@ -104,6 +138,9 @@ VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
 }
 
 VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
+  Check_Type(key, T_STRING);
+  Check_Type(count, T_FIXNUM);
+
   appsignal_increment_counter(
       string(key),
       FIX2INT(count)
@@ -112,6 +149,9 @@ VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
 }
 
 VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_FLOAT);
+
   appsignal_add_distribution_value(
       string(key),
       NUM2DBL(value)
