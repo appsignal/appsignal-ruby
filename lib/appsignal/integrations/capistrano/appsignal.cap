@@ -1,26 +1,23 @@
 namespace :appsignal do
   task :deploy do
-    env = fetch(:rails_env, fetch(:rack_env, 'production'))
-    user = ENV['USER'] || ENV['USERNAME']
-    revision = fetch(:appsignal_revision, fetch(:current_revision))
-    logger = fetch(:logger, Logger.new($stdout))
+    params = {
+      revision: fetch(:appsignal_revision, fetch(:current_revision)),
+      user: ENV['USER'] || ENV['USERNAME'],
+      environment: fetch(:rails_env, fetch(:rack_env, 'production'))
+    }
 
-    appsignal_config = Appsignal::Config.new(
-      ENV['PWD'],
-      env,
-      fetch(:appsignal_config, {}),
-      logger
-    )
-
-    if appsignal_config && appsignal_config.active?
-      marker_data = {
-        :revision => revision,
-        :user => user
-      }
-
-      marker = Appsignal::Marker.new(marker_data, appsignal_config, logger)
-      marker.transmit
+    on roles fetch(:appsignal_roles) do
+      within release_path do
+        execute *fetch(:appsignal_bin), 'notify_of_deploy', params.map { |k,v| "--#{k}=#{v}" }.join(' ')
+      end
     end
+  end
+end
+
+namespace :load do
+  task :defaults do
+    set :appsignal_roles, :all
+    set :appsignal_bin, [:appsignal]
   end
 end
 
