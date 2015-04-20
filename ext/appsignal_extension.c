@@ -14,32 +14,32 @@ void appsignal_set_process_gauge(char *, float);
 void appsignal_increment_counter(char *, int);
 void appsignal_add_distribution_value(char *, float);
 
-char * string(VALUE str) {
+static char * string(VALUE str) {
   // TODO we should use RSTRING_PTR and RSTRING_LEN, see:
   // https://github.com/ruby/ruby/blob/trunk/doc/extension.rdoc
   return StringValueCStr(str);
 }
 
-VALUE start(VALUE self) {
+static VALUE start(VALUE self) {
   appsignal_start();
   return Qnil;
 }
 
-VALUE start_transaction(VALUE self, VALUE transaction_id) {
+static VALUE start_transaction(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
   appsignal_start_transaction(string(transaction_id));
   return Qnil;
 }
 
-VALUE start_event(VALUE self, VALUE transaction_id) {
+static VALUE start_event(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
   appsignal_start_event(string(transaction_id));
   return Qnil;
 }
 
-VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VALUE body) {
+static VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VALUE body) {
   Check_Type(transaction_id, T_STRING);
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
@@ -54,7 +54,7 @@ VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VA
   return Qnil;
 }
 
-VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE message) {
+static VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE message) {
   Check_Type(transaction_id, T_STRING);
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
@@ -67,7 +67,7 @@ VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE 
   return Qnil;
 }
 
-VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VALUE payload) {
+static VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VALUE payload) {
   Check_Type(transaction_id, T_STRING);
   Check_Type(key, T_STRING);
   Check_Type(payload, T_STRING);
@@ -80,7 +80,7 @@ VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VA
   return Qnil;
 }
 
-VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace, VALUE action, VALUE queue_start) {
+static VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace, VALUE action, VALUE queue_start) {
   Check_Type(transaction_id, T_STRING);
   Check_Type(namespace, T_STRING);
   Check_Type(action, T_STRING);
@@ -95,7 +95,7 @@ VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace
   return Qnil;
 }
 
-VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALUE value) {
+static VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALUE value) {
   Check_Type(transaction_id, T_STRING);
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
@@ -108,14 +108,14 @@ VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALU
   return Qnil;
 }
 
-VALUE finish_transaction(VALUE self, VALUE transaction_id) {
+static VALUE finish_transaction(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
   appsignal_finish_transaction(string(transaction_id));
   return Qnil;
 }
 
-VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
+static VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
 
@@ -126,7 +126,7 @@ VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
+static VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
 
@@ -137,7 +137,7 @@ VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
+static VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
   Check_Type(key, T_STRING);
   Check_Type(count, T_FIXNUM);
 
@@ -148,7 +148,7 @@ VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
   return Qnil;
 }
 
-VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
+static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
 
