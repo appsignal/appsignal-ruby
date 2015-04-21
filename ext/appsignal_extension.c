@@ -32,6 +32,8 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id) {
   return Qnil;
 }
 
+// NEXT: http://stackoverflow.com/questions/24145823/rust-ffi-c-string-handling
+
 static VALUE start_event(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
@@ -161,7 +163,7 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
 
 void Init_appsignal_extension(void) {
   VALUE Appsignal = rb_define_module("Appsignal");
-  VALUE Extension = rb_define_module_under(Appsignal, "Extension");
+  VALUE Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
 
   // Transaction monitoring
   rb_define_singleton_method(Extension, "start",                      start,                      0);
