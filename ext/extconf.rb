@@ -32,9 +32,6 @@ if SUPPORTED_ARCHS.include?(arch)
   end
   FileUtils.chmod(0755, ext_path('appsignal-agent'))
 
-  require 'pry'
-  binding.pry
-
   have_library 'appsignal', 'appsignal_start'
 
   create_makefile 'appsignal_extension'
