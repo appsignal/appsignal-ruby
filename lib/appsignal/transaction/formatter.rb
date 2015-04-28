@@ -60,20 +60,7 @@ module Appsignal
       end
 
       def add_exception_to_hash!
-        hash[:exception] = {
-          :exception => exception.class.name,
-          :message => exception.message,
-          :backtrace => clean_backtrace(exception)
-        }
-      end
-
-      def clean_backtrace(exception)
-        return [] unless exception.backtrace.is_a?(Array)
-        if defined?(::Rails)
-          ::Rails.backtrace_cleaner.clean(exception.backtrace, nil)
-        else
-          exception.backtrace
-        end
+        hash[:exception] = exception
       end
 
       def add_events_to_hash!
