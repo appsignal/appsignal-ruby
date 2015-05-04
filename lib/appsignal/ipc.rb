@@ -57,6 +57,10 @@ module Appsignal
         def enqueue(transaction)
           Appsignal.logger.debug("Sending transaction #{transaction.request_id} in IPC client")
           @server.enqueue(transaction)
+        rescue DRb::DRbConnError
+          # Try to reconnect and send again
+          start
+          @server.enqueue(transaction)
         end
 
         def active?

@@ -104,7 +104,19 @@ unless running_jruby?
 
         it "should send the transaction to the server" do
           subject.start
-          subject.server.should_receive(:enqueue).with(transaction)
+          subject.server.should_receive(:enqueue).with(transaction).once
+          subject.enqueue(transaction)
+        end
+
+        it "should reconnect and send the transaction to the server if there's a connection error" do
+          subject.start
+
+          subject.server.should_receive(:enqueue).with(transaction).once do
+            raise DRb::DRbConnError.new
+          end
+          subject.should_receive(:start).once
+          subject.server.should_receive(:enqueue).with(transaction).once
+
           subject.enqueue(transaction)
         end
       end
