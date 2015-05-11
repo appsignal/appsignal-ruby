@@ -22,12 +22,6 @@ if defined?(::Sinatra)
       it { should be_a(Appsignal::Config) }
     end
 
-    context "agent" do
-      subject { Appsignal.agent }
-
-      it { should be_a(Appsignal::Agent) }
-    end
-
     it "should have added the listener middleware" do
       Sinatra::Application.middleware.to_a.should include(
         [Appsignal::Rack::Listener, [], nil]
@@ -36,7 +30,7 @@ if defined?(::Sinatra)
 
     it "should have added the instrumentation middleware" do
       Sinatra::Application.middleware.to_a.should include(
-        [Appsignal::Rack::Instrumentation, [], nil]
+        [Appsignal::Rack::SinatraInstrumentation, [], nil]
       )
     end
   end

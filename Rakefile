@@ -8,6 +8,7 @@ GEMFILES = %w(
   rails-4.0
   rails-4.1
   rails-4.2
+  sequel
   sinatra
 )
 
@@ -117,7 +118,7 @@ task :generate_bundle_and_spec_all do
       out << '#!/bin/sh'
     end
     out << 'rm -f .ruby-version'
-
+    out << 'rake -f ext/Rakefile'
     out << "echo 'Using #{version_manager}'"
     RUBY_VERSIONS.each do |version|
       out << "echo 'Switching to #{version}'"
@@ -151,3 +152,5 @@ task :console do
   ARGV.clear
   IRB.start
 end
+
+task :default => [:generate_bundle_and_spec_all, :spec]

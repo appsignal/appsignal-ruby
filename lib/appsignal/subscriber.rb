@@ -34,11 +34,18 @@ module Appsignal
     def start(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
 
+      return if transaction.paused?
       Appsignal::Extension.start_event(transaction.request_id)
     end
 
     def finish(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
+
+      if name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
+        transaction.set_root_event(name, payload)
+      end
+
+      return if transaction.paused?
 
       title, body = Appsignal::EventFormatter.format(name, payload)
       Appsignal::Extension.finish_event(
@@ -47,10 +54,6 @@ module Appsignal
         title || BLANK,
         body || BLANK
       )
-
-      if name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
-        transaction.set_root_event(name, payload)
-      end
     end
   end
 end

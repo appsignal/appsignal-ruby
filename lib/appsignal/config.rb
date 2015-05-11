@@ -7,30 +7,33 @@ module Appsignal
     include Appsignal::CarefulLogger
 
     DEFAULT_CONFIG = {
-      :ignore_exceptions      => [],
-      :ignore_actions         => [],
-      :send_params            => true,
-      :endpoint               => 'https://push.appsignal.com',
-      :instrument_net_http    => true,
-      :skip_session_data      => false
+      :ignore_exceptions              => [],
+      :ignore_actions                 => [],
+      :send_params                    => true,
+      :endpoint                       => 'https://push.appsignal.com',
+      :slow_request_threshold         => 200,
+      :instrument_net_http            => true,
+      :skip_session_data              => false,
+      :enable_frontend_error_catching => false,
+      :frontend_error_catching_path   => '/appsignal_error_catcher'
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
 
     def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
-      @root_path = root_path
-      @env = env.to_s
+      @root_path      = root_path
+      @env            = env.to_s
       @initial_config = initial_config
-      @logger = logger
+      @logger         = logger
 
       if File.exists?(config_file)
         load_config_from_disk
       elsif ENV['APPSIGNAL_PUSH_API_KEY']
-        load_default_config_with_push_api_key(
+        load_default_config_with_push_api_key_and_name_from_env(
           ENV['APPSIGNAL_PUSH_API_KEY']
         )
       elsif ENV['APPSIGNAL_API_KEY']
-        load_default_config_with_push_api_key(
+        load_default_config_with_push_api_key_and_name_from_env(
           ENV['APPSIGNAL_API_KEY']
         )
         @logger.info(
@@ -45,7 +48,7 @@ module Appsignal
       end
       if config_hash && !config_hash[:name]
         @logger.debug(
-          "There's no application name set in your config file. " \
+          "There's no application name set in your config file or in the APPSIGNAL_APP_NAME env var. " \
           "You should set one unless your app runs on Heroku."
         )
       end
@@ -102,11 +105,14 @@ module Appsignal
       end
     end
 
-    def load_default_config_with_push_api_key(key)
+    def load_default_config_with_push_api_key_and_name_from_env(key)
+      # Get base config by doing the default merge and adding the push api key.
       @config_hash = merge_config(
         :push_api_key => key,
         :active => true
       )
+      @config_hash[:name]   = ENV['APPSIGNAL_APP_NAME'] if ENV['APPSIGNAL_APP_NAME']
+      @config_hash[:active] = ENV['APPSIGNAL_ACTIVE'] == 'true' if ENV['APPSIGNAL_ACTIVE']
     end
 
     def merge_config(config)

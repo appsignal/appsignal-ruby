@@ -36,7 +36,7 @@ if rails_present?
     context "with key" do
       context "known key" do
         before do
-          authcheck.should_receive(:perform).and_return(200)
+          authcheck.should_receive(:perform).and_return('200')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -56,7 +56,7 @@ if rails_present?
 
       context "invalid key" do
         before do
-          authcheck.should_receive(:perform).and_return(401)
+          authcheck.should_receive(:perform).and_return('401')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)
@@ -70,7 +70,7 @@ if rails_present?
 
       context "failed check" do
         before do
-          authcheck.should_receive(:perform).and_return(500)
+          authcheck.should_receive(:perform).and_return('500')
 
           prepare_destination
           run_generator_in_tmp %w(my_app_key)

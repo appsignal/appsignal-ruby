@@ -19,6 +19,7 @@ module Appsignal
       require 'appsignal/integrations/delayed_job'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
+      require 'appsignal/integrations/sequel'
     end
 
     def load_instrumentations
@@ -72,7 +73,7 @@ module Appsignal
         ActiveSupport::Notifications.instrument(name, payload) do
           yield
         end
-      rescue Exception => exception
+      rescue => exception
         Appsignal.set_exception(exception)
         raise exception
       ensure
@@ -151,10 +152,10 @@ module Appsignal
     #
     # @since 0.8.7
     def without_instrumentation
-      agent.paused = true if agent
+      Appsignal::Transaction.current.pause! if Appsignal::Transaction.current
       yield
     ensure
-      agent.paused = false if agent
+      Appsignal::Transaction.current.resume! if Appsignal::Transaction.current
     end
   end
 end
@@ -168,6 +169,10 @@ require 'appsignal/params_sanitizer'
 require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
+require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/rack/listener'
 require 'appsignal/rack/instrumentation'
 require 'appsignal/integrations/rails'
+require 'appsignal/js_exception_transaction'
+require 'appsignal/zipped_payload'
+require 'appsignal/transmitter'
