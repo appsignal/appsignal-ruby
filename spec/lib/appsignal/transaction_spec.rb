@@ -204,7 +204,7 @@ describe Appsignal::Transaction do
 
       describe '#add_exception' do
         it 'should add an exception', :if => rails_present? do
-          if Gem::Version.new(Rails.version) >= Gem::Version.new('4.2.1')
+          if Gem::Version.new(Rails.version) >= Gem::Version.new('4.2.0')
             expect {
               transaction.add_exception(exception)
             }.to change(transaction, :exception).to({
