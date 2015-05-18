@@ -1,3 +1,7 @@
+# 0.11.10
+* Fix for binding bug in exceptions in Resque
+* Handle invalidly encoded characters in payload
+
 # 0.11.9
 * Fix for infinite attempts to transmit if there is no valid api key
 
