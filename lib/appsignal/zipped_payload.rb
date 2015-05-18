@@ -18,11 +18,11 @@ module Appsignal
     def self.jsonify(value)
       case value
       when String
-        begin
-          value.encode('utf-8')
-        rescue Encoding::UndefinedConversionError
-          '[invalid-utf8]'
-        end
+        value.encode(
+          'utf-8',
+          :invalid => :replace,
+          :undef   => :replace
+        )
       when Numeric, NilClass, TrueClass, FalseClass
         value
       when Hash
@@ -30,7 +30,7 @@ module Appsignal
       when Array
         value.map { |v| jsonify(v) }
       else
-        jsonify value.to_s
+        jsonify(value.to_s)
       end
     end
   end

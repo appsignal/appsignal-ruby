@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 require 'spec_helper'
 
 describe Appsignal::ZippedPayload do
@@ -34,7 +36,7 @@ describe Appsignal::ZippedPayload do
         }
       } }
 
-      it { should == "{\"field_one\":\"aa\",\"field_two\":\"[invalid-utf8]\",\"field_three\":[\"one\",\"[invalid-utf8]\"],\"field_four\":{\"one\":\"[invalid-utf8]\"}}" }
+      it { should == "{\"field_one\":\"aa\",\"field_two\":\"aa�\",\"field_three\":[\"one\",\"aa�\"],\"field_four\":{\"one\":\"aa�\"}}" }
     end
   end
 end
