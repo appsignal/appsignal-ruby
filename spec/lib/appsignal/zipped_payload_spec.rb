@@ -1,7 +1,6 @@
 require 'spec_helper'
 
 describe Appsignal::ZippedPayload do
-
   describe "#initialize" do
     it "should initialize a new `Appsignal::ZippedPayload` and zip the body" do
       payload = Appsignal::ZippedPayload.new({'the' => 'payload'})
@@ -13,4 +12,29 @@ describe Appsignal::ZippedPayload do
     end
   end
 
+  describe ".json_generate" do
+    subject { Appsignal::ZippedPayload.send(:json_generate, body) }
+
+    context "with a valid body" do
+      let(:body) { {'the' => 'payload'} }
+
+      it { should == "{\"the\":\"payload\"}" }
+    end
+
+    context "with a body that contains strings with invalid utf-8 content" do
+      let(:string_with_invalid_utf8) { [0x61, 0x61, 0x85].pack('c*') }
+      let(:body) { {
+        'field_one' => [0x61, 0x61].pack('c*'),
+        'field_two' => string_with_invalid_utf8,
+        'field_three' => [
+          'one', string_with_invalid_utf8
+        ],
+        'field_four' => {
+          'one' => string_with_invalid_utf8
+        }
+      } }
+
+      it { should == "{\"field_one\":\"aa\",\"field_two\":\"[invalid-utf8]\",\"field_three\":[\"one\",\"[invalid-utf8]\"],\"field_four\":{\"one\":\"[invalid-utf8]\"}}" }
+    end
+  end
 end
