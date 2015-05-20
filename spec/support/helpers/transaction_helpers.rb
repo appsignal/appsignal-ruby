@@ -1,8 +1,4 @@
 module TransactionHelpers
-  def fixed_time
-    @fixed_time ||= Time.utc(2014, 01, 15, 11, 0, 0).to_f
-  end
-
   def uploaded_file
     if rails_present?
       ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp')
@@ -21,7 +17,7 @@ module TransactionHelpers
           File.join(project_fixture_path, 'app/controllers/somethings_controller.rb:10').to_s,
           '/user/local/ruby/path.rb:8'
         ])
-        o.add_exception(exception)
+        o.set_exception(exception)
       end
     end
   end
@@ -67,18 +63,13 @@ module TransactionHelpers
         'action_dispatch.routes' => 'not_available'
       }.merge(args)
     ).tap do |o|
-      o.set_perform_job_event(
-        notification_event(
-          :name => 'perform_job.delayed_job',
-          :payload => payload
-        )
-      )
+      o.set_root_event('perform_job.delayed_job', payload )
     end
   end
 
   def appsignal_transaction(args={})
     process_action_event = args.delete(:process_action_event)
-    events = args.delete(:events) || [
+    args.delete(:events) || [
       notification_event(:name => 'query.mongoid')
     ]
     exception = args.delete(:exception)
@@ -90,9 +81,8 @@ module TransactionHelpers
         'action_dispatch.routes' => 'not_available'
       }.merge(args)
     ).tap do |o|
-      o.set_process_action_event(process_action_event)
-      o.add_exception(exception)
-      events.each { |event| o.add_event(event) }
+      o.set_root_event(process_action_event.name, process_action_event.payload)
+      o.set_exception(exception) if exception
     end
   end
 end

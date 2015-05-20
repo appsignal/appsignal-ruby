@@ -1,22 +1,19 @@
 require 'logger'
-require 'rack'
-require 'thread_safe'
 require 'securerandom'
 
 begin
   require 'active_support/notifications'
-rescue LoadError
+  ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
+rescue LoadError, NameError
   require 'vendor/active_support/notifications'
 end
 
 module Appsignal
   class << self
-    attr_accessor :config, :logger, :agent, :in_memory_log
+    attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log
 
     def load_integrations
       require 'appsignal/integrations/delayed_job'
-      require 'appsignal/integrations/passenger'
-      require 'appsignal/integrations/unicorn'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
       require 'appsignal/integrations/sequel'
@@ -47,31 +44,19 @@ module Appsignal
         end
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
+          config.write_to_environment
+          Appsignal::Extension.start
           load_integrations
           load_instrumentations
+          Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
-          @agent = Appsignal::Agent.new
-          at_exit do
-            logger.debug('Running at_exit block')
-            @agent.send_queue
-          end
+          @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")
         end
       else
         logger.error('Can\'t start, no config loaded')
       end
-    end
-
-    # Convenience method for adding a transaction to the queue. This queue is
-    # managed and is periodically pushed to Appsignal.
-    #
-    # @return [ true ] True.
-    #
-    # @since 0.5.0
-    def enqueue(transaction)
-      return unless active?
-      agent.enqueue(transaction)
     end
 
     def monitor_transaction(name, payload={})
@@ -81,12 +66,12 @@ module Appsignal
       end
 
       begin
-        Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+        Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
         ActiveSupport::Notifications.instrument(name, payload) do
           yield
         end
-      rescue Exception => exception
-        Appsignal.add_exception(exception)
+      rescue => exception
+        Appsignal.set_exception(exception)
         raise exception
       ensure
         Appsignal::Transaction.complete_current!
@@ -102,19 +87,18 @@ module Appsignal
 
     def send_exception(exception, tags=nil)
       return if !active? || is_ignored_exception?(exception)
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-      transaction.add_exception(exception)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
       transaction.set_tags(tags) if tags
-      transaction.complete!
-      Appsignal.agent.send_queue
+      transaction.set_error(exception)
+      Appsignal::Transaction.complete_current!
     end
 
-    def add_exception(exception)
+    def set_exception(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
                 is_ignored_exception?(exception)
-      Appsignal::Transaction.current.add_exception(exception)
+      Appsignal::Transaction.current.set_error(exception)
     end
 
     def tag_request(params={})
@@ -124,10 +108,6 @@ module Appsignal
       transaction.set_tags(params)
     end
     alias :tag_job :tag_request
-
-    def transactions
-      @transactions ||= {}
-    end
 
     def logger
       @in_memory_log = StringIO.new unless @in_memory_log
@@ -153,15 +133,8 @@ module Appsignal
       @logger << @in_memory_log.string if @in_memory_log
     end
 
-    def post_processing_middleware
-      @post_processing_chain ||= Appsignal::Aggregator::PostProcessor.default_middleware
-      yield @post_processing_chain if block_given?
-      @post_processing_chain
-    end
-
     def active?
-      config && config.active? &&
-        agent && agent.active?
+      config && config.active?
     end
 
     def is_ignored_exception?(exception)
@@ -184,25 +157,18 @@ module Appsignal
   end
 end
 
-require 'appsignal/agent'
-require 'appsignal/event'
-require 'appsignal/aggregator'
-require 'appsignal/aggregator/post_processor'
-require 'appsignal/aggregator/middleware'
+require 'appsignal_extension'
 require 'appsignal/auth_check'
 require 'appsignal/config'
+require 'appsignal/event_formatter'
 require 'appsignal/marker'
+require 'appsignal/params_sanitizer'
+require 'appsignal/subscriber'
+require 'appsignal/transaction'
+require 'appsignal/version'
+require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/rack/listener'
 require 'appsignal/rack/instrumentation'
-require 'appsignal/rack/sinatra_instrumentation'
-require 'appsignal/rack/js_exception_catcher'
-require 'appsignal/params_sanitizer'
-require 'appsignal/transaction'
-require 'appsignal/transaction/formatter'
-require 'appsignal/transaction/params_sanitizer'
-require 'appsignal/transmitter'
-require 'appsignal/zipped_payload'
-require 'appsignal/ipc'
-require 'appsignal/version'
 require 'appsignal/integrations/rails'
 require 'appsignal/js_exception_transaction'
+require 'appsignal/transmitter'

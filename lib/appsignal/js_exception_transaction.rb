@@ -3,44 +3,61 @@ module Appsignal
 
     def initialize(data)
       @data = data
-      @time = Time.now.to_i
+      @uuid = SecureRandom.uuid
+
+      Appsignal::Extension.start_transaction(@uuid)
+
+      set_base_data
+      set_metadata
+      set_error
+      set_error_data
     end
 
-    def type
-      :exception
+    def set_base_data
+      Appsignal::Extension.set_transaction_basedata(
+        @uuid,
+        'frontend',
+        @data['action'],
+        0
+      )
     end
 
-    def action
-      @data['action']
+    def set_metadata
+      Appsignal::Extension.set_transaction_metadata(
+        @uuid, 'path', @data['path']
+      ) if @data['path']
     end
 
-    def clear_events!; end
-    def convert_values_to_primitives!; end
-    def events; []; end
+    def set_error
+      Appsignal::Extension.set_transaction_error(
+        @uuid,
+        @data['name'],
+        @data['message']
+      )
+    end
 
-    def to_hash
+    def set_error_data
       {
-        :request_id => SecureRandom.uuid,
-        :log_entry => {
-          :action      => action,
-          :path        => @data['path'],
-          :kind        => 'frontend',
-          :time        => @time,
-          :environment => @data['environment'],
-          :revision    => Appsignal.agent.revision
-        },
-        :exception => {
-          :exception => @data['name'],
-          :message   => @data['message'],
-          :backtrace => @data['backtrace']
-        },
-        :failed => true
-      }
+        :params       => @data['params'],
+        :environment  => @data['environment'],
+        :backtrace    => @data['backtrace'],
+        :tags         => @data['tags']
+      }.each do |key, data|
+        next unless data.is_a?(Array) || data.is_a?(Hash)
+        begin
+          Appsignal::Extension.set_transaction_error_data(
+            @uuid,
+            key.to_s,
+            JSON.generate(data)
+          )
+        rescue JSON::GeneratorError=>e
+          Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
+        end
+      end
     end
 
     def complete!
-      Appsignal.enqueue(self)
+      Appsignal::Extension.finish_transaction(@uuid)
     end
-
   end
 end

@@ -21,7 +21,7 @@ describe Appsignal::Config do
         :instrument_net_http            => true,
         :skip_session_data              => false,
         :send_params                    => true,
-        :endpoint                       => 'https://push.appsignal.com/1',
+        :endpoint                       => 'https://push.appsignal.com',
         :slow_request_threshold         => 200,
         :push_api_key                   => 'abc',
         :name                           => 'TestApp',
@@ -38,6 +38,24 @@ describe Appsignal::Config do
 
       it "should return nil for a non-existing key" do
         subject[:nonsense].should be_nil
+      end
+    end
+
+    describe "#write_to_environment" do
+      before do
+        subject.write_to_environment
+      end
+
+      it "should write the current config to env vars" do
+        ENV['APPSIGNAL_ACTIVE'].should            == 'true'
+        ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
+        ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
+        ENV['APPSIGNAL_LOG_PATH'].should          end_with('/log')
+        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
+        ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
+        ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
+        ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::AGENT_VERSION
       end
     end
 
@@ -90,6 +108,11 @@ describe Appsignal::Config do
   end
 
   context "when there is no config file" do
+    before do
+      ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
+        ENV[key] = nil
+      end
+    end
     let(:initial_config) { {} }
     let(:config) { Appsignal::Config.new('/nothing', 'production', initial_config) }
 
@@ -135,7 +158,7 @@ describe Appsignal::Config do
           :send_params                    => true,
           :instrument_net_http            => true,
           :skip_session_data              => false,
-          :endpoint                       => 'https://push.appsignal.com/1',
+          :endpoint                       => 'https://push.appsignal.com',
           :slow_request_threshold         => 200,
           :active                         => true,
           :enable_frontend_error_catching => false,
