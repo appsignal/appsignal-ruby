@@ -49,6 +49,19 @@ if defined?(::Sinatra)
         process_action_event.name.should == 'process_action.sinatra'
         process_action_event.payload[:action].should == 'GET /'
       end
+
+      it "should add exceptions stored in env under sinatra.error" do
+        exception = RuntimeError.new('Raise the roof')
+        env['sinatra.error'] = exception
+
+        transaction = double
+        transaction.stub(:set_process_action_event)
+        transaction.stub(:add_event)
+        transaction.should_receive(:add_exception).with(exception)
+        Appsignal::Transaction.stub(:current => transaction)
+
+        middleware.call(env)
+      end
     end
 
     describe "raw_payload" do
