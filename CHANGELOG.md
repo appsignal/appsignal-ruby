@@ -1,3 +1,6 @@
+# 0.11.11
+* Reliably get errors in production for Sinatra
+
 # 0.11.10
 * Fix for binding bug in exceptions in Resque
 * Handle invalidly encoded characters in payload
