@@ -135,6 +135,14 @@ describe Appsignal do
     end
   end
 
+  describe ".stop" do
+    it "should call stop on the extension" do
+      Appsignal::Extension.should_receive(:stop)
+      Appsignal.stop
+      Appsignal.active?.should be_false
+    end
+  end
+
   describe '.active?' do
     subject { Appsignal.active? }
 

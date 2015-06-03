@@ -59,6 +59,10 @@ module Appsignal
       end
     end
 
+    def stop
+      Appsignal::Extension.stop
+    end
+
     def monitor_transaction(name, payload={})
       unless active?
         yield

@@ -1,6 +1,7 @@
 #include<ruby.h>
 
 void appsignal_start(void);
+void appsignal_stop(void);
 void appsignal_start_transaction(char *);
 void appsignal_start_event(char *);
 void appsignal_finish_event(char *, char *, char *, char *);
@@ -22,6 +23,12 @@ static char * STRING_POINTER(VALUE str) {
 
 static VALUE start(VALUE self) {
   appsignal_start();
+
+  return Qnil;
+}
+
+static VALUE stop(VALUE self) {
+  appsignal_stop();
 
   return Qnil;
 }
@@ -166,6 +173,7 @@ void Init_appsignal_extension(void) {
 
   // Transaction monitoring
   rb_define_singleton_method(Extension, "start",                      start,                      0);
+  rb_define_singleton_method(Extension, "stop",                       stop,                       0);
   rb_define_singleton_method(Extension, "start_transaction",          start_transaction,          1);
   rb_define_singleton_method(Extension, "start_event",                start_event,                1);
   rb_define_singleton_method(Extension, "finish_event",               finish_event,               4);
