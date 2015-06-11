@@ -292,6 +292,36 @@ describe Appsignal do
       end
     end
 
+    describe "custom stats" do
+      describe ".set_gauge" do
+        it "should call set_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_gauge).with('key', 0.1)
+          Appsignal.set_gauge('key', 0.1)
+        end
+      end
+
+      describe ".set_process_gauge" do
+        it "should call set_process_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_process_gauge).with('key', 0.1)
+          Appsignal.set_process_gauge('key', 0.1)
+        end
+      end
+
+      describe ".increment_counter" do
+        it "should call increment_counter on the extension" do
+          Appsignal::Extension.should_receive(:increment_counter).with('key', 1)
+          Appsignal.increment_counter('key', 1)
+        end
+      end
+
+      describe ".add_distribution_value" do
+        it "should call increment_counter on the extension" do
+          Appsignal::Extension.should_receive(:add_distribution_value).with('key', 0.1)
+          Appsignal.add_distribution_value('key', 0.1)
+        end
+      end
+    end
+
     describe '.logger' do
       subject { Appsignal.logger }
 

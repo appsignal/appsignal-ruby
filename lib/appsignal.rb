@@ -113,6 +113,22 @@ module Appsignal
     end
     alias :tag_job :tag_request
 
+    def set_gauge(key, value)
+      Appsignal::Extension.set_gauge(key, value)
+    end
+
+    def set_process_gauge(key, value)
+      Appsignal::Extension.set_process_gauge(key, value)
+    end
+
+    def increment_counter(key, value)
+      Appsignal::Extension.increment_counter(key, value)
+    end
+
+    def add_distribution_value(key, value)
+      Appsignal::Extension.add_distribution_value(key, value)
+    end
+
     def logger
       @in_memory_log = StringIO.new unless @in_memory_log
       @logger ||= Logger.new(@in_memory_log).tap do |l|
