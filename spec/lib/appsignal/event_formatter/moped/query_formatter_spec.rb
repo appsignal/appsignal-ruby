@@ -64,12 +64,15 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         double(
           :full_collection_name => 'database.collection',
           :flags                => [],
-          :documents            => [{'_id' => 'abc'}, {'_id' => 'def'}],
+          :documents            => [
+            {'_id' => 'abc', 'events' => {'foo' => [{'bar' => 'baz'}]}},
+            {'_id' => 'def', 'events' => {'foo' => [{'baz' => 'bar'}]}}
+          ],
           :class                => double(:to_s => 'Moped::Protocol::Insert')
         )
       end
 
-      it { should == ['Insert', '{:database=>"database.collection", :documents=>[{"_id"=>"?"}, {"_id"=>"?"}], :flags=>[]}'] }
+      it { should == ['Insert', '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Update" do
