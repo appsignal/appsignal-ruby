@@ -21,6 +21,10 @@ module Appsignal
             payload[:action] = env['sinatra.route']
           end
         end
+      ensure
+        # In production newer versions of Sinatra don't raise errors, but store
+        # them in the sinatra.error env var.
+        Appsignal::Transaction.current.add_exception(env['sinatra.error']) if env['sinatra.error']
       end
 
       def raw_payload(env)

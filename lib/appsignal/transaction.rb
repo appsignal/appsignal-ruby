@@ -95,6 +95,7 @@ module Appsignal
 
     def set_error(error)
       return unless error
+      Appsignal.logger.debug("Adding #{ex.class.name} to transaction: #{request_id}")
       Appsignal::Extension.set_transaction_error(
         request_id,
         error.class.name,
