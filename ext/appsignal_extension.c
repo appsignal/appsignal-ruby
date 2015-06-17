@@ -1,19 +1,5 @@
 #include<ruby.h>
-
-void appsignal_start(void);
-void appsignal_stop(void);
-void appsignal_start_transaction(char *);
-void appsignal_start_event(char *);
-void appsignal_finish_event(char *, char *, char *, char *);
-void appsignal_set_transaction_error(char *, char *, char *);
-void appsignal_set_transaction_error_data(char *, char *, char *);
-void appsignal_set_transaction_basedata(char *, char *, char *, long);
-void appsignal_set_transaction_metadata(char *, char *, char *);
-void appsignal_finish_transaction(char *);
-void appsignal_set_gauge(char *, float);
-void appsignal_set_process_gauge(char *, float);
-void appsignal_increment_counter(char *, int);
-void appsignal_add_distribution_value(char *, float);
+#include<appsignal_extension.h>
 
 static char * STRING_POINTER(VALUE str) {
   // TODO we should use RSTRING_PTR and RSTRING_LEN, see:
