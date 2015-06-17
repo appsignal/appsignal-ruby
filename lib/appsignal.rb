@@ -117,6 +117,10 @@ module Appsignal
       Appsignal::Extension.set_gauge(key, value)
     end
 
+    def set_host_gauge(key, value)
+      Appsignal::Extension.set_host_gauge(key, value)
+    end
+
     def set_process_gauge(key, value)
       Appsignal::Extension.set_process_gauge(key, value)
     end

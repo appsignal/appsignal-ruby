@@ -300,6 +300,13 @@ describe Appsignal do
         end
       end
 
+      describe ".set_host_gauge" do
+        it "should call set_host_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_host_gauge).with('key', 0.1)
+          Appsignal.set_host_gauge('key', 0.1)
+        end
+      end
+
       describe ".set_process_gauge" do
         it "should call set_process_gauge on the extension" do
           Appsignal::Extension.should_receive(:set_process_gauge).with('key', 0.1)
