@@ -129,14 +129,6 @@ if rails_present?
         end
       end
 
-      context "skip sanitization for prepared statements" do
-        let(:connection_config) { {:adapter => 'postgresql'} }
-
-        let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=$1' }
-
-        it { should == ['Model load', 'SELECT "table".* FROM "table" WHERE "id"=$1'] }
-      end
-
       context "return nil for schema queries" do
         let(:name) { 'SCHEMA' }
         let(:sql) { 'SET client_min_messages TO 22' }
@@ -192,28 +184,6 @@ if rails_present?
           let(:connection_config) { {:adapter => 'sqlite'} }
 
           it { should be_true }
-        end
-
-        describe "adapter_uses_prepared_statements" do
-          subject { formatter.adapter_uses_prepared_statements }
-
-          context "when using mysql" do
-            let(:connection_config) { {:adapter => 'mysql'} }
-
-            it { should be_false }
-          end
-
-          context "when using postgresql" do
-            let(:connection_config) { {:adapter => 'postgresql'} }
-
-            it { should be_true }
-          end
-
-          context "when using postgresql and prepared statements is disabled" do
-            let(:connection_config) { {:adapter => 'postgresql', :prepared_statements => false} }
-
-            it { should be_false }
-          end
         end
       end
     end
