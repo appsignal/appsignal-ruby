@@ -365,7 +365,7 @@ describe Appsignal::Transaction do
 
           it "should convert all payloads to primitives" do
             should == {
-              :model => {:with => [:weird, weird_class.inspect]},
+              :model => {:with => [:weird, '#<Class>']},
             }
           end
         end
@@ -382,7 +382,7 @@ describe Appsignal::Transaction do
           end
 
           its([:weird]) { should be_a(String) }
-          its([:weird]) { should match(/#<Class:(.*)>/) }
+          its([:weird]) { should eql("#<Class>") }
           its([:smash]) { should == {:foo => 'bar'} }
         end
       end

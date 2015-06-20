@@ -6,6 +6,12 @@ class ErrorOnInspect
   end
 end
 
+class ClassWithInspect
+  def inspect
+    "#<ClassWithInspect foo=\"bar\"/>"
+  end
+end
+
 describe Appsignal::ParamsSanitizer do
   let(:klass) { Appsignal::ParamsSanitizer }
   let(:file) { uploaded_file }
@@ -23,13 +29,14 @@ describe Appsignal::ParamsSanitizer do
             :key => 'value',
             :file => file,
           },
-          ErrorOnInspect.new
+          ErrorOnInspect.new,
+          ClassWithInspect.new
         ]
       }
     }
   end
   let(:sanitized_params) { klass.sanitize(params) }
-  let(:scrubbed_params) { klass.scrub(params) }
+  let(:scrubbed_params)  { klass.scrub(params) }
 
   describe ".sanitize!" do
     subject { params }
@@ -54,7 +61,8 @@ describe Appsignal::ParamsSanitizer do
         its([1]) { should == 'else' }
         its([2]) { should be_instance_of String }
         its([2]) { should include '::UploadedFile' }
-        its([4]) { should == '#<ErrorOnInspect/>' }
+        its([4]) { should == '#<ErrorOnInspect>' }
+        its([5]) { should == '#<ClassWithInspect>' }
 
         context "nested hash" do
           subject { params[:hash][:nested_array][3] }
