@@ -51,10 +51,7 @@ module Appsignal
       end
 
       def inspected(value)
-        value.inspect
-      rescue
-        # It turns out that sometimes inspect can fail
-        "#<#{value.class.to_s}/>"
+        "#<#{value.class.to_s}>"
       end
     end
   end
