@@ -1,3 +1,6 @@
+# 0.11.12
+* Sanitizer will no longer inspect unknown objects, since implementations of inspect sometimes trigger unexpected behavior.
+
 # 0.11.11
 * Reliably get errors in production for Sinatra
 
