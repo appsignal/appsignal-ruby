@@ -10,6 +10,7 @@ production:
 development:
   <<: *defaults
   active: true
+  http_proxy: "http://10.10.10.10:8888"
 
 test:
   <<: *defaults

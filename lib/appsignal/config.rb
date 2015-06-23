@@ -15,7 +15,8 @@ module Appsignal
       :instrument_net_http            => true,
       :skip_session_data              => false,
       :enable_frontend_error_catching => false,
-      :frontend_error_catching_path   => '/appsignal_error_catcher'
+      :frontend_error_catching_path   => '/appsignal_error_catcher',
+      :http_proxy                     => ''
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -75,6 +76,7 @@ module Appsignal
 
     def load_config_from_disk
       configurations = YAML.load(ERB.new(IO.read(config_file)).result)
+
       config_for_this_env = configurations[env]
       if config_for_this_env
         config_for_this_env = Hash[config_for_this_env.map do |key, value|
