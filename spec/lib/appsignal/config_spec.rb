@@ -27,7 +27,8 @@ describe Appsignal::Config do
         :name                           => 'TestApp',
         :active                         => true,
         :enable_frontend_error_catching => false,
-        :frontend_error_catching_path   => '/appsignal_error_catcher'
+        :frontend_error_catching_path   => '/appsignal_error_catcher',
+        :http_proxy                     => ''
       }
     end
 
@@ -139,7 +140,8 @@ describe Appsignal::Config do
           :slow_request_threshold         => 200,
           :active                         => true,
           :enable_frontend_error_catching => false,
-          :frontend_error_catching_path   => '/appsignal_error_catcher'
+          :frontend_error_catching_path   => '/appsignal_error_catcher',
+          :http_proxy                     => ''
         }
       end
 

@@ -89,6 +89,18 @@ describe Appsignal::Transmitter do
       its(:use_ssl?) { should be_false }
     end
 
+    context "with a proxy" do
+      let(:config) { project_fixture_config('development') }
+
+      its(:proxy?) { should be_true }
+    end
+
+    context "without a proxy" do
+      let(:config) { project_fixture_config('test') }
+
+      its(:proxy?) { should be_false }
+    end
+
     context "with a https uri" do
       let(:config) { project_fixture_config('production') }
 

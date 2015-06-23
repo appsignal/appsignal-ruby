@@ -62,13 +62,19 @@ module Appsignal
     end
 
     def http_client
-      Net::HTTP.new(uri.host, uri.port).tap do |http|
+      Net::HTTP.new(uri.host, uri.port, proxy_uri.host, proxy_uri.port).tap do |http|
         if uri.scheme == 'https'
           http.use_ssl = true
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
           http.ca_file = CA_FILE_PATH
         end
       end
+    end
+
+    private
+
+    def proxy_uri
+      @proxy_uri ||= URI.parse(config[:http_proxy])
     end
   end
 end
