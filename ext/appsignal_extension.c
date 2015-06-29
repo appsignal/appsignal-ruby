@@ -1,5 +1,8 @@
-#include<ruby.h>
-#include<appsignal_extension.h>
+#include "ruby/ruby.h"
+#include "ruby/debug.h"
+#include "appsignal_extension.h"
+
+VALUE __current_transaction_id = Qnil;
 
 static VALUE start(VALUE self) {
   appsignal_start();
@@ -15,6 +18,8 @@ static VALUE stop(VALUE self) {
 
 static VALUE start_transaction(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
+
+  __current_transaction_id = transaction_id;
 
   appsignal_start_transaction(StringValueCStr(transaction_id));
   return Qnil;
@@ -99,6 +104,8 @@ static VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE ke
 static VALUE finish_transaction(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
+  __current_transaction_id = Qnil;
+
   appsignal_finish_transaction(StringValueCStr(transaction_id));
   return Qnil;
 }
@@ -158,6 +165,25 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
+static void track_allocation(VALUE tpval, void *data) {
+  if (__current_transaction_id != Qnil) {
+    appsignal_track_allocation(StringValueCStr(__current_transaction_id));
+  }
+}
+
+static void install_tracepoint() {
+  #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
+  VALUE allocation_tracer;
+	allocation_tracer = rb_tracepoint_new(
+      Qnil,
+      RUBY_INTERNAL_EVENT_NEWOBJ,
+      track_allocation,
+      0
+  );
+	rb_tracepoint_enable(allocation_tracer);
+  #endif
+}
+
 void Init_appsignal_extension(void) {
   VALUE Appsignal = rb_define_module("Appsignal");
   VALUE Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
@@ -180,4 +206,7 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "set_process_gauge",          set_process_gauge,          2);
   rb_define_singleton_method(Extension, "increment_counter",          increment_counter,          2);
   rb_define_singleton_method(Extension, "add_distribution_value",     add_distribution_value,     2);
+
+  // Install tracepoint
+  install_tracepoint();
 }
