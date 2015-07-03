@@ -83,10 +83,16 @@ describe Appsignal::Aggregator::PostProcessor do
       subject.exists?(Appsignal::Aggregator::Middleware::DeleteBlanks).should be_true
       if rails_present?
         subject.exists?(Appsignal::Aggregator::Middleware::ActionViewSanitizer).should be_true
-        subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_true
+
+        if active_record_present?
+          subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_true
+        end
       else
         subject.exists?(Appsignal::Aggregator::Middleware::ActionViewSanitizer).should be_false
-        subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_false
+
+        if active_record_present?
+          subject.exists?(Appsignal::Aggregator::Middleware::ActiveRecordSanitizer).should be_false
+        end
       end
     end
   end

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-if rails_present?
+if active_record_present?
   require 'active_record'
   require 'appsignal/aggregator/middleware/active_record_sanitizer'
 

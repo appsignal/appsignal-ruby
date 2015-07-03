@@ -20,6 +20,13 @@ def rails_present?
   RAILS_PRESENT
 end
 
+def active_record_present?
+  require 'active_record'
+  true
+rescue LoadError
+  false
+end
+
 def running_jruby?
   defined?(RUBY_ENGINE) && RUBY_ENGINE == 'jruby'
 end
@@ -40,6 +47,13 @@ end
 
 def sequel_present?
   require 'sequel'
+  true
+rescue LoadError
+  false
+end
+
+def padrino_present?
+  require 'padrino'
   true
 rescue LoadError
   false
