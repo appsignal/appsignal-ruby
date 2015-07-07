@@ -162,16 +162,37 @@ static void track_allocation(VALUE tpval, void *data) {
   appsignal_track_allocation();
 }
 
+static void track_gc(VALUE tpval, void *data) {
+  rb_trace_arg_t *tparg = rb_tracearg_from_tracepoint(tpval);
+  rb_event_flag_t flag  = rb_tracearg_event_flag(tparg);
+
+  switch (flag) {
+    case RUBY_INTERNAL_EVENT_GC_START:
+      appsignal_track_gc_start();
+    case RUBY_INTERNAL_EVENT_GC_END_SWEEP:
+      appsignal_track_gc_end();
+  }
+}
+
 static void install_tracepoint_callbacks() {
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
-  VALUE allocation_tracer;
-	allocation_tracer = rb_tracepoint_new(
+  VALUE allocation_tracer = rb_tracepoint_new(
       Qnil,
       RUBY_INTERNAL_EVENT_NEWOBJ,
       track_allocation,
       0
   );
 	rb_tracepoint_enable(allocation_tracer);
+  #endif
+  #if defined(RUBY_INTERNAL_EVENT_GC_START) && defined(RUBY_INTERNAL_EVENT_GC_END_SWEEP)
+  rb_event_flag_t events = RUBY_INTERNAL_EVENT_GC_START|RUBY_INTERNAL_EVENT_GC_END_SWEEP;
+  VALUE gc_tracer = rb_tracepoint_new(
+      Qnil,
+      events,
+      track_gc,
+      0
+  );
+	rb_tracepoint_enable(gc_tracer);
   #endif
 }
 
