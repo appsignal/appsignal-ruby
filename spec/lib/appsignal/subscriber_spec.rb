@@ -81,10 +81,10 @@ describe Appsignal::Subscriber do
 
       it "should call native start and finish event for every event" do
         Appsignal::Extension.should_receive(:start_event).exactly(4).times
-        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'one', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'two', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'two.three', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with('request-id', 'one.three', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two.three', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one.three', '', '').once
 
         ActiveSupport::Notifications.instrument('one') do
           ActiveSupport::Notifications.instrument('two') do
@@ -99,7 +99,7 @@ describe Appsignal::Subscriber do
       it "should call finish with title and body if there is a formatter" do
           Appsignal::Extension.should_receive(:start_event).once
           Appsignal::Extension.should_receive(:finish_event).with(
-            'request-id',
+            kind_of(Integer),
             'request.net_http',
             'GET http://www.google.com',
             ''

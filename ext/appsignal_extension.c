@@ -2,8 +2,6 @@
 #include "ruby/debug.h"
 #include "appsignal_extension.h"
 
-VALUE __current_transaction_id = Qnil;
-
 static VALUE start(VALUE self) {
   appsignal_start();
 
@@ -19,27 +17,24 @@ static VALUE stop(VALUE self) {
 static VALUE start_transaction(VALUE self, VALUE transaction_id) {
   Check_Type(transaction_id, T_STRING);
 
-  __current_transaction_id = transaction_id;
+  return INT2FIX(appsignal_start_transaction(StringValueCStr(transaction_id)));
+}
 
-  appsignal_start_transaction(StringValueCStr(transaction_id));
+static VALUE start_event(VALUE self, VALUE transaction_index) {
+  Check_Type(transaction_index, T_FIXNUM);
+
+  appsignal_start_event(FIX2INT(transaction_index));
   return Qnil;
 }
 
-static VALUE start_event(VALUE self, VALUE transaction_id) {
-  Check_Type(transaction_id, T_STRING);
-
-  appsignal_start_event(StringValueCStr(transaction_id));
-  return Qnil;
-}
-
-static VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE title, VALUE body) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE finish_event(VALUE self, VALUE transaction_index, VALUE name, VALUE title, VALUE body) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
   Check_Type(body, T_STRING);
 
   appsignal_finish_event(
-      StringValueCStr(transaction_id),
+      FIX2INT(transaction_index),
       StringValueCStr(name),
       StringValueCStr(title),
       StringValueCStr(body)
@@ -47,40 +42,40 @@ static VALUE finish_event(VALUE self, VALUE transaction_id, VALUE name, VALUE ti
   return Qnil;
 }
 
-static VALUE set_transaction_error(VALUE self, VALUE transaction_id, VALUE name, VALUE message) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE set_transaction_error(VALUE self, VALUE transaction_index, VALUE name, VALUE message) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
 
   appsignal_set_transaction_error(
-      StringValueCStr(transaction_id),
+      FIX2INT(transaction_index),
       StringValueCStr(name),
       StringValueCStr(message)
   );
   return Qnil;
 }
 
-static VALUE set_transaction_error_data(VALUE self, VALUE transaction_id, VALUE key, VALUE payload) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE set_transaction_error_data(VALUE self, VALUE transaction_index, VALUE key, VALUE payload) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(key, T_STRING);
   Check_Type(payload, T_STRING);
 
   appsignal_set_transaction_error_data(
-      StringValueCStr(transaction_id),
+      FIX2INT(transaction_index),
       StringValueCStr(key),
       StringValueCStr(payload)
   );
   return Qnil;
 }
 
-static VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE namespace, VALUE action, VALUE queue_start) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE set_transaction_base_data(VALUE self, VALUE transaction_index, VALUE namespace, VALUE action, VALUE queue_start) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(namespace, T_STRING);
   Check_Type(action, T_STRING);
   Check_Type(queue_start, T_FIXNUM);
 
-  appsignal_set_transaction_basedata(
-      StringValueCStr(transaction_id),
+  appsignal_set_transaction_base_data(
+      FIX2INT(transaction_index),
       StringValueCStr(namespace),
       StringValueCStr(action),
       FIX2LONG(queue_start)
@@ -88,25 +83,23 @@ static VALUE set_transaction_basedata(VALUE self, VALUE transaction_id, VALUE na
   return Qnil;
 }
 
-static VALUE set_transaction_metadata(VALUE self, VALUE transaction_id, VALUE key, VALUE value) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE set_transaction_metadata(VALUE self, VALUE transaction_index, VALUE key, VALUE value) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
 
   appsignal_set_transaction_metadata(
-      StringValueCStr(transaction_id),
+      FIX2INT(transaction_index),
       StringValueCStr(key),
       StringValueCStr(value)
   );
   return Qnil;
 }
 
-static VALUE finish_transaction(VALUE self, VALUE transaction_id) {
-  Check_Type(transaction_id, T_STRING);
+static VALUE finish_transaction(VALUE self, VALUE transaction_index) {
+  Check_Type(transaction_index, T_FIXNUM);
 
-  __current_transaction_id = Qnil;
-
-  appsignal_finish_transaction(StringValueCStr(transaction_id));
+  appsignal_finish_transaction(FIX2INT(transaction_index));
   return Qnil;
 }
 
@@ -166,12 +159,10 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
 }
 
 static void track_allocation(VALUE tpval, void *data) {
-  if (__current_transaction_id != Qnil) {
-    appsignal_track_allocation(StringValueCStr(__current_transaction_id));
-  }
+  appsignal_track_allocation();
 }
 
-static void install_tracepoint() {
+static void install_tracepoint_callbacks() {
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
   VALUE allocation_tracer;
 	allocation_tracer = rb_tracepoint_new(
@@ -196,7 +187,7 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "finish_event",               finish_event,               4);
   rb_define_singleton_method(Extension, "set_transaction_error",      set_transaction_error,      3);
   rb_define_singleton_method(Extension, "set_transaction_error_data", set_transaction_error_data, 3);
-  rb_define_singleton_method(Extension, "set_transaction_basedata",   set_transaction_basedata,   4);
+  rb_define_singleton_method(Extension, "set_transaction_base_data",  set_transaction_base_data,   4);
   rb_define_singleton_method(Extension, "set_transaction_metadata",   set_transaction_metadata,   3);
   rb_define_singleton_method(Extension, "finish_transaction",         finish_transaction,         1);
 
@@ -207,6 +198,6 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "increment_counter",          increment_counter,          2);
   rb_define_singleton_method(Extension, "add_distribution_value",     add_distribution_value,     2);
 
-  // Install tracepoint
-  install_tracepoint();
+  // Tracepoint callbacks
+  install_tracepoint_callbacks();
 }

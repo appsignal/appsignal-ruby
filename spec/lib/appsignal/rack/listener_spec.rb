@@ -19,7 +19,7 @@ describe Appsignal::Rack::Listener do
   let(:env) { {} }
 
   describe '#call' do
-    let(:current) { double(:request_id => '1', :set_error => true) }
+    let(:current) { double(:request_id => '1', :set_error => true, :transaction_index => 1) }
     before do
       middleware.stub(:request_id => '1')
       Appsignal::Transaction.stub(:current => current)

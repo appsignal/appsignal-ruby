@@ -20,7 +20,7 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#initialize" do
     it "should call all required methods" do
-      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc')
+      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc').and_return(1)
 
       expect( transaction ).to receive(:set_base_data)
       expect( transaction ).to receive(:set_metadata)
@@ -28,13 +28,15 @@ describe Appsignal::JSExceptionTransaction do
       expect( transaction ).to receive(:set_error_data)
 
       transaction.send :initialize, data
+
+      expect( transaction.transaction_index ).to eq(1)
     end
   end
 
   describe "#set_base_data" do
     it "should call `Appsignal::Extension.set_transaction_basedata`" do
-      expect( Appsignal::Extension ).to receive(:set_transaction_basedata).with(
-        '123abc',
+      expect( Appsignal::Extension ).to receive(:set_transaction_base_data).with(
+        kind_of(Integer),
         'frontend',
         'ExceptionIncidentComponent',
         0
@@ -47,7 +49,7 @@ describe Appsignal::JSExceptionTransaction do
   describe "#set_metadata" do
    it "should call `Appsignal::Extension.set_transaction_metadata`" do
      expect( Appsignal::Extension ).to receive(:set_transaction_metadata).with(
-      '123abc',
+      kind_of(Integer),
        'path',
        'foo.bar/moo'
      )
@@ -59,7 +61,7 @@ describe Appsignal::JSExceptionTransaction do
   describe "#set_error" do
    it "should call `Appsignal::Extension.set_transaction_error`" do
      expect( Appsignal::Extension ).to receive(:set_transaction_error).with(
-      '123abc',
+      kind_of(Integer),
        'TypeError',
        'foo is not a valid method'
      )
@@ -71,7 +73,7 @@ describe Appsignal::JSExceptionTransaction do
   describe "#set_error_data" do
    it "should call `Appsignal::Extension.set_transaction_error_data`" do
      expect( Appsignal::Extension ).to receive(:set_transaction_error_data).with(
-      '123abc',
+      kind_of(Integer),
       'backtrace',
       '["foo.bar/js:11:1","foo.bar/js:22:2"]'
      )
@@ -82,9 +84,8 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#complete!" do
     it "should call all required methods" do
-      expect( Appsignal::Extension ).to receive(:finish_transaction).with('123abc')
+      expect( Appsignal::Extension ).to receive(:finish_transaction).with(kind_of(Integer))
       transaction.complete!
     end
   end
-
 end

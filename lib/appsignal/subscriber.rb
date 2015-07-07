@@ -35,7 +35,7 @@ module Appsignal
       return unless transaction = Appsignal::Transaction.current
 
       return if transaction.paused?
-      Appsignal::Extension.start_event(transaction.request_id)
+      Appsignal::Extension.start_event(transaction.transaction_index)
     end
 
     def finish(name, id, payload)
@@ -49,7 +49,7 @@ module Appsignal
 
       title, body = Appsignal::EventFormatter.format(name, payload)
       Appsignal::Extension.finish_event(
-        transaction.request_id,
+        transaction.transaction_index,
         name,
         title || BLANK,
         body || BLANK

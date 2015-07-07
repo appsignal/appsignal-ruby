@@ -50,7 +50,7 @@ describe Appsignal::Transaction do
         before { Appsignal::Transaction.create('2', {}) }
 
         it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-          Appsignal::Extension.should_receive(:finish_transaction).with('2')
+          Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
 
           Appsignal::Transaction.complete_current!
 
@@ -114,6 +114,7 @@ describe Appsignal::Transaction do
       subject { transaction }
 
       its(:request_id)         { should == '3' }
+      its(:transaction_index)  { should be_a Integer }
       its(:root_event_payload) { should be_nil }
       its(:exception)          { should be_nil }
       its(:env)                { should == env }
@@ -141,8 +142,8 @@ describe Appsignal::Transaction do
         let(:payload) { create_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Extension.should_receive(:set_transaction_basedata).with(
-            '3',
+          Appsignal::Extension.should_receive(:set_transaction_base_data).with(
+            kind_of(Integer),
             'http_request',
             'BlogPostsController#show',
             kind_of(Integer)
@@ -172,8 +173,8 @@ describe Appsignal::Transaction do
         let(:payload) { create_background_payload }
 
         it "should set the meta data in the transaction and native" do
-          Appsignal::Extension.should_receive(:set_transaction_basedata).with(
-            '3',
+          Appsignal::Extension.should_receive(:set_transaction_base_data).with(
+            kind_of(Integer),
             'background_job',
             'BackgroundJob#perform',
             kind_of(Integer)
@@ -192,7 +193,7 @@ describe Appsignal::Transaction do
     describe "#set_metadata" do
       it "should set the metdata in native" do
         Appsignal::Extension.should_receive(:set_transaction_metadata).with(
-          '3',
+          kind_of(Integer),
           'request_method',
           'GET'
         ).once
@@ -216,27 +217,27 @@ describe Appsignal::Transaction do
 
       it "should set an error and it's data in native" do
         Appsignal::Extension.should_receive(:set_transaction_error).with(
-          '3',
+          kind_of(Integer),
           'RSpec::Mocks::Mock',
           'test message'
         )
         Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          '3',
+          kind_of(Integer),
           'environment',
           "{\"SERVER_NAME\":\"localhost\",\"HTTP_X_REQUEST_START\":\"1000000\",\"HTTP_USER_AGENT\":\"IE6\"}"
         ).once
         Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          '3',
+          kind_of(Integer),
           'session_data',
           "{}"
         ).once
         Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          '3',
+          kind_of(Integer),
           'backtrace',
           "[\"line 1\"]"
         ).once
         Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          '3',
+          kind_of(Integer),
           'tags',
           "{}"
         ).once
@@ -251,12 +252,12 @@ describe Appsignal::Transaction do
 
         it "should also set params" do
           Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            '3',
+            kind_of(Integer),
             'params',
             '{"controller":"blog_posts","action":"show","id":"1"}'
           ).once
           Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            '3',
+            kind_of(Integer),
             kind_of(String),
             kind_of(String)
           ).exactly(4).times
@@ -272,12 +273,12 @@ describe Appsignal::Transaction do
 
         it "should skip the field" do
           Appsignal::Extension.should_not_receive(:set_transaction_error_data).with(
-            '3',
+            kind_of(Integer),
             'params',
             kind_of(String)
           )
           Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            '3',
+            kind_of(Integer),
             kind_of(String),
             kind_of(String)
           ).exactly(4).times

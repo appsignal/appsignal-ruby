@@ -22,12 +22,12 @@ describe Appsignal::Extension do
       end
 
       it "should have a start_event method" do
-        subject.start_event('request_id')
+        subject.start_event(1)
       end
 
       it "should have a finish_event method" do
         subject.finish_event(
-          'request_id',
+          1,
           'name',
           'title',
           'body'
@@ -36,7 +36,7 @@ describe Appsignal::Extension do
 
       it "should have a set_transaction_error method" do
         subject.set_transaction_error(
-          'request_id',
+          1,
           'name',
           'message'
         )
@@ -44,15 +44,15 @@ describe Appsignal::Extension do
 
       it "should have a set_transaction_error_data method" do
         subject.set_transaction_error_data(
-          'request_id',
+          1,
           'params',
           '{}'
         )
       end
 
-      it "should have a set_transaction_basedata method" do
-        subject.set_transaction_basedata(
-          'request_id',
+      it "should have a set_transaction_base_data method" do
+        subject.set_transaction_base_data(
+          1,
           'kind',
           'action',
           100
@@ -61,14 +61,34 @@ describe Appsignal::Extension do
 
       it "should have a set_transaction_metadata method" do
         subject.set_transaction_metadata(
-          'request_id',
+          1,
           'key',
           'value'
         )
       end
 
       it "should have a finish_transaction method" do
-        subject.finish_transaction('request_id')
+        subject.finish_transaction(1)
+      end
+
+      it "should have a set_gauge method" do
+        Appsignal.set_gauge('key', 1.0)
+      end
+
+      it "should have a set_host_gauge method" do
+        Appsignal.set_host_gauge('key', 1.0)
+      end
+
+      it "should have a set_process_gauge method" do
+        Appsignal.set_process_gauge('key', 1.0)
+      end
+
+      it "should have a increment_counter method" do
+        Appsignal.increment_counter('key', 1)
+      end
+
+      it "should have a add_distribution_value method" do
+        Appsignal.add_distribution_value('key', 1.0)
       end
     end
   end
