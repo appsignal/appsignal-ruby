@@ -22,7 +22,6 @@ describe Appsignal::Config do
         :skip_session_data              => false,
         :send_params                    => true,
         :endpoint                       => 'https://push.appsignal.com',
-        :slow_request_threshold         => 200,
         :push_api_key                   => 'abc',
         :name                           => 'TestApp',
         :active                         => true,
@@ -159,7 +158,6 @@ describe Appsignal::Config do
           :instrument_net_http            => true,
           :skip_session_data              => false,
           :endpoint                       => 'https://push.appsignal.com',
-          :slow_request_threshold         => 200,
           :active                         => true,
           :enable_frontend_error_catching => false,
           :frontend_error_catching_path   => '/appsignal_error_catcher'

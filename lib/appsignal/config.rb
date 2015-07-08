@@ -11,7 +11,6 @@ module Appsignal
       :ignore_actions                 => [],
       :send_params                    => true,
       :endpoint                       => 'https://push.appsignal.com',
-      :slow_request_threshold         => 200,
       :instrument_net_http            => true,
       :skip_session_data              => false,
       :enable_frontend_error_catching => false,
