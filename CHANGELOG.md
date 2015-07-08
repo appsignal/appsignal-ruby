@@ -1,3 +1,7 @@
+# 0.11.13
+* Configure Net::HTTP to only use TLS
+* Add http proxy support
+
 # 0.11.12
 * Sanitizer will no longer inspect unknown objects, since implementations of inspect sometimes trigger unexpected behavior.
 
