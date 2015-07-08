@@ -137,8 +137,14 @@ module Appsignal
       @in_memory_log = StringIO.new unless @in_memory_log
       @logger ||= Logger.new(@in_memory_log).tap do |l|
         l.level = Logger::INFO
-        l.formatter = Logger::Formatter.new
+        l.formatter = log_formatter
       end
+    end
+
+    def log_formatter
+        proc do |severity, datetime, progname, msg|
+          "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}"
+        end
     end
 
     def start_logger(path)
@@ -146,7 +152,7 @@ module Appsignal
          !ENV['DYNO'] &&
          !ENV['SHELLYCLOUD_DEPLOYMENT']
         @logger = Logger.new(File.join(path, 'appsignal.log'))
-        @logger.formatter = Logger::Formatter.new
+        @logger.formatter = log_formatter
       else
         @logger = Logger.new($stdout)
         @logger.formatter = lambda do |severity, datetime, progname, msg|
