@@ -86,6 +86,7 @@ describe Appsignal::Transmitter do
       let(:config) { project_fixture_config('test') }
 
       it { should be_instance_of(Net::HTTP) }
+      its(:proxy?) { should be_false }
       its(:use_ssl?) { should be_false }
     end
 
@@ -93,9 +94,18 @@ describe Appsignal::Transmitter do
       let(:config) { project_fixture_config('production') }
 
       it { should be_instance_of(Net::HTTP) }
+      its(:proxy?) { should be_false }
       its(:use_ssl?) { should be_true }
       its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
       its(:ca_file) { Appsignal::Transmitter::CA_FILE_PATH }
+    end
+
+    context "with a proxy" do
+      let(:config) { project_fixture_config('production', :http_proxy => 'http://localhost:8080') }
+
+      its(:proxy?) { should be_true }
+      its(:proxy_address) { should == 'localhost' }
+      its(:proxy_port) { should == 8080 }
     end
   end
 end
