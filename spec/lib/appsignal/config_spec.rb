@@ -16,6 +16,7 @@ describe Appsignal::Config do
 
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
+        :debug                          => false,
         :ignore_exceptions              => [],
         :ignore_actions                 => [],
         :instrument_net_http            => true,
@@ -50,6 +51,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
         ENV['APPSIGNAL_LOG_PATH'].should          end_with('/log')
+        ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
         ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
@@ -151,6 +153,7 @@ describe Appsignal::Config do
         )
 
         subject.config_hash.should == {
+          :debug                          => false,
           :push_api_key                   => 'push_api_key',
           :ignore_exceptions              => [],
           :ignore_actions                 => [],
