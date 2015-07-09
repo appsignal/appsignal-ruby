@@ -103,6 +103,9 @@ module Appsignal
 
     def send_queue
       Appsignal.logger.debug('Sending queue')
+      unless aggregator.has_transactions? || aggregator_queue.any?
+        return
+      end
       # Replace aggregator while making sure no thread
       # is adding to it's queue
       aggregator_to_be_sent = nil

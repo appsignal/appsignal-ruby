@@ -271,39 +271,61 @@ describe Appsignal::Agent do
   describe "#send_queue" do
     let(:zipped_payload) { double(:body => :zip) }
 
-    it "adds Zipped Payload to queue" do
-      subject.aggregator.stub(:post_processed_queue! => :foo)
+    context "with something in the aggregator" do
+      before do
+        subject.aggregator.stub(:has_transactions? => true)
+      end
 
-      Appsignal::ZippedPayload
-        .should_receive(:new)
-        .with(:foo)
-        .and_return(zipped_payload)
+      it "adds Zipped Payload to queue" do
+        subject.aggregator.stub(:post_processed_queue! => :foo)
 
-      subject.should_receive(:add_to_aggregator_queue).with(zipped_payload)
+        Appsignal::ZippedPayload
+          .should_receive(:new)
+          .with(:foo)
+          .and_return(zipped_payload)
+
+        subject.should_receive(:add_to_aggregator_queue).with(zipped_payload)
+      end
+
+      it "sends aggregators" do
+        subject.should_receive(:send_aggregators)
+      end
+
+      it "handle exceptions in post processing" do
+        subject.aggregator.stub(:post_processed_queue!).and_raise(
+          PostProcessingException.new('Message')
+        )
+
+        Appsignal.logger.should_receive(:error).
+          with(kind_of(String)).
+          once
+      end
+
+      it "handles exceptions in transmit" do
+        subject.stub(:send_aggregators).and_raise(
+          Exception.new('Message')
+        )
+
+        Appsignal.logger.should_receive(:error).
+          with(kind_of(String)).
+          once
+      end
     end
 
-    it "sends aggregators" do
-      subject.should_receive(:send_aggregators)
+    context "with something in the aggregator queue" do
+      before do
+        subject.aggregator_queue.stub(:any? => true)
+      end
+
+      it "sends aggregators" do
+        subject.should_receive(:send_aggregators)
+      end
     end
 
-    it "handle exceptions in post processing" do
-      subject.aggregator.stub(:post_processed_queue!).and_raise(
-        PostProcessingException.new('Message')
-      )
-
-      Appsignal.logger.should_receive(:error).
-        with(kind_of(String)).
-        once
-    end
-
-    it "handles exceptions in transmit" do
-      subject.stub(:send_aggregators).and_raise(
-        Exception.new('Message')
-      )
-
-      Appsignal.logger.should_receive(:error).
-        with(kind_of(String)).
-        once
+    context "with empty aggregator and aggregator queue" do
+      it "does not send aggregators" do
+        subject.should_not_receive(:send_aggregators)
+      end
     end
 
     after { subject.send_queue }
