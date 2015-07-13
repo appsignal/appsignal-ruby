@@ -1,5 +1,4 @@
 #include "ruby/ruby.h"
-#include "ruby/debug.h"
 #include "appsignal_extension.h"
 
 static VALUE start(VALUE self) {
@@ -158,41 +157,48 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-static void track_allocation(VALUE tpval, void *data) {
+static void track_allocation(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
   appsignal_track_allocation();
 }
 
-static void track_gc(VALUE tpval, void *data) {
-  rb_trace_arg_t *tparg = rb_tracearg_from_tracepoint(tpval);
-  rb_event_flag_t flag  = rb_tracearg_event_flag(tparg);
+static void track_gc_start(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
+    appsignal_track_gc_start();
+}
 
-  switch (flag) {
-    case RUBY_INTERNAL_EVENT_GC_START:
-      appsignal_track_gc_start();
-    case RUBY_INTERNAL_EVENT_GC_END_SWEEP:
-      appsignal_track_gc_end();
-  }
+static void track_gc_end(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
+    appsignal_track_gc_end();
 }
 
 static void install_tracepoint_callbacks() {
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
-  VALUE allocation_tracer = rb_tracepoint_new(
-      Qnil,
-      RUBY_INTERNAL_EVENT_NEWOBJ,
+  rb_add_event_hook(
       track_allocation,
-      0
+      RUBY_INTERNAL_EVENT_NEWOBJ,
+      Qnil
   );
-	rb_tracepoint_enable(allocation_tracer);
   #endif
-  #if defined(RUBY_INTERNAL_EVENT_GC_START) && defined(RUBY_INTERNAL_EVENT_GC_END_SWEEP)
-  rb_event_flag_t events = RUBY_INTERNAL_EVENT_GC_START|RUBY_INTERNAL_EVENT_GC_END_SWEEP;
-  VALUE gc_tracer = rb_tracepoint_new(
-      Qnil,
-      events,
-      track_gc,
-      0
+  #if defined(RUBY_INTERNAL_EVENT_GC_START)
+  rb_add_event_hook(
+      track_gc_start,
+      RUBY_INTERNAL_EVENT_GC_START,
+      Qnil
   );
-	rb_tracepoint_enable(gc_tracer);
+  #endif
+  #if defined(RUBY_INTERNAL_EVENT_GC_END_SWEEP)
+  // Ruby 2.1
+  rb_add_event_hook(
+      track_gc_end,
+      RUBY_INTERNAL_EVENT_GC_END_SWEEP,
+      Qnil
+  );
+  #endif
+  #if defined(RUBY_INTERNAL_EVENT_GC_END)
+  // Ruby 2.2
+  rb_add_event_hook(
+      track_gc_end,
+      RUBY_INTERNAL_EVENT_GC_END,
+      Qnil
+  );
   #endif
 }
 
