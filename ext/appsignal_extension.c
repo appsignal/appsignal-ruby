@@ -226,6 +226,6 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "increment_counter",          increment_counter,          2);
   rb_define_singleton_method(Extension, "add_distribution_value",     add_distribution_value,     2);
 
-  // Tracepoint callbacks
+  // Event hooks
   install_event_hooks();
 }
