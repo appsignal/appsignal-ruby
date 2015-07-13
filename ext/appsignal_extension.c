@@ -162,11 +162,11 @@ static void track_allocation(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID ar
 }
 
 static void track_gc_start(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
-    appsignal_track_gc_start();
+  appsignal_track_gc_start();
 }
 
 static void track_gc_end(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
-    appsignal_track_gc_end();
+  appsignal_track_gc_end();
 }
 
 static void install_tracepoint_callbacks() {
