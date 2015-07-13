@@ -169,7 +169,8 @@ static void track_gc_end(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, 
   appsignal_track_gc_end();
 }
 
-static void install_tracepoint_callbacks() {
+static void install_event_hooks() {
+  // These event hooks are only available on Ruby 2.1 and 2.2
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
   rb_add_event_hook(
       track_allocation,
@@ -226,5 +227,5 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "add_distribution_value",     add_distribution_value,     2);
 
   // Tracepoint callbacks
-  install_tracepoint_callbacks();
+  install_event_hooks();
 }
