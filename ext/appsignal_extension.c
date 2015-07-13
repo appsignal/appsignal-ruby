@@ -215,7 +215,7 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "finish_event",               finish_event,               4);
   rb_define_singleton_method(Extension, "set_transaction_error",      set_transaction_error,      3);
   rb_define_singleton_method(Extension, "set_transaction_error_data", set_transaction_error_data, 3);
-  rb_define_singleton_method(Extension, "set_transaction_base_data",  set_transaction_base_data,   4);
+  rb_define_singleton_method(Extension, "set_transaction_base_data",  set_transaction_base_data,  4);
   rb_define_singleton_method(Extension, "set_transaction_metadata",   set_transaction_metadata,   3);
   rb_define_singleton_method(Extension, "finish_transaction",         finish_transaction,         1);
 
