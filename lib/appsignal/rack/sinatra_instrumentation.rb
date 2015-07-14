@@ -22,7 +22,7 @@ module Appsignal
       ensure
         # In production newer versions of Sinatra don't raise errors, but store
         # them in the sinatra.error env var.
-        Appsignal::Transaction.current.add_exception(env['sinatra.error']) if env['sinatra.error']
+        Appsignal::Transaction.current.add_exception(env['sinatra.error']) if env['sinatra.error'] && Appsignal.active?
       end
 
       def raw_payload(env)
