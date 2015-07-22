@@ -560,7 +560,7 @@ describe Appsignal::Agent do
     end
 
     context "return values" do
-      %w( 200 420 413 429 406 402 401 ).each do |code|
+      %w( 200 420 413 429 406 402 401 400 ).each do |code|
         it "should return true for '#{code}'" do
           subject.send(:handle_result, code).should be_true
         end

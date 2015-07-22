@@ -203,6 +203,9 @@ module Appsignal
         Appsignal.logger.error 'API token cannot be authorized'
         shutdown(false, 401)
         true
+      when 400
+        Appsignal.logger.error 'Empty body sent'
+        true
       else
         Appsignal.logger.error "Unknown Appsignal response code: '#{code}'"
         false
