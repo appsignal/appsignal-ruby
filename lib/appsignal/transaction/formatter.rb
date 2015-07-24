@@ -26,6 +26,7 @@ module Appsignal
           :log_entry => {
             :path => fullpath,
             :kind => kind,
+            :action => action,
             :time => time,
             :environment => sanitized_environment,
             :session_data => sanitized_session_data,

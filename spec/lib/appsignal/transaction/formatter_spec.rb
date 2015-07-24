@@ -56,6 +56,30 @@ describe Appsignal::Transaction::Formatter do
       end
     end
 
+    context "with a background request without payload" do
+      let(:transaction) do
+        Appsignal::Transaction.new('123', {}).tap do |transaction|
+          transaction.set_kind('web')
+          transaction.set_action('foo#bar')
+        end
+      end
+
+      it "should get the kind and action from the transaction" do
+        subject.to_hash.should == {
+          :request_id => '123',
+          :log_entry  => {
+            :path         => '/foo',
+            :kind         => 'web',
+            :action       => 'foo#bar',
+            :time         => nil,
+            :environment  => {},
+            :session_data => {},
+            :revision     => nil},
+          :failed => false
+        }
+      end
+    end
+
     context "with an exception request" do
       let(:transaction) { transaction_with_exception }
 
