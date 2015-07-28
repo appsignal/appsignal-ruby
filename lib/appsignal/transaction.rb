@@ -68,6 +68,14 @@ module Appsignal
       @paused = false
     end
 
+    def set_kind(kind)
+      @kind = kind
+    end
+
+    def set_action(action)
+      @action = action
+    end
+
     def set_process_action_event(event)
       return unless event && event.payload
       @process_action_event = event.dup
@@ -95,7 +103,7 @@ module Appsignal
     def add_exception(ex=nil)
       return unless ex
       Appsignal.logger.debug("Adding #{ex.class.name} to transaction: #{request_id}")
-      @time = Time.now.utc.to_f
+      @time      = Time.now.utc.to_f
       @exception = {
         :exception  => ex.class.name,
         :message    => ex.message,

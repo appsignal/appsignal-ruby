@@ -189,6 +189,22 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#set_kind" do
+      it "should set the kind" do
+        expect{
+          transaction.set_kind('web')
+        }.to change(transaction, :kind).from(nil).to('web')
+      end
+    end
+
+    describe "#set_action" do
+      it "should set the action" do
+        expect{
+          transaction.set_action('foo#bar')
+        }.to change(transaction, :action).from(nil).to('foo#bar')
+      end
+    end
+
     context "using exceptions" do
       let(:exception) do
         double(
