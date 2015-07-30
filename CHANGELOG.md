@@ -1,8 +1,13 @@
 # 0.11.13
-* Configure Net::HTTP to only use TLS
+* Add Padrino support
+* Add Rake task monitoring
 * Add http proxy support
+* Configure Net::HTTP to only use TLS
 * Don't send queue if there is no content
 * Don't retry transmission when response code is 400 (no content)
+* Display warning message when attempting to send a non-exception to `send_exception`
+* Fix capistrano 2 detection
+* Fix issue with Sinatra integration attempting to attach an exception to a transaction that doesn't exist.
 
 # 0.11.12
 * Sanitizer will no longer inspect unknown objects, since implementations of inspect sometimes trigger unexpected behavior.
