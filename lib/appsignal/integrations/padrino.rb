@@ -37,7 +37,7 @@ module Padrino::Routing::InstanceMethods
         rescue => e
           Appsignal.add_exception(e); raise e
         ensure
-          payload[:action] = "#{settings.name}:#{request.controller}##{request.action}"
+          payload[:action] = "#{settings.name}:#{request.controller}##{request.fullpath}"
         end
       end
     end
