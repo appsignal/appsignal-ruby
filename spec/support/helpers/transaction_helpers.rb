@@ -82,13 +82,15 @@ module TransactionHelpers
       notification_event(:name => 'query.mongoid')
     ]
     exception = args.delete(:exception)
+    defaults = args.delete(:defaults) || {}
     Appsignal::Transaction.create(
       '1',
       {
         'HTTP_USER_AGENT' => 'IE6',
         'SERVER_NAME' => 'localhost',
         'action_dispatch.routes' => 'not_available'
-      }.merge(args)
+      }.merge(args),
+      defaults
     ).tap do |o|
       o.set_process_action_event(process_action_event)
       o.add_exception(exception)

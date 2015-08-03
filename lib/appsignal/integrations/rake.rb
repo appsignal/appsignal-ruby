@@ -3,9 +3,13 @@ module Rake
     alias_method :invoke_without_appsignal, :invoke
 
     def invoke(*args)
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
-      transaction.set_kind('background_job')
-      transaction.set_action(name)
+      transaction = Appsignal::Transaction.create(
+        SecureRandom.uuid,
+        ENV,
+        :kind => 'background_job',
+        :action => name,
+        :params => args
+      )
 
       invoke_without_appsignal(*args)
     rescue => exception

@@ -189,22 +189,6 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#set_kind" do
-      it "should set the kind" do
-        expect{
-          transaction.set_kind('web')
-        }.to change(transaction, :kind).from(nil).to('web')
-      end
-    end
-
-    describe "#set_action" do
-      it "should set the action" do
-        expect{
-          transaction.set_action('foo#bar')
-        }.to change(transaction, :action).from(nil).to('foo#bar')
-      end
-    end
-
     context "using exceptions" do
       let(:exception) do
         double(
@@ -341,7 +325,12 @@ describe Appsignal::Transaction do
 
     describe "#truncate!" do
       subject { slow_transaction }
-      before { subject.set_tags('a' => 'b') }
+      before  do
+        subject.set_tags('a' => 'b')
+        subject.sanitized_environment[:foo]  = 'bar'
+        subject.sanitized_session_data[:foo] = 'bar'
+        subject.sanitized_params[:foo]       = 'bar'
+      end
 
       it "should clear the process action payload and events" do
         subject.truncate!
@@ -349,6 +338,11 @@ describe Appsignal::Transaction do
         subject.process_action_event.payload.should be_empty
         subject.events.should be_empty
         subject.tags.should be_empty
+
+        subject.sanitized_environment.should be_empty
+        subject.sanitized_session_data.should be_empty
+        subject.sanitized_params.should be_empty
+
         subject.truncated?.should be_true
       end
 
@@ -619,6 +613,7 @@ describe Appsignal::Transaction do
           transaction.should_receive(:sanitize_environment!)
           transaction.should_receive(:sanitize_session_data!)
           transaction.should_receive(:sanitize_tags!)
+          transaction.should_receive(:sanitize_params!)
           subject
         end
       end
@@ -630,6 +625,7 @@ describe Appsignal::Transaction do
           transaction.should_receive(:sanitize_environment!)
           transaction.should_not_receive(:sanitize_session_data!)
           transaction.should_receive(:sanitize_tags!)
+          transaction.should_receive(:sanitize_params!)
           subject
         end
       end
@@ -740,6 +736,36 @@ describe Appsignal::Transaction do
           Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
           subject
           transaction.sanitized_session_data.should == {}
+        end
+      end
+    end
+
+    describe '#sanitize_params!' do
+      let(:params) { {:foo => 'bar'} }
+      let(:transaction) do
+        Appsignal::Transaction.create('1', {}, :params => params)
+      end
+      before  { Appsignal.config = {:send_params => true} }
+      subject { transaction.sanitized_params }
+
+      it "should call the params sanitizer and set sanitized params" do
+        Appsignal::ParamsSanitizer.should_receive(:sanitize)
+          .with(params)
+          .and_return({'foo' => 'bar'})
+
+        transaction.send(:sanitize_params!)
+
+        should == {'foo' => 'bar'}
+      end
+
+      context "when skipping session data" do
+        before { Appsignal.config = {:send_params => false} }
+
+        it "should not pass data to the params sanitizer" do
+          Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+          transaction.send(:sanitize_params!)
+
+          should == {}
         end
       end
     end

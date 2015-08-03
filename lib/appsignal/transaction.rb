@@ -11,10 +11,10 @@ module Appsignal
     HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP).freeze
 
-    def self.create(request_id, env)
+    def self.create(request_id, env, defaults={})
       Appsignal.logger.debug("Creating transaction: #{request_id}")
       Thread.current[:appsignal_transaction_id] = request_id
-      Appsignal::Transaction.new(request_id, env)
+      Appsignal::Transaction.new(request_id, env, defaults)
     end
 
     def self.current
@@ -31,17 +31,20 @@ module Appsignal
     end
 
     attr_reader :request_id, :events, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused
+                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused, :params
 
-    def initialize(request_id, env)
+    def initialize(request_id, env, defaults={})
       Appsignal.transactions[request_id] = self
-      @request_id = request_id
-      @events = []
+      @request_id           =  request_id
+      @events               = []
       @process_action_event = nil
-      @exception = {}
-      @env = env
-      @tags = {}
-      @paused = false
+      @exception            = {}
+      @env                  = env
+      @params               = defaults[:params] || {}
+      @tags                 = defaults[:tags] || {}
+      @kind                 = defaults[:kind] || 'web'
+      @action               = defaults[:action]
+      @paused               = false
     end
 
     def sanitized_environment
@@ -50,6 +53,10 @@ module Appsignal
 
     def sanitized_session_data
       @sanitized_session_data ||= {}
+    end
+
+    def sanitized_params
+      @sanitized_params ||= {}
     end
 
     def request
@@ -66,14 +73,6 @@ module Appsignal
 
     def resume!
       @paused = false
-    end
-
-    def set_kind(kind)
-      @kind = kind
-    end
-
-    def set_action(action)
-      @action = action
     end
 
     def set_process_action_event(event)
@@ -144,6 +143,7 @@ module Appsignal
       tags.clear
       sanitized_environment.clear
       sanitized_session_data.clear
+      sanitized_params.clear
       @env = nil
       @truncated = true
     end
@@ -221,6 +221,7 @@ module Appsignal
       sanitize_environment!
       sanitize_session_data! if kind == 'http_request'
       sanitize_tags!
+      sanitize_params!
       @env = nil
     end
 
@@ -236,7 +237,7 @@ module Appsignal
     end
 
     def sanitize_environment!
-      return unless env
+      return unless env && env.keys.any?
       ENV_METHODS.each do |key|
         sanitized_environment[key] = env[key]
       end
@@ -247,6 +248,11 @@ module Appsignal
         request.session.to_hash
       ) if Appsignal.config[:skip_session_data] == false
       @fullpath = request.fullpath
+    end
+
+    def sanitize_params!
+      return unless Appsignal.config[:send_params]
+      @sanitized_params = Appsignal::ParamsSanitizer.sanitize(@params)
     end
   end
 end

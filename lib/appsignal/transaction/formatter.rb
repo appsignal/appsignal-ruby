@@ -23,16 +23,17 @@ module Appsignal
       def default_hash
         {
           :request_id => request_id,
-          :log_entry => {
-            :path => fullpath,
-            :kind => kind,
-            :action => action,
-            :time => time,
-            :environment => sanitized_environment,
+          :log_entry  => {
+            :path         => fullpath,
+            :kind         => kind,
+            :action       => action,
+            :time         => time,
+            :environment  => sanitized_environment,
             :session_data => sanitized_session_data,
-            :revision => Appsignal.agent.revision
+            :params       => sanitized_params,
+            :revision     => Appsignal.agent.revision
           },
-          :failed => exception?
+          :failed     => exception?
         }
       end
 

@@ -28,6 +28,7 @@ describe Appsignal::Transaction::Formatter do
           :path => "/foo",
           :session_data => {},
           :revision => nil,
+          :params => {},
           :time => 1389783600.0,
       } }
       its([:events]) { should be_nil }
@@ -58,11 +59,18 @@ describe Appsignal::Transaction::Formatter do
 
     context "with a background request without payload" do
       let(:transaction) do
-        Appsignal::Transaction.new('123', {}).tap do |transaction|
-          transaction.set_kind('web')
-          transaction.set_action('foo#bar')
-        end
+        Appsignal::Transaction.new(
+          '123',
+          {},
+          {
+            :kind   => 'web',
+            :action => 'foo#bar',
+            :params => {'foo' => 'bar'}
+          }
+        )
       end
+
+      before { transaction.send(:add_sanitized_context!) }
 
       it "should get the kind and action from the transaction" do
         subject.to_hash.should == {
@@ -74,7 +82,9 @@ describe Appsignal::Transaction::Formatter do
             :time         => nil,
             :environment  => {},
             :session_data => {},
-            :revision     => nil},
+            :revision     => nil,
+            :params       => {'foo' => 'bar'}
+          },
           :failed => false
         }
       end
@@ -199,6 +209,7 @@ describe Appsignal::Transaction::Formatter do
         :kind => "background_job",
         :path => "/foo",
         :session_data => {},
+        :params => {},
         :revision => nil,
         :time => 1389783600.0,
       } }
