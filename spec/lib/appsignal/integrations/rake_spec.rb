@@ -24,16 +24,19 @@ describe "Rack integration" do
       let!(:transaction) { Appsignal::Transaction.new('123', {}) }
       let!(:agent)       { double('Agent', :send_queue => true) }
       before do
+        SecureRandom.stub(:uuid => '123')
         Appsignal::Transaction.stub(:create => transaction)
         Appsignal.stub(:agent => agent, :active? => true)
       end
 
-      it "should set the kind" do
-        expect( transaction ).to receive(:set_kind).with('background_job')
-      end
-
-      it "should set the action" do
-        expect( transaction ).to receive(:set_action).with('task:name')
+      it "should create a transaction" do
+        expect( Appsignal::Transaction ).to receive(:create).with(
+          '123',
+          ENV,
+          :kind => 'background_job',
+          :action => 'task:name',
+          :params => ['foo']
+        )
       end
 
       it "should call the original task" do
