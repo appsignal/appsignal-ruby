@@ -19,13 +19,13 @@ if defined?(::Resque)
 
   # Set up IPC
   Resque.before_first_fork do
-    Appsignal::IPC::Server.start
+    Appsignal::IPC::Server.start if Appsignal.active?
   end
 
   # In the fork, stop the normal agent startup
   # and stop listening to the server
   Resque.after_fork do |job|
-    Appsignal::IPC.forked!
+    Appsignal::IPC.forked! if Appsignal.active?
   end
 
   # Extend the default job class with AppSignal instrumentation
