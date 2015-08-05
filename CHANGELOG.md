@@ -5,6 +5,7 @@
 * Configure Net::HTTP to only use TLS
 * Don't send queue if there is no content
 * Don't retry transmission when response code is 400 (no content)
+* Don't start Resque IPC server when AppSignal is not active
 * Display warning message when attempting to send a non-exception to `send_exception`
 * Fix capistrano 2 detection
 * Fix issue with Sinatra integration attempting to attach an exception to a transaction that doesn't exist.
