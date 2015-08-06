@@ -8,13 +8,13 @@ if padrino_present?
       include Padrino::Routing
     end
 
-    before :all do
+    before do
       @events = []
       @subscriber = ActiveSupport::Notifications.subscribe do |*args|
         @events << ActiveSupport::Notifications::Event.new(*args)
       end
     end
-    after :all do
+    after do
       ActiveSupport::Notifications.unsubscribe(@subscriber)
     end
 
@@ -74,6 +74,19 @@ if padrino_present?
           :env                     => env,
           :settings                => settings
         )
+      end
+
+      context "when request has a route object" do
+        let(:route_object) { double(:original_path => '/accounts/edit/:id') }
+        before             { request.stub(:route_obj => route_object) }
+
+        it "should instrument the action" do
+          router.route!(base)
+
+          expect( @events.first.payload[:action] ).to eql('TestApp:/accounts/edit/:id')
+        end
+
+        after { router.route!(base) }
       end
 
       context "when Sinatra tells us it's a static file" do
