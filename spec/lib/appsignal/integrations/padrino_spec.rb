@@ -56,89 +56,116 @@ if padrino_present?
       let(:env)      { {} }
       let(:settings) { double(:name => 'TestApp') }
 
-      let(:request) do
-        double(
-          :params          => {'id' => 1},
-          :session         => {'user_id' => 123},
-          :request_method  => 'GET',
-          :path            => '/users/1',
-          :controller      => 'users',
-          :action          => 'show'
-        )
-      end
-
-      before do
-        router.stub(
-          :route_without_appsignal => true,
-          :request                 => request,
-          :env                     => env,
-          :settings                => settings
-        )
-      end
-
-      context "when request has a route object" do
-        let(:route_object) { double(:original_path => '/accounts/edit/:id') }
-        before             { request.stub(:route_obj => route_object) }
-
-        it "should instrument the action" do
-          router.route!(base)
-
-          expect( @events.first.payload[:action] ).to eql('TestApp:/accounts/edit/:id')
-        end
-
-        after { router.route!(base) }
-      end
-
-      context "when Sinatra tells us it's a static file" do
-        let(:env) { {'sinatra.static_file' => true} }
-
-        it "should call the original method" do
-          expect( router ).to receive(:route_without_appsignal)
-        end
-
-        it "should not instrument the request" do
-          expect( ActiveSupport::Notifications ).to_not receive(:instrument)
-        end
-
-        after { router.route!(base) }
-      end
-
-      context "with a dynamic request" do
-
-        it "should call the original method" do
-          expect( router ).to receive(:route_without_appsignal)
-        end
-
-        it "should instrument the action" do
-          expect( ActiveSupport::Notifications ).to receive(:instrument).with(
-            'process_action.padrino',
-            {
-              :params  => {'id' => 1},
-              :session => {'user_id' => 123},
-              :method  => 'GET',
-              :path    => '/users/1'
-            }
+      describe "#route!" do
+        let(:request) do
+          double(
+            :params          => {'id' => 1},
+            :session         => {'user_id' => 123},
+            :request_method  => 'GET',
+            :path            => '/users/1',
+            :controller      => 'users',
+            :action          => 'show'
           )
         end
 
-        after { router.route!(base) }
-      end
+        before do
+          router.stub(
+            :route_without_appsignal => true,
+            :request                 => request,
+            :env                     => env,
+            :settings                => settings,
+            :get_payload_action      => 'controller#action'
+          )
+        end
 
-      it "should add the action to the payload" do
-        router.route!(base)
+        context "when Sinatra tells us it's a static file" do
+          let(:env) { {'sinatra.static_file' => true} }
 
-        expect( @events.first.payload[:action] ).to eql('TestApp:users#show')
-      end
+          it "should call the original method" do
+            expect( router ).to receive(:route_without_appsignal)
+          end
 
-      context "with an exception" do
-        before { router.stub(:route_without_appsignal).and_raise(VerySpecificError) }
+          it "should not instrument the request" do
+            expect( ActiveSupport::Notifications ).to_not receive(:instrument)
+          end
 
-        it "should add the exception to the current transaction" do
-          expect( Appsignal ).to receive(:add_exception)
+          after { router.route!(base) }
+        end
 
-          router.route!(base) rescue VerySpecificError
+        context "with a dynamic request" do
+
+          it "should call the original method" do
+            expect( router ).to receive(:route_without_appsignal)
+          end
+
+          it "should instrument the action" do
+            expect( ActiveSupport::Notifications ).to receive(:instrument).with(
+              'process_action.padrino',
+              {
+                :params  => {'id' => 1},
+                :session => {'user_id' => 123},
+                :method  => 'GET',
+                :path    => '/users/1'
+              }
+            )
+          end
+
+          after { router.route!(base) }
+        end
+
+        it "should add the action to the payload" do
+          router.route!(base)
+
+          expect( @events.first.payload[:action] ).to eql('controller#action')
+        end
+
+        context "with an exception" do
+          before { router.stub(:route_without_appsignal).and_raise(VerySpecificError) }
+
+          it "should add the exception to the current transaction" do
+            expect( Appsignal ).to receive(:add_exception)
+
+            router.route!(base) rescue VerySpecificError
+          end
         end
       end
+
+      describe "#get_payload_action" do
+        before { router.stub(:settings  => settings) }
+
+        context "when request is nil" do
+          it "should return the site" do
+            expect( router.get_payload_action(nil) ).to eql('TestApp')
+          end
+        end
+
+        context "when there's no route object" do
+          let(:request) { double(:controller => 'Controller', :action => 'action') }
+
+          it "should return the site name, controller and action" do
+            expect( router.get_payload_action(request) ).to eql('TestApp:Controller#action')
+          end
+
+          context "when there's no action" do
+            let(:request) { double(:controller => 'Controller', :fullpath => '/action') }
+
+            it "should return the site name, controller and fullpath" do
+              expect( router.get_payload_action(request) ).to eql('TestApp:Controller#/action')
+            end
+          end
+        end
+
+        context "when request has a route object" do
+          let(:request)      { double }
+          let(:route_object) { double(:original_path => '/accounts/edit/:id') }
+          before             { request.stub(:route_obj => route_object) }
+
+          it "should return the original path" do
+            expect( router.get_payload_action(request) ).to eql('TestApp:/accounts/edit/:id')
+          end
+        end
+      end
+
     end
   end
 end
