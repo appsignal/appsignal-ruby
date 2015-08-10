@@ -48,7 +48,7 @@ if defined?(::Sidekiq)
         end
 
         def truncate(text)
-          text.size > 100 ? "#{text[0...97]}..." : text
+          text.size > 200 ? "#{text[0...197]}..." : text
         end
       end
     end

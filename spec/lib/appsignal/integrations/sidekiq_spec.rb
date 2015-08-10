@@ -104,11 +104,11 @@ describe "Sidekiq integration" do
 
   describe "#truncate" do
     let(:very_long_text) do
-      "a" * 200
+      "a" * 400
     end
 
-    it "should truncate the text to 100 chars max" do
-      plugin.truncate(very_long_text).should == "#{'a' * 97}..."
+    it "should truncate the text to 200 chars max" do
+      plugin.truncate(very_long_text).should == "#{'a' * 197}..."
     end
   end
 
