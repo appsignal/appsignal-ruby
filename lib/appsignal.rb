@@ -143,7 +143,7 @@ module Appsignal
 
     def log_formatter
         proc do |severity, datetime, progname, msg|
-          "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}"
+          "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}\n"
         end
     end
 
