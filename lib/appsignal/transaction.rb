@@ -16,7 +16,6 @@ module Appsignal
 
     class << self
       def create(request_id, env)
-        Appsignal.logger.debug("Creating transaction: #{request_id}")
         Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
       end
 
@@ -141,7 +140,6 @@ module Appsignal
       return unless root_event_payload
       queue_start = root_event_payload[:queue_start]
       return unless queue_start
-      Appsignal.logger.debug("Setting background queue start: #{queue_start}")
       @queue_start = (queue_start.to_f * 1000.0).to_i
     end
 
@@ -154,7 +152,6 @@ module Appsignal
       return unless env
       env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
       if env_var
-        Appsignal.logger.debug("Setting http queue start: #{env_var}")
         cleaned_value = env_var.tr('^0-9', '')
         unless cleaned_value.empty?
           value = cleaned_value.to_i
