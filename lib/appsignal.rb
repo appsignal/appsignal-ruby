@@ -13,6 +13,7 @@ module Appsignal
     attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log
 
     def load_integrations
+      require 'appsignal/integrations/celluloid'
       require 'appsignal/integrations/delayed_job'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
