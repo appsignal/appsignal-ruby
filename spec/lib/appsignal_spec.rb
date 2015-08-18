@@ -417,7 +417,7 @@ describe Appsignal do
       it "should format a log line" do
         Process.stub(:pid => 100)
         subject.call('Debug', Time.parse('2015-07-08'), nil, 'log line').should ==
-          '[2015-07-08T00:00:00 (process) #100][Debug] log line'
+          "[2015-07-08T00:00:00 (process) #100][Debug] log line\n"
       end
     end
 
