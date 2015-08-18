@@ -7,8 +7,14 @@ static VALUE start(VALUE self) {
   return Qnil;
 }
 
-static VALUE stop(VALUE self) {
-  appsignal_stop();
+static VALUE stop_agent(VALUE self) {
+  appsignal_stop_agent();
+
+  return Qnil;
+}
+
+static VALUE stop_extension(VALUE self) {
+  appsignal_stop_extension();
 
   return Qnil;
 }
@@ -209,7 +215,8 @@ void Init_appsignal_extension(void) {
 
   // Transaction monitoring
   rb_define_singleton_method(Extension, "start",                      start,                      0);
-  rb_define_singleton_method(Extension, "stop",                       stop,                       0);
+  rb_define_singleton_method(Extension, "stop_agent",                 stop_agent,                 0);
+  rb_define_singleton_method(Extension, "stop_extension",             stop_extension,             0);
   rb_define_singleton_method(Extension, "start_transaction",          start_transaction,          1);
   rb_define_singleton_method(Extension, "start_event",                start_event,                1);
   rb_define_singleton_method(Extension, "finish_event",               finish_event,               4);

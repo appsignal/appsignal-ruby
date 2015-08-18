@@ -135,10 +135,18 @@ describe Appsignal do
     end
   end
 
-  describe ".stop" do
-    it "should call stop on the extension" do
-      Appsignal::Extension.should_receive(:stop)
-      Appsignal.stop
+  describe ".stop_agent" do
+    it "should call stop_agent on the extension" do
+      Appsignal::Extension.should_receive(:stop_agent)
+      Appsignal.stop_agent
+      Appsignal.active?.should be_false
+    end
+  end
+
+  describe ".stop_extension" do
+    it "should call stop_extension on the extension" do
+      Appsignal::Extension.should_receive(:stop_extension)
+      Appsignal.stop_extension
       Appsignal.active?.should be_false
     end
   end

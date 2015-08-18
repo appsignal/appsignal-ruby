@@ -59,9 +59,14 @@ module Appsignal
       end
     end
 
-    def stop
-      Appsignal::Extension.stop
+    def stop_agent
+      Appsignal::Extension.stop_agent
     end
+
+    def stop_extension
+      Appsignal::Extension.stop_extension
+    end
+
 
     def monitor_transaction(name, payload={})
       unless active?
