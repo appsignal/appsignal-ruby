@@ -19,6 +19,8 @@ describe Appsignal::ParamsSanitizer do
     {
       :text => 'string',
       :file => file,
+      :float => 0.0,
+      :int => 1,
       :hash => {
         :nested_text => 'string',
         :nested_array => [
@@ -43,9 +45,11 @@ describe Appsignal::ParamsSanitizer do
     before { klass.sanitize!(subject) }
 
     it { should be_instance_of Hash }
-    its([:text]) { should == 'string' }
-    its([:file]) { should be_instance_of String }
-    its([:file]) { should include '::UploadedFile' }
+    its([:text])  { should == 'string' }
+    its([:file])  { should be_instance_of String }
+    its([:file])  { should include '::UploadedFile' }
+    its([:float]) { should == 0.0 }
+    its([:int])   { should == 1 }
 
     context "hash" do
       subject { params[:hash] }
