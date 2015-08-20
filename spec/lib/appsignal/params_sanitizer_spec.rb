@@ -17,16 +17,20 @@ describe Appsignal::ParamsSanitizer do
   let(:file) { uploaded_file }
   let(:params) do
     {
-      :text => 'string',
-      :file => file,
-      :hash => {
-        :nested_text => 'string',
+      :text       => 'string',
+      :file       => file,
+      :float      => 0.0,
+      :bool_true  => true,
+      :bool_false => false,
+      :int        => 1,
+      :hash       => {
+        :nested_text  => 'string',
         :nested_array => [
           'something',
           'else',
           file,
           {
-            :key => 'value',
+            :key  => 'value',
             :file => file,
           },
           ErrorOnInspect.new,
@@ -43,9 +47,13 @@ describe Appsignal::ParamsSanitizer do
     before { klass.sanitize!(subject) }
 
     it { should be_instance_of Hash }
-    its([:text]) { should == 'string' }
-    its([:file]) { should be_instance_of String }
-    its([:file]) { should include '::UploadedFile' }
+    its([:text])        { should == 'string' }
+    its([:file])        { should be_instance_of String }
+    its([:file])        { should include '::UploadedFile' }
+    its([:float])       { should == 0.0 }
+    its([:int])         { should == 1 }
+    its([:bool_true])   { should == 'true' }
+    its([:bool_false])  { should == 'false' }
 
     context "hash" do
       subject { params[:hash] }
