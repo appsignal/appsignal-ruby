@@ -103,6 +103,11 @@ module Appsignal
       Appsignal::Transaction.complete_current!
     end
 
+    def add_exception(exception)
+      warn '[DEPRECATION] add_exception is deprecated, use set_exception instead'
+      set_exception(exception)
+    end
+
     def set_exception(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||

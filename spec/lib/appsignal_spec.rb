@@ -179,6 +179,12 @@ describe Appsignal do
     end
   end
 
+  describe ".add_exception" do
+    it "should alias this method" do
+      Appsignal.should respond_to(:add_exception)
+    end
+  end
+
   context "not active" do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
