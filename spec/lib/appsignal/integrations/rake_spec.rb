@@ -6,20 +6,35 @@ describe "Rack integration" do
   let(:task) { Rake::Task.new('task', app) }
   before do
     load file
+    task.stub(
+      :name                     => 'task:name',
+      :invoke_without_appsignal => true
+    )
   end
 
   describe "#invoke" do
-    before do
-      task.stub(
-        :name                     => 'task:name',
-        :invoke_without_appsignal => true
-      )
+    before { Appsignal.stub(:active? => true) }
+
+    it "should call with appsignal monitoring" do
+      expect( task ).to receive(:invoke_with_appsignal).with(['foo'])
     end
 
-    it "should create a transaction" do
-      expect( Appsignal::Transaction ).to receive(:create)
+    context "when not active" do
+      before { Appsignal.stub(:active? => false) }
+
+      it "should NOT call with appsignal monitoring" do
+        expect( task ).to_not receive(:invoke_with_appsignal).with(['foo'])
+      end
+
+      it "should call the original task" do
+        expect( task ).to receive(:invoke_without_appsignal).with(['foo'])
+      end
     end
 
+    after { task.invoke(['foo']) }
+  end
+
+  describe "#invoke_with_appsignal" do
     context "with transaction" do
       let!(:transaction) { Appsignal::Transaction.new('123', {}) }
       let!(:agent)       { double('Agent', :send_queue => true) }
@@ -81,6 +96,6 @@ describe "Rack integration" do
       end
     end
 
-    after { task.invoke('foo') rescue VerySpecificError }
+    after { task.invoke_with_appsignal('foo') rescue VerySpecificError }
   end
 end
