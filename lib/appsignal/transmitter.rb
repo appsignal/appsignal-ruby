@@ -62,7 +62,13 @@ module Appsignal
     end
 
     def http_client
-      Net::HTTP.new(uri.host, uri.port, proxy_addr, proxy_port).tap do |http|
+      client = if config[:http_proxy]
+        Net::HTTP.new(uri.host, uri.port, proxy_addr, proxy_port)
+      else
+        Net::HTTP.new(uri.host, uri.port)
+      end
+
+      client.tap do |http|
         if uri.scheme == 'https'
           http.use_ssl     = true
           http.ssl_version = :TLSv1
