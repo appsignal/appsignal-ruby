@@ -1,3 +1,8 @@
+# 0.11.14
+* Support ActiveJob wrapped jobs
+* Improve proxy support
+* Improve rake support
+
 # 0.11.13
 * Add Padrino support
 * Add Rake task monitoring
