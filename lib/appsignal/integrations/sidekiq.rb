@@ -15,7 +15,7 @@ if defined?(::Sidekiq)
         def call(worker, item, queue)
           Appsignal.monitor_transaction(
             'perform_job.sidekiq',
-            :class       => item['class'],
+            :class       => item['wrapped'] || item['class'],
             :method      => 'perform',
             :metadata    => formatted_metadata(item),
             :params      => format_args(item['args']),
