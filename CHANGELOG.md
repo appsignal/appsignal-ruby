@@ -1,3 +1,6 @@
+# 0.11.15
+* Improve Sinatra support
+
 # 0.11.14
 * Support ActiveJob wrapped jobs
 * Improve proxy support
