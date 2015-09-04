@@ -11,23 +11,13 @@ module Rake
     end
 
     def invoke_with_appsignal(*args)
-      transaction = Appsignal::Transaction.create(
-        SecureRandom.uuid,
-        ENV,
-        :kind => 'background_job',
+      Appsignal.monitor_transaction(
+        'perform_job.rake',
         :action => name,
         :params => args
-      )
-
-      invoke_without_appsignal(*args)
-    rescue => exception
-      unless Appsignal.is_ignored_exception?(exception)
-        transaction.add_exception(exception)
+      ) do
+        invoke_without_appsignal(*args)
       end
-      raise exception
-    ensure
-      transaction.complete!
-      Appsignal.agent.send_queue if Appsignal.active?
     end
   end
 end

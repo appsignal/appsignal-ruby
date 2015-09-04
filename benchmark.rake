@@ -1,7 +1,7 @@
 require 'appsignal'
 require 'benchmark'
 
-class ::Appsignal::Event::ActiveRecordEvent
+class ::Appsignal::EventFormatter::ActiveRecord::SqlFormatter
   def connection_config; {:adapter => 'mysql'}; end
 end
 
@@ -14,11 +14,7 @@ namespace :benchmark do
   task :run_inactive do
     puts 'Running with appsignal off'
     ENV['APPSIGNAL_PUSH_API_KEY'] = nil
-    subscriber = ActiveSupport::Notifications.subscribe do |*args|
-      # Add a subscriber so we can track the overhead of just appsignal
-    end
     run_benchmark
-    ActiveSupport::Notifications.unsubscribe(subscriber)
   end
 
   task :run_active do
@@ -29,18 +25,24 @@ namespace :benchmark do
 end
 
 def run_benchmark
+  no_transactions = 10_000
+
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
-  Appsignal.config = Appsignal::Config.new('', 'production')
+
+  Appsignal.config = Appsignal::Config.new(Dir.pwd, 'production', :endpoint => 'http://localhost:8080')
   Appsignal.start
   puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
 
-  puts 'Running 10_000 normal transactions'
+  puts "Running #{no_transactions} normal transactions"
   puts(Benchmark.measure do
-    10_000.times do |i|
+    no_transactions.times do |i|
+      transaction_id = "transaction_#{i}"
+      ActiveSupport::Notifications.instrumenter.instance_variable_set(:@id, transaction_id)
       Appsignal::Transaction.create("transaction_#{i}", {})
 
-      ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
+      ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users`
+                                                                            WHERE `users`.`id` = ?')
       10.times do
         ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
       end
@@ -64,14 +66,8 @@ def run_benchmark
 
       Appsignal::Transaction.complete_current!
     end
+    puts 'Finished'
   end)
-
-  if Appsignal.active?
-    puts "Running aggregator post_processed_queue! for #{Appsignal.agent.aggregator.queue.length} transactions"
-    puts(Benchmark.measure do
-      Appsignal.agent.aggregator.post_processed_queue!.to_json
-    end)
-  end
 
   puts "Done, currently #{ObjectSpace.count_objects[:TOTAL] - total_objects} objects created"
 end

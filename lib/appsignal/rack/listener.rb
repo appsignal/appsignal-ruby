@@ -18,7 +18,7 @@ module Appsignal
         Appsignal::Transaction.create(request_id(env), env)
         @app.call(env)
       rescue Exception => exception
-        Appsignal.add_exception(exception)
+        Appsignal.set_exception(exception)
         raise exception
       ensure
         Appsignal::Transaction.complete_current!

@@ -7,11 +7,11 @@ module Appsignal
     include Appsignal::CarefulLogger
 
     DEFAULT_CONFIG = {
+      :debug                          => false,
       :ignore_exceptions              => [],
       :ignore_actions                 => [],
       :send_params                    => true,
-      :endpoint                       => 'https://push.appsignal.com/1',
-      :slow_request_threshold         => 200,
+      :endpoint                       => 'https://push.appsignal.com',
       :instrument_net_http            => true,
       :skip_session_data              => false,
       :enable_frontend_error_catching => false,
@@ -65,6 +65,19 @@ module Appsignal
 
     def active?
       !! self[:active]
+    end
+
+    def write_to_environment
+      ENV['APPSIGNAL_ACTIVE']            = active?.to_s
+      ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
+      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
+      ENV['APPSIGNAL_LOG_PATH']          = File.join(root_path, 'log')
+      ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
+      ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
+      ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
+      ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
+      ENV['APPSIGNAL_ENVIRONMENT']       = env
+      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::AGENT_VERSION
     end
 
     protected

@@ -76,7 +76,7 @@ describe "Sidekiq integration" do
   context "with an erroring call" do
     let(:error) { VerySpecificError.new('the roof') }
     it "should add the exception to appsignal" do
-      current_transaction.should_receive(:add_exception).with(error)
+      current_transaction.should_receive(:set_error).with(error)
     end
 
     after do

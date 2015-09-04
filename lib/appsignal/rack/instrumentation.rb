@@ -1,3 +1,5 @@
+require 'rack'
+
 module Appsignal
   module Rack
     class Instrumentation
