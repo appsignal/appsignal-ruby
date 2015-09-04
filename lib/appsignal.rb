@@ -97,9 +97,13 @@ module Appsignal
 
     def send_exception(exception, tags=nil)
       return if !active? || is_ignored_exception?(exception)
+      unless exception.is_a?(Exception)
+        logger.error('Can\'t send exception, given value is not an exception')
+        return
+      end
       transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
       transaction.set_tags(tags) if tags
-      transaction.set_error(exception)
+      transaction.add_exception(exception)
       Appsignal::Transaction.complete_current!
     end
 

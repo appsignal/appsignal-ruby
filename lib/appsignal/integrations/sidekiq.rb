@@ -15,7 +15,7 @@ if defined?(::Sidekiq)
         def call(worker, item, queue)
           Appsignal.monitor_transaction(
             'perform_job.sidekiq',
-            :class       => item['class'],
+            :class       => item['wrapped'] || item['class'],
             :method      => 'perform',
             :metadata    => formatted_metadata(item),
             :params      => format_args(item['args']),
@@ -48,7 +48,7 @@ if defined?(::Sidekiq)
         end
 
         def truncate(text)
-          text.size > 100 ? "#{text[0...97]}..." : text
+          text.size > 200 ? "#{text[0...197]}..." : text
         end
       end
     end

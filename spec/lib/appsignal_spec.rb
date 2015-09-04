@@ -436,8 +436,9 @@ describe Appsignal do
       end
     end
 
-    describe ".send_error" do
-      let(:tags) { nil }
+    describe ".send_exception" do
+      let(:tags)      { nil }
+      let(:exception) { VerySpecificError.new }
 
       it "should send the exception to AppSignal" do
         Appsignal::Transaction.should_receive(:create).and_call_original
@@ -459,12 +460,20 @@ describe Appsignal do
         Appsignal::Transaction.should_not_receive(:create)
       end
 
-      after do
-        begin
-          raise "I am an exception"
-        rescue Exception => e
-          Appsignal.send_exception(e, tags)
+      context "when given class is not an exception" do
+        let(:exception) { double }
+
+        it "should log a message" do
+          expect( Appsignal.logger ).to receive(:error).with('Can\'t send exception, given value is not an exception')
         end
+
+        it "should not send the exception" do
+          expect( Appsignal::Transaction ).to_not receive(:create)
+        end
+      end
+
+      after do
+        Appsignal.send_exception(exception, tags) rescue Exception
       end
     end
 

@@ -25,8 +25,10 @@ module Appsignal
           sanitize_hash(value)
         when Array
           sanitize_array(value)
-        when Fixnum, String, Symbol
+        when Fixnum, String, Symbol, Float
           unmodified(value)
+        when TrueClass, FalseClass
+          stringified(value)
         else
           inspected(value)
         end
@@ -46,15 +48,16 @@ module Appsignal
         target_array
       end
 
+      def stringified(value)
+        value.to_s
+      end
+
       def unmodified(value)
         value
       end
 
       def inspected(value)
-        value.inspect
-      rescue
-        # It turns out that sometimes inspect can fail
-        "#<#{value.class.to_s}/>"
+        "#<#{value.class.to_s}>"
       end
     end
   end

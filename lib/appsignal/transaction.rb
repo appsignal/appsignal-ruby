@@ -56,6 +56,10 @@ module Appsignal
       @sanitized_session_data ||= {}
     end
 
+    def sanitized_params
+      @sanitized_params ||= {}
+    end
+
     def request
       @request ||= ::Rack::Request.new(env)
     end
@@ -195,6 +199,5 @@ module Appsignal
         backtrace
       end
     end
-
   end
 end

@@ -9,6 +9,14 @@ module Appsignal
       end
 
       def call(env)
+        if Appsignal.active?
+          call_with_appsignal_monitoring(env)
+        else
+          @app.call(env)
+        end
+      end
+
+      def call_with_appsignal_monitoring(env)
         ActiveSupport::Notifications.instrument(
           'process_action.sinatra',
           raw_payload(env)

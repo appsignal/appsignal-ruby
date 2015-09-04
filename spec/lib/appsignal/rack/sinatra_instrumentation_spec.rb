@@ -23,6 +23,34 @@ if defined?(::Sinatra)
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, {}) }
 
     describe "#call" do
+     before do
+       middleware.stub(:raw_payload => {})
+     end
+
+      context "when appsignal is active" do
+        before { Appsignal.stub(:active? => true) }
+
+        it "should call with monitoring" do
+          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+        end
+      end
+
+      context "when appsignal is not active" do
+        before { Appsignal.stub(:active? => false) }
+
+        it "should not call with monitoring" do
+          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+        end
+
+        it "should call the stack" do
+          expect( app ).to receive(:call).with(env)
+        end
+      end
+
+      after { middleware.call(env) }
+    end
+
+    describe "#call_with_appsignal_monitoring" do
       before do
         middleware.stub(:raw_payload => {})
         env['sinatra.route'] = 'GET /'
@@ -31,7 +59,7 @@ if defined?(::Sinatra)
       it "should instrument the call" do
         app.should_receive(:call).with(env)
 
-        middleware.call(env)
+        middleware.call_with_appsignal_monitoring(env)
 
         process_action_event = @events.last
         process_action_event.name.should == 'process_action.sinatra'
@@ -42,7 +70,7 @@ if defined?(::Sinatra)
         app.should_receive(:call).with(env).and_raise('the roof')
 
         lambda {
-          middleware.call(env)
+          middleware.call_with_appsignal_monitoring(env)
         }.should raise_error
 
         process_action_event = @events.last
@@ -60,7 +88,7 @@ if defined?(::Sinatra)
         transaction.should_receive(:add_exception).with(exception)
         Appsignal::Transaction.stub(:current => transaction)
 
-        middleware.call(env)
+        middleware.call_with_appsignal_monitoring(env)
       end
     end
 
