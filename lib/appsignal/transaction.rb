@@ -2,6 +2,7 @@ module Appsignal
   class Transaction
     HTTP_REQUEST   = 'http_request'.freeze
     BACKGROUND_JOB = 'background_job'.freeze
+    FRONTEND       = 'frontend'.freeze
 
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
@@ -15,8 +16,8 @@ module Appsignal
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP).freeze
 
     class << self
-      def create(request_id, env)
-        Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(request_id, env)
+      def create(id, namespace, request, options={})
+        Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
       end
 
       def current
@@ -33,72 +34,76 @@ module Appsignal
       end
     end
 
-    attr_reader :request_id, :transaction_index, :process_action_event, :action, :exception,
-                :env, :fullpath, :time, :tags, :kind, :queue_start, :paused, :root_event_payload
+    attr_reader :transaction_index, :transaction_id, :namespace, :request, :paused, :tags, :options
 
-    def initialize(request_id, env)
-      @root_event_payload = nil
-      @request_id = request_id
-      @process_action_event = nil
-      @exception = nil
-      @env = env
-      @tags = {}
+    def initialize(transaction_id, namespace, request, options)
+      @transaction_id = transaction_id
+      @namespace = namespace
+      @request = request
       @paused = false
-      @queue_start = -1
-      @transaction_index = Appsignal::Extension.start_transaction(@request_id)
+      @tags = {}
+
+      @options = options
+      @options[:params_method] ||= :params
+
+      @transaction_index = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
     end
 
-    def sanitized_environment
-      @sanitized_environment ||= {}
+    def pause!
+      @paused = true
     end
 
-    def sanitized_session_data
-      @sanitized_session_data ||= {}
+    def resume!
+      @paused = false
     end
 
-    def sanitized_params
-      @sanitized_params ||= {}
+    def paused?
+      @paused == true
     end
 
-    def request
-      @request ||= ::Rack::Request.new(env)
+    def when_finished
+      yield self
     end
 
     def set_tags(given_tags={})
       @tags.merge!(given_tags)
     end
 
-    def set_root_event(name, payload)
-      @root_event_payload = payload
-      if name.start_with?(Subscriber::PROCESS_ACTION_PREFIX)
-        @action = "#{@root_event_payload[:controller]}##{@root_event_payload[:action]}"
-        @kind = HTTP_REQUEST
-        set_http_queue_start
-        set_metadata('path', payload[:path])
-        set_metadata('request_format', payload[:request_format])
-        set_metadata('request_method', payload[:request_method])
-        set_metadata('status', payload[:status].to_s)
-      elsif name.start_with?(Subscriber::PERFORM_JOB_PREFIX)
-        @action = "#{@root_event_payload[:class]}##{@root_event_payload[:method]}"
-        @kind = BACKGROUND_JOB
-        set_background_queue_start
+    def set_action(action)
+      return unless action
+      Appsignal::Extension.set_transaction_action(transaction_index, action)
+    end
+
+    def set_http_or_background_action(from=request.params)
+      return unless from
+      group_and_action = [
+        from[:controller] || from[:class],
+        from[:action] || from[:method]
+      ]
+      set_action(group_and_action.compact.join('#'))
+    end
+
+    def set_queue_start(start)
+      return unless start
+      Appsignal::Extension.set_transaction_queue_start(transaction_index, start)
+    end
+
+    def set_http_or_background_queue_start
+      if namespace == HTTP_REQUEST
+        set_queue_start(http_queue_start)
+      elsif namespace == BACKGROUND_JOB
+        set_queue_start(background_queue_start)
       end
-      Appsignal::Extension.set_transaction_base_data(
-        transaction_index,
-        kind,
-        action,
-        queue_start
-      )
     end
 
     def set_metadata(key, value)
-      return unless value
+      return unless key && value
       Appsignal::Extension.set_transaction_metadata(transaction_index, key, value)
     end
 
     def set_error(error)
       return unless error
-      Appsignal.logger.debug("Adding #{error.class.name} to transaction: #{request_id}")
+      Appsignal.logger.debug("Adding #{error.class.name} to transaction: #{transaction_id}")
       Appsignal::Extension.set_transaction_error(
         transaction_index,
         error.class.name,
@@ -126,59 +131,64 @@ module Appsignal
     end
     alias_method :add_exception, :set_error
 
-    def pause!
-      @paused = true
-    end
+    class GenericRequest
+      attr_reader :env
 
-    def resume!
-      @paused = false
-    end
+      def initialize(env)
+        @env = env
+      end
 
-    def paused?
-      @paused == true
+      def params
+        env[:params]
+      end
     end
 
     protected
 
-    def set_background_queue_start
-      return unless root_event_payload
-      queue_start = root_event_payload[:queue_start]
+    def background_queue_start
+      return unless request.env
+      queue_start = request.env[:queue_start]
       return unless queue_start
-      @queue_start = (queue_start.to_f * 1000.0).to_i
+      (queue_start.to_f * 1000.0).to_i
+    end
+
+    def http_queue_start
+      return unless request.env
+      return unless env_var = request.env['HTTP_X_QUEUE_START'.freeze] || request.env['HTTP_X_REQUEST_START'.freeze]
+      cleaned_value = env_var.tr('^0-9'.freeze, ''.freeze)
+      return if cleaned_value.empty?
+      value = cleaned_value.to_i
+      [1_000_000.0, 1_000.0].each do |factor|
+        queue_start = (value / factor).to_i
+        return queue_start if queue_start > 946_681_200 # Ok if it's later than 2000
+      end
+      nil
     end
 
     def sanitized_params
-      return unless root_event_payload
-      Appsignal::ParamsSanitizer.sanitize(root_event_payload[:params])
-    end
-
-    def set_http_queue_start
-      return unless env
-      env_var = env['HTTP_X_QUEUE_START'] || env['HTTP_X_REQUEST_START']
-      if env_var
-        cleaned_value = env_var.tr('^0-9', '')
-        unless cleaned_value.empty?
-          value = cleaned_value.to_i
-          [1_000_000.0, 1_000.0].each do |factor|
-            @queue_start = (value / factor).to_i
-            break if @queue_start > 946_681_200.0 # Ok if it's later than 2000
-          end
-        end
+      return unless Appsignal.config[:send_params]
+      return unless request.respond_to?(options[:params_method])
+      return unless params = request.send(options[:params_method])
+      if params.is_a?(Hash)
+        Appsignal::ParamsSanitizer.sanitize(params)
+      elsif params.is_a?(Array)
+        params
       end
     end
 
     def sanitized_environment
-      return unless env
+      return unless request.env
       {}.tap do |out|
         ENV_METHODS.each do |key|
-          out[key] = env[key] if env[key]
+          out[key] = request.env[key] if request.env[key]
         end
       end
     end
 
     def sanitized_session_data
-      return if Appsignal.config[:skip_session_data] || !env
-      Appsignal::ParamsSanitizer.sanitize(request.session.to_hash)
+      return if Appsignal.config[:skip_session_data] || !request.respond_to?(:session)
+      return unless session = request.session
+      Appsignal::ParamsSanitizer.sanitize(session.to_hash)
     end
 
     # Only keep tags if they meet the following criteria:
@@ -193,7 +203,7 @@ module Appsignal
     end
 
     def cleaned_backtrace(backtrace)
-      if defined?(::Rails)
+      if defined?(::Rails) && backtrace
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
         backtrace

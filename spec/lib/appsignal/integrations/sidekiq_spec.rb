@@ -15,7 +15,7 @@ describe "Sidekiq integration" do
 
   let(:worker) { double }
   let(:queue) { double }
-  let(:current_transaction) { Appsignal::Transaction.create(SecureRandom.uuid, {}) }
+  let(:current_transaction) { background_job_transaction }
   let(:item) {{
     'class'       => 'TestClass',
     'retry_count' => 0,
@@ -76,7 +76,7 @@ describe "Sidekiq integration" do
   context "with an erroring call" do
     let(:error) { VerySpecificError.new('the roof') }
     it "should add the exception to appsignal" do
-      current_transaction.should_receive(:set_error).with(error)
+      Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
     end
 
     after do

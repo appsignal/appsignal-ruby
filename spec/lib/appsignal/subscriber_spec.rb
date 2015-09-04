@@ -76,7 +76,7 @@ describe Appsignal::Subscriber do
       let(:transaction) { Appsignal::Transaction.current }
 
       before do
-        Appsignal::Transaction.create('request-id', {})
+        Appsignal::Transaction.create('request-id', Appsignal::Transaction::HTTP_REQUEST, {})
       end
 
       it "should call native start and finish event for every event" do
@@ -113,48 +113,14 @@ describe Appsignal::Subscriber do
           )
       end
 
-      context "root event" do
-        it "should not set the root event for normal events" do
-          transaction.should_not_receive(:set_root_event)
-
-          ActiveSupport::Notifications.instrument 'something'
-        end
-
-        it "should set the root event when the name starts with process_action" do
-          transaction.respond_to?(:set_root_event).should be_true
-          transaction.should_receive(:set_root_event).with(
-            'process_action.action_controller',
-            :params => {}
-          )
-
-          ActiveSupport::Notifications.instrument 'process_action.action_controller', {:params => {}}
-        end
-
-        it "should set the root event when the name starts with perform_job" do
-          transaction.respond_to?(:set_root_event).should be_true
-          transaction.should_receive(:set_root_event).with(
-            'perform_job.resque',
-            :params => {}
-          )
-
-          ActiveSupport::Notifications.instrument 'perform_job.resque', {:params => {}}
-        end
-      end
-
       context "when paused" do
         before { transaction.pause! }
 
-        it "should set a root event, but no other events" do
+        it "should add no events" do
           Appsignal::Extension.should_not_receive(:start_event)
           Appsignal::Extension.should_not_receive(:finish_event)
 
-          transaction.respond_to?(:set_root_event).should be_true
-          transaction.should_receive(:set_root_event).with(
-            'perform_job.resque',
-            :params => {}
-          )
-
-          ActiveSupport::Notifications.instrument 'perform_job.resque', {:params => {}}
+          ActiveSupport::Notifications.instrument 'sql.active_record'
         end
       end
     end

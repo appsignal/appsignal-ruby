@@ -18,7 +18,7 @@ describe Appsignal::Extension do
       end
 
       it "should have a start_transaction method" do
-        subject.start_transaction('request_id')
+        subject.start_transaction('request_id', 'http_request')
       end
 
       it "should have a start_event method" do
@@ -26,45 +26,27 @@ describe Appsignal::Extension do
       end
 
       it "should have a finish_event method" do
-        subject.finish_event(
-          1,
-          'name',
-          'title',
-          'body'
-        )
+        subject.finish_event(1, 'name', 'title', 'body')
       end
 
       it "should have a set_transaction_error method" do
-        subject.set_transaction_error(
-          1,
-          'name',
-          'message'
-        )
+        subject.set_transaction_error(1, 'name', 'message')
       end
 
       it "should have a set_transaction_error_data method" do
-        subject.set_transaction_error_data(
-          1,
-          'params',
-          '{}'
-        )
+        subject.set_transaction_error_data(1, 'params', '{}')
       end
 
-      it "should have a set_transaction_base_data method" do
-        subject.set_transaction_base_data(
-          1,
-          'kind',
-          'action',
-          100
-        )
+      it "should have a set_transaction_action method" do
+        subject.set_transaction_action(1, 'value')
+      end
+
+      it "should have a set_transaction_queue_start method" do
+        subject.set_transaction_queue_start(1, 10)
       end
 
       it "should have a set_transaction_metadata method" do
-        subject.set_transaction_metadata(
-          1,
-          'key',
-          'value'
-        )
+        subject.set_transaction_metadata(1, 'key', 'value')
       end
 
       it "should have a finish_transaction method" do

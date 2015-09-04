@@ -17,33 +17,32 @@ module Appsignal
       end
 
       def call_with_appsignal_monitoring(env)
-        ActiveSupport::Notifications.instrument(
-          'process_action.sinatra',
-          raw_payload(env)
-        ) do |payload|
-          begin
-            @app.call(env)
-          ensure
-            # This information is available only after the
-            # request has been processed by Sinatra.
-            payload[:action] = env['sinatra.route']
-          end
+        if @options[:params_method]
+          env[:params_method] = @options[:params_method]
         end
-      ensure
-        # In production newer versions of Sinatra don't raise errors, but store
-        # them in the sinatra.error env var.
-        Appsignal::Transaction.current.add_exception(env['sinatra.error']) if env['sinatra.error']
-      end
-
-      def raw_payload(env)
-        request = @options.fetch(:request_class, ::Sinatra::Request).new(env)
-        params = request.public_send(@options.fetch(:params_method, :params))
-        {
-          :params  => params,
-          :session => request.session,
-          :method  => request.request_method,
-          :path    => request.path
-        }
+        request = @options.fetch(:request_class, Sinatra::Request).new(env)
+        transaction = Appsignal::Transaction.create(
+          SecureRandom.uuid,
+          Transaction::HTTP_REQUEST,
+          request
+        )
+        begin
+          ActiveSupport::Notifications.instrument('process_action.sinatra') do
+            @app.call(env)
+          end
+        rescue => error
+          transaction.set_error(error)
+          raise error
+        ensure
+          # In production newer versions of Sinatra don't raise errors, but store
+          # them in the sinatra.error env var.
+          transaction.set_error(env['sinatra.error']) if env['sinatra.error']
+          transaction.set_action(env['sinatra.route'])
+          transaction.set_metadata('path', request.path)
+          transaction.set_metadata('method', request.request_method)
+          transaction.set_http_or_background_queue_start
+          Appsignal::Transaction.complete_current!
+        end
       end
     end
   end

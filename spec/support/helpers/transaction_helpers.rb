@@ -55,16 +55,15 @@ module TransactionHelpers
     )
   end
 
-  def background_job_transaction(args={}, payload=create_background_payload)
+  def background_job_transaction(args={}, payload=background_env_with_data)
     Appsignal::Transaction.create(
       '1',
-      {
+      Appsignal::Transaction::BACKGROUND_JOB,
+      Appsignal::Transaction::GenericRequest.new({
         'SERVER_NAME' => 'localhost',
         'action_dispatch.routes' => 'not_available'
-      }.merge(args)
-    ).tap do |o|
-      o.set_root_event('perform_job.delayed_job', payload )
-    end
+      }.merge(args))
+    )
   end
 
   def appsignal_transaction(args={})
@@ -75,13 +74,14 @@ module TransactionHelpers
     exception = args.delete(:exception)
     Appsignal::Transaction.create(
       '1',
+      args.delete(:namespace) || Appsignal::Transaction::HTTP_REQUEST,
       {
         'HTTP_USER_AGENT' => 'IE6',
         'SERVER_NAME' => 'localhost',
         'action_dispatch.routes' => 'not_available'
       }.merge(args)
     ).tap do |o|
-      o.set_root_event(process_action_event.name, process_action_event.payload)
+      o.set_action(process_action_event.name)
       o.set_exception(exception) if exception
     end
   end

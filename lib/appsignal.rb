@@ -68,22 +68,36 @@ module Appsignal
       Appsignal::Extension.stop_extension
     end
 
-
-    def monitor_transaction(name, payload={})
+    def monitor_transaction(name, env={})
       unless active?
         yield
         return
       end
 
+       if name.start_with?('perform_job'.freeze)
+        namespace = Appsignal::Transaction::BACKGROUND_JOB
+        request   = Appsignal::Transaction::GenericRequest.new(env)
+      elsif name.start_with?('process_action'.freeze)
+        namespace = Appsignal::Transaction::HTTP_REQUEST
+        request   = ::Rack::Request.new(env)
+      else
+        logger.error("Unrecognized name '#{name}'") and return
+      end
+      transaction = Appsignal::Transaction.create(
+        SecureRandom.uuid,
+        namespace,
+        request
+      )
       begin
-        Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
-        ActiveSupport::Notifications.instrument(name, payload) do
+        ActiveSupport::Notifications.instrument(name) do
           yield
         end
-      rescue => exception
-        Appsignal.set_exception(exception)
-        raise exception
+      rescue => error
+        transaction.set_error(error)
+        raise error
       ensure
+        transaction.set_http_or_background_action(request.env)
+        transaction.set_http_or_background_queue_start
         Appsignal::Transaction.complete_current!
       end
     end
@@ -95,30 +109,35 @@ module Appsignal
       raise exception
     end
 
-    def send_exception(exception, tags=nil)
+    def send_exception(exception, tags=nil, namespace=Appsignal::Transaction::HTTP_REQUEST)
       return if !active? || is_ignored_exception?(exception)
       unless exception.is_a?(Exception)
         logger.error('Can\'t send exception, given value is not an exception')
         return
       end
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV.to_hash)
+      transaction = Appsignal::Transaction.create(
+        SecureRandom.uuid,
+        namespace,
+        Appsignal::Transaction::GenericRequest.new({})
+      )
       transaction.set_tags(tags) if tags
       transaction.add_exception(exception)
       Appsignal::Transaction.complete_current!
     end
 
     def add_exception(exception)
-      warn '[DEPRECATION] add_exception is deprecated, use set_exception instead'
+      warn '[DEPRECATION] add_exception is deprecated, use set_error instead'
       set_exception(exception)
     end
 
-    def set_exception(exception)
+    def set_error(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
                 is_ignored_exception?(exception)
       Appsignal::Transaction.current.set_error(exception)
     end
+    alias :set_exception :set_error
 
     def tag_request(params={})
       return unless active?
@@ -212,8 +231,9 @@ require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
 require 'appsignal/rack/js_exception_catcher'
-require 'appsignal/rack/listener'
-require 'appsignal/rack/instrumentation'
-require 'appsignal/integrations/rails'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'
+
+# This needs to be required immediately, that's why it's
+# not in load_integrations
+require 'appsignal/integrations/rails'

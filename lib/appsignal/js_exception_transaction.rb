@@ -5,21 +5,16 @@ module Appsignal
     def initialize(data)
       @data = data
       @uuid = SecureRandom.uuid
-      @transaction_index = Appsignal::Extension.start_transaction(@uuid)
+      @transaction_index = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND)
 
-      set_base_data
+      set_action
       set_metadata
       set_error
       set_error_data
     end
 
-    def set_base_data
-      Appsignal::Extension.set_transaction_base_data(
-        @transaction_index,
-        'frontend',
-        @data['action'],
-        0
-      )
+    def set_action
+      Appsignal::Extension.set_transaction_action(@transaction_index, @data['action'])
     end
 
     def set_metadata

@@ -1,4 +1,5 @@
 ENV['RAILS_ENV'] ||= 'test'
+require 'rack'
 require 'rspec'
 require 'pry'
 require 'timecop'
@@ -85,6 +86,7 @@ end
 
 RSpec.configure do |config|
   config.include ConfigHelpers
+  config.include EnvHelpers
   config.include NotificationHelpers
   config.include TimeHelpers
   config.include TransactionHelpers

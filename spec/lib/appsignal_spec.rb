@@ -244,12 +244,10 @@ describe Appsignal do
     end
 
     describe ".monitor_transaction" do
-      context "with a normall call" do
-        it "should instrument and complete" do
-          Appsignal::Transaction.stub(:current => transaction)
+      context "with a successful call" do
+        it "should instrument and complete for a background job" do
           ActiveSupport::Notifications.should_receive(:instrument).with(
-            'perform_job.something',
-            :class => 'Something'
+            'perform_job.something'
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
           object = double
@@ -257,8 +255,30 @@ describe Appsignal do
 
           Appsignal.monitor_transaction(
             'perform_job.something',
-            :class => 'Something'
+            background_env_with_data
           ) do
+            current = Appsignal::Transaction.current
+            current.namespace.should == Appsignal::Transaction::BACKGROUND_JOB
+            current.request.should be_a(Appsignal::Transaction::GenericRequest)
+            object.some_method
+          end
+        end
+
+        it "should instrument and complete for a http request" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'process_action.something'
+          ).and_yield
+          Appsignal::Transaction.should_receive(:complete_current!)
+          object = double
+          object.should_receive(:some_method)
+
+          Appsignal.monitor_transaction(
+            'process_action.something',
+            http_request_env_with_data
+          ) do
+            current = Appsignal::Transaction.current
+            current.namespace.should == Appsignal::Transaction::HTTP_REQUEST
+            current.request.should be_a(::Rack::Request)
             object.some_method
           end
         end
@@ -268,7 +288,7 @@ describe Appsignal do
         let(:error) { VerySpecificError.new('the roof') }
 
         it "should add the error to the current transaction and complete" do
-          Appsignal.should_receive(:set_exception).with(error)
+          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
           Appsignal::Transaction.should_receive(:complete_current!)
 
           lambda {
@@ -448,7 +468,11 @@ describe Appsignal do
         let(:tags) { {:a => 'a', :b => 'b'} }
 
         it "should tag the request before sending" do
-          transaction = Appsignal::Transaction.create(SecureRandom.uuid, {})
+          transaction = Appsignal::Transaction.create(
+            SecureRandom.uuid,
+            Appsignal::Transaction::HTTP_REQUEST,
+            Appsignal::Transaction::GenericRequest.new({})
+          )
           Appsignal::Transaction.stub(:create => transaction)
           transaction.should_receive(:set_tags).with(tags)
           Appsignal::Transaction.should_receive(:complete_current!)
@@ -473,7 +497,7 @@ describe Appsignal do
       end
 
       after do
-        Appsignal.send_exception(exception, tags) rescue Exception
+        Appsignal.send_exception(exception, tags)
       end
     end
 

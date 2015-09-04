@@ -12,29 +12,34 @@ describe Appsignal::Transaction do
   end
 
   let(:time)        { Time.at(fixed_time) }
-  let(:transaction) { Appsignal::Transaction.create('1', {}) }
+  let(:namespace)   { Appsignal::Transaction::HTTP_REQUEST }
+  let(:env)         { {} }
+  let(:merged_env)  { http_request_env_with_data(env) }
+  let(:options)     { {} }
+  let(:request)     { Rack::Request.new(merged_env) }
+  let(:transaction) { Appsignal::Transaction.create('1', namespace, request, options) }
 
   before { Timecop.freeze(time) }
   after  { Timecop.return }
 
   context "class methods" do
-    describe '.create' do
-      subject { Appsignal::Transaction.create('1', {}) }
+    describe ".create" do
+      subject { transaction }
 
-      it 'should add the transaction to thread local' do
-        Appsignal::Extension.should_receive(:start_transaction).with('1')
+      it "should add the transaction to thread local" do
+        Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request')
         subject
         Thread.current[:appsignal_transaction].should == subject
       end
 
       it "should create a transaction" do
         subject.should be_a Appsignal::Transaction
-        subject.request_id.should == '1'
+        subject.transaction_id.should == '1'
+        subject.namespace.should == 'http_request'
       end
     end
 
     describe '.current' do
-      let(:transaction) { Appsignal::Transaction.create('1', {}) }
       before { transaction }
       subject { Appsignal::Transaction.current }
 
@@ -47,7 +52,7 @@ describe Appsignal::Transaction do
       before { Thread.current[:appsignal_transaction] = nil }
 
       context "with a current transaction" do
-        before { Appsignal::Transaction.create('2', {}) }
+        before { Appsignal::Transaction.create('2', Appsignal::Transaction::HTTP_REQUEST, {}) }
 
         it "should complete the current transaction and set the thread appsignal_transaction to nil" do
           Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
@@ -66,66 +71,64 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#pause!" do
-    it "should change the pause flag to true" do
-      expect{
-        transaction.pause!
-      }.to change(transaction, :paused).from(false).to(true)
-    end
-  end
-
-  describe "#resume!" do
-    before { transaction.pause! }
-
-    it "should change the pause flag to false" do
-      expect{
-        transaction.resume!
-      }.to change(transaction, :paused).from(true).to(false)
-    end
-  end
-
-  describe "#paused?" do
-
-    it "should return the pasue state" do
-      expect( transaction.paused? ).to be_false
+  context "pausing" do
+    describe "#pause!" do
+      it "should change the pause flag to true" do
+        expect{
+          transaction.pause!
+        }.to change(transaction, :paused).from(false).to(true)
+      end
     end
 
-    context "when paused" do
+    describe "#resume!" do
       before { transaction.pause! }
 
-      it "should return the pasue state" do
-        expect( transaction.paused? ).to be_true
+      it "should change the pause flag to false" do
+        expect{
+          transaction.resume!
+        }.to change(transaction, :paused).from(true).to(false)
+      end
+    end
+
+    describe "#paused?" do
+
+      it "should return the pause state" do
+        expect( transaction.paused? ).to be_false
+      end
+
+      context "when paused" do
+        before { transaction.pause! }
+
+        it "should return the pause state" do
+          expect( transaction.paused? ).to be_true
+        end
       end
     end
   end
 
   context "with transaction instance" do
-    let(:env) do
-      {
-        'HTTP_USER_AGENT' => 'IE6',
-        'SERVER_NAME' => 'localhost',
-        'action_dispatch.routes' => 'not_available',
-        'HTTP_X_REQUEST_START' => '1000000'
-      }
-    end
-    let(:transaction) { Appsignal::Transaction.create('3', env) }
-
     context "initialization" do
       subject { transaction }
 
-      its(:request_id)         { should == '3' }
+      its(:transaction_id)     { should == '1' }
+      its(:namespace)          { should == 'http_request' }
       its(:transaction_index)  { should be_a Integer }
-      its(:root_event_payload) { should be_nil }
-      its(:exception)          { should be_nil }
-      its(:env)                { should == env }
+      its(:request)            { should_not be_nil }
+      its(:paused)             { should be_false }
       its(:tags)               { should == {} }
-      its(:queue_start)        { should == -1 }
-    end
+      its(:transaction_index)  { should be_a Integer }
 
-    describe '#request' do
-      subject { transaction.request }
+      context "options" do
+        subject { transaction.options }
 
-      it { should be_a ::Rack::Request }
+        its([:params_method]) { should == :params }
+
+        context "with overridden options" do
+          let(:options) { {:params_method => :filtered_params} }
+
+          its([:params_method]) { should == :filtered_params }
+        end
+      end
     end
 
     describe "#set_tags" do
@@ -136,62 +139,94 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe '#set_root_event' do
-      context "for a process_action event" do
-        let(:name)    { 'process_action.action_controller' }
-        let(:payload) { create_payload }
-
-        it "should set the meta data in the transaction and native" do
-          Appsignal::Extension.should_receive(:set_transaction_base_data).with(
+    describe "set_action" do
+      it "should set the action in extension" do
+          Appsignal::Extension.should_receive(:set_transaction_action).with(
             kind_of(Integer),
-            'http_request',
-            'BlogPostsController#show',
-            kind_of(Integer)
-          )
+            'PagesController#show'
+          ).once
 
-          metadata = {
-            'path'           => '/blog',
-            'request_format' => 'html',
-            'request_method' => 'GET',
-            'status'         => '200'
-          }
-          metadata.each do |key, value|
-            transaction.should_receive(:set_metadata).with(key, value).once
-          end
+          transaction.set_action('PagesController#show')
+      end
 
-          transaction.set_root_event(name, payload)
+      it "should not set the action in extension when value is nil" do
+        Appsignal::Extension.should_not_receive(:set_transaction_action)
 
-          transaction.root_event_payload.should == payload
-          transaction.action.should == 'BlogPostsController#show'
-          transaction.kind.should == 'http_request'
-          transaction.queue_start.should be_kind_of(Integer)
+        transaction.set_action(nil)
+      end
+    end
+
+    describe "#set_http_or_background_action" do
+      context "for a hash with controller and action" do
+        let(:from) { {:controller => 'HomeController', :action => 'show'} }
+
+        it "should set the action" do
+          transaction.should_receive(:set_action).with('HomeController#show')
         end
       end
 
-      context "for a perform_job event" do
-        let(:name)    { 'perform_job.delayed_job' }
-        let(:payload) { create_background_payload }
+      context "for a hash with just action" do
+        let(:from) { {:action => 'show'} }
 
-        it "should set the meta data in the transaction and native" do
-          Appsignal::Extension.should_receive(:set_transaction_base_data).with(
-            kind_of(Integer),
-            'background_job',
-            'BackgroundJob#perform',
-            kind_of(Integer)
-          )
+        it "should set the action" do
+          transaction.should_receive(:set_action).with('show')
+        end
+      end
 
-          transaction.set_root_event(name, payload)
+      context "for a hash with class and method" do
+        let(:from) { {:class => 'Worker', :method => 'perform'} }
 
-          transaction.root_event_payload.should == payload
-          transaction.action.should == 'BackgroundJob#perform'
-          transaction.kind.should == 'background_job'
-          transaction.queue_start.should be_kind_of(Integer)
+        it "should set the action" do
+          transaction.should_receive(:set_action).with('Worker#perform')
+        end
+      end
+
+      after { transaction.set_http_or_background_action(from) }
+    end
+
+    describe "set_queue_start" do
+      it "should set the queue start in extension" do
+        Appsignal::Extension.should_receive(:set_transaction_queue_start).with(
+          kind_of(Integer),
+          10.0
+        ).once
+
+        transaction.set_queue_start(10.0)
+      end
+
+      it "should not set the queue start in extension when value is nil" do
+        Appsignal::Extension.should_not_receive(:set_transaction_queue_start)
+
+        transaction.set_queue_start(nil)
+      end
+    end
+
+    describe "#set_http_or_background_queue_start" do
+      context "for a http transaction" do
+        let(:namespace) { Appsignal::Transaction::HTTP_REQUEST }
+        let(:env) { {'HTTP_X_REQUEST_START' => (fixed_time * 1000).to_s} }
+
+        it "should set the queue start on the transaction" do
+          transaction.should_receive(:set_queue_start).with(13897836000)
+
+          transaction.set_http_or_background_queue_start
+        end
+      end
+
+      context "for a background transaction" do
+        let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
+        let(:env) { {:queue_start => fixed_time} }
+
+        it "should set the queue start on the transaction" do
+          transaction.should_receive(:set_queue_start).with(1389783600000)
+
+          transaction.set_http_or_background_queue_start
         end
       end
     end
 
     describe "#set_metadata" do
-      it "should set the metdata in native" do
+      it "should set the metdata in extension" do
         Appsignal::Extension.should_receive(:set_transaction_metadata).with(
           kind_of(Integer),
           'request_method',
@@ -201,7 +236,7 @@ describe Appsignal::Transaction do
         transaction.set_metadata('request_method', 'GET')
       end
 
-      it "should set the metdata in native when value is nil" do
+      it "should not set the metdata in extension when value is nil" do
         Appsignal::Extension.should_not_receive(:set_transaction_metadata)
 
         transaction.set_metadata('request_method', nil)
@@ -209,48 +244,35 @@ describe Appsignal::Transaction do
     end
 
     describe '#set_error' do
+      let(:env) { http_request_env_with_data }
       let(:error) { double(:error, :message => 'test message', :backtrace => ['line 1']) }
 
       it "should also respond to add_exception for backwords compatibility" do
         transaction.should respond_to(:add_exception)
       end
 
-      it "should set an error and it's data in native" do
-        Appsignal::Extension.should_receive(:set_transaction_error).with(
-          kind_of(Integer),
-          'RSpec::Mocks::Mock',
-          'test message'
-        )
-        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          kind_of(Integer),
-          'environment',
-          "{\"SERVER_NAME\":\"localhost\",\"HTTP_X_REQUEST_START\":\"1000000\",\"HTTP_USER_AGENT\":\"IE6\"}"
-        ).once
-        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          kind_of(Integer),
-          'session_data',
-          "{}"
-        ).once
-        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          kind_of(Integer),
-          'backtrace',
-          "[\"line 1\"]"
-        ).once
-        Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-          kind_of(Integer),
-          'tags',
-          "{}"
-        ).once
-
-        transaction.set_error(error)
-      end
-
-      context "with root event payload" do
-        before do
-          transaction.set_root_event('process_action.action_controller', create_payload)
-        end
-
-        it "should also set params" do
+      context "for a http request" do
+        it "should set an error and it's data in native" do
+          Appsignal::Extension.should_receive(:set_transaction_error).with(
+            kind_of(Integer),
+            'RSpec::Mocks::Mock',
+            'test message'
+          )
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
+            kind_of(Integer),
+            'environment',
+            "{\"CONTENT_LENGTH\":\"0\",\"REQUEST_METHOD\":\"GET\",\"SERVER_NAME\":\"example.org\",\"SERVER_PORT\":\"80\",\"PATH_INFO\":\"/blog\"}"
+          ).once
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
+            kind_of(Integer),
+            'session_data',
+            "{}"
+          ).once
+          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
+            kind_of(Integer),
+            'backtrace',
+            "[\"line 1\"]"
+          ).once
           Appsignal::Extension.should_receive(:set_transaction_error_data).with(
             kind_of(Integer),
             'params',
@@ -258,9 +280,9 @@ describe Appsignal::Transaction do
           ).once
           Appsignal::Extension.should_receive(:set_transaction_error_data).with(
             kind_of(Integer),
-            kind_of(String),
-            kind_of(String)
-          ).exactly(4).times
+            'tags',
+            "{}"
+          ).once
 
           transaction.set_error(error)
         end
@@ -288,55 +310,157 @@ describe Appsignal::Transaction do
       end
     end
 
-    # protected
+    context "generic request" do
+      let(:env) { {} }
+      subject { Appsignal::Transaction::GenericRequest.new(env) }
 
-    describe "#set_background_queue_start" do
-      before do
-        transaction.stub(:root_event_payload => payload)
-        transaction.send(:set_background_queue_start)
+      it "should initialize with an empty env" do
+        subject.env.should be_empty
       end
 
-      subject { transaction.queue_start }
+      context "with a filled env" do
+        let(:env) do
+          {
+            :params => {:id => 1},
+            :queue_start => 10
+          }
+        end
+
+        its(:env) { should == env }
+        its(:params) { should == {:id => 1} }
+      end
+    end
+
+    # protected
+
+    describe "#background_queue_start" do
+      subject { transaction.send(:background_queue_start) }
 
       context "when queue start is nil" do
-        let(:payload) { create_background_payload(:queue_start => nil) }
-
-        it { should == -1 }
+        it { should == nil }
       end
 
       context "when queue start is set" do
-        let(:payload) { create_background_payload }
+        let(:env) { background_env_with_data }
 
         it { should == 1389783590000 }
+      end
+    end
+
+    describe "#http_queue_start" do
+      let(:slightly_earlier_time) { fixed_time - 0.4 }
+      let(:slightly_earlier_time_value) { (slightly_earlier_time * factor).to_i }
+      subject { transaction.send(:http_queue_start) }
+
+      shared_examples "http queue start" do
+        context "when env is nil" do
+          before { transaction.request.stub(:env => nil) }
+
+          it { should be_nil }
+        end
+
+        context "with no relevant header set" do
+          let(:env) { {} }
+
+          it { should be_nil }
+        end
+
+        context "with the HTTP_X_REQUEST_START header set" do
+          let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}"} }
+
+          it { should == 1389783599 }
+
+          context "with unparsable content" do
+            let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
+
+            it { should be_nil }
+          end
+
+          context "with some cruft" do
+            let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}aaaa"} }
+
+            it { should == 1389783599 }
+          end
+
+          context "with a really low number" do
+            let(:env) { {'HTTP_X_REQUEST_START' => "t=100"} }
+
+            it { should be_nil }
+          end
+
+          context "with the alternate HTTP_X_QUEUE_START header set" do
+            let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_value}"} }
+
+            it { should == 1389783599 }
+          end
+        end
+      end
+
+      context "time in miliseconds" do
+        let(:factor) { 1_000 }
+
+        it_should_behave_like "http queue start"
+      end
+
+      context "time in microseconds" do
+        let(:factor) { 1_000_000 }
+
+        it_should_behave_like "http queue start"
       end
     end
 
     describe "#sanitized_params" do
       subject { transaction.send(:sanitized_params) }
 
-      context "without a root event payload" do
+      context "without params" do
+        before { transaction.request.stub(:params => nil) }
+
         it { should be_nil }
       end
 
-      context "with a root event payload" do
-        before { transaction.stub(:root_event_payload => create_payload) }
+      context "when not sending params" do
+        before { Appsignal.config.config_hash[:send_params] = false }
+        after { Appsignal.config.config_hash[:send_params] = true }
 
+        it { should be_nil }
+      end
+
+      context "when params method does not exist" do
+        let(:options) { {:params_method => :nonsense} }
+
+        it { should be_nil }
+      end
+
+      context "with an array" do
+        let(:request) { Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2'])) }
+
+        it { should == ['arg1', 'arg2'] }
+      end
+
+      context "with env" do
         it "should call the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({:id => 1})
+          Appsignal::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({
+            'controller' => 'blog_posts',
+            'action' => 'show',
+            'id' => '1'
+          })
 
-          subject.should == {:id => 1}
+          subject.should == {
+            'controller' => 'blog_posts',
+            'action' => 'show',
+            'id' => '1'
+          }
         end
       end
     end
 
     describe "#sanitized_environment" do
       let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
-      let(:transaction) { Appsignal::Transaction.create('1', env) }
 
       subject { transaction.send(:sanitized_environment) }
 
       context "when env is nil" do
-        let(:env) { nil }
+        before { transaction.request.stub(:env => nil) }
 
         it { should be_nil }
       end
@@ -358,19 +482,24 @@ describe Appsignal::Transaction do
       subject { transaction.send(:sanitized_session_data) }
 
       context "when env is nil" do
-       let(:transaction) { Appsignal::Transaction.create('1', nil) }
+        before { transaction.request.stub(:session => nil) }
 
         it { should be_nil }
       end
 
       context "when env is empty" do
-       let(:transaction) { Appsignal::Transaction.create('1', {}) }
+        before { transaction.request.stub(:session => {}) }
 
         it { should == {} }
       end
 
+      context "when request class does not have a session method" do
+        let(:request) { Appsignal::Transaction::GenericRequest.new({}) }
+
+        it { should be_nil }
+      end
+
       context "when there is a session" do
-       let(:transaction) { Appsignal::Transaction.create('1', {}) }
         before do
           transaction.should respond_to(:request)
           transaction.stub_chain(:request, :session => {:foo => :bar})
@@ -406,22 +535,21 @@ describe Appsignal::Transaction do
             end
           end
         end
-      end
 
-      context "when skipping session data" do
-        before do
-          Appsignal.config = {:skip_session_data => true}
-        end
+        context "when skipping session data" do
+          before do
+            Appsignal.config = {:skip_session_data => true}
+          end
 
-        it "does not pass the session data into the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
-          subject.should be_nil
+          it "does not pass the session data into the params sanitizer" do
+            Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+            subject.should be_nil
+          end
         end
       end
     end
 
     describe '#sanitized_tags' do
-      let(:transaction) { Appsignal::Transaction.create('1', {}) }
       before do
         transaction.set_tags(
           {
