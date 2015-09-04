@@ -85,7 +85,7 @@ if defined?(::Sinatra)
         transaction = double
         transaction.stub(:set_process_action_event)
         transaction.stub(:add_event)
-        transaction.should_receive(:add_exception).with(exception)
+        Appsignal.should_receive(:add_exception).with(exception)
         Appsignal::Transaction.stub(:current => transaction)
 
         middleware.call_with_appsignal_monitoring(env)
