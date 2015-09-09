@@ -23,7 +23,7 @@ module Appsignal
         request = @options.fetch(:request_class, Sinatra::Request).new(env)
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
-          Transaction::HTTP_REQUEST,
+          Appsignal::Transaction::HTTP_REQUEST,
           request
         )
         begin
