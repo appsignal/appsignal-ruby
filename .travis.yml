@@ -20,6 +20,7 @@ gemfile:
   - "gemfiles/rails-4.1.gemfile"
   - "gemfiles/rails-4.2.gemfile"
   - "gemfiles/rails-5.0.gemfile"
+  - "gemfiles/resque.gemfile"
   - "gemfiles/sequel.gemfile"
   - "gemfiles/sinatra.gemfile"
 

@@ -8,7 +8,7 @@ describe Appsignal::Hooks::RedisHook do
   context "with redis" do
     context "with redis" do
       before :all do
-        module Redis
+        class Redis
           class Client
             def process(commands, &block)
               1

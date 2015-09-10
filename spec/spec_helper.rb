@@ -53,6 +53,13 @@ rescue LoadError
   false
 end
 
+def resque_present?
+  require 'resque'
+  true
+rescue LoadError
+  false
+end
+
 def padrino_present?
   require 'padrino'
   true
