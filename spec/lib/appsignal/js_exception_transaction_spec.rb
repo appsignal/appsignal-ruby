@@ -20,9 +20,9 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#initialize" do
     it "should call all required methods" do
-      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc').and_return(1)
+      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc', 'frontend').and_return(1)
 
-      expect( transaction ).to receive(:set_base_data)
+      expect( transaction ).to receive(:set_action)
       expect( transaction ).to receive(:set_metadata)
       expect( transaction ).to receive(:set_error)
       expect( transaction ).to receive(:set_error_data)
@@ -35,14 +35,12 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#set_base_data" do
     it "should call `Appsignal::Extension.set_transaction_basedata`" do
-      expect( Appsignal::Extension ).to receive(:set_transaction_base_data).with(
+      expect( Appsignal::Extension ).to receive(:set_transaction_action).with(
         kind_of(Integer),
-        'frontend',
         'ExceptionIncidentComponent',
-        0
       )
 
-      transaction.set_base_data
+      transaction.set_action
     end
   end
 

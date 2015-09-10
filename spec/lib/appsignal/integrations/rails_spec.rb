@@ -46,7 +46,6 @@ if rails_present?
             ENV.delete('APPSIGNAL_APP_ENV')
           end
 
-
           its(:env) { should == 'env_test' }
         end
       end
@@ -55,7 +54,7 @@ if rails_present?
         it "should have added the listener middleware" do
           expect( app.middleware ).to receive(:insert_before).with(
             ActionDispatch::RemoteIp,
-            Appsignal::Rack::Listener
+            Appsignal::Rack::RailsInstrumentation
           )
         end
 
@@ -76,11 +75,11 @@ if rails_present?
           it "should have added the listener and JSExceptionCatcher middleware" do
             expect( app.middleware ).to receive(:insert_before).with(
               ActionDispatch::RemoteIp,
-              Appsignal::Rack::Listener
+              Appsignal::Rack::RailsInstrumentation
             )
 
             expect( app.middleware ).to receive(:insert_before).with(
-              Appsignal::Rack::Listener,
+              Appsignal::Rack::RailsInstrumentation,
               Appsignal::Rack::JSExceptionCatcher
             )
           end

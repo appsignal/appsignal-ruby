@@ -7,6 +7,8 @@ end
 
 GC.disable
 
+task :default => :'benchmark:all'
+
 namespace :benchmark do
   task :all => [:run_inactive, :run_active] do
   end
@@ -37,32 +39,30 @@ def run_benchmark
   puts "Running #{no_transactions} normal transactions"
   puts(Benchmark.measure do
     no_transactions.times do |i|
-      transaction_id = "transaction_#{i}"
-      ActiveSupport::Notifications.instrumenter.instance_variable_set(:@id, transaction_id)
-      Appsignal::Transaction.create("transaction_#{i}", {})
-
-      ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users`
-                                                                            WHERE `users`.`id` = ?')
-      10.times do
-        ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
-      end
-
-      ActiveSupport::Notifications.instrument('render_template.action_view', :identifier => 'app/views/home/show.html.erb') do
-        5.times do
-          ActiveSupport::Notifications.instrument('render_partial.action_view', :identifier => 'app/views/home/_piece.html.erb') do
-            3.times do
-              ActiveSupport::Notifications.instrument('cache.read')
-            end
-          end
-        end
-      end
-
-      ActiveSupport::Notifications.instrument(
-        'process_action.action_controller',
+      request = Appsignal::Transaction::GenericRequest.new(
         :controller => 'HomeController',
         :action     => 'show',
         :params     => {:id => 1}
       )
+      Appsignal::Transaction.create("transaction_#{i}", Appsignal::Transaction::HTTP_REQUEST, request)
+
+      ActiveSupport::Notifications.instrument('process_action.action_controller') do
+        ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users`
+                                                                              WHERE `users`.`id` = ?')
+        10.times do
+          ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
+        end
+
+        ActiveSupport::Notifications.instrument('render_template.action_view', :identifier => 'app/views/home/show.html.erb') do
+          5.times do
+            ActiveSupport::Notifications.instrument('render_partial.action_view', :identifier => 'app/views/home/_piece.html.erb') do
+              3.times do
+                ActiveSupport::Notifications.instrument('cache.read')
+              end
+            end
+          end
+        end
+      end
 
       Appsignal::Transaction.complete_current!
     end

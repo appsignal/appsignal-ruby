@@ -19,10 +19,10 @@ static VALUE stop_extension(VALUE self) {
   return Qnil;
 }
 
-static VALUE start_transaction(VALUE self, VALUE transaction_id) {
+static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace) {
   Check_Type(transaction_id, T_STRING);
 
-  return INT2FIX(appsignal_start_transaction(StringValueCStr(transaction_id)));
+  return INT2FIX(appsignal_start_transaction(StringValueCStr(transaction_id), StringValueCStr(namespace)));
 }
 
 static VALUE start_event(VALUE self, VALUE transaction_index) {
@@ -73,16 +73,23 @@ static VALUE set_transaction_error_data(VALUE self, VALUE transaction_index, VAL
   return Qnil;
 }
 
-static VALUE set_transaction_base_data(VALUE self, VALUE transaction_index, VALUE namespace, VALUE action, VALUE queue_start) {
+static VALUE set_transaction_action(VALUE self, VALUE transaction_index, VALUE action) {
   Check_Type(transaction_index, T_FIXNUM);
-  Check_Type(namespace, T_STRING);
   Check_Type(action, T_STRING);
+
+  appsignal_set_transaction_action(
+      FIX2INT(transaction_index),
+      StringValueCStr(action)
+  );
+  return Qnil;
+}
+
+static VALUE set_transaction_queue_start(VALUE self, VALUE transaction_index, VALUE queue_start) {
+  Check_Type(transaction_index, T_FIXNUM);
   Check_Type(queue_start, T_FIXNUM);
 
-  appsignal_set_transaction_base_data(
+  appsignal_set_transaction_queue_start(
       FIX2INT(transaction_index),
-      StringValueCStr(namespace),
-      StringValueCStr(action),
       FIX2LONG(queue_start)
   );
   return Qnil;
@@ -214,24 +221,25 @@ void Init_appsignal_extension(void) {
   VALUE Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
 
   // Transaction monitoring
-  rb_define_singleton_method(Extension, "start",                      start,                      0);
-  rb_define_singleton_method(Extension, "stop_agent",                 stop_agent,                 0);
-  rb_define_singleton_method(Extension, "stop_extension",             stop_extension,             0);
-  rb_define_singleton_method(Extension, "start_transaction",          start_transaction,          1);
-  rb_define_singleton_method(Extension, "start_event",                start_event,                1);
-  rb_define_singleton_method(Extension, "finish_event",               finish_event,               4);
-  rb_define_singleton_method(Extension, "set_transaction_error",      set_transaction_error,      3);
-  rb_define_singleton_method(Extension, "set_transaction_error_data", set_transaction_error_data, 3);
-  rb_define_singleton_method(Extension, "set_transaction_base_data",  set_transaction_base_data,  4);
-  rb_define_singleton_method(Extension, "set_transaction_metadata",   set_transaction_metadata,   3);
-  rb_define_singleton_method(Extension, "finish_transaction",         finish_transaction,         1);
+  rb_define_singleton_method(Extension, "start",                       start,                       0);
+  rb_define_singleton_method(Extension, "stop_agent",                  stop_agent,                  0);
+  rb_define_singleton_method(Extension, "stop_extension",              stop_extension,              0);
+  rb_define_singleton_method(Extension, "start_transaction",           start_transaction,           2);
+  rb_define_singleton_method(Extension, "start_event",                 start_event,                 1);
+  rb_define_singleton_method(Extension, "finish_event",                finish_event,                4);
+  rb_define_singleton_method(Extension, "set_transaction_error",       set_transaction_error,       3);
+  rb_define_singleton_method(Extension, "set_transaction_error_data",  set_transaction_error_data,  3);
+  rb_define_singleton_method(Extension, "set_transaction_action",      set_transaction_action,      2);
+  rb_define_singleton_method(Extension, "set_transaction_queue_start", set_transaction_queue_start, 2);
+  rb_define_singleton_method(Extension, "set_transaction_metadata",    set_transaction_metadata,    3);
+  rb_define_singleton_method(Extension, "finish_transaction",          finish_transaction,          1);
 
   // Metrics
-  rb_define_singleton_method(Extension, "set_gauge",                  set_gauge,                  2);
-  rb_define_singleton_method(Extension, "set_host_gauge",             set_host_gauge,             2);
-  rb_define_singleton_method(Extension, "set_process_gauge",          set_process_gauge,          2);
-  rb_define_singleton_method(Extension, "increment_counter",          increment_counter,          2);
-  rb_define_singleton_method(Extension, "add_distribution_value",     add_distribution_value,     2);
+  rb_define_singleton_method(Extension, "set_gauge",                   set_gauge,                   2);
+  rb_define_singleton_method(Extension, "set_host_gauge",              set_host_gauge,              2);
+  rb_define_singleton_method(Extension, "set_process_gauge",           set_process_gauge,           2);
+  rb_define_singleton_method(Extension, "increment_counter",           increment_counter,           2);
+  rb_define_singleton_method(Extension, "add_distribution_value",      add_distribution_value,      2);
 
   // Event hooks
   install_event_hooks();

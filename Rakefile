@@ -2,6 +2,7 @@ GEMFILES = %w(
   capistrano2
   capistrano3
   no_dependencies
+  padrino
   rails-3.0
   rails-3.1
   rails-3.2

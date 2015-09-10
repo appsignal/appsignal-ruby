@@ -3,6 +3,29 @@
 * Use native library and agent
 * Use API V2
 
+# 0.11.15
+* Improve Sinatra support
+
+# 0.11.14
+* Support ActiveJob wrapped jobs
+* Improve proxy support
+* Improve rake support
+
+# 0.11.13
+* Add Padrino support
+* Add Rake task monitoring
+* Add http proxy support
+* Configure Net::HTTP to only use TLS
+* Don't send queue if there is no content
+* Don't retry transmission when response code is 400 (no content)
+* Don't start Resque IPC server when AppSignal is not active
+* Display warning message when attempting to send a non-exception to `send_exception`
+* Fix capistrano 2 detection
+* Fix issue with Sinatra integration attempting to attach an exception to a transaction that doesn't exist.
+
+# 0.11.12
+* Sanitizer will no longer inspect unknown objects, since implementations of inspect sometimes trigger unexpected behavior.
+
 # 0.11.11
 * Reliably get errors in production for Sinatra
 

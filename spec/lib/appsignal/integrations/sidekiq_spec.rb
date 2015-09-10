@@ -15,7 +15,7 @@ describe "Sidekiq integration" do
 
   let(:worker) { double }
   let(:queue) { double }
-  let(:current_transaction) { Appsignal::Transaction.create(SecureRandom.uuid, {}) }
+  let(:current_transaction) { background_job_transaction }
   let(:item) {{
     'class'       => 'TestClass',
     'retry_count' => 0,
@@ -47,6 +47,23 @@ describe "Sidekiq integration" do
       )
     end
 
+    it "reports the correct job class for a ActiveJob wrapped job" do
+      item['wrapped'] = 'ActiveJobClass'
+      Appsignal.should_receive(:monitor_transaction).with(
+        'perform_job.sidekiq',
+        :class    => 'ActiveJobClass',
+        :method   => 'perform',
+        :metadata => {
+          'retry_count' => "0",
+          'queue'       => 'default',
+          'extra'       => 'data',
+          'wrapped'     => 'ActiveJobClass'
+        },
+        :params      => ['Model', "1"],
+        :queue_start => Time.parse('01-01-2001 10:00:00UTC')
+      )
+    end
+
     after do
       Timecop.freeze(Time.parse('01-01-2001 10:01:00UTC')) do
         Appsignal::Integrations::SidekiqPlugin.new.call(worker, item, queue) do
@@ -59,7 +76,7 @@ describe "Sidekiq integration" do
   context "with an erroring call" do
     let(:error) { VerySpecificError.new('the roof') }
     it "should add the exception to appsignal" do
-      current_transaction.should_receive(:set_error).with(error)
+      Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
     end
 
     after do
@@ -104,11 +121,11 @@ describe "Sidekiq integration" do
 
   describe "#truncate" do
     let(:very_long_text) do
-      "a" * 200
+      "a" * 400
     end
 
-    it "should truncate the text to 100 chars max" do
-      plugin.truncate(very_long_text).should == "#{'a' * 97}..."
+    it "should truncate the text to 200 chars max" do
+      plugin.truncate(very_long_text).should == "#{'a' * 197}..."
     end
   end
 

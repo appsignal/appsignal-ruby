@@ -1,8 +1,6 @@
 module Appsignal
   class Subscriber
-    PROCESS_ACTION_PREFIX = 'process_action'.freeze
-    PERFORM_JOB_PREFIX    = 'perform_job'.freeze
-    BLANK                 = ''.freeze
+    BLANK = ''.freeze
 
     def initialize
       subscribe
@@ -33,18 +31,13 @@ module Appsignal
 
     def start(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
-
       return if transaction.paused?
+
       Appsignal::Extension.start_event(transaction.transaction_index)
     end
 
     def finish(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
-
-      if name.start_with?(PROCESS_ACTION_PREFIX, PERFORM_JOB_PREFIX)
-        transaction.set_root_event(name, payload)
-      end
-
       return if transaction.paused?
 
       title, body = Appsignal::EventFormatter.format(name, payload)

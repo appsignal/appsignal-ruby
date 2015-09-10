@@ -1,21 +1,14 @@
 require 'spec_helper'
 
-begin
-  require 'sinatra'
-  require 'appsignal/integrations/sinatra'
-rescue LoadError
-end
-
-if defined?(::Sinatra)
-  describe Appsignal::Rack::SinatraInstrumentation do
+if defined?(::Rails)
+  describe Appsignal::Rack::RailsInstrumentation do
     before :all do
       start_agent
     end
 
     let(:app) { double(:call => true) }
-    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
-    let(:options) { {} }
-    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, options) }
+    let(:env) { http_request_env_with_data('action_dispatch.request_id' => '1') }
+    let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
 
     describe "#call" do
       before do
@@ -37,7 +30,7 @@ if defined?(::Sinatra)
           expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
         end
 
-        it "should call the stack" do
+        it "should call the app" do
           expect( app ).to receive(:call).with(env)
         end
       end
@@ -48,10 +41,10 @@ if defined?(::Sinatra)
     describe "#call_with_appsignal_monitoring" do
       it "should create a transaction" do
         Appsignal::Transaction.should_receive(:create).with(
-          kind_of(String),
+          '1',
           Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(Sinatra::Request)
-        ).and_return(double(:set_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+          kind_of(ActionDispatch::Request)
+        ).and_return(double(:set_http_or_background_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
       end
 
       it "should call the app" do
@@ -71,37 +64,13 @@ if defined?(::Sinatra)
         end
       end
 
-      context "with an error in sinatra.error" do
-        let(:error) { VerySpecificError.new }
-        let(:env) { {'sinatra.error' => error} }
-
-        it "should set the error" do
-          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
-        end
-      end
-
-      it "should set the action" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
-      end
-
       it "should set metadata" do
         Appsignal::Transaction.any_instance.should_receive(:set_metadata).twice
       end
 
-      it "should set the queue start" do
+      it "should set the action and queue start" do
+        Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_action)
         Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
-      end
-
-      context "with overridden request class and params method" do
-        let(:options) { {:request_class => ::Rack::Request, :params_method => :filtered_params} }
-
-        it "should use the overridden request class and params method" do
-          request = ::Rack::Request.new(env)
-          ::Rack::Request.should_receive(:new).
-                          with(env.merge(:params_method => :filtered_params)).
-                          at_least(:once).
-                          and_return(request)
-        end
       end
 
       after { middleware.call(env) rescue VerySpecificError }

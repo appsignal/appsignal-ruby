@@ -1,4 +1,5 @@
 ENV['RAILS_ENV'] ||= 'test'
+require 'rack'
 require 'rspec'
 require 'pry'
 require 'timecop'
@@ -18,6 +19,13 @@ end
 
 def rails_present?
   RAILS_PRESENT
+end
+
+def active_record_present?
+  require 'active_record'
+  true
+rescue LoadError
+  false
 end
 
 def running_jruby?
@@ -40,6 +48,13 @@ end
 
 def sequel_present?
   require 'sequel'
+  true
+rescue LoadError
+  false
+end
+
+def padrino_present?
+  require 'padrino'
   true
 rescue LoadError
   false
@@ -71,6 +86,7 @@ end
 
 RSpec.configure do |config|
   config.include ConfigHelpers
+  config.include EnvHelpers
   config.include NotificationHelpers
   config.include TimeHelpers
   config.include TransactionHelpers
