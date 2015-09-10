@@ -2,6 +2,7 @@ require 'spec_helper'
 
 begin
   require 'sinatra'
+  require 'appsignal/integrations/sinatra'
 rescue LoadError
 end
 
@@ -9,23 +10,17 @@ if defined?(::Sinatra)
   describe Appsignal::Rack::SinatraInstrumentation do
     before :all do
       start_agent
-      @events = []
-      @subscriber = ActiveSupport::Notifications.subscribe do |*args|
-        @events << ActiveSupport::Notifications::Event.new(*args)
-      end
-    end
-    after :all do
-      ActiveSupport::Notifications.unsubscribe(@subscriber)
     end
 
     let(:app) { double(:call => true) }
-    let(:env) { {} }
-    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, {}) }
+    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
+    let(:options) { {} }
+    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, options) }
 
     describe "#call" do
-     before do
-       middleware.stub(:raw_payload => {})
-     end
+      before do
+        middleware.stub(:raw_payload => {})
+      end
 
       context "when appsignal is active" do
         before { Appsignal.stub(:active? => true) }
@@ -51,88 +46,65 @@ if defined?(::Sinatra)
     end
 
     describe "#call_with_appsignal_monitoring" do
-      before do
-        middleware.stub(:raw_payload => {})
-        env['sinatra.route'] = 'GET /'
+      it "should create a transaction" do
+        Appsignal::Transaction.should_receive(:create).with(
+          kind_of(String),
+          Appsignal::Transaction::HTTP_REQUEST,
+          kind_of(Sinatra::Request)
+        ).and_return(double(:set_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
       end
 
-      it "should instrument the call" do
+      it "should call the app" do
         app.should_receive(:call).with(env)
-
-        middleware.call_with_appsignal_monitoring(env)
-
-        process_action_event = @events.last
-        process_action_event.name.should == 'process_action.sinatra'
-        process_action_event.payload[:action].should == 'GET /'
       end
 
-      it "should still set the action if there was an exception" do
-        app.should_receive(:call).with(env).and_raise('the roof')
+      context "with an error" do
+        let(:error) { VerySpecificError.new }
+        let(:app) do
+          double.tap do |d|
+            d.stub(:call).and_raise(error)
+          end
+        end
 
-        lambda {
-          middleware.call_with_appsignal_monitoring(env)
-        }.should raise_error
-
-        process_action_event = @events.last
-        process_action_event.name.should == 'process_action.sinatra'
-        process_action_event.payload[:action].should == 'GET /'
+        it "should set the error" do
+          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+        end
       end
 
-      it "should add exceptions stored in env under sinatra.error" do
-        exception = RuntimeError.new('Raise the roof')
-        env['sinatra.error'] = exception
+      context "with an error in sinatra.error" do
+        let(:error) { VerySpecificError.new }
+        let(:env) { {'sinatra.error' => error} }
 
-        transaction = double
-        transaction.stub(:set_process_action_event)
-        transaction.stub(:add_event)
-        Appsignal.should_receive(:add_exception).with(exception)
-        Appsignal::Transaction.stub(:current => transaction)
-
-        middleware.call_with_appsignal_monitoring(env)
+        it "should set the error" do
+          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+        end
       end
-    end
 
-    describe "raw_payload" do
-      let(:env) do
-        {
-          'rack.input' => StringIO.new,
-          'REQUEST_METHOD' => 'GET',
-          'PATH_INFO' => '/homepage',
-          'QUERY_STRING' => 'param=something'
-        }
+      it "should set the action" do
+        Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
       end
-      subject { middleware.raw_payload(env) }
 
-      it { should == {
-        :params => {'param' => 'something'},
-        :session => {},
-        :method => 'GET',
-        :path => '/homepage'
-      } }
-    end
-
-    describe "use a custom request class and parameters method" do
-      let(:request_class) do
-        double(
-          new: double(
-            request_method: 'POST',
-            path: '/somewhere',
-            filtered_params: {'param' => 'changed_something'}
-          )
-        )
+      it "should set metadata" do
+        Appsignal::Transaction.any_instance.should_receive(:set_metadata).twice
       end
-      let(:options) do
-        { request_class: request_class, params_method: :filtered_params }
-      end
-      let(:middleware) { Appsignal::Rack::Instrumentation.new(app, options) }
-      subject { middleware.raw_payload(env) }
 
-      it { should == {
-        :action => 'POST:/somewhere',
-        :params => {'param' => 'changed_something'},
-        :method => 'POST',
-        :path => '/somewhere'
-      } }
+      it "should set the queue start" do
+        Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
+      end
+
+      context "with overridden request class and params method" do
+        let(:options) { {:request_class => ::Rack::Request, :params_method => :filtered_params} }
+
+        it "should use the overridden request class and params method" do
+          request = ::Rack::Request.new(env)
+          ::Rack::Request.should_receive(:new).
+                          with(env.merge(:params_method => :filtered_params)).
+                          at_least(:once).
+                          and_return(request)
+        end
+      end
+
+      after { middleware.call(env) rescue VerySpecificError }
     end
   end
 end

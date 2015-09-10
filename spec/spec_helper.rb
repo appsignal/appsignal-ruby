@@ -1,4 +1,5 @@
 ENV['RAILS_ENV'] ||= 'test'
+require 'rack'
 require 'rspec'
 require 'pry'
 require 'timecop'
@@ -71,9 +72,23 @@ def fixtures_dir
   @fixtures_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'support/fixtures'))
 end
 
+# Add way to clear subscribers between specs
+module ActiveSupport
+  module Notifications
+    class Fanout
+      def clear_subscribers
+        @subscribers.clear
+        @listeners_for.clear
+      end
+    end
+  end
+end
+
 RSpec.configure do |config|
   config.include ConfigHelpers
+  config.include EnvHelpers
   config.include NotificationHelpers
+  config.include TimeHelpers
   config.include TransactionHelpers
 
   config.before do
@@ -84,8 +99,12 @@ RSpec.configure do |config|
   end
 
   config.after do
-    FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
     Appsignal.logger = nil
+  end
+
+  config.after :all do
+    ActiveSupport::Notifications.notifier.clear_subscribers
+    FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
   end
 end
 

@@ -10,10 +10,6 @@ module Appsignal::Integrations
 
       Appsignal.start_logger(File.join(root, 'log'))
       Appsignal.start
-
-      if Appsignal.active?
-        Padrino.use(Appsignal::Rack::Listener)
-      end
     end
   end
 end
@@ -21,25 +17,30 @@ end
 module Padrino::Routing::InstanceMethods
   alias route_without_appsignal route!
 
-  def route!(base = settings, pass_block = nil)
-    if env['sinatra.static_file']
+  def route!(base=settings, pass_block=nil)
+    if !Appsignal.active? || env['sinatra.static_file']
       route_without_appsignal(base, pass_block)
-    else
-      request_payload = {
-        :params  => request.params,
-        :session => request.session,
-        :method  => request.request_method,
-        :path    => request.path
-      }
-      ActiveSupport::Notifications.instrument('process_action.padrino', request_payload) do |request_payload|
-        begin
-          route_without_appsignal(base, pass_block)
-        rescue => e
-          Appsignal.add_exception(e); raise e
-        ensure
-          request_payload[:action] = get_payload_action(request)
-        end
+      return
+    end
+
+    transaction = Appsignal::Transaction.create(
+      SecureRandom.uuid,
+      Appsignal::Transaction::HTTP_REQUEST,
+      request
+    )
+    begin
+      ActiveSupport::Notifications.instrument('process_action.padrino') do
+        route_without_appsignal(base, pass_block)
       end
+    rescue => error
+      transaction.set_error(error)
+      raise error
+    ensure
+      transaction.set_action(get_payload_action(request))
+      transaction.set_metadata('path', request.path)
+      transaction.set_metadata('method', request.request_method)
+      transaction.set_http_or_background_queue_start
+      Appsignal::Transaction.complete_current!
     end
   end
 

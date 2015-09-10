@@ -1,5 +1,10 @@
 require 'spec_helper'
 
+begin
+  require 'padrino'
+rescue LoadError
+end
+
 if padrino_present?
   describe "Padrino integration"   do
     require File.expand_path('lib/appsignal/integrations/padrino.rb')
@@ -9,34 +14,20 @@ if padrino_present?
     end
 
     before do
-      @events = []
-      @subscriber = ActiveSupport::Notifications.subscribe do |*args|
-        @events << ActiveSupport::Notifications::Event.new(*args)
-      end
-    end
-    after do
-      ActiveSupport::Notifications.unsubscribe(@subscriber)
+      Appsignal.stub(
+        :active?      => true,
+        :start        => true,
+        :start_logger => true
+      )
     end
 
     describe "Appsignal::Integrations::PadrinoPlugin" do
-      before do
-        Appsignal.stub(
-          :active?      => true,
-          :start        => true,
-          :start_logger => true
-        )
-      end
-
       it "should start the logger on init" do
         expect( Appsignal ).to receive(:start_logger)
       end
 
       it "should start appsignal on init" do
         expect( Appsignal ).to receive(:start)
-      end
-
-      it "should add the Listener middleware to the stack" do
-        expect( Padrino ).to receive(:use).with(Appsignal::Rack::Listener)
       end
 
       context "when not active" do
@@ -64,7 +55,8 @@ if padrino_present?
             :request_method  => 'GET',
             :path            => '/users/1',
             :controller      => 'users',
-            :action          => 'show'
+            :action          => 'show',
+            :env             => {}
           )
         end
 
@@ -92,40 +84,69 @@ if padrino_present?
           after { router.route!(base) }
         end
 
-        context "with a dynamic request" do
+        context "when appsignal is not active" do
+          before { Appsignal.stub(:active? => false) }
 
           it "should call the original method" do
             expect( router ).to receive(:route_without_appsignal)
           end
 
-          it "should instrument the action" do
-            expect( ActiveSupport::Notifications ).to receive(:instrument).with(
-              'process_action.padrino',
-              {
-                :params  => {'id' => 1},
-                :session => {'user_id' => 123},
-                :method  => 'GET',
-                :path    => '/users/1'
-              }
-            )
+          it "should not instrument the request" do
+            expect( ActiveSupport::Notifications ).to_not receive(:instrument)
           end
 
           after { router.route!(base) }
         end
 
-        it "should add the action to the payload" do
-          router.route!(base)
+        context "with a dynamic request" do
+          let(:transaction) do
+              double(
+                :set_http_or_background_action => nil,
+                :set_http_or_background_queue_start => nil,
+                :set_metadata => nil,
+                :set_action => nil,
+                :set_error => nil
+              )
+          end
+          before { Appsignal::Transaction.stub(:create => transaction) }
 
-          expect( @events.first.payload[:action] ).to eql('controller#action')
-        end
+          context "without an error" do
+            it "should create a transaction" do
+              expect( Appsignal::Transaction ).to receive(:create).with(
+                kind_of(String),
+                Appsignal::Transaction::HTTP_REQUEST,
+                request
+              ).and_return(transaction)
+            end
 
-        context "with an exception" do
-          before { router.stub(:route_without_appsignal).and_raise(VerySpecificError) }
+            it "should call the original routing method" do
+              expect( router ).to receive(:route_without_appsignal)
+            end
 
-          it "should add the exception to the current transaction" do
-            expect( Appsignal ).to receive(:add_exception)
+            it "should instrument the action" do
+              expect( ActiveSupport::Notifications ).to receive(:instrument).with('process_action.padrino')
+            end
 
-            router.route!(base) rescue VerySpecificError
+            it "should set metadata" do
+              expect( transaction ).to receive(:set_metadata).twice
+            end
+
+            it "should set the action on the transaction" do
+              expect( transaction ).to receive(:set_action).with('controller#action')
+            end
+
+            after { router.route!(base) }
+          end
+
+          context "with an error" do
+            let(:error) { VerySpecificError.new }
+            before { router.stub(:route_without_appsignal).and_raise(error) }
+
+            it "should add the exception to the current transaction" do
+              expect( transaction ).to receive(:set_error).with(error)
+
+              router.route!(base) rescue VerySpecificError
+            end
           end
         end
       end
@@ -165,7 +186,6 @@ if padrino_present?
           end
         end
       end
-
     end
   end
 end

@@ -2,6 +2,7 @@ GEMFILES = %w(
   capistrano2
   capistrano3
   no_dependencies
+  padrino
   rails-3.0
   rails-3.1
   rails-3.2
@@ -16,8 +17,7 @@ RUBY_VERSIONS = %w(
   1.9.3-p429
   2.0.0-p451
   2.1.2
-  jruby-1.7.9
-  rbx-2.2.9
+  2.2.0
 )
 
 VERSION_MANAGERS = {
@@ -48,8 +48,8 @@ task :publish do
       puts `git tag #{version}`
       puts `git push origin #{version}`
       puts `git push appsignal #{version}`
-      puts `git push origin master`
-      puts `git push appsignal master`
+      puts `git push origin #{branch}`
+      puts `git push appsignal #{branch}`
     rescue
       raise "Tag: '#{version}' already exists"
     end
@@ -65,6 +65,16 @@ task :publish do
 
   def version
     @version ||= 'v' << gem_version
+  end
+
+  def branch
+    if gem_version.include?('alpha') ||
+         gem_version.include?('beta') ||
+         gem_version.include?('rc')
+      'develop'
+    else
+      'master'
+    end
   end
 
   def git_status_to_array(changes)
@@ -107,11 +117,11 @@ task :generate_bundle_and_spec_all do
       out << '#!/bin/sh'
     end
     out << 'rm -f .ruby-version'
-
     out << "echo 'Using #{version_manager}'"
     RUBY_VERSIONS.each do |version|
       out << "echo 'Switching to #{version}'"
       out << "#{switch_command} #{version} || { echo 'Switching Ruby failed'; exit 1; }"
+      out << 'cd ext && ruby extconf.rb && make clean && make && cd ..'
       GEMFILES.each do |gemfile|
         out << "echo 'Bundling #{gemfile} in #{version}'"
         out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"

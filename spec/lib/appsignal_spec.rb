@@ -43,10 +43,14 @@ describe Appsignal do
     context "when config is loaded" do
       before { Appsignal.config = project_fixture_config }
 
-      it "should start an agent" do
+      it "should initialize logging" do
         Appsignal.start
-        Appsignal.agent.should be_a Appsignal::Agent
         Appsignal.logger.level.should == Logger::INFO
+      end
+
+      it "should start native" do
+        Appsignal::Extension.should_receive(:start)
+        Appsignal.start
       end
 
       it "should load integrations" do
@@ -57,6 +61,16 @@ describe Appsignal do
       it "should load instrumentations" do
         Appsignal.should_receive(:load_instrumentations)
         Appsignal.start
+      end
+
+      it "should initialize formatters" do
+        Appsignal::EventFormatter.should_receive(:initialize_formatters)
+        Appsignal.start
+      end
+
+      it "should create a subscriber" do
+        Appsignal.start
+        Appsignal.subscriber.should be_a(Appsignal::Subscriber)
       end
 
       context "when not active for this environment" do
@@ -121,46 +135,57 @@ describe Appsignal do
     end
   end
 
+  describe ".stop_agent" do
+    it "should call stop_agent on the extension" do
+      Appsignal::Extension.should_receive(:stop_agent)
+      Appsignal.stop_agent
+      Appsignal.active?.should be_false
+    end
+  end
+
+  describe ".stop_extension" do
+    it "should call stop_extension on the extension" do
+      Appsignal::Extension.should_receive(:stop_extension)
+      Appsignal.stop_extension
+      Appsignal.active?.should be_false
+    end
+  end
+
   describe '.active?' do
     subject { Appsignal.active? }
 
-    context "without config and agent" do
+    context "without config" do
       before do
         Appsignal.config = nil
-        Appsignal.agent = nil
       end
 
       it { should be_false }
     end
 
-    context "with agent and inactive config" do
+    context "with inactive config" do
       before do
         Appsignal.config = project_fixture_config('nonsense')
-        Appsignal.agent = Appsignal::Agent.new
       end
 
       it { should be_false }
     end
 
-    context "with active agent and config" do
+    context "with active config" do
       before do
         Appsignal.config = project_fixture_config
-        Appsignal.agent = Appsignal::Agent.new
       end
 
       it { should be_true }
     end
   end
 
-  context "not active" do
-    describe ".enqueue" do
-      it "should do nothing" do
-        lambda {
-          Appsignal.enqueue(Appsignal::Transaction.create(SecureRandom.uuid, ENV))
-        }.should_not raise_error
-      end
+  describe ".add_exception" do
+    it "should alias this method" do
+      Appsignal.should respond_to(:add_exception)
     end
+  end
 
+  context "not active" do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
         Appsignal::Transaction.should_not_receive(:create)
@@ -176,29 +201,29 @@ describe Appsignal do
       end
     end
 
-    describe ".listen_for_exception" do
+    describe ".listen_for_error" do
       it "should do nothing" do
         error = RuntimeError.new('specific error')
         lambda {
-          Appsignal.listen_for_exception do
+          Appsignal.listen_for_error do
             raise error
           end
         }.should raise_error(error)
       end
     end
 
-    describe ".send_exception" do
+    describe ".send_error" do
       it "should do nothing" do
         lambda {
-          Appsignal.send_exception(RuntimeError.new)
+          Appsignal.send_error(RuntimeError.new)
         }.should_not raise_error
       end
     end
 
-    describe ".add_exception" do
+    describe ".set_error" do
       it "should do nothing" do
         lambda {
-          Appsignal.add_exception(RuntimeError.new)
+          Appsignal.set_error(RuntimeError.new)
         }.should_not raise_error
       end
     end
@@ -218,32 +243,42 @@ describe Appsignal do
       Appsignal.start
     end
 
-    describe ".enqueue" do
-      subject { Appsignal.enqueue(transaction) }
-
-      it "forwards the call to the agent" do
-        Appsignal.agent.should respond_to(:enqueue)
-        Appsignal.agent.should_receive(:enqueue).with(transaction)
-        subject
-      end
-    end
-
     describe ".monitor_transaction" do
-      context "with a normall call" do
-        it "should instrument and complete" do
-          Appsignal::Transaction.stub(:current => transaction)
+      context "with a successful call" do
+        it "should instrument and complete for a background job" do
           ActiveSupport::Notifications.should_receive(:instrument).with(
-            'perform_job.something',
-            :class => 'Something'
+            'perform_job.something'
           ).and_yield
-          transaction.should_receive(:complete!)
+          Appsignal::Transaction.should_receive(:complete_current!)
           object = double
           object.should_receive(:some_method)
 
           Appsignal.monitor_transaction(
             'perform_job.something',
-            :class => 'Something'
+            background_env_with_data
           ) do
+            current = Appsignal::Transaction.current
+            current.namespace.should == Appsignal::Transaction::BACKGROUND_JOB
+            current.request.should be_a(Appsignal::Transaction::GenericRequest)
+            object.some_method
+          end
+        end
+
+        it "should instrument and complete for a http request" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'process_action.something'
+          ).and_yield
+          Appsignal::Transaction.should_receive(:complete_current!)
+          object = double
+          object.should_receive(:some_method)
+
+          Appsignal.monitor_transaction(
+            'process_action.something',
+            http_request_env_with_data
+          ) do
+            current = Appsignal::Transaction.current
+            current.namespace.should == Appsignal::Transaction::HTTP_REQUEST
+            current.request.should be_a(::Rack::Request)
             object.some_method
           end
         end
@@ -253,7 +288,7 @@ describe Appsignal do
         let(:error) { VerySpecificError.new('the roof') }
 
         it "should add the error to the current transaction and complete" do
-          Appsignal.should_receive(:add_exception).with(error)
+          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
           Appsignal::Transaction.should_receive(:complete_current!)
 
           lambda {
@@ -291,10 +326,41 @@ describe Appsignal do
       end
     end
 
-    describe ".transactions" do
-      subject { Appsignal.transactions }
+    describe "custom stats" do
+      describe ".set_gauge" do
+        it "should call set_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_gauge).with('key', 0.1)
+          Appsignal.set_gauge('key', 0.1)
+        end
+      end
 
-      it { should be_a Hash }
+      describe ".set_host_gauge" do
+        it "should call set_host_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_host_gauge).with('key', 0.1)
+          Appsignal.set_host_gauge('key', 0.1)
+        end
+      end
+
+      describe ".set_process_gauge" do
+        it "should call set_process_gauge on the extension" do
+          Appsignal::Extension.should_receive(:set_process_gauge).with('key', 0.1)
+          Appsignal.set_process_gauge('key', 0.1)
+        end
+      end
+
+      describe ".increment_counter" do
+        it "should call increment_counter on the extension" do
+          Appsignal::Extension.should_receive(:increment_counter).with('key', 1)
+          Appsignal.increment_counter('key', 1)
+        end
+      end
+
+      describe ".add_distribution_value" do
+        it "should call increment_counter on the extension" do
+          Appsignal::Extension.should_receive(:add_distribution_value).with('key', 0.1)
+          Appsignal.add_distribution_value('key', 0.1)
+        end
+      end
     end
 
     describe '.logger' do
@@ -371,48 +437,30 @@ describe Appsignal do
       end
     end
 
+    describe ".log_formatter" do
+      subject { Appsignal.log_formatter }
+
+      it "should format a log line" do
+        Process.stub(:pid => 100)
+        subject.call('Debug', Time.parse('2015-07-08'), nil, 'log line').should ==
+          "[2015-07-08T00:00:00 (process) #100][Debug] log line\n"
+      end
+    end
+
     describe '.config' do
       subject { Appsignal.config }
 
       it { should be_a Appsignal::Config }
       it 'should return configuration' do
-        subject[:endpoint].should == 'https://push.appsignal.com/1'
+        subject[:endpoint].should == 'https://push.appsignal.com'
       end
     end
 
-    describe ".post_processing_middleware" do
-      before { Appsignal.instance_variable_set(:@post_processing_chain, nil) }
-
-      it "returns the default middleware stack" do
-        Appsignal::Aggregator::PostProcessor.should_receive(:default_middleware)
-        Appsignal.post_processing_middleware
-      end
-
-      it "returns a chain when called without a block" do
-        instance = Appsignal.post_processing_middleware
-        instance.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-      end
-
-      context "when passing a block" do
-        it "yields an appsignal middleware chain" do
-          Appsignal.post_processing_middleware do |o|
-            o.should be_an_instance_of Appsignal::Aggregator::Middleware::Chain
-          end
-        end
-      end
-    end
-
-    describe ".send_exception" do
+    describe ".send_error" do
       let(:tags)      { nil }
-      let(:exception) { VerySpecificError.new }
-      before          { Appsignal::IPC.stub(:current => false) }
+      let(:error) { VerySpecificError.new }
 
-      it "should send the exception to AppSignal" do
-        agent = double(:shutdown => true, :active? => true)
-        Appsignal.stub(:agent).and_return(agent)
-        agent.should_receive(:send_queue)
-        agent.should_receive(:enqueue).with(kind_of(Appsignal::Transaction))
-
+      it "should send the error to AppSignal" do
         Appsignal::Transaction.should_receive(:create).and_call_original
       end
 
@@ -420,75 +468,80 @@ describe Appsignal do
         let(:tags) { {:a => 'a', :b => 'b'} }
 
         it "should tag the request before sending" do
-          transaction = Appsignal::Transaction.create(SecureRandom.uuid, {})
+          transaction = Appsignal::Transaction.create(
+            SecureRandom.uuid,
+            Appsignal::Transaction::HTTP_REQUEST,
+            Appsignal::Transaction::GenericRequest.new({})
+          )
           Appsignal::Transaction.stub(:create => transaction)
           transaction.should_receive(:set_tags).with(tags)
+          Appsignal::Transaction.should_receive(:complete_current!)
         end
       end
 
-      it "should not send the exception if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_exception? => true)
+      it "should not send the error if it's in the ignored list" do
+        Appsignal.stub(:is_ignored_error? => true)
         Appsignal::Transaction.should_not_receive(:create)
       end
 
-      context "when given class is not an exception" do
-        let(:exception) { double }
+      context "when given class is not an error" do
+        let(:error) { double }
 
         it "should log a message" do
-          expect( Appsignal.logger ).to receive(:error).with('Can\'t send exception, given value is not an exception')
+          expect( Appsignal.logger ).to receive(:error).with('Can\'t send error, given value is not an exception')
         end
 
-        it "should not send the exception" do
+        it "should not send the error" do
           expect( Appsignal::Transaction ).to_not receive(:create)
         end
       end
 
       after do
-        Appsignal.send_exception(exception, tags) rescue Exception
+        Appsignal.send_error(error, tags)
       end
     end
 
-    describe ".listen_for_exception" do
-      it "should call send_exception and re-raise" do
-        Appsignal.should_receive(:send_exception).with(kind_of(Exception))
+    describe ".listen_for_error" do
+      it "should call send_error and re-raise" do
+        Appsignal.should_receive(:send_error).with(kind_of(Exception))
         lambda {
-          Appsignal.listen_for_exception do
+          Appsignal.listen_for_error do
             raise "I am an exception"
           end
         }.should raise_error(RuntimeError, "I am an exception")
       end
     end
 
-    describe ".add_exception" do
+    describe ".set_error" do
       before { Appsignal::Transaction.stub(:current => transaction) }
-      let(:exception) { RuntimeError.new('I am an exception') }
+      let(:error) { RuntimeError.new('I am an exception') }
 
-      it "should add the exception to the current transaction" do
-        transaction.should_receive(:add_exception).with(exception)
+      it "should add the error to the current transaction" do
+        transaction.should_receive(:set_error).with(error)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_error(error)
       end
 
       it "should do nothing if there is no current transaction" do
         Appsignal::Transaction.stub(:current => nil)
 
-        transaction.should_not_receive(:add_exception).with(exception)
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_error(error)
       end
 
-      it "should not add the exception if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_exception? => true)
+      it "should not add the error if it's in the ignored list" do
+        Appsignal.stub(:is_ignored_error? => true)
 
-        transaction.should_not_receive(:add_exception).with(exception)
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.add_exception(exception)
+        Appsignal.set_error(error)
       end
 
-      it "should do nothing if the exception is nil" do
-        transaction.should_not_receive(:add_exception)
+      it "should do nothing if the error is nil" do
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.add_exception(nil)
+        Appsignal.set_error(nil)
       end
     end
 
@@ -516,22 +569,22 @@ describe Appsignal do
       end
     end
 
-    describe ".is_ignored_exception?" do
-      let(:exception) { StandardError.new }
+    describe ".is_ignored_error?" do
+      let(:error) { StandardError.new }
       before do
         Appsignal.stub(
-          :config => {:ignore_exceptions => 'StandardError'}
+          :config => {:ignore_errors => ['StandardError']}
         )
       end
 
-      subject { Appsignal.is_ignored_exception?(exception) }
+      subject { Appsignal.is_ignored_error?(error) }
 
       it "should return true if it's in the ignored list" do
         should be_true
       end
 
-      context "when exception is not in the ingore list" do
-        let(:exception) { Object.new }
+      context "when error is not in the ignored list" do
+        let(:error) { Object.new }
 
         it "should return false" do
           should be_false

@@ -1,4 +1,5 @@
 require 'appsignal'
+require 'appsignal/rack/sinatra_instrumentation'
 
 Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
 
@@ -13,6 +14,5 @@ Appsignal.start_logger(app_settings.root)
 Appsignal.start
 
 if Appsignal.active?
-  ::Sinatra::Application.use(Appsignal::Rack::Listener)
   ::Sinatra::Application.use(Appsignal::Rack::SinatraInstrumentation)
 end

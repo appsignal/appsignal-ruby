@@ -25,7 +25,7 @@ describe "Resque integration" do
     end
 
     describe :around_perform_resque_plugin do
-      let(:transaction) { Appsignal::Transaction.new(1, {}) }
+      let(:transaction) { background_job_transaction }
       let(:job) { Resque::Job }
       let(:invoked_job) { nil }
       before do
@@ -47,7 +47,7 @@ describe "Resque integration" do
         end
 
         it "should close the transaction" do
-          transaction.should_receive(:complete!)
+          Appsignal::Transaction.should_receive(:complete_current!)
         end
 
         after { job.around_perform_resque_plugin { invoked_job }  }
@@ -55,7 +55,7 @@ describe "Resque integration" do
 
       context "with exception" do
         it "should set the exception" do
-          transaction.should_receive(:add_exception)
+          Appsignal::Transaction.any_instance.should_receive(:set_error)
         end
 
         after do

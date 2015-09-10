@@ -16,13 +16,13 @@ describe Appsignal::Config do
 
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
-        :ignore_exceptions              => [],
+        :debug                          => false,
+        :ignore_errors                  => [],
         :ignore_actions                 => [],
         :instrument_net_http            => true,
         :skip_session_data              => false,
         :send_params                    => true,
-        :endpoint                       => 'https://push.appsignal.com/1',
-        :slow_request_threshold         => 200,
+        :endpoint                       => 'https://push.appsignal.com',
         :push_api_key                   => 'abc',
         :name                           => 'TestApp',
         :active                         => true,
@@ -38,6 +38,25 @@ describe Appsignal::Config do
 
       it "should return nil for a non-existing key" do
         subject[:nonsense].should be_nil
+      end
+    end
+
+    describe "#write_to_environment" do
+      before do
+        subject.write_to_environment
+      end
+
+      it "should write the current config to env vars" do
+        ENV['APPSIGNAL_ACTIVE'].should            == 'true'
+        ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
+        ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
+        ENV['APPSIGNAL_LOG_PATH'].should          end_with('/log')
+        ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
+        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
+        ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
+        ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
+        ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::AGENT_VERSION
       end
     end
 
@@ -66,11 +85,15 @@ describe Appsignal::Config do
       end
     end
 
-    context "and there is an old-style api_key defined" do
+    context "and there is an old-style config" do
       let(:config) { project_fixture_config('old_api_key') }
 
       it "should fill the push_api_key with the old style key" do
         subject[:push_api_key].should == 'def'
+      end
+
+      it "should fill ignore_errors with the old style ignore exceptions" do
+        subject[:ignore_errors].should == ['StandardError']
       end
     end
   end
@@ -90,6 +113,11 @@ describe Appsignal::Config do
   end
 
   context "when there is no config file" do
+    before do
+      ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
+        ENV[key] = nil
+      end
+    end
     let(:initial_config) { {} }
     let(:config) { Appsignal::Config.new('/nothing', 'production', initial_config) }
 
@@ -129,14 +157,14 @@ describe Appsignal::Config do
         )
 
         subject.config_hash.should == {
+          :debug                          => false,
           :push_api_key                   => 'push_api_key',
-          :ignore_exceptions              => [],
+          :ignore_errors                  => [],
           :ignore_actions                 => [],
           :send_params                    => true,
           :instrument_net_http            => true,
           :skip_session_data              => false,
-          :endpoint                       => 'https://push.appsignal.com/1',
-          :slow_request_threshold         => 200,
+          :endpoint                       => 'https://push.appsignal.com',
           :active                         => true,
           :enable_frontend_error_catching => false,
           :frontend_error_catching_path   => '/appsignal_error_catcher'
