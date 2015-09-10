@@ -61,10 +61,6 @@ module Appsignal
       @paused == true
     end
 
-    def when_finished
-      yield self
-    end
-
     def set_tags(given_tags={})
       @tags.merge!(given_tags)
     end
