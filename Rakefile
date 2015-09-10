@@ -10,6 +10,7 @@ GEMFILES = %w(
   rails-4.2
   sequel
   sinatra
+  resque
 )
 
 RUBY_VERSIONS = %w(

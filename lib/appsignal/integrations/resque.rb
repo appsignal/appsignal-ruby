@@ -27,7 +27,4 @@ if defined?(::Resque)
   Resque.after_fork do |job|
     Appsignal::IPC.forked! if Appsignal.active?
   end
-
-  # Extend the default job class with AppSignal instrumentation
-  Resque::Job.send(:extend, Appsignal::Integrations::ResquePlugin)
 end
