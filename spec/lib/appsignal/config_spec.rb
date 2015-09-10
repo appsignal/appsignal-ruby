@@ -17,7 +17,7 @@ describe Appsignal::Config do
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
         :debug                          => false,
-        :ignore_exceptions              => [],
+        :ignore_errors                  => [],
         :ignore_actions                 => [],
         :instrument_net_http            => true,
         :skip_session_data              => false,
@@ -85,11 +85,15 @@ describe Appsignal::Config do
       end
     end
 
-    context "and there is an old-style api_key defined" do
+    context "and there is an old-style config" do
       let(:config) { project_fixture_config('old_api_key') }
 
       it "should fill the push_api_key with the old style key" do
         subject[:push_api_key].should == 'def'
+      end
+
+      it "should fill ignore_errors with the old style ignore exceptions" do
+        subject[:ignore_errors].should == ['StandardError']
       end
     end
   end
@@ -155,7 +159,7 @@ describe Appsignal::Config do
         subject.config_hash.should == {
           :debug                          => false,
           :push_api_key                   => 'push_api_key',
-          :ignore_exceptions              => [],
+          :ignore_errors                  => [],
           :ignore_actions                 => [],
           :send_params                    => true,
           :instrument_net_http            => true,

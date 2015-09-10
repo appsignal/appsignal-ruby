@@ -8,7 +8,7 @@ module Appsignal
 
     DEFAULT_CONFIG = {
       :debug                          => false,
-      :ignore_exceptions              => [],
+      :ignore_errors                  => [],
       :ignore_actions                 => [],
       :send_params                    => true,
       :endpoint                       => 'https://push.appsignal.com',
@@ -98,6 +98,9 @@ module Appsignal
         # versions of the gem
         if !config_for_this_env[:push_api_key] && config_for_this_env[:api_key]
           config_for_this_env[:push_api_key] = config_for_this_env[:api_key]
+        end
+        if !config_for_this_env[:ignore_errors] && config_for_this_env[:ignore_exceptions]
+          config_for_this_env[:ignore_errors] = config_for_this_env[:ignore_exceptions]
         end
 
         @config_hash = merge_config(config_for_this_env)

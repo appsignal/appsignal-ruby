@@ -99,6 +99,8 @@ module Appsignal
 
     def set_error(error)
       return unless error
+      return if Appsignal.is_ignored_error?(error)
+
       Appsignal.logger.debug("Adding #{error.class.name} to transaction: #{transaction_id}")
       Appsignal::Extension.set_transaction_error(
         transaction_index,

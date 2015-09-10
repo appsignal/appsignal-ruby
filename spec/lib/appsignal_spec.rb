@@ -201,29 +201,29 @@ describe Appsignal do
       end
     end
 
-    describe ".listen_for_exception" do
+    describe ".listen_for_error" do
       it "should do nothing" do
         error = RuntimeError.new('specific error')
         lambda {
-          Appsignal.listen_for_exception do
+          Appsignal.listen_for_error do
             raise error
           end
         }.should raise_error(error)
       end
     end
 
-    describe ".send_exception" do
+    describe ".send_error" do
       it "should do nothing" do
         lambda {
-          Appsignal.send_exception(RuntimeError.new)
+          Appsignal.send_error(RuntimeError.new)
         }.should_not raise_error
       end
     end
 
-    describe ".set_exception" do
+    describe ".set_error" do
       it "should do nothing" do
         lambda {
-          Appsignal.set_exception(RuntimeError.new)
+          Appsignal.set_error(RuntimeError.new)
         }.should_not raise_error
       end
     end
@@ -456,11 +456,11 @@ describe Appsignal do
       end
     end
 
-    describe ".send_exception" do
+    describe ".send_error" do
       let(:tags)      { nil }
-      let(:exception) { VerySpecificError.new }
+      let(:error) { VerySpecificError.new }
 
-      it "should send the exception to AppSignal" do
+      it "should send the error to AppSignal" do
         Appsignal::Transaction.should_receive(:create).and_call_original
       end
 
@@ -479,69 +479,69 @@ describe Appsignal do
         end
       end
 
-      it "should not send the exception if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_exception? => true)
+      it "should not send the error if it's in the ignored list" do
+        Appsignal.stub(:is_ignored_error? => true)
         Appsignal::Transaction.should_not_receive(:create)
       end
 
-      context "when given class is not an exception" do
-        let(:exception) { double }
+      context "when given class is not an error" do
+        let(:error) { double }
 
         it "should log a message" do
-          expect( Appsignal.logger ).to receive(:error).with('Can\'t send exception, given value is not an exception')
+          expect( Appsignal.logger ).to receive(:error).with('Can\'t send error, given value is not an exception')
         end
 
-        it "should not send the exception" do
+        it "should not send the error" do
           expect( Appsignal::Transaction ).to_not receive(:create)
         end
       end
 
       after do
-        Appsignal.send_exception(exception, tags)
+        Appsignal.send_error(error, tags)
       end
     end
 
-    describe ".listen_for_exception" do
-      it "should call send_exception and re-raise" do
-        Appsignal.should_receive(:send_exception).with(kind_of(Exception))
+    describe ".listen_for_error" do
+      it "should call send_error and re-raise" do
+        Appsignal.should_receive(:send_error).with(kind_of(Exception))
         lambda {
-          Appsignal.listen_for_exception do
+          Appsignal.listen_for_error do
             raise "I am an exception"
           end
         }.should raise_error(RuntimeError, "I am an exception")
       end
     end
 
-    describe ".set_exception" do
+    describe ".set_error" do
       before { Appsignal::Transaction.stub(:current => transaction) }
-      let(:exception) { RuntimeError.new('I am an exception') }
+      let(:error) { RuntimeError.new('I am an exception') }
 
-      it "should add the exception to the current transaction" do
-        transaction.should_receive(:set_error).with(exception)
+      it "should add the error to the current transaction" do
+        transaction.should_receive(:set_error).with(error)
 
-        Appsignal.set_exception(exception)
+        Appsignal.set_error(error)
       end
 
       it "should do nothing if there is no current transaction" do
         Appsignal::Transaction.stub(:current => nil)
 
-        transaction.should_not_receive(:set_exception).with(exception)
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.set_exception(exception)
+        Appsignal.set_error(error)
       end
 
-      it "should not add the exception if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_exception? => true)
+      it "should not add the error if it's in the ignored list" do
+        Appsignal.stub(:is_ignored_error? => true)
 
-        transaction.should_not_receive(:set_exception).with(exception)
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.set_exception(exception)
+        Appsignal.set_error(error)
       end
 
-      it "should do nothing if the exception is nil" do
-        transaction.should_not_receive(:set_exception)
+      it "should do nothing if the error is nil" do
+        transaction.should_not_receive(:set_error)
 
-        Appsignal.set_exception(nil)
+        Appsignal.set_error(nil)
       end
     end
 
@@ -569,22 +569,22 @@ describe Appsignal do
       end
     end
 
-    describe ".is_ignored_exception?" do
-      let(:exception) { StandardError.new }
+    describe ".is_ignored_error?" do
+      let(:error) { StandardError.new }
       before do
         Appsignal.stub(
-          :config => {:ignore_exceptions => 'StandardError'}
+          :config => {:ignore_errors => ['StandardError']}
         )
       end
 
-      subject { Appsignal.is_ignored_exception?(exception) }
+      subject { Appsignal.is_ignored_error?(error) }
 
       it "should return true if it's in the ignored list" do
         should be_true
       end
 
-      context "when exception is not in the ingore list" do
-        let(:exception) { Object.new }
+      context "when error is not in the ignored list" do
+        let(:error) { Object.new }
 
         it "should return false" do
           should be_false

@@ -19,3 +19,5 @@ test:
 old_api_key:
   api_key: "def"
   active: true
+  ignore_exceptions:
+    - StandardError
