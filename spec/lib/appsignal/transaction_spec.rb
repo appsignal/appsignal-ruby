@@ -251,6 +251,13 @@ describe Appsignal::Transaction do
         transaction.should respond_to(:add_exception)
       end
 
+      it "should not add the error if it's in the ignored list" do
+        Appsignal.stub(:is_ignored_error? => true)
+        Appsignal::Extension.should_not_receive(:set_transaction_error)
+
+        transaction.set_error(error)
+      end
+
       context "for a http request" do
         it "should set an error and it's data in native" do
           Appsignal::Extension.should_receive(:set_transaction_error).with(
