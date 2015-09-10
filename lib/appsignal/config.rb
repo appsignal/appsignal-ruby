@@ -29,7 +29,8 @@ module Appsignal
       'APPSIGNAL_SKIP_SESSION_DATA'              => :skip_session_data,
       'APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING' => :enable_frontend_error_catching,
       'APPSIGNAL_IGNORE_ERRORS'                  => :ignore_errors,
-      'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions
+      'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
+      'APPSIGNAL_HTTP_PROXY'                     => :http_proxy
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -79,6 +80,7 @@ module Appsignal
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
+      ENV['APPSIGNAL_HTTP_PROXY']        = config_hash[:http_proxy]
     end
 
     protected
@@ -120,7 +122,7 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end
