@@ -102,17 +102,18 @@ module Appsignal
       end
     end
 
-    def listen_for_exception(&block)
+    def listen_for_error(&block)
       yield
-    rescue Exception => exception
-      send_exception(exception)
-      raise exception
+    rescue => error
+      send_error(error)
+      raise error
     end
+    alias :listen_for_exception :listen_for_error
 
-    def send_exception(exception, tags=nil, namespace=Appsignal::Transaction::HTTP_REQUEST)
-      return if !active? || is_ignored_exception?(exception)
-      unless exception.is_a?(Exception)
-        logger.error('Can\'t send exception, given value is not an exception')
+    def send_error(error, tags=nil, namespace=Appsignal::Transaction::HTTP_REQUEST)
+      return if !active? || is_ignored_error?(error)
+      unless error.is_a?(Exception)
+        logger.error('Can\'t send error, given value is not an exception')
         return
       end
       transaction = Appsignal::Transaction.create(
@@ -121,23 +122,20 @@ module Appsignal
         Appsignal::Transaction::GenericRequest.new({})
       )
       transaction.set_tags(tags) if tags
-      transaction.add_exception(exception)
+      transaction.set_error(error)
       Appsignal::Transaction.complete_current!
     end
-
-    def add_exception(exception)
-      warn '[DEPRECATION] add_exception is deprecated, use set_error instead'
-      set_exception(exception)
-    end
+    alias :send_exception :send_error
 
     def set_error(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||
                 exception.nil? ||
-                is_ignored_exception?(exception)
+                is_ignored_error?(exception)
       Appsignal::Transaction.current.set_error(exception)
     end
     alias :set_exception :set_error
+    alias :add_exception :set_error
 
     def tag_request(params={})
       return unless active?
@@ -201,9 +199,10 @@ module Appsignal
       config && config.active?
     end
 
-    def is_ignored_exception?(exception)
-      Appsignal.config[:ignore_exceptions].include?(exception.class.name)
+    def is_ignored_error?(error)
+      Appsignal.config[:ignore_errors].include?(error.class.name)
     end
+    alias :is_ignored_exception? :is_ignored_error?
 
     def is_ignored_action?(action)
       Appsignal.config[:ignore_actions].include?(action)
