@@ -94,8 +94,11 @@ RSpec.configure do |config|
   config.before do
     ENV['PWD'] = File.expand_path(File.join(File.dirname(__FILE__), '../'))
     ENV['RAILS_ENV'] = 'test'
-    ENV.delete('APPSIGNAL_PUSH_API_KEY')
-    ENV.delete('APPSIGNAL_API_KEY')
+
+    # Clean environment
+    ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
+      ENV[key] = nil
+    end
   end
 
   config.after do
