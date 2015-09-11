@@ -81,6 +81,7 @@ module Appsignal
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
       ENV['APPSIGNAL_HTTP_PROXY']        = config_hash[:http_proxy]
+      ENV['APPSIGNAL_IGNORE_ACTIONS']    = config_hash[:ignore_actions].join(',')
     end
 
     protected

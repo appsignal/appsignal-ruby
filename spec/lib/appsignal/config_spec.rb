@@ -43,6 +43,8 @@ describe Appsignal::Config do
 
     describe "#write_to_environment" do
       before do
+        subject.config_hash[:http_proxy]     = 'http://localhost'
+        subject.config_hash[:ignore_actions] = ['action1', 'action2']
         subject.write_to_environment
       end
 
@@ -57,6 +59,8 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
         ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
         ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::AGENT_VERSION
+        ENV['APPSIGNAL_HTTP_PROXY'].should        == 'http://localhost'
+        ENV['APPSIGNAL_IGNORE_ACTIONS'].should    == 'action1,action2'
       end
     end
 
