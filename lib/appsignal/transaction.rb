@@ -42,7 +42,7 @@ module Appsignal
       @env                  = env
       @params               = defaults[:params] || {}
       @tags                 = defaults[:tags] || {}
-      @kind                 = defaults[:kind] || 'web'
+      @kind                 = defaults[:kind] || 'http_request'
       @action               = defaults[:action]
       @paused               = false
     end
