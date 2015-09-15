@@ -57,14 +57,8 @@ if active_record_present?
 
           it { should == ['Model load', "SELECT `table`.* FROM `table` WHERE `id` = ?"] }
 
-          context "with an escaped single quote" do
-            let(:sql) { "`id` = '\\'big\\' secret'" }
-
-            it { should == ['Model load', "`id` = ?"] }
-          end
-
-          context "with an escaped double quote" do
-            let(:sql) { "`id` = '\\\"big\\\" secret'" }
+          context "with escaped single quotes in the string" do
+            let(:sql) { "`id` = 'this is a \'big\' secret'" }
 
             it { should == ['Model load', "`id` = ?"] }
           end
@@ -75,34 +69,36 @@ if active_record_present?
 
           it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` = ?'] }
 
-          context "with an escaped single quote" do
-            let(:sql) { '`id` = "\\\'big\\\' secret"' }
-
-            it { should == ['Model load', "`id` = ?"] }
-          end
-
-          context "with an escaped double quote" do
-            let(:sql) { '`id` = "\\"big\\" secret"' }
+          context "with escaped double quotes in the string" do
+            let(:sql) { '`id` = "this is a \"big\" secret"' }
 
             it { should == ['Model load', "`id` = ?"] }
           end
         end
 
         context "numeric parameter" do
-          let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
+          context "integer" do
+            let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` = 1' }
 
-          it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` = ?'] }
+            it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` = ?'] }
+          end
+
+          context "float" do
+            let(:sql) { 'SELECT `table`.* FROM `table` WHERE `value` = 10.0' }
+
+            it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `value` = ?'] }
+          end
         end
 
-        context "parameter array" do
+        context "in operator with params" do
           let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
 
           it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` IN (?)'] }
         end
       end
 
-      context "with double quote style table names and no prepared statements" do
-        let(:connection_config) { {:adapter => 'postgresql', :prepared_statements => false} }
+      context "with double quote style table names" do
+        let(:connection_config) { {:adapter => 'postgresql'} }
 
         context "single quoted data value" do
           let(:sql) { "SELECT \"table\".* FROM \"table\" WHERE \"id\" = 'secret'" }
@@ -110,22 +106,24 @@ if active_record_present?
           it { should == ['Model load', "SELECT \"table\".* FROM \"table\" WHERE \"id\" = ?"] }
 
           context "with an escaped single quote" do
-            let(:sql) { "\"id\" = '\\'big\\' secret'" }
-
-            it { should == ['Model load', "\"id\" = ?"] }
-          end
-
-          context "with an escaped double quote" do
-            let(:sql) { "\"id\" = '\\\"big\\\" secret'" }
+            let(:sql) { "\"id\" = 'this is a \'big\' secret'" }
 
             it { should == ['Model load', "\"id\" = ?"] }
           end
         end
 
         context "numeric parameter" do
-          let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=1' }
+          context "integer" do
+            let(:sql) { 'SELECT "table".* FROM "table" WHERE "id"=1' }
 
-          it { should == ['Model load', 'SELECT "table".* FROM "table" WHERE "id"=?'] }
+            it { should == ['Model load', 'SELECT "table".* FROM "table" WHERE "id"=?'] }
+          end
+
+          context "float" do
+            let(:sql) { 'SELECT "table".* FROM "table" WHERE "value"=10.0' }
+
+            it { should == ['Model load', 'SELECT "table".* FROM "table" WHERE "value"=?'] }
+          end
         end
       end
 
