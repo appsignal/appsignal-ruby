@@ -63,6 +63,7 @@ describe Appsignal::Config do
       it "should merge with the config" do
         subject[:name].should == 'TestApp'
         subject[:initial_key].should == 'value'
+        subject[:ignore_exceptions].should == []
       end
     end
 
@@ -149,6 +150,7 @@ describe Appsignal::Config do
         it "should merge with the config" do
           Appsignal.logger.should_not_receive(:debug)
           subject[:name].should == 'Initial Name'
+          subject[:ignore_exceptions].should == []
         end
       end
 
