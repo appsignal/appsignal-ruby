@@ -1,4 +1,4 @@
 module Appsignal
-  VERSION       = '0.12.beta.31'
-  AGENT_VERSION = '8cdd29b'
+  VERSION       = '0.12.beta.32'
+  AGENT_VERSION = '246e4be'
 end
