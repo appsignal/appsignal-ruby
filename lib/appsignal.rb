@@ -37,7 +37,14 @@ module Appsignal
     end
 
     def start
-      if config
+      unless @config
+        @config = Config.new(
+          ENV['PWD'],
+          ENV['APPSIGNAL_APP_ENV'] || ENV['RAILS_ENV'] || ENV['RACK_ENV']
+        )
+      end
+
+      if config.valid?
         if config[:debug]
           logger.level = Logger::DEBUG
         else
@@ -56,7 +63,7 @@ module Appsignal
           logger.info("Not starting, not active for #{config.env}")
         end
       else
-        logger.error('Can\'t start, no config loaded')
+        logger.error('Not starting, no valid config for this environment')
       end
     end
 

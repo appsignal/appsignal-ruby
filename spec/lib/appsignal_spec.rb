@@ -32,12 +32,23 @@ describe Appsignal do
   end
 
   describe ".start" do
-    it "should do nothing when config is not loaded" do
-      Appsignal.logger.should_receive(:error).with(
-        "Can't start, no config loaded"
-      )
-      Appsignal.start
-      Appsignal.agent.should be_nil
+    context "with no config set beforehand" do
+      it "should do nothing when config is not set and there is no valid config in the env" do
+        Appsignal.logger.should_receive(:error).with(
+          "Push api key not set after loading config"
+        ).once
+        Appsignal.logger.should_receive(:error).with(
+          "Not starting, no valid config for this environment"
+        ).once
+        Appsignal::Extension.should_not_receive(:start)
+        Appsignal.start
+      end
+
+      it "should create a config from the env" do
+        ENV['APPSIGNAL_PUSH_API_KEY'] = 'something'
+        Appsignal::Extension.should_receive(:start)
+        Appsignal.start
+      end
     end
 
     context "when config is loaded" do
@@ -77,9 +88,6 @@ describe Appsignal do
         before { Appsignal.config = project_fixture_config('staging') }
 
         it "should do nothing" do
-          Appsignal.logger.should_receive(:info).with(
-            'Not starting, not active for staging'
-          )
           Appsignal.start
           Appsignal.agent.should be_nil
         end
