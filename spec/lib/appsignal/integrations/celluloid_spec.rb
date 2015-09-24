@@ -15,9 +15,9 @@ describe "Celluloid integration" do
       load file
     end
 
-    specify { expect(Appsignal).to receive(:stop_extension) }
-
+    specify { expect(Appsignal).to receive(:stop) }
     specify { expect(Celluloid).to receive(:shutdown_without_appsignal) }
+
     after do
       Celluloid.shutdown
     end

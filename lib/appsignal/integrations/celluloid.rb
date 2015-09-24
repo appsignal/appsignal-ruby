@@ -10,7 +10,7 @@ if defined?(::Celluloid)
       alias shutdown_without_appsignal shutdown
 
       def shutdown
-        Appsignal.stop_extension
+        Appsignal.stop
         shutdown_without_appsignal
       end
     end

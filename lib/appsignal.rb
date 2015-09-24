@@ -67,12 +67,8 @@ module Appsignal
       end
     end
 
-    def stop_agent
-      Appsignal::Extension.stop_agent
-    end
-
-    def stop_extension
-      Appsignal::Extension.stop_extension
+    def stop
+      Appsignal::Extension.stop
     end
 
     def monitor_transaction(name, env={})
