@@ -7,15 +7,30 @@ module Appsignal
     include Appsignal::CarefulLogger
 
     DEFAULT_CONFIG = {
-      :ignore_exceptions              => [],
+      :debug                          => false,
+      :ignore_errors                  => [],
       :ignore_actions                 => [],
       :send_params                    => true,
-      :endpoint                       => 'https://push.appsignal.com/1',
-      :slow_request_threshold         => 200,
+      :endpoint                       => 'https://push.appsignal.com',
       :instrument_net_http            => true,
       :skip_session_data              => false,
       :enable_frontend_error_catching => false,
       :frontend_error_catching_path   => '/appsignal_error_catcher'
+    }.freeze
+
+    ENV_TO_KEY_MAPPING = {
+      'APPSIGNAL_ACTIVE'                         => :active,
+      'APPSIGNAL_PUSH_API_KEY'                   => :push_api_key,
+      'APPSIGNAL_APP_NAME'                       => :name,
+      'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
+      'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
+      'APPSIGNAL_DEBUG'                          => :debug,
+      'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
+      'APPSIGNAL_SKIP_SESSION_DATA'              => :skip_session_data,
+      'APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING' => :enable_frontend_error_catching,
+      'APPSIGNAL_IGNORE_ERRORS'                  => :ignore_errors,
+      'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
+      'APPSIGNAL_HTTP_PROXY'                     => :http_proxy
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -25,46 +40,48 @@ module Appsignal
       @env            = env.to_s
       @initial_config = initial_config
       @logger         = logger
+      @valid          = false
 
+      # Initial config
+      @config_hash = DEFAULT_CONFIG.merge(initial_config)
+
+      # Load config from environment variables
+      load_from_environment
+
+      # Load the config file if it exists
       if File.exists?(config_file)
-        load_config_from_disk
-      elsif ENV['APPSIGNAL_PUSH_API_KEY']
-        load_default_config_with_push_api_key_and_name_from_env(
-          ENV['APPSIGNAL_PUSH_API_KEY']
-        )
-      elsif ENV['APPSIGNAL_API_KEY']
-        load_default_config_with_push_api_key_and_name_from_env(
-          ENV['APPSIGNAL_API_KEY']
-        )
-        @logger.info(
-          'The APPSIGNAL_API_KEY environment variable has been deprecated, ' \
-          'please switch to APPSIGNAL_PUSH_API_KEY'
-        )
-      else
-        carefully_log_error(
-          "Not loading: No config file found at '#{config_file}' " \
-          "and no APPSIGNAL_PUSH_API_KEY env var present"
-        )
+        load_from_disk
       end
-      if config_hash && !config_hash[:name]
-        @logger.debug(
-          "There's no application name set in your config file or in the APPSIGNAL_APP_NAME env var. " \
-          "You should set one unless your app runs on Heroku."
-        )
-      end
-    end
 
-    def loaded?
-      !! config_hash
+      # Validate that we have a correct config
+      validate
     end
 
     def [](key)
-      return unless loaded?
       config_hash[key]
     end
 
+    def valid?
+      @valid
+    end
+
     def active?
-      !! self[:active]
+      @valid && self[:active]
+    end
+
+    def write_to_environment
+      ENV['APPSIGNAL_ACTIVE']            = active?.to_s
+      ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
+      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
+      ENV['APPSIGNAL_LOG_PATH']          = File.join(root_path, 'log')
+      ENV['APPSIGNAL_ENVIRONMENT']       = env
+      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::AGENT_VERSION
+      ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
+      ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
+      ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
+      ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
+      ENV['APPSIGNAL_HTTP_PROXY']        = config_hash[:http_proxy]
+      ENV['APPSIGNAL_IGNORE_ACTIONS']    = config_hash[:ignore_actions].join(',')
     end
 
     protected
@@ -73,7 +90,7 @@ module Appsignal
       @config_file ||= File.join(root_path, 'config', 'appsignal.yml')
     end
 
-    def load_config_from_disk
+    def load_from_disk
       configurations = YAML.load(ERB.new(IO.read(config_file)).result)
       config_for_this_env = configurations[env]
       if config_for_this_env
@@ -86,10 +103,65 @@ module Appsignal
         if !config_for_this_env[:push_api_key] && config_for_this_env[:api_key]
           config_for_this_env[:push_api_key] = config_for_this_env[:api_key]
         end
+        if !config_for_this_env[:ignore_errors] && config_for_this_env[:ignore_exceptions]
+          config_for_this_env[:ignore_errors] = config_for_this_env[:ignore_exceptions]
+        end
 
-        @config_hash = merge_config(config_for_this_env)
+        merge(@config_hash, config_for_this_env)
       else
-        carefully_log_error("Not loading: config for '#{env}' not found")
+        carefully_log_error("Not loading from config file: config for '#{env}' not found")
+      end
+    end
+
+    def load_from_environment
+      config = {}
+
+      # Make active by default if APPSIGNAL_PUSH_API_KEY is present
+      if ENV['APPSIGNAL_PUSH_API_KEY']
+        config[:active] = true
+      end
+
+      # Configuration with string type
+      %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY).each do |var|
+        if env_var = ENV[var]
+          config[ENV_TO_KEY_MAPPING[var]] = env_var
+        end
+      end
+
+      # Configuration with boolean type
+      %w(APPSIGNAL_ACTIVE APPSIGNAL_DEBUG APPSIGNAL_INSTRUMENT_NET_HTTP
+         APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING).each do |var|
+        if env_var = ENV[var]
+          config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
+        end
+      end
+
+      # Configuration with array of strings type
+      %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS).each do |var|
+        if env_var = ENV[var]
+          config[ENV_TO_KEY_MAPPING[var]] = env_var.split(',')
+        end
+      end
+
+      merge(@config_hash, config)
+    end
+
+    def merge(original_config, new_config)
+      new_config.each do |key, value|
+        unless original_config[key].nil?
+          @logger.warn("Config key '#{key}' is being overwritten")
+        end
+        original_config[key] = value
+      end
+    end
+
+    def validate
+      if config_hash[:push_api_key]
+        @valid = true
+      else
+        @valid = false
+        carefully_log_error("Push api key not set after loading config")
       end
     end
 
@@ -101,10 +173,6 @@ module Appsignal
       )
       @config_hash[:name]   = ENV['APPSIGNAL_APP_NAME'] if ENV['APPSIGNAL_APP_NAME']
       @config_hash[:active] = ENV['APPSIGNAL_ACTIVE'] == 'true' if ENV['APPSIGNAL_ACTIVE']
-    end
-
-    def merge_config(config)
-      DEFAULT_CONFIG.merge(initial_config).merge(config)
     end
   end
 end

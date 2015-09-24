@@ -1,7 +1,6 @@
 default: &defaults
   push_api_key: "abc"
   name: "TestApp"
-  slow_request_threshold: 200
 
 production:
   <<: *defaults
@@ -13,10 +12,12 @@ development:
 
 test:
   <<: *defaults
-  endpoint: "http://localhost:3000/1"
+  endpoint: "http://localhost:3000"
   debug: true
   active: true
 
 old_api_key:
   api_key: "def"
   active: true
+  ignore_exceptions:
+    - StandardError

@@ -26,7 +26,7 @@ describe Appsignal::CLI do
     subject { cli.config }
 
     it { should be_instance_of(Appsignal::Config) }
-    its(:loaded?) { should be_true }
+    its(:valid?) { should be_true }
   end
 
   it "should print the help with no arguments, -h and --help" do

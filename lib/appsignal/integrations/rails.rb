@@ -1,6 +1,8 @@
 if defined?(::Rails)
   Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
+  require 'appsignal/rack/rails_instrumentation'
+
   module Appsignal
     module Integrations
       class Railtie < ::Rails::Railtie
@@ -21,13 +23,13 @@ if defined?(::Rails)
 
           app.middleware.insert_before(
             ActionDispatch::RemoteIp,
-            Appsignal::Rack::Listener
+            Appsignal::Rack::RailsInstrumentation
           )
 
           if Appsignal.config.active? &&
             Appsignal.config[:enable_frontend_error_catching] == true
             app.middleware.insert_before(
-              Appsignal::Rack::Listener,
+              Appsignal::Rack::RailsInstrumentation,
               Appsignal::Rack::JSExceptionCatcher,
             )
           end

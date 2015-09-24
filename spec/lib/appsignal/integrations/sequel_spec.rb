@@ -10,12 +10,16 @@ describe "Sequel integration", if: sequel_present? do
   end
 
   context "with Sequel" do
-    before { Appsignal::Transaction.create('uuid', 'test') }
+    before { Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test') }
 
     it "should instrument queries" do
-      expect { db['SELECT 1'].all }
-        .to change { Appsignal::Transaction.current.events.empty? }
-        .from(true).to(false)
+      expect( Appsignal::Extension ).to receive(:start_event)
+        .at_least(:once)
+      expect( Appsignal::Extension ).to receive(:finish_event)
+        .at_least(:once)
+        .with(kind_of(Integer), "sql.sequel", "", "")
+
+      db['SELECT 1'].all
     end
   end
 end
