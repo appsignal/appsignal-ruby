@@ -4,10 +4,7 @@ require File.expand_path('../lib/appsignal/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = [
     'Robert Beekman',
-    'Steven Weller',
-    'Thijs Cadier',
-    'Ron Cadier',
-    'Jacob Vosmaer'
+    'Thijs Cadier'
   ]
   gem.email                 = ['support@appsignal.com']
   gem.description           = 'The official appsignal.com gem'
@@ -34,12 +31,4 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'pry'
   gem.add_development_dependency 'timecop'
   gem.add_development_dependency 'webmock'
-
-  if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
-    gem.add_development_dependency 'racc'
-    gem.add_development_dependency 'rubysl-enumerator'
-    gem.add_development_dependency 'rubysl-net-http'
-    gem.add_development_dependency 'rubysl-rexml'
-    gem.add_development_dependency 'rubysl-test-unit'
-  end
 end
