@@ -223,7 +223,7 @@ module Appsignal
   end
 end
 
-require 'appsignal_extension'
+require 'appsignal/extension'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/event_formatter'
