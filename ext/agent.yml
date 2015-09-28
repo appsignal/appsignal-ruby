@@ -2,10 +2,10 @@
 :version: c0f342f
 :triples:
   x86_64-linux:
-    :checksum: 34ec5169c4ed863a36c113a4bb78609ad77b8bd262d1607cc34ef0b809b6f7b4
-    :download_url: https://appsignal-agent-releases.global.ssl.fastly.net/c0f342f/appsignal-agent-x86_64-linux.tar.gz
-    :lib_filename: libappsignal.so
+    :checksum: 822058862ff44f8f77d6ee60ae116358b33af35cb09bdf6a87631653cc4da116
+    :download_url: https://appsignal-agent-releases.global.ssl.fastly.net/c0f342f/appsignal-agent-x86_64-linux-static.tar.gz
+    :lib_filename: libappsignal.a
   x86_64-darwin:
-    :checksum: 0ff18e87ea16c40cceda3677fee48e912ea9eeaca81c407935ea59e0fb45eeb4
-    :download_url: https://appsignal-agent-releases.global.ssl.fastly.net/c0f342f/appsignal-agent-x86_64-darwin.tar.gz
-    :lib_filename: libappsignal.dylib
+    :checksum: 46ce8aad2689df40ad5a323264e6e4b8bb9919adbc6767cdf3bb9fc97e0a5aa7
+    :download_url: https://appsignal-agent-releases.global.ssl.fastly.net/c0f342f/appsignal-agent-x86_64-darwin-static.tar.gz
+    :lib_filename: libappsignal.a

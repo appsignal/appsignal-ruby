@@ -75,7 +75,7 @@ module Appsignal
       ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
       ENV['APPSIGNAL_LOG_PATH']          = File.join(root_path, 'log')
       ENV['APPSIGNAL_ENVIRONMENT']       = env
-      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::ExtensionLoader.agent_version
+      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::Extension.agent_version
       ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]

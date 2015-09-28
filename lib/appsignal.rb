@@ -37,6 +37,8 @@ module Appsignal
     end
 
     def start
+      return unless extension_loaded?
+
       unless @config
         @config = Config.new(
           ENV['PWD'],
