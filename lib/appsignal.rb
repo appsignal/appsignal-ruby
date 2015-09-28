@@ -10,7 +10,7 @@ end
 
 module Appsignal
   class << self
-    attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log
+    attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log, :extension_loaded
 
     def load_integrations
       require 'appsignal/integrations/celluloid'
@@ -198,8 +198,12 @@ module Appsignal
       @logger << @in_memory_log.string if @in_memory_log
     end
 
+    def extension_loaded?
+      !!@extension_loaded
+    end
+
     def active?
-      config && config.active?
+      config && config.active? && extension_loaded?
     end
 
     def is_ignored_error?(error)

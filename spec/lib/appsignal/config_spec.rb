@@ -58,7 +58,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
         ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
-        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::AGENT_VERSION
+        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::ExtensionLoader.agent_version
         ENV['APPSIGNAL_HTTP_PROXY'].should        == 'http://localhost'
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should    == 'action1,action2'
       end

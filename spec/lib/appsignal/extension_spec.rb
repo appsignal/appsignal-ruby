@@ -1,8 +1,50 @@
 require 'spec_helper'
+require 'fileutils'
 
-describe Appsignal::Extension do
-  context "call native methods without errors" do
+describe "extension loading and operation" do
+  describe ".agent_config" do
+    subject { Appsignal::ExtensionLoader.agent_config }
+
+    it { should have_key(:version) }
+    it { should have_key(:triples) }
+  end
+
+  describe ".arch" do
+    subject { Appsignal::ExtensionLoader.agent_config }
+
+    it { should_not be_nil }
+  end
+
+  describe ".agent_version" do
+    subject { Appsignal::ExtensionLoader.agent_version }
+
+    it { should_not be_nil }
+  end
+
+  context "when the extension library cannot be loaded" do
+    before do
+      Appsignal::ExtensionLoader.stub(:lib_path => '/tmp/nonsense')
+    end
+
+    it "should log an error and set appsignal to inactive" do
+      Appsignal.logger.should_receive(:error).with(
+        'Failed to load extension (dlopen(/tmp/nonsense, 9): image not found), ' \
+        'please check the install.log file in the ext directory of the gem and e-mail us at support@appsignal.com'
+      )
+
+      Appsignal::ExtensionLoader.load_extension
+
+      Appsignal.extension_loaded?.should be_false
+    end
+  end
+
+  context "when the extension library can be loaded" do
     subject { Appsignal::Extension }
+
+    it "should load the extension" do
+      Appsignal::ExtensionLoader.load_extension
+      Appsignal.extension_loaded?.should be_true
+    end
 
     it "should have a start method" do
       subject.start
