@@ -8,9 +8,11 @@ if defined?(::Que)
           base.class_eval do
 
             def _run_with_appsignal
+              cls = attrs[:job_class]
+              cls = attrs[:args].last['job_class'] if cls == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
               Appsignal.monitor_transaction(
                 'perform_job.que',
-                :class    => attrs[:job_class],
+                :class    => cls,
                 :method   => 'run',
                 :metadata => {
                   :id        => attrs[:job_id],
