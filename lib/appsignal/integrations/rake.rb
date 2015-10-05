@@ -23,7 +23,7 @@ module Rake
       transaction.set_action(name)
       transaction.set_error(error)
       transaction.complete!
-      sleep 0.5 # Give us some time to flush to the agent
+      Appsignal.stop
       raise error
     end
   end
