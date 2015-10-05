@@ -39,7 +39,7 @@ describe "Resque integration" do
         end
 
         it "should wrap in a transaction with the correct params" do
-          Appsignal.should_receive(:monitor_transaction).with(
+          Appsignal.should_receive(:monitor_single_transaction).with(
             'perform_job.resque',
             :class => 'Resque::Job',
             :method => 'perform'

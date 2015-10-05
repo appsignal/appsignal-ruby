@@ -300,6 +300,40 @@ describe Appsignal do
       end
     end
 
+    describe ".monitor_single_transaction" do
+      context "with a successful call" do
+        it "should call monitor_transaction and stop" do
+          Appsignal.should_receive(:monitor_transaction).with(
+            'perform_job.something',
+            :key => :value
+          ).and_yield
+          Appsignal.should_receive(:stop)
+
+          Appsignal.monitor_single_transaction('perform_job.something', :key => :value) do
+            # nothing
+          end
+        end
+      end
+
+      context "with an erroring call" do
+        let(:error) { VerySpecificError.new('the roof') }
+
+        it "should call monitor_transaction and stop and then raise the error" do
+          Appsignal.should_receive(:monitor_transaction).with(
+            'perform_job.something',
+            :key => :value
+          ).and_yield
+          Appsignal.should_receive(:stop)
+
+          lambda {
+            Appsignal.monitor_single_transaction('perform_job.something', :key => :value) do
+              raise error
+            end
+          }.should raise_error(error)
+        end
+      end
+    end
+
     describe ".tag_request" do
       before { Appsignal::Transaction.stub(:current => transaction) }
 
