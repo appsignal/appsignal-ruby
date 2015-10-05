@@ -15,6 +15,7 @@ module Appsignal
     def load_integrations
       require 'appsignal/integrations/celluloid'
       require 'appsignal/integrations/delayed_job'
+      require 'appsignal/integrations/passenger'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
       require 'appsignal/integrations/sequel'
