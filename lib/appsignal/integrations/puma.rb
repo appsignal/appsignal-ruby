@@ -1,4 +1,4 @@
-if defined?(::Puma)
+if defined?(::Puma) && ::Puma.respond_to?(:cli_config)
   Appsignal.logger.info('Loading Puma integration')
 
   if ::Puma.cli_config
