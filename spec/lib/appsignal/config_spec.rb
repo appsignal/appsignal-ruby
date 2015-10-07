@@ -52,7 +52,6 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_ACTIVE'].should            == 'true'
         ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
-        ENV['APPSIGNAL_LOG_PATH'].should          end_with('/log')
         ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
         ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
