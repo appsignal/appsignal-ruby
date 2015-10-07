@@ -63,6 +63,8 @@ module Appsignal
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
+          Appsignal::Extension.install_allocation_event_hook if config[:enable_allocation_tracking]
+          Appsignal::Extension.install_gc_event_hooks if config[:enable_gc_instrumentation]
           @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")

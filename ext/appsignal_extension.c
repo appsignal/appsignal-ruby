@@ -176,8 +176,8 @@ static void track_gc_end(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, 
   appsignal_track_gc_end();
 }
 
-static void install_event_hooks() {
-  // These event hooks are only available on Ruby 2.1 and 2.2
+static VALUE install_allocation_event_hook() {
+  // This event hook is only available on Ruby 2.1 and 2.2
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
   rb_add_event_hook(
       track_allocation,
@@ -185,6 +185,12 @@ static void install_event_hooks() {
       Qnil
   );
   #endif
+
+  return Qnil;
+}
+
+static VALUE install_gc_event_hooks() {
+  // These event hooks are only available on Ruby 2.1 and 2.2
   #if defined(RUBY_INTERNAL_EVENT_GC_START)
   rb_add_event_hook(
       track_gc_start,
@@ -208,6 +214,8 @@ static void install_event_hooks() {
       Qnil
   );
   #endif
+
+  return Qnil;
 }
 
 void Init_appsignal_extension(void) {
@@ -227,13 +235,14 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "set_transaction_metadata",    set_transaction_metadata,    3);
   rb_define_singleton_method(Extension, "finish_transaction",          finish_transaction,          1);
 
-  // Metrics
-  rb_define_singleton_method(Extension, "set_gauge",                   set_gauge,                   2);
-  rb_define_singleton_method(Extension, "set_host_gauge",              set_host_gauge,              2);
-  rb_define_singleton_method(Extension, "set_process_gauge",           set_process_gauge,           2);
-  rb_define_singleton_method(Extension, "increment_counter",           increment_counter,           2);
-  rb_define_singleton_method(Extension, "add_distribution_value",      add_distribution_value,      2);
+  // Event hook installation
+  rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
+  rb_define_singleton_method(Extension, "install_gc_event_hooks",        install_gc_event_hooks,        0);
 
-  // Event hooks
-  install_event_hooks();
+  // Metrics
+  rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);
+  rb_define_singleton_method(Extension, "set_host_gauge",         set_host_gauge,         2);
+  rb_define_singleton_method(Extension, "set_process_gauge",      set_process_gauge,      2);
+  rb_define_singleton_method(Extension, "increment_counter",      increment_counter,      2);
+  rb_define_singleton_method(Extension, "add_distribution_value", add_distribution_value, 2);
 }

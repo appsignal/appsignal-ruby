@@ -15,7 +15,9 @@ module Appsignal
       :instrument_net_http            => true,
       :skip_session_data              => false,
       :enable_frontend_error_catching => false,
-      :frontend_error_catching_path   => '/appsignal_error_catcher'
+      :frontend_error_catching_path   => '/appsignal_error_catcher',
+      :enable_allocation_tracking     => true,
+      :enable_gc_instrumentation      => true
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -30,7 +32,9 @@ module Appsignal
       'APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING' => :enable_frontend_error_catching,
       'APPSIGNAL_IGNORE_ERRORS'                  => :ignore_errors,
       'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
-      'APPSIGNAL_HTTP_PROXY'                     => :http_proxy
+      'APPSIGNAL_HTTP_PROXY'                     => :http_proxy,
+      'APPSIGNAL_ENABLE_ALLOCATION_TRACKING'     => :enable_allocation_tracking,
+      'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -130,7 +134,8 @@ module Appsignal
 
       # Configuration with boolean type
       %w(APPSIGNAL_ACTIVE APPSIGNAL_DEBUG APPSIGNAL_INSTRUMENT_NET_HTTP
-         APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING).each do |var|
+         APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
+         APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
         end

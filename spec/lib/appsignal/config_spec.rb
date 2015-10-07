@@ -27,7 +27,9 @@ describe Appsignal::Config do
         :name                           => 'TestApp',
         :active                         => true,
         :enable_frontend_error_catching => false,
-        :frontend_error_catching_path   => '/appsignal_error_catcher'
+        :frontend_error_catching_path   => '/appsignal_error_catcher',
+        :enable_allocation_tracking     => true,
+        :enable_gc_instrumentation      => true
       }
     end
 
