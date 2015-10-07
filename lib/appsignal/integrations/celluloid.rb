@@ -4,6 +4,7 @@ if defined?(::Celluloid)
   # Some versions of Celluloid have race conditions while exiting
   # that can result in a dead lock. We stop appsignal before shutting
   # down Celluloid so we're sure our thread does not aggravate this situation.
+  # This way we also make sure any outstanding transactions get flushed.
 
   ::Celluloid.class_eval do
     class << self

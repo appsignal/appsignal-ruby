@@ -8,6 +8,10 @@ if defined?(::Delayed::Plugin)
           lifecycle.around(:invoke_job) do |job, &block|
             invoke_with_instrumentation(job, block)
           end
+
+          lifecycle.after(:loop) do |loop|
+            Appsignal.stop
+          end
         end
 
         def self.invoke_with_instrumentation(job, block)

@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'rake'
-describe "Rack integration" do
+
+describe "Rake integration" do
   let(:file) { File.expand_path('lib/appsignal/integrations/rake.rb') }
   let(:app)  { double(:current_scope => nil) }
   let(:task) { Rake::Task.new('task', app) }
@@ -39,13 +40,20 @@ describe "Rack integration" do
       let!(:transaction) { regular_transaction }
       let!(:agent)       { double('Agent', :send_queue => true) }
       before do
+        transaction.stub(:set_action)
+        transaction.stub(:set_error)
+        transaction.stub(:complete!)
         SecureRandom.stub(:uuid => '123')
         Appsignal::Transaction.stub(:create => transaction)
-        Appsignal.stub(:agent => agent, :active? => true)
+        Appsignal.stub(:active? => true)
       end
 
       it "should call the original task" do
         expect( task ).to receive(:invoke_without_appsignal).with('foo')
+      end
+
+      it "should not create a transaction" do
+        expect( Appsignal::Transaction ).not_to receive(:create)
       end
 
       context "with an exception" do
@@ -69,6 +77,14 @@ describe "Rack integration" do
 
         it "should add the exception to the transaction" do
           expect( transaction ).to receive(:set_error).with(exception)
+        end
+
+        it "should call complete! on the transaction" do
+          expect( transaction ).to receive(:complete!)
+        end
+
+        it "should stop appsignal" do
+          expect( Appsignal ).to receive(:stop)
         end
       end
     end

@@ -15,9 +15,12 @@ module Appsignal
     def load_integrations
       require 'appsignal/integrations/celluloid'
       require 'appsignal/integrations/delayed_job'
+      require 'appsignal/integrations/passenger'
+      require 'appsignal/integrations/puma'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
       require 'appsignal/integrations/sequel'
+      require 'appsignal/integrations/unicorn'
     end
 
     def load_instrumentations
@@ -73,13 +76,14 @@ module Appsignal
       Appsignal::Extension.stop
     end
 
+    # Wrap a transaction with appsignal monitoring.
     def monitor_transaction(name, env={})
       unless active?
         yield
         return
       end
 
-       if name.start_with?('perform_job'.freeze)
+      if name.start_with?('perform_job'.freeze)
         namespace = Appsignal::Transaction::BACKGROUND_JOB
         request   = Appsignal::Transaction::GenericRequest.new(env)
       elsif name.start_with?('process_action'.freeze)
@@ -105,6 +109,17 @@ module Appsignal
         transaction.set_http_or_background_queue_start
         Appsignal::Transaction.complete_current!
       end
+    end
+
+    # Monitor a transaction, stop Appsignal and wait for this single transaction to be
+    # flushed.
+    #
+    # Useful for cases such as Rake tasks and Resque-like systems where a process is
+    # forked and immediately exits after the transaction finishes.
+    def monitor_single_transaction(name, env={}, &block)
+      monitor_transaction(name, env, &block)
+    ensure
+      stop
     end
 
     def listen_for_error(&block)
