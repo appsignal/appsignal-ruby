@@ -16,6 +16,7 @@ module Appsignal
       require 'appsignal/integrations/celluloid'
       require 'appsignal/integrations/delayed_job'
       require 'appsignal/integrations/passenger'
+      require 'appsignal/integrations/puma'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
       require 'appsignal/integrations/sequel'
