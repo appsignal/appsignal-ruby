@@ -14,17 +14,33 @@ describe "Puma integration" do
 
       def initialize
         @options = {}
-        @options[:before_worker_shutdown] = []
       end
     end
   end
   before do
-    load file
     start_agent
   end
 
-  it "should add a before shutdown worker callback" do
-    Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
+  context "with a nil before worker shutdown" do
+    before do
+      Puma.cli_config.options.delete(:before_worker_shutdown)
+      load file
+    end
+
+    it "should add a before shutdown worker callback" do
+      Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
+    end
+  end
+
+  context "with an existing before worker shutdown" do
+    before do
+      Puma.cli_config.options[:before_worker_shutdown] = []
+      load file
+    end
+
+    it "should add a before shutdown worker callback" do
+      Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
+    end
   end
 
   context "without Puma" do
