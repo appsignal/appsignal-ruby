@@ -81,8 +81,7 @@ module Appsignal
     # Wrap a transaction with appsignal monitoring.
     def monitor_transaction(name, env={})
       unless active?
-        yield
-        return
+        return yield
       end
 
       if name.start_with?('perform_job'.freeze)

@@ -210,12 +210,12 @@ describe Appsignal do
         Appsignal::Transaction.should_not_receive(:create)
         ActiveSupport::Notifications.should_not_receive(:instrument)
         object = double
-        object.should_receive(:some_method)
+        object.should_receive(:some_method).and_return(1)
 
         lambda {
           Appsignal.monitor_transaction('perform_job.nothing') do
             object.some_method
-          end
+          end.should == 1
         }.should_not raise_error
       end
     end
@@ -270,7 +270,7 @@ describe Appsignal do
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
           object = double
-          object.should_receive(:some_method)
+          object.should_receive(:some_method).and_return(1)
 
           Appsignal.monitor_transaction(
             'perform_job.something',
@@ -280,7 +280,7 @@ describe Appsignal do
             current.namespace.should == Appsignal::Transaction::BACKGROUND_JOB
             current.request.should be_a(Appsignal::Transaction::GenericRequest)
             object.some_method
-          end
+          end.should == 1
         end
 
         it "should instrument and complete for a http request" do
