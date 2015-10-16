@@ -381,23 +381,38 @@ describe Appsignal do
 
     describe "custom stats" do
       describe ".set_gauge" do
-        it "should call set_gauge on the extension" do
+        it "should call set_gauge on the extension with a float" do
           Appsignal::Extension.should_receive(:set_gauge).with('key', 0.1)
           Appsignal.set_gauge('key', 0.1)
+        end
+
+        it "should call set_gauge on the extension with an int" do
+          Appsignal::Extension.should_receive(:set_gauge).with('key', 1.0)
+          Appsignal.set_gauge('key', 1)
         end
       end
 
       describe ".set_host_gauge" do
-        it "should call set_host_gauge on the extension" do
+        it "should call set_host_gauge on the extension with a float" do
           Appsignal::Extension.should_receive(:set_host_gauge).with('key', 0.1)
           Appsignal.set_host_gauge('key', 0.1)
+        end
+
+        it "should call set_host_gauge on the extension with an int" do
+          Appsignal::Extension.should_receive(:set_host_gauge).with('key', 1.0)
+          Appsignal.set_host_gauge('key', 1)
         end
       end
 
       describe ".set_process_gauge" do
-        it "should call set_process_gauge on the extension" do
+        it "should call set_process_gauge on the extension with a float" do
           Appsignal::Extension.should_receive(:set_process_gauge).with('key', 0.1)
           Appsignal.set_process_gauge('key', 0.1)
+        end
+
+        it "should call set_process_gauge on the extension with an int" do
+          Appsignal::Extension.should_receive(:set_process_gauge).with('key', 1.0)
+          Appsignal.set_process_gauge('key', 1)
         end
       end
 
@@ -409,9 +424,14 @@ describe Appsignal do
       end
 
       describe ".add_distribution_value" do
-        it "should call increment_counter on the extension" do
+        it "should call add_distribution_value on the extension with a float" do
           Appsignal::Extension.should_receive(:add_distribution_value).with('key', 0.1)
           Appsignal.add_distribution_value('key', 0.1)
+        end
+
+        it "should call add_distribution_value on the extension with an int" do
+          Appsignal::Extension.should_receive(:add_distribution_value).with('key', 1.0)
+          Appsignal.add_distribution_value('key', 1)
         end
       end
     end

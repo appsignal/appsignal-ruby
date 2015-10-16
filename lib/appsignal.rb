@@ -167,15 +167,15 @@ module Appsignal
     alias :tag_job :tag_request
 
     def set_gauge(key, value)
-      Appsignal::Extension.set_gauge(key, value)
+      Appsignal::Extension.set_gauge(key, value.to_f)
     end
 
     def set_host_gauge(key, value)
-      Appsignal::Extension.set_host_gauge(key, value)
+      Appsignal::Extension.set_host_gauge(key, value.to_f)
     end
 
     def set_process_gauge(key, value)
-      Appsignal::Extension.set_process_gauge(key, value)
+      Appsignal::Extension.set_process_gauge(key, value.to_f)
     end
 
     def increment_counter(key, value)
@@ -183,7 +183,7 @@ module Appsignal
     end
 
     def add_distribution_value(key, value)
-      Appsignal::Extension.add_distribution_value(key, value)
+      Appsignal::Extension.add_distribution_value(key, value.to_f)
     end
 
     def logger
