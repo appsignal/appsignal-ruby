@@ -50,7 +50,9 @@ describe Appsignal::Transmitter do
       end
 
       it "should instantiate a new ZippedPayload" do
-        expect( Appsignal::ZippedPayload ).to receive(:new).and_return(payload)
+        expect( Appsignal::ZippedPayload ).to receive(:new).with({'the' => 'payload'})
+                                                           .and_return(payload)
+                                                           .at_least(:once)
         instance.transmit({'the' => 'payload'})
       end
     end
