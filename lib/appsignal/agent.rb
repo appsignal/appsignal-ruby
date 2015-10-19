@@ -68,7 +68,9 @@ module Appsignal
       Appsignal.logger.debug('Subscribing to notifications')
       # Subscribe to notifications that don't start with a !
       @subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
-        if Appsignal::Transaction.current
+        # Some people abuse the notification system and send their own data over it
+        # (looking at you, active_admin), make sure we only process valid events.
+        if Appsignal::Transaction.current && args.length == 5
           event = Appsignal::Event.event_for_instrumentation(*args)
           if event.name.start_with?('process_action')
             Appsignal::Transaction.current.set_process_action_event(event)

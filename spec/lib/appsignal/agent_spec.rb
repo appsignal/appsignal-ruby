@@ -180,6 +180,12 @@ describe Appsignal::Agent do
         ActiveSupport::Notifications.instrument '!render_template'
       end
 
+      it "should ignore events that do not confirm to the event spec" do
+        Appsignal::Transaction.current.should_not_receive(:add_event)
+
+        ActiveSupport::Notifications.publish 'borked', 'foo'
+      end
+
       it "should add a normal event" do
         Appsignal::Transaction.current.should_not_receive(:set_process_action_event)
         Appsignal::Transaction.current.should_receive(:add_event).with(
