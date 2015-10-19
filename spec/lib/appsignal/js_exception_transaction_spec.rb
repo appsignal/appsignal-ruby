@@ -8,7 +8,8 @@ describe Appsignal::JSExceptionTransaction do
       'message'     => 'foo is not a valid method',
       'action'      => 'ExceptionIncidentComponent',
       'path'        => 'foo.bar/moo',
-      'environment' => 'development',
+      'environment' => {"user_agent" => "Mozilla/5.0"},
+      'tags'        => {"intercom_user_id" => "abc123"},
       'backtrace'   => [
         'foo.bar/js:11:1',
         'foo.bar/js:22:2',
@@ -64,7 +65,8 @@ describe Appsignal::JSExceptionTransaction do
           :path        => 'foo.bar/moo',
           :kind        => 'frontend',
           :time        => 123,
-          :environment => 'development',
+          :environment => {"user_agent" => "Mozilla/5.0"},
+          :tags        => {"intercom_user_id" => "abc123"},
           :revision    => 'abcdef'
         },
         :exception => {

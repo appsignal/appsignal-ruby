@@ -27,6 +27,7 @@ module Appsignal
           :kind        => 'frontend',
           :time        => @time,
           :environment => @data['environment'],
+          :tags        => @data['tags'],
           :revision    => Appsignal.agent.revision
         },
         :exception => {
