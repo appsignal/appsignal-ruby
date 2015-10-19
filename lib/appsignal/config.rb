@@ -1,5 +1,6 @@
 require 'erb'
 require 'yaml'
+require 'uri'
 require 'appsignal/integrations/capistrano/careful_logger'
 
 module Appsignal
@@ -161,6 +162,11 @@ module Appsignal
     end
 
     def validate
+      # Strip path from endpoint so we're backwards compatible with
+      # earlier versions of the gem.
+      endpoint_uri = URI(config_hash[:endpoint])
+      config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
+
       if config_hash[:push_api_key]
         @valid = true
       else

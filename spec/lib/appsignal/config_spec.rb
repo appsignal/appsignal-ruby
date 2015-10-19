@@ -33,6 +33,14 @@ describe Appsignal::Config do
       }
     end
 
+    context "when there is a pre 0.12 style endpoint" do
+      let(:config) { project_fixture_config('production', :endpoint => 'https://push.appsignal.com/1') }
+
+      it "should strip the path" do
+        subject[:endpoint].should == 'https://push.appsignal.com'
+      end
+    end
+
     describe "#[]" do
       it "should get the value for an existing key" do
         subject[:push_api_key].should == 'abc'
