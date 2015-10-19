@@ -165,7 +165,11 @@ module Appsignal
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.
       endpoint_uri = URI(config_hash[:endpoint])
-      config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
+      if endpoint_uri.port == 443
+        config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
+      else
+        config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}:#{endpoint_uri.port}"
+      end
 
       if config_hash[:push_api_key]
         @valid = true

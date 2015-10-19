@@ -41,6 +41,14 @@ describe Appsignal::Config do
       end
     end
 
+    context "when there is an endpoint with a non-standard port" do
+      let(:config) { project_fixture_config('production', :endpoint => 'http://localhost:4567') }
+
+      it "should keep the port" do
+        subject[:endpoint].should == 'http://localhost:4567'
+      end
+    end
+
     describe "#[]" do
       it "should get the value for an existing key" do
         subject[:push_api_key].should == 'abc'
