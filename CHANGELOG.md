@@ -1,3 +1,6 @@
+# 0.11.17
+* Fix for bug using rack request in `send_exception`
+
 # 0.11.16
 * Send tags passed to the frontend error catcher
 * Fix issue with ActiveAdmin sending incompatible instrumentation events
