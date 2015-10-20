@@ -106,7 +106,7 @@ module Appsignal
         logger.error('Can\'t send exception, given value is not an exception')
         return
       end
-      transaction = Appsignal::Transaction.create(SecureRandom.uuid, ENV)
+      transaction = Appsignal::Transaction.create(SecureRandom.uuid, nil)
       transaction.add_exception(exception)
       transaction.set_tags(tags) if tags
       transaction.complete!
