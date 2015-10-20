@@ -77,6 +77,12 @@ describe Appsignal::Transaction do
       subject { transaction.request }
 
       it { should be_a ::Rack::Request }
+
+      context "without env" do
+        let(:env) { nil }
+
+        it { should be_nil }
+      end
     end
 
     describe '#set_process_action_event' do
@@ -730,6 +736,18 @@ describe Appsignal::Transaction do
       context "when skipping session data" do
         before do
           Appsignal.config = {:skip_session_data => true}
+        end
+
+        it "does not pass the session data into the params sanitizer" do
+          Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+          subject
+          transaction.sanitized_session_data.should == {}
+        end
+      end
+
+      context "without a request" do
+        before do
+          transaction.stub(:request => nil)
         end
 
         it "does not pass the session data into the params sanitizer" do

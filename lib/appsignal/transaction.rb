@@ -60,7 +60,7 @@ module Appsignal
     end
 
     def request
-      ::Rack::Request.new(@env)
+      ::Rack::Request.new(@env) if @env
     end
 
     def set_tags(given_tags={})
@@ -244,6 +244,7 @@ module Appsignal
     end
 
     def sanitize_session_data!
+      return unless request
       @sanitized_session_data = Appsignal::ParamsSanitizer.sanitize(
         request.session.to_hash
       ) if Appsignal.config[:skip_session_data] == false
