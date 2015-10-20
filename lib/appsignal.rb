@@ -20,6 +20,7 @@ module Appsignal
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
       require 'appsignal/integrations/sequel'
+      require 'appsignal/integrations/que'
     end
 
     def load_instrumentations
