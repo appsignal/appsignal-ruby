@@ -16,33 +16,31 @@ module Appsignal
       end
 
       def call_with_appsignal_monitoring(env)
-        transaction = Appsignal::Transaction.create(SecureRandom.uuid, env)
-        streaming   = false
+        request = ::Rack::Request.new(env)
+        transaction = Appsignal::Transaction.create(
+          SecureRandom.uuid,
+          Appsignal::Transaction::HTTP_REQUEST,
+          request
+        )
 
         # Instrument a `process_action`, to set params/action name
-        status, headers, body = ActiveSupport::Notifications
-          .instrument('process_action.rack', raw_payload(env)) do |payload|
-          begin
-            @app.call(env)
-          rescue Exception => e
-            transaction.add_exception(e); raise e;
-          ensure
-            payload[:action] = env['appsignal.action']
+        status, headers, body =
+          ActiveSupport::Notifications.instrument('process_action.rack') do
+            begin
+              @app.call(env)
+            rescue Exception => e
+              transaction.set_error(e)
+              raise e
+            ensure
+              transaction.set_action(env['appsignal.action'])
+              transaction.set_metadata('path', request.path)
+              transaction.set_metadata('method', request.request_method)
+              transaction.set_http_or_background_queue_start
+            end
           end
-        end
 
         # Wrap the result body with our StreamWrapper
         [status, headers, StreamWrapper.new(body, transaction)]
-      end
-
-      def raw_payload(env)
-        request = ::Rack::Request.new(env)
-        {
-          :params  => request.params,
-          :session => request.session,
-          :method  => request.request_method,
-          :path    => request.path
-        }
       end
     end
   end
@@ -56,15 +54,15 @@ module Appsignal
     def each
       @stream.each { |c| yield(c) }
     rescue Exception => e
-      @transaction.add_exception(e); raise e
+      @transaction.set_error(e); raise e
     end
 
     def close
       @stream.close if @stream.respond_to?(:close)
     rescue Exception => e
-      @transaction.add_exception(e); raise e
+      @transaction.set_error(e); raise e
     ensure
-      @transaction.complete!
+      Appsignal::Transaction.complete_current!
     end
   end
 end

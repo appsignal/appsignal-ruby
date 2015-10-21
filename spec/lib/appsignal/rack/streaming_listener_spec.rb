@@ -3,7 +3,14 @@ require 'appsignal/rack/streaming_listener'
 
 describe Appsignal::Rack::StreamingListener do
   let(:headers)  { {} }
-  let(:env)      { {} }
+  let(:env) do
+    {
+      'rack.input'     => StringIO.new,
+      'REQUEST_METHOD' => 'GET',
+      'PATH_INFO'      => '/homepage',
+      'QUERY_STRING'   => 'param=something'
+    }
+  end
   let(:app)      { double(:call => [200, headers, 'body']) }
   let(:listener) { Appsignal::Rack::StreamingListener.new(app, {}) }
 
@@ -28,9 +35,15 @@ describe Appsignal::Rack::StreamingListener do
   end
 
   describe "#call_with_appsignal_monitoring" do
-    let!(:transaction) { Appsignal::Transaction.create(SecureRandom.uuid, env) }
-    let(:wrapper)      { Appsignal::StreamWrapper.new('body', transaction) }
-    let(:raw_payload)  { {:foo => :bar} }
+    let!(:transaction) do
+      Appsignal::Transaction.create(
+        SecureRandom.uuid,
+        Appsignal::Transaction::HTTP_REQUEST,
+        ::Rack::Request.new(env)
+      )
+    end
+    let(:wrapper)     { Appsignal::StreamWrapper.new('body', transaction) }
+    let(:raw_payload) { {:foo => :bar} }
 
     before do
       SecureRandom.stub(:uuid => '123')
@@ -40,7 +53,7 @@ describe Appsignal::Rack::StreamingListener do
 
     it "should create a transaction" do
       expect( Appsignal::Transaction ).to receive(:create)
-        .with('123', env)
+        .with('123', Appsignal::Transaction::HTTP_REQUEST, instance_of(Rack::Request))
         .and_return(transaction)
 
       listener.call_with_appsignal_monitoring(env)
@@ -48,27 +61,37 @@ describe Appsignal::Rack::StreamingListener do
 
     it "should instrument the call" do
       expect( ActiveSupport::Notifications ).to receive(:instrument)
-        .with('process_action.rack', raw_payload)
-        .and_yield(raw_payload)
+        .with('process_action.rack')
+        .and_yield
 
       listener.call_with_appsignal_monitoring(env)
     end
 
-    it "should add `appsignal.action` to the payload" do
-      allow( ActiveSupport::Notifications ).to receive(:instrument)
-        .and_yield(raw_payload)
+    it "should add `appsignal.action` to the transaction" do
+      allow( ActiveSupport::Notifications ).to receive(:instrument).and_yield
 
       env['appsignal.action'] = 'Action'
-      listener.call_with_appsignal_monitoring(env)
 
-      expect( raw_payload ).to eql({:foo => :bar, :action => 'Action'})
+      expect( transaction ).to receive(:set_action).with('Action')
+
+      listener.call_with_appsignal_monitoring(env)
+    end
+
+    it "should add the path, method and queue start to the transaction" do
+      allow( ActiveSupport::Notifications ).to receive(:instrument).and_yield
+
+      expect( transaction ).to receive(:set_metadata).with('path', '/homepage')
+      expect( transaction ).to receive(:set_metadata).with('method', 'GET')
+      expect( transaction ).to receive(:set_http_or_background_queue_start)
+
+      listener.call_with_appsignal_monitoring(env)
     end
 
     context "with an exception in the instrumentation call" do
       it "should add the exception to the transaction" do
         allow( app ).to receive(:call).and_raise(VerySpecificError.new('broken'))
 
-        expect( transaction ).to receive(:add_exception)
+        expect( transaction ).to receive(:set_error)
 
         listener.call_with_appsignal_monitoring(env) rescue VerySpecificError
       end
@@ -79,37 +102,17 @@ describe Appsignal::Rack::StreamingListener do
         .with('body', transaction)
         .and_return(wrapper)
 
-      status, headers, body = listener.call_with_appsignal_monitoring(env)
+      body = listener.call_with_appsignal_monitoring(env)[2]
 
       expect( body ).to be_a(Appsignal::StreamWrapper)
-    end
-  end
-
-  describe "#raw_payload" do
-    let(:env) do
-      {
-        'rack.input'     => StringIO.new,
-        'REQUEST_METHOD' => 'GET',
-        'PATH_INFO'      => '/homepage',
-        'QUERY_STRING'   => 'param=something'
-      }
-    end
-
-    it "should return an Appsignal compatible playload" do
-      expect( listener.raw_payload(env) ).to eql({
-        :params   => {'param' => 'something'},
-        :session  => {},
-        :method   => 'GET',
-        :path     => '/homepage'
-      })
     end
   end
 end
 
 describe Appsignal::StreamWrapper do
-  let(:stream)       { double }
-  let(:transaction)  { Appsignal::Transaction.create(SecureRandom.uuid, {}) }
-  let(:wrapper)      { Appsignal::StreamWrapper.new(stream, transaction) }
+  let(:stream)      { double }
+  let(:transaction) { Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {}) }
+  let(:wrapper)     { Appsignal::StreamWrapper.new(stream, transaction) }
 
   describe "#each" do
     it "should call the original stream" do
@@ -123,7 +126,7 @@ describe Appsignal::StreamWrapper do
         allow( stream ).to receive(:each)
           .and_raise(VerySpecificError.new('broken'))
 
-        expect( transaction ).to receive(:add_exception)
+        expect( transaction ).to receive(:set_error)
 
         wrapper.send(:each) rescue VerySpecificError
       end
@@ -133,7 +136,7 @@ describe Appsignal::StreamWrapper do
   describe "#close" do
     it "should call the original stream and close the transaction" do
       expect( stream ).to receive(:close)
-      expect( transaction ).to receive(:complete!)
+      expect( Appsignal::Transaction ).to receive(:complete_current!)
 
       wrapper.close
     end
@@ -143,8 +146,8 @@ describe Appsignal::StreamWrapper do
         allow( stream ).to receive(:close)
           .and_raise(VerySpecificError.new('broken'))
 
-        expect( transaction ).to receive(:add_exception)
-        expect( transaction ).to receive(:complete!)
+        expect( transaction ).to receive(:set_error)
+        expect( Appsignal::Transaction ).to receive(:complete_current!)
 
         wrapper.send(:close) rescue VerySpecificError
       end
