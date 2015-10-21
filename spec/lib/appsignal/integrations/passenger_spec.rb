@@ -7,7 +7,8 @@ describe "Passenger integration" do
     end
   end
 
-  it "adds behavior to stopping_worker_process" do
+  it "adds behavior to stopping_worker_process and starting_worker_process" do
+    PhusionPassenger.should_receive(:on_event).with(:starting_worker_process)
     PhusionPassenger.should_receive(:on_event).with(:stopping_worker_process)
     load file
   end

@@ -162,6 +162,15 @@ describe Appsignal do
     end
   end
 
+  describe ".forked" do
+    it "should resubscribe and start the extension" do
+      Appsignal::Extension.should_receive(:start)
+      Appsignal::Subscriber.should_receive(:new)
+
+      Appsignal.forked
+    end
+  end
+
   describe ".stop" do
     it "should call stop on the extension" do
       Appsignal::Extension.should_receive(:stop)

@@ -78,6 +78,12 @@ module Appsignal
       Appsignal::Extension.stop
     end
 
+    def forked
+      logger.debug('Forked process, resubscribing and restarting extension')
+      Appsignal::Extension.start
+      @subscriber = Appsignal::Subscriber.new
+    end
+
     # Wrap a transaction with appsignal monitoring.
     def monitor_transaction(name, env={})
       unless active?
