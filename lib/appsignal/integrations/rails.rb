@@ -11,15 +11,16 @@ if defined?(::Rails)
         end
 
         def self.initialize_appsignal(app)
-          # Start logger
-          Appsignal.start_logger(Rails.root.join('log'))
-
           # Load config
           Appsignal.config = Appsignal::Config.new(
             Rails.root,
             ENV.fetch('APPSIGNAL_APP_ENV', Rails.env),
-            :name => Rails.application.class.parent_name
+            :name => Rails.application.class.parent_name,
+            :log_file_path => Rails.root.join('log/appsignal.log')
           )
+
+          # Start logger
+          Appsignal.start_logger
 
           app.middleware.insert_before(
             ActionDispatch::RemoteIp,

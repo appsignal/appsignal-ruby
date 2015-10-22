@@ -206,11 +206,12 @@ module Appsignal
         end
     end
 
-    def start_logger(path)
+    def start_logger(path_arg=nil)
+      path = Appsignal.config ? Appsignal.config[:log_file_path] : nil
       if path && File.writable?(path) &&
          !ENV['DYNO'] &&
          !ENV['SHELLYCLOUD_DEPLOYMENT']
-        @logger = Logger.new(File.join(path, 'appsignal.log'))
+        @logger = Logger.new(path)
         @logger.formatter = log_formatter
       else
         @logger = Logger.new($stdout)
@@ -220,6 +221,10 @@ module Appsignal
       end
       @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
+
+      if path_arg
+        @logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
+      end
     end
 
     def extension_loaded?

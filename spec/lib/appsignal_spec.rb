@@ -5,9 +5,7 @@ describe Appsignal do
   before do
     # Make sure we have a clean state because we want to test
     # initialization here.
-    Appsignal.agent.shutdown if Appsignal.agent
     Appsignal.config = nil
-    Appsignal.agent = nil
     Appsignal.extensions.clear
   end
 
@@ -453,68 +451,75 @@ describe Appsignal do
 
     describe ".start_logger" do
       let(:out_stream) { StringIO.new }
+      let(:path) { File.join(project_fixture_path, 'log') }
       let(:log_file) { File.join(path, 'appsignal.log') }
+
       before do
         @original_stdout = $stdout
         $stdout = out_stream
         Appsignal.logger.error('Log something')
+        Appsignal.config = project_fixture_config(
+          'production',
+          :log_file_path => log_file
+        )
       end
       after do
         $stdout = @original_stdout
       end
 
       context "when the log path is writable" do
-        let(:path) { File.join(project_fixture_path, 'log') }
-        before { Appsignal.start_logger(path) }
-
         it "should log to file" do
+          Appsignal.start_logger
+          Appsignal.logger.error('Log to file')
           File.exists?(log_file).should be_true
+          File.open(log_file).read.should include 'Log to file'
           File.open(log_file).read.should include 'Log something'
         end
       end
 
       context "when the log path is not writable" do
         let(:path) { '/nonsense/log' }
-        before { Appsignal.start_logger(path) }
 
         it "should log to stdout" do
+          Appsignal.start_logger
           Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
+          out_stream.string.should include 'Log something'
         end
       end
 
       context "when we're on Heroku" do
-        let(:path) { File.join(project_fixture_path, 'log') }
         before do
           ENV['DYNO'] = 'dyno1'
-          Appsignal.start_logger(path)
         end
         after { ENV.delete('DYNO') }
 
         it "should log to stdout" do
+          Appsignal.start_logger
           Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
+          out_stream.string.should include 'Log something'
         end
       end
 
       context "when we're on Shelly Cloud" do
-        let(:path) { File.join(project_fixture_path, 'log') }
         before do
           ENV['SHELLYCLOUD_DEPLOYMENT'] = 'true'
-          Appsignal.start_logger(path)
         end
         after { ENV.delete('SHELLYCLOUD_DEPLOYMENT') }
 
         it "should log to stdout" do
+          Appsignal.start_logger
           Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
+          out_stream.string.should include 'Log something'
         end
       end
 
       context "when there is no in memory log" do
         it "should not crash" do
           Appsignal.in_memory_log = nil
-          Appsignal.start_logger(nil)
+          Appsignal.start_logger
         end
       end
     end
