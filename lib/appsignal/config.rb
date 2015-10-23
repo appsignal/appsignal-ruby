@@ -28,6 +28,7 @@ module Appsignal
       'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
       'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
       'APPSIGNAL_DEBUG'                          => :debug,
+      'APPSIGNAL_LOG_FILE_PATH'                  => :log_file_path,
       'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
       'APPSIGNAL_SKIP_SESSION_DATA'              => :skip_session_data,
       'APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING' => :enable_frontend_error_catching,
@@ -81,6 +82,7 @@ module Appsignal
       ENV['APPSIGNAL_ENVIRONMENT']       = env
       ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::Extension.agent_version
       ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
+      ENV['APPSIGNAL_LOG_FILE_PATH']     = config_hash[:log_file_path].to_s if config_hash[:log_file_path]
       ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
@@ -127,7 +129,7 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_FILE_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end

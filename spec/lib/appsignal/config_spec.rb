@@ -63,6 +63,7 @@ describe Appsignal::Config do
       before do
         subject.config_hash[:http_proxy]     = 'http://localhost'
         subject.config_hash[:ignore_actions] = ['action1', 'action2']
+        subject.config_hash[:log_file_path]  = '/var/log/appsignal.log'
         subject.write_to_environment
       end
 
@@ -71,6 +72,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
         ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
+        ENV['APPSIGNAL_LOG_FILE_PATH'].should     == '/var/log/appsignal.log'
         ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
         ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'

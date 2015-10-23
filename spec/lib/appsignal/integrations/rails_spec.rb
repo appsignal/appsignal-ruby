@@ -28,9 +28,10 @@ if rails_present?
 
         it { should be_a(Appsignal::Config) }
 
-        its(:root_path) { should == Pathname.new(project_fixture_path) }
-        its(:env)       { should == 'test' }
-        its([:name])    { should == 'TestApp' }
+        its(:root_path)       { should == Pathname.new(project_fixture_path) }
+        its(:env)             { should == 'test' }
+        its([:name])          { should == 'TestApp' }
+        its([:log_file_path]) { should == Pathname.new(File.join(project_fixture_path, 'log/appsignal.log')) }
 
         context "initial config" do
           before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
