@@ -68,18 +68,19 @@ describe Appsignal::Config do
       end
 
       it "should write the current config to env vars" do
-        ENV['APPSIGNAL_ACTIVE'].should            == 'true'
-        ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
-        ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
-        ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
-        ENV['APPSIGNAL_LOG_FILE_PATH'].should     == '/var/log/appsignal.log'
-        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
-        ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
-        ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
-        ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
-        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::Extension.agent_version
-        ENV['APPSIGNAL_HTTP_PROXY'].should        == 'http://localhost'
-        ENV['APPSIGNAL_IGNORE_ACTIONS'].should    == 'action1,action2'
+        ENV['APPSIGNAL_ACTIVE'].should                       == 'true'
+        ENV['APPSIGNAL_APP_PATH'].should                     end_with('spec/support/project_fixture')
+        ENV['APPSIGNAL_AGENT_PATH'].should                   end_with('/ext')
+        ENV['APPSIGNAL_DEBUG_LOGGING'].should                == 'false'
+        ENV['APPSIGNAL_LOG_FILE_PATH'].should                == '/var/log/appsignal.log'
+        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            == 'https://push.appsignal.com'
+        ENV['APPSIGNAL_PUSH_API_KEY'].should                 == 'abc'
+        ENV['APPSIGNAL_APP_NAME'].should                     == 'TestApp'
+        ENV['APPSIGNAL_ENVIRONMENT'].should                  == 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should                == Appsignal::Extension.agent_version
+        ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should == Appsignal::VERSION
+        ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
+        ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
       end
     end
 

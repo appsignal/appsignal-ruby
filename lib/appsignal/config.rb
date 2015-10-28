@@ -76,18 +76,19 @@ module Appsignal
     end
 
     def write_to_environment
-      ENV['APPSIGNAL_ACTIVE']            = active?.to_s
-      ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
-      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
-      ENV['APPSIGNAL_ENVIRONMENT']       = env
-      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::Extension.agent_version
-      ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
-      ENV['APPSIGNAL_LOG_FILE_PATH']     = config_hash[:log_file_path].to_s if config_hash[:log_file_path]
-      ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
-      ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
-      ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
-      ENV['APPSIGNAL_HTTP_PROXY']        = config_hash[:http_proxy]
-      ENV['APPSIGNAL_IGNORE_ACTIONS']    = config_hash[:ignore_actions].join(',')
+      ENV['APPSIGNAL_ACTIVE']                       = active?.to_s
+      ENV['APPSIGNAL_APP_PATH']                     = root_path.to_s
+      ENV['APPSIGNAL_AGENT_PATH']                   = File.expand_path('../../../ext', __FILE__).to_s
+      ENV['APPSIGNAL_ENVIRONMENT']                  = env
+      ENV['APPSIGNAL_AGENT_VERSION']                = Appsignal::Extension.agent_version
+      ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'] = Appsignal::VERSION
+      ENV['APPSIGNAL_DEBUG_LOGGING']                = config_hash[:debug].to_s
+      ENV['APPSIGNAL_LOG_FILE_PATH']                = config_hash[:log_file_path].to_s if config_hash[:log_file_path]
+      ENV['APPSIGNAL_PUSH_API_ENDPOINT']            = config_hash[:endpoint]
+      ENV['APPSIGNAL_PUSH_API_KEY']                 = config_hash[:push_api_key]
+      ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
+      ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
+      ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
     end
 
     protected
