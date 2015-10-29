@@ -137,6 +137,7 @@ describe Appsignal do
         it "should require integrations" do
           Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http').once
           Appsignal.should_receive(:require).with('appsignal/instrumentations/redis').once
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/sequel').once
         end
       end
 
@@ -150,6 +151,7 @@ describe Appsignal do
         it "should require integrations" do
           Appsignal.should_not_receive(:require).with('appsignal/instrumentations/net_http')
           Appsignal.should_not_receive(:require).with('appsignal/instrumentations/redis')
+          Appsignal.should_not_receive(:require).with('appsignal/instrumentations/sequel')
         end
       end
 

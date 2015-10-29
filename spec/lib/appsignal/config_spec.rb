@@ -21,6 +21,7 @@ describe Appsignal::Config do
         :ignore_actions                 => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
+        :instrument_sequel              => true,
         :skip_session_data              => false,
         :send_params                    => true,
         :endpoint                       => 'https://push.appsignal.com',
