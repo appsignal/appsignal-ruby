@@ -6,10 +6,15 @@ if defined?(::Sequel)
       module Sequel
         # Add query instrumentation
         def log_yield(sql, args = nil)
-          name    = 'sql.sequel'
-          payload = {:sql => sql, :args => args}
 
-          ActiveSupport::Notifications.instrument(name, payload) { yield }
+          # We'd like to get full sql queries in the payloads as well. To do
+          # that we need to find out a way to ask Sequel which quoting strategy
+          # is used by the adapter. We can then do something similar to the AR
+          # formatter.
+
+          ActiveSupport::Notifications.instrument('sql.sequel') do
+            yield
+          end
         end
       end # Sequel
     end # Integrations

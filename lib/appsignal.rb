@@ -19,12 +19,13 @@ module Appsignal
       require 'appsignal/integrations/puma'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
-      require 'appsignal/integrations/sequel'
       require 'appsignal/integrations/unicorn'
     end
 
     def load_instrumentations
       require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
+      require 'appsignal/instrumentations/redis' if config[:instrument_redis]
+      require 'appsignal/instrumentations/sequel' if config[:instrument_sequel]
     end
 
     def extensions
@@ -127,6 +128,23 @@ module Appsignal
       monitor_transaction(name, env, &block)
     ensure
       stop
+    end
+
+    # Instrument a block of code.
+    #
+    # Convenience method to instrument a block of code without having to define a formatter.
+    # Give a name and optionally a title and body. It's very important that no dynamic data ends
+    # up in the title and body. If you have arguments that are different for every block you need
+    # to replace them with `?` characters for example.
+    def instrument(name, title=nil, body=nil)
+      ActiveSupport::Notifications.instrument(
+        name,
+        :title => title,
+        :body => body,
+        :appsignal_preformatted => true
+      ) do
+        yield if block_given?
+      end
     end
 
     def listen_for_error(&block)

@@ -16,10 +16,7 @@ describe "Net::HTTP instrumentation" do
 
     event = events.last
     event.name.should == 'request.net_http'
-    event.payload[:protocol].should == 'http'
-    event.payload[:domain].should == 'www.google.com'
-    event.payload[:path].should == '/'
-    event.payload[:method].should == 'GET'
+    event.payload[:title].should == 'GET http://www.google.com'
   end
 
   it "should generate an event for a https request" do
@@ -32,9 +29,6 @@ describe "Net::HTTP instrumentation" do
 
     event = events.last
     event.name.should == 'request.net_http'
-    event.payload[:protocol].should == 'https'
-    event.payload[:domain].should == 'www.google.com'
-    event.payload[:path].should == '/'
-    event.payload[:method].should == 'GET'
+    event.payload[:title].should == 'GET https://www.google.com'
   end
 end

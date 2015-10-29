@@ -131,19 +131,23 @@ describe Appsignal do
     describe ".load_instrumentations" do
       before { Appsignal.config = project_fixture_config }
 
-      context "Net::HTTP" do
-        context "if on in the config" do
-          it "should require net_http" do
-            Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http')
-          end
+      context "if on in the config" do
+        it "should require integrations" do
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http').once
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/redis').once
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/sequel').once
+        end
+      end
+
+      context "if off in the config" do
+        before do
+          Appsignal.config.config_hash[:instrument_net_http] = false
+          Appsignal.config.config_hash[:instrument_redis] = false
+          Appsignal.config.config_hash[:instrument_sequel] = false
         end
 
-        context "if off in the config" do
-          before { Appsignal.config.config_hash[:instrument_net_http] = false }
-
-          it "should not require net_http" do
-            Appsignal.should_not_receive(:require).with('appsignal/instrumentations/net_http')
-          end
+        it "should not require" do
+          Appsignal.should_not_receive(:require)
         end
       end
 
@@ -360,13 +364,44 @@ describe Appsignal do
       end
     end
 
+    describe ".instrument" do
+      context "with just a name" do
+        it "should instrument and return the value" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'operation.name',
+            :title => nil,
+            :body => nil,
+            :appsignal_preformatted => true
+          ).and_yield
+
+          Appsignal.instrument('operation.name') do
+            'result'
+          end.should == 'result'
+        end
+      end
+
+      context "with a name, title and body" do
+        it "should instrument and return the value" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'operation.name',
+            :title => 'title',
+            :body => 'body',
+            :appsignal_preformatted => true
+          ).and_yield
+
+          Appsignal.instrument('operation.name', 'title', 'body') do
+            'result'
+          end.should == 'result'
+        end
+      end
+    end
+
     describe ".tag_request" do
       before { Appsignal::Transaction.stub(:current => transaction) }
 
       context "with transaction" do
         let(:transaction) { double }
         it "should call set_tags on transaction" do
-
           transaction.should_receive(:set_tags).with({'a' => 'b'})
         end
 
