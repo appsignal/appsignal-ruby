@@ -132,8 +132,9 @@ describe Appsignal do
       before { Appsignal.config = project_fixture_config }
 
       context "if on in the config" do
-        it "should require net_http" do
+        it "should require integrations" do
           Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http').once
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/redis').once
           Appsignal.should_receive(:require).with('appsignal/instrumentations/sequel').once
         end
       end
@@ -141,6 +142,7 @@ describe Appsignal do
       context "if off in the config" do
         before do
           Appsignal.config.config_hash[:instrument_net_http] = false
+          Appsignal.config.config_hash[:instrument_redis] = false
           Appsignal.config.config_hash[:instrument_sequel] = false
         end
 

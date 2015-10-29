@@ -24,6 +24,7 @@ module Appsignal
 
     def load_instrumentations
       require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
+      require 'appsignal/instrumentations/redis' if config[:instrument_redis]
       require 'appsignal/instrumentations/sequel' if config[:instrument_sequel]
     end
 
