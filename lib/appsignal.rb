@@ -129,6 +129,23 @@ module Appsignal
       stop
     end
 
+    # Instrument a block of code.
+    #
+    # Convenience method to instrument a block of code without having to define a formatter.
+    # Give a name and optionally a title and body. It's very important that no dynamic data ends
+    # up in the title and body. If you have arguments that are different for every block you need
+    # to replace them with `?` characters for example.
+    def instrument(name, title=nil, body=nil)
+      ActiveSupport::Notifications.instrument(
+        name,
+        :title => title,
+        :body => body,
+        :appsignal_preformatted => true
+      ) do
+        yield if block_given?
+      end
+    end
+
     def listen_for_error(&block)
       yield
     rescue => error

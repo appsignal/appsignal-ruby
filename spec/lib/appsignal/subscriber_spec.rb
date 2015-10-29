@@ -1,5 +1,13 @@
 require 'spec_helper'
 
+class MockSubscriberFormatter < Appsignal::EventFormatter
+  register 'mock.category'
+
+  def format(payload)
+    [payload[:title], payload[:body]]
+  end
+end
+
 describe Appsignal::Subscriber do
   before :all do
     start_agent
@@ -100,16 +108,31 @@ describe Appsignal::Subscriber do
           Appsignal::Extension.should_receive(:start_event).once
           Appsignal::Extension.should_receive(:finish_event).with(
             kind_of(Integer),
-            'request.net_http',
-            'GET http://www.google.com',
-            ''
+            'mock.category',
+            'User load',
+            'select * from users'
           ).once
 
           ActiveSupport::Notifications.instrument(
+            'mock.category',
+            :title => 'User load',
+            :body  => 'select * from users'
+          )
+      end
+
+      it "should call finish with title and body if the event is preformatted" do
+          Appsignal::Extension.should_receive(:start_event).once
+          Appsignal::Extension.should_receive(:finish_event).with(
+            kind_of(Integer),
             'request.net_http',
-            :protocol => 'http',
-            :domain   => 'www.google.com',
-            :method   => 'GET'
+            'title',
+            'body'
+          ).once
+
+          Appsignal.instrument(
+            'request.net_http',
+            'title',
+            'body'
           )
       end
 

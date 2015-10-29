@@ -360,13 +360,44 @@ describe Appsignal do
       end
     end
 
+    describe ".instrument" do
+      context "with just a name" do
+        it "should instrument and return the value" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'operation.name',
+            :title => nil,
+            :body => nil,
+            :appsignal_preformatted => true
+          ).and_yield
+
+          Appsignal.instrument('operation.name') do
+            'result'
+          end.should == 'result'
+        end
+      end
+
+      context "with a name, title and body" do
+        it "should instrument and return the value" do
+          ActiveSupport::Notifications.should_receive(:instrument).with(
+            'operation.name',
+            :title => 'title',
+            :body => 'body',
+            :appsignal_preformatted => true
+          ).and_yield
+
+          Appsignal.instrument('operation.name', 'title', 'body') do
+            'result'
+          end.should == 'result'
+        end
+      end
+    end
+
     describe ".tag_request" do
       before { Appsignal::Transaction.stub(:current => transaction) }
 
       context "with transaction" do
         let(:transaction) { double }
         it "should call set_tags on transaction" do
-
           transaction.should_receive(:set_tags).with({'a' => 'b'})
         end
 
