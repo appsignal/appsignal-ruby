@@ -131,19 +131,21 @@ describe Appsignal do
     describe ".load_instrumentations" do
       before { Appsignal.config = project_fixture_config }
 
-      context "Net::HTTP" do
-        context "if on in the config" do
-          it "should require net_http" do
-            Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http')
-          end
+      context "if on in the config" do
+        it "should require net_http" do
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http').once
+          Appsignal.should_receive(:require).with('appsignal/instrumentations/sequel').once
+        end
+      end
+
+      context "if off in the config" do
+        before do
+          Appsignal.config.config_hash[:instrument_net_http] = false
+          Appsignal.config.config_hash[:instrument_sequel] = false
         end
 
-        context "if off in the config" do
-          before { Appsignal.config.config_hash[:instrument_net_http] = false }
-
-          it "should not require net_http" do
-            Appsignal.should_not_receive(:require).with('appsignal/instrumentations/net_http')
-          end
+        it "should not require" do
+          Appsignal.should_not_receive(:require)
         end
       end
 

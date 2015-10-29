@@ -19,12 +19,12 @@ module Appsignal
       require 'appsignal/integrations/puma'
       require 'appsignal/integrations/sidekiq'
       require 'appsignal/integrations/resque'
-      require 'appsignal/integrations/sequel'
       require 'appsignal/integrations/unicorn'
     end
 
     def load_instrumentations
       require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
+      require 'appsignal/instrumentations/sequel' if config[:instrument_sequel]
     end
 
     def extensions
