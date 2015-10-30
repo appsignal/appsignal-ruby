@@ -22,8 +22,9 @@ describe "extension loading and operation" do
       Appsignal.extension_loaded?.should be_true
     end
 
-    it "should have a start method" do
+    it "should have a start and stop method" do
       subject.start
+      subject.stop
     end
 
     context "with a valid config" do
@@ -31,8 +32,9 @@ describe "extension loading and operation" do
         project_fixture_config.write_to_environment
       end
 
-      it "should have a start method" do
+      it "should have a start and stop method" do
         subject.start
+        subject.stop
       end
 
       it "should have a start_transaction method" do

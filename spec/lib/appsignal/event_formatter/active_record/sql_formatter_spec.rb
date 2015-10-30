@@ -53,9 +53,9 @@ if active_record_present?
         before { formatter.stub(:adapter_uses_double_quoted_table_names => false) }
 
         context "single quoted data value" do
-          let(:sql) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret'" }
+          let(:sql) { "SELECT `table`.* FROM `table` WHERE `id` = 'secret' ORDER BY `table`.`id` ASC LIMIT 1" }
 
-          it { should == ['Model load', "SELECT `table`.* FROM `table` WHERE `id` = ?"] }
+          it { should == ['Model load', "SELECT `table`.* FROM `table` WHERE `id` = ? ORDER BY `table`.`id` ASC LIMIT ?"] }
 
           context "with escaped single quotes in the string" do
             let(:sql) { "`id` = 'this is a \'big\' secret'" }
@@ -101,9 +101,9 @@ if active_record_present?
         let(:connection_config) { {:adapter => 'postgresql'} }
 
         context "single quoted data value" do
-          let(:sql) { "SELECT \"table\".* FROM \"table\" WHERE \"id\" = 'secret'" }
+          let(:sql) { "SELECT \"table\".* FROM \"table\" WHERE \"id\" = 'secret' ORDER BY \"table\".\"id\" ASC LIMIT 1" }
 
-          it { should == ['Model load', "SELECT \"table\".* FROM \"table\" WHERE \"id\" = ?"] }
+          it { should == ['Model load', "SELECT \"table\".* FROM \"table\" WHERE \"id\" = ? ORDER BY \"table\".\"id\" ASC LIMIT ?"] }
 
           context "with an escaped single quote" do
             let(:sql) { "\"id\" = 'this is a \'big\' secret'" }

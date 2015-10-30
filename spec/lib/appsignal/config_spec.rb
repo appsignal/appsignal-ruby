@@ -35,6 +35,22 @@ describe Appsignal::Config do
       }
     end
 
+    context "when there is a pre 0.12 style endpoint" do
+      let(:config) { project_fixture_config('production', :endpoint => 'https://push.appsignal.com/1') }
+
+      it "should strip the path" do
+        subject[:endpoint].should == 'https://push.appsignal.com'
+      end
+    end
+
+    context "when there is an endpoint with a non-standard port" do
+      let(:config) { project_fixture_config('production', :endpoint => 'http://localhost:4567') }
+
+      it "should keep the port" do
+        subject[:endpoint].should == 'http://localhost:4567'
+      end
+    end
+
     describe "#[]" do
       it "should get the value for an existing key" do
         subject[:push_api_key].should == 'abc'
@@ -49,21 +65,24 @@ describe Appsignal::Config do
       before do
         subject.config_hash[:http_proxy]     = 'http://localhost'
         subject.config_hash[:ignore_actions] = ['action1', 'action2']
+        subject.config_hash[:log_file_path]  = '/var/log/appsignal.log'
         subject.write_to_environment
       end
 
       it "should write the current config to env vars" do
-        ENV['APPSIGNAL_ACTIVE'].should            == 'true'
-        ENV['APPSIGNAL_APP_PATH'].should          end_with('spec/support/project_fixture')
-        ENV['APPSIGNAL_AGENT_PATH'].should        end_with('/ext')
-        ENV['APPSIGNAL_DEBUG_LOGGING'].should     == 'false'
-        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should == 'https://push.appsignal.com'
-        ENV['APPSIGNAL_PUSH_API_KEY'].should      == 'abc'
-        ENV['APPSIGNAL_APP_NAME'].should          == 'TestApp'
-        ENV['APPSIGNAL_ENVIRONMENT'].should       == 'production'
-        ENV['APPSIGNAL_AGENT_VERSION'].should     == Appsignal::Extension.agent_version
-        ENV['APPSIGNAL_HTTP_PROXY'].should        == 'http://localhost'
-        ENV['APPSIGNAL_IGNORE_ACTIONS'].should    == 'action1,action2'
+        ENV['APPSIGNAL_ACTIVE'].should                       == 'true'
+        ENV['APPSIGNAL_APP_PATH'].should                     end_with('spec/support/project_fixture')
+        ENV['APPSIGNAL_AGENT_PATH'].should                   end_with('/ext')
+        ENV['APPSIGNAL_DEBUG_LOGGING'].should                == 'false'
+        ENV['APPSIGNAL_LOG_FILE_PATH'].should                == '/var/log/appsignal.log'
+        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            == 'https://push.appsignal.com'
+        ENV['APPSIGNAL_PUSH_API_KEY'].should                 == 'abc'
+        ENV['APPSIGNAL_APP_NAME'].should                     == 'TestApp'
+        ENV['APPSIGNAL_ENVIRONMENT'].should                  == 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should                == Appsignal::Extension.agent_version
+        ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should == Appsignal::VERSION
+        ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
+        ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
       end
     end
 

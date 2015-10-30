@@ -6,11 +6,11 @@ Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
 app_settings = ::Sinatra::Application.settings
 Appsignal.config = Appsignal::Config.new(
   app_settings.root,
-  app_settings.environment
+  app_settings.environment,
+  :log_file_path => File.join(app_settings.root, 'appsignal.log')
 )
 
-Appsignal.start_logger(app_settings.root)
-
+Appsignal.start_logger
 Appsignal.start
 
 if Appsignal.active?

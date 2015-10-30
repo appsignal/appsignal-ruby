@@ -4,11 +4,12 @@ module Appsignal
       class SqlFormatter < Appsignal::EventFormatter
         register 'sql.active_record'
 
-        SINGLE_QUOTED_STRING = /'(.?|[^'])*'/.freeze
-        DOUBLE_QUOTED_STRING = /"(.?|[^"])*"/.freeze
+        SINGLE_QUOTED_STRING = /'(.?|[^']).*'/.freeze
+        DOUBLE_QUOTED_STRING = /"(.?|[^"]).*"/.freeze
         IN_OPERATOR_CONTENT  = /(IN \()[^\)]+(\))/.freeze
         NUMERIC              = /\d*\.?\d+/.freeze
-        REPLACEMENT          = '\1?\2'.freeze
+        REPLACEMENT          = '?'.freeze
+        IN_REPLACEMENT       = '\1?\2'.freeze
         SCHEMA               = 'SCHEMA'.freeze
 
         attr_reader :adapter_uses_double_quoted_table_names
@@ -28,7 +29,7 @@ module Appsignal
             sql_string.gsub!(DOUBLE_QUOTED_STRING, REPLACEMENT)
           end
           sql_string.gsub!(SINGLE_QUOTED_STRING, REPLACEMENT)
-          sql_string.gsub!(IN_OPERATOR_CONTENT, REPLACEMENT)
+          sql_string.gsub!(IN_OPERATOR_CONTENT, IN_REPLACEMENT)
           sql_string.gsub!(NUMERIC, REPLACEMENT)
           [payload[:name], sql_string]
         end

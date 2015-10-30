@@ -1,5 +1,6 @@
 require 'erb'
 require 'yaml'
+require 'uri'
 require 'appsignal/integrations/capistrano/careful_logger'
 
 module Appsignal
@@ -29,6 +30,7 @@ module Appsignal
       'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
       'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
       'APPSIGNAL_DEBUG'                          => :debug,
+      'APPSIGNAL_LOG_FILE_PATH'                  => :log_file_path,
       'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
       'APPSIGNAL_INSTRUMENT_REDIS'               => :instrument_redis,
       'APPSIGNAL_INSTRUMENT_SEQUEL'              => :instrument_sequel,
@@ -78,17 +80,19 @@ module Appsignal
     end
 
     def write_to_environment
-      ENV['APPSIGNAL_ACTIVE']            = active?.to_s
-      ENV['APPSIGNAL_APP_PATH']          = root_path.to_s
-      ENV['APPSIGNAL_AGENT_PATH']        = File.expand_path('../../../ext', __FILE__).to_s
-      ENV['APPSIGNAL_ENVIRONMENT']       = env
-      ENV['APPSIGNAL_AGENT_VERSION']     = Appsignal::Extension.agent_version
-      ENV['APPSIGNAL_DEBUG_LOGGING']     = config_hash[:debug].to_s
-      ENV['APPSIGNAL_PUSH_API_ENDPOINT'] = config_hash[:endpoint]
-      ENV['APPSIGNAL_PUSH_API_KEY']      = config_hash[:push_api_key]
-      ENV['APPSIGNAL_APP_NAME']          = config_hash[:name]
-      ENV['APPSIGNAL_HTTP_PROXY']        = config_hash[:http_proxy]
-      ENV['APPSIGNAL_IGNORE_ACTIONS']    = config_hash[:ignore_actions].join(',')
+      ENV['APPSIGNAL_ACTIVE']                       = active?.to_s
+      ENV['APPSIGNAL_APP_PATH']                     = root_path.to_s
+      ENV['APPSIGNAL_AGENT_PATH']                   = File.expand_path('../../../ext', __FILE__).to_s
+      ENV['APPSIGNAL_ENVIRONMENT']                  = env
+      ENV['APPSIGNAL_AGENT_VERSION']                = Appsignal::Extension.agent_version
+      ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'] = Appsignal::VERSION
+      ENV['APPSIGNAL_DEBUG_LOGGING']                = config_hash[:debug].to_s
+      ENV['APPSIGNAL_LOG_FILE_PATH']                = config_hash[:log_file_path].to_s if config_hash[:log_file_path]
+      ENV['APPSIGNAL_PUSH_API_ENDPOINT']            = config_hash[:endpoint]
+      ENV['APPSIGNAL_PUSH_API_KEY']                 = config_hash[:push_api_key]
+      ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
+      ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
+      ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
     end
 
     protected
@@ -130,7 +134,7 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_FILE_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end
@@ -165,6 +169,15 @@ module Appsignal
     end
 
     def validate
+      # Strip path from endpoint so we're backwards compatible with
+      # earlier versions of the gem.
+      endpoint_uri = URI(config_hash[:endpoint])
+      if endpoint_uri.port == 443
+        config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
+      else
+        config_hash[:endpoint] = "#{endpoint_uri.scheme}://#{endpoint_uri.host}:#{endpoint_uri.port}"
+      end
+
       if config_hash[:push_api_key]
         @valid = true
       else
