@@ -85,6 +85,10 @@ module Appsignal
       @subscriber.resubscribe
     end
 
+    def get_server_state(key)
+      Appsignal::Extension::get_server_state(key)
+    end
+
     # Wrap a transaction with appsignal monitoring.
     def monitor_transaction(name, env={})
       unless active?

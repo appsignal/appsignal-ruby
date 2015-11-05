@@ -204,6 +204,18 @@ describe Appsignal do
     end
   end
 
+  describe ".get_server_state" do
+    it "should call server state on the extension" do
+      Appsignal::Extension.should_receive(:get_server_state).with('key')
+
+      Appsignal.get_server_state('key')
+    end
+
+    it "should get nil by default" do
+      Appsignal.get_server_state('key').should be_nil
+    end
+  end
+
   context "not active" do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do

@@ -17,6 +17,18 @@ static VALUE stop(VALUE self) {
   return Qnil;
 }
 
+static VALUE get_server_state(VALUE self, VALUE key) {
+  Check_Type(key, T_STRING);
+
+  char * ptr = appsignal_get_server_state(StringValueCStr(key));
+
+  if (ptr) {
+    return rb_str_new2(ptr);
+  } else {
+    return Qnil;
+  }
+}
+
 static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace) {
   appsignal_transaction* transaction;
 
@@ -242,6 +254,9 @@ void Init_appsignal_extension(void) {
   // Starting and stopping
   rb_define_singleton_method(Extension, "start", start, 0);
   rb_define_singleton_method(Extension, "stop",  stop,  0);
+
+  // Server state
+  rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);
 
   // Start transaction
   rb_define_singleton_method(Extension, "start_transaction", start_transaction, 2);
