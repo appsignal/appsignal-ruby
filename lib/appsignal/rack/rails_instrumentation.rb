@@ -21,7 +21,8 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           env['action_dispatch.request_id'],
           Appsignal::Transaction::HTTP_REQUEST,
-          request
+          request,
+          :params_method => :filtered_parameters
         )
         begin
           @app.call(env)

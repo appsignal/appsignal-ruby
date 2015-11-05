@@ -43,7 +43,8 @@ if defined?(::Rails)
         Appsignal::Transaction.should_receive(:create).with(
           '1',
           Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(ActionDispatch::Request)
+          kind_of(ActionDispatch::Request),
+          :params_method=>:filtered_parameters
         ).and_return(double(:set_http_or_background_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
       end
 
