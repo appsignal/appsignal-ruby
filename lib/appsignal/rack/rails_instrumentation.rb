@@ -30,7 +30,10 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_http_or_background_action
+          controller = env['action_controller.instance']
+          if controller
+            transaction.set_action("#{controller.class.to_s}##{controller.action_name}")
+          end
           transaction.set_http_or_background_queue_start
           transaction.set_metadata('path', request.path)
           transaction.set_metadata('method', request.request_method)

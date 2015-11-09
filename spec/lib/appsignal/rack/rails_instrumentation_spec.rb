@@ -1,5 +1,8 @@
 require 'spec_helper'
 
+class MockController
+end
+
 if defined?(::Rails)
   describe Appsignal::Rack::RailsInstrumentation do
     before :all do
@@ -7,7 +10,14 @@ if defined?(::Rails)
     end
 
     let(:app) { double(:call => true) }
-    let(:env) { http_request_env_with_data('action_dispatch.request_id' => '1') }
+    let(:env) do
+      http_request_env_with_data('action_dispatch.request_id' => '1').tap do |request|
+        request['action_controller.instance'] = double(
+          :class => MockController,
+          :action_name => 'index'
+        )
+      end
+    end
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
 
     describe "#call" do
@@ -45,7 +55,13 @@ if defined?(::Rails)
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(ActionDispatch::Request),
           :params_method=>:filtered_parameters
-        ).and_return(double(:set_http_or_background_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+        ).and_return(
+          double(
+            :set_action => nil,
+            :set_http_or_background_queue_start => nil,
+            :set_metadata => nil
+          )
+        )
       end
 
       it "should call the app" do
@@ -70,7 +86,7 @@ if defined?(::Rails)
       end
 
       it "should set the action and queue start" do
-        Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_action)
+        Appsignal::Transaction.any_instance.should_receive(:set_action).with('MockController#index')
         Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
       end
 
