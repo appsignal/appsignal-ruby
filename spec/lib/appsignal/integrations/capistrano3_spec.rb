@@ -160,7 +160,7 @@ if capistrano3_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             invoke('appsignal:deploy')
-            io.string.should include("Not loading: config for 'nonsense' not found")
+            io.string.should include("Not loading from config file: config for 'nonsense' not found")
           end
         end
       end
