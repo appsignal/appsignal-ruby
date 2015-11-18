@@ -62,11 +62,6 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "should load integrations" do
-        Appsignal.should_receive(:load_integrations)
-        Appsignal.start
-      end
-
       it "should load instrumentations" do
         Appsignal.should_receive(:load_instrumentations)
         Appsignal.start
@@ -120,14 +115,6 @@ describe Appsignal do
       end
     end
 
-    describe ".load_integrations" do
-      it "should require the integrations" do
-        Appsignal.should_receive(:require).at_least(:once)
-      end
-
-      after { Appsignal.load_integrations }
-    end
-
     describe ".load_instrumentations" do
       before { Appsignal.config = project_fixture_config }
 
@@ -167,11 +154,26 @@ describe Appsignal do
   end
 
   describe ".forked" do
-    it "should resubscribe and start the extension" do
-      Appsignal::Extension.should_receive(:start)
-      Appsignal::Subscriber.should_receive(:new)
+    context "when not active" do
+      it "should should do nothing" do
+        Appsignal::Extension.should_not_receive(:start)
+        Appsignal::Subscriber.should_not_receive(:new)
 
-      Appsignal.forked
+        Appsignal.forked
+      end
+    end
+
+    context "when active" do
+      before do
+        Appsignal.config = project_fixture_config
+      end
+
+      it "should resubscribe and start the extension" do
+        Appsignal::Extension.should_receive(:start)
+        Appsignal::Subscriber.any_instance.should_receive(:resubscribe)
+
+        Appsignal.forked
+      end
     end
   end
 

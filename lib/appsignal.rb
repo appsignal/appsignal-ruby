@@ -12,16 +12,6 @@ module Appsignal
   class << self
     attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log, :extension_loaded
 
-    def load_integrations
-      require 'appsignal/integrations/celluloid'
-      require 'appsignal/integrations/delayed_job'
-      require 'appsignal/integrations/passenger'
-      require 'appsignal/integrations/puma'
-      require 'appsignal/integrations/sidekiq'
-      require 'appsignal/integrations/resque'
-      require 'appsignal/integrations/unicorn'
-    end
-
     def load_instrumentations
       require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
       require 'appsignal/instrumentations/redis' if config[:instrument_redis]
@@ -60,7 +50,6 @@ module Appsignal
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
           config.write_to_environment
           Appsignal::Extension.start
-          load_integrations
           load_instrumentations
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
@@ -80,9 +69,10 @@ module Appsignal
     end
 
     def forked
+      return unless active?
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
-      @subscriber = Appsignal::Subscriber.new
+      @subscriber.resubscribe
     end
 
     # Wrap a transaction with appsignal monitoring.
@@ -269,7 +259,11 @@ require 'appsignal/version'
 require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'
-
-# This needs to be required immediately, that's why it's
-# not in load_integrations
+require 'appsignal/integrations/celluloid'
+require 'appsignal/integrations/delayed_job'
+require 'appsignal/integrations/passenger'
+require 'appsignal/integrations/puma'
+require 'appsignal/integrations/sidekiq'
 require 'appsignal/integrations/rails'
+require 'appsignal/integrations/resque'
+require 'appsignal/integrations/unicorn'
