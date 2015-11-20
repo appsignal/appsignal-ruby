@@ -1,16 +1,17 @@
 require 'spec_helper'
 require 'rake'
 
-describe "Rake integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/rake.rb') }
+describe Appsignal::Hooks::RakeHook do
   let(:app)  { double(:current_scope => nil) }
   let(:task) { Rake::Task.new('task', app) }
   before do
-    load file
     task.stub(
       :name                     => 'task:name',
       :invoke_without_appsignal => true
     )
+  end
+  before :all do
+    Appsignal::Hooks::RakeHook.new.install
   end
 
   describe "#invoke" do

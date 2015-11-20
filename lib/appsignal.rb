@@ -51,6 +51,7 @@ module Appsignal
           config.write_to_environment
           Appsignal::Extension.start
           load_instrumentations
+          Appsignal::Hooks.load_hooks
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
           Appsignal::Extension.install_allocation_event_hook if config[:enable_allocation_tracking]
@@ -251,19 +252,13 @@ require 'appsignal/extension'
 require 'appsignal/auth_check'
 require 'appsignal/config'
 require 'appsignal/event_formatter'
+require 'appsignal/hooks'
 require 'appsignal/marker'
 require 'appsignal/params_sanitizer'
+require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
 require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'
-require 'appsignal/integrations/celluloid'
-require 'appsignal/integrations/delayed_job'
-require 'appsignal/integrations/passenger'
-require 'appsignal/integrations/puma'
-require 'appsignal/integrations/sidekiq'
-require 'appsignal/integrations/rails'
-require 'appsignal/integrations/resque'
-require 'appsignal/integrations/unicorn'
