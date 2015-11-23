@@ -50,9 +50,12 @@ end
 
 require 'appsignal/hooks/celluloid'
 require 'appsignal/hooks/delayed_job'
+require 'appsignal/hooks/net_http'
 require 'appsignal/hooks/passenger'
 require 'appsignal/hooks/puma'
 require 'appsignal/hooks/rake'
+require 'appsignal/hooks/redis'
 require 'appsignal/hooks/resque'
+require 'appsignal/hooks/sequel'
 require 'appsignal/hooks/sidekiq'
 require 'appsignal/hooks/unicorn'

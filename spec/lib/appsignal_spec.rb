@@ -62,11 +62,6 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "should load instrumentations" do
-        Appsignal.should_receive(:load_instrumentations)
-        Appsignal.start
-      end
-
       it "should initialize formatters" do
         Appsignal::EventFormatter.should_receive(:initialize_formatters)
         Appsignal.start
@@ -113,34 +108,6 @@ describe Appsignal do
           Appsignal.start
         end
       end
-    end
-
-    describe ".load_instrumentations" do
-      before { Appsignal.config = project_fixture_config }
-
-      context "if on in the config" do
-        it "should require integrations" do
-          Appsignal.should_receive(:require).with('appsignal/instrumentations/net_http').once
-          Appsignal.should_receive(:require).with('appsignal/instrumentations/redis').once
-          Appsignal.should_receive(:require).with('appsignal/instrumentations/sequel').once
-        end
-      end
-
-      context "if off in the config" do
-        before do
-          Appsignal.config.config_hash[:instrument_net_http] = false
-          Appsignal.config.config_hash[:instrument_redis] = false
-          Appsignal.config.config_hash[:instrument_sequel] = false
-        end
-
-        it "should require integrations" do
-          Appsignal.should_not_receive(:require).with('appsignal/instrumentations/net_http')
-          Appsignal.should_not_receive(:require).with('appsignal/instrumentations/redis')
-          Appsignal.should_not_receive(:require).with('appsignal/instrumentations/sequel')
-        end
-      end
-
-      after { Appsignal.load_instrumentations }
     end
 
     context "with debug logging" do

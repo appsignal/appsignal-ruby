@@ -12,12 +12,6 @@ module Appsignal
   class << self
     attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log, :extension_loaded
 
-    def load_instrumentations
-      require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
-      require 'appsignal/instrumentations/redis' if config[:instrument_redis]
-      require 'appsignal/instrumentations/sequel' if config[:instrument_sequel]
-    end
-
     def extensions
       @extensions ||= []
     end
@@ -50,7 +44,6 @@ module Appsignal
           logger.info("Starting AppSignal #{Appsignal::VERSION} on #{RUBY_VERSION}/#{RUBY_PLATFORM}")
           config.write_to_environment
           Appsignal::Extension.start
-          load_instrumentations
           Appsignal::Hooks.load_hooks
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
