@@ -375,7 +375,7 @@ describe Appsignal::Transaction do
         context "with the HTTP_X_REQUEST_START header set" do
           let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}"} }
 
-          it { should == 1389783599 }
+          it { should == 1389783599600 }
 
           context "with unparsable content" do
             let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
@@ -386,7 +386,7 @@ describe Appsignal::Transaction do
           context "with some cruft" do
             let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}aaaa"} }
 
-            it { should == 1389783599 }
+            it { should == 1389783599600 }
           end
 
           context "with a really low number" do
@@ -398,7 +398,7 @@ describe Appsignal::Transaction do
           context "with the alternate HTTP_X_QUEUE_START header set" do
             let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_value}"} }
 
-            it { should == 1389783599 }
+            it { should == 1389783599600 }
           end
         end
       end
