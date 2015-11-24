@@ -156,11 +156,16 @@ module Appsignal
       cleaned_value = env_var.tr('^0-9'.freeze, ''.freeze)
       return if cleaned_value.empty?
       value = cleaned_value.to_i
-      [1_000_000.0, 1_000.0].each do |factor|
-        queue_start = (value / factor).to_i
-        return queue_start if queue_start > 946_681_200 # Ok if it's later than 2000
+      if value > 4_102_441_200_000
+        # Value is in microseconds
+        value / 1_000
+      elsif value < 946_681_200_000
+        # Value is to low to be plausible
+        nil
+      else
+        # Value is in milliseconds
+        value
       end
-      nil
     end
 
     def sanitized_params
