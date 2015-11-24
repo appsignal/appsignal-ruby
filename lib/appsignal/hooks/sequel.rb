@@ -20,6 +20,7 @@ module Appsignal
 
       def dependencies_present?
         defined?(::Sequel::Database) &&
+          Appsignal.config &&
           Appsignal.config[:instrument_sequel]
       end
 
