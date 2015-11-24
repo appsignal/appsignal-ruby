@@ -24,6 +24,7 @@ module Appsignal
 
     def load_instrumentations
       require 'appsignal/instrumentations/net_http' if config[:instrument_net_http]
+      require 'appsignal/instrumentations/object' if config[:instrumentation_methods]
     end
 
     def extensions
