@@ -1,12 +1,9 @@
 require 'spec_helper'
 
-describe "Resque integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }
-
+describe Appsignal::Hooks::ResqueHook do
   context "with resque" do
-    before do
+    before :all do
       module Resque
-
         def self.before_first_fork
         end
 
@@ -19,10 +16,10 @@ describe "Resque integration" do
         class TestError < StandardError
         end
       end
-
-      load file
+      Appsignal::Hooks::ResqueHook.new.install
       start_agent
     end
+    after(:all) { Object.send(:remove_const, :Resque) }
 
     describe :around_perform_resque_plugin do
       let(:transaction) { background_job_transaction }
@@ -70,9 +67,6 @@ describe "Resque integration" do
   end
 
   context "without resque" do
-    before(:all) { Object.send(:remove_const, :Resque) }
-
-    specify { expect { ::Resque }.to raise_error(NameError) }
-    specify { expect { load file }.to_not raise_error }
+    its(:dependencies_present?) { should be_false }
   end
 end

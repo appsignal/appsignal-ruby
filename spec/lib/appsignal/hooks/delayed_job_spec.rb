@@ -1,8 +1,6 @@
 require 'spec_helper'
 
-describe "Delayed Job integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/delayed_job.rb') }
-
+describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
     before(:all) do
       module Delayed
@@ -18,15 +16,17 @@ describe "Delayed Job integration" do
         end
       end
     end
+    after(:all) { Object.send(:remove_const, :Delayed) }
     before do
-      load file
       start_agent
     end
+
+    its(:dependencies_present?) { should be_true }
 
     # We haven't found a way to test the hooks, we'll have to do that manually
 
     describe ".invoke_with_instrumentation" do
-      let(:plugin) { Appsignal::Integrations::DelayedPlugin }
+      let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
       let(:time) { Time.parse('01-01-2001 10:01:00UTC') }
       let(:job) do
         double(
@@ -112,14 +112,11 @@ describe "Delayed Job integration" do
     end
 
     it "should add the plugin" do
-      ::Delayed::Worker.plugins.should include Appsignal::Integrations::DelayedPlugin
+      ::Delayed::Worker.plugins.should include Appsignal::Hooks::DelayedJobPlugin
     end
   end
 
   context "without delayed job" do
-    before(:all) { Object.send(:remove_const, :Delayed) }
-
-    specify { expect { ::Delayed }.to raise_error(NameError) }
-    specify { expect { load file }.to_not raise_error }
+    its(:dependencies_present?) { should be_false }
   end
 end

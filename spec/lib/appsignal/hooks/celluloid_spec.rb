@@ -1,19 +1,19 @@
 require 'spec_helper'
 
-describe "Celluloid integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/celluloid.rb') }
-
+describe Appsignal::Hooks::CelluloidHook do
   context "with celluloid" do
-    before(:all) do
+    before :all do
       module Celluloid
         def self.shutdown
         end
       end
+      Appsignal::Hooks::CelluloidHook.new.install
+    end
+    after :all do
+      Object.send(:remove_const, :Celluloid)
     end
 
-    before do
-      load file
-    end
+    its(:dependencies_present?) { should be_true }
 
     specify { expect(Appsignal).to receive(:stop) }
     specify { expect(Celluloid).to receive(:shutdown_without_appsignal) }
@@ -24,9 +24,6 @@ describe "Celluloid integration" do
   end
 
   context "without celluloid" do
-    before(:all) { Object.send(:remove_const, :Celluloid) }
-
-    specify { expect { ::Celluloid }.to raise_error(NameError) }
-    specify { expect { load file }.to_not raise_error }
+    its(:dependencies_present?) { should be_false }
   end
 end

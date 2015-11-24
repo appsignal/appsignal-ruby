@@ -10,7 +10,7 @@ if capistrano2_present?
 
     before :all do
       @capistrano_config = Capistrano::Configuration.new
-      Appsignal::Integrations::Capistrano.tasks(@capistrano_config)
+      Appsignal::Capistrano.tasks(@capistrano_config)
     end
 
     it "should have a deploy task" do

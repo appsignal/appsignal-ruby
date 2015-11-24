@@ -1,18 +1,6 @@
 require 'spec_helper'
 
-describe "Sidekiq integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/sidekiq.rb') }
-  before :all do
-    module Sidekiq
-      def self.configure_server
-      end
-    end
-  end
-  before do
-    load file
-    start_agent
-  end
-
+describe Appsignal::Hooks::SidekiqPlugin do
   let(:worker) { double }
   let(:queue) { double }
   let(:current_transaction) { background_job_transaction }
@@ -24,11 +12,12 @@ describe "Sidekiq integration" do
     'args'        => ['Model', 1],
     'extra'       => 'data'
   }}
-  let(:plugin) { Appsignal::Integrations::SidekiqPlugin.new }
+  let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
 
   before do
     Appsignal.stub(:is_ignored_exception? => false)
     Appsignal::Transaction.stub(:current => current_transaction)
+    start_agent
   end
 
   context "with a performance call" do
@@ -66,7 +55,7 @@ describe "Sidekiq integration" do
 
     after do
       Timecop.freeze(Time.parse('01-01-2001 10:01:00UTC')) do
-        Appsignal::Integrations::SidekiqPlugin.new.call(worker, item, queue) do
+        Appsignal::Hooks::SidekiqPlugin.new.call(worker, item, queue) do
           # nothing
         end
       end
@@ -82,7 +71,7 @@ describe "Sidekiq integration" do
     after do
       begin
         Timecop.freeze(Time.parse('01-01-2001 10:01:00UTC')) do
-          Appsignal::Integrations::SidekiqPlugin.new.call(worker, item, queue) do
+          Appsignal::Hooks::SidekiqPlugin.new.call(worker, item, queue) do
             raise error
           end
         end
@@ -149,13 +138,24 @@ describe "Sidekiq integration" do
         plugin.string_or_inspect(object).should == object.inspect
       end
     end
+  end
+end
 
+describe Appsignal::Hooks::SidekiqHook do
+  context "with sidekiq" do
+    before :all do
+      module Sidekiq
+        def self.configure_server
+        end
+      end
+      Appsignal::Hooks::SidekiqHook.new.install
+    end
+    after(:all) { Object.send(:remove_const, :Sidekiq) }
+
+    its(:dependencies_present?) { should be_true }
   end
 
   context "without sidekiq" do
-    before(:all) { Object.send(:remove_const, :Sidekiq) }
-
-    specify { expect { Sidekiq }.to raise_error(NameError) }
-    specify { expect { load file }.to_not raise_error }
+    its(:dependencies_present?) { should be_false }
   end
 end
