@@ -426,16 +426,17 @@ describe Appsignal do
 
     describe ".start_logger" do
       let(:out_stream) { StringIO.new }
-      let(:path) { File.join(project_fixture_path, 'log') }
-      let(:log_file) { File.join(path, 'appsignal.log') }
+      let(:log_path) { File.join(project_fixture_path, 'log') }
+      let(:log_file) { File.join(log_path, 'appsignal.log') }
 
       before do
+        FileUtils.rm_f(log_file)
         @original_stdout = $stdout
         $stdout = out_stream
         Appsignal.logger.error('Log something')
         Appsignal.config = project_fixture_config(
           'production',
-          :log_file_path => log_file
+          :log_path => log_path
         )
       end
       after do
@@ -453,7 +454,7 @@ describe Appsignal do
       end
 
       context "when the log path is not writable" do
-        let(:path) { '/nonsense/log' }
+        let(:log_path) { '/nonsense/log' }
 
         it "should log to stdout" do
           Appsignal.start_logger

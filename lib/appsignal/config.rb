@@ -30,7 +30,7 @@ module Appsignal
       'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
       'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
       'APPSIGNAL_DEBUG'                          => :debug,
-      'APPSIGNAL_LOG_FILE_PATH'                  => :log_file_path,
+      'APPSIGNAL_LOG_PATH'                       => :log_path,
       'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
       'APPSIGNAL_INSTRUMENT_REDIS'               => :instrument_redis,
       'APPSIGNAL_INSTRUMENT_SEQUEL'              => :instrument_sequel,
@@ -71,6 +71,14 @@ module Appsignal
       config_hash[key]
     end
 
+    def log_file_path
+      path = config_hash[:log_path] || root_path
+      File.join(File.realpath(path), 'appsignal.log')
+    rescue Errno::ENOENT
+      puts "appsignal: WARNING: log file path '#{path}' does not exist or is not writable"
+      nil
+    end
+
     def valid?
       @valid
     end
@@ -87,7 +95,7 @@ module Appsignal
       ENV['APPSIGNAL_AGENT_VERSION']                = Appsignal::Extension.agent_version
       ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'] = Appsignal::VERSION
       ENV['APPSIGNAL_DEBUG_LOGGING']                = config_hash[:debug].to_s
-      ENV['APPSIGNAL_LOG_FILE_PATH']                = config_hash[:log_file_path].to_s if config_hash[:log_file_path]
+      ENV['APPSIGNAL_LOG_FILE_PATH']                = log_file_path.to_s if log_file_path
       ENV['APPSIGNAL_PUSH_API_ENDPOINT']            = config_hash[:endpoint]
       ENV['APPSIGNAL_PUSH_API_KEY']                 = config_hash[:push_api_key]
       ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
@@ -134,7 +142,7 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_FILE_PATH).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end

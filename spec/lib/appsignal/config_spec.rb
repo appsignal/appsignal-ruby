@@ -11,8 +11,9 @@ describe Appsignal::Config do
       subject
     end
 
-    its(:valid?)  { should be_true }
-    its(:active?) { should be_true }
+    its(:valid?)        { should be_true }
+    its(:active?)       { should be_true }
+    its(:log_file_path) { should end_with('spec/support/project_fixture/appsignal.log') }
 
     it "should merge with the default config and fill the config hash" do
       subject.config_hash.should == {
@@ -33,6 +34,12 @@ describe Appsignal::Config do
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => true
       }
+    end
+
+    context "if a log file path is set" do
+      let(:config) { project_fixture_config('production', :log_path => '/tmp') }
+
+      its(:log_file_path) { should end_with('/tmp/appsignal.log') }
     end
 
     context "when there is a pre 0.12 style endpoint" do
@@ -65,7 +72,7 @@ describe Appsignal::Config do
       before do
         subject.config_hash[:http_proxy]     = 'http://localhost'
         subject.config_hash[:ignore_actions] = ['action1', 'action2']
-        subject.config_hash[:log_file_path]  = '/var/log/appsignal.log'
+        subject.config_hash[:log_path]  = '/tmp'
         subject.write_to_environment
       end
 
@@ -74,7 +81,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_APP_PATH'].should                     end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should                   end_with('/ext')
         ENV['APPSIGNAL_DEBUG_LOGGING'].should                == 'false'
-        ENV['APPSIGNAL_LOG_FILE_PATH'].should                == '/var/log/appsignal.log'
+        ENV['APPSIGNAL_LOG_FILE_PATH'].should                end_with('/tmp/appsignal.log')
         ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            == 'https://push.appsignal.com'
         ENV['APPSIGNAL_PUSH_API_KEY'].should                 == 'abc'
         ENV['APPSIGNAL_APP_NAME'].should                     == 'TestApp'
@@ -148,10 +155,11 @@ describe Appsignal::Config do
 
   context "when there is no config file" do
     let(:initial_config) { {} }
-    let(:config) { Appsignal::Config.new('/nothing', 'production', initial_config) }
+    let(:config) { Appsignal::Config.new('/tmp', 'production', initial_config) }
 
-    its(:valid?)  { should be_false }
-    its(:active?) { should be_false }
+    its(:valid?)        { should be_false }
+    its(:active?)       { should be_false }
+    its(:log_file_path) { should end_with('/tmp/appsignal.log') }
 
     context "with valid config in the environment" do
       before do

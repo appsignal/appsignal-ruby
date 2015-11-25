@@ -9,7 +9,7 @@ module Appsignal::Integrations
       Appsignal.config = Appsignal::Config.new(
         root,
         Padrino.env,
-        :log_file_path => File.join(root, 'log/appsignal.log')
+        :log_path => File.join(root, 'log')
       )
 
       Appsignal.start_logger
