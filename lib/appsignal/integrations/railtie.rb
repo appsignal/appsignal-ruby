@@ -15,7 +15,7 @@ module Appsignal
           Rails.root,
           ENV.fetch('APPSIGNAL_APP_ENV', Rails.env),
           :name => Rails.application.class.parent_name,
-          :log_file_path => Rails.root.join('log/appsignal.log')
+          :log_path => Rails.root.join('log')
         )
 
         # Start logger
