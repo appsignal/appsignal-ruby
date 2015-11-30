@@ -75,8 +75,7 @@ module Appsignal
       path = config_hash[:log_path] || root_path
       File.join(File.realpath(path), 'appsignal.log')
     rescue Errno::ENOENT
-      puts "appsignal: WARNING: log file path '#{path}' does not exist or is not writable"
-      nil
+      '/tmp/appsignal.log'
     end
 
     def valid?

@@ -453,17 +453,6 @@ describe Appsignal do
         end
       end
 
-      context "when the log path is not writable" do
-        let(:log_path) { '/nonsense/log' }
-
-        it "should log to stdout" do
-          Appsignal.start_logger
-          Appsignal.logger.error('Log to stdout')
-          out_stream.string.should include 'appsignal: Log to stdout'
-          out_stream.string.should include 'Log something'
-        end
-      end
-
       context "when we're on Heroku" do
         before do
           ENV['DYNO'] = 'dyno1'

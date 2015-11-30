@@ -40,6 +40,12 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config('production', :log_path => '/tmp') }
 
       its(:log_file_path) { should end_with('/tmp/appsignal.log') }
+
+      context "if it is not writable" do
+        let(:config) { project_fixture_config('production', :log_path => '/root') }
+
+        its(:log_file_path) { should == '/tmp/appsignal.log' }
+      end
     end
 
     context "when there is a pre 0.12 style endpoint" do
