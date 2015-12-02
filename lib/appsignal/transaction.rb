@@ -145,8 +145,7 @@ module Appsignal
 
     def background_queue_start
       return unless request.env
-      queue_start = request.env[:queue_start]
-      return unless queue_start
+      return unless queue_start = request.env[:queue_start]
       (queue_start.to_f * 1000.0).to_i
     end
 
