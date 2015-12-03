@@ -169,7 +169,7 @@ module Appsignal
       Appsignal::Extension.set_process_gauge(key, value.to_f)
     end
 
-    def increment_counter(key, value)
+    def increment_counter(key, value=1)
       Appsignal::Extension.increment_counter(key, value)
     end
 

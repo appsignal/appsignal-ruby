@@ -401,7 +401,12 @@ describe Appsignal do
       describe ".increment_counter" do
         it "should call increment_counter on the extension" do
           Appsignal::Extension.should_receive(:increment_counter).with('key', 1)
-          Appsignal.increment_counter('key', 1)
+          Appsignal.increment_counter('key')
+        end
+
+        it "should call increment_counter on the extension with a count" do
+          Appsignal::Extension.should_receive(:increment_counter).with('key', 5)
+          Appsignal.increment_counter('key', 5)
         end
       end
 
