@@ -107,38 +107,6 @@ describe Appsignal::Hooks::SidekiqPlugin do
       plugin.format_args(args).should == ['Model', '1', object.inspect]
     end
   end
-
-  describe "#truncate" do
-    let(:very_long_text) do
-      "a" * 400
-    end
-
-    it "should truncate the text to 200 chars max" do
-      plugin.truncate(very_long_text).should == "#{'a' * 197}..."
-    end
-  end
-
-  describe "#string_or_inspect" do
-    context "when string" do
-      it "should return the string" do
-        plugin.string_or_inspect('foo').should == 'foo'
-      end
-    end
-
-    context "when integer" do
-      it "should return the string" do
-        plugin.string_or_inspect(1).should == '1'
-      end
-    end
-
-    context "when object" do
-      let(:object) { Object.new }
-
-      it "should return the string" do
-        plugin.string_or_inspect(object).should == object.inspect
-      end
-    end
-  end
 end
 
 describe Appsignal::Hooks::SidekiqHook do
