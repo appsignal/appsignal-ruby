@@ -45,6 +45,44 @@ module Appsignal
         raise NotImplementedError
       end
     end
+
+    module Helpers
+
+      def self.included(base)
+        base.extend(ClassMethods)
+      end
+
+      module ClassMethods
+        def truncate(text)
+          Appsignal::Hooks::Helpers.truncate(text)
+        end
+
+        def string_or_inspect(string_or_other)
+          Appsignal::Hooks::Helpers.string_or_inspect(string_or_other)
+        end
+      end
+
+      def string_or_inspect(string_or_other)
+        Appsignal::Hooks::Helpers.string_or_inspect(string_or_other)
+      end
+
+      def truncate(text)
+        Appsignal::Hooks::Helpers.truncate(text)
+      end
+
+      def self.string_or_inspect(string_or_other)
+        if string_or_other.is_a?(String)
+          string_or_other
+        else
+          string_or_other.inspect
+        end
+      end
+
+      def self.truncate(text)
+        text.size > 200 ? "#{text[0...197]}..." : text
+      end
+    end
+
   end
 end
 
