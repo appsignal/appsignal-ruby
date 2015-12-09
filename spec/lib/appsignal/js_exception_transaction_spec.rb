@@ -14,6 +14,9 @@ describe Appsignal::JSExceptionTransaction do
       'backtrace'   => [
         'foo.bar/js:11:1',
         'foo.bar/js:22:2',
+      ],
+      'tags'        => [
+        'tag1'
       ]
     }
   end
@@ -25,7 +28,7 @@ describe Appsignal::JSExceptionTransaction do
       expect( transaction ).to receive(:set_action)
       expect( transaction ).to receive(:set_metadata)
       expect( transaction ).to receive(:set_error)
-      expect( transaction ).to receive(:set_error_data)
+      expect( transaction ).to receive(:set_sample_data)
 
       transaction.send :initialize, data
 
@@ -61,22 +64,23 @@ describe Appsignal::JSExceptionTransaction do
      expect( Appsignal::Extension ).to receive(:set_transaction_error).with(
       kind_of(Integer),
        'TypeError',
-       'foo is not a valid method'
+       'foo is not a valid method',
+       "[\"foo.bar/js:11:1\",\"foo.bar/js:22:2\"]"
      )
 
      transaction.set_error
    end
   end
 
-  describe "#set_error_data" do
+  describe "#set_sample_data" do
    it "should call `Appsignal::Extension.set_transaction_error_data`" do
-     expect( Appsignal::Extension ).to receive(:set_transaction_error_data).with(
+     expect( Appsignal::Extension ).to receive(:set_transaction_sample_data).with(
       kind_of(Integer),
-      'backtrace',
-      '["foo.bar/js:11:1","foo.bar/js:22:2"]'
+      'tags',
+      '["tag1"]'
      )
 
-     transaction.set_error_data
+     transaction.set_sample_data
    end
   end
 

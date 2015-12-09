@@ -26,7 +26,7 @@ module Appsignal
 
       def complete_current!
         if current
-          Appsignal::Extension.finish_transaction(current.transaction_index)
+          current.complete
           Thread.current[:appsignal_transaction] = nil
         else
           Appsignal.logger.error('Trying to complete current, but no transaction present')
@@ -47,6 +47,13 @@ module Appsignal
       @options[:params_method] ||= :params
 
       @transaction_index = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
+    end
+
+    def complete
+      if Appsignal::Extension.finish_transaction(transaction_index)
+        sample_data
+      end
+      Appsignal::Extension.complete_transaction(transaction_index)
     end
 
     def pause!
@@ -97,35 +104,42 @@ module Appsignal
       Appsignal::Extension.set_transaction_metadata(transaction_index, key, value)
     end
 
+    def set_sample_data(key, data)
+      return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
+      Appsignal::Extension.set_transaction_sample_data(
+        transaction_index,
+        key.to_s,
+        JSON.generate(data)
+      )
+    rescue JSON::GeneratorError=>e
+      Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
+    end
+
+    def sample_data
+      {
+        :params       => sanitized_params,
+        :environment  => sanitized_environment,
+        :session_data => sanitized_session_data,
+        :tags         => sanitized_tags
+      }.each do |key, data|
+        set_sample_data(key, data)
+      end
+    end
+
     def set_error(error)
       return unless error
       return if Appsignal.is_ignored_error?(error)
 
       Appsignal.logger.debug("Adding #{error.class.name} to transaction: #{transaction_id}")
+      backtrace = cleaned_backtrace(error.backtrace)
       Appsignal::Extension.set_transaction_error(
         transaction_index,
         error.class.name,
-        error.message
+        error.message,
+        backtrace ? JSON.generate(backtrace) : ''
       )
-
-      {
-        :params       => sanitized_params,
-        :environment  => sanitized_environment,
-        :session_data => sanitized_session_data,
-        :backtrace    => cleaned_backtrace(error.backtrace),
-        :tags         => sanitized_tags
-      }.each do |key, data|
-        next unless data.is_a?(Array) || data.is_a?(Hash)
-        begin
-          Appsignal::Extension.set_transaction_error_data(
-            transaction_index,
-            key.to_s,
-            JSON.generate(data)
-          )
-        rescue JSON::GeneratorError=>e
-          Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
-        end
-      end
+    rescue JSON::GeneratorError=>e
+      Appsignal.logger.error("JSON generate error (#{e.message}) for '#{backtrace.inspect}'")
     end
     alias_method :add_exception, :set_error
 

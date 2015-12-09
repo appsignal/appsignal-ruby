@@ -10,7 +10,7 @@ module Appsignal
       set_action
       set_metadata
       set_error
-      set_error_data
+      set_sample_data
     end
 
     def set_action
@@ -27,20 +27,20 @@ module Appsignal
       Appsignal::Extension.set_transaction_error(
         @transaction_index,
         @data['name'],
-        @data['message']
+        @data['message'],
+        JSON.generate(@data['backtrace'])
       )
     end
 
-    def set_error_data
+    def set_sample_data
       {
         :params       => @data['params'],
         :environment  => @data['environment'],
-        :backtrace    => @data['backtrace'],
         :tags         => @data['tags']
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
         begin
-          Appsignal::Extension.set_transaction_error_data(
+          Appsignal::Extension.set_transaction_sample_data(
             @transaction_index,
             key.to_s,
             JSON.generate(data)

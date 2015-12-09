@@ -41,25 +41,27 @@ static VALUE finish_event(VALUE self, VALUE transaction_index, VALUE name, VALUE
   return Qnil;
 }
 
-static VALUE set_transaction_error(VALUE self, VALUE transaction_index, VALUE name, VALUE message) {
+static VALUE set_transaction_error(VALUE self, VALUE transaction_index, VALUE name, VALUE message, VALUE backtrace) {
   Check_Type(transaction_index, T_FIXNUM);
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
+  Check_Type(backtrace, T_STRING);
 
   appsignal_set_transaction_error(
       FIX2INT(transaction_index),
       StringValueCStr(name),
-      StringValueCStr(message)
+      StringValueCStr(message),
+      StringValueCStr(backtrace)
   );
   return Qnil;
 }
 
-static VALUE set_transaction_error_data(VALUE self, VALUE transaction_index, VALUE key, VALUE payload) {
+static VALUE set_transaction_sample_data(VALUE self, VALUE transaction_index, VALUE key, VALUE payload) {
   Check_Type(transaction_index, T_FIXNUM);
   Check_Type(key, T_STRING);
   Check_Type(payload, T_STRING);
 
-  appsignal_set_transaction_error_data(
+  appsignal_set_transaction_sample_data(
       FIX2INT(transaction_index),
       StringValueCStr(key),
       StringValueCStr(payload)
@@ -105,7 +107,14 @@ static VALUE set_transaction_metadata(VALUE self, VALUE transaction_index, VALUE
 static VALUE finish_transaction(VALUE self, VALUE transaction_index) {
   Check_Type(transaction_index, T_FIXNUM);
 
-  appsignal_finish_transaction(FIX2INT(transaction_index));
+  int sample = appsignal_finish_transaction(FIX2INT(transaction_index));
+  return sample == 1 ? Qtrue : Qfalse;
+}
+
+static VALUE complete_transaction(VALUE self, VALUE transaction_index) {
+  Check_Type(transaction_index, T_FIXNUM);
+
+  appsignal_complete_transaction(FIX2INT(transaction_index));
   return Qnil;
 }
 
@@ -228,12 +237,13 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "start_transaction",           start_transaction,           2);
   rb_define_singleton_method(Extension, "start_event",                 start_event,                 1);
   rb_define_singleton_method(Extension, "finish_event",                finish_event,                4);
-  rb_define_singleton_method(Extension, "set_transaction_error",       set_transaction_error,       3);
-  rb_define_singleton_method(Extension, "set_transaction_error_data",  set_transaction_error_data,  3);
+  rb_define_singleton_method(Extension, "set_transaction_error",       set_transaction_error,       4);
+  rb_define_singleton_method(Extension, "set_transaction_sample_data", set_transaction_sample_data, 3);
   rb_define_singleton_method(Extension, "set_transaction_action",      set_transaction_action,      2);
   rb_define_singleton_method(Extension, "set_transaction_queue_start", set_transaction_queue_start, 2);
   rb_define_singleton_method(Extension, "set_transaction_metadata",    set_transaction_metadata,    3);
   rb_define_singleton_method(Extension, "finish_transaction",          finish_transaction,          1);
+  rb_define_singleton_method(Extension, "complete_transaction",        complete_transaction,        1);
 
   // Event hook installation
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
