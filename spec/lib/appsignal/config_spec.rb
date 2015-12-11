@@ -32,7 +32,8 @@ describe Appsignal::Config do
         :enable_frontend_error_catching => false,
         :frontend_error_catching_path   => '/appsignal_error_catcher',
         :enable_allocation_tracking     => true,
-        :enable_gc_instrumentation      => true
+        :enable_gc_instrumentation      => true,
+        :running_in_container           => false
       }
     end
 
@@ -96,6 +97,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should == Appsignal::VERSION
         ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
+        ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
       end
     end
 

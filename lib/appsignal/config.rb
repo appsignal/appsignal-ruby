@@ -20,7 +20,8 @@ module Appsignal
       :enable_frontend_error_catching => false,
       :frontend_error_catching_path   => '/appsignal_error_catcher',
       :enable_allocation_tracking     => true,
-      :enable_gc_instrumentation      => true
+      :enable_gc_instrumentation      => true,
+      :running_in_container           => false
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -40,7 +41,8 @@ module Appsignal
       'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
       'APPSIGNAL_HTTP_PROXY'                     => :http_proxy,
       'APPSIGNAL_ENABLE_ALLOCATION_TRACKING'     => :enable_allocation_tracking,
-      'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation
+      'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation,
+      'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -100,6 +102,7 @@ module Appsignal
       ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
       ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
       ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
+      ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
     end
 
     protected
@@ -150,7 +153,8 @@ module Appsignal
       # Configuration with boolean type
       %w(APPSIGNAL_ACTIVE APPSIGNAL_DEBUG APPSIGNAL_INSTRUMENT_NET_HTTP
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
-         APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION).each do |var|
+         APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
+         APPSIGNAL_RUNNING_IN_CONTAINER).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
         end
