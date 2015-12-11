@@ -50,11 +50,11 @@ describe "extension loading and operation" do
       end
 
       it "should have a set_transaction_error method" do
-        subject.set_transaction_error(1, 'name', 'message')
+        subject.set_transaction_error(1, 'name', 'message', '[backtrace]')
       end
 
-      it "should have a set_transaction_error_data method" do
-        subject.set_transaction_error_data(1, 'params', '{}')
+      it "should have a set_transaction_sample_data method" do
+        subject.set_transaction_sample_data(1, 'params', '{}')
       end
 
       it "should have a set_transaction_action method" do

@@ -71,6 +71,24 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#complete" do
+    it "should sample data if it needs to be sampled" do
+      Appsignal::Extension.should_receive(:finish_transaction).and_return(true)
+      Appsignal::Extension.should_receive(:complete_transaction)
+      transaction.should_receive(:sample_data)
+
+      transaction.complete
+    end
+
+    it "should not sample data if it does not need to be sampled" do
+      Appsignal::Extension.should_receive(:finish_transaction).and_return(false)
+      Appsignal::Extension.should_receive(:complete_transaction)
+      transaction.should_not_receive(:sample_data)
+
+      transaction.complete
+    end
+  end
+
   context "pausing" do
     describe "#pause!" do
       it "should change the pause flag to true" do
@@ -243,6 +261,62 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "set_sample_data" do
+      it "should generate json and set the data" do
+        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'params',
+          '{"controller":"blog_posts","action":"show","id":"1"}'
+        ).once
+
+        transaction.set_sample_data(
+          'params',
+          {
+            :controller => 'blog_posts',
+            :action     => 'show',
+            :id         => '1'
+          }
+        )
+      end
+
+      it "should do nothing if the data cannot be converted to json" do
+        Appsignal::Extension.should_not_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'params',
+          kind_of(String)
+        )
+
+        transaction.set_sample_data('params', 'string')
+      end
+    end
+
+    describe "#sample_data" do
+      it "should sample data" do
+        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'environment',
+          "{\"CONTENT_LENGTH\":\"0\",\"REQUEST_METHOD\":\"GET\",\"SERVER_NAME\":\"example.org\",\"SERVER_PORT\":\"80\",\"PATH_INFO\":\"/blog\"}"
+        ).once
+        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'session_data',
+          "{}"
+        ).once
+        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'params',
+          '{"controller":"blog_posts","action":"show","id":"1"}'
+        ).once
+        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
+          kind_of(Integer),
+          'tags',
+          "{}"
+        ).once
+
+        transaction.sample_data
+      end
+    end
+
     describe '#set_error' do
       let(:env) { http_request_env_with_data }
       let(:error) { double(:error, :message => 'test message', :backtrace => ['line 1']) }
@@ -259,58 +333,13 @@ describe Appsignal::Transaction do
       end
 
       context "for a http request" do
-        it "should set an error and it's data in native" do
+        it "should set an error in the extension" do
           Appsignal::Extension.should_receive(:set_transaction_error).with(
             kind_of(Integer),
             'RSpec::Mocks::Mock',
-            'test message'
-          )
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'environment',
-            "{\"CONTENT_LENGTH\":\"0\",\"REQUEST_METHOD\":\"GET\",\"SERVER_NAME\":\"example.org\",\"SERVER_PORT\":\"80\",\"PATH_INFO\":\"/blog\"}"
-          ).once
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'session_data',
-            "{}"
-          ).once
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'backtrace',
+            'test message',
             "[\"line 1\"]"
-          ).once
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'params',
-            '{"controller":"blog_posts","action":"show","id":"1"}'
-          ).once
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'tags',
-            "{}"
-          ).once
-
-          transaction.set_error(error)
-        end
-      end
-
-      context "with a non-json convertable type" do
-        before do
-          transaction.stub(:sanitized_params => 'a string')
-        end
-
-        it "should skip the field" do
-          Appsignal::Extension.should_not_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            'params',
-            kind_of(String)
           )
-          Appsignal::Extension.should_receive(:set_transaction_error_data).with(
-            kind_of(Integer),
-            kind_of(String),
-            kind_of(String)
-          ).exactly(4).times
 
           transaction.set_error(error)
         end
