@@ -93,7 +93,8 @@ task :publish do
   end
 end
 
-task :bundle do
+task :install do
+  system 'cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make && cd ..'
   GEMFILES.each do |gemfile|
     system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
   end
@@ -119,7 +120,7 @@ task :generate_bundle_and_spec_all do
     RUBY_VERSIONS.each do |version|
       out << "echo 'Switching to #{version}'"
       out << "#{switch_command} #{version} || { echo 'Switching Ruby failed'; exit 1; }"
-      out << 'cd ext && ruby extconf.rb && make clean && make && cd ..'
+      out << 'cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make && cd ..'
       GEMFILES.each do |gemfile|
         out << "echo 'Bundling #{gemfile} in #{version}'"
         out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
