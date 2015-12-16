@@ -129,28 +129,6 @@ static VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-static VALUE set_host_gauge(VALUE self, VALUE key, VALUE value) {
-  Check_Type(key, T_STRING);
-  Check_Type(value, T_FLOAT);
-
-  appsignal_set_host_gauge(
-      StringValueCStr(key),
-      NUM2DBL(value)
-  );
-  return Qnil;
-}
-
-static VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
-  Check_Type(key, T_STRING);
-  Check_Type(value, T_FLOAT);
-
-  appsignal_set_process_gauge(
-      StringValueCStr(key),
-      NUM2DBL(value)
-  );
-  return Qnil;
-}
-
 static VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
   Check_Type(key, T_STRING);
   Check_Type(count, T_FIXNUM);
@@ -251,8 +229,6 @@ void Init_appsignal_extension(void) {
 
   // Metrics
   rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);
-  rb_define_singleton_method(Extension, "set_host_gauge",         set_host_gauge,         2);
-  rb_define_singleton_method(Extension, "set_process_gauge",      set_process_gauge,      2);
   rb_define_singleton_method(Extension, "increment_counter",      increment_counter,      2);
   rb_define_singleton_method(Extension, "add_distribution_value", add_distribution_value, 2);
 }

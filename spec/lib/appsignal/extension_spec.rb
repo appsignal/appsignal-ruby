@@ -77,14 +77,6 @@ describe "extension loading and operation" do
         Appsignal.set_gauge('key', 1.0)
       end
 
-      it "should have a set_host_gauge method" do
-        Appsignal.set_host_gauge('key', 1.0)
-      end
-
-      it "should have a set_process_gauge method" do
-        Appsignal.set_process_gauge('key', 1.0)
-      end
-
       it "should have a increment_counter method" do
         Appsignal.increment_counter('key', 1)
       end
