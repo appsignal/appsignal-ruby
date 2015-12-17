@@ -142,6 +142,11 @@ module Appsignal
         config[:active] = true
       end
 
+      # Heroku is a container based system
+      if ENV['DYNO']
+        config[:running_in_container] = true
+      end
+
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH).each do |var|

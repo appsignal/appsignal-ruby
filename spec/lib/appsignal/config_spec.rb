@@ -120,6 +120,19 @@ describe Appsignal::Config do
       it "should use env vars that are not present in the config file" do
         subject[:debug].should == true
       end
+
+      context "running on Heroku" do
+        before do
+          ENV['DYNO'] = 'true'
+        end
+        after do
+          ENV.delete('DYNO')
+        end
+
+        it "should set running in container to true" do
+          subject[:running_in_container].should be_true
+        end
+      end
     end
 
     context "and there is an initial config" do
