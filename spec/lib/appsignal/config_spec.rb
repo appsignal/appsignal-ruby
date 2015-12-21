@@ -43,7 +43,7 @@ describe Appsignal::Config do
       its(:log_file_path) { should end_with('/tmp/appsignal.log') }
 
       context "if it is not writable" do
-        let(:config) { project_fixture_config('production', :log_path => '/root') }
+        let(:config) { project_fixture_config('production', :log_path => '/non-existing') }
 
         its(:log_file_path) { should == '/tmp/appsignal.log' }
       end

@@ -169,7 +169,13 @@ if capistrano2_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             @capistrano_config.find_and_execute_task('appsignal:deploy')
-            @io.string.should include("Not loading: config for 'nonsense' not found")
+            @io.string.encode(
+              'UTF-8',
+              'binary',
+              :invalid => :replace,
+              :undef => :replace,
+              :replace => ''
+            ).should include("config for 'nonsense' not found")
           end
         end
       end
