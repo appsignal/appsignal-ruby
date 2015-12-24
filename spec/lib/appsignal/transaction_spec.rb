@@ -332,6 +332,13 @@ describe Appsignal::Transaction do
         transaction.set_error(error)
       end
 
+      it "should not add the error if appsignal is not active" do
+        Appsignal.stub(:active? => false)
+        Appsignal::Extension.should_not_receive(:set_transaction_error)
+
+        transaction.set_error(error)
+      end
+
       context "for a http request" do
         it "should set an error in the extension" do
           Appsignal::Extension.should_receive(:set_transaction_error).with(
