@@ -7,6 +7,11 @@ describe Appsignal::Hooks::PumaHook do
         def self.cli_config
           @cli_config ||= CliConfig.new
         end
+
+        class Cluster
+          def stop_workers
+          end
+        end
       end
 
       class CliConfig
@@ -21,24 +26,43 @@ describe Appsignal::Hooks::PumaHook do
 
     its(:dependencies_present?) { should be_true }
 
-    context "with a nil before worker shutdown" do
+    context "when installed" do
       before do
+        Appsignal::Hooks::PumaHook.new.install
+      end
+
+      it "adds behavior to Unicorn::Worker#close" do
+        cluster = Puma::Cluster.new
+
+        Appsignal.should_receive(:stop)
+        cluster.should_receive(:stop_workers_without_appsignal)
+
+        cluster.stop_workers
+      end
+    end
+
+    context "with nil hooks" do
+      before do
+        Puma.cli_config.options.delete(:before_worker_boot)
         Puma.cli_config.options.delete(:before_worker_shutdown)
         Appsignal::Hooks::PumaHook.new.install
       end
 
       it "should add a before shutdown worker callback" do
+        Puma.cli_config.options[:before_worker_boot].first.should be_a(Proc)
         Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
       end
     end
 
-    context "with an existing before worker shutdown" do
+    context "with existing hooks" do
       before do
+        Puma.cli_config.options[:before_worker_boot] = []
         Puma.cli_config.options[:before_worker_shutdown] = []
         Appsignal::Hooks::PumaHook.new.install
       end
 
       it "should add a before shutdown worker callback" do
+        Puma.cli_config.options[:before_worker_boot].first.should be_a(Proc)
         Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
       end
     end
