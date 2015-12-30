@@ -42,7 +42,7 @@ module Appsignal
       @request = request
       @paused = false
       @tags = {}
-
+      @store = Hash.new({})
       @options = options
       @options[:params_method] ||= :params
 
@@ -66,6 +66,10 @@ module Appsignal
 
     def paused?
       @paused == true
+    end
+
+    def store(key)
+      @store[key]
     end
 
     def set_tags(given_tags={})

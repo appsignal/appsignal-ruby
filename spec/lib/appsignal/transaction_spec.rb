@@ -149,6 +149,19 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#store" do
+      it "should return an empty store when it's not already present" do
+        expect( transaction.store('test') ).to eql({})
+      end
+
+      it "should store changes to the store" do
+        transaction_store = transaction.store('test')
+        transaction_store['transaction'] = 'value'
+
+        expect( transaction.store('test') ).to eql({'transaction' => 'value'})
+      end
+    end
+
     describe "#set_tags" do
       it "should add tags to transaction" do
         expect {

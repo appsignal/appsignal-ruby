@@ -241,6 +241,7 @@ module Appsignal
   end
 end
 
+require 'appsignal/utils'
 require 'appsignal/extension'
 require 'appsignal/auth_check'
 require 'appsignal/config'
