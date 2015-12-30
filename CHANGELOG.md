@@ -2,6 +2,7 @@
 * New version of event formatting and collection
 * Use native library and agent
 * Use API V2
+* Support for Mongoid 5
 
 # 0.11.15
 * Improve Sinatra support
