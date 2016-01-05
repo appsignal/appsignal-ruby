@@ -13,22 +13,13 @@ describe "Rack integration" do
   end
 
   describe "#invoke" do
-    before { Appsignal.stub(:active? => true) }
 
     it "should call with appsignal monitoring" do
       expect( task ).to receive(:invoke_with_appsignal).with(['foo'])
     end
 
-    context "when not active" do
-      before { Appsignal.stub(:active? => false) }
-
-      it "should NOT call with appsignal monitoring" do
-        expect( task ).to_not receive(:invoke_with_appsignal).with(['foo'])
-      end
-
-      it "should call the original task" do
-        expect( task ).to receive(:invoke_without_appsignal).with(['foo'])
-      end
+    it "should call the original task" do
+      expect( task ).to receive(:invoke_without_appsignal).with(['foo'])
     end
 
     after { task.invoke(['foo']) }

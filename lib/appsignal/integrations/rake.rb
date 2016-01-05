@@ -3,11 +3,7 @@ module Rake
     alias_method :invoke_without_appsignal, :invoke
 
     def invoke(*args)
-      if Appsignal.active?
-        invoke_with_appsignal(*args)
-      else
-        invoke_without_appsignal(*args)
-      end
+      invoke_with_appsignal(*args)
     end
 
     def invoke_with_appsignal(*args)
