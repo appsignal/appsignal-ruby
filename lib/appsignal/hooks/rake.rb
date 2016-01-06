@@ -9,18 +9,10 @@ module Appsignal
 
       def install
         ::Rake::Task.class_eval do
-          alias :invoke_without_appsignal :invoke
+          alias :execute_without_appsignal :execute
 
-          def invoke(*args)
-            if Appsignal.active?
-              invoke_with_appsignal(*args)
-            else
-              invoke_without_appsignal(*args)
-            end
-          end
-
-          def invoke_with_appsignal(*args)
-            invoke_without_appsignal(*args)
+          def execute(*args)
+            execute_without_appsignal(*args)
           rescue => error
             transaction = Appsignal::Transaction.create(
               SecureRandom.uuid,
@@ -31,7 +23,7 @@ module Appsignal
             )
             transaction.set_action(name)
             transaction.set_error(error)
-            transaction.complete!
+            transaction.complete
             Appsignal.stop
             raise error
           end
