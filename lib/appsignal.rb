@@ -197,14 +197,15 @@ module Appsignal
          !ENV['DYNO'] &&
          !ENV['SHELLYCLOUD_DEPLOYMENT']
         @logger = Logger.new(path)
+        @logger.level = Logger::INFO
         @logger.formatter = log_formatter
       else
         @logger = Logger.new($stdout)
+        @logger.level = Logger::INFO
         @logger.formatter = lambda do |severity, datetime, progname, msg|
           "appsignal: #{msg}\n"
         end
       end
-      @logger.level = Logger::INFO
       @logger << @in_memory_log.string if @in_memory_log
 
       if path_arg
