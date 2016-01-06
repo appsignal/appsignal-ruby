@@ -1,8 +1,6 @@
 module Appsignal
   class Hooks
     class SidekiqPlugin
-      include Appsignal::Hooks::Helpers
-
       def job_keys
         @job_keys ||= Set.new(%w(
             class args retried_at failed_at
@@ -32,10 +30,22 @@ module Appsignal
         end
       end
 
+      def string_or_inspect(string_or_other)
+        if string_or_other.is_a?(String)
+          string_or_other
+        else
+          string_or_other.inspect
+        end
+      end
+
       def format_args(args)
         args.map do |arg|
           truncate(string_or_inspect(arg))
         end
+      end
+
+      def truncate(text)
+        text.size > 200 ? "#{text[0...197]}..." : text
       end
     end
 

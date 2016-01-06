@@ -36,7 +36,7 @@ describe Appsignal::Hooks::DelayedJobHook do
           :attempts       => 1,
           :queue          => 'default',
           :created_at     => time - 60_000,
-          :payload_object => double(:args => ['argument']),
+          :payload_object => double
         )
       end
       let(:invoked_block) { Proc.new { } }
@@ -54,7 +54,6 @@ describe Appsignal::Hooks::DelayedJobHook do
               :queue    => 'default',
               :id       => 123
             },
-            :params      => ['argument'],
             :queue_start => time - 60_000,
           )
 
@@ -67,15 +66,14 @@ describe Appsignal::Hooks::DelayedJobHook do
           let(:job) do
             double(
               :payload_object => double(
-                :appsignal_name => 'CustomClass#perform',
-                :args           => ['argument']
+                :appsignal_name => 'CustomClass#perform'
               ),
-              :id             => 123,
-              :name           => 'TestClass#perform',
-              :priority       => 1,
-              :attempts       => 1,
-              :queue          => 'default',
-              :created_at     => time - 60_000
+              :id         => 123,
+              :name       => 'TestClass#perform',
+              :priority   => 1,
+              :attempts   => 1,
+              :queue      => 'default',
+              :created_at => time - 60_000
             )
           end
           it "should wrap in a transaction with the correct params" do
@@ -89,7 +87,6 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :queue    => 'default',
                 :id       => 123
               },
-              :params      => ['argument'],
               :queue_start => time - 60_000
             )
 

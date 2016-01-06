@@ -1,8 +1,6 @@
 module Appsignal
   class Hooks
     class DelayedJobPlugin < ::Delayed::Plugin
-      include Appsignal::Hooks::Helpers
-
       callbacks do |lifecycle|
         lifecycle.around(:invoke_job) do |job, &block|
           invoke_with_instrumentation(job, block)
@@ -31,16 +29,9 @@ module Appsignal
             :priority => job.priority || 0,
             :attempts => job.attempts || 0
           },
-          :params      => format_args(job.payload_object.args),
           :queue_start => job.created_at
         ) do
           block.call(job)
-        end
-      end
-
-      def self.format_args(args)
-        args.map do |arg|
-          self.truncate(self.string_or_inspect(arg))
         end
       end
     end
