@@ -15,10 +15,11 @@ GEMFILES = %w(
 )
 
 RUBY_VERSIONS = %w(
-  1.9.3-p429
-  2.0.0-p451
-  2.1.2
-  2.2.0
+  1.9.3
+  2.0.0
+  2.1.8
+  2.2.4
+  2.3.0
 )
 
 VERSION_MANAGERS = {
@@ -131,7 +132,7 @@ task :generate_bundle_and_spec_all do
         out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
       end
     end
-    out << 'rm .ruby-version'
+    out << 'rm -f .ruby-version'
     out << "echo 'Successfully ran specs for all environments'"
 
     script = "bundle_and_spec_all_#{version_manager}.sh"
