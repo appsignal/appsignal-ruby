@@ -61,7 +61,7 @@ module Appsignal
       load_from_environment
 
       # Load the config file if it exists
-      if File.exists?(config_file)
+      if config_file && File.exists?(config_file)
         load_from_disk
       end
 
@@ -108,7 +108,8 @@ module Appsignal
     protected
 
     def config_file
-      @config_file ||= File.join(root_path, 'config', 'appsignal.yml')
+      @config_file ||=
+        root_path.nil? ? nil : File.join(root_path, 'config', 'appsignal.yml')
     end
 
     def load_from_disk

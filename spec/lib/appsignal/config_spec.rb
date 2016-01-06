@@ -201,4 +201,12 @@ describe Appsignal::Config do
       its([:ignore_actions]) { should == ['action1', 'action2'] }
     end
   end
+
+  context "when a nil root path is passed" do
+    let(:initial_config) { {} }
+    let(:config) { Appsignal::Config.new(nil, 'production', initial_config) }
+
+    its(:valid?)  { should be_false }
+    its(:active?) { should be_false }
+  end
 end
