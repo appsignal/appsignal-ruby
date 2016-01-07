@@ -1,3 +1,5 @@
+require 'rspec/core/rake_task'
+
 GEMFILES = %w(
   capistrano2
   capistrano3
@@ -100,7 +102,7 @@ task :install do
   end
 end
 
-task :spec do
+task :spec_all_gemfiles do
   GEMFILES.each do |gemfile|
     puts "Running #{gemfile}"
     raise 'Not successful' unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
@@ -151,4 +153,14 @@ task :console do
   IRB.start
 end
 
-task :default => [:generate_bundle_and_spec_all, :spec]
+task :install_extension do
+  `cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make`
+end
+
+RSpec::Core::RakeTask.new(:rspec) do |t|
+  t.pattern = Dir.glob('spec/**/*_spec.rb')
+end
+
+task :travis => [:install_extension, :rspec]
+
+task :default => [:generate_bundle_and_spec_all, :spec_all_gemfiles]
