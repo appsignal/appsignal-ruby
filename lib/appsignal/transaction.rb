@@ -21,16 +21,12 @@ module Appsignal
       end
 
       def current
-        Thread.current[:appsignal_transaction]
+        Thread.current[:appsignal_transaction] || NilTransaction.new
       end
 
       def complete_current!
-        if current
-          current.complete
-          Thread.current[:appsignal_transaction] = nil
-        else
-          Appsignal.logger.error('Trying to complete current, but no transaction present')
-        end
+        current.complete
+        Thread.current[:appsignal_transaction] = nil
       end
     end
 
@@ -228,6 +224,13 @@ module Appsignal
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
         backtrace
+      end
+    end
+
+    # Stub that is returned by `Transaction.current` if there is no current transaction, so
+    # that it's still safe to call methods on it if there is none.
+    class NilTransaction
+      def method_missing(m, *args, &block)
       end
     end
   end

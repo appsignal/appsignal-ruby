@@ -40,33 +40,36 @@ describe Appsignal::Transaction do
     end
 
     describe '.current' do
-      before { transaction }
       subject { Appsignal::Transaction.current }
 
-      it 'should return the correct transaction' do
-        should == transaction
+      context "if there is a transaction" do
+        before { transaction }
+
+        it "should return the correct transaction" do
+          should == transaction
+        end
+      end
+
+      context "if there is no transaction" do
+        before do
+          Thread.current[:appsignal_transaction] = nil
+        end
+
+        it "should return a nil transaction stub" do
+          should be_a Appsignal::Transaction::NilTransaction
+        end
       end
     end
 
     describe "complete_current!" do
-      before { Thread.current[:appsignal_transaction] = nil }
+      before { Appsignal::Transaction.create('2', Appsignal::Transaction::HTTP_REQUEST, {}) }
 
-      context "with a current transaction" do
-        before { Appsignal::Transaction.create('2', Appsignal::Transaction::HTTP_REQUEST, {}) }
+      it "should complete the current transaction and set the thread appsignal_transaction to nil" do
+        Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
 
-        it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-          Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
+        Appsignal::Transaction.complete_current!
 
-          Appsignal::Transaction.complete_current!
-
-          Thread.current[:appsignal_transaction].should be_nil
-        end
-      end
-
-      context "without a current transaction" do
-        it "should not raise an error" do
-          Appsignal::Transaction.complete_current!
-        end
+        Thread.current[:appsignal_transaction].should be_nil
       end
     end
   end
@@ -639,6 +642,29 @@ describe Appsignal::Transaction do
       it { should == ['line 1'] }
 
       pending "calls Rails backtrace cleaner if Rails is present"
+    end
+  end
+
+  describe Appsignal::Transaction::NilTransaction do
+    subject { Appsignal::Transaction::NilTransaction.new }
+
+    it "should have method stubs" do
+      lambda {
+        subject.complete
+        subject.pause!
+        subject.resume!
+        subject.paused?
+        subject.store(:key)
+        subject.set_tags(:tag => 1)
+        subject.set_action('action')
+        subject.set_http_or_background_action
+        subject.set_queue_start(1)
+        subject.set_http_or_background_queue_start
+        subject.set_metadata('key', 'value')
+        subject.set_sample_data('key', 'data')
+        subject.sample_data
+        subject.set_error('a')
+      }.should_not raise_error
     end
   end
 end
