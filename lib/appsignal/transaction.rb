@@ -45,6 +45,10 @@ module Appsignal
       @transaction_index = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
     end
 
+    def nil_transaction?
+      false
+    end
+
     def complete
       if Appsignal::Extension.finish_transaction(transaction_index)
         sample_data
@@ -231,6 +235,10 @@ module Appsignal
     # that it's still safe to call methods on it if there is none.
     class NilTransaction
       def method_missing(m, *args, &block)
+      end
+
+      def nil_transaction?
+        true
       end
     end
   end

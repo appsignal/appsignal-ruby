@@ -48,6 +48,10 @@ describe Appsignal::Transaction do
         it "should return the correct transaction" do
           should == transaction
         end
+
+        it "should indicate it's not a nil transaction" do
+          subject.nil_transaction?.should be_false
+        end
       end
 
       context "if there is no transaction" do
@@ -57,6 +61,10 @@ describe Appsignal::Transaction do
 
         it "should return a nil transaction stub" do
           should be_a Appsignal::Transaction::NilTransaction
+        end
+
+        it "should indicate it's a nil transaction" do
+          subject.nil_transaction?.should be_true
         end
       end
     end

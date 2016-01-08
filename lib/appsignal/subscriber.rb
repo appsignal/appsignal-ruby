@@ -31,14 +31,14 @@ module Appsignal
 
     def start(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
-      return if transaction.paused?
+      return if transaction.nil_transaction? || transaction.paused?
 
       Appsignal::Extension.start_event(transaction.transaction_index)
     end
 
     def finish(name, id, payload)
       return unless transaction = Appsignal::Transaction.current
-      return if transaction.paused?
+      return if transaction.nil_transaction? || transaction.paused?
 
       title, body = Appsignal::EventFormatter.format(name, payload)
       Appsignal::Extension.finish_event(
