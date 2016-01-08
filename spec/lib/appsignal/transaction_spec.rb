@@ -587,7 +587,7 @@ describe Appsignal::Transaction do
                 def load_session(env); [1, {:foo => :bar}]; end
                 def session_exists?(env); true; end
               }.new
-              ActionDispatch::Request::Session.create(store, {}, {})
+              ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new('rack.input' => StringIO.new), {})
             end
           end
         end

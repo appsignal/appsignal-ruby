@@ -9,6 +9,7 @@ GEMFILES = %w(
   rails-4.0
   rails-4.1
   rails-4.2
+  rails-5.0
   sequel
   sinatra
 )
