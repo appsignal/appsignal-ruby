@@ -39,9 +39,4 @@ matrix:
 env:
   global: "RAILS_ENV=test"
 
-branches:
-  only:
-    - "master"
-    - "develop"
-
 script: "bundle exec rake travis"
