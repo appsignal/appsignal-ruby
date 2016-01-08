@@ -105,9 +105,11 @@ static VALUE set_transaction_metadata(VALUE self, VALUE transaction_index, VALUE
 }
 
 static VALUE finish_transaction(VALUE self, VALUE transaction_index) {
+  int sample;
+
   Check_Type(transaction_index, T_FIXNUM);
 
-  int sample = appsignal_finish_transaction(FIX2INT(transaction_index));
+  sample = appsignal_finish_transaction(FIX2INT(transaction_index));
   return sample == 1 ? Qtrue : Qfalse;
 }
 
