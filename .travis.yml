@@ -9,7 +9,6 @@ rvm:
   - "2.2.4"
   - "2.3.0"
   - "jruby-19mode"
-  - "rbx"
 
 gemfile:
   - "gemfiles/capistrano2.gemfile"
@@ -25,8 +24,16 @@ gemfile:
   - "gemfiles/sinatra.gemfile"
 
 matrix:
+  exclude:
+    - rvm: "1.9.3"
+      gemfile: "gemfiles/rails-5.0.gemfile"
+    - rvm: "2.0.0"
+      gemfile: "gemfiles/rails-5.0.gemfile"
+    - rvm: "2.1.8"
+      gemfile: "gemfiles/rails-5.0.gemfile"
+    - rvm: "jruby-19mode"
+      gemfile: "gemfiles/rails-5.0.gemfile"
   allow_failures:
-    - rvm: "rbx"
     - rvm: "jruby-19mode"
 
 env:
