@@ -24,12 +24,12 @@ RUBY_VERSIONS = %w(
 )
 
 EXCLUSIONS = {
-  'rails-5.0' => %w( 1.9.3-p551 2.0.0-p648 2.1.8)
+  'rails-5.0' => %w( 1.9.3 2.0.0 2.1.8)
 }
 
 VERSION_MANAGERS = {
-  :rbenv => 'rbenv local',
-  :rvm => 'rvm use'
+  :rbenv => lambda { |version| "rbenv local #{version}" },
+  :rvm => lambda { |version| "rvm use --default #{version.split('-').first}" }
 }
 
 task :publish do
@@ -103,7 +103,7 @@ task :publish do
 end
 
 task :install do
-  system 'cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make && cd ..'
+  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal_extension.h Makefile appsignal_extension.bundle && ruby extconf.rb && make && cd ..'
   GEMFILES.each do |gemfile|
     system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
   end
@@ -119,7 +119,7 @@ end
 task :generate_bundle_and_spec_all do
   VERSION_MANAGERS.each do |version_manager, switch_command|
     out = []
-    if version_manager == 'rvm use'
+    if version_manager == :rvm
       out << '#!/bin/bash --login'
     else
       out << '#!/bin/sh'
@@ -127,14 +127,17 @@ task :generate_bundle_and_spec_all do
     out << 'rm -f .ruby-version'
     out << "echo 'Using #{version_manager}'"
     RUBY_VERSIONS.each do |version|
-      out << "echo 'Switching to #{version}'"
-      out << "#{switch_command} #{version} || { echo 'Switching Ruby failed'; exit 1; }"
-      out << 'cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make && cd ..'
+      short_version = version.split('-').first
+      out << "echo 'Switching to #{short_version}'"
+      out << "#{switch_command.call(version)} || { echo 'Switching Ruby failed'; exit 1; }"
+      out << "ruby -v"
+      out << "echo 'Compiling extension'"
+      out << 'cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal_extension.h libappsignal.a Makefile && ruby extconf.rb  && make && cd ..'
       GEMFILES.each do |gemfile|
-        unless EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(version)
-          out << "echo 'Bundling #{gemfile} in #{version}'"
+        unless EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(short_version)
+          out << "echo 'Bundling #{gemfile} in #{short_version}'"
           out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
-          out << "echo 'Running #{gemfile} in #{version}'"
+          out << "echo 'Running #{gemfile} in #{short_version}'"
           out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
         end
       end
@@ -142,7 +145,8 @@ task :generate_bundle_and_spec_all do
     out << 'rm -f .ruby-version'
     out << "echo 'Successfully ran specs for all environments'"
 
-    script = "bundle_and_spec_all_#{version_manager}.sh"
+    script = "bundle_and_spec_all_#{version_manager}"
+    FileUtils.rm_f(script)
     File.open(script, 'w') do |file|
       file.write out.join("\n")
     end
