@@ -1,3 +1,7 @@
+# 0.11.18
+* Fix in Rake integration
+* Refactor of Resque integration
+
 # 0.11.17
 * Fix for bug using rack request in `send_exception`
 
