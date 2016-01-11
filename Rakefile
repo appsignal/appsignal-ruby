@@ -22,6 +22,10 @@ RUBY_VERSIONS = %w(
   2.3.0
 )
 
+EXCLUSIONS = {
+  'rails-5.0' => %w( 1.9.3-p551 2.0.0-p648 2.1.8)
+}
+
 VERSION_MANAGERS = {
   :rbenv => 'rbenv local',
   :rvm => 'rvm use'
@@ -126,10 +130,12 @@ task :generate_bundle_and_spec_all do
       out << "#{switch_command} #{version} || { echo 'Switching Ruby failed'; exit 1; }"
       out << 'cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make && cd ..'
       GEMFILES.each do |gemfile|
-        out << "echo 'Bundling #{gemfile} in #{version}'"
-        out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
-        out << "echo 'Running #{gemfile} in #{version}'"
-        out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
+        unless EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(version)
+          out << "echo 'Bundling #{gemfile} in #{version}'"
+          out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
+          out << "echo 'Running #{gemfile} in #{version}'"
+          out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
+        end
       end
     end
     out << 'rm -f .ruby-version'
