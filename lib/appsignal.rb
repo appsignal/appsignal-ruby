@@ -1,11 +1,15 @@
 require 'logger'
 require 'securerandom'
 
+# Make sure we have the notification system
 begin
   require 'active_support/notifications'
   ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
-rescue LoadError, NameError
+rescue LoadError
   require 'vendor/active_support/notifications'
+rescue NameError
+  require 'appsignal/update_active_support'
+  Appsignal::UpdateActiveSupport.run
 end
 
 module Appsignal
