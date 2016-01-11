@@ -6,7 +6,7 @@ module Appsignal
 
         SINGLE_QUOTED_STRING = /'(.?|[^']).*'/.freeze
         DOUBLE_QUOTED_STRING = /"(.?|[^"]).*"/.freeze
-        IN_OPERATOR_CONTENT  = /(IN \()[^\)]+(\))/.freeze
+        IN_OPERATOR_CONTENT  = /(IN \()[^SELECT][^\)]+(\))/.freeze
         NUMERIC              = /\d*\.?\d+/.freeze
         REPLACEMENT          = '?'.freeze
         IN_REPLACEMENT       = '\1?\2'.freeze
