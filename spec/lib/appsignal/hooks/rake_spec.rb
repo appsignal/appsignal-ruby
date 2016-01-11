@@ -6,51 +6,29 @@ describe Appsignal::Hooks::RakeHook do
   let(:task) { Rake::Task.new('task', app) }
   before do
     task.stub(
-      :name                     => 'task:name',
-      :invoke_without_appsignal => true
+      :name                      => 'task:name',
+      :execute_without_appsignal => true
     )
   end
   before :all do
     Appsignal::Hooks::RakeHook.new.install
   end
 
-  describe "#invoke" do
-    before { Appsignal.stub(:active? => true) }
-
-    it "should call with appsignal monitoring" do
-      expect( task ).to receive(:invoke_with_appsignal).with(['foo'])
-    end
-
-    context "when not active" do
-      before { Appsignal.stub(:active? => false) }
-
-      it "should NOT call with appsignal monitoring" do
-        expect( task ).to_not receive(:invoke_with_appsignal).with(['foo'])
-      end
-
-      it "should call the original task" do
-        expect( task ).to receive(:invoke_without_appsignal).with(['foo'])
-      end
-    end
-
-    after { task.invoke(['foo']) }
-  end
-
-  describe "#invoke_with_appsignal" do
+  describe "#execute" do
     context "with transaction" do
       let!(:transaction) { regular_transaction }
       let!(:agent)       { double('Agent', :send_queue => true) }
       before do
         transaction.stub(:set_action)
         transaction.stub(:set_error)
-        transaction.stub(:complete!)
+        transaction.stub(:complete)
         SecureRandom.stub(:uuid => '123')
         Appsignal::Transaction.stub(:create => transaction)
         Appsignal.stub(:active? => true)
       end
 
       it "should call the original task" do
-        expect( task ).to receive(:invoke_without_appsignal).with('foo')
+        expect( task ).to receive(:execute_without_appsignal).with('foo')
       end
 
       it "should not create a transaction" do
@@ -61,7 +39,7 @@ describe Appsignal::Hooks::RakeHook do
         let(:exception) { VerySpecificError.new }
 
         before do
-          task.stub(:invoke_without_appsignal).and_raise(exception)
+          task.stub(:execute_without_appsignal).and_raise(exception)
         end
 
         it "should create a transaction" do
@@ -81,7 +59,7 @@ describe Appsignal::Hooks::RakeHook do
         end
 
         it "should call complete! on the transaction" do
-          expect( transaction ).to receive(:complete!)
+          expect( transaction ).to receive(:complete)
         end
 
         it "should stop appsignal" do
@@ -90,6 +68,6 @@ describe Appsignal::Hooks::RakeHook do
       end
     end
 
-    after { task.invoke_with_appsignal('foo') rescue VerySpecificError }
+    after { task.execute('foo') rescue VerySpecificError }
   end
 end
