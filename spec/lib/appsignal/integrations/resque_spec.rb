@@ -1,78 +1,82 @@
 require 'spec_helper'
 
-describe "Resque integration" do
-  let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }
+if resque_present?
+  describe "Resque integration" do
+    let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }
 
-  context "with resque" do
-    before do
-      module Resque
-
-        def self.before_first_fork
-        end
-
-        def self.after_fork
-        end
-
-        class Job
-        end
-
-        class TestError < StandardError
-        end
-      end
-
-      load file
-      start_agent
-    end
-
-    describe :around_perform_resque_plugin do
-      let(:transaction) { Appsignal::Transaction.new(1, {}) }
-      let(:job) { Resque::Job }
-      let(:invoked_job) { nil }
+    context "with resque" do
       before do
-        transaction.stub(:complete! => true)
-        Appsignal::Transaction.stub(:current => transaction)
+        load file
+        start_agent
+
+        class TestJob
+          extend Appsignal::Integrations::ResquePlugin
+
+          def self.perform
+          end
+        end
+
+        class BrokenTestJob
+          extend Appsignal::Integrations::ResquePlugin
+
+          def self.perform
+            raise VerySpecificError.new('broken')
+          end
+        end
+
       end
 
-      context "without exception" do
-        it "should create a new transaction" do
-          Appsignal::Transaction.should_receive(:create).and_return(transaction)
+      describe :around_perform_resque_plugin do
+        let(:transaction) { Appsignal::Transaction.new(1, {}) }
+        let(:job) { Resque::Job.new('default', {'class' => 'TestJob'}) }
+        before do
+          transaction.stub(:complete! => true)
+          Appsignal::Transaction.stub(:current => transaction)
         end
 
-        it "should wrap in a transaction with the correct params" do
-          Appsignal.should_receive(:monitor_transaction).with(
-            'perform_job.resque',
-            :class => 'Resque::Job',
-            :method => 'perform'
-          )
+        context "without exception" do
+          it "should create a new transaction" do
+            Appsignal::Transaction.should_receive(:create).and_return(transaction)
+          end
+
+          it "should wrap in a transaction with the correct params" do
+            Appsignal.should_receive(:monitor_transaction).with(
+              'perform_job.resque',
+              :class => 'TestJob',
+              :method => 'perform'
+            )
+          end
+
+          it "should close the transaction" do
+            transaction.should_receive(:complete!)
+          end
+
+          after { job.perform  }
         end
 
-        it "should close the transaction" do
-          transaction.should_receive(:complete!)
-        end
+        context "with exception" do
+          let(:job) { Resque::Job.new('default', {'class' => 'BrokenTestJob'}) }
 
-        after { job.around_perform_resque_plugin { invoked_job }  }
-      end
+          it "should set the exception" do
+            transaction.should_receive(:add_exception)
+          end
 
-      context "with exception" do
-        it "should set the exception" do
-          transaction.should_receive(:add_exception)
-        end
-
-        after do
-          begin
-            job.around_perform_resque_plugin { raise(Resque::TestError.new('the roof')) }
-          rescue Resque::TestError
-            # Do nothing
+          after do
+            begin
+              job.perform
+            rescue VerySpecificError
+              # Do nothing
+            end
           end
         end
       end
     end
-  end
 
-  context "without resque" do
-    before(:all) { Object.send(:remove_const, :Resque) }
+    context "without resque" do
+      before(:all) { Object.send(:remove_const, :Resque) }
 
-    specify { expect { ::Resque }.to raise_error(NameError) }
-    specify { expect { load file }.to_not raise_error }
+      specify { expect { ::Resque }.to raise_error(NameError) }
+      specify { expect { load file }.to_not raise_error }
+    end
   end
 end
