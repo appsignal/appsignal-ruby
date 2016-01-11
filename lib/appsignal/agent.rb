@@ -2,6 +2,7 @@ module Appsignal
   class Agent
     ACTION = 'log_entries'.freeze
     AGGREGATOR_LIMIT = 3 # Three minutes with a sleep time of 60 seconds
+    MUTEX_FOR_THREAD_EXCLUSIVE = Mutex.new # Ruby 2.3 deprecated Thread.exclusive
 
     attr_accessor :aggregator, :thread, :master_pid, :pid, :active, :sleep_time,
                   :transmitter, :subscriber, :paused, :aggregator_queue, :revision,
@@ -111,7 +112,7 @@ module Appsignal
       # Replace aggregator while making sure no thread
       # is adding to it's queue
       aggregator_to_be_sent = nil
-      Thread.exclusive do
+      MUTEX_FOR_THREAD_EXCLUSIVE.synchronize do
         aggregator_to_be_sent = aggregator
         @aggregator = Aggregator.new
       end
@@ -155,7 +156,7 @@ module Appsignal
       Appsignal.logger.info('Forked worker process')
       @active = true
       @pid = Process.pid
-      Thread.exclusive do
+      MUTEX_FOR_THREAD_EXCLUSIVE.synchronize do
         @aggregator = Aggregator.new
       end
       resubscribe
