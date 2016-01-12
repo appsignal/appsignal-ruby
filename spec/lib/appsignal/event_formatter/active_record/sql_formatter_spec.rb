@@ -90,10 +90,16 @@ if active_record_present?
           end
         end
 
-        context "in operator with params" do
+        context "in operator with values" do
           let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (1, 2)' }
 
           it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` IN (?)'] }
+        end
+
+        context "in operator with inner query" do
+          let(:sql) { 'SELECT `table`.* FROM `table` WHERE `id` IN (SELECT `id` from `other_table` WHERE `value` = 10.0)' }
+
+          it { should == ['Model load', 'SELECT `table`.* FROM `table` WHERE `id` IN (SELECT `id` from `other_table` WHERE `value` = ?)'] }
         end
       end
 
