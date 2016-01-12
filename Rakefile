@@ -53,10 +53,10 @@ task :publish do
       puts `git commit -am 'Bump to #{version} [ci skip]'`
       puts "# Creating tag #{version}"
       puts `git tag #{version}`
-      puts `git push origin #{version}`
-      puts `git push appsignal #{version}`
-      puts `git push origin #{branch}`
-      puts `git push appsignal #{branch}`
+      puts `git push public #{version}`
+      puts `git push private #{version}`
+      puts `git push public #{branch}`
+      puts `git push private #{branch}`
     rescue
       raise "Tag: '#{version}' already exists"
     end
