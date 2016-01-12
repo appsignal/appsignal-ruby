@@ -1,0 +1,7 @@
+dependencies:
+  override:
+    - rake generate_bundle_and_spec_all
+
+test:
+  override:
+    - ./bundle_and_spec_all_rvm
