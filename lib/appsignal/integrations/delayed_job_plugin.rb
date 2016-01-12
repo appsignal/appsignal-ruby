@@ -6,7 +6,7 @@ module Appsignal
           invoke_with_instrumentation(job, block)
         end
 
-        lifecycle.after(:loop) do |loop|
+        lifecycle.after(:execute) do |execute|
           Appsignal.stop
         end
       end
