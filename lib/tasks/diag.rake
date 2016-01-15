@@ -50,12 +50,22 @@ namespace :diag do
     end
   end
 
+  desc "Check the ext installation log"
+  task :check_ext_install do
+    path     = `bundle show appsignal`
+    log_path = "#{path.strip}/ext/install.log"
+    puts "Showing last lines of extension install log: #{log_path}"
+    puts `tail #{log_path}`
+    puts "\n"
+  end
+
   task :all => [
     "diag:gem_version",
     "diag:agent_version",
     "diag:start_appsignal",
     "diag:config",
     "diag:check_api_key",
-    "diag:paths_writable"
+    "diag:paths_writable",
+    "diag:check_ext_install"
   ]
 end
