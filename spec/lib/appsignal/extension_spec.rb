@@ -5,8 +5,8 @@ describe "extension loading and operation" do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
 
-    it { should have_key(:version) }
-    it { should have_key(:triples) }
+    it { should have_key('version') }
+    it { should have_key('triples') }
   end
 
   describe ".agent_version" do
