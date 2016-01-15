@@ -1,5 +1,4 @@
 require 'appsignal'
-
 namespace :diag do
 
   desc "Shows the AppSignal gem version"
@@ -52,10 +51,12 @@ namespace :diag do
 
   desc "Check the ext installation log"
   task :check_ext_install do
-    path     = `bundle show appsignal`
+    require 'bundler/cli'
+    require "bundler/cli/common"
+    path     = Bundler::CLI::Common.select_spec('appsignal').full_gem_path
     log_path = "#{path.strip}/ext/install.log"
     puts "Showing last lines of extension install log: #{log_path}"
-    puts `tail #{log_path}`
+    puts File.read(log_path)
     puts "\n"
   end
 
