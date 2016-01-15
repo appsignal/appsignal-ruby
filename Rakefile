@@ -1,4 +1,5 @@
 require 'rspec/core/rake_task'
+import 'lib/tasks/diag.rake'
 
 GEMFILES = %w(
   capistrano2
