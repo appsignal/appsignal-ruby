@@ -1,3 +1,6 @@
+# 1.0.1
+* Fix for bug in gem initialization when using `safe_yaml` gem
+
 # 1.0.0
 * New version of event formatting and collection
 * Use native library and agent
