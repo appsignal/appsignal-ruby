@@ -14,21 +14,31 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
-        class_and_method_name = call_if_exists(job.payload_object, :appsignal_name) || job.name
-        class_name, method_name = class_and_method_name.split('#')
+        if job.respond_to?(:payload_object)
+          # Direct Delayed Job
+          class_and_method_name = extract_value(job.payload_object, :appsignal_name) || job.name
+          class_name, method_name = class_and_method_name.split('#')
+          args = extract_value(job.payload_object, :args, {})
+          job_data = job
+        elsif job.respond_to?(:job_data)
+          # Via ActiveJob
+          class_name, method_name = job.job_data[:name].split('#')
+          args = job.job_data[:args] || {}
+          job_data = job.job_data
+        end
 
         Appsignal.monitor_transaction(
           'perform_job.delayed_job',
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => call_if_exists(job, :id),
-            :queue    => call_if_exists(job, :queue),
-            :priority => call_if_exists(job, :priority, 0),
-            :attempts => call_if_exists(job, :attempts, 0)
+            :id       => extract_value(job_data, :id),
+            :queue    => extract_value(job_data, :queue),
+            :priority => extract_value(job_data, :priority, 0),
+            :attempts => extract_value(job_data, :attempts, 0)
           },
-          :params      => format_args(call_if_exists(job.payload_object, :args, {})),
-          :queue_start => call_if_exists(job, :created_at)
+          :params      => format_args(args),
+          :queue_start => extract_value(job_data, :created_at)
         ) do
           block.call(job)
         end

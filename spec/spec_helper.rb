@@ -7,6 +7,8 @@ require 'webmock/rspec'
 
 puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}"
 
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'support/stubs'))
+
 begin
   require 'rails'
   Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/rails','*.rb'))].each {|f| require f}
@@ -19,6 +21,13 @@ end
 
 def rails_present?
   RAILS_PRESENT
+end
+
+def active_job_present?
+  require 'active_job'
+  true
+rescue LoadError
+  false
 end
 
 def active_record_present?
