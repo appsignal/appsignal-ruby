@@ -14,11 +14,7 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
-        class_and_method_name = if job.payload_object.respond_to?(:appsignal_name)
-                                  job.payload_object.appsignal_name
-                                else
-                                  job.name
-                                end
+        class_and_method_name = call_if_exists(job.payload_object, :appsignal_name) || job.name
         class_name, method_name = class_and_method_name.split('#')
 
         Appsignal.monitor_transaction(
@@ -26,13 +22,13 @@ module Appsignal
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => job.id,
-            :queue    => job.queue,
-            :priority => job.priority || 0,
-            :attempts => job.attempts || 0
+            :id       => call_if_exists(job, :id),
+            :queue    => call_if_exists(job, :queue),
+            :priority => call_if_exists(job, :priority, 0),
+            :attempts => call_if_exists(job, :attempts, 0)
           },
-          :params      => format_args(job.payload_object.args),
-          :queue_start => job.created_at
+          :params      => format_args(call_if_exists(job.payload_object, :args, {})),
+          :queue_start => call_if_exists(job, :created_at)
         ) do
           block.call(job)
         end

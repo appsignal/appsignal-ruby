@@ -116,6 +116,22 @@ describe Appsignal::Hooks::Helpers do
         ClassWithHelpers.string_or_inspect('string')
       end
     end
+
+    describe "#call_if_exists" do
+      it "should call the class method helper" do
+        expect( Appsignal::Hooks::Helpers ).to receive(:call_if_exists)
+                                                .with('object', 'string', nil)
+
+        ClassWithHelpers.call_if_exists('object', 'string')
+      end
+
+      it "should call the class method helper with a default value" do
+        expect( Appsignal::Hooks::Helpers ).to receive(:call_if_exists)
+                                                .with('object', 'string', 2)
+
+        ClassWithHelpers.call_if_exists('object', 'string', 2)
+      end
+    end
   end
 
   describe ".truncate" do
@@ -146,6 +162,28 @@ describe Appsignal::Hooks::Helpers do
 
       it "should return the string" do
         Appsignal::Hooks::Helpers.string_or_inspect(object).should == object.inspect
+      end
+    end
+  end
+
+  describe ".call_if_exists" do
+    let(:object) { double(:existing_method => 'value') }
+
+    context "when the method exists" do
+      subject { Appsignal::Hooks::Helpers.call_if_exists(object, :existing_method) }
+
+      it { should == 'value' }
+    end
+
+    context "when the method does not exist" do
+      subject { Appsignal::Hooks::Helpers.call_if_exists(object, :nonexisting_method) }
+
+      it { should be_nil }
+
+      context "and there is a default value" do
+        subject { Appsignal::Hooks::Helpers.call_if_exists(object, :nonexisting_method, 1) }
+
+        it { should == 1 }
       end
     end
   end

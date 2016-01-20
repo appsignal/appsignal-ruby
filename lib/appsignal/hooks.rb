@@ -47,7 +47,6 @@ module Appsignal
     end
 
     module Helpers
-
       def self.included(base)
         base.extend(ClassMethods)
       end
@@ -59,6 +58,10 @@ module Appsignal
 
         def string_or_inspect(string_or_other)
           Appsignal::Hooks::Helpers.string_or_inspect(string_or_other)
+        end
+
+        def call_if_exists(object, method_name, default_value=nil)
+          Appsignal::Hooks::Helpers.call_if_exists(object, method_name, default_value)
         end
       end
 
@@ -81,8 +84,11 @@ module Appsignal
       def self.truncate(text)
         text.size > 200 ? "#{text[0...197]}..." : text
       end
-    end
 
+      def self.call_if_exists(object, method_name, default_value=nil)
+        object.respond_to?(method_name) ? object.send(method_name) : default_value
+      end
+    end
   end
 end
 
