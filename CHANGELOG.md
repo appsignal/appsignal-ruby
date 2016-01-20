@@ -1,3 +1,8 @@
+# 1.0.2
+* Bug fix in format of process memory measurements
+* Event formatter for `instantiation.active_record`
+* Rake integration file for backwards compatibility
+
 # 1.0.1
 * Fix for bug in gem initialization when using `safe_yaml` gem
 
