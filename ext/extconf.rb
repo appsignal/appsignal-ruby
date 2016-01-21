@@ -28,7 +28,7 @@ def installation_failed(reason)
 end
 
 def install
-  logger.info "Installing appsignal agent for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+  logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
 
   unless AGENT_CONFIG['triples'].keys.include?(ARCH)
     installation_failed(
