@@ -13,14 +13,20 @@ end
 
 module Appsignal
   class Extension
-    def self.agent_config
-      @agent_config ||= YAML.load(
-        File.read(File.join(File.dirname(__FILE__), '../../ext/agent.yml'))
-      )
-    end
+    class << self
+      def agent_config
+        @agent_config ||= YAML.load(
+          File.read(File.join(File.dirname(__FILE__), '../../ext/agent.yml'))
+        )
+      end
 
-    def self.agent_version
-      agent_config['version']
+      def agent_version
+        agent_config['version']
+      end
+
+      def method_missing(m, *args, &block)
+        # Do nothing if the extension methods are not loaded
+      end
     end
   end
 end
