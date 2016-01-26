@@ -91,7 +91,11 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
   end
 
   context "without transaction" do
-    before { Appsignal::Transaction.stub(:current => nil) }
+    before do
+      Appsignal::Transaction.stub(
+        :current => Appsignal::Transaction::NilTransaction.new
+      )
+    end
 
     it "should not attempt to start an event" do
       Appsignal::Extension.should_not receive(:start_event)
@@ -107,7 +111,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
   end
 
   context "when appsignal is paused" do
-    let(:transaction) { double(:paused? => true) }
+    let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
     before { Appsignal::Transaction.stub(:current => transaction) }
 
     it "should not attempt to start an event" do
