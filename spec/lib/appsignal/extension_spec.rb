@@ -18,7 +18,7 @@ describe "extension loading and operation" do
   context "when the extension library can be loaded" do
     subject { Appsignal::Extension }
 
-    it "should load the extension" do
+    it "should indicate that the extension is loaded" do
       Appsignal.extension_loaded?.should be_true
     end
 
@@ -74,16 +74,37 @@ describe "extension loading and operation" do
       end
 
       it "should have a set_gauge method" do
-        Appsignal.set_gauge('key', 1.0)
+        subject.set_gauge('key', 1.0)
       end
 
       it "should have a increment_counter method" do
-        Appsignal.increment_counter('key', 1)
+        subject.increment_counter('key', 1)
       end
 
       it "should have a add_distribution_value method" do
-        Appsignal.add_distribution_value('key', 1.0)
+        subject.add_distribution_value('key', 1.0)
       end
+    end
+  end
+
+  context "when the extension library cannot be loaded" do
+    subject { Appsignal::Extension }
+
+    before :all do
+      Appsignal.extension_loaded = false
+    end
+    after :all do
+      Appsignal.extension_loaded = true
+    end
+
+    it "should indicate that the extension is not loaded" do
+      Appsignal.extension_loaded?.should be_false
+    end
+
+    it "should not raise errors when methods are called" do
+      expect {
+        subject.something
+      }.not_to raise_error
     end
   end
 end
