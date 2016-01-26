@@ -23,6 +23,7 @@ gemfile:
   - "gemfiles/resque.gemfile"
   - "gemfiles/sequel.gemfile"
   - "gemfiles/sinatra.gemfile"
+  - "gemfiles/grape.gemfile"
 
 matrix:
   exclude:

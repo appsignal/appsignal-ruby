@@ -14,6 +14,7 @@ GEMFILES = %w(
   resque
   sequel
   sinatra
+  grape
 )
 
 RUBY_VERSIONS = %w(
