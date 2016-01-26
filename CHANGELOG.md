@@ -2,6 +2,8 @@
 * Bug fix in format of process memory measurements
 * Event formatter for `instantiation.active_record`
 * Rake integration file for backwards compatibility
+* Don't instrument mongo-ruby-driver when transaction is not present
+* Accept method calls on extension if it's not loaded
 
 # 1.0.1
 * Fix for bug in gem initialization when using `safe_yaml` gem
