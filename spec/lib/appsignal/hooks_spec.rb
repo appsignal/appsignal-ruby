@@ -120,16 +120,23 @@ describe Appsignal::Hooks::Helpers do
     describe "#extract_value" do
       it "should call the class method helper" do
         expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
-                                                .with('object', 'string', nil)
+                                                .with('object', 'string', nil, false)
 
         ClassWithHelpers.extract_value('object', 'string')
       end
 
       it "should call the class method helper with a default value" do
         expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
-                                                .with('object', 'string', 2)
+                                                .with('object', 'string', 2, false)
 
         ClassWithHelpers.extract_value('object', 'string', 2)
+      end
+
+      it "should call the class method helper with convert_to_s set" do
+        expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
+                                                .with('object', 'string', 2, true)
+
+        ClassWithHelpers.extract_value('object', 'string', 2, true)
       end
     end
   end
@@ -209,6 +216,15 @@ describe Appsignal::Hooks::Helpers do
           it { should == 1 }
         end
       end
+
+    end
+
+    context "when we need to call to_s on the value" do
+      let(:object) { double(:existing_method => 1) }
+
+      subject { Appsignal::Hooks::Helpers.extract_value(object, :existing_method, nil, true) }
+
+      it { should == '1' }
     end
   end
 end

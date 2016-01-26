@@ -32,7 +32,7 @@ module Appsignal
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => extract_value(job_data, :id),
+            :id       => extract_value(job_data, :id, nil, true),
             :queue    => extract_value(job_data, :queue),
             :priority => extract_value(job_data, :priority, 0),
             :attempts => extract_value(job_data, :attempts, 0)
