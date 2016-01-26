@@ -30,7 +30,7 @@ end
 def install
   logger.info "Installing appsignal agent for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
 
-  unless AGENT_CONFIG[:triples].keys.include?(ARCH)
+  unless AGENT_CONFIG['triples'].keys.include?(ARCH)
     installation_failed(
       "AppSignal currently does not support your system architecture (#{ARCH})." \
       "Please let us know at support@appsignal.com, we aim to support everything our customers run."
@@ -38,21 +38,21 @@ def install
     return
   end
 
-  arch_config = AGENT_CONFIG[:triples][ARCH]
+  arch_config = AGENT_CONFIG['triples'][ARCH]
 
   unless File.exists?(ext_path('appsignal-agent')) &&
-           File.exists?(ext_path(arch_config[:lib_filename])) &&
+           File.exists?(ext_path(arch_config['lib_filename'])) &&
            File.exists?(ext_path('appsignal_extension.h'))
-    logger.info "Downloading agent release from #{arch_config[:download_url]}"
+    logger.info "Downloading agent release from #{arch_config['download_url']}"
 
-    archive = open(arch_config[:download_url])
+    archive = open(arch_config['download_url'])
 
-    if Digest::SHA256.hexdigest(archive.read) == arch_config[:checksum]
+    if Digest::SHA256.hexdigest(archive.read) == arch_config['checksum']
       logger.info 'Checksum of downloaded archive verified, extracting archive'
     else
       installation_failed(
         "Aborting installation, checksum of downloaded archive could not be verified: " \
-        "Expected '#{arch_config[:checksum]}', got '#{checksum}'."
+        "Expected '#{arch_config['checksum']}', got '#{checksum}'."
       )
       return
     end

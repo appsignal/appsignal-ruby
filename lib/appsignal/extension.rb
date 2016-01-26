@@ -20,7 +20,7 @@ module Appsignal
     end
 
     def self.agent_version
-      agent_config[:version]
+      agent_config['version']
     end
   end
 end
