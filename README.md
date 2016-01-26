@@ -30,3 +30,10 @@ BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec
 Or run `rake generate_bundle_and_spec_all` to generate a script that runs specs for all
 Ruby versions and gem combinations we support.
 You need Rvm or Rbenv to do this. Travis will run specs for these combinations as well.
+
+## Branches and versions
+
+The `master` branch corresponds to the current release of the gem. The
+`develop` branch is used for development of features that will end up in
+the next minor release. If you fix a bug open a pull request on `master`, if
+it's a new feature on `develop`.
