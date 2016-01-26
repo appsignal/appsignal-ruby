@@ -1,6 +1,7 @@
 dependencies:
   override:
-    - rake generate_bundle_and_spec_all
+    - bundle
+    - bundle exec rake generate_bundle_and_spec_all
 
 test:
   override:
