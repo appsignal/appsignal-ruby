@@ -2,6 +2,8 @@ module Appsignal
   class Subscriber
     BLANK = ''.freeze
 
+    attr_reader :as_subscriber
+
     def initialize
       subscribe
     end
@@ -9,12 +11,15 @@ module Appsignal
     def subscribe
       Appsignal.logger.debug('Subscribing to notifications')
       # Subscribe to notifications that don't start with a !
-      ActiveSupport::Notifications.subscribe(/^[^!]/, self)
+      @as_subscriber = ActiveSupport::Notifications.subscribe(/^[^!]/, self)
     end
 
     def unsubscribe
-      Appsignal.logger.debug('Unsubscribing from notifications')
-      ActiveSupport::Notifications.unsubscribe(self)
+      if @as_subscriber
+        Appsignal.logger.debug('Unsubscribing from notifications')
+        ActiveSupport::Notifications.unsubscribe(@as_subscriber)
+        @as_subscriber = nil
+      end
     end
 
     def resubscribe

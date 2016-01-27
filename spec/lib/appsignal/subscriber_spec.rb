@@ -6,43 +6,56 @@ describe Appsignal::Subscriber do
   end
 
   before do
+    ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).clear
     Thread.current[:appsignal_transaction] = nil
   end
 
-  let(:subscriber) { Appsignal.subscriber }
+  let(:subscriber) { Appsignal::Subscriber.new }
   subject { subscriber }
 
   context "initialization" do
+    before do
+      subject
+    end
+
     it "should be in the subscriber list" do
       ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
         s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
-      end.count == 1
+      end.count.should == 1
     end
   end
 
   context "subscriptions" do
     describe "subscribe" do
       it "should subscribe" do
-        ActiveSupport::Notifications.should_receive(:subscribe).with(/^[^!]/, subject).at_least(:once)
-
         subject.subscribe
+        subject.as_subscriber.should_not be_nil
+
+        ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
+          s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
+        end.count.should == 2
       end
     end
 
     describe "#unsubscribe" do
       it "should unsubscribe" do
-        ActiveSupport::Notifications.should_receive(:unsubscribe).with(subject).at_least(:once)
-
         subject.unsubscribe
+        subject.as_subscriber.should be_nil
+
+        ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
+          s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
+        end.count.should == 0
       end
     end
 
     describe "#resubscribe" do
       it "should unsubscribe and subscribe" do
-        subject.should_receive(:unsubscribe).at_least(:once)
-        subject.should_receive(:subscribe)
-
         subject.resubscribe
+        subject.as_subscriber.should_not be_nil
+
+        ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
+          s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
+        end.count.should == 1
       end
     end
   end
@@ -56,6 +69,10 @@ describe Appsignal::Subscriber do
   end
 
   context "handling events using #start and #finish" do
+    before do
+      subscriber
+    end
+
     it "should should not listen to events that start with a bang" do
       subject.should_not_receive(:start)
       subject.should_not_receive(:finish)
@@ -97,20 +114,20 @@ describe Appsignal::Subscriber do
       end
 
       it "should call finish with title and body if there is a formatter" do
-          Appsignal::Extension.should_receive(:start_event).once
-          Appsignal::Extension.should_receive(:finish_event).with(
-            kind_of(Integer),
-            'request.net_http',
-            'GET http://www.google.com',
-            ''
-          ).once
+        Appsignal::Extension.should_receive(:start_event).once
+        Appsignal::Extension.should_receive(:finish_event).with(
+          kind_of(Integer),
+          'request.net_http',
+          'GET http://www.google.com',
+          ''
+        ).once
 
-          ActiveSupport::Notifications.instrument(
-            'request.net_http',
-            :protocol => 'http',
-            :domain   => 'www.google.com',
-            :method   => 'GET'
-          )
+        ActiveSupport::Notifications.instrument(
+          'request.net_http',
+          :protocol => 'http',
+          :domain   => 'www.google.com',
+          :method   => 'GET'
+        )
       end
 
       context "when paused" do
