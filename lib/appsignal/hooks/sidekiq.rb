@@ -8,16 +8,23 @@ module Appsignal
             class args retried_at failed_at
             error_message error_class backtrace
             error_backtrace enqueued_at retry
+            jid retry created_at wrapped
         ))
       end
 
       def call(worker, item, queue)
+        if item['class'] == 'ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper'
+          params = format_args(item['args'].first['arguments'])
+        else
+          params = format_args(item['args'])
+        end
+
         Appsignal.monitor_transaction(
           'perform_job.sidekiq',
           :class       => item['wrapped'] || item['class'],
           :method      => 'perform',
           :metadata    => formatted_metadata(item),
-          :params      => format_args(item['args']),
+          :params      => params,
           :queue_start => item['enqueued_at']
         ) do
           yield

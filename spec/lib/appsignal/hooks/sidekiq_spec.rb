@@ -36,21 +36,35 @@ describe Appsignal::Hooks::SidekiqPlugin do
       )
     end
 
-    it "reports the correct job class for a ActiveJob wrapped job" do
-      item['wrapped'] = 'ActiveJobClass'
-      Appsignal.should_receive(:monitor_transaction).with(
-        'perform_job.sidekiq',
-        :class    => 'ActiveJobClass',
-        :method   => 'perform',
-        :metadata => {
-          'retry_count' => "0",
-          'queue'       => 'default',
-          'extra'       => 'data',
-          'wrapped'     => 'ActiveJobClass'
-        },
-        :params      => ['Model', "1"],
-        :queue_start => Time.parse('01-01-2001 10:00:00UTC')
-      )
+    context "when wrapped by ActiveJob" do
+      let(:item) {{
+        "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+        "wrapped" => "TestClass",
+        "queue" => "default",
+        "args"=> [{
+          "job_class" => "TestJob",
+          "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+          "queue_name" => "default",
+          "arguments" => ['Model', 1],
+        }],
+        "retry" => true,
+        "jid" => "efb140489485999d32b5504c",
+        "created_at" => Time.parse('01-01-2001 10:00:00UTC').to_f,
+        "enqueued_at" => Time.parse('01-01-2001 10:00:00UTC').to_f
+      }}
+
+      it "should wrap in a transaction with the correct params" do
+        Appsignal.should_receive(:monitor_transaction).with(
+          'perform_job.sidekiq',
+          :class    => 'TestClass',
+          :method   => 'perform',
+          :metadata => {
+            'queue' => 'default'
+          },
+          :params      => ['Model', "1"],
+          :queue_start => Time.parse('01-01-2001 10:00:00UTC').to_f
+        )
+      end
     end
 
     after do
