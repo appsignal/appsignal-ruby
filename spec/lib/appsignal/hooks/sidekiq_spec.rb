@@ -106,21 +106,6 @@ describe Appsignal::Hooks::SidekiqPlugin do
       plugin.formatted_metadata(item).should == {'foo' => 'bar'}
     end
   end
-
-  describe "#format_args" do
-    let(:object) { Object.new }
-    let(:args) do
-      [
-        'Model',
-        1,
-        object
-      ]
-    end
-
-    it "should format the arguments" do
-      plugin.format_args(args).should == ['Model', '1', object.inspect]
-    end
-  end
 end
 
 describe Appsignal::Hooks::SidekiqHook do

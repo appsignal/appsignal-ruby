@@ -79,88 +79,28 @@ describe Appsignal::Hooks::Helpers do
   class ClassWithHelpers
     include Appsignal::Hooks::Helpers
   end
-
-  let(:class_with_helpers) { ClassWithHelpers.new }
+  let(:with_helpers) { ClassWithHelpers.new }
 
   describe "#truncate" do
-    it "should call the class method helper" do
-      expect( Appsignal::Hooks::Helpers ).to receive(:truncate).with('text')
-
-      class_with_helpers.truncate('text')
-    end
-  end
-
-  describe "#string_or_inspect" do
-    it "should call the class method helper" do
-      expect( Appsignal::Hooks::Helpers ).to receive(:string_or_inspect)
-                                              .with('string')
-
-      class_with_helpers.string_or_inspect('string')
-    end
-  end
-
-  describe Appsignal::Hooks::Helpers::ClassMethods do
-    describe "#truncate" do
-      it "should call the class method helper" do
-        expect( Appsignal::Hooks::Helpers ).to receive(:truncate).with('text')
-
-        ClassWithHelpers.truncate('text')
-      end
-    end
-
-    describe "#string_or_inspect" do
-      it "should call the class method helper" do
-        expect( Appsignal::Hooks::Helpers ).to receive(:string_or_inspect)
-                                                .with('string')
-
-        ClassWithHelpers.string_or_inspect('string')
-      end
-    end
-
-    describe "#extract_value" do
-      it "should call the class method helper" do
-        expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
-                                                .with('object', 'string', nil, false)
-
-        ClassWithHelpers.extract_value('object', 'string')
-      end
-
-      it "should call the class method helper with a default value" do
-        expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
-                                                .with('object', 'string', 2, false)
-
-        ClassWithHelpers.extract_value('object', 'string', 2)
-      end
-
-      it "should call the class method helper with convert_to_s set" do
-        expect( Appsignal::Hooks::Helpers ).to receive(:extract_value)
-                                                .with('object', 'string', 2, true)
-
-        ClassWithHelpers.extract_value('object', 'string', 2, true)
-      end
-    end
-  end
-
-  describe ".truncate" do
     let(:very_long_text) do
       "a" * 400
     end
 
     it "should truncate the text to 200 chars max" do
-      Appsignal::Hooks::Helpers.truncate(very_long_text).should == "#{'a' * 197}..."
+      with_helpers.truncate(very_long_text).should == "#{'a' * 197}..."
     end
   end
 
-  describe ".string_or_inspect" do
+  describe "#string_or_inspect" do
     context "when string" do
       it "should return the string" do
-        Appsignal::Hooks::Helpers.string_or_inspect('foo').should == 'foo'
+        with_helpers.string_or_inspect('foo').should == 'foo'
       end
     end
 
     context "when integer" do
       it "should return the string" do
-        Appsignal::Hooks::Helpers.string_or_inspect(1).should == '1'
+        with_helpers.string_or_inspect(1).should == '1'
       end
     end
 
@@ -168,28 +108,28 @@ describe Appsignal::Hooks::Helpers do
       let(:object) { Object.new }
 
       it "should return the string" do
-        Appsignal::Hooks::Helpers.string_or_inspect(object).should == object.inspect
+        with_helpers.string_or_inspect(object).should == object.inspect
       end
     end
   end
 
-  describe ".extract_value" do
+  describe "#extract_value" do
     context "for a hash" do
       let(:hash) { {:key => 'value'} }
 
       context "when the key exists" do
-        subject { Appsignal::Hooks::Helpers.extract_value(hash, :key) }
+        subject { with_helpers.extract_value(hash, :key) }
 
         it { should == 'value' }
       end
 
       context "when the key does not exist" do
-        subject { Appsignal::Hooks::Helpers.extract_value(hash, :nonexistent_key) }
+        subject { with_helpers.extract_value(hash, :nonexistent_key) }
 
         it { should be_nil }
 
         context "with a default value" do
-          subject { Appsignal::Hooks::Helpers.extract_value(hash, :nonexistent_key, 1) }
+          subject { with_helpers.extract_value(hash, :nonexistent_key, 1) }
 
           it { should == 1 }
         end
@@ -200,18 +140,18 @@ describe Appsignal::Hooks::Helpers do
       let(:object) { double(:existing_method => 'value') }
 
       context "when the method exists" do
-        subject { Appsignal::Hooks::Helpers.extract_value(object, :existing_method) }
+        subject { with_helpers.extract_value(object, :existing_method) }
 
         it { should == 'value' }
       end
 
       context "when the method does not exist" do
-        subject { Appsignal::Hooks::Helpers.extract_value(object, :nonexistent_method) }
+        subject { with_helpers.extract_value(object, :nonexistent_method) }
 
         it { should be_nil }
 
         context "and there is a default value" do
-          subject { Appsignal::Hooks::Helpers.extract_value(object, :nonexistent_method, 1) }
+          subject { with_helpers.extract_value(object, :nonexistent_method, 1) }
 
           it { should == 1 }
         end
@@ -222,9 +162,30 @@ describe Appsignal::Hooks::Helpers do
     context "when we need to call to_s on the value" do
       let(:object) { double(:existing_method => 1) }
 
-      subject { Appsignal::Hooks::Helpers.extract_value(object, :existing_method, nil, true) }
+      subject { with_helpers.extract_value(object, :existing_method, nil, true) }
 
       it { should == '1' }
+    end
+  end
+
+  describe "#format_args" do
+    let(:object) { Object.new }
+    let(:args) do
+      [
+        'Model',
+        1,
+        object,
+        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+      ]
+    end
+
+    it "should format the arguments" do
+      with_helpers.format_args(args).should == [
+        'Model',
+        '1',
+        object.inspect,
+        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ...'
+      ]
     end
   end
 end

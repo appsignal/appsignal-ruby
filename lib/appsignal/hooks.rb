@@ -47,33 +47,7 @@ module Appsignal
     end
 
     module Helpers
-      def self.included(base)
-        base.extend(ClassMethods)
-      end
-
-      module ClassMethods
-        def truncate(text)
-          Appsignal::Hooks::Helpers.truncate(text)
-        end
-
-        def string_or_inspect(string_or_other)
-          Appsignal::Hooks::Helpers.string_or_inspect(string_or_other)
-        end
-
-        def extract_value(object_or_hash, field, default_value=nil, convert_to_s=false)
-          Appsignal::Hooks::Helpers.extract_value(object_or_hash, field, default_value, convert_to_s)
-        end
-      end
-
       def string_or_inspect(string_or_other)
-        Appsignal::Hooks::Helpers.string_or_inspect(string_or_other)
-      end
-
-      def truncate(text)
-        Appsignal::Hooks::Helpers.truncate(text)
-      end
-
-      def self.string_or_inspect(string_or_other)
         if string_or_other.is_a?(String)
           string_or_other
         else
@@ -81,11 +55,11 @@ module Appsignal
         end
       end
 
-      def self.truncate(text)
+      def truncate(text)
         text.size > 200 ? "#{text[0...197]}..." : text
       end
 
-      def self.extract_value(object_or_hash, field, default_value=nil, convert_to_s=false)
+      def extract_value(object_or_hash, field, default_value=nil, convert_to_s=false)
         value = if object_or_hash.respond_to?(:[])
           object_or_hash[field]
         elsif object_or_hash.respond_to?(field)
@@ -95,6 +69,12 @@ module Appsignal
           value.to_s
         else
           value
+        end
+      end
+
+      def format_args(args)
+        args.map do |arg|
+          truncate(string_or_inspect(arg))
         end
       end
     end

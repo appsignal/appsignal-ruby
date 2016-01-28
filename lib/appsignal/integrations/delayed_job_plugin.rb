@@ -1,7 +1,7 @@
 module Appsignal
   class Hooks
     class DelayedJobPlugin < ::Delayed::Plugin
-      include Appsignal::Hooks::Helpers
+      extend Appsignal::Hooks::Helpers
 
       callbacks do |lifecycle|
         lifecycle.around(:invoke_job) do |job, &block|
@@ -41,12 +41,6 @@ module Appsignal
           :queue_start => extract_value(job_data, :created_at)
         ) do
           block.call(job)
-        end
-      end
-
-      def self.format_args(args)
-        args.map do |arg|
-          self.truncate(self.string_or_inspect(arg))
         end
       end
     end
