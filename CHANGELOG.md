@@ -1,3 +1,9 @@
+# 1.1
+* Collect global metrics for GC durations
+* Collect params from Delayed Job in a reliable way
+* Collect perams for Delayed Job and Sidekiq when using ActiveJob
+* Official Grape support
+
 # 1.0.2
 * Bug fix in format of process memory measurements
 * Event formatter for `instantiation.active_record`
