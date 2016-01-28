@@ -6,7 +6,7 @@ module Appsignal
       register :net_http
 
       def dependencies_present?
-        Appsignal.config[:instrument_net_http]
+        Appsignal.config && Appsignal.config[:instrument_net_http]
       end
 
       def install
