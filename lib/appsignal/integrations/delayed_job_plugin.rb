@@ -16,7 +16,7 @@ module Appsignal
       def self.invoke_with_instrumentation(job, block)
         if job.respond_to?(:payload_object)
           # Direct Delayed Job
-          class_and_method_name = extract_value(job.payload_object, :appsignal_name) || job.name
+          class_and_method_name = extract_value(job.payload_object, :appsignal_name, job.name)
           class_name, method_name = class_and_method_name.split('#')
           args = extract_value(job.payload_object, :args, {})
           job_data = job
