@@ -74,3 +74,118 @@ describe Appsignal::Hooks do
     Appsignal::Hooks.hooks[:mock_error_hook].installed?.should be_false
   end
 end
+
+describe Appsignal::Hooks::Helpers do
+  class ClassWithHelpers
+    include Appsignal::Hooks::Helpers
+  end
+  let(:with_helpers) { ClassWithHelpers.new }
+
+  describe "#truncate" do
+    let(:very_long_text) do
+      "a" * 400
+    end
+
+    it "should truncate the text to 200 chars max" do
+      with_helpers.truncate(very_long_text).should == "#{'a' * 197}..."
+    end
+  end
+
+  describe "#string_or_inspect" do
+    context "when string" do
+      it "should return the string" do
+        with_helpers.string_or_inspect('foo').should == 'foo'
+      end
+    end
+
+    context "when integer" do
+      it "should return the string" do
+        with_helpers.string_or_inspect(1).should == '1'
+      end
+    end
+
+    context "when object" do
+      let(:object) { Object.new }
+
+      it "should return the string" do
+        with_helpers.string_or_inspect(object).should == object.inspect
+      end
+    end
+  end
+
+  describe "#extract_value" do
+    context "for a hash" do
+      let(:hash) { {:key => 'value'} }
+
+      context "when the key exists" do
+        subject { with_helpers.extract_value(hash, :key) }
+
+        it { should == 'value' }
+      end
+
+      context "when the key does not exist" do
+        subject { with_helpers.extract_value(hash, :nonexistent_key) }
+
+        it { should be_nil }
+
+        context "with a default value" do
+          subject { with_helpers.extract_value(hash, :nonexistent_key, 1) }
+
+          it { should == 1 }
+        end
+      end
+    end
+
+    context "for an object" do
+      let(:object) { double(:existing_method => 'value') }
+
+      context "when the method exists" do
+        subject { with_helpers.extract_value(object, :existing_method) }
+
+        it { should == 'value' }
+      end
+
+      context "when the method does not exist" do
+        subject { with_helpers.extract_value(object, :nonexistent_method) }
+
+        it { should be_nil }
+
+        context "and there is a default value" do
+          subject { with_helpers.extract_value(object, :nonexistent_method, 1) }
+
+          it { should == 1 }
+        end
+      end
+
+    end
+
+    context "when we need to call to_s on the value" do
+      let(:object) { double(:existing_method => 1) }
+
+      subject { with_helpers.extract_value(object, :existing_method, nil, true) }
+
+      it { should == '1' }
+    end
+  end
+
+  describe "#format_args" do
+    let(:object) { Object.new }
+    let(:args) do
+      [
+        'Model',
+        1,
+        object,
+        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+      ]
+    end
+
+    it "should format the arguments" do
+      with_helpers.format_args(args).should == [
+        'Model',
+        '1',
+        object.inspect,
+        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ...'
+      ]
+    end
+  end
+end

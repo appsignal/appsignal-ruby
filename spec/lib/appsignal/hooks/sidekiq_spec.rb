@@ -36,21 +36,35 @@ describe Appsignal::Hooks::SidekiqPlugin do
       )
     end
 
-    it "reports the correct job class for a ActiveJob wrapped job" do
-      item['wrapped'] = 'ActiveJobClass'
-      Appsignal.should_receive(:monitor_transaction).with(
-        'perform_job.sidekiq',
-        :class    => 'ActiveJobClass',
-        :method   => 'perform',
-        :metadata => {
-          'retry_count' => "0",
-          'queue'       => 'default',
-          'extra'       => 'data',
-          'wrapped'     => 'ActiveJobClass'
-        },
-        :params      => ['Model', "1"],
-        :queue_start => Time.parse('01-01-2001 10:00:00UTC')
-      )
+    context "when wrapped by ActiveJob" do
+      let(:item) {{
+        "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+        "wrapped" => "TestClass",
+        "queue" => "default",
+        "args"=> [{
+          "job_class" => "TestJob",
+          "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+          "queue_name" => "default",
+          "arguments" => ['Model', 1],
+        }],
+        "retry" => true,
+        "jid" => "efb140489485999d32b5504c",
+        "created_at" => Time.parse('01-01-2001 10:00:00UTC').to_f,
+        "enqueued_at" => Time.parse('01-01-2001 10:00:00UTC').to_f
+      }}
+
+      it "should wrap in a transaction with the correct params" do
+        Appsignal.should_receive(:monitor_transaction).with(
+          'perform_job.sidekiq',
+          :class    => 'TestClass',
+          :method   => 'perform',
+          :metadata => {
+            'queue' => 'default'
+          },
+          :params      => ['Model', "1"],
+          :queue_start => Time.parse('01-01-2001 10:00:00UTC').to_f
+        )
+      end
     end
 
     after do
@@ -90,53 +104,6 @@ describe Appsignal::Hooks::SidekiqPlugin do
 
     it "should only add items to the hash that do not appear in JOB_KEYS" do
       plugin.formatted_metadata(item).should == {'foo' => 'bar'}
-    end
-  end
-
-  describe "#format_args" do
-    let(:object) { Object.new }
-    let(:args) do
-      [
-        'Model',
-        1,
-        object
-      ]
-    end
-
-    it "should format the arguments" do
-      plugin.format_args(args).should == ['Model', '1', object.inspect]
-    end
-  end
-
-  describe "#truncate" do
-    let(:very_long_text) do
-      "a" * 400
-    end
-
-    it "should truncate the text to 200 chars max" do
-      plugin.truncate(very_long_text).should == "#{'a' * 197}..."
-    end
-  end
-
-  describe "#string_or_inspect" do
-    context "when string" do
-      it "should return the string" do
-        plugin.string_or_inspect('foo').should == 'foo'
-      end
-    end
-
-    context "when integer" do
-      it "should return the string" do
-        plugin.string_or_inspect(1).should == '1'
-      end
-    end
-
-    context "when object" do
-      let(:object) { Object.new }
-
-      it "should return the string" do
-        plugin.string_or_inspect(object).should == object.inspect
-      end
     end
   end
 end

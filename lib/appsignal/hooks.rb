@@ -45,6 +45,39 @@ module Appsignal
         raise NotImplementedError
       end
     end
+
+    module Helpers
+      def string_or_inspect(string_or_other)
+        if string_or_other.is_a?(String)
+          string_or_other
+        else
+          string_or_other.inspect
+        end
+      end
+
+      def truncate(text)
+        text.size > 200 ? "#{text[0...197]}..." : text
+      end
+
+      def extract_value(object_or_hash, field, default_value=nil, convert_to_s=false)
+        value = if object_or_hash.respond_to?(:[])
+          object_or_hash[field]
+        elsif object_or_hash.respond_to?(field)
+          object_or_hash.send(field)
+        end || default_value
+        if convert_to_s
+          value.to_s
+        else
+          value
+        end
+      end
+
+      def format_args(args)
+        args.map do |arg|
+          truncate(string_or_inspect(arg))
+        end
+      end
+    end
   end
 end
 

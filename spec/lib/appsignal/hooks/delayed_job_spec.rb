@@ -28,17 +28,18 @@ describe Appsignal::Hooks::DelayedJobHook do
     describe ".invoke_with_instrumentation" do
       let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
       let(:time) { Time.parse('01-01-2001 10:01:00UTC') }
-      let(:job) do
-        double(
+      let(:job_data) do
+        {
           :id             => 123,
           :name           => 'TestClass#perform',
           :priority       => 1,
           :attempts       => 1,
           :queue          => 'default',
           :created_at     => time - 60_000,
-          :payload_object => double
-        )
+          :payload_object => double(:args => ['argument']),
+        }
       end
+      let(:job) { double(job_data) }
       let(:invoked_block) { Proc.new { } }
       let(:error) { StandardError.new }
 
@@ -52,8 +53,9 @@ describe Appsignal::Hooks::DelayedJobHook do
               :priority => 1,
               :attempts => 1,
               :queue    => 'default',
-              :id       => 123
+              :id       => '123'
             },
+            :params      => ['argument'],
             :queue_start => time - 60_000,
           )
 
@@ -63,18 +65,19 @@ describe Appsignal::Hooks::DelayedJobHook do
         end
 
         context "with custom name call" do
-          let(:job) do
-            double(
+          let(:job_data) do
+            {
               :payload_object => double(
-                :appsignal_name => 'CustomClass#perform'
+                :appsignal_name => 'CustomClass#perform',
+                :args           => ['argument']
               ),
-              :id         => 123,
-              :name       => 'TestClass#perform',
-              :priority   => 1,
-              :attempts   => 1,
-              :queue      => 'default',
-              :created_at => time - 60_000
-            )
+              :id             => '123',
+              :name           => 'TestClass#perform',
+              :priority       => 1,
+              :attempts       => 1,
+              :queue          => 'default',
+              :created_at     => time - 60_000
+            }
           end
           it "should wrap in a transaction with the correct params" do
             Appsignal.should_receive(:monitor_transaction).with(
@@ -85,13 +88,45 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :priority => 1,
                 :attempts => 1,
                 :queue    => 'default',
-                :id       => 123
+                :id       => '123'
               },
+              :params      => ['argument'],
               :queue_start => time - 60_000
             )
 
             Timecop.freeze(time) do
               plugin.invoke_with_instrumentation(job, invoked_block)
+            end
+          end
+        end
+
+        if active_job_present?
+          require 'active_job'
+
+          context "when wrapped by ActiveJob" do
+            before do
+              job_data[:args] = ['argument']
+            end
+            let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
+
+            it "should wrap in a transaction with the correct params" do
+              Appsignal.should_receive(:monitor_transaction).with(
+                'perform_job.delayed_job',
+                :class    => 'TestClass',
+                :method   => 'perform',
+                :metadata => {
+                  :priority => 1,
+                  :attempts => 1,
+                  :queue    => 'default',
+                  :id       => '123'
+                },
+                :params      => ['argument'],
+                :queue_start => time - 60_000,
+              )
+
+              Timecop.freeze(time) do
+                plugin.invoke_with_instrumentation(job, invoked_block)
+              end
             end
           end
         end

@@ -1,21 +1,30 @@
 module Appsignal
   class Hooks
     class SidekiqPlugin
+      include Appsignal::Hooks::Helpers
+
       def job_keys
         @job_keys ||= Set.new(%w(
             class args retried_at failed_at
             error_message error_class backtrace
             error_backtrace enqueued_at retry
+            jid retry created_at wrapped
         ))
       end
 
       def call(worker, item, queue)
+        if item['class'] == 'ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper'
+          params = format_args(item['args'].first['arguments'])
+        else
+          params = format_args(item['args'])
+        end
+
         Appsignal.monitor_transaction(
           'perform_job.sidekiq',
           :class       => item['wrapped'] || item['class'],
           :method      => 'perform',
           :metadata    => formatted_metadata(item),
-          :params      => format_args(item['args']),
+          :params      => params,
           :queue_start => item['enqueued_at']
         ) do
           yield
@@ -28,24 +37,6 @@ module Appsignal
             hsh[key] = truncate(string_or_inspect(val)) unless job_keys.include?(key)
           end
         end
-      end
-
-      def string_or_inspect(string_or_other)
-        if string_or_other.is_a?(String)
-          string_or_other
-        else
-          string_or_other.inspect
-        end
-      end
-
-      def format_args(args)
-        args.map do |arg|
-          truncate(string_or_inspect(arg))
-        end
-      end
-
-      def truncate(text)
-        text.size > 200 ? "#{text[0...197]}..." : text
       end
     end
 
