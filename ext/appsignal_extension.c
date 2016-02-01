@@ -187,19 +187,10 @@ static VALUE install_gc_event_hooks() {
       Qnil
   );
   #endif
-  #if defined(RUBY_INTERNAL_EVENT_GC_END_SWEEP)
-  // Ruby 2.1
+  #if defined(RUBY_INTERNAL_EVENT_GC_END_MARK)
   rb_add_event_hook(
       track_gc_end,
-      RUBY_INTERNAL_EVENT_GC_END_SWEEP,
-      Qnil
-  );
-  #endif
-  #if defined(RUBY_INTERNAL_EVENT_GC_END)
-  // Ruby 2.2
-  rb_add_event_hook(
-      track_gc_end,
-      RUBY_INTERNAL_EVENT_GC_END,
+      RUBY_INTERNAL_EVENT_GC_END_MARK,
       Qnil
   );
   #endif
