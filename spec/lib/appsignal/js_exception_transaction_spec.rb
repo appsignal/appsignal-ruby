@@ -87,6 +87,7 @@ describe Appsignal::JSExceptionTransaction do
   describe "#complete!" do
     it "should call all required methods" do
       expect( Appsignal::Extension ).to receive(:finish_transaction).with(kind_of(Integer))
+      expect( Appsignal::Extension ).to receive(:complete_transaction).with(kind_of(Integer))
       transaction.complete!
     end
   end
