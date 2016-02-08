@@ -1,3 +1,7 @@
+# 1.0.3
+* Fix bug in completing JS transactions
+* Make Resque integration robust for bigger payloads
+
 # 1.0.2
 * Bug fix in format of process memory measurements
 * Event formatter for `instantiation.active_record`
