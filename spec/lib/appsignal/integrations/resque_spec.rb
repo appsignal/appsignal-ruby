@@ -31,6 +31,7 @@ if resque_present?
         before do
           transaction.stub(:complete => true)
           Appsignal::Transaction.stub(:current => transaction)
+          Appsignal.should_receive(:stop)
         end
 
         context "without exception" do
