@@ -53,6 +53,7 @@ module Appsignal
 
     def complete!
       Appsignal::Extension.finish_transaction(@transaction_index)
+      Appsignal::Extension.complete_transaction(@transaction_index)
     end
   end
 end
