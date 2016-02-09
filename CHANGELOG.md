@@ -1,6 +1,7 @@
 # 1.0.3
 * Fix bug in completing JS transactions
 * Make Resque integration robust for bigger payloads
+* Message in logs if agent logging cannot initialize
 
 # 1.0.2
 * Bug fix in format of process memory measurements
