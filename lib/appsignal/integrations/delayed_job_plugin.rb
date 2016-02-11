@@ -24,7 +24,7 @@ module Appsignal
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => job.id,
+            :id       => job.id.to_s,
             :queue    => job.queue,
             :priority => job.priority || 0,
             :attempts => job.attempts || 0

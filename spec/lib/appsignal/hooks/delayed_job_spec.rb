@@ -52,7 +52,7 @@ describe Appsignal::Hooks::DelayedJobHook do
               :priority => 1,
               :attempts => 1,
               :queue    => 'default',
-              :id       => 123
+              :id       => '123'
             },
             :queue_start => time - 60_000,
           )
@@ -68,7 +68,7 @@ describe Appsignal::Hooks::DelayedJobHook do
               :payload_object => double(
                 :appsignal_name => 'CustomClass#perform'
               ),
-              :id         => 123,
+              :id         => '123',
               :name       => 'TestClass#perform',
               :priority   => 1,
               :attempts   => 1,
@@ -85,7 +85,7 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :priority => 1,
                 :attempts => 1,
                 :queue    => 'default',
-                :id       => 123
+                :id       => '123'
               },
               :queue_start => time - 60_000
             )
