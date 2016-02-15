@@ -71,12 +71,12 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :appsignal_name => 'CustomClass#perform',
                 :args           => ['argument']
               ),
-              :id             => '123',
-              :name           => 'TestClass#perform',
-              :priority       => 1,
-              :attempts       => 1,
-              :queue          => 'default',
-              :created_at     => time - 60_000
+              :id         => '123',
+              :name       => 'TestClass#perform',
+              :priority   => 1,
+              :attempts   => 1,
+              :queue      => 'default',
+              :created_at => time - 60_000
             }
           end
           it "should wrap in a transaction with the correct params" do
