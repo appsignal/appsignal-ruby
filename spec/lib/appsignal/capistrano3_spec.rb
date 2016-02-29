@@ -80,9 +80,29 @@ if capistrano3_present?
               )
             end
           end
+
+          context "when stage is used instead of rack_env / rails_env" do
+            before do
+              @capistrano_config.delete(:rails_env)
+              @capistrano_config.set(:stage, 'stage_production')
+            end
+
+            it "should be instantiated with the right params" do
+              Appsignal::Config.should_receive(:new).with(
+                project_fixture_path,
+                'stage_production',
+                {:name => 'AppName'},
+                kind_of(Logger)
+              )
+            end
+          end
         end
 
-        after { invoke('appsignal:deploy') }
+        after do
+          invoke('appsignal:deploy')
+          @capistrano_config.delete(:stage)
+          @capistrano_config.delete(:rack_env)
+        end
       end
 
       context "send marker" do
