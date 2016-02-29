@@ -42,7 +42,8 @@ module Appsignal
       'APPSIGNAL_HTTP_PROXY'                     => :http_proxy,
       'APPSIGNAL_ENABLE_ALLOCATION_TRACKING'     => :enable_allocation_tracking,
       'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation,
-      'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container
+      'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container,
+      'APPSIGNAL_WORKING_DIR_PATH'               => :working_dir_path
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -103,6 +104,7 @@ module Appsignal
       ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
       ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
+      ENV['APPSIGNAL_WORKING_DIR_PATH']             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
     end
 
     protected
@@ -150,7 +152,8 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
+         APPSIGNAL_WORKING_DIR_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end

@@ -1,3 +1,6 @@
+# 1.0.4
+* Make working dir configurable using `APPSIGNAL_WORKING_DIR_PATH` or `:working_dir_path`
+
 # 1.0.3
 * Fix bug in completing JS transactions
 * Make Resque integration robust for bigger payloads
