@@ -15,7 +15,7 @@ describe "Sequel integration", if: sequel_present? do
         .at_least(:once)
       expect( Appsignal::Extension ).to receive(:finish_event)
         .at_least(:once)
-        .with(kind_of(Integer), "sql.sequel", "", "")
+        .with(kind_of(Integer), "sql.sequel", "", kind_of(String), 1)
 
       db['SELECT 1'].all
     end

@@ -43,7 +43,8 @@ module Appsignal
           transaction.transaction_index,
           'query.mongodb',
           event.command_name.to_s,
-          %Q(#{event.database_name} | #{result} | #{command})
+          %Q(#{event.database_name} | #{result} | #{command}),
+          0
         )
       end
     end

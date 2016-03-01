@@ -60,6 +60,8 @@ module Appsignal
       end
     end
   end
+
+  SQL_BODY_FORMAT = 1
 end
 
 Dir.glob(File.expand_path('../event_formatter/**/*.rb', __FILE__)).each do |file|
