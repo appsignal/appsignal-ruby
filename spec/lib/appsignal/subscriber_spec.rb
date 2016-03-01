@@ -98,10 +98,10 @@ describe Appsignal::Subscriber do
 
       it "should call native start and finish event for every event" do
         Appsignal::Extension.should_receive(:start_event).exactly(4).times
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two.three', '', '').once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one.three', '', '').once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one', '', '', 0).once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two', '', '', 0).once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two.three', '', '', 0).once
+        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one.three', '', '', 0).once
 
         ActiveSupport::Notifications.instrument('one') do
           ActiveSupport::Notifications.instrument('two') do
@@ -119,7 +119,8 @@ describe Appsignal::Subscriber do
           kind_of(Integer),
           'request.net_http',
           'GET http://www.google.com',
-          ''
+          '',
+          0
         ).once
 
         ActiveSupport::Notifications.instrument(
@@ -127,6 +128,23 @@ describe Appsignal::Subscriber do
           :protocol => 'http',
           :domain   => 'www.google.com',
           :method   => 'GET'
+        )
+      end
+
+      it "should call finish with title, body and body format if there is a formatter that returns it" do
+        Appsignal::Extension.should_receive(:start_event).once
+        Appsignal::Extension.should_receive(:finish_event).with(
+          kind_of(Integer),
+          'sql.active_record',
+          'Something load',
+          'SELECT * FROM something',
+          1
+        ).once
+
+        ActiveSupport::Notifications.instrument(
+          'sql.active_record',
+          :name => 'Something load',
+          :sql  => 'SELECT * FROM something'
         )
       end
 

@@ -46,7 +46,7 @@ describe "extension loading and operation" do
       end
 
       it "should have a finish_event method" do
-        subject.finish_event(1, 'name', 'title', 'body')
+        subject.finish_event(1, 'name', 'title', 'body', 0)
       end
 
       it "should have a set_transaction_error method" do
