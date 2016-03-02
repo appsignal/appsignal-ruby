@@ -11,13 +11,15 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     describe "#started" do
       let(:event) do
         double(
-          :request_id => 1,
-          :command    => {'foo' => 'bar'}
+          :request_id   => 1,
+          :command_name => 'find',
+          :command      => {'foo' => 'bar'}
         )
       end
 
       it "should sanitize command" do
-        Appsignal::Utils.should receive(:sanitize).with({'foo' => 'bar'} )
+        Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter
+          .should receive(:format).with('find', {'foo' => 'bar'})
 
         subscriber.started(event)
       end
@@ -81,9 +83,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         Appsignal::Extension.should receive(:finish_event).with(
           transaction.transaction_index,
           'query.mongodb',
-          'find',
-          "test | SUCCEEDED | {\"foo\"=>\"?\"}",
-          0
+          'find | test | SUCCEEDED',
+          "{\"foo\":\"?\"}"
         )
 
         subscriber.finish('SUCCEEDED', event)
