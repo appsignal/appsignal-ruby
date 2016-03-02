@@ -33,4 +33,20 @@ describe Appsignal::Utils do
       end
     end
   end
+
+  describe ".sanitize_key" do
+    it "should not sanitize key when no key_sanitizer is given" do
+      expect( Appsignal::Utils.sanitize_key('foo', nil) ).to eql('foo')
+    end
+
+    context "with moped sanitizer" do
+      it "should not sanitize key when no dots are in the key" do
+        expect( Appsignal::Utils.sanitize_key('foo', :moped) ).to eql('foo')
+      end
+
+      it "should sanitize key when dots are in the key" do
+        expect( Appsignal::Utils.sanitize_key('foo.bar', :moped) ).to eql('foo.?')
+      end
+    end
+  end
 end
