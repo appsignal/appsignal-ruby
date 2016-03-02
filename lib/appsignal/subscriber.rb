@@ -45,12 +45,13 @@ module Appsignal
       return unless transaction = Appsignal::Transaction.current
       return if transaction.nil_transaction? || transaction.paused?
 
-      title, body = Appsignal::EventFormatter.format(name, payload)
+      title, body, body_format = Appsignal::EventFormatter.format(name, payload)
       Appsignal::Extension.finish_event(
         transaction.transaction_index,
         name,
         title || BLANK,
-        body || BLANK
+        body || BLANK,
+        body_format || 0
       )
     end
   end

@@ -82,7 +82,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
           transaction.transaction_index,
           'query.mongodb',
           'find',
-          "test | SUCCEEDED | {\"foo\"=>\"?\"}"
+          "test | SUCCEEDED | {\"foo\"=>\"?\"}",
+          0
         )
 
         subscriber.finish('SUCCEEDED', event)
