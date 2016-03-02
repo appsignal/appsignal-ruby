@@ -71,7 +71,14 @@ module Appsignal
           when :sanitize_document
             Appsignal::Utils.sanitize(val, true, :mongodb)
           when :sanitize_bulk
-            val.map { |v| self.format(:bulk, v) }
+            if val.length > 1
+              [
+                self.format(:bulk, val.first),
+                "[...]"
+              ]
+            else
+              val.map { |v| self.format(:bulk, v) }
+            end
           else '?'
           end
         end

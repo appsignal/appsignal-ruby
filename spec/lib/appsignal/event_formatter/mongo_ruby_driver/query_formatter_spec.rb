@@ -85,6 +85,22 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
           {"q" => {"_id" => '?'}, "u" => '[?]'}
         ])
       end
+
+      context "when bulk has more than one update" do
+        let(:value) do
+          [
+            {"q" => {"_id" => 1}, "u" => [{"foo" => "bar"}]},
+            {"q" => {"_id" => 2}, "u" => [{"foo" => "baz"}]},
+          ]
+        end
+
+        it "should return only the first value of sanitized bulk documents" do
+          expect( formatter.apply_strategy(strategy, value) ).to eql([
+            {"q" => {"_id" => '?'}, "u" => '[?]'},
+            "[...]"
+          ])
+        end
+      end
     end
 
     context "when strategy is missing" do
