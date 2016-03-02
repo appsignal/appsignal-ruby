@@ -22,12 +22,12 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       let(:op) do
         double(
           :full_collection_name => 'database.collection',
-          :selector             => {'_id' => 'abc'},
+          :selector             => {'query' => {'_id' => 'abc'}},
           :class                => double(:to_s => 'Moped::Protocol::Command')
         )
       end
 
-      it { should == ['Command', '{:database=>"database.collection", :selector=>{"_id"=>"?"}}'] }
+      it { should == ['Command', '{:database=>"database.collection", :selector=>{"query"=>"?"}}'] }
     end
 
     context "Moped::Protocol::Query" do
@@ -80,13 +80,13 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         double(
           :full_collection_name => 'database.collection',
           :selector             => {'_id' => 'abc'},
-          :update               => {'name' => 'James Bond'},
+          :update               => {'user.name' => 'James Bond'},
           :flags                => [],
           :class                => double(:to_s => 'Moped::Protocol::Update')
         )
       end
 
-      it { should == ['Update', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"name"=>"?"}, :flags=>[]}'] }
+      it { should == ['Update', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"user.?"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::KillCursors" do
