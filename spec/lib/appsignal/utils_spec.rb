@@ -39,13 +39,13 @@ describe Appsignal::Utils do
       expect( Appsignal::Utils.sanitize_key('foo', nil) ).to eql('foo')
     end
 
-    context "with moped sanitizer" do
+    context "with mongodb sanitizer" do
       it "should not sanitize key when no dots are in the key" do
-        expect( Appsignal::Utils.sanitize_key('foo', :moped) ).to eql('foo')
+        expect( Appsignal::Utils.sanitize_key('foo', :mongodb) ).to eql('foo')
       end
 
       it "should sanitize key when dots are in the key" do
-        expect( Appsignal::Utils.sanitize_key('foo.bar', :moped) ).to eql('foo.?')
+        expect( Appsignal::Utils.sanitize_key('foo.bar', :mongodb) ).to eql('foo.?')
       end
     end
   end
