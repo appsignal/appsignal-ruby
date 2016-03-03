@@ -1,16 +1,19 @@
 module Appsignal
   class Hooks
     class MongoMonitorSubscriber
-
       # Called by Mongo::Monitor when query starts
       def started(event)
         transaction = Appsignal::Transaction.current
         return if transaction.nil_transaction?
         return if transaction.paused?
 
+        # Format the command
+        command = Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter
+          .format(event.command_name, event.command)
+
         # Store the query on the transaction, we need it when the event finishes
         store                   = transaction.store('mongo_driver')
-        store[event.request_id] = Appsignal::Utils.sanitize(event.command)
+        store[event.request_id] = command
 
         # Start this event
         Appsignal::Extension.start_event(transaction.transaction_index)
@@ -36,14 +39,14 @@ module Appsignal
 
         # Get the query from the transaction store
         store   = transaction.store('mongo_driver')
-        command = store[event.request_id].inspect
+        command = store.delete(event.request_id) || {}
 
         # Finish the event in the extension.
         Appsignal::Extension.finish_event(
           transaction.transaction_index,
           'query.mongodb',
-          event.command_name.to_s,
-          %Q(#{event.database_name} | #{result} | #{command}),
+          "#{event.command_name.to_s} | #{event.database_name} | #{result}",
+          JSON.generate(command),
           0
         )
       end

@@ -28,7 +28,7 @@ module Appsignal
 
     def self.sanitize_key(key, sanitizer)
       case sanitizer
-      when :moped then key.gsub(/(\..+)/, '.?')
+      when :mongodb then key.gsub(/(\..+)/, '.?')
       else key
       end
     end
