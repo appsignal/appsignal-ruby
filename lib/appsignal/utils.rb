@@ -28,7 +28,7 @@ module Appsignal
 
     def self.sanitize_key(key, sanitizer)
       case sanitizer
-      when :mongodb then key.gsub(/(\..+)/, '.?')
+      when :mongodb then key.to_s.gsub(/(\..+)/, '.?')
       else key
       end
     end

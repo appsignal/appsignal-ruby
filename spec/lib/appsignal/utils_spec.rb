@@ -47,6 +47,10 @@ describe Appsignal::Utils do
       it "should sanitize key when dots are in the key" do
         expect( Appsignal::Utils.sanitize_key('foo.bar', :mongodb) ).to eql('foo.?')
       end
+
+      it "should sanitize a symbol" do
+        expect( Appsignal::Utils.sanitize_key(:ismaster, :mongodb) ).to eql('ismaster')
+      end
     end
   end
 end
