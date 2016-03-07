@@ -18,13 +18,22 @@ describe Appsignal::Utils do
       end
     end
 
-    context "when params is an array of strings " do
+    context "when params is an array of strings" do
       let(:params) { ['foo', 'bar'] }
 
       it "should sanitize all hash values with a single questionmark" do
         expect( Appsignal::Utils.sanitize(params) ).to eq(['?'])
       end
     end
+
+    context "when params is a mixed array" do
+      let(:params) { [nil, 'foo', 'bar'] }
+
+      it "should sanitize all hash values with a single questionmark" do
+        expect( Appsignal::Utils.sanitize(params) ).to eq(['?'])
+      end
+    end
+
     context "when params is a string" do
       let(:params) { 'bar'}
 
