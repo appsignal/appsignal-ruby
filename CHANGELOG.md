@@ -1,3 +1,8 @@
+# 1.0.5
+* Improved sql sanitization
+* Improved mongoid/mongodb sanitization
+* Minor performance improvements
+
 # 1.0.4
 * Make working dir configurable using `APPSIGNAL_WORKING_DIR_PATH` or `:working_dir_path`
 
