@@ -32,5 +32,28 @@ module Appsignal
       else key
       end
     end
+
+    def self.json_generate(body)
+      JSON.generate(jsonify(body))
+    end
+
+    def self.jsonify(value)
+      case value
+      when String
+        value.encode(
+          'utf-8',
+          :invalid => :replace,
+          :undef   => :replace
+        )
+      when Numeric, NilClass, TrueClass, FalseClass
+        value
+      when Hash
+        Hash[value.map { |k, v| [jsonify(k), jsonify(v)] }]
+      when Array
+        value.map { |v| jsonify(v) }
+      else
+        jsonify(value.to_s)
+      end
+    end
   end
 end

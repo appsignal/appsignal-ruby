@@ -46,7 +46,7 @@ module Appsignal
           transaction.transaction_index,
           'query.mongodb',
           "#{event.command_name.to_s} | #{event.database_name} | #{result}",
-          JSON.generate(command),
+          Appsignal::Utils.json_generate(command),
           0
         )
       end
