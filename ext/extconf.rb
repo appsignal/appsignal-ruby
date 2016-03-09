@@ -76,7 +76,7 @@ def install
     create_makefile 'appsignal_extension'
     logger.info 'Successfully installed appsignal extension'
   else
-    installation_failed "Aborting installation, extension files were not present"
+    installation_failed "Aborting installation, extension files were not present or could not be loaded"
   end
 rescue => ex
   installation_failed "Exception while installing: #{ex}"
