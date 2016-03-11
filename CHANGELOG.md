@@ -3,6 +3,7 @@
 * Improved mongoid/mongodb sanitization
 * Minor performance improvements
 * Better handling for non-utf8 convertable strings
+* Make gem installable (but not functional) on jRuby
 
 # 1.0.4
 * Make working dir configurable using `APPSIGNAL_WORKING_DIR_PATH` or `:working_dir_path`
