@@ -11,12 +11,12 @@ module Appsignal
             when 'Moped::Protocol::Command'
               return ['Command', {
                 :database => op.full_collection_name,
-                :selector => Appsignal::Utils.sanitize(op.selector)
+                :selector => Appsignal::Utils.sanitize(op.selector, true, :mongodb)
               }.inspect]
             when 'Moped::Protocol::Query'
               return ['Query', {
                 :database => op.full_collection_name,
-                :selector => Appsignal::Utils.sanitize(op.selector),
+                :selector => Appsignal::Utils.sanitize(op.selector, false, :mongodb),
                 :flags    => op.flags,
                 :limit    => op.limit,
                 :skip     => op.skip,
@@ -25,21 +25,21 @@ module Appsignal
             when 'Moped::Protocol::Delete'
               return ['Delete', {
                 :database => op.full_collection_name,
-                :selector => Appsignal::Utils.sanitize(op.selector),
+                :selector => Appsignal::Utils.sanitize(op.selector, false, :mongodb),
                 :flags    => op.flags,
               }.inspect]
             when 'Moped::Protocol::Insert'
               return ['Insert', {
                 :database   => op.full_collection_name,
-                :documents  => Appsignal::Utils.sanitize(op.documents, true),
+                :documents  => Appsignal::Utils.sanitize(op.documents, true, :mongodb),
                 :count      => op.documents.count,
                 :flags      => op.flags,
               }.inspect]
             when 'Moped::Protocol::Update'
               return ['Update', {
                 :database => op.full_collection_name,
-                :selector => Appsignal::Utils.sanitize(op.selector),
-                :update   => Appsignal::Utils.sanitize(op.update, true),
+                :selector => Appsignal::Utils.sanitize(op.selector, false, :mongodb),
+                :update   => Appsignal::Utils.sanitize(op.update, true, :mongodb),
                 :flags    => op.flags,
               }.inspect]
             when 'Moped::Protocol::KillCursors'
@@ -53,7 +53,6 @@ module Appsignal
             end
           end
         end
-
       end
     end
   end

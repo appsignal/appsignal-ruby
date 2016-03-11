@@ -98,6 +98,18 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
         ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
+        ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
+      end
+
+      context "if working_dir_path is set" do
+        before do
+          subject.config_hash[:working_dir_path] = '/tmp/appsignal2'
+          subject.write_to_environment
+        end
+
+        it "should write the current config to env vars" do
+          ENV['APPSIGNAL_WORKING_DIR_PATH'].should == '/tmp/appsignal2'
+        end
       end
     end
 

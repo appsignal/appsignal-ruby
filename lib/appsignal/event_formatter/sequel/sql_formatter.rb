@@ -1,11 +1,11 @@
 module Appsignal
   class EventFormatter
-    module ActiveRecord
+    module Sequel
       class SqlFormatter < Appsignal::EventFormatter
-        register 'sql.active_record'
+        register 'sql.sequel'
 
         def format(payload)
-          [payload[:name], payload[:sql], SQL_BODY_FORMAT]
+          [nil, payload[:sql], SQL_BODY_FORMAT]
         end
       end
     end

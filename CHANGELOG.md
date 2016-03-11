@@ -4,6 +4,16 @@
 * Collect perams for Delayed Job and Sidekiq when using ActiveJob
 * Official Grape support
 
+# 1.0.5
+* Improved sql sanitization
+* Improved mongoid/mongodb sanitization
+* Minor performance improvements
+* Better handling for non-utf8 convertable strings
+* Make gem installable (but not functional) on jRuby
+
+# 1.0.4
+* Make working dir configurable using `APPSIGNAL_WORKING_DIR_PATH` or `:working_dir_path`
+
 # 1.0.3
 * Fix bug in completing JS transactions
 * Make Resque integration robust for bigger payloads

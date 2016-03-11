@@ -1,6 +1,5 @@
 require 'digest'
 require 'logger'
-require 'mkmf'
 require 'fileutils'
 require 'open-uri'
 require 'zlib'
@@ -29,6 +28,13 @@ end
 
 def install
   logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+
+  if RUBY_PLATFORM =~ /java/
+    installation_failed(
+      "We do not support jRuby at the moment, email support@appsignal.com if you want to join the beta"
+    )
+    return
+  end
 
   unless AGENT_CONFIG['triples'].keys.include?(ARCH)
     installation_failed(
@@ -70,13 +76,14 @@ def install
   end
 
   logger.info "Creating makefile"
+  require 'mkmf'
   if find_library('appsignal', 'appsignal_start', EXT_PATH) &&
        find_executable('appsignal-agent', EXT_PATH) &&
        find_header('appsignal_extension.h', EXT_PATH)
     create_makefile 'appsignal_extension'
     logger.info 'Successfully installed appsignal extension'
   else
-    installation_failed "Aborting installation, extension files were not present"
+    installation_failed "Aborting installation, extension files were not present or could not be loaded"
   end
 rescue => ex
   installation_failed "Exception while installing: #{ex}"

@@ -3,13 +3,10 @@ module Appsignal
     module SequelExtension
       # Add query instrumentation
       def log_yield(sql, args = nil)
-
-        # We'd like to get full sql queries in the payloads as well. To do
-        # that we need to find out a way to ask Sequel which quoting strategy
-        # is used by the adapter. We can then do something similar to the AR
-        # formatter.
-
-        ActiveSupport::Notifications.instrument('sql.sequel') do
+        ActiveSupport::Notifications.instrument(
+          'sql.sequel',
+          :sql => sql
+        ) do
           yield
         end
       end

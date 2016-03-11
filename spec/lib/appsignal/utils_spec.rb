@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 require 'spec_helper'
 
 describe Appsignal::Utils do
@@ -31,6 +33,52 @@ describe Appsignal::Utils do
       it "should sanitize all hash values with a questionmark" do
         expect( Appsignal::Utils.sanitize(params) ).to eq('?')
       end
+    end
+  end
+
+  describe ".sanitize_key" do
+    it "should not sanitize key when no key_sanitizer is given" do
+      expect( Appsignal::Utils.sanitize_key('foo', nil) ).to eql('foo')
+    end
+
+    context "with mongodb sanitizer" do
+      it "should not sanitize key when no dots are in the key" do
+        expect( Appsignal::Utils.sanitize_key('foo', :mongodb) ).to eql('foo')
+      end
+
+      it "should sanitize key when dots are in the key" do
+        expect( Appsignal::Utils.sanitize_key('foo.bar', :mongodb) ).to eql('foo.?')
+      end
+
+      it "should sanitize a symbol" do
+        expect( Appsignal::Utils.sanitize_key(:ismaster, :mongodb) ).to eql('ismaster')
+      end
+    end
+  end
+
+  describe ".json_generate" do
+    subject { Appsignal::Utils.json_generate(body) }
+
+    context "with a valid body" do
+      let(:body) { {'the' => 'payload'} }
+
+      it { should == "{\"the\":\"payload\"}" }
+    end
+
+    context "with a body that contains strings with invalid utf-8 content" do
+      let(:string_with_invalid_utf8) { [0x61, 0x61, 0x85].pack('c*') }
+      let(:body) { {
+        'field_one' => [0x61, 0x61].pack('c*'),
+        'field_two' => string_with_invalid_utf8,
+        'field_three' => [
+          'one', string_with_invalid_utf8
+        ],
+        'field_four' => {
+          'one' => string_with_invalid_utf8
+        }
+      } }
+
+      it { should == "{\"field_one\":\"aa\",\"field_two\":\"aa�\",\"field_three\":[\"one\",\"aa�\"],\"field_four\":{\"one\":\"aa�\"}}" }
     end
   end
 end

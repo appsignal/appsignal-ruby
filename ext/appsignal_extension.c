@@ -26,17 +26,19 @@ static VALUE start_event(VALUE self, VALUE transaction_index) {
   return Qnil;
 }
 
-static VALUE finish_event(VALUE self, VALUE transaction_index, VALUE name, VALUE title, VALUE body) {
+static VALUE finish_event(VALUE self, VALUE transaction_index, VALUE name, VALUE title, VALUE body, VALUE body_format) {
   Check_Type(transaction_index, T_FIXNUM);
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
   Check_Type(body, T_STRING);
+  Check_Type(body_format, T_FIXNUM);
 
   appsignal_finish_event(
       FIX2INT(transaction_index),
       StringValueCStr(name),
       StringValueCStr(title),
-      StringValueCStr(body)
+      StringValueCStr(body),
+      FIX2INT(body_format)
   );
   return Qnil;
 }
@@ -207,7 +209,7 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "stop",                        stop,                        0);
   rb_define_singleton_method(Extension, "start_transaction",           start_transaction,           2);
   rb_define_singleton_method(Extension, "start_event",                 start_event,                 1);
-  rb_define_singleton_method(Extension, "finish_event",                finish_event,                4);
+  rb_define_singleton_method(Extension, "finish_event",                finish_event,                5);
   rb_define_singleton_method(Extension, "set_transaction_error",       set_transaction_error,       4);
   rb_define_singleton_method(Extension, "set_transaction_sample_data", set_transaction_sample_data, 3);
   rb_define_singleton_method(Extension, "set_transaction_action",      set_transaction_action,      2);
