@@ -16,12 +16,6 @@ describe Appsignal::CLI do
     $stdout = @original_stdout
   end
 
-  describe "#logger" do
-    it "should be a logger" do
-      cli.logger.should be_instance_of(Logger)
-    end
-  end
-
   describe "#config" do
     subject { cli.config }
 
@@ -36,7 +30,7 @@ describe Appsignal::CLI do
       }.should raise_error(SystemExit)
 
       out_stream.string.should include 'appsignal <command> [options]'
-      out_stream.string.should include 'Available commands: notify_of_deploy'
+      out_stream.string.should include 'Available commands: install, notify_of_deploy'
     end
   end
 
@@ -60,7 +54,7 @@ describe Appsignal::CLI do
       "appsignal -h to see the help"
   end
 
-  describe "#notify_of_deploy" do
+  describe "notify_of_deploy" do
     it "should validate that the config has been loaded and all options have been supplied" do
       cli.should_receive(:validate_active_config)
       cli.should_receive(:validate_required_options).with(
@@ -79,7 +73,7 @@ describe Appsignal::CLI do
           :user => 'thijs'
         },
         kind_of(Appsignal::Config),
-        kind_of(Logger)
+        nil
       ).and_return(marker)
       marker.should_receive(:transmit)
 
@@ -102,7 +96,7 @@ describe Appsignal::CLI do
           :user => 'thijs'
         },
         kind_of(Appsignal::Config),
-        kind_of(Logger)
+        nil
       ).and_return(marker)
       marker.should_receive(:transmit)
 
@@ -115,6 +109,17 @@ describe Appsignal::CLI do
       ])
 
       cli.config[:name].should == 'project-production'
+    end
+  end
+
+  describe "install" do
+    it "should call Appsignal::Install.install" do
+      Appsignal::CLI::Install.should_receive(:run).with('api-key', instance_of(Appsignal::Config))
+
+      cli.run([
+        'install',
+        'api-key'
+      ])
     end
   end
 

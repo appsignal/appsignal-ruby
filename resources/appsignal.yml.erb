@@ -1,0 +1,23 @@
+default: &defaults
+  # Your push api key, it is possible to set this dynamically using ERB:
+  # push_api_key: "<%%= ENV['APPSIGNAL_PUSH_API_KEY'] %>"
+  push_api_key: "<%= push_api_key %>"
+
+  # Your app's name
+  name: "<%= app_name %>"
+
+  # Actions that should not be monitored by AppSignal
+  # ignore_actions:
+  #   - ApplicationController#isup
+
+  # See http://docs.appsignal.com/gem-settings/configuration.html for
+  # all configuration options.
+
+# Configuration per environment, leave out an environment or set active
+# to false to not push metrics for that environment.
+<% environments.each do |environment| -%>
+<%= environment %>:
+  <<: *defaults
+  active: true
+<%= "\n" unless environment == environments.last -%>
+<% end -%>

@@ -5,7 +5,7 @@ begin
 rescue LoadError
 end
 
-if defined?(::Sinatra)
+if sinatra_present?
   ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
   require 'appsignal/integrations/sinatra'
 

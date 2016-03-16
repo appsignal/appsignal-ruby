@@ -4,7 +4,7 @@ module Appsignal
 
     attr_reader :config, :logger
 
-    def initialize(config, logger)
+    def initialize(config, logger=Appsignal.logger)
       @config = config
       @logger = logger
     end

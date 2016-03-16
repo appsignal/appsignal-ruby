@@ -23,6 +23,10 @@ def rails_present?
   RAILS_PRESENT
 end
 
+def sinatra_present?
+  defined?(::Sinatra)
+end
+
 def active_job_present?
   require 'active_job'
   true
@@ -114,6 +118,11 @@ RSpec.configure do |config|
   config.include TimeHelpers
   config.include TransactionHelpers
 
+  config.before :all do
+    FileUtils.rm_rf(tmp_dir)
+    FileUtils.mkdir_p(tmp_dir)
+  end
+
   config.before do
     ENV['PWD'] = File.expand_path(File.join(File.dirname(__FILE__), '../'))
     ENV['RAILS_ENV'] = 'test'
@@ -124,13 +133,11 @@ RSpec.configure do |config|
     end
   end
 
-  config.after do
-    Appsignal.logger = nil
-  end
-
   config.after :all do
     ActiveSupport::Notifications.notifier.clear_subscribers
     FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
+    Appsignal.config = nil
+    Appsignal.logger = nil
   end
 end
 

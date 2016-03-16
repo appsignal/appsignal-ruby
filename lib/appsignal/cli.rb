@@ -2,10 +2,11 @@ require 'optparse'
 require 'logger'
 require 'yaml'
 require 'appsignal'
+require 'appsignal/cli/install'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(notify_of_deploy).freeze
+    AVAILABLE_COMMANDS = %w(install notify_of_deploy).freeze
 
     class << self
       attr_accessor :options, :config, :initial_config
@@ -23,6 +24,8 @@ module Appsignal
             case command.to_sym
             when :notify_of_deploy
               notify_of_deploy
+            when :install
+              Appsignal::CLI::Install.run(argv.shift, config(nil))
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -36,12 +39,8 @@ module Appsignal
         end
       end
 
-      def logger
-        Logger.new($stdout)
-      end
-
-      def config
-        @config ||= Appsignal::Config.new(
+      def config(logger=Logger.new($stdout))
+        Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
           initial_config,
@@ -88,7 +87,8 @@ module Appsignal
             o.on '--name=<name>', "The name of the app (optional)" do |arg|
               initial_config[:name] = arg
             end
-          end
+          end,
+          'install' => OptionParser.new
         }
       end
 
@@ -102,7 +102,7 @@ module Appsignal
             :user => options[:user]
           },
           config,
-          logger
+          nil
         ).transmit
       end
 
