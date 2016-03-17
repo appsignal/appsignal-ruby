@@ -28,7 +28,7 @@ describe Appsignal::CLI do
       }.should raise_error(SystemExit)
 
       out_stream.string.should include 'appsignal <command> [options]'
-      out_stream.string.should include 'Available commands: install, notify_of_deploy'
+      out_stream.string.should include 'Available commands: diagnose, install, notify_of_deploy'
     end
   end
 
@@ -52,6 +52,16 @@ describe Appsignal::CLI do
       "appsignal -h to see the help"
   end
 
+  describe "diagnose" do
+    it "should call Appsignal::Diagnose.install" do
+      Appsignal::CLI::Diagnose.should_receive(:run)
+
+      cli.run([
+        'diagnose'
+      ])
+    end
+  end
+
   describe "install" do
     it "should call Appsignal::Install.install" do
       Appsignal::CLI::Install.should_receive(:run).with(
@@ -66,7 +76,7 @@ describe Appsignal::CLI do
     end
   end
 
-  describe "install" do
+  describe "notify_of_deploy" do
     it "should call Appsignal::Install.install" do
       Appsignal::CLI::NotifyOfDeploy.should_receive(:run).with(
         {:revision=>"aaaaa", :user=>"thijs", :environment=>"production"},

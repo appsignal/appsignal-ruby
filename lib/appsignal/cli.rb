@@ -2,12 +2,13 @@ require 'optparse'
 require 'logger'
 require 'yaml'
 require 'appsignal'
+require 'appsignal/cli/diagnose'
 require 'appsignal/cli/install'
 require 'appsignal/cli/notify_of_deploy'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(install notify_of_deploy).freeze
+    AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
 
     class << self
       attr_accessor :options, :config, :initial_config
@@ -23,10 +24,12 @@ module Appsignal
           if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
             case command.to_sym
-            when :notify_of_deploy
-              Appsignal::CLI::NotifyOfDeploy.run(options, config)
+            when :diagnose
+              Appsignal::CLI::Diagnose.run
             when :install
               Appsignal::CLI::Install.run(argv.shift, config(nil))
+            when :notify_of_deploy
+              Appsignal::CLI::NotifyOfDeploy.run(options, config)
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -70,6 +73,8 @@ module Appsignal
 
       def command_option_parser
         {
+          'diagnose' => OptionParser.new,
+          'install' => OptionParser.new,
           'notify_of_deploy' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal notify_of_deploy [options]'
 
@@ -88,8 +93,7 @@ module Appsignal
             o.on '--name=<name>', "The name of the app (optional)" do |arg|
               initial_config[:name] = arg
             end
-          end,
-          'install' => OptionParser.new
+          end
         }
       end
     end
