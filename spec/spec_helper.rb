@@ -23,10 +23,6 @@ def rails_present?
   RAILS_PRESENT
 end
 
-def sinatra_present?
-  defined?(::Sinatra)
-end
-
 def active_job_present?
   require 'active_job'
   true
@@ -71,6 +67,15 @@ def resque_present?
   true
 rescue LoadError
   false
+end
+
+def sinatra_present?
+  begin
+    require 'sinatra'
+    true
+  rescue LoadError
+    false
+  end
 end
 
 def padrino_present?
