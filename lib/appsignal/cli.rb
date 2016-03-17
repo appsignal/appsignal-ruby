@@ -3,6 +3,7 @@ require 'logger'
 require 'yaml'
 require 'appsignal'
 require 'appsignal/cli/install'
+require 'appsignal/cli/notify_of_deploy'
 
 module Appsignal
   class CLI
@@ -23,7 +24,7 @@ module Appsignal
             commands[command].parse!(argv)
             case command.to_sym
             when :notify_of_deploy
-              notify_of_deploy
+              Appsignal::CLI::NotifyOfDeploy.run(options, config)
             when :install
               Appsignal::CLI::Install.run(argv.shift, config(nil))
             end
@@ -90,40 +91,6 @@ module Appsignal
           end,
           'install' => OptionParser.new
         }
-      end
-
-      def notify_of_deploy
-        validate_active_config
-        validate_required_options([:revision, :user, :environment])
-
-        Appsignal::Marker.new(
-          {
-            :revision => options[:revision],
-            :user => options[:user]
-          },
-          config,
-          nil
-        ).transmit
-      end
-
-      protected
-
-      def validate_required_options(required_options)
-        missing = required_options.select do |required_option|
-          val = options[required_option]
-          val.nil? || (val.respond_to?(:empty?) && val.empty?)
-        end
-        if missing.any?
-          puts "Missing options: #{missing.join(', ')}"
-          exit(1)
-        end
-      end
-
-      def validate_active_config
-        unless config.active?
-          puts 'Exiting: No config file or push api key env var found'
-          exit(1)
-        end
       end
     end
   end

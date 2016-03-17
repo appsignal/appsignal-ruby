@@ -8,8 +8,6 @@ describe Appsignal::CLI do
     @original_stdout = $stdout
     $stdout = out_stream
     ENV['PWD'] = project_fixture_path
-    cli.config = nil
-    cli.initial_config = {}
     cli.options = {:environment => 'production'}
   end
   after do
@@ -54,67 +52,12 @@ describe Appsignal::CLI do
       "appsignal -h to see the help"
   end
 
-  describe "notify_of_deploy" do
-    it "should validate that the config has been loaded and all options have been supplied" do
-      cli.should_receive(:validate_active_config)
-      cli.should_receive(:validate_required_options).with(
-        [:revision, :user, :environment]
-      )
-      Appsignal::Marker.should_receive(:new).and_return(double(:transmit => true))
-
-      cli.notify_of_deploy
-    end
-
-    it "should notify of a deploy" do
-      marker = double
-      Appsignal::Marker.should_receive(:new).with(
-        {
-          :revision => 'aaaaa',
-          :user => 'thijs'
-        },
-        kind_of(Appsignal::Config),
-        nil
-      ).and_return(marker)
-      marker.should_receive(:transmit)
-
-      cli.run([
-        'notify_of_deploy',
-        '--revision=aaaaa',
-        '--user=thijs',
-        '--environment=production'
-      ])
-    end
-
-    it "should notify of a deploy with no config file and a name specified" do
-      ENV['PWD'] = '/nonsense'
-      ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
-
-      marker = double
-      Appsignal::Marker.should_receive(:new).with(
-        {
-          :revision => 'aaaaa',
-          :user => 'thijs'
-        },
-        kind_of(Appsignal::Config),
-        nil
-      ).and_return(marker)
-      marker.should_receive(:transmit)
-
-      cli.run([
-        'notify_of_deploy',
-        '--name=project-production',
-        '--revision=aaaaa',
-        '--user=thijs',
-        '--environment=production'
-      ])
-
-      cli.config[:name].should == 'project-production'
-    end
-  end
-
   describe "install" do
     it "should call Appsignal::Install.install" do
-      Appsignal::CLI::Install.should_receive(:run).with('api-key', instance_of(Appsignal::Config))
+      Appsignal::CLI::Install.should_receive(:run).with(
+        'api-key',
+        instance_of(Appsignal::Config)
+      )
 
       cli.run([
         'install',
@@ -123,81 +66,20 @@ describe Appsignal::CLI do
     end
   end
 
-  # protected
-
-  describe "#validate_required_options" do
-    let(:required_options) { [:option_1, :option_2, :option_3] }
-
-    it "should do nothing with all options supplied" do
-      cli.options = {
-        :option_1 => 1,
-        :option_2 => 2,
-        :option_3 => 3
-      }
-      cli.send(
-        :validate_required_options,
-        required_options
+  describe "install" do
+    it "should call Appsignal::Install.install" do
+      Appsignal::CLI::NotifyOfDeploy.should_receive(:run).with(
+        {:revision=>"aaaaa", :user=>"thijs", :environment=>"production"},
+        instance_of(Appsignal::Config)
       )
-      out_stream.string.should be_empty
-    end
 
-    it "should print a message with one option missing and exit" do
-      cli.options = {
-        :option_1 => 1,
-        :option_2 => 2
-      }
-      lambda {
-        cli.send(
-          :validate_required_options,
-          required_options
-        )
-      }.should raise_error(SystemExit)
-      out_stream.string.should include('Missing options: option_3')
-    end
-
-    it "should print a message with multiple options missing and exit" do
-      cli.options = {
-        :option_1 => 1,
-        :option_2 => ''
-      }
-      lambda {
-        cli.send(
-          :validate_required_options,
-          required_options
-        )
-      }.should raise_error(SystemExit)
-      out_stream.string.should include("Missing options: option_2, option_3")
-    end
-  end
-
-  describe "#validate_active_config" do
-    context "when config is present" do
-      it "should do nothing" do
-        cli.send(:validate_active_config)
-        out_stream.string.should be_empty
-      end
-    end
-
-    context "when config is not present" do
-      before { cli.options = {:environment => 'nonsense'} }
-
-      it "should print a message and exit" do
-        lambda {
-          cli.send(:validate_active_config)
-        }.should raise_error(SystemExit)
-        out_stream.string.should include('Exiting: No config file or push api key env var found')
-      end
-    end
-
-    context "when config is not active" do
-      before { ENV['PWD'] = '/nonsense' }
-
-      it "should print a message and exit" do
-        lambda {
-          cli.send(:validate_active_config)
-        }.should raise_error(SystemExit)
-        out_stream.string.should include('Exiting: No config file or push api key env var found')
-      end
+      cli.run([
+        'notify_of_deploy',
+        '--name=project-production',
+        '--revision=aaaaa',
+        '--user=thijs',
+        '--environment=production'
+      ])
     end
   end
 end
