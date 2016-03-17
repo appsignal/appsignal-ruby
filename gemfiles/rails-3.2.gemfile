@@ -4,6 +4,4 @@ gem 'rails', '~> 3.2.14'
 
 gem 'test-unit'
 
-gem 'generator_spec'
-
 gemspec :path => '../'
