@@ -14,12 +14,10 @@ module Appsignal
       elsif params.is_a?(Array)
         if only_top_level
           sanitize(params[0], only_top_level, key_sanitizer=nil)
-        elsif params.first.is_a?(String)
-          ['?']
         else
           params.map do |item|
             sanitize(item, only_top_level, key_sanitizer=nil)
-          end
+          end.uniq
         end
       else
         '?'
