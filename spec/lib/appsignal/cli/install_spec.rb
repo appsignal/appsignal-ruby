@@ -54,7 +54,7 @@ describe Appsignal::CLI::Install do
       describe ".run" do
         it "should install with environment variables" do
           cli.should_receive(:gets).once.and_return('n')
-          cli.should_receive(:gets).once.and_return('y')
+          cli.should_receive(:gets).once.and_return('2')
 
           cli.run('key', config)
 
@@ -66,7 +66,7 @@ describe Appsignal::CLI::Install do
 
         it "should install with config file" do
           cli.should_receive(:gets).once.and_return('n')
-          cli.should_receive(:gets).once.and_return('n')
+          cli.should_receive(:gets).once.and_return('1')
           cli.should_receive(:write_config_file)
 
           cli.run('key', config)
@@ -79,7 +79,7 @@ describe Appsignal::CLI::Install do
         it "should install with an overridden app name and environment variables" do
           cli.should_receive(:gets).once.and_return('y')
           cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('y')
+          cli.should_receive(:gets).once.and_return('2')
 
           cli.run('key', config)
 
@@ -88,13 +88,12 @@ describe Appsignal::CLI::Install do
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
           out_stream.string.should include("Now commit and push to your test/staging/production environment.")
-
         end
 
         it "should install with an overridden app name and a config file" do
           cli.should_receive(:gets).once.and_return('y')
           cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('n')
+          cli.should_receive(:gets).once.and_return('1')
           cli.should_receive(:write_config_file)
 
           cli.run('key', config)
@@ -128,7 +127,7 @@ describe Appsignal::CLI::Install do
       describe ".install" do
         it "should install with environment variables" do
           cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('y')
+          cli.should_receive(:gets).once.and_return('2')
 
           cli.run('key', config)
 
@@ -140,7 +139,7 @@ describe Appsignal::CLI::Install do
 
         it "should install with a config file" do
           cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('n')
+          cli.should_receive(:gets).once.and_return('1')
           cli.should_receive(:write_config_file)
 
           cli.run('key', config)
@@ -178,6 +177,33 @@ describe Appsignal::CLI::Install do
     end
   end
 
+  describe ".yes_or_no" do
+    it "should take yes for an answer" do
+      cli.should_receive(:gets).once.and_return('')
+      cli.should_receive(:gets).once.and_return('nonsense')
+      cli.should_receive(:gets).once.and_return('y')
+
+      cli.yes_or_no('yes or no?: ').should be_true
+    end
+
+    it "should take no for an answer" do
+      cli.should_receive(:gets).once.and_return('')
+      cli.should_receive(:gets).once.and_return('nonsense')
+      cli.should_receive(:gets).once.and_return('n')
+
+      cli.yes_or_no('yes or no?: ').should be_false
+    end
+  end
+
+  describe ".required_input" do
+    it "should collect required input" do
+      cli.should_receive(:gets).once.and_return('')
+      cli.should_receive(:gets).once.and_return('value')
+
+      cli.required_input('provide: ').should == 'value'
+    end
+  end
+
   describe ".configure" do
     before do
       config[:push_api_key] = 'key'
@@ -186,7 +212,7 @@ describe Appsignal::CLI::Install do
 
     context "environment variables" do
       it "should output the environment variables" do
-        cli.should_receive(:gets).once.and_return('y')
+        cli.should_receive(:gets).once.and_return('2')
 
         cli.configure(config, [], false)
 
@@ -196,7 +222,7 @@ describe Appsignal::CLI::Install do
       end
 
       it "should output the environment variables with name overwritten" do
-        cli.should_receive(:gets).once.and_return('y')
+        cli.should_receive(:gets).once.and_return('2')
 
         cli.configure(config, [], true)
 
@@ -209,7 +235,7 @@ describe Appsignal::CLI::Install do
 
     context "config file" do
       it "should write the config file" do
-        cli.should_receive(:gets).once.and_return('n')
+        cli.should_receive(:gets).once.and_return('1')
 
         cli.should_receive(:write_config_file).with(
           :push_api_key => 'key',

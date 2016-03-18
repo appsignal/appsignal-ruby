@@ -44,11 +44,9 @@ module Appsignal
 
             config[:name] = Rails.application.class.parent_name
 
-            print "Your application's name is: '#{config[:name]}', do you want to change how this is displayed in AppSignal? (y/n): "
-            name_overwritten = gets.chomp == 'y'
+            name_overwritten = yes_or_no("Your application's name is: '#{config[:name]}', do you want to change how this is displayed in AppSignal? (y/n): ")
             if name_overwritten
-              print 'Enter application name: '
-              config[:name] = gets.chomp
+              config[:name] = required_input('Enter application name: ')
             end
 
             configure(config, rails_environments, name_overwritten)
@@ -59,8 +57,7 @@ module Appsignal
           elsif installed_frameworks.include?(:sinatra)
             puts 'Installing for Sinatra'
 
-            print 'Enter application name: '
-            config[:name] = gets.chomp
+            config[:name] = required_input('Enter application name: ')
 
             configure(config, ['production', 'staging'], true)
 
@@ -81,27 +78,57 @@ module Appsignal
           true
         end
 
-        def configure(config, environments, name_overwritten)
-          print "Do you prefer to configure your applications using environment variables? (y/n): "
-          if gets.chomp == 'y'
-            puts
-            puts "Add the following environment variables to configure AppSignal:"
-            puts
-            puts "export APPSIGNAL_ACTIVE=true"
-            puts "export APPSIGNAL_PUSH_API_KEY=#{config[:push_api_key]}"
-            if name_overwritten
-              puts "export APPSIGNAL_APP_NAME=#{config[:name]}"
+        def yes_or_no(prompt)
+          loop do
+            print prompt
+            input = gets.chomp
+            if input == 'y'
+              return true
+            elsif input == 'n'
+              return false
             end
-            puts
-            puts "See the documentation for more configuration options: http://docs.appsignal.com/gem-settings/configuration.html"
-          else
-            puts
-            puts "Writing config file to config/appsignal.yml"
-            write_config_file(
-              :push_api_key => config[:push_api_key],
-              :app_name => config[:name],
-              :environments => environments
-            )
+          end
+        end
+
+        def required_input(prompt)
+          loop do
+            print prompt
+            input = gets.chomp
+            if input.length > 0
+              return input
+            end
+          end
+        end
+
+        def configure(config, environments, name_overwritten)
+          puts "How do you want to configure AppSignal?"
+          puts "(1) a config file"
+          puts "(2) environment variables?"
+          loop do
+            print "Choose (1/2): "
+            input = gets.chomp
+            if input == '1'
+              puts
+              puts "Writing config file to config/appsignal.yml"
+              write_config_file(
+                :push_api_key => config[:push_api_key],
+                :app_name => config[:name],
+                :environments => environments
+              )
+              break
+            elsif input == '2'
+              puts
+              puts "Add the following environment variables to configure AppSignal:"
+              puts
+              puts "export APPSIGNAL_ACTIVE=true"
+              puts "export APPSIGNAL_PUSH_API_KEY=#{config[:push_api_key]}"
+              if name_overwritten
+                puts "export APPSIGNAL_APP_NAME=#{config[:name]}"
+              end
+              puts
+              puts "See the documentation for more configuration options: http://docs.appsignal.com/gem-settings/configuration.html"
+              break
+            end
           end
         end
 
