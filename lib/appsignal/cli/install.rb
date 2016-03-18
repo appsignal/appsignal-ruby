@@ -50,10 +50,7 @@ module Appsignal
             end
 
             configure(config, rails_environments, name_overwritten)
-
-            puts
-            puts 'AppSignal has been installed, thank you!'
-            puts 'Now commit and push to your test/staging/production environment.'
+            done_notice
           elsif installed_frameworks.include?(:sinatra)
             puts 'Installing for Sinatra'
 
@@ -68,8 +65,8 @@ module Appsignal
             puts "  use Appsignal::Rack::SinatraInstrumentation"
             puts
             puts "You can find more information in the documentation: http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
-            puts
-            puts 'Now commit and push to your test/staging/production environment.'
+
+            done_notice
           else
             puts "We could not detect which framework you are using. We'll be very grateful if you e-mail ons on support@appsignal.com with information about your setup."
             return false
@@ -129,6 +126,15 @@ module Appsignal
               puts "See the documentation for more configuration options: http://docs.appsignal.com/gem-settings/configuration.html"
               break
             end
+          end
+        end
+
+        def done_notice
+          puts 'AppSignal has been installed, thank you!'
+          if Gem.win_platform?
+            puts 'The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment'
+          else
+            puts 'You can try AppSignal in your local development environment, or push these change to your test/staging/production environment'
           end
         end
 

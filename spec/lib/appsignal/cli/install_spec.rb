@@ -61,7 +61,7 @@ describe Appsignal::CLI::Install do
           out_stream.string.should include("Validating api key... Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
 
         it "should install with config file" do
@@ -73,7 +73,7 @@ describe Appsignal::CLI::Install do
 
           out_stream.string.should include("Validating api key... Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
 
         it "should install with an overridden app name and environment variables" do
@@ -87,7 +87,7 @@ describe Appsignal::CLI::Install do
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
 
         it "should install with an overridden app name and a config file" do
@@ -100,7 +100,7 @@ describe Appsignal::CLI::Install do
 
           out_stream.string.should include("Validating api key... Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
       end
 
@@ -247,6 +247,30 @@ describe Appsignal::CLI::Install do
 
         out_stream.string.should include("Writing config file to config/appsignal.yml")
       end
+    end
+  end
+
+  describe ".done_notice" do
+    subject { out_stream.string }
+
+    context "on windows" do
+      before do
+        Gem.stub(:win_platform? => true)
+        cli.done_notice
+      end
+
+      it { should include('The AppSignal agent currently does not work on Windows') }
+      it { should include('test/staging/production environment') }
+    end
+
+    context "not on windows" do
+      before do
+        Gem.stub(:win_platform? => false)
+        cli.done_notice
+      end
+
+      it { should include('You can try AppSignal in your local development environment') }
+      it { should include('test/staging/production environment') }
     end
   end
 
