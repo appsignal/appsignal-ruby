@@ -5,7 +5,11 @@ module Appsignal
         register 'sql.active_record'
 
         def format(payload)
-          [payload[:name], payload[:sql], SQL_BODY_FORMAT]
+          [
+            payload[:name],
+            Appsignal::Utils.encode_utf8(payload[:sql]),
+            SQL_BODY_FORMAT
+          ]
         end
       end
     end
