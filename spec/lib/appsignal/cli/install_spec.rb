@@ -18,6 +18,8 @@ describe Appsignal::CLI::Install do
     $stdout = out_stream
     Appsignal::AuthCheck.stub(:new => auth_check)
     auth_check.stub(:perform => '200')
+    cli.stub(:sleep)
+    cli.stub(:press_any_key)
   end
   after do
     $stdout = @original_stdout
@@ -27,7 +29,8 @@ describe Appsignal::CLI::Install do
     it "should not continue if there is no key" do
       cli.run(nil, config)
 
-      out_stream.string.should include('Please provide the push api key you can find on https://appsignal.com as the first argument:')
+      out_stream.string.should include('Problem encountered:')
+      out_stream.string.should include('No push api key entered')
     end
 
     context "auth check" do
@@ -58,10 +61,11 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
 
         it "should install with config file" do
@@ -71,9 +75,10 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
 
         it "should install with an overridden app name and environment variables" do
@@ -83,11 +88,12 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
 
         it "should install with an overridden app name and a config file" do
@@ -98,9 +104,10 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
       end
 
@@ -131,10 +138,11 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Sinatra")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
 
         it "should install with a config file" do
@@ -144,9 +152,10 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Sinatra")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
       end
 
@@ -167,10 +176,11 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Padrino")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
 
         it "should install with a config file" do
@@ -180,9 +190,10 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("Installing for Padrino")
-          out_stream.string.should include("AppSignal has been installed, thank you!")
+          out_stream.string.should include("AppSignal installation complete")
         end
       end
 
@@ -194,13 +205,52 @@ describe Appsignal::CLI::Install do
     end
   end
 
+  context "with grape" do
+    if grape_present?
+      describe ".install" do
+        it "should install with environment variables" do
+          cli.should_receive(:gets).once.and_return('Appname')
+          cli.should_receive(:gets).once.and_return('2')
+
+          cli.run('key', config)
+
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Installing for Grape")
+          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
+          out_stream.string.should include("AppSignal installation complete")
+        end
+
+        it "should install with a config file" do
+          cli.should_receive(:gets).once.and_return('Appname')
+          cli.should_receive(:gets).once.and_return('1')
+          cli.should_receive(:write_config_file)
+
+          cli.run('key', config)
+
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Installing for Grape")
+          out_stream.string.should include("AppSignal installation complete")
+        end
+      end
+
+      describe ".installed_frameworks" do
+        subject { cli.installed_frameworks }
+
+        it { should include(:grape) }
+      end
+    end
+  end
+
   context "with unknown framework" do
-    if !rails_present? && !sinatra_present?
+    if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present?
       describe ".install" do
         it "should give a message about unknown framework" do
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Validating api key...")
+          out_stream.string.should include("Api key valid")
           out_stream.string.should include("We could not detect which framework you are using.")
         end
       end
@@ -210,6 +260,45 @@ describe Appsignal::CLI::Install do
 
         it { should be_empty }
       end
+    end
+  end
+
+  describe ".colorize" do
+    subject { cli.colorize('text', :green) }
+
+    context "on windows" do
+      before do
+        Gem.stub(:win_platform? => true)
+      end
+
+      it { should == 'text' }
+    end
+
+    context "not on windows" do
+      before do
+        Gem.stub(:win_platform? => false)
+      end
+
+      it { should == "\e[32mtext\e[0m" }
+    end
+  end
+
+  describe ".periods" do
+    it "should output three periods" do
+      cli.periods
+      out_stream.string.should include('...')
+    end
+  end
+
+  describe ".press_any_key" do
+    before do
+      cli.unstub(:press_any_key)
+      STDIN.stub(:getch)
+    end
+
+    it "should continue" do
+      cli.press_any_key
+      out_stream.string.should include('Press any key')
     end
   end
 
@@ -281,7 +370,8 @@ describe Appsignal::CLI::Install do
 
         cli.configure(config, [], false)
 
-        out_stream.string.should include("Writing config file to config/appsignal.yml")
+        out_stream.string.should include("Writing config file")
+        out_stream.string.should include("Config file written to config/appsignal.yml")
       end
     end
   end
@@ -305,8 +395,8 @@ describe Appsignal::CLI::Install do
         cli.done_notice
       end
 
-      it { should include('You can try AppSignal in your local development environment') }
-      it { should include('test/staging/production environment') }
+      it { should include('You can do this on your dev environment') }
+      it { should include('Or deploy to staging or production') }
     end
   end
 
