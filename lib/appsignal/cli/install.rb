@@ -38,41 +38,66 @@ module Appsignal
           puts ' Api key valid'
 
           if installed_frameworks.include?(:rails)
-            require File.expand_path(File.join(ENV['PWD'], 'config/application.rb'))
-
-            puts 'Installing for Ruby on Rails'
-
-            config[:name] = Rails.application.class.parent_name
-
-            name_overwritten = yes_or_no("Your application's name is: '#{config[:name]}', do you want to change how this is displayed in AppSignal? (y/n): ")
-            if name_overwritten
-              config[:name] = required_input('Enter application name: ')
-            end
-
-            configure(config, rails_environments, name_overwritten)
-            done_notice
-          elsif installed_frameworks.include?(:sinatra)
-            puts 'Installing for Sinatra'
-
-            config[:name] = required_input('Enter application name: ')
-
-            configure(config, ['production', 'staging'], true)
-
-            puts
-            puts "Sinatra requires some manual configuration. Add this line beneath require 'sinatra':"
-            puts "  require 'appsignal/integrations/sinatra'"
-            puts "If your app is a subclass of Sinatra::Base you need to use this middleware:"
-            puts "  use Appsignal::Rack::SinatraInstrumentation"
-            puts
-            puts "You can find more information in the documentation: http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
-
-            done_notice
+            install_for_rails(config)
+          elsif installed_frameworks.include?(:sinatra) && !installed_frameworks.include?(:padrino)
+            install_for_sinatra(config)
+          elsif installed_frameworks.include?(:padrino)
+            install_for_padrino(config)
           else
             puts "We could not detect which framework you are using. We'll be very grateful if you e-mail ons on support@appsignal.com with information about your setup."
             return false
           end
 
           true
+        end
+
+        def install_for_rails(config)
+          require File.expand_path(File.join(ENV['PWD'], 'config/application.rb'))
+
+          puts 'Installing for Ruby on Rails'
+
+          config[:name] = Rails.application.class.parent_name
+
+          name_overwritten = yes_or_no("Your application's name is: '#{config[:name]}', do you want to change how this is displayed in AppSignal? (y/n): ")
+          if name_overwritten
+            config[:name] = required_input('Enter application name: ')
+          end
+
+          configure(config, rails_environments, name_overwritten)
+          done_notice
+        end
+
+        def install_for_sinatra(config)
+          puts 'Installing for Sinatra'
+
+          config[:name] = required_input('Enter application name: ')
+
+          configure(config, ['production', 'staging'], true)
+
+          puts
+          puts "Sinatra requires some manual configuration. Add this line beneath require 'sinatra':"
+          puts "  require 'appsignal/integrations/sinatra'"
+          puts "If your app is a subclass of Sinatra::Base you need to use this middleware:"
+          puts "  use Appsignal::Rack::SinatraInstrumentation"
+          puts
+          puts "You can find more information in the documentation: http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
+
+          done_notice
+        end
+
+        def install_for_padrino(config)
+          puts 'Installing for Padrino'
+
+          config[:name] = required_input('Enter application name: ')
+
+          configure(config, ['production', 'staging'], true)
+
+          puts
+          puts "Padrino requires some manual configuration. After installing the gem, add the following line to /config/boot.rb: require 'appsignal/integrations/padrino"
+          puts
+          puts "You can find more information in the documentation: http://docs.appsignal.com/getting-started/supported-frameworks.html#padrino"
+
+          done_notice
         end
 
         def yes_or_no(prompt)
@@ -148,6 +173,11 @@ module Appsignal
             begin
               require 'sinatra'
               out << :sinatra
+            rescue LoadError
+            end
+            begin
+              require 'padrino'
+              out << :padrino
             rescue LoadError
             end
           end

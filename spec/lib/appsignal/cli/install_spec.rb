@@ -123,7 +123,7 @@ describe Appsignal::CLI::Install do
   end
 
   context "with sinatra" do
-    if sinatra_present?
+    if sinatra_present? && !padrino_present?
       describe ".install" do
         it "should install with environment variables" do
           cli.should_receive(:gets).once.and_return('Appname')
@@ -154,6 +154,42 @@ describe Appsignal::CLI::Install do
         subject { cli.installed_frameworks }
 
         it { should include(:sinatra) }
+      end
+    end
+  end
+
+  context "with padrino" do
+    if padrino_present?
+      describe ".install" do
+        it "should install with environment variables" do
+          cli.should_receive(:gets).once.and_return('Appname')
+          cli.should_receive(:gets).once.and_return('2')
+
+          cli.run('key', config)
+
+          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Installing for Padrino")
+          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
+        end
+
+        it "should install with a config file" do
+          cli.should_receive(:gets).once.and_return('Appname')
+          cli.should_receive(:gets).once.and_return('1')
+          cli.should_receive(:write_config_file)
+
+          cli.run('key', config)
+
+          out_stream.string.should include("Validating api key... Api key valid")
+          out_stream.string.should include("Installing for Padrino")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
+        end
+      end
+
+      describe ".installed_frameworks" do
+        subject { cli.installed_frameworks }
+
+        it { should include(:padrino) }
       end
     end
   end
