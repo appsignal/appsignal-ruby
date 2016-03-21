@@ -134,7 +134,7 @@ describe Appsignal::CLI::Install do
           out_stream.string.should include("Validating api key... Api key valid")
           out_stream.string.should include("Installing for Sinatra")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
 
         it "should install with a config file" do
@@ -146,7 +146,7 @@ describe Appsignal::CLI::Install do
 
           out_stream.string.should include("Validating api key... Api key valid")
           out_stream.string.should include("Installing for Sinatra")
-          out_stream.string.should include("Now commit and push to your test/staging/production environment.")
+          out_stream.string.should include("AppSignal has been installed, thank you!")
         end
       end
 
