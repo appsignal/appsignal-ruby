@@ -1,3 +1,6 @@
+# 1.0.6
+* Bugfix in background thread when using heavy sanization
+
 # 1.0.5
 * Improved sql sanitization
 * Improved mongoid/mongodb sanitization
