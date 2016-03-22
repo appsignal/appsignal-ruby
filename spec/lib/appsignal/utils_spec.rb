@@ -90,4 +90,14 @@ describe Appsignal::Utils do
       it { should == "{\"field_one\":\"aa\",\"field_two\":\"aa�\",\"field_three\":[\"one\",\"aa�\"],\"field_four\":{\"one\":\"aa�\"}}" }
     end
   end
+
+  describe ".encode_utf8" do
+    subject { Appsignal::Utils.encode_utf8(value) }
+
+    context "value with invalid utf-8 content" do
+      let(:value) { [0x61, 0x61, 0x85].pack('c*') }
+
+      it { should == "aa�" }
+    end
+  end
 end
