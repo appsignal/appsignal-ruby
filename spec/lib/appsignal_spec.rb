@@ -72,12 +72,6 @@ describe Appsignal do
         Appsignal.subscriber.should be_a(Appsignal::Subscriber)
       end
 
-      it "should install event hooks" do
-        Appsignal::Extension.should_receive(:install_allocation_event_hook)
-        Appsignal::Extension.should_receive(:install_gc_event_hooks)
-        Appsignal.start
-      end
-
       context "when not active for this environment" do
         before { Appsignal.config = project_fixture_config('staging') }
 
@@ -96,7 +90,20 @@ describe Appsignal do
         end
       end
 
-      context "when allocation tracking and gc instrumentation has been disabled" do
+      context "when allocation tracking and gc instrumentation have been enabled" do
+        before do
+          Appsignal.config.config_hash[:enable_allocation_tracking] = true
+          Appsignal.config.config_hash[:enable_gc_instrumentation] = true
+        end
+
+        it "should install event hooks" do
+          Appsignal::Extension.should_receive(:install_allocation_event_hook)
+          Appsignal::Extension.should_receive(:install_gc_event_hooks)
+          Appsignal.start
+        end
+      end
+
+      context "when allocation tracking and gc instrumentation have been disabled" do
         before do
           Appsignal.config.config_hash[:enable_allocation_tracking] = false
           Appsignal.config.config_hash[:enable_gc_instrumentation] = false
