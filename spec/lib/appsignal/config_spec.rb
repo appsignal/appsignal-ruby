@@ -65,9 +65,14 @@ describe Appsignal::Config do
       end
     end
 
-    describe "#[]" do
+    describe "#[]= and #[]" do
       it "should get the value for an existing key" do
         subject[:push_api_key].should == 'abc'
+      end
+
+      it "should change and get the value for an existing key" do
+        subject[:push_api_key] = 'abcde'
+        subject[:push_api_key].should == 'abcde'
       end
 
       it "should return nil for a non-existing key" do

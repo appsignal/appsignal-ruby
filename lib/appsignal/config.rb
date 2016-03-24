@@ -47,6 +47,7 @@ module Appsignal
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
+    attr_accessor :logger
 
     def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
       @root_path      = root_path
@@ -72,6 +73,10 @@ module Appsignal
 
     def [](key)
       config_hash[key]
+    end
+
+    def []=(key, value)
+      config_hash[key] = value
     end
 
     def log_file_path

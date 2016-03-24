@@ -1,11 +1,6 @@
 require 'spec_helper'
 
-begin
-  require 'sinatra'
-rescue LoadError
-end
-
-if defined?(::Sinatra)
+if sinatra_present? && !padrino_present?
   ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
   require 'appsignal/integrations/sinatra'
 
@@ -14,12 +9,6 @@ if defined?(::Sinatra)
       subject { Appsignal.logger }
 
       it { should be_a Logger }
-    end
-
-    context "config" do
-      subject { Appsignal.config }
-
-      it { should be_a(Appsignal::Config) }
     end
 
     it "should have added the instrumentation middleware" do

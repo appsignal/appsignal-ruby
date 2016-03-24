@@ -2,10 +2,13 @@ require 'optparse'
 require 'logger'
 require 'yaml'
 require 'appsignal'
+require 'appsignal/cli/diagnose'
+require 'appsignal/cli/install'
+require 'appsignal/cli/notify_of_deploy'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(notify_of_deploy).freeze
+    AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
 
     class << self
       attr_accessor :options, :config, :initial_config
@@ -21,8 +24,12 @@ module Appsignal
           if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
             case command.to_sym
+            when :diagnose
+              Appsignal::CLI::Diagnose.run
+            when :install
+              Appsignal::CLI::Install.run(argv.shift, config(nil))
             when :notify_of_deploy
-              notify_of_deploy
+              Appsignal::CLI::NotifyOfDeploy.run(options, config)
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -36,12 +43,8 @@ module Appsignal
         end
       end
 
-      def logger
-        Logger.new($stdout)
-      end
-
-      def config
-        @config ||= Appsignal::Config.new(
+      def config(logger=Logger.new($stdout))
+        Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
           initial_config,
@@ -70,6 +73,8 @@ module Appsignal
 
       def command_option_parser
         {
+          'diagnose' => OptionParser.new,
+          'install' => OptionParser.new,
           'notify_of_deploy' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal notify_of_deploy [options]'
 
@@ -90,40 +95,6 @@ module Appsignal
             end
           end
         }
-      end
-
-      def notify_of_deploy
-        validate_active_config
-        validate_required_options([:revision, :user, :environment])
-
-        Appsignal::Marker.new(
-          {
-            :revision => options[:revision],
-            :user => options[:user]
-          },
-          config,
-          logger
-        ).transmit
-      end
-
-      protected
-
-      def validate_required_options(required_options)
-        missing = required_options.select do |required_option|
-          val = options[required_option]
-          val.nil? || (val.respond_to?(:empty?) && val.empty?)
-        end
-        if missing.any?
-          puts "Missing options: #{missing.join(', ')}"
-          exit(1)
-        end
-      end
-
-      def validate_active_config
-        unless config.active?
-          puts 'Exiting: No config file or push api key env var found'
-          exit(1)
-        end
       end
     end
   end

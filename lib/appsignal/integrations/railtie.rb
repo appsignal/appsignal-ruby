@@ -36,10 +36,6 @@ module Appsignal
 
         Appsignal.start
       end
-
-      rake_tasks do
-        load 'tasks/diag.rake'
-      end
     end
   end
 end
