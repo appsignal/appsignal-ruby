@@ -1,3 +1,6 @@
+# 1.0.7
+* Another multibyte bugfix in sql sanizitation
+
 # 1.0.6
 * Bugfix in sql sanitization when using multibyte utf-8 characters
 
