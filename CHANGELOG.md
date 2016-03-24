@@ -4,8 +4,11 @@
 * Collect perams for Delayed Job and Sidekiq when using ActiveJob
 * Official Grape support
 
+# 1.0.7
+* Another multibyte bugfix in sql sanizitation
+
 # 1.0.6
-* Bugfix in background thread when using heavy sanization
+* Bugfix in sql sanitization when using multibyte utf-8 characters
 
 # 1.0.5
 * Improved sql sanitization
