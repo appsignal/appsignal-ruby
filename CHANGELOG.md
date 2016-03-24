@@ -3,6 +3,7 @@
 * Collect params from Delayed Job in a reliable way
 * Collect perams for Delayed Job and Sidekiq when using ActiveJob
 * Official Grape support
+* Easier installation using `bundle exec appsignal install`
 
 # 1.0.7
 * Another multibyte bugfix in sql sanizitation
