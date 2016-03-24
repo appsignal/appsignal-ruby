@@ -1,5 +1,5 @@
 # 1.1
-* Collect global metrics for GC durations
+* Collect global metrics for GC durations (in beta, disabled by default)
 * Collect params from Delayed Job in a reliable way
 * Collect perams for Delayed Job and Sidekiq when using ActiveJob
 * Official Grape support
