@@ -24,18 +24,21 @@ module Appsignal
         )
 
         # Instrument a `process_action`, to set params/action name
+        streaming = true
         status, headers, body =
           ActiveSupport::Notifications.instrument('process_action.rack') do
             begin
               @app.call(env)
             rescue Exception => e
               transaction.set_error(e)
+              streaming = false
               raise e
             ensure
               transaction.set_action(env['appsignal.action'])
               transaction.set_metadata('path', request.path)
               transaction.set_metadata('method', request.request_method)
               transaction.set_http_or_background_queue_start
+              Appsignal::Transaction.complete_current! unless streaming
             end
           end
 

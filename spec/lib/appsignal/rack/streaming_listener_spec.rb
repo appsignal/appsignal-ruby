@@ -88,10 +88,11 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     context "with an exception in the instrumentation call" do
-      it "should add the exception to the transaction" do
+      it "should add the exception to the transaction and complete it" do
         allow( app ).to receive(:call).and_raise(VerySpecificError.new('broken'))
 
         expect( transaction ).to receive(:set_error)
+        expect( Appsignal::Transaction ).to receive(:complete_current!)
 
         listener.call_with_appsignal_monitoring(env) rescue VerySpecificError
       end
