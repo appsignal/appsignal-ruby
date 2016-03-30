@@ -1,12 +1,12 @@
 # 1.1.1
-* Fix for crash of agent in some circumstances
-
-# 1.1
 * Collect global metrics for GC durations (in beta, disabled by default)
 * Collect params from Delayed Job in a reliable way
 * Collect perams for Delayed Job and Sidekiq when using ActiveJob
 * Official Grape support
 * Easier installation using `bundle exec appsignal install`
+
+# 1.1.0
+Yanked
 
 # 1.0.7
 * Another multibyte bugfix in sql sanizitation
