@@ -1,3 +1,6 @@
+# 1.1.1
+* Fix for crash of agent in some circumstances
+
 # 1.1
 * Collect global metrics for GC durations (in beta, disabled by default)
 * Collect params from Delayed Job in a reliable way
