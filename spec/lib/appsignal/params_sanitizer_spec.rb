@@ -22,6 +22,7 @@ describe Appsignal::ParamsSanitizer do
       :float      => 0.0,
       :bool_true  => true,
       :bool_false => false,
+      :nil        => nil,
       :int        => 1,
       :hash       => {
         :nested_text  => 'string',
@@ -52,8 +53,9 @@ describe Appsignal::ParamsSanitizer do
     its([:file])        { should include '::UploadedFile' }
     its([:float])       { should == 0.0 }
     its([:int])         { should == 1 }
-    its([:bool_true])   { should == 'true' }
-    its([:bool_false])  { should == 'false' }
+    its([:bool_true])   { should == true }
+    its([:bool_false])  { should == false }
+    its([:nil])         { should == nil }
 
     context "hash" do
       subject { params[:hash] }
