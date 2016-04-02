@@ -9,8 +9,8 @@ if capistrano3_present?
 
   describe "Capistrano 3 integration" do
     let(:config) { project_fixture_config }
-    let(:io) { StringIO.new }
-    let(:logger) { Logger.new(io) }
+    let(:out_stream) { StringIO.new }
+    let(:logger) { Logger.new(out_stream) }
 
     before do
       @capistrano_config = Capistrano::Configuration.env
@@ -18,10 +18,13 @@ if capistrano3_present?
       @capistrano_config.set(:logger, logger)
     end
     before do
+      @original_stdout = $stdout
+      $stdout = out_stream
       @original_stderr = $stderr
-      $stderr = io
+      $stderr = out_stream
     end
     after do
+      $stdout = @original_stdout
       $stderr = @original_stderr
       Rake::Task['appsignal:deploy'].reenable
     end
@@ -117,8 +120,7 @@ if capistrano3_present?
           before do
             @marker = Appsignal::Marker.new(
               marker_data,
-              config,
-              logger
+              config
             )
             Appsignal::Marker.stub(:new => @marker)
           end
@@ -132,8 +134,7 @@ if capistrano3_present?
             it "should add the correct marker data" do
               Appsignal::Marker.should_receive(:new).with(
                 marker_data,
-                kind_of(Appsignal::Config),
-                kind_of(Logger)
+                kind_of(Appsignal::Config)
               ).and_return(@marker)
 
               invoke('appsignal:deploy')
@@ -142,8 +143,8 @@ if capistrano3_present?
             it "should transmit data" do
               @transmitter.should_receive(:transmit).and_return('200')
               invoke('appsignal:deploy')
-              io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-              io.string.should include('ppsignal has been notified of this deploy!')
+              out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+              out_stream.string.should include('ppsignal has been notified of this deploy!')
             end
 
             context "with overridden revision" do
@@ -156,8 +157,7 @@ if capistrano3_present?
                     :revision => 'abc123',
                     :user => 'batman'
                   },
-                  kind_of(Appsignal::Config),
-                  kind_of(Logger)
+                  kind_of(Appsignal::Config)
                 ).and_return(@marker)
 
                 invoke('appsignal:deploy')
@@ -167,8 +167,8 @@ if capistrano3_present?
 
           it "should not transmit data" do
             invoke('appsignal:deploy')
-            io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-            io.string.should include('Something went wrong while trying to notify Appsignal:')
+            out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+            out_stream.string.should include('Something went wrong while trying to notify Appsignal:')
           end
         end
 
@@ -180,7 +180,7 @@ if capistrano3_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             invoke('appsignal:deploy')
-            io.string.should include("Not loading from config file: config for 'nonsense' not found")
+            out_stream.string.should include("Not notifying of deploy, config is not active")
           end
         end
       end

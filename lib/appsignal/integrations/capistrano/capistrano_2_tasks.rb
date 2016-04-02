@@ -15,7 +15,7 @@ module Appsignal
               ENV['PWD'],
               env,
               fetch(:appsignal_config, {}),
-              logger
+              Logger.new(StringIO.new)
             )
 
             if appsignal_config && appsignal_config.active?
@@ -24,12 +24,14 @@ module Appsignal
                 :user => user
               }
 
-              marker = Marker.new(marker_data, appsignal_config, logger)
+              marker = Marker.new(marker_data, appsignal_config)
               if config.dry_run
-                logger.info('Dry run: Deploy marker not actually sent.')
+                puts 'Dry run: AppSignal deploy marker not actually sent.'
               else
                 marker.transmit
               end
+            else
+              puts 'Not notifying of deploy, config is not active'
             end
           end
         end

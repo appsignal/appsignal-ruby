@@ -3,13 +3,12 @@ namespace :appsignal do
     env = fetch(:stage, fetch(:rails_env, fetch(:rack_env, 'production')))
     user = ENV['USER'] || ENV['USERNAME']
     revision = fetch(:appsignal_revision, fetch(:current_revision))
-    logger = fetch(:logger, Logger.new($stdout))
 
     appsignal_config = Appsignal::Config.new(
       ENV['PWD'],
       env,
       fetch(:appsignal_config, {}),
-      logger
+      Logger.new(StringIO.new)
     )
 
     if appsignal_config && appsignal_config.active?
@@ -18,8 +17,10 @@ namespace :appsignal do
         :user => user
       }
 
-      marker = Appsignal::Marker.new(marker_data, appsignal_config, logger)
+      marker = Appsignal::Marker.new(marker_data, appsignal_config)
       marker.transmit
+    else
+      puts 'Not notifying of deploy, config is not active'
     end
   end
 end

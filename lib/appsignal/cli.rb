@@ -27,7 +27,7 @@ module Appsignal
             when :diagnose
               Appsignal::CLI::Diagnose.run
             when :install
-              Appsignal::CLI::Install.run(argv.shift, config(nil))
+              Appsignal::CLI::Install.run(argv.shift, config)
             when :notify_of_deploy
               Appsignal::CLI::NotifyOfDeploy.run(options, config)
             end
@@ -43,12 +43,12 @@ module Appsignal
         end
       end
 
-      def config(logger=Logger.new($stdout))
+      def config
         Appsignal::Config.new(
           ENV['PWD'],
           options[:environment],
           initial_config,
-          logger
+          Logger.new(StringIO.new)
         )
       end
 

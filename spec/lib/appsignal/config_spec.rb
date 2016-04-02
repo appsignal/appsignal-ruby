@@ -7,7 +7,7 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config('production') }
 
     it "should not log an error" do
-      Appsignal::Config.any_instance.should_not_receive(:carefully_log_error)
+      Logger.any_instance.should_not_receive(:log_error)
       subject
     end
 
@@ -178,10 +178,10 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config('nonsense') }
 
     it "should log an error" do
-      Appsignal::Config.any_instance.should_receive(:carefully_log_error).with(
+      Logger.any_instance.should_receive(:error).with(
         "Not loading from config file: config for 'nonsense' not found"
       ).once
-      Appsignal::Config.any_instance.should_receive(:carefully_log_error).with(
+      Logger.any_instance.should_receive(:error).with(
         "Push api key not set after loading config"
       ).once
       subject

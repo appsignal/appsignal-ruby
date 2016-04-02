@@ -1,12 +1,9 @@
 require 'erb'
 require 'yaml'
 require 'uri'
-require 'appsignal/integrations/capistrano/careful_logger'
 
 module Appsignal
   class Config
-    include Appsignal::CarefulLogger
-
     DEFAULT_CONFIG = {
       :debug                          => false,
       :ignore_errors                  => [],
@@ -138,7 +135,7 @@ module Appsignal
 
         merge(@config_hash, config_for_this_env)
       else
-        carefully_log_error("Not loading from config file: config for '#{env}' not found")
+        @logger.error "Not loading from config file: config for '#{env}' not found"
       end
     end
 
@@ -207,7 +204,7 @@ module Appsignal
         @valid = true
       else
         @valid = false
-        carefully_log_error("Push api key not set after loading config")
+        @logger.error "Push api key not set after loading config"
       end
     end
 
