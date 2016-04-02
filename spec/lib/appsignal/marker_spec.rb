@@ -10,12 +10,17 @@ describe Appsignal::Marker do
         :user => 'batman',
         :rails_env => 'production'
       },
-      config,
-      logger
+      config
     )
   }
-  let(:log) { StringIO.new }
-  let(:logger) { Logger.new(log) }
+  let(:out_stream) { StringIO.new }
+  before do
+    @original_stdout = $stdout
+    $stdout = out_stream
+  end
+  after do
+    $stdout = @original_stdout
+  end
 
   context "transmit" do
     let(:transmitter) { double }
@@ -36,48 +41,28 @@ describe Appsignal::Marker do
       marker.transmit
     end
 
-    context "logs" do
-      shared_examples_for "logging info and errors" do
-        it "should log status 200" do
-          transmitter.should_receive(:transmit).and_return('200')
+    it "should log status 200" do
+      transmitter.should_receive(:transmit).and_return('200')
 
-          marker.transmit
+      marker.transmit
 
-          log.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-          log.string.should include('Appsignal has been notified of this deploy!')
-        end
+      out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+      out_stream.string.should include('Appsignal has been notified of this deploy!')
+    end
 
-        it "should log other status" do
-          transmitter.should_receive(:transmit).and_return('500')
-          transmitter.should_receive(:uri).and_return('http://localhost:3000/1/markers')
+    it "should log other status" do
+      transmitter.should_receive(:transmit).and_return('500')
+      transmitter.should_receive(:uri).and_return('http://localhost:3000/1/markers')
 
-          marker.transmit
+      marker.transmit
 
-          log.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-          log.string.should include(
-            'Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/1/markers'
-          )
-          log.string.should_not include(
-            'Appsignal has been notified of this deploy!'
-          )
-        end
-      end
-
-      it_should_behave_like "logging info and errors"
-
-      if capistrano2_present?
-        require 'capistrano'
-
-        context "with a Capistrano 2 logger" do
-          let(:logger) {
-            Capistrano::Logger.new(:output => log).tap do |logger|
-              logger.level = Capistrano::Logger::MAX_LEVEL
-            end
-          }
-
-          it_should_behave_like "logging info and errors"
-        end
-      end
+      out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+      out_stream.string.should include(
+        'Something went wrong while trying to notify Appsignal: 500 at http://localhost:3000/1/markers'
+      )
+      out_stream.string.should_not include(
+        'Appsignal has been notified of this deploy!'
+      )
     end
   end
 end

@@ -6,7 +6,16 @@ if capistrano2_present?
   require 'appsignal/capistrano'
 
   describe "Capistrano 2 integration" do
+    let(:out_stream) { StringIO.new }
     let(:config) { project_fixture_config }
+
+    before do
+      @original_stdout = $stdout
+      $stdout = out_stream
+    end
+    after do
+      $stdout = @original_stdout
+    end
 
     before :all do
       @capistrano_config = Capistrano::Configuration.new
@@ -39,7 +48,7 @@ if capistrano2_present?
             project_fixture_path,
             'production',
             {},
-            kind_of(Capistrano::Logger)
+            kind_of(Logger)
           )
         end
 
@@ -53,7 +62,7 @@ if capistrano2_present?
               project_fixture_path,
               'production',
               {:name => 'AppName'},
-              kind_of(Capistrano::Logger)
+              kind_of(Logger)
             )
           end
 
@@ -68,7 +77,7 @@ if capistrano2_present?
                 project_fixture_path,
                 'rack_production',
                 {:name => 'AppName'},
-                kind_of(Capistrano::Logger)
+                kind_of(Logger)
               )
             end
           end
@@ -78,13 +87,6 @@ if capistrano2_present?
       end
 
       context "send marker" do
-        before :all do
-          @io = StringIO.new
-          @logger = Capistrano::Logger.new(:output => @io)
-          @logger.level = Capistrano::Logger::MAX_LEVEL
-          @capistrano_config.logger = @logger
-        end
-
         let(:marker_data) do
           {
             :revision => '503ce0923ed177a3ce000005',
@@ -96,8 +98,7 @@ if capistrano2_present?
           before do
             @marker = Appsignal::Marker.new(
               marker_data,
-              config,
-              @logger
+              config
             )
             Appsignal::Marker.stub(:new => @marker)
           end
@@ -111,8 +112,7 @@ if capistrano2_present?
             it "should add the correct marker data" do
               Appsignal::Marker.should_receive(:new).with(
                 marker_data,
-                kind_of(Appsignal::Config),
-                kind_of(Capistrano::Logger)
+                kind_of(Appsignal::Config)
               ).and_return(@marker)
 
               @capistrano_config.find_and_execute_task('appsignal:deploy')
@@ -121,8 +121,8 @@ if capistrano2_present?
             it "should transmit data" do
               @transmitter.should_receive(:transmit).and_return('200')
               @capistrano_config.find_and_execute_task('appsignal:deploy')
-              @io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-              @io.string.should include('Appsignal has been notified of this deploy!')
+              out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+              out_stream.string.should include('Appsignal has been notified of this deploy!')
             end
 
             context "with overridden revision" do
@@ -135,8 +135,7 @@ if capistrano2_present?
                     :revision => 'abc123',
                     :user => 'batman'
                   },
-                  kind_of(Appsignal::Config),
-                  kind_of(Capistrano::Logger)
+                  kind_of(Appsignal::Config)
                 ).and_return(@marker)
 
                 @capistrano_config.find_and_execute_task('appsignal:deploy')
@@ -146,8 +145,8 @@ if capistrano2_present?
 
           it "should not transmit data" do
             @capistrano_config.find_and_execute_task('appsignal:deploy')
-            @io.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
-            @io.string.should include('Something went wrong while trying to notify Appsignal:')
+            out_stream.string.should include('Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman')
+            out_stream.string.should include('Something went wrong while trying to notify Appsignal:')
           end
 
           context "dry run" do
@@ -156,7 +155,7 @@ if capistrano2_present?
             it "should not send deploy marker" do
               @marker.should_not_receive(:transmit)
               @capistrano_config.find_and_execute_task('appsignal:deploy')
-              @io.string.should include('Dry run: Deploy marker not actually sent.')
+              out_stream.string.should include('Dry run: AppSignal deploy marker not actually sent.')
             end
           end
         end
@@ -169,13 +168,7 @@ if capistrano2_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             @capistrano_config.find_and_execute_task('appsignal:deploy')
-            @io.string.encode(
-              'UTF-8',
-              'binary',
-              :invalid => :replace,
-              :undef => :replace,
-              :replace => ''
-            ).should include("config for 'nonsense' not found")
+            out_stream.string.should include('Not notifying of deploy, config is not active')
           end
         end
       end

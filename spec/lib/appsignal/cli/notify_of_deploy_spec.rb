@@ -34,8 +34,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
           :revision => 'aaaaa',
           :user => 'thijs'
         },
-        kind_of(Appsignal::Config),
-        nil
+        kind_of(Appsignal::Config)
       ).and_return(marker)
       marker.should_receive(:transmit)
 
@@ -52,8 +51,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
           :revision => 'aaaaa',
           :user => 'thijs'
         },
-        kind_of(Appsignal::Config),
-        nil
+        kind_of(Appsignal::Config)
       ).and_return(marker)
       marker.should_receive(:transmit)
 

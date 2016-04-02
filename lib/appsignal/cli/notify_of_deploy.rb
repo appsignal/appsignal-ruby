@@ -11,8 +11,7 @@ module Appsignal
               :revision => options[:revision],
               :user => options[:user]
             },
-            config,
-            nil
+            config
           ).transmit
         end
 
@@ -25,14 +24,14 @@ module Appsignal
           end
           if missing.any?
             puts "Missing options: #{missing.join(', ')}"
-            exit(1)
+            exit 1
           end
         end
 
         def validate_active_config(config)
           unless config.active?
             puts 'Exiting: No config file or push api key env var found'
-            exit(1)
+            exit 1
           end
         end
       end
