@@ -1,5 +1,6 @@
 # 1.1.2
 * Bug fix in notify of deploy cli
+* Better support for nil, true and false in sanitization
 
 # 1.1.1
 * Collect global metrics for GC durations (in beta, disabled by default)
