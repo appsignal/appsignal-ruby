@@ -19,7 +19,7 @@ module Appsignal
       def call_with_appsignal_monitoring(env)
         request = ActionDispatch::Request.new(env)
         transaction = Appsignal::Transaction.create(
-          env['action_dispatch.request_id'],
+          request_id(env),
           Appsignal::Transaction::HTTP_REQUEST,
           request,
           :params_method => :filtered_parameters
@@ -39,6 +39,10 @@ module Appsignal
           transaction.set_metadata('method', request.request_method)
           Appsignal::Transaction.complete_current!
         end
+      end
+
+      def request_id(env)
+        env['action_dispatch.request_id'] || SecureRandom.uuid
       end
     end
   end
