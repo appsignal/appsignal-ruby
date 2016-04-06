@@ -92,5 +92,21 @@ if defined?(::Rails)
 
       after { middleware.call(env) rescue VerySpecificError }
     end
+
+    describe "#request_id" do
+      subject { middleware.request_id(env) }
+
+      context "with request id set" do
+        let(:env) { {'action_dispatch.request_id' => 'id'} }
+
+        it { should == 'id' }
+      end
+
+      context "with request id not set" do
+        let(:env) { {} }
+
+        its(:length) { should == 36 }
+      end
+    end
   end
 end
