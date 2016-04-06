@@ -1,3 +1,8 @@
+# 1.1.3
+* Fix for issue where Appsignal.send_exception clears the current
+  transaction if it is present
+* Rails 3.0 compatibility fix
+
 # 1.1.2
 * Bug fix in notify of deploy cli
 * Better support for nil, true and false in sanitization
