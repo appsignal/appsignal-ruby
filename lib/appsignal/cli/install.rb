@@ -19,9 +19,9 @@ module Appsignal
           puts
           unless push_api_key
             puts colorize 'Problem encountered:', :red
-            puts '  No push api key entered.'
+            puts '  No push API key entered.'
             puts '  - Sign up for AppSignal and follow the instructions'
-            puts "  - Already signed up? Click 'new app' on the account overview"
+            puts "  - Already signed up? Click 'New app' on the account overview page"
             puts
             puts colorize 'Exiting installer...', :red
             return false
@@ -29,22 +29,22 @@ module Appsignal
 
           config[:push_api_key] = push_api_key
 
-          print 'Validating api key'
+          print 'Validating API key'
           periods
           puts
           begin
             auth_check = Appsignal::AuthCheck.new(config)
             unless auth_check.perform == '200'
-              puts "\n  Api key '#{config[:push_api_key]}' is not valid, please get a new one on https://appsignal.com"
+              puts "\n  API key '#{config[:push_api_key]}' is not valid, please get a new one on https://appsignal.com"
               return false
             end
           rescue Exception => e
-            puts "  There was an error validating your api key:"
+            puts "  There was an error validating your API key:"
             puts colorize "'#{e}'", :red
             puts "  Please try again"
             return false
           end
-          puts colorize '  Api key valid!', :green
+          puts colorize '  API key valid!', :green
           puts
 
           if installed_frameworks.include?(:rails)
@@ -56,7 +56,7 @@ module Appsignal
           elsif installed_frameworks.include?(:grape)
             install_for_grape(config)
           else
-            puts "We could not detect which framework you are using. We'll be very grateful if you e-mail ons on support@appsignal.com with information about your setup."
+            puts "We could not detect which framework you are using. We'd be very grateful if you email us on support@appsignal.com with information about your setup."
             return false
           end
 
@@ -189,7 +189,7 @@ module Appsignal
         def configure(config, environments, name_overwritten)
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
-          puts "  (2) environment variables?"
+          puts "  (2) environment variables"
           loop do
             print "  Choose (1/2): "
             input = gets.chomp
@@ -230,7 +230,7 @@ module Appsignal
           puts colorize "#####################################", :green
           sleep 0.3
           puts
-          puts '  Now you need to send us some data!'
+          puts '  Now you need to send us some data...'
           puts
           if Gem.win_platform?
             puts 'The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment'
@@ -241,9 +241,9 @@ module Appsignal
             puts
             puts "  Test if AppSignal is receiving data:"
             puts "  - Requests > 200ms are shown in AppSignal"
-            puts "  - Generate an error to test (add .xml to any path!)"
+            puts "  - Generate an error to test (e.g. add .xml to a url)"
             puts
-            puts "Return to your browser and follow the instructions!"
+            puts "Please return to your browser and follow the instructions."
           end
         end
 

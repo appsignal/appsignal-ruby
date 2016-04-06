@@ -30,7 +30,7 @@ describe Appsignal::CLI::Install do
       cli.run(nil, config)
 
       out_stream.string.should include('Problem encountered:')
-      out_stream.string.should include('No push api key entered')
+      out_stream.string.should include('No push API key entered')
     end
 
     context "auth check" do
@@ -39,7 +39,7 @@ describe Appsignal::CLI::Install do
 
         cli.run('key', config)
 
-        out_stream.string.should include("Api key 'key' is not valid")
+        out_stream.string.should include("API key 'key' is not valid")
       end
 
       it "should exit if there was an error" do
@@ -47,7 +47,7 @@ describe Appsignal::CLI::Install do
 
         cli.run('key', config)
 
-        out_stream.string.should include("There was an error validating your api key")
+        out_stream.string.should include("There was an error validating your API key")
       end
     end
   end
@@ -61,8 +61,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("AppSignal installation complete")
@@ -75,8 +75,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("AppSignal installation complete")
         end
@@ -88,8 +88,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
@@ -104,8 +104,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Ruby on Rails")
           out_stream.string.should include("AppSignal installation complete")
         end
@@ -138,8 +138,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Sinatra")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("AppSignal installation complete")
@@ -152,8 +152,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Sinatra")
           out_stream.string.should include("AppSignal installation complete")
         end
@@ -176,8 +176,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Padrino")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("AppSignal installation complete")
@@ -190,8 +190,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Padrino")
           out_stream.string.should include("AppSignal installation complete")
         end
@@ -214,8 +214,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Grape")
           out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
           out_stream.string.should include("AppSignal installation complete")
@@ -228,8 +228,8 @@ describe Appsignal::CLI::Install do
 
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("Installing for Grape")
           out_stream.string.should include("AppSignal installation complete")
         end
@@ -249,8 +249,8 @@ describe Appsignal::CLI::Install do
         it "should give a message about unknown framework" do
           cli.run('key', config)
 
-          out_stream.string.should include("Validating api key...")
-          out_stream.string.should include("Api key valid")
+          out_stream.string.should include("Validating API key...")
+          out_stream.string.should include("API key valid")
           out_stream.string.should include("We could not detect which framework you are using.")
         end
       end
