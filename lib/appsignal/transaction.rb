@@ -32,7 +32,7 @@ module Appsignal
 
     attr_reader :transaction_index, :transaction_id, :namespace, :request, :paused, :tags, :options
 
-    def initialize(transaction_id, namespace, request, options)
+    def initialize(transaction_id, namespace, request, options={})
       @transaction_id = transaction_id
       @namespace = namespace
       @request = request

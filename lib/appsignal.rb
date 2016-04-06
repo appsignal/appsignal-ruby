@@ -132,14 +132,14 @@ module Appsignal
         logger.error('Can\'t send error, given value is not an exception')
         return
       end
-      transaction = Appsignal::Transaction.create(
+      transaction = Appsignal::Transaction.new(
         SecureRandom.uuid,
         namespace,
         Appsignal::Transaction::GenericRequest.new({})
       )
       transaction.set_tags(tags) if tags
       transaction.set_error(error)
-      Appsignal::Transaction.complete_current!
+      transaction.complete
     end
     alias :send_exception :send_error
 
