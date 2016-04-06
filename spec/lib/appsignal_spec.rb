@@ -525,21 +525,21 @@ describe Appsignal do
       let(:error) { VerySpecificError.new }
 
       it "should send the error to AppSignal" do
-        Appsignal::Transaction.should_receive(:create).and_call_original
+        Appsignal::Transaction.should_receive(:new).and_call_original
       end
 
       context "with tags" do
         let(:tags) { {:a => 'a', :b => 'b'} }
 
         it "should tag the request before sending" do
-          transaction = Appsignal::Transaction.create(
+          transaction = Appsignal::Transaction.new(
             SecureRandom.uuid,
             Appsignal::Transaction::HTTP_REQUEST,
             Appsignal::Transaction::GenericRequest.new({})
           )
-          Appsignal::Transaction.stub(:create => transaction)
+          Appsignal::Transaction.stub(:new => transaction)
           transaction.should_receive(:set_tags).with(tags)
-          Appsignal::Transaction.should_receive(:complete_current!)
+          transaction.should_receive(:complete)
         end
       end
 
