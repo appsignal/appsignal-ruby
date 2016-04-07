@@ -141,7 +141,7 @@ module Appsignal
       Appsignal::Extension.set_transaction_error(
         transaction_index,
         error.class.name,
-        error.message,
+        error.message.to_s,
         backtrace ? Appsignal::Utils.json_generate(backtrace) : ''
       )
     rescue JSON::GeneratorError=>e
