@@ -1,5 +1,6 @@
 # 1.1.4
 * Better debug logging for agent issues
+* Fix for exception with nil messages
 
 # 1.1.3
 * Fix for issue where Appsignal.send_exception clears the current
