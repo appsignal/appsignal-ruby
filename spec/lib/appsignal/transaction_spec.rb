@@ -380,6 +380,25 @@ describe Appsignal::Transaction do
           transaction.set_error(error)
         end
       end
+
+      context "when error message is nil" do
+        let(:error) { double(:error, :message => nil, :backtrace => ['line 1']) }
+
+        it "should not raise an error" do
+          expect{ transaction.set_error(error) }.to_not raise_error
+        end
+
+        it "should set an error in the extension" do
+          Appsignal::Extension.should_receive(:set_transaction_error).with(
+            kind_of(Integer),
+            'RSpec::Mocks::Mock',
+            '',
+            "[\"line 1\"]"
+          )
+
+          transaction.set_error(error)
+        end
+      end
     end
 
     context "generic request" do
