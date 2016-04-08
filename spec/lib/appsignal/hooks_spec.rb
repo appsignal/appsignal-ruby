@@ -136,6 +136,31 @@ describe Appsignal::Hooks::Helpers do
       end
     end
 
+    context "for a struct" do
+      before :all do
+        TestStruct = Struct.new(:key)
+      end
+      let(:struct) { TestStruct.new('value') }
+
+      context "when the key exists" do
+        subject { with_helpers.extract_value(struct, :key) }
+
+        it { should == 'value' }
+      end
+
+      context "when the key does not exist" do
+        subject { with_helpers.extract_value(struct, :nonexistent_key) }
+
+        it { should be_nil }
+
+        context "with a default value" do
+          subject { with_helpers.extract_value(struct, :nonexistent_key, 1) }
+
+          it { should == 1 }
+        end
+      end
+    end
+
     context "for an object" do
       let(:object) { double(:existing_method => 'value') }
 
