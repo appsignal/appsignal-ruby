@@ -29,7 +29,12 @@ module Appsignal
     end
 
     def start
-      return unless extension_loaded?
+      unless extension_loaded?
+        logger.info('Not starting appsignal, extension is not loaded')
+        return
+      else
+        logger.debug('Starting appsignal')
+      end
 
       unless @config
         @config = Config.new(
@@ -63,6 +68,7 @@ module Appsignal
     end
 
     def stop
+      logger.debug('Stopping appsignal')
       Appsignal::Extension.stop
     end
 
