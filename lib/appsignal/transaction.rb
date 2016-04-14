@@ -17,7 +17,19 @@ module Appsignal
 
     class << self
       def create(id, namespace, request, options={})
-        Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+        # Check if we already have a running transaction
+        if Thread.current[:appsignal_transaction] != nil
+
+          # Log the issue and return the current transaction
+          Appsignal.logger.debug("Trying to start new transaction #{id} but #{current.transaction_id} is already running. Using #{current.transaction_id}")
+
+          # Return the current (running) transaction
+          current
+
+        # Otherwise, start a new transaction
+        else
+          Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+        end
       end
 
       def current
