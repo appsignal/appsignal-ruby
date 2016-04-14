@@ -3,6 +3,7 @@
 * Add require to deploy.rb if present on installation
 * Warn when overwriting already existing transaction
 * Support for x86-linux
+* Some improvements in debug logging
 
 # 1.1.4
 * Better debug logging for agent issues
