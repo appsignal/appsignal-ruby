@@ -67,8 +67,12 @@ module Appsignal
       end
     end
 
-    def stop
-      logger.debug('Stopping appsignal')
+    def stop(called_by=nil)
+      if called_by
+        logger.debug("Stopping appsignal (#{called_by})")
+      else
+        logger.debug('Stopping appsignal')
+      end
       Appsignal::Extension.stop
     end
 

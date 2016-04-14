@@ -13,7 +13,7 @@ module Appsignal
         end
 
         ::PhusionPassenger.on_event(:stopping_worker_process) do
-          Appsignal.stop
+          Appsignal.stop('passenger')
         end
       end
     end

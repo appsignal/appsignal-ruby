@@ -153,9 +153,19 @@ describe Appsignal do
 
   describe ".stop" do
     it "should call stop on the extension" do
+      Appsignal.logger.should_receive(:debug).with('Stopping appsignal')
       Appsignal::Extension.should_receive(:stop)
       Appsignal.stop
       Appsignal.active?.should be_false
+    end
+
+    context "with context specified" do
+      it "should log the context" do
+        Appsignal.logger.should_receive(:debug).with('Stopping appsignal (something)')
+        Appsignal::Extension.should_receive(:stop)
+        Appsignal.stop('something')
+        Appsignal.active?.should be_false
+      end
     end
   end
 
