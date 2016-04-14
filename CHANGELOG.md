@@ -1,3 +1,9 @@
+# 1.1.5
+* Support for null in sql sanitization
+* Add require to deploy.rb if present on installation
+* Warn when overwriting already existing transaction
+* Support for x86-linux
+
 # 1.1.4
 * Better debug logging for agent issues
 * Fix for exception with nil messages
