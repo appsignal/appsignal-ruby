@@ -489,20 +489,6 @@ describe Appsignal do
         end
       end
 
-      context "when we're on Shelly Cloud" do
-        before do
-          ENV['SHELLYCLOUD_DEPLOYMENT'] = 'true'
-        end
-        after { ENV.delete('SHELLYCLOUD_DEPLOYMENT') }
-
-        it "should log to stdout" do
-          Appsignal.start_logger
-          Appsignal.logger.error('Log to stdout')
-          out_stream.string.should include 'appsignal: Log to stdout'
-          out_stream.string.should include 'Log something'
-        end
-      end
-
       context "when there is no in memory log" do
         it "should not crash" do
           Appsignal.in_memory_log = nil
