@@ -207,9 +207,7 @@ module Appsignal
 
     def start_logger(path_arg=nil)
       path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && File.writable?(File.dirname(path)) &&
-         !ENV['DYNO'] &&
-         !ENV['SHELLYCLOUD_DEPLOYMENT']
+      if path && !ENV['DYNO']
         @logger = Logger.new(path)
         @logger.formatter = log_formatter
       else
