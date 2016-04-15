@@ -78,7 +78,11 @@ module Appsignal
 
     def log_file_path
       path = config_hash[:log_path] || root_path
-      File.join(File.realpath(path), 'appsignal.log')
+      if File.writable?(path)
+        File.join(File.realpath(path), 'appsignal.log')
+      else
+        '/tmp/appsignal.log'
+      end
     rescue Errno::ENOENT
       '/tmp/appsignal.log'
     end
