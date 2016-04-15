@@ -4,6 +4,7 @@
 * Warn when overwriting already existing transaction
 * Support for x86-linux
 * Some improvements in debug logging
+* Check of log file path is writable
 
 # 1.1.4
 * Better debug logging for agent issues
