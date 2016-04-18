@@ -5,6 +5,7 @@
 * Support for x86-linux
 * Some improvements in debug logging
 * Check of log file path is writable
+* Use bundled CA certs when installing agent
 
 # 1.1.4
 * Better debug logging for agent issues
