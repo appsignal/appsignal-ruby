@@ -201,7 +201,13 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
       return unless request.respond_to?(options[:params_method])
-      return unless params = request.send(options[:params_method])
+      begin
+        return unless params = request.send(options[:params_method])
+      rescue Exception => ex
+        # Getting params from the request has been know to fail.
+        Appsignal.logger.debug "Exception while getting params: #{ex}"
+        return
+      end
       if params.is_a?(Hash)
         Appsignal::ParamsSanitizer.sanitize(params)
       elsif params.is_a?(Array)

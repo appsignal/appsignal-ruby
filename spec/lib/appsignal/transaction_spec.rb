@@ -532,6 +532,12 @@ describe Appsignal::Transaction do
         it { should be_nil }
       end
 
+      context "when params crashes" do
+        before { transaction.request.stub(:params).and_raise(NoMethodError) }
+
+        it { should be_nil }
+      end
+
       context "when not sending params" do
         before { Appsignal.config.config_hash[:send_params] = false }
         after { Appsignal.config.config_hash[:send_params] = true }
