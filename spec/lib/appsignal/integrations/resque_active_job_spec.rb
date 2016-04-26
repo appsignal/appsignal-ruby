@@ -36,19 +36,5 @@ if resque_present? && active_job_present?
         after { job.perform_now }
       end
     end
-
-    context "without ActiveJob" do
-      before(:all) { Object.send(:remove_const, :ActiveJob) }
-
-      specify { expect { ::ActiveJob }.to raise_error(NameError) }
-      specify { expect { load file }.to_not raise_error }
-    end
-
-    context "without Resque" do
-      before(:all) { Object.send(:remove_const, :Resque) }
-
-      specify { expect { ::Resque }.to raise_error(NameError) }
-      specify { expect { load file }.to_not raise_error }
-    end
   end
 end
