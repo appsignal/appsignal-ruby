@@ -263,6 +263,7 @@ require 'appsignal/marker'
 require 'appsignal/params_sanitizer'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
+require 'appsignal/integrations/resque_active_job'
 require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
