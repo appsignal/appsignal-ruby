@@ -1,0 +1,23 @@
+require 'spec_helper'
+
+describe Appsignal::EventFormatter::Faraday::RequestFormatter do
+  let(:klass)     { Appsignal::EventFormatter::Faraday::RequestFormatter }
+  let(:formatter) { klass.new }
+
+  it "should register request.faraday" do
+    Appsignal::EventFormatter.registered?('request.faraday', klass).should be_true
+  end
+
+  describe "#format" do
+    let(:payload) do
+      {
+        method: :get,
+        url: URI.parse("http://example.org/hello/world")
+      }
+    end
+
+    subject { formatter.format(payload) }
+
+    it { should == ['GET http://example.org/hello/world', nil] }
+  end
+end
