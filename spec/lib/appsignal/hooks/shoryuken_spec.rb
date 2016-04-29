@@ -4,7 +4,10 @@ describe Appsignal::Hooks::ShoryukenHook do
   context "with shoryuken" do
     before(:all) do
       module Shoryuken
+        def self.configure_server
+        end
       end
+      Appsignal::Hooks::ShoryukenHook.new.install
     end
 
     after(:all) do
