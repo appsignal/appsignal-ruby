@@ -92,13 +92,6 @@ rescue LoadError
   false
 end
 
-def shoryuken_present?
-  require 'shoryuken'
-  true
-rescue LoadError
-  false
-end
-
 require 'appsignal'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
