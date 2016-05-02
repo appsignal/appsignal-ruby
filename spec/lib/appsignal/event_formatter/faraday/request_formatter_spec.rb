@@ -12,12 +12,12 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
     let(:payload) do
       {
         method: :get,
-        url: URI.parse("http://example.org/hello/world")
+        url: URI.parse("http://example.org/hello/world?some=param")
       }
     end
 
     subject { formatter.format(payload) }
 
-    it { should == ['GET http://example.org/hello/world', nil] }
+    it { should == ['GET http://example.org', 'GET http://example.org/hello/world'] }
   end
 end

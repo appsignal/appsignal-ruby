@@ -5,7 +5,12 @@ module Appsignal
         register 'request.faraday'
 
         def format(payload)
-          ["#{payload[:method].to_s.upcase} #{payload[:url]}", nil]
+          http_method = payload[:method].to_s.upcase
+          uri = payload[:url]
+          [
+            "#{http_method} #{uri.scheme}://#{uri.host}",
+            "#{http_method} #{uri.scheme}://#{uri.host}#{uri.path}"
+          ]
         end
       end
     end
