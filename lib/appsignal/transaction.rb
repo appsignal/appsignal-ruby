@@ -37,8 +37,13 @@ module Appsignal
       end
 
       def complete_current!
-        current.complete
-        Thread.current[:appsignal_transaction] = nil
+        begin
+          current.complete
+        rescue Exception => e
+          Appsignal.logger.error("Failed to complete transaction ##{current.transaction_id}. #{e.message}")
+        ensure
+          Thread.current[:appsignal_transaction] = nil
+        end
       end
     end
 
