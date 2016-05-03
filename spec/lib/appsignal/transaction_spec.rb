@@ -102,6 +102,14 @@ describe Appsignal::Transaction do
 
         Thread.current[:appsignal_transaction].should be_nil
       end
+
+      it "should still clear the transaction if there is an error" do
+        Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer)).and_raise 'Error'
+
+        Appsignal::Transaction.complete_current!
+
+        Thread.current[:appsignal_transaction].should be_nil
+      end
     end
   end
 
