@@ -1,3 +1,8 @@
+# 1.1.6
+* Generic Rack instrumentation middleware
+* Event formatter for Faraday
+* Rescue and log errors in transaction complete and fetching params
+
 # 1.1.5
 * Support for null in sql sanitization
 * Add require to deploy.rb if present on installation
