@@ -17,33 +17,56 @@ describe Appsignal::Transaction do
   let(:merged_env)  { http_request_env_with_data(env) }
   let(:options)     { {} }
   let(:request)     { Rack::Request.new(merged_env) }
-  let(:transaction) { Appsignal::Transaction.create('1', namespace, request, options) }
+  let(:transaction) { Appsignal::Transaction.new('1', namespace, request, options) }
 
   before { Timecop.freeze(time) }
   after  { Timecop.return }
 
   context "class methods" do
     describe ".create" do
-      subject { transaction }
 
       it "should add the transaction to thread local" do
         Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request')
-        subject
-        Thread.current[:appsignal_transaction].should == subject
+
+        created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
+
+        Thread.current[:appsignal_transaction].should == created_transaction
       end
 
       it "should create a transaction" do
-        subject.should be_a Appsignal::Transaction
-        subject.transaction_id.should == '1'
-        subject.namespace.should == 'http_request'
+        created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
+
+        created_transaction.should be_a Appsignal::Transaction
+        created_transaction.transaction_id.should == '1'
+        created_transaction.namespace.should == 'http_request'
+      end
+
+      context "when a transaction is already running" do
+        let(:running_transaction) { double(:transaction_id => 2) }
+        before { Thread.current[:appsignal_transaction] = running_transaction }
+
+        it "should not create a new transaction" do
+          expect(
+            Appsignal::Transaction.create('1', namespace, request, options)
+          ).to eq(running_transaction)
+        end
+
+        it "should output a debug message" do
+          expect( Appsignal.logger ).to receive(:debug)
+            .with("Trying to start new transaction 1 but 2 is already running. Using 2")
+
+          Appsignal::Transaction.create('1', namespace, request, options)
+        end
       end
     end
 
     describe '.current' do
+      before { Thread.current[:appsignal_transaction] = transaction }
+
       subject { Appsignal::Transaction.current }
 
       context "if there is a transaction" do
-        before { transaction }
+        before { Appsignal::Transaction.create('1', namespace, request, options) }
 
         it "should return the correct transaction" do
           should == transaction
@@ -74,6 +97,14 @@ describe Appsignal::Transaction do
 
       it "should complete the current transaction and set the thread appsignal_transaction to nil" do
         Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
+
+        Appsignal::Transaction.complete_current!
+
+        Thread.current[:appsignal_transaction].should be_nil
+      end
+
+      it "should still clear the transaction if there is an error" do
+        Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer)).and_raise 'Error'
 
         Appsignal::Transaction.complete_current!
 
@@ -380,6 +411,25 @@ describe Appsignal::Transaction do
           transaction.set_error(error)
         end
       end
+
+      context "when error message is nil" do
+        let(:error) { double(:error, :message => nil, :backtrace => ['line 1']) }
+
+        it "should not raise an error" do
+          expect{ transaction.set_error(error) }.to_not raise_error
+        end
+
+        it "should set an error in the extension" do
+          Appsignal::Extension.should_receive(:set_transaction_error).with(
+            kind_of(Integer),
+            'RSpec::Mocks::Mock',
+            '',
+            "[\"line 1\"]"
+          )
+
+          transaction.set_error(error)
+        end
+      end
     end
 
     context "generic request" do
@@ -486,6 +536,12 @@ describe Appsignal::Transaction do
 
       context "without params" do
         before { transaction.request.stub(:params => nil) }
+
+        it { should be_nil }
+      end
+
+      context "when params crashes" do
+        before { transaction.request.stub(:params).and_raise(NoMethodError) }
 
         it { should be_nil }
       end

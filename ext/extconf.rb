@@ -10,6 +10,7 @@ require File.expand_path('../../lib/appsignal/version.rb', __FILE__)
 EXT_PATH     = File.expand_path('..', __FILE__)
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, 'agent.yml')))
 ARCH         = "#{Gem::Platform.local.cpu}-#{Gem::Platform.local.os}"
+CA_CERT_PATH = File.join(EXT_PATH, '../resources/cacert.pem')
 
 def ext_path(path)
   File.join(EXT_PATH, path)
@@ -51,7 +52,7 @@ def install
            File.exists?(ext_path('appsignal_extension.h'))
     logger.info "Downloading agent release from #{arch_config['download_url']}"
 
-    archive = open(arch_config['download_url'])
+    archive = open(arch_config['download_url'], :ssl_ca_cert => CA_CERT_PATH)
 
     if Digest::SHA256.hexdigest(archive.read) == arch_config['checksum']
       logger.info 'Checksum of downloaded archive verified, extracting archive'

@@ -374,6 +374,27 @@ describe Appsignal::CLI::Install do
         out_stream.string.should include("Config file written to config/appsignal.yml")
       end
     end
+
+    context "when deploy.rb is present" do
+      let(:config_dir) { File.join(tmp_dir, 'config') }
+      let(:deploy_rb_file) { File.join(tmp_dir, 'config/deploy.rb') }
+      before do
+        ENV['PWD'] = tmp_dir
+        FileUtils.mkdir_p(config_dir)
+        FileUtils.touch(deploy_rb_file)
+        cli.should_receive(:gets).once.and_return('2')
+      end
+      after do
+        FileUtils.rm_rf(config_dir)
+      end
+
+      it "should add a require to deploy.rb" do
+        cli.configure(config, [], false)
+
+        out_stream.string.should include 'Adding AppSignal integration to deploy.rb'
+        File.read(deploy_rb_file).should include "require 'appsignal/capistrano'"
+      end
+    end
   end
 
   describe ".done_notice" do

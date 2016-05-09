@@ -153,9 +153,19 @@ describe Appsignal do
 
   describe ".stop" do
     it "should call stop on the extension" do
+      Appsignal.logger.should_receive(:debug).with('Stopping appsignal')
       Appsignal::Extension.should_receive(:stop)
       Appsignal.stop
       Appsignal.active?.should be_false
+    end
+
+    context "with context specified" do
+      it "should log the context" do
+        Appsignal.logger.should_receive(:debug).with('Stopping appsignal (something)')
+        Appsignal::Extension.should_receive(:stop)
+        Appsignal.stop('something')
+        Appsignal.active?.should be_false
+      end
     end
   end
 
@@ -470,20 +480,6 @@ describe Appsignal do
           ENV['DYNO'] = 'dyno1'
         end
         after { ENV.delete('DYNO') }
-
-        it "should log to stdout" do
-          Appsignal.start_logger
-          Appsignal.logger.error('Log to stdout')
-          out_stream.string.should include 'appsignal: Log to stdout'
-          out_stream.string.should include 'Log something'
-        end
-      end
-
-      context "when we're on Shelly Cloud" do
-        before do
-          ENV['SHELLYCLOUD_DEPLOYMENT'] = 'true'
-        end
-        after { ENV.delete('SHELLYCLOUD_DEPLOYMENT') }
 
         it "should log to stdout" do
           Appsignal.start_logger

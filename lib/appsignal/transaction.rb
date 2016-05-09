@@ -17,7 +17,17 @@ module Appsignal
 
     class << self
       def create(id, namespace, request, options={})
-        Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+        # Check if we already have a running transaction
+        if Thread.current[:appsignal_transaction] != nil
+          # Log the issue and return the current transaction
+          Appsignal.logger.debug("Trying to start new transaction #{id} but #{current.transaction_id} is already running. Using #{current.transaction_id}")
+
+          # Return the current (running) transaction
+          current
+        else
+          # Otherwise, start a new transaction
+          Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+        end
       end
 
       def current
@@ -26,6 +36,9 @@ module Appsignal
 
       def complete_current!
         current.complete
+      rescue Exception => e
+        Appsignal.logger.error("Failed to complete transaction ##{current.transaction_id}. #{e.message}")
+      ensure
         Thread.current[:appsignal_transaction] = nil
       end
     end
@@ -136,12 +149,11 @@ module Appsignal
       return unless Appsignal.active?
       return if Appsignal.is_ignored_error?(error)
 
-      Appsignal.logger.debug("Adding #{error.class.name} to transaction: #{transaction_id}")
       backtrace = cleaned_backtrace(error.backtrace)
       Appsignal::Extension.set_transaction_error(
         transaction_index,
         error.class.name,
-        error.message,
+        error.message.to_s,
         backtrace ? Appsignal::Utils.json_generate(backtrace) : ''
       )
     rescue JSON::GeneratorError=>e
@@ -190,7 +202,13 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
       return unless request.respond_to?(options[:params_method])
-      return unless params = request.send(options[:params_method])
+      begin
+        return unless params = request.send(options[:params_method])
+      rescue Exception => ex
+        # Getting params from the request has been know to fail.
+        Appsignal.logger.debug "Exception while getting params: #{ex}"
+        return
+      end
       if params.is_a?(Hash)
         Appsignal::ParamsSanitizer.sanitize(params)
       elsif params.is_a?(Array)

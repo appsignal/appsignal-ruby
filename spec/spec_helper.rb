@@ -128,6 +128,10 @@ RSpec.configure do |config|
     FileUtils.mkdir_p(tmp_dir)
   end
 
+  config.after do
+    Thread.current[:appsignal_transaction] = nil
+  end
+
   config.before do
     ENV['PWD'] = File.expand_path(File.join(File.dirname(__FILE__), '../'))
     ENV['RAILS_ENV'] = 'test'

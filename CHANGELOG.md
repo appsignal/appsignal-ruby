@@ -1,3 +1,22 @@
+# 1.1.6
+* Generic Rack instrumentation middleware
+* Event formatter for Faraday
+* Rescue and log errors in transaction complete and fetching params
+
+# 1.1.5
+* Support for null in sql sanitization
+* Add require to deploy.rb if present on installation
+* Warn when overwriting already existing transaction
+* Support for x86-linux
+* Some improvements in debug logging
+* Check of log file path is writable
+* Use bundled CA certs when installing agent
+
+# 1.1.4
+* Better debug logging for agent issues
+* Fix for exception with nil messages
+* Fix for using structs as job params in Delayed Job
+
 # 1.1.3
 * Fix for issue where Appsignal.send_exception clears the current
   transaction if it is present

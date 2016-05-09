@@ -9,7 +9,7 @@ module Appsignal
         end
 
         lifecycle.after(:execute) do |execute|
-          Appsignal.stop
+          Appsignal.stop('delayed job')
         end
       end
 

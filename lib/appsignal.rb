@@ -29,7 +29,12 @@ module Appsignal
     end
 
     def start
-      return unless extension_loaded?
+      unless extension_loaded?
+        logger.info('Not starting appsignal, extension is not loaded')
+        return
+      else
+        logger.debug('Starting appsignal')
+      end
 
       unless @config
         @config = Config.new(
@@ -62,7 +67,12 @@ module Appsignal
       end
     end
 
-    def stop
+    def stop(called_by=nil)
+      if called_by
+        logger.debug("Stopping appsignal (#{called_by})")
+      else
+        logger.debug('Stopping appsignal')
+      end
       Appsignal::Extension.stop
     end
 
@@ -197,9 +207,7 @@ module Appsignal
 
     def start_logger(path_arg=nil)
       path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && File.writable?(File.dirname(path)) &&
-         !ENV['DYNO'] &&
-         !ENV['SHELLYCLOUD_DEPLOYMENT']
+      if path && !ENV['DYNO']
         @logger = Logger.new(path)
         @logger.formatter = log_formatter
       else
@@ -258,6 +266,7 @@ require 'appsignal/integrations/resque'
 require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
+require 'appsignal/rack/generic_instrumentation'
 require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'

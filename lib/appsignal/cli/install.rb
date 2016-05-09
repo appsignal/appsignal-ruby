@@ -187,6 +187,17 @@ module Appsignal
         end
 
         def configure(config, environments, name_overwritten)
+          deploy_rb_file = File.join(ENV['PWD'], 'config/deploy.rb')
+          if File.exists?(deploy_rb_file) && (File.read(deploy_rb_file) =~ /require (\'|\").\/appsignal\/capistrano/).nil?
+            print 'Adding AppSignal integration to deploy.rb'
+            File.open(deploy_rb_file, 'a') do |f|
+              f.write "\nrequire 'appsignal/capistrano'\n"
+            end
+            periods
+            puts
+            puts
+          end
+
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
           puts "  (2) environment variables"
