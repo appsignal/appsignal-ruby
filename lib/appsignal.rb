@@ -78,6 +78,7 @@ module Appsignal
 
     def forked
       return unless active?
+      Appsignal.start_logger
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
       @subscriber.resubscribe
