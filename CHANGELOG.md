@@ -1,3 +1,7 @@
+# 1.1.7
+* Make logging resilient for closing FD's (daemons gem does this)
+* Add support for using Resque through ActiveJob
+
 # 1.1.6
 * Generic Rack instrumentation middleware
 * Event formatter for Faraday
