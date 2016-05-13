@@ -78,6 +78,7 @@ module Appsignal
 
     def forked
       return unless active?
+      Appsignal.start_logger
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
       @subscriber.resubscribe
@@ -263,6 +264,7 @@ require 'appsignal/marker'
 require 'appsignal/params_sanitizer'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
+require 'appsignal/integrations/resque_active_job'
 require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'

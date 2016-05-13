@@ -27,7 +27,7 @@ if resque_present?
 
       describe :around_perform_resque_plugin do
         let(:transaction) { Appsignal::Transaction.new('1', 'background', {}, {}) }
-        let(:job) { Resque::Job.new('default', {'class' => 'TestJob'}) }
+        let(:job) { ::Resque::Job.new('default', {'class' => 'TestJob'}) }
         before do
           transaction.stub(:complete => true)
           Appsignal::Transaction.stub(:current => transaction)
@@ -55,7 +55,7 @@ if resque_present?
         end
 
         context "with exception" do
-          let(:job) { Resque::Job.new('default', {'class' => 'BrokenTestJob'}) }
+          let(:job) { ::Resque::Job.new('default', {'class' => 'BrokenTestJob'}) }
 
           it "should set the exception" do
             Appsignal::Transaction.any_instance.should_receive(:set_error)

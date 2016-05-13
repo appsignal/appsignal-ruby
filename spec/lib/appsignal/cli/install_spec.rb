@@ -130,7 +130,7 @@ describe Appsignal::CLI::Install do
   end
 
   context "with sinatra" do
-    if sinatra_present? && !padrino_present?
+    if sinatra_present? && !padrino_present? && !rails_present?
       describe ".install" do
         it "should install with environment variables" do
           cli.should_receive(:gets).once.and_return('Appname')

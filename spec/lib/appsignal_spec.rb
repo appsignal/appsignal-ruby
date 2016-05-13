@@ -143,6 +143,7 @@ describe Appsignal do
       end
 
       it "should resubscribe and start the extension" do
+        Appsignal.should_receive(:start_logger)
         Appsignal::Extension.should_receive(:start)
         Appsignal::Subscriber.any_instance.should_receive(:resubscribe)
 
