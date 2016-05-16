@@ -96,7 +96,7 @@ describe Appsignal::Transaction do
       before { Appsignal::Transaction.create('2', Appsignal::Transaction::HTTP_REQUEST, {}) }
 
       it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-        Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer))
+        Appsignal::Transaction.current.should_receive(:complete)
 
         Appsignal::Transaction.complete_current!
 
@@ -104,7 +104,7 @@ describe Appsignal::Transaction do
       end
 
       it "should still clear the transaction if there is an error" do
-        Appsignal::Extension.should_receive(:finish_transaction).with(kind_of(Integer)).and_raise 'Error'
+        Appsignal::Transaction.current.should_receive(:complete).and_raise 'Error'
 
         Appsignal::Transaction.complete_current!
 
@@ -115,17 +115,17 @@ describe Appsignal::Transaction do
 
   describe "#complete" do
     it "should sample data if it needs to be sampled" do
-      Appsignal::Extension.should_receive(:finish_transaction).and_return(true)
-      Appsignal::Extension.should_receive(:complete_transaction)
+      transaction.ext.should_receive(:finish).and_return(true)
       transaction.should_receive(:sample_data)
+      transaction.ext.should_receive(:complete)
 
       transaction.complete
     end
 
     it "should not sample data if it does not need to be sampled" do
-      Appsignal::Extension.should_receive(:finish_transaction).and_return(false)
-      Appsignal::Extension.should_receive(:complete_transaction)
+      transaction.ext.should_receive(:finish).and_return(false)
       transaction.should_not_receive(:sample_data)
+      transaction.ext.should_receive(:complete)
 
       transaction.complete
     end
@@ -170,13 +170,12 @@ describe Appsignal::Transaction do
     context "initialization" do
       subject { transaction }
 
+      its(:ext)                { should_not be_nil }
       its(:transaction_id)     { should == '1' }
       its(:namespace)          { should == 'http_request' }
-      its(:transaction_index)  { should be_a Integer }
       its(:request)            { should_not be_nil }
       its(:paused)             { should be_false }
       its(:tags)               { should == {} }
-      its(:transaction_index)  { should be_a Integer }
 
       context "options" do
         subject { transaction.options }
@@ -214,8 +213,7 @@ describe Appsignal::Transaction do
 
     describe "set_action" do
       it "should set the action in extension" do
-          Appsignal::Extension.should_receive(:set_transaction_action).with(
-            kind_of(Integer),
+          transaction.ext.should_receive(:set_action).with(
             'PagesController#show'
           ).once
 
@@ -259,8 +257,7 @@ describe Appsignal::Transaction do
 
     describe "set_queue_start" do
       it "should set the queue start in extension" do
-        Appsignal::Extension.should_receive(:set_transaction_queue_start).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_queue_start).with(
           10.0
         ).once
 
@@ -268,7 +265,7 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the queue start in extension when value is nil" do
-        Appsignal::Extension.should_not_receive(:set_transaction_queue_start)
+        transaction.ext.should_not_receive(:set_queue_start)
 
         transaction.set_queue_start(nil)
       end
@@ -300,8 +297,7 @@ describe Appsignal::Transaction do
 
     describe "#set_metadata" do
       it "should set the metdata in extension" do
-        Appsignal::Extension.should_receive(:set_transaction_metadata).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_metadata).with(
           'request_method',
           'GET'
         ).once
@@ -310,7 +306,7 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the metdata in extension when value is nil" do
-        Appsignal::Extension.should_not_receive(:set_transaction_metadata)
+        transaction.ext.should_not_receive(:set_metadata)
 
         transaction.set_metadata('request_method', nil)
       end
@@ -318,8 +314,7 @@ describe Appsignal::Transaction do
 
     describe "set_sample_data" do
       it "should generate json and set the data" do
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'params',
           '{"controller":"blog_posts","action":"show","id":"1"}'
         ).once
@@ -335,8 +330,7 @@ describe Appsignal::Transaction do
       end
 
       it "should do nothing if the data cannot be converted to json" do
-        Appsignal::Extension.should_not_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_not_receive(:set_sample_data).with(
           'params',
           kind_of(String)
         )
@@ -347,28 +341,23 @@ describe Appsignal::Transaction do
 
     describe "#sample_data" do
       it "should sample data" do
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'environment',
           "{\"CONTENT_LENGTH\":\"0\",\"REQUEST_METHOD\":\"GET\",\"SERVER_NAME\":\"example.org\",\"SERVER_PORT\":\"80\",\"PATH_INFO\":\"/blog\"}"
         ).once
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'session_data',
           "{}"
         ).once
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'params',
           '{"controller":"blog_posts","action":"show","id":"1"}'
         ).once
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'metadata',
           '{"key":"value"}'
         ).once
-        Appsignal::Extension.should_receive(:set_transaction_sample_data).with(
-          kind_of(Integer),
+        transaction.ext.should_receive(:set_sample_data).with(
           'tags',
           "{}"
         ).once
@@ -387,22 +376,21 @@ describe Appsignal::Transaction do
 
       it "should not add the error if it's in the ignored list" do
         Appsignal.stub(:is_ignored_error? => true)
-        Appsignal::Extension.should_not_receive(:set_transaction_error)
+        transaction.ext.should_not_receive(:set_error)
 
         transaction.set_error(error)
       end
 
       it "should not add the error if appsignal is not active" do
         Appsignal.stub(:active? => false)
-        Appsignal::Extension.should_not_receive(:set_transaction_error)
+        transaction.ext.should_not_receive(:set_error)
 
         transaction.set_error(error)
       end
 
       context "for a http request" do
         it "should set an error in the extension" do
-          Appsignal::Extension.should_receive(:set_transaction_error).with(
-            kind_of(Integer),
+          transaction.ext.should_receive(:set_error).with(
             'RSpec::Mocks::Mock',
             'test message',
             "[\"line 1\"]"
@@ -420,8 +408,7 @@ describe Appsignal::Transaction do
         end
 
         it "should set an error in the extension" do
-          Appsignal::Extension.should_receive(:set_transaction_error).with(
-            kind_of(Integer),
+          transaction.ext.should_receive(:set_error).with(
             'RSpec::Mocks::Mock',
             '',
             "[\"line 1\"]"
@@ -429,6 +416,48 @@ describe Appsignal::Transaction do
 
           transaction.set_error(error)
         end
+      end
+    end
+
+    describe "#start_event" do
+      it "should start the event in the extension" do
+        transaction.ext.should_receive(:start_event)
+
+        transaction.start_event
+      end
+    end
+
+    describe "finish_event" do
+      it "should finish the event in the extension" do
+        transaction.ext.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          1
+        )
+
+        transaction.finish_event(
+          'name',
+          'title',
+          'body',
+          1
+        )
+      end
+
+      it "should finish the event in the extension with nil arguments" do
+        transaction.ext.should_receive(:finish_event).with(
+          'name',
+          '',
+          '',
+          0
+        )
+
+        transaction.finish_event(
+          'name',
+          nil,
+          nil,
+          nil
+        )
       end
     end
 

@@ -1,11 +1,11 @@
 module Appsignal
   class JSExceptionTransaction
-    attr_reader :uuid, :transaction_index
+    attr_reader :uuid, :ext
 
     def initialize(data)
       @data = data
       @uuid = SecureRandom.uuid
-      @transaction_index = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND)
+      @ext = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND)
 
       set_action
       set_metadata
@@ -14,18 +14,17 @@ module Appsignal
     end
 
     def set_action
-      Appsignal::Extension.set_transaction_action(@transaction_index, @data['action'])
+      @ext.set_action(@data['action'])
     end
 
     def set_metadata
-      Appsignal::Extension.set_transaction_metadata(
-        @transaction_index, 'path', @data['path']
+      @ext.set_metadata(
+        'path', @data['path']
       ) if @data['path']
     end
 
     def set_error
-      Appsignal::Extension.set_transaction_error(
-        @transaction_index,
+      @ext.set_error(
         @data['name'],
         @data['message'],
         Appsignal::Utils.json_generate(@data['backtrace'])
@@ -40,8 +39,7 @@ module Appsignal
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
         begin
-          Appsignal::Extension.set_transaction_sample_data(
-            @transaction_index,
+          @ext.set_sample_data(
             key.to_s,
             Appsignal::Utils.json_generate(data)
           )
@@ -52,8 +50,8 @@ module Appsignal
     end
 
     def complete!
-      Appsignal::Extension.finish_transaction(@transaction_index)
-      Appsignal::Extension.complete_transaction(@transaction_index)
+      @ext.finish
+      @ext.complete
     end
   end
 end

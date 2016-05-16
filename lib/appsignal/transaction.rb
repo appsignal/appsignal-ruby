@@ -3,6 +3,7 @@ module Appsignal
     HTTP_REQUEST   = 'http_request'.freeze
     BACKGROUND_JOB = 'background_job'.freeze
     FRONTEND       = 'frontend'.freeze
+    BLANK          = ''.freeze
 
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
@@ -43,7 +44,7 @@ module Appsignal
       end
     end
 
-    attr_reader :transaction_index, :transaction_id, :namespace, :request, :paused, :tags, :options
+    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options
 
     def initialize(transaction_id, namespace, request, options={})
       @transaction_id = transaction_id
@@ -55,7 +56,7 @@ module Appsignal
       @options = options
       @options[:params_method] ||= :params
 
-      @transaction_index = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
+      @ext = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
     end
 
     def nil_transaction?
@@ -63,10 +64,10 @@ module Appsignal
     end
 
     def complete
-      if Appsignal::Extension.finish_transaction(transaction_index)
+      if @ext.finish
         sample_data
       end
-      Appsignal::Extension.complete_transaction(transaction_index)
+      @ext.complete
     end
 
     def pause!
@@ -91,7 +92,7 @@ module Appsignal
 
     def set_action(action)
       return unless action
-      Appsignal::Extension.set_transaction_action(transaction_index, action)
+      @ext.set_action(action)
     end
 
     def set_http_or_background_action(from=request.params)
@@ -105,7 +106,7 @@ module Appsignal
 
     def set_queue_start(start)
       return unless start
-      Appsignal::Extension.set_transaction_queue_start(transaction_index, start)
+      @ext.set_queue_start(start)
     end
 
     def set_http_or_background_queue_start
@@ -118,13 +119,12 @@ module Appsignal
 
     def set_metadata(key, value)
       return unless key && value
-      Appsignal::Extension.set_transaction_metadata(transaction_index, key, value)
+      @ext.set_metadata(key, value)
     end
 
     def set_sample_data(key, data)
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
-      Appsignal::Extension.set_transaction_sample_data(
-        transaction_index,
+      @ext.set_sample_data(
         key.to_s,
         Appsignal::Utils.json_generate(data)
       )
@@ -150,8 +150,7 @@ module Appsignal
       return if Appsignal.is_ignored_error?(error)
 
       backtrace = cleaned_backtrace(error.backtrace)
-      Appsignal::Extension.set_transaction_error(
-        transaction_index,
+      @ext.set_error(
         error.class.name,
         error.message.to_s,
         backtrace ? Appsignal::Utils.json_generate(backtrace) : ''
@@ -160,6 +159,19 @@ module Appsignal
       Appsignal.logger.error("JSON generate error (#{e.message}) for '#{backtrace.inspect}'")
     end
     alias_method :add_exception, :set_error
+
+    def start_event
+      @ext.start_event
+    end
+
+    def finish_event(name, title, body, body_format)
+      @ext.finish_event(
+        name,
+        title || BLANK,
+        body || BLANK,
+        body_format || 0
+      )
+    end
 
     class GenericRequest
       attr_reader :env

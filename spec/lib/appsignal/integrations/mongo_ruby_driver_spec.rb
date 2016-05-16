@@ -31,10 +31,9 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       end
 
       it "should start an event in the extension" do
-        Appsignal::Extension.should receive(:start_event)
-          .with(transaction.transaction_index)
+        transaction.should receive(:start_event)
 
-          subscriber.started(event)
+        subscriber.started(event)
       end
     end
 
@@ -80,8 +79,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       end
 
       it "should finish the transaction in the extension" do
-        Appsignal::Extension.should receive(:finish_event).with(
-          transaction.transaction_index,
+        transaction.should receive(:finish_event).with(
           'query.mongodb',
           'find | test | SUCCEEDED',
           "{\"foo\":\"?\"}",

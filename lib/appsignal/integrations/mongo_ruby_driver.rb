@@ -16,7 +16,7 @@ module Appsignal
         store[event.request_id] = command
 
         # Start this event
-        Appsignal::Extension.start_event(transaction.transaction_index)
+        transaction.start_event
       end
 
       # Called by Mongo::Monitor when query succeeds
@@ -42,8 +42,7 @@ module Appsignal
         command = store.delete(event.request_id) || {}
 
         # Finish the event in the extension.
-        Appsignal::Extension.finish_event(
-          transaction.transaction_index,
+        transaction.finish_event(
           'query.mongodb',
           "#{event.command_name.to_s} | #{event.database_name} | #{result}",
           Appsignal::Utils.json_generate(command),
@@ -51,6 +50,5 @@ module Appsignal
         )
       end
     end
-
   end
 end

@@ -97,11 +97,11 @@ describe Appsignal::Subscriber do
       end
 
       it "should call native start and finish event for every event" do
-        Appsignal::Extension.should_receive(:start_event).exactly(4).times
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one', '', '', 0).once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two', '', '', 0).once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'two.three', '', '', 0).once
-        Appsignal::Extension.should_receive(:finish_event).with(kind_of(Integer), 'one.three', '', '', 0).once
+        transaction.should_receive(:start_event).exactly(4).times
+        transaction.should_receive(:finish_event).with('one', nil, nil, nil).once
+        transaction.should_receive(:finish_event).with('two', nil, nil, nil).once
+        transaction.should_receive(:finish_event).with('two.three', nil, nil, nil).once
+        transaction.should_receive(:finish_event).with('one.three', nil, nil, nil).once
 
         ActiveSupport::Notifications.instrument('one') do
           ActiveSupport::Notifications.instrument('two') do
@@ -114,13 +114,12 @@ describe Appsignal::Subscriber do
       end
 
       it "should call finish with title and body if there is a formatter" do
-        Appsignal::Extension.should_receive(:start_event).once
-        Appsignal::Extension.should_receive(:finish_event).with(
-          kind_of(Integer),
+        transaction.should_receive(:start_event).once
+        transaction.should_receive(:finish_event).with(
           'request.net_http',
           'GET http://www.google.com',
-          '',
-          0
+          nil,
+          nil
         ).once
 
         ActiveSupport::Notifications.instrument(
@@ -132,9 +131,8 @@ describe Appsignal::Subscriber do
       end
 
       it "should call finish with title, body and body format if there is a formatter that returns it" do
-        Appsignal::Extension.should_receive(:start_event).once
-        Appsignal::Extension.should_receive(:finish_event).with(
-          kind_of(Integer),
+        transaction.should_receive(:start_event).once
+        transaction.should_receive(:finish_event).with(
           'sql.active_record',
           'Something load',
           'SELECT * FROM something',
