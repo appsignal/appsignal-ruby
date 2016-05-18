@@ -188,7 +188,7 @@ module Appsignal
     def merge(original_config, new_config)
       new_config.each do |key, value|
         unless original_config[key].nil?
-          @logger.info("Config key '#{key}' is being overwritten")
+          @logger.debug("Config key '#{key}' is being overwritten")
         end
         original_config[key] = value
       end
