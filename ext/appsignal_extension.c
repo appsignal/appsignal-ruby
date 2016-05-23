@@ -18,9 +18,10 @@ static VALUE stop(VALUE self) {
 }
 
 static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace) {
+  appsignal_transaction* transaction;
+
   Check_Type(transaction_id, T_STRING);
 
-  appsignal_transaction* transaction;
   transaction = appsignal_start_transaction(
       StringValueCStr(transaction_id),
       StringValueCStr(namespace)
@@ -35,6 +36,7 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace
 
 static VALUE start_event(VALUE self) {
   appsignal_transaction* transaction;
+
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_start_event(transaction);
@@ -43,12 +45,12 @@ static VALUE start_event(VALUE self) {
 }
 
 static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format) {
+  appsignal_transaction* transaction;
+
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
   Check_Type(body, T_STRING);
   Check_Type(body_format, T_FIXNUM);
-
-  appsignal_transaction* transaction;
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_finish_event(
@@ -62,11 +64,11 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
 }
 
 static VALUE set_transaction_error(VALUE self, VALUE name, VALUE message, VALUE backtrace) {
+  appsignal_transaction* transaction;
+
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
   Check_Type(backtrace, T_STRING);
-
-  appsignal_transaction* transaction;
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_error(
@@ -79,10 +81,10 @@ static VALUE set_transaction_error(VALUE self, VALUE name, VALUE message, VALUE 
 }
 
 static VALUE set_transaction_sample_data(VALUE self, VALUE key, VALUE payload) {
+  appsignal_transaction* transaction;
+
   Check_Type(key, T_STRING);
   Check_Type(payload, T_STRING);
-
-  appsignal_transaction* transaction;
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_sample_data(
@@ -94,9 +96,9 @@ static VALUE set_transaction_sample_data(VALUE self, VALUE key, VALUE payload) {
 }
 
 static VALUE set_transaction_action(VALUE self, VALUE action) {
-  Check_Type(action, T_STRING);
-
   appsignal_transaction* transaction;
+
+  Check_Type(action, T_STRING);
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_action(
@@ -107,9 +109,9 @@ static VALUE set_transaction_action(VALUE self, VALUE action) {
 }
 
 static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
-  Check_Type(queue_start, T_FIXNUM);
-
   appsignal_transaction* transaction;
+
+  Check_Type(queue_start, T_FIXNUM);
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_queue_start(
@@ -120,10 +122,10 @@ static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
 }
 
 static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
+  appsignal_transaction* transaction;
+
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
-
-  appsignal_transaction* transaction;
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_metadata(
@@ -135,8 +137,8 @@ static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
 }
 
 static VALUE finish_transaction(VALUE self) {
-  int sample;
   appsignal_transaction* transaction;
+  int sample;
 
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
