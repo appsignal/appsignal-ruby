@@ -32,15 +32,14 @@ describe Appsignal::JSExceptionTransaction do
 
       transaction.send :initialize, data
 
-      expect( transaction.transaction_index ).to eq(1)
+      expect( transaction.ext ).not_to be_nil
     end
   end
 
   describe "#set_base_data" do
     it "should call `Appsignal::Extension.set_transaction_basedata`" do
-      expect( Appsignal::Extension ).to receive(:set_transaction_action).with(
-        kind_of(Integer),
-        'ExceptionIncidentComponent',
+      expect( transaction.ext ).to receive(:set_action).with(
+        'ExceptionIncidentComponent'
       )
 
       transaction.set_action
@@ -49,8 +48,7 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#set_metadata" do
    it "should call `Appsignal::Extension.set_transaction_metadata`" do
-     expect( Appsignal::Extension ).to receive(:set_transaction_metadata).with(
-      kind_of(Integer),
+     expect( transaction.ext ).to receive(:set_metadata).with(
        'path',
        'foo.bar/moo'
      )
@@ -61,8 +59,7 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#set_error" do
    it "should call `Appsignal::Extension.set_transaction_error`" do
-     expect( Appsignal::Extension ).to receive(:set_transaction_error).with(
-      kind_of(Integer),
+     expect( transaction.ext ).to receive(:set_error).with(
        'TypeError',
        'foo is not a valid method',
        "[\"foo.bar/js:11:1\",\"foo.bar/js:22:2\"]"
@@ -74,8 +71,7 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#set_sample_data" do
    it "should call `Appsignal::Extension.set_transaction_error_data`" do
-     expect( Appsignal::Extension ).to receive(:set_transaction_sample_data).with(
-      kind_of(Integer),
+     expect( transaction.ext ).to receive(:set_sample_data).with(
       'tags',
       '["tag1"]'
      )
@@ -86,8 +82,8 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#complete!" do
     it "should call all required methods" do
-      expect( Appsignal::Extension ).to receive(:finish_transaction).with(kind_of(Integer))
-      expect( Appsignal::Extension ).to receive(:complete_transaction).with(kind_of(Integer))
+      expect( transaction.ext ).to receive(:finish)
+      expect( transaction.ext ).to receive(:complete)
       transaction.complete!
     end
   end

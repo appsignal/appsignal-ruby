@@ -1,7 +1,5 @@
 module Appsignal
   class Subscriber
-    BLANK = ''.freeze
-
     attr_reader :as_subscriber
 
     def initialize
@@ -38,7 +36,7 @@ module Appsignal
       return unless transaction = Appsignal::Transaction.current
       return if transaction.nil_transaction? || transaction.paused?
 
-      Appsignal::Extension.start_event(transaction.transaction_index)
+      transaction.start_event
     end
 
     def finish(name, id, payload)
@@ -46,12 +44,11 @@ module Appsignal
       return if transaction.nil_transaction? || transaction.paused?
 
       title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-      Appsignal::Extension.finish_event(
-        transaction.transaction_index,
+      transaction.finish_event(
         name,
-        title || BLANK,
-        body || BLANK,
-        body_format || 0
+        title,
+        body,
+        body_format
       )
     end
   end
