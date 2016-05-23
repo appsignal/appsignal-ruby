@@ -16,6 +16,13 @@ module Appsignal
     HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP HTTP_RANGE)
 
+    JSON_EXCEPTIONS = [
+      IOError,
+      NotImplementedError,
+      JSON::GeneratorError,
+      Encoding::UndefinedConversionError
+    ].freeze
+
     class << self
       def create(id, namespace, request, options={})
         # Check if we already have a running transaction
@@ -128,8 +135,8 @@ module Appsignal
         key.to_s,
         Appsignal::Utils.json_generate(data)
       )
-    rescue JSON::GeneratorError=>e
-      Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
+    rescue *JSON_EXCEPTIONS => e
+      Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{data.inspect}'")
     end
 
     def sample_data
@@ -155,8 +162,8 @@ module Appsignal
         error.message.to_s,
         backtrace ? Appsignal::Utils.json_generate(backtrace) : ''
       )
-    rescue JSON::GeneratorError=>e
-      Appsignal.logger.error("JSON generate error (#{e.message}) for '#{backtrace.inspect}'")
+    rescue *JSON_EXCEPTIONS => e
+      Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{backtrace.inspect}'")
     end
     alias_method :add_exception, :set_error
 

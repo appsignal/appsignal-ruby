@@ -43,8 +43,8 @@ module Appsignal
             key.to_s,
             Appsignal::Utils.json_generate(data)
           )
-        rescue JSON::GeneratorError=>e
-          Appsignal.logger.error("JSON generate error (#{e.message}) for '#{data.inspect}'")
+        rescue *Appsignal::Transaction::JSON_EXCEPTIONS => e
+          Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{backtrace.inspect}'")
         end
       end
     end
