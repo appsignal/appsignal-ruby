@@ -1,19 +1,19 @@
 ---
-version: 594b119
+version: b9b98f1
 triples:
   x86_64-linux:
-    checksum: b80bb04c42f662b5b66a9b7061805ff6843f5fa27026d0c87ab7a7c8da6c2a64
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/594b119/appsignal-agent-x86_64-linux-static.tar.gz
+    checksum: 69542d576478984d769257fb58639728a937872d35d3f9bb30da986e02d36909
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/b9b98f1/appsignal-agent-x86_64-linux-static.tar.gz
     lib_filename: libappsignal.a
   i686-linux:
-    checksum: 39d0a0d3aaf82743a4158a1c274e076c05fdc8a44c8e76d47bef78166af5e440
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/594b119/appsignal-agent-i686-linux-static.tar.gz
+    checksum: 7bf25f151a255227c8bee0b75b8e8c75adc484f2b418c2dfc760e0a82869ed27
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/b9b98f1/appsignal-agent-i686-linux-static.tar.gz
     lib_filename: libappsignal.a
   x86-linux:
-    checksum: 39d0a0d3aaf82743a4158a1c274e076c05fdc8a44c8e76d47bef78166af5e440
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/594b119/appsignal-agent-i686-linux-static.tar.gz
+    checksum: 7bf25f151a255227c8bee0b75b8e8c75adc484f2b418c2dfc760e0a82869ed27
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/b9b98f1/appsignal-agent-i686-linux-static.tar.gz
     lib_filename: libappsignal.a
   x86_64-darwin:
-    checksum: c64c2b7b774c4c60ed99e5d508fc44bfbf99bd738fabd3d62157715f5215692f
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/594b119/appsignal-agent-x86_64-darwin-static.tar.gz
+    checksum: c8b0df3b38e9747d468e12bb7d7c6bfdc901b62d6138b5629c3969e78ff6cc4d
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/b9b98f1/appsignal-agent-x86_64-darwin-static.tar.gz
     lib_filename: libappsignal.a
