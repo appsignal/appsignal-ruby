@@ -33,7 +33,8 @@ describe Appsignal::Config do
         :frontend_error_catching_path   => '/appsignal_error_catcher',
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
-        :running_in_container           => false
+        :running_in_container           => false,
+        :collect_host_metrics           => false
       }
     end
 
@@ -112,6 +113,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
         ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
         ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
+        ENV['APPSIGNAL_COLLECT_HOST_METRICS'].should         == 'false'
       end
 
       context "if working_dir_path is set" do
