@@ -1,6 +1,7 @@
 # 1.2.0
 * Restart background thread when FD's are closed
 * Beta version of collecting host metrics (disabled by default)
+* Hooks for Shuryoken
 
 # 1.1.7
 * Make logging resilient for closing FD's (daemons gem does this)
