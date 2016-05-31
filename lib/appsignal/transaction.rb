@@ -1,3 +1,5 @@
+require 'json'
+
 module Appsignal
   class Transaction
     HTTP_REQUEST   = 'http_request'.freeze
