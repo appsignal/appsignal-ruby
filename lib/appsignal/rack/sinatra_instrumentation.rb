@@ -3,9 +3,12 @@ require 'rack'
 module Appsignal
   module Rack
     class SinatraInstrumentation
+      attr_reader :raise_errors_on
+
       def initialize(app, options = {})
         Appsignal.logger.debug 'Initializing Appsignal::Rack::SinatraInstrumentation'
         @app, @options = app, options
+        @raise_errors_on = @app.settings.raise_errors
       end
 
       def call(env)
@@ -34,9 +37,9 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          # In production newer versions of Sinatra don't raise errors, but store
+          # If raise_error is off versions of Sinatra don't raise errors, but store
           # them in the sinatra.error env var.
-          transaction.set_error(env['sinatra.error']) if env['sinatra.error']
+          transaction.set_error(env['sinatra.error']) if !@raise_errors_on && env['sinatra.error']
           transaction.set_action(env['sinatra.route'])
           transaction.set_metadata('path', request.path)
           transaction.set_metadata('method', request.request_method)
