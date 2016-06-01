@@ -1,3 +1,6 @@
+# 1.1.8
+* Require json to fix problem with using from Capistrano
+
 # 1.1.7
 * Make logging resilient for closing FD's (daemons gem does this)
 * Add support for using Resque through ActiveJob
