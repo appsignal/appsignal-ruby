@@ -21,6 +21,7 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace
   appsignal_transaction* transaction;
 
   Check_Type(transaction_id, T_STRING);
+  Check_Type(namespace, T_STRING);
 
   transaction = appsignal_start_transaction(
       StringValueCStr(transaction_id),
