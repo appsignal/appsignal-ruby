@@ -1,5 +1,6 @@
 # 1.1.9
 * Fix for race condition when creating working dir exactly at the same time
+* Make diag Rake task resilient to missing config
 
 # 1.1.8
 * Require json to fix problem with using from Capistrano
