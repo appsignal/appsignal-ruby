@@ -20,8 +20,12 @@ namespace :appsignal do
 
     desc "Checks if config is present and shows the values"
     task :config => :start_appsignal do
-      Appsignal.config.config_hash.each do |key, val|
-        puts "Config #{key}: #{val}"
+      if Appsignal.config && Appsignal.config.config_hash
+        Appsignal.config.config_hash.each do |key, val|
+          puts "Config #{key}: #{val}"
+        end
+      else
+        puts "No config present"
       end
     end
 
