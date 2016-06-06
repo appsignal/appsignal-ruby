@@ -18,9 +18,9 @@ static VALUE stop(VALUE self) {
 }
 
 static VALUE get_server_state(VALUE self, VALUE key) {
-  Check_Type(key, T_STRING);
-
   char * ptr = appsignal_get_server_state(StringValueCStr(key));
+
+  Check_Type(key, T_STRING);
 
   if (ptr) {
     return rb_str_new2(ptr);
