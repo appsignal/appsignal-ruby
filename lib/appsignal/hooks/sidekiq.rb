@@ -25,7 +25,8 @@ module Appsignal
           :method      => 'perform',
           :metadata    => formatted_metadata(item),
           :params      => params,
-          :queue_start => item['enqueued_at']
+          :queue_start => item['enqueued_at'],
+          :queue_time  => (Time.now.to_f - item['enqueued_at'].to_f) * 1000
         ) do
           yield
         end
