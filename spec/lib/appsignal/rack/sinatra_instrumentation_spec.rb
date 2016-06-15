@@ -12,7 +12,8 @@ if defined?(::Sinatra)
       start_agent
     end
 
-    let(:app) { double(:call => true) }
+    let(:settings) { double(:raise_errors => false) }
+    let(:app) { double(:call => true, :settings => settings) }
     let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, options) }
@@ -63,6 +64,7 @@ if defined?(::Sinatra)
         let(:app) do
           double.tap do |d|
             d.stub(:call).and_raise(error)
+            d.stub(:settings => settings)
           end
         end
 
@@ -77,6 +79,14 @@ if defined?(::Sinatra)
 
         it "should set the error" do
           Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+        end
+
+        context "if raise_errors is on" do
+          let(:settings) { double(:raise_errors => true) }
+
+          it "should not set the error" do
+            Appsignal::Transaction.any_instance.should_not_receive(:set_error)
+          end
         end
       end
 

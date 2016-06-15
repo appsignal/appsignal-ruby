@@ -1,3 +1,9 @@
+# 1.2.0
+* Restart background thread when FD's are closed
+* Beta version of collecting host metrics (disabled by default)
+* Hooks for Shuryoken
+* Don't add errors from env if raise_errors is off for Sinatra
+
 # 1.1.9
 * Fix for race condition when creating working dir exactly at the same time
 * Make diag Rake task resilient to missing config

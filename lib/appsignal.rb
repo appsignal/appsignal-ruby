@@ -1,3 +1,4 @@
+require 'json'
 require 'logger'
 require 'securerandom'
 
@@ -82,6 +83,10 @@ module Appsignal
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
       @subscriber.resubscribe
+    end
+
+    def get_server_state(key)
+      Appsignal::Extension::get_server_state(key)
     end
 
     # Wrap a transaction with appsignal monitoring.

@@ -37,40 +37,44 @@ describe "extension loading and operation" do
         subject.stop
       end
 
-      it "should have a start_transaction method" do
-        subject.start_transaction('request_id', 'http_request')
-      end
+      context "with a transaction" do
+        subject { Appsignal::Extension.start_transaction('request_id', 'http_request') }
 
-      it "should have a start_event method" do
-        subject.start_event(1)
-      end
+        it "should have a start_event method" do
+          subject.start_event
+        end
 
-      it "should have a finish_event method" do
-        subject.finish_event(1, 'name', 'title', 'body', 0)
-      end
+        it "should have a finish_event method" do
+          subject.finish_event('name', 'title', 'body', 0)
+        end
 
-      it "should have a set_transaction_error method" do
-        subject.set_transaction_error(1, 'name', 'message', '[backtrace]')
-      end
+        it "should have a set_error method" do
+          subject.set_error('name', 'message', '[backtrace]')
+        end
 
-      it "should have a set_transaction_sample_data method" do
-        subject.set_transaction_sample_data(1, 'params', '{}')
-      end
+        it "should have a set_sample_data method" do
+          subject.set_sample_data('params', '{}')
+        end
 
-      it "should have a set_transaction_action method" do
-        subject.set_transaction_action(1, 'value')
-      end
+        it "should have a set_action method" do
+          subject.set_action('value')
+        end
 
-      it "should have a set_transaction_queue_start method" do
-        subject.set_transaction_queue_start(1, 10)
-      end
+        it "should have a set_queue_start method" do
+          subject.set_queue_start(10)
+        end
 
-      it "should have a set_transaction_metadata method" do
-        subject.set_transaction_metadata(1, 'key', 'value')
-      end
+        it "should have a set_metadata method" do
+          subject.set_metadata('key', 'value')
+        end
 
-      it "should have a finish_transaction method" do
-        subject.finish_transaction(1)
+        it "should have a finish method" do
+          subject.finish
+        end
+
+        it "should have a complete method" do
+          subject.complete
+        end
       end
 
       it "should have a set_gauge method" do

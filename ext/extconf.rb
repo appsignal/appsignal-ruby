@@ -48,7 +48,7 @@ def install
   arch_config = AGENT_CONFIG['triples'][ARCH]
 
   unless File.exists?(ext_path('appsignal-agent')) &&
-           File.exists?(ext_path(arch_config['lib_filename'])) &&
+           File.exists?(ext_path('libappsignal.a')) &&
            File.exists?(ext_path('appsignal_extension.h'))
     logger.info "Downloading agent release from #{arch_config['download_url']}"
 
@@ -90,6 +90,9 @@ def install
   end
 rescue => ex
   installation_failed "Exception while installing: #{ex}"
+  ex.backtrace.each do |line|
+    logger.error line
+  end
 end
 
 install
