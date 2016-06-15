@@ -17,7 +17,7 @@ describe "Sequel integration", if: sequel_present? do
         .at_least(:once)
         .with("sql.sequel", nil, kind_of(String), 1)
 
-      db['SELECT 1'].all
+      db['SELECT 1'].all.to_a
     end
   end
 end
