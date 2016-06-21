@@ -123,13 +123,18 @@ static VALUE set_transaction_action(VALUE self, VALUE action) {
 
 static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
   appsignal_transaction* transaction;
+  int queue_start_type;
 
-  Check_Type(queue_start, T_FIXNUM);
+  queue_start_type = TYPE(queue_start);
+  if (queue_start_type != T_FIXNUM && queue_start_type != T_BIGNUM) {
+      rb_raise(rb_eTypeError, "queue_start should be a Fixnum or Bignum");
+  }
+
   Data_Get_Struct(self, appsignal_transaction, transaction);
 
   appsignal_set_transaction_queue_start(
       transaction,
-      FIX2LONG(queue_start)
+      NUM2LONG(queue_start)
   );
   return Qnil;
 }
