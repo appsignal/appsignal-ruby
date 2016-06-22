@@ -1,8 +1,20 @@
 module Appsignal
   class Hooks
-    module SequelExtension
+    module SequelLogExtension
       # Add query instrumentation
       def log_yield(sql, args = nil)
+        ActiveSupport::Notifications.instrument(
+          'sql.sequel',
+          :sql => sql
+        ) do
+          yield
+        end
+      end
+    end
+
+    module SequelLogConnectionExtension
+      # Add query instrumentation
+      def log_connection_yield(sql, conn, args = nil)
         ActiveSupport::Notifications.instrument(
           'sql.sequel',
           :sql => sql
@@ -23,10 +35,17 @@ module Appsignal
 
       def install
         # Register the extension...
-        ::Sequel::Database.register_extension(
-          :appsignal_integration,
-          Appsignal::Hooks::SequelExtension
-        )
+        if ::Sequel::MAJOR >= 4 && ::Sequel::MINOR >= 35
+          ::Sequel::Database.register_extension(
+            :appsignal_integration,
+            Appsignal::Hooks::SequelLogConnectionExtension
+          )
+        else
+          ::Sequel::Database.register_extension(
+            :appsignal_integration,
+            Appsignal::Hooks::SequelLogExtension
+          )
+        end
 
         # ... and automatically add it to future instances.
         ::Sequel::Database.extension(:appsignal_integration)

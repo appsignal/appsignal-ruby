@@ -11,6 +11,7 @@ GEMFILES = %w(
   rails-5.0
   resque
   sequel
+  sequel-435
   sinatra
   grape
 )
