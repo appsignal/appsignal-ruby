@@ -39,7 +39,7 @@ module Appsignal
 
       unless @config
         @config = Config.new(
-          ENV['PWD'],
+          Dir.pwd,
           ENV['APPSIGNAL_APP_ENV'] || ENV['RAILS_ENV'] || ENV['RACK_ENV']
         )
       end

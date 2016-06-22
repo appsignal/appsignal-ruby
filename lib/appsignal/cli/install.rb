@@ -64,7 +64,7 @@ module Appsignal
         end
 
         def install_for_rails(config)
-          require File.expand_path(File.join(ENV['PWD'], 'config/application.rb'))
+          require File.expand_path(File.join(Dir.pwd, 'config/application.rb'))
 
           puts 'Installing for Ruby on Rails'
 
@@ -187,7 +187,7 @@ module Appsignal
         end
 
         def configure(config, environments, name_overwritten)
-          deploy_rb_file = File.join(ENV['PWD'], 'config/deploy.rb')
+          deploy_rb_file = File.join(Dir.pwd, 'config/deploy.rb')
           if File.exists?(deploy_rb_file) && (File.read(deploy_rb_file) =~ /require (\'|\").\/appsignal\/capistrano/).nil?
             print 'Adding AppSignal integration to deploy.rb'
             File.open(deploy_rb_file, 'a') do |f|
@@ -285,7 +285,7 @@ module Appsignal
 
         def rails_environments
           @environments ||= Dir.glob(
-            File.join(ENV['PWD'], 'config/environments/*.rb')
+            File.join(Dir.pwd, 'config/environments/*.rb')
           ).map { |o| File.basename(o, ".rb") }.sort - EXCLUDED_ENVIRONMENTS
         end
 
@@ -298,8 +298,8 @@ module Appsignal
 
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
-          FileUtils.mkdir_p(File.join(ENV['PWD'], 'config'))
-          File.write(File.join(ENV['PWD'], 'config/appsignal.yml'), config)
+          FileUtils.mkdir_p(File.join(Dir.pwd, 'config'))
+          File.write(File.join(Dir.pwd, 'config/appsignal.yml'), config)
         end
       end
     end

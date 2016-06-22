@@ -45,7 +45,7 @@ module Appsignal
 
       def config
         Appsignal::Config.new(
-          ENV['PWD'],
+          Dir.pwd,
           options[:environment],
           initial_config,
           Logger.new(StringIO.new)
