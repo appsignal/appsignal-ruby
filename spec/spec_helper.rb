@@ -142,7 +142,6 @@ RSpec.configure do |config|
   end
 
   config.before do
-    ENV['PWD'] = File.expand_path(File.join(File.dirname(__FILE__), '../'))
     ENV['RAILS_ENV'] = 'test'
 
     # Clean environment
