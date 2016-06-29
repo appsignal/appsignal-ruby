@@ -24,7 +24,6 @@ describe Appsignal::Transaction do
 
   context "class methods" do
     describe ".create" do
-
       it "should add the transaction to thread local" do
         Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request')
 
@@ -458,6 +457,25 @@ describe Appsignal::Transaction do
           nil,
           nil
         )
+      end
+    end
+
+    describe "#instrument" do
+      it "should start and finish an event around the given block" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        transaction.should_receive(:start_event)
+        transaction.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          0
+        )
+
+        transaction.instrument 'name', 'title', 'body' do
+          stub.method_call
+        end.should eq 'return value'
       end
     end
 

@@ -59,9 +59,10 @@ module Appsignal
         formatter.format(payload) unless formatter.nil?
       end
     end
-  end
 
-  SQL_BODY_FORMAT = 1
+    DEFAULT = 0
+    SQL_BODY_FORMAT = 1
+  end
 end
 
 Dir.glob(File.expand_path('../event_formatter/**/*.rb', __FILE__)).each do |file|

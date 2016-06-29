@@ -266,6 +266,19 @@ describe Appsignal do
         }.should_not raise_error
       end
     end
+
+    describe ".instrument" do
+      it "should not instrument, but still call the block" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        lambda {
+          Appsignal.instrument 'name' do
+            stub.method_call
+          end.should eq 'return value'
+        }.should_not raise_error
+      end
+    end
   end
 
   context "with config and started" do
@@ -615,6 +628,25 @@ describe Appsignal do
         transaction.should_not_receive(:set_error)
 
         Appsignal.set_error(nil)
+      end
+    end
+
+    describe ".instrument" do
+      it "should instrument through the transaction" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        transaction.should_receive(:start_event)
+        transaction.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          0
+        )
+
+        Appsignal.instrument 'name', 'title', 'body' do
+          stub.method_call
+        end.should eq 'return value'
       end
     end
 
