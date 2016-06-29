@@ -88,6 +88,14 @@ if defined?(::Sinatra)
             Appsignal::Transaction.any_instance.should_not_receive(:set_error)
           end
         end
+
+        context "if sinatra.skip_appsignal_error is set" do
+          let(:env) { {'sinatra.error' => error, 'sinatra.skip_appsignal_error' => true} }
+
+          it "should not set the error" do
+            Appsignal::Transaction.any_instance.should_not_receive(:set_error)
+          end
+        end
       end
 
       it "should set the action" do

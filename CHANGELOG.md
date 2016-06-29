@@ -1,3 +1,10 @@
+# 1.2.1
+* Use Dir.pwd in CLI install wizard
+* Support bignums when setting queue length
+* Support for Sequel 4.35
+* Add env option to skip errors in Sinatra
+* Fix for queue time calculation in Sidekiq (by lucasmazza)
+
 # 1.2.0
 * Restart background thread when FD's are closed
 * Beta version of collecting host metrics (disabled by default)

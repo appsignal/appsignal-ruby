@@ -22,6 +22,7 @@ gemfile:
   - "gemfiles/rails-5.0.gemfile"
   - "gemfiles/resque.gemfile"
   - "gemfiles/sequel.gemfile"
+  - "gemfiles/sequel-435.gemfile"
   - "gemfiles/sinatra.gemfile"
   - "gemfiles/grape.gemfile"
 

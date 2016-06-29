@@ -7,7 +7,7 @@ describe Appsignal::CLI do
   before do
     @original_stdout = $stdout
     $stdout = out_stream
-    ENV['PWD'] = project_fixture_path
+    Dir.stub(:pwd => project_fixture_path)
     cli.options = {:environment => 'production'}
   end
   after do

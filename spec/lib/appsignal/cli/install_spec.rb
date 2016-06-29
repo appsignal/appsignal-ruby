@@ -13,7 +13,7 @@ describe Appsignal::CLI::Install do
   let(:auth_check) { double }
 
   before do
-    ENV['PWD'] = project_fixture_path
+    Dir.stub(:pwd => project_fixture_path)
     @original_stdout = $stdout
     $stdout = out_stream
     Appsignal::AuthCheck.stub(:new => auth_check)
@@ -113,7 +113,7 @@ describe Appsignal::CLI::Install do
 
       describe ".rails_environments" do
         before do
-          ENV['PWD'] = project_fixture_path
+          Dir.stub(:pwd => project_fixture_path)
         end
 
         subject { cli.rails_environments }
@@ -379,7 +379,7 @@ describe Appsignal::CLI::Install do
       let(:config_dir) { File.join(tmp_dir, 'config') }
       let(:deploy_rb_file) { File.join(tmp_dir, 'config/deploy.rb') }
       before do
-        ENV['PWD'] = tmp_dir
+        Dir.stub(:pwd => tmp_dir)
         FileUtils.mkdir_p(config_dir)
         FileUtils.touch(deploy_rb_file)
         cli.should_receive(:gets).once.and_return('2')
@@ -423,7 +423,7 @@ describe Appsignal::CLI::Install do
 
   context ".write_config_file" do
     before do
-      ENV['PWD'] = tmp_dir
+      Dir.stub(:pwd => tmp_dir)
     end
 
     it "should write a config file with environments" do
