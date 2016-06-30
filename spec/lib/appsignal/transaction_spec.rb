@@ -269,6 +269,16 @@ describe Appsignal::Transaction do
 
         transaction.set_queue_start(nil)
       end
+
+      it "should not raise an error when the queue start is too big" do
+        transaction.ext.should_receive(:set_queue_start).and_raise(RangeError)
+
+        Appsignal.logger.should_receive(:warn).with("Queue start value 10 is too big")
+
+        lambda {
+          transaction.set_queue_start(10)
+        }.should_not raise_error
+      end
     end
 
     describe "#set_http_or_background_queue_start" do
