@@ -402,6 +402,14 @@ describe Appsignal do
           Appsignal::Extension.should_receive(:set_gauge).with('key', 1.0)
           Appsignal.set_gauge('key', 1)
         end
+
+        it "should not raise an exception when out of range" do
+          Appsignal::Extension.should_receive(:set_gauge).with('key', 10).and_raise(RangeError)
+          Appsignal.logger.should_receive(:warn).with("Gauge value 10 for key 'key' is too big")
+          lambda {
+            Appsignal.set_gauge('key', 10)
+          }.should_not raise_error
+        end
       end
 
       describe ".set_host_gauge" do
@@ -413,6 +421,14 @@ describe Appsignal do
         it "should call set_host_gauge on the extension with an int" do
           Appsignal::Extension.should_receive(:set_host_gauge).with('key', 1.0)
           Appsignal.set_host_gauge('key', 1)
+        end
+
+        it "should not raise an exception when out of range" do
+          Appsignal::Extension.should_receive(:set_host_gauge).with('key', 10).and_raise(RangeError)
+          Appsignal.logger.should_receive(:warn).with("Host gauge value 10 for key 'key' is too big")
+          lambda {
+            Appsignal.set_host_gauge('key', 10)
+          }.should_not raise_error
         end
       end
 
@@ -426,6 +442,14 @@ describe Appsignal do
           Appsignal::Extension.should_receive(:set_process_gauge).with('key', 1.0)
           Appsignal.set_process_gauge('key', 1)
         end
+
+        it "should not raise an exception when out of range" do
+          Appsignal::Extension.should_receive(:set_process_gauge).with('key', 10).and_raise(RangeError)
+          Appsignal.logger.should_receive(:warn).with("Process gauge value 10 for key 'key' is too big")
+          lambda {
+            Appsignal.set_process_gauge('key', 10)
+          }.should_not raise_error
+        end
       end
 
       describe ".increment_counter" do
@@ -438,6 +462,14 @@ describe Appsignal do
           Appsignal::Extension.should_receive(:increment_counter).with('key', 5)
           Appsignal.increment_counter('key', 5)
         end
+
+        it "should not raise an exception when out of range" do
+          Appsignal::Extension.should_receive(:increment_counter).with('key', 10).and_raise(RangeError)
+          Appsignal.logger.should_receive(:warn).with("Counter value 10 for key 'key' is too big")
+          lambda {
+            Appsignal.increment_counter('key', 10)
+          }.should_not raise_error
+        end
       end
 
       describe ".add_distribution_value" do
@@ -449,6 +481,14 @@ describe Appsignal do
         it "should call add_distribution_value on the extension with an int" do
           Appsignal::Extension.should_receive(:add_distribution_value).with('key', 1.0)
           Appsignal.add_distribution_value('key', 1)
+        end
+
+        it "should not raise an exception when out of range" do
+          Appsignal::Extension.should_receive(:add_distribution_value).with('key', 10).and_raise(RangeError)
+          Appsignal.logger.should_receive(:warn).with("Distribution value 10 for key 'key' is too big")
+          lambda {
+            Appsignal.add_distribution_value('key', 10)
+          }.should_not raise_error
         end
       end
     end
