@@ -117,6 +117,8 @@ module Appsignal
     def set_queue_start(start)
       return unless start
       @ext.set_queue_start(start)
+    rescue RangeError
+      Appsignal.logger.warn("Queue start value #{start} is too big")
     end
 
     def set_http_or_background_queue_start

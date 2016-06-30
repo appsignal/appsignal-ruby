@@ -1,3 +1,6 @@
+# 1.2.2
+* Handle out of range numbers in queue lenght and metrics api
+
 # 1.2.1
 * Use Dir.pwd in CLI install wizard
 * Support bignums when setting queue length
