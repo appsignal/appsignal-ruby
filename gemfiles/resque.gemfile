@@ -3,5 +3,6 @@ source 'https://rubygems.org'
 gem 'resque'
 gem 'rails', '~> 4.2.0'
 gem 'mime-types', '~> 2.6'
+gem 'rack', '~> 1.6.4'
 
 gemspec :path => '../'
