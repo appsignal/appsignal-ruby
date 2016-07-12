@@ -80,7 +80,7 @@ module Appsignal
 
     def log_file_path
       path = config_hash[:log_path] || root_path
-      if File.writable?(path)
+      if path && File.writable?(path)
         File.join(File.realpath(path), 'appsignal.log')
       else
         '/tmp/appsignal.log'

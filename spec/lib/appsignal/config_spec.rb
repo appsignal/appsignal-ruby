@@ -56,6 +56,14 @@ describe Appsignal::Config do
 
         its(:log_file_path) { should == '/tmp/appsignal.log' }
       end
+
+      context "if it is nil" do
+        let(:config) { project_fixture_config('production', :log_path => nil) }
+
+        before { config.stub(:root_path => nil) }
+
+        its(:log_file_path) { should == '/tmp/appsignal.log' }
+      end
     end
 
     context "when there is a pre 0.12 style endpoint" do

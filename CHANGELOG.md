@@ -1,3 +1,8 @@
+# 1.2.3
+* Catch nil config for installer and diag
+* Minor performance improvements
+* Support for arrays in sql lexer
+
 # 1.2.2
 * Handle out of range numbers in queue lenght and metrics api
 
