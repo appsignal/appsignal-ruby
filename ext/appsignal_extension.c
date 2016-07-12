@@ -1,5 +1,19 @@
 #include "ruby/ruby.h"
+#include "ruby/encoding.h"
 #include "appsignal_extension.h"
+
+static inline appsignal_string_t make_appsignal_string(VALUE str) {
+  return (appsignal_string_t) {
+    .len = RSTRING_LEN(str),
+    .buf = RSTRING_PTR(str)
+  };
+}
+
+static inline VALUE make_ruby_string(appsignal_string_t string) {
+  VALUE str = rb_str_new(string.buf, string.len);
+  rb_enc_associate(str, rb_utf8_encoding());
+  return str;
+}
 
 VALUE Appsignal;
 VALUE Extension;
@@ -18,26 +32,27 @@ static VALUE stop(VALUE self) {
 }
 
 static VALUE get_server_state(VALUE self, VALUE key) {
-  char * ptr = appsignal_get_server_state(StringValueCStr(key));
+  appsignal_string_t string;
 
   Check_Type(key, T_STRING);
 
-  if (ptr) {
-    return rb_str_new2(ptr);
+  string = appsignal_get_server_state(make_appsignal_string(key));
+  if (string.len > 0) {
+    return make_ruby_string(string);
   } else {
     return Qnil;
   }
 }
 
 static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(transaction_id, T_STRING);
   Check_Type(namespace, T_STRING);
 
   transaction = appsignal_start_transaction(
-      StringValueCStr(transaction_id),
-      StringValueCStr(namespace)
+      make_appsignal_string(transaction_id),
+      make_appsignal_string(namespace)
   );
 
   if (transaction) {
@@ -48,9 +63,9 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace
 }
 
 static VALUE start_event(VALUE self) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_start_event(transaction);
 
@@ -58,71 +73,71 @@ static VALUE start_event(VALUE self) {
 }
 
 static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
   Check_Type(body, T_STRING);
   Check_Type(body_format, T_FIXNUM);
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_finish_event(
       transaction,
-      StringValueCStr(name),
-      StringValueCStr(title),
-      StringValueCStr(body),
+      make_appsignal_string(name),
+      make_appsignal_string(title),
+      make_appsignal_string(body),
       FIX2INT(body_format)
   );
   return Qnil;
 }
 
 static VALUE set_transaction_error(VALUE self, VALUE name, VALUE message, VALUE backtrace) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
   Check_Type(backtrace, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_set_transaction_error(
       transaction,
-      StringValueCStr(name),
-      StringValueCStr(message),
-      StringValueCStr(backtrace)
+      make_appsignal_string(name),
+      make_appsignal_string(message),
+      make_appsignal_string(backtrace)
   );
   return Qnil;
 }
 
 static VALUE set_transaction_sample_data(VALUE self, VALUE key, VALUE payload) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(key, T_STRING);
   Check_Type(payload, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_set_transaction_sample_data(
       transaction,
-      StringValueCStr(key),
-      StringValueCStr(payload)
+      make_appsignal_string(key),
+      make_appsignal_string(payload)
   );
   return Qnil;
 }
 
 static VALUE set_transaction_action(VALUE self, VALUE action) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(action, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_set_transaction_action(
       transaction,
-      StringValueCStr(action)
+      make_appsignal_string(action)
   );
   return Qnil;
 }
 
 static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
   int queue_start_type;
 
   queue_start_type = TYPE(queue_start);
@@ -130,7 +145,7 @@ static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
       rb_raise(rb_eTypeError, "queue_start should be a Fixnum or Bignum");
   }
 
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_set_transaction_queue_start(
       transaction,
@@ -140,34 +155,34 @@ static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
 }
 
 static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_set_transaction_metadata(
       transaction,
-      StringValueCStr(key),
-      StringValueCStr(value)
+      make_appsignal_string(key),
+      make_appsignal_string(value)
   );
   return Qnil;
 }
 
 static VALUE finish_transaction(VALUE self) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
   int sample;
 
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   sample = appsignal_finish_transaction(transaction);
   return sample == 1 ? Qtrue : Qfalse;
 }
 
 static VALUE complete_transaction(VALUE self) {
-  appsignal_transaction* transaction;
+  appsignal_transaction_t* transaction;
 
-  Data_Get_Struct(self, appsignal_transaction, transaction);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_complete_transaction(transaction);
   return Qnil;
@@ -178,7 +193,7 @@ static VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
   Check_Type(value, T_FLOAT);
 
   appsignal_set_gauge(
-      StringValueCStr(key),
+      make_appsignal_string(key),
       NUM2DBL(value)
   );
   return Qnil;
@@ -189,7 +204,7 @@ static VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
   Check_Type(count, T_FIXNUM);
 
   appsignal_increment_counter(
-      StringValueCStr(key),
+      make_appsignal_string(key),
       FIX2INT(count)
   );
   return Qnil;
@@ -200,7 +215,7 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
   Check_Type(value, T_FLOAT);
 
   appsignal_add_distribution_value(
-      StringValueCStr(key),
+      make_appsignal_string(key),
       NUM2DBL(value)
   );
   return Qnil;
