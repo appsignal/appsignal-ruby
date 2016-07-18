@@ -27,7 +27,8 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
-          request
+          request,
+          {:force => @options.include?(:force) && @options[:force]}
         )
         begin
           ActiveSupport::Notifications.instrument('process_action.sinatra') do
@@ -42,11 +43,21 @@ module Appsignal
           if !@raise_errors_on && env['sinatra.error'] && !env['sinatra.skip_appsignal_error']
             transaction.set_error(env['sinatra.error'])
           end
-          transaction.set_action(env['sinatra.route'])
+          transaction.set_action(action_name(env))
           transaction.set_metadata('path', request.path)
           transaction.set_metadata('method', request.request_method)
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current!
+        end
+      end
+
+
+      def action_name(env)
+        if @options.fetch(:mounted_at, nil)
+          method, route = env['sinatra.route'].split(" ")
+          "#{method} #{@options.fetch(:mounted_at, nil)}#{route}"
+        else
+          env['sinatra.route']
         end
       end
     end
