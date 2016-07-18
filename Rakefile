@@ -2,6 +2,7 @@ require 'rspec/core/rake_task'
 GEMFILES = %w(
   capistrano2
   capistrano3
+  grape
   no_dependencies
   padrino
   rails-3.2
@@ -13,11 +14,9 @@ GEMFILES = %w(
   sequel
   sequel-435
   sinatra
-  grape
 )
 
 RUBY_VERSIONS = %w(
-  1.9.3-p551
   2.0.0-p648
   2.1.8
   2.2.4
@@ -25,7 +24,7 @@ RUBY_VERSIONS = %w(
 )
 
 EXCLUSIONS = {
-  'rails-5.0' => %w( 1.9.3 2.0.0 2.1.8)
+  'rails-5.0' => %w(2.0.0 2.1.8)
 }
 
 VERSION_MANAGERS = {
