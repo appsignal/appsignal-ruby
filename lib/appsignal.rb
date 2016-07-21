@@ -131,7 +131,7 @@ module Appsignal
     def monitor_single_transaction(name, env={}, &block)
       monitor_transaction(name, env, &block)
     ensure
-      stop
+      stop('monitor_single_transaction')
     end
 
     def listen_for_error(&block)
