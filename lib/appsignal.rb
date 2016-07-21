@@ -232,7 +232,11 @@ module Appsignal
           "appsignal: #{msg}\n"
         end
       end
-      @logger.level = Logger::INFO
+      if config && config[:debug]
+        @logger.level = Logger::DEBUG
+      else
+        @logger.level = Logger::INFO
+      end
       @logger << @in_memory_log.string if @in_memory_log
 
       if path_arg

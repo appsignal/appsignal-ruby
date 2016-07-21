@@ -521,6 +521,7 @@ describe Appsignal do
       context "when the log path is writable" do
         it "should log to file" do
           Appsignal.start_logger
+          Appsignal.logger.level.should == Logger::INFO
           Appsignal.logger.error('Log to file')
           File.exists?(log_file).should be_true
           File.open(log_file).read.should include 'Log to file'
@@ -536,6 +537,7 @@ describe Appsignal do
 
         it "should log to stdout" do
           Appsignal.start_logger
+          Appsignal.logger.level.should == Logger::INFO
           Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
           out_stream.string.should include 'Log something'
@@ -546,6 +548,22 @@ describe Appsignal do
         it "should not crash" do
           Appsignal.in_memory_log = nil
           Appsignal.start_logger
+        end
+      end
+
+      context "when there is no config and debug is on" do
+        it "should set the log level to info" do
+          Appsignal.config = nil
+          Appsignal.start_logger
+          Appsignal.logger.level.should == Logger::INFO
+        end
+      end
+
+      context "when there is a config and debug is on" do
+        it "should set the log level to debug" do
+          Appsignal.config.config_hash[:debug] = true
+          Appsignal.start_logger
+          Appsignal.logger.level.should == Logger::DEBUG
         end
       end
     end
