@@ -57,6 +57,16 @@ describe Appsignal::Transaction do
 
           Appsignal::Transaction.create('1', namespace, request, options)
         end
+
+        context "with option to force a new transaction" do
+          let(:options) { {:force => true} }
+          it "should not create a new transaction" do
+            expect(
+              Appsignal::Transaction.create('1', namespace, request, options)
+            ).to_not eq(running_transaction)
+          end
+        end
+
       end
     end
 

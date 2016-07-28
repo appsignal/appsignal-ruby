@@ -51,7 +51,8 @@ if defined?(::Sinatra)
         Appsignal::Transaction.should_receive(:create).with(
           kind_of(String),
           Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(Sinatra::Request)
+          kind_of(Sinatra::Request),
+          kind_of(Hash)
         ).and_return(double(:set_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
       end
 
@@ -119,6 +120,13 @@ if defined?(::Sinatra)
                           with(env.merge(:params_method => :filtered_params)).
                           at_least(:once).
                           and_return(request)
+        end
+      end
+
+      context "with option to set path prefix" do
+        let(:options) {{ :mounted_at  => "/api/v2" }}
+        it "should call set_action with a prefix path" do
+          Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/v2/")
         end
       end
 
