@@ -1,3 +1,6 @@
+# 1.2.4
+* Support for adding a namespace when mounting Sinatra apps in Rails
+
 # 1.2.3
 * Catch nil config for installer and diag
 * Minor performance improvements
