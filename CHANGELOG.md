@@ -1,7 +1,10 @@
+# 1.2.4
+* Support for adding a namespace when mounting Sinatra apps in Rails
+
 # 1.2.3
 * Catch nil config for installer and diag
 * Minor performance improvements
-* Support for arrays in sql lexer
+* Support for arrays, literal value types and function arguments in sql lexer
 
 # 1.2.2
 * Handle out of range numbers in queue lenght and metrics api

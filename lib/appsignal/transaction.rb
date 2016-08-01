@@ -28,6 +28,11 @@ module Appsignal
 
     class << self
       def create(id, namespace, request, options={})
+        # Allow middleware to force a new transaction
+        if options.include?(:force) && options[:force]
+          Thread.current[:appsignal_transaction] = nil
+        end
+
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction] != nil
           # Log the issue and return the current transaction
