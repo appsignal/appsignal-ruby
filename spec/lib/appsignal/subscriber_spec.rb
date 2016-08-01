@@ -116,17 +116,16 @@ describe Appsignal::Subscriber do
       it "should call finish with title and body if there is a formatter" do
         transaction.should_receive(:start_event).once
         transaction.should_receive(:finish_event).with(
-          'request.net_http',
+          'request.faraday',
           'GET http://www.google.com',
-          nil,
+          'GET http://www.google.com',
           nil
         ).once
 
         ActiveSupport::Notifications.instrument(
-          'request.net_http',
-          :protocol => 'http',
-          :domain   => 'www.google.com',
-          :method   => 'GET'
+          'request.faraday',
+          :method => 'get',
+          :url => URI('http://www.google.com')
         )
       end
 

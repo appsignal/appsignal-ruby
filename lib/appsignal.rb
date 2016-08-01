@@ -177,6 +177,13 @@ module Appsignal
     end
     alias :tag_job :tag_request
 
+    def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
+      Appsignal::Transaction.current.start_event
+      r = yield
+      Appsignal::Transaction.current.finish_event(name, title, body, body_format)
+      r
+    end
+
     def set_gauge(key, value)
       Appsignal::Extension.set_gauge(key, value.to_f)
     rescue RangeError

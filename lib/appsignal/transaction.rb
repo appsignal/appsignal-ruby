@@ -181,13 +181,20 @@ module Appsignal
       @ext.start_event
     end
 
-    def finish_event(name, title, body, body_format)
+    def finish_event(name, title, body, body_format=Appsignal::EventFormatter::DEFAULT)
       @ext.finish_event(
         name,
         title || BLANK,
         body || BLANK,
-        body_format || 0
+        body_format || Appsignal::EventFormatter::DEFAULT
       )
+    end
+
+    def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
+      start_event
+      r = yield
+      finish_event(name, title, body, body_format)
+      r
     end
 
     class GenericRequest
@@ -288,6 +295,11 @@ module Appsignal
     # that it's still safe to call methods on it if there is none.
     class NilTransaction
       def method_missing(m, *args, &block)
+      end
+
+      # Instrument should still yield
+      def instrument(*args)
+        yield
       end
 
       def nil_transaction?
