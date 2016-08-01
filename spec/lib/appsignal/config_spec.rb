@@ -34,7 +34,8 @@ describe Appsignal::Config do
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
         :running_in_container           => false,
-        :enable_host_metrics            => false
+        :enable_host_metrics            => false,
+        :hostname                       => Socket.gethostname
       }
     end
 
@@ -102,6 +103,7 @@ describe Appsignal::Config do
         subject.config_hash[:http_proxy]     = 'http://localhost'
         subject.config_hash[:ignore_actions] = ['action1', 'action2']
         subject.config_hash[:log_path]  = '/tmp'
+        subject.config_hash[:hostname]  = 'app1.local'
         subject.write_to_environment
       end
 
@@ -122,6 +124,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
         ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
         ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'false'
+        ENV['APPSIGNAL_HOSTNAME'].should                     == 'app1.local'
       end
 
       context "if working_dir_path is set" do

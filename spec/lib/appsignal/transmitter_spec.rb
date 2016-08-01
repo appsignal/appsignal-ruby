@@ -6,7 +6,7 @@ describe Appsignal::Transmitter do
   let(:instance) { Appsignal::Transmitter.new(action, config) }
 
   describe "#uri" do
-    before { Socket.stub(:gethostname => 'app1.local') }
+    before { ENV['APPSIGNAL_HOSTNAME'] = 'app1.local' }
 
     subject { instance.uri.to_s }
 
