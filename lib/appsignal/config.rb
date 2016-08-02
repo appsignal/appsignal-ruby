@@ -19,7 +19,8 @@ module Appsignal
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
       :running_in_container           => false,
-      :enable_host_metrics            => false
+      :enable_host_metrics            => false,
+      :hostname                       => Socket.gethostname
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -42,7 +43,8 @@ module Appsignal
       'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation,
       'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container,
       'APPSIGNAL_WORKING_DIR_PATH'               => :working_dir_path,
-      'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics
+      'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics,
+      'APPSIGNAL_HOSTNAME'                       => :hostname
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -114,6 +116,7 @@ module Appsignal
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
       ENV['APPSIGNAL_WORKING_DIR_PATH']             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV['APPSIGNAL_ENABLE_HOST_METRICS']          = config_hash[:enable_host_metrics].to_s
+      ENV['APPSIGNAL_HOSTNAME']                     = config_hash[:hostname].to_s
     end
 
     protected
@@ -162,7 +165,7 @@ module Appsignal
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
-         APPSIGNAL_WORKING_DIR_PATH).each do |var|
+         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end

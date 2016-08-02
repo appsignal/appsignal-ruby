@@ -35,7 +35,7 @@ module Appsignal
           :api_key => config[:push_api_key],
           :name => config[:name],
           :environment => config.env,
-          :hostname => Socket.gethostname,
+          :hostname => config[:hostname],
           :gem_version => Appsignal::VERSION
         })
       end
