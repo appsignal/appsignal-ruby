@@ -634,7 +634,7 @@ describe Appsignal::Transaction do
 
       context "with env" do
         it "should call the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({
+          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({
             'controller' => 'blog_posts',
             'action' => 'show',
             'id' => '1'
@@ -702,7 +702,7 @@ describe Appsignal::Transaction do
         end
 
         it "passes the session data into the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
+          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
             and_return(:sanitized_foo)
           subject.should == :sanitized_foo
         end
@@ -716,7 +716,7 @@ describe Appsignal::Transaction do
             end
 
             it "should return an session hash" do
-              Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
+              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
                 and_return(:sanitized_foo)
               subject
             end
@@ -737,7 +737,7 @@ describe Appsignal::Transaction do
           end
 
           it "does not pass the session data into the params sanitizer" do
-            Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+            Appsignal::Utils::ParamsSanitizer.should_not_receive(:sanitize)
             subject.should be_nil
           end
         end

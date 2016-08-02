@@ -1,3 +1,5 @@
+require 'appsignal/utils/params_sanitizer'
+
 module Appsignal
   module Utils
     def self.sanitize(params, only_top_level=false, key_sanitizer=nil)

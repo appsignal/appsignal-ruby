@@ -246,7 +246,7 @@ module Appsignal
         return
       end
       if params.is_a?(Hash)
-        Appsignal::ParamsSanitizer.sanitize(params)
+        Appsignal::Utils::ParamsSanitizer.sanitize(params)
       elsif params.is_a?(Array)
         params
       end
@@ -264,7 +264,7 @@ module Appsignal
     def sanitized_session_data
       return if Appsignal.config[:skip_session_data] || !request.respond_to?(:session)
       return unless session = request.session
-      Appsignal::ParamsSanitizer.sanitize(session.to_hash)
+      Appsignal::Utils::ParamsSanitizer.sanitize(session.to_hash)
     end
 
     def metadata
