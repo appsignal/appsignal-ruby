@@ -32,30 +32,42 @@ module Appsignal
     end
 
     def self.json_generate(body)
-      JSON.generate(jsonify(body))
+      JSON.generate(body)
     end
 
-    def self.jsonify(value)
-      case value
-      when String
-        encode_utf8(value)
-      when Numeric, NilClass, TrueClass, FalseClass
-        value
-      when Hash
-        Hash[value.map { |k, v| [jsonify(k), jsonify(v)] }]
-      when Array
-        value.map { |v| jsonify(v) }
-      else
-        jsonify(value.to_s)
+    class JSON
+      module ClassMethods
+        def generate(body)
+          ::JSON.generate(jsonify(body))
+        end
+
+        private
+
+        def jsonify(value)
+          case value
+          when String
+            encode_utf8(value)
+          when Numeric, NilClass, TrueClass, FalseClass
+            value
+          when Hash
+            Hash[value.map { |k, v| [jsonify(k), jsonify(v)] }]
+          when Array
+            value.map { |v| jsonify(v) }
+          else
+            jsonify(value.to_s)
+          end
+        end
+
+        def encode_utf8(value)
+          value.encode(
+            'utf-8'.freeze,
+            :invalid => :replace,
+            :undef   => :replace
+          )
+        end
       end
-    end
 
-    def self.encode_utf8(value)
-      value.encode(
-        'utf-8'.freeze,
-        :invalid => :replace,
-        :undef   => :replace
-      )
+      extend ClassMethods
     end
   end
 end
