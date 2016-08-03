@@ -69,7 +69,7 @@ module Appsignal
           when :deny       then '?'
           when :deny_array then '[?]'
           when :sanitize_document
-            Appsignal::Utils.sanitize(val, true, :mongodb)
+            Appsignal::Utils::QueryParamsSanitizer.sanitize(val, true, :mongodb)
           when :sanitize_bulk
             if val.length > 1
               [

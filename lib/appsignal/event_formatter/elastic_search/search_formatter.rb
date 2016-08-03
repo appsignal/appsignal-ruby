@@ -18,7 +18,7 @@ module Appsignal
               if [:index, :type].include?(key)
                 hsh[key] = val
               else
-                hsh[key] = Appsignal::Utils.sanitize(val)
+                hsh[key] = Appsignal::Utils::QueryParamsSanitizer.sanitize(val)
               end
             end
           end
