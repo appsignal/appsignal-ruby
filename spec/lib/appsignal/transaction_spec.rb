@@ -613,6 +613,12 @@ describe Appsignal::Transaction do
         it { should be_nil }
       end
 
+      context "when params method does not exist" do
+        let(:options) { {:params_method => :nonsense} }
+
+        it { should be_nil }
+      end
+
       context "when not sending params" do
         before { Appsignal.config.config_hash[:send_params] = false }
         after { Appsignal.config.config_hash[:send_params] = true }
@@ -620,31 +626,48 @@ describe Appsignal::Transaction do
         it { should be_nil }
       end
 
-      context "when params method does not exist" do
-        let(:options) { {:params_method => :nonsense} }
-
-        it { should be_nil }
-      end
-
       context "with an array" do
-        let(:request) { Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2'])) }
+        let(:request) do
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2']))
+        end
 
         it { should == ['arg1', 'arg2'] }
+
+        context "with AppSignal filtering" do
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it { should == ['arg1', 'arg2'] }
+        end
       end
 
       context "with env" do
-        it "should call the params sanitizer" do
-          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({
-            'controller' => 'blog_posts',
-            'action' => 'show',
-            'id' => '1'
-          })
+        context "with sanitization" do
+          let(:request) do
+            Appsignal::Transaction::GenericRequest.new \
+              http_request_env_with_data(:params => { :foo => :bar })
+          end
 
-          subject.should == {
-            'controller' => 'blog_posts',
-            'action' => 'show',
-            'id' => '1'
-          }
+          it "should call the params sanitizer" do
+            puts Appsignal.config.config_hash[:filter_parameters].inspect
+            subject.should == { :foo => :bar }
+          end
+        end
+
+        context "with AppSignal filtering" do
+          let(:request) do
+            Appsignal::Transaction::GenericRequest.new \
+              http_request_env_with_data(:params => { :foo => :bar, :baz => :bat })
+          end
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "should call the params sanitizer with filtering" do
+            subject.should == {
+              :foo => '[FILTERED]',
+              :baz => :bat
+            }
+          end
         end
       end
     end

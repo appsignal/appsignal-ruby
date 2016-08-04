@@ -20,6 +20,7 @@ describe Appsignal::Config do
         :debug                          => false,
         :ignore_errors                  => [],
         :ignore_actions                 => [],
+        :filter_parameters              => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
