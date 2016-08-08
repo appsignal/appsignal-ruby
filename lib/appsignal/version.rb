@@ -1,5 +1,5 @@
 require 'yaml'
 
 module Appsignal
-  VERSION = '1.2.4.beta.2'
+  VERSION = '1.2.4.beta.3'
 end
