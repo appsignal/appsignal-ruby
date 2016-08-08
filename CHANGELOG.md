@@ -1,5 +1,6 @@
 # 1.2.4
 * Support for adding a namespace when mounting Sinatra apps in Rails
+* Support for negative numbers and ILIKE in the sql lexer
 
 # 1.2.3
 * Catch nil config for installer and diag
