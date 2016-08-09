@@ -13,7 +13,7 @@ if sinatra_present? && !padrino_present?
 
     it "should have added the instrumentation middleware" do
       Sinatra::Base.middleware.to_a.should include(
-        [Appsignal::Rack::SinatraInstrumentation, [], nil]
+        [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
       )
     end
   end

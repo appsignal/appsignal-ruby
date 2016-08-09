@@ -13,5 +13,5 @@ Appsignal.start_logger
 Appsignal.start
 
 if Appsignal.active?
-  ::Sinatra::Base.use(Appsignal::Rack::SinatraInstrumentation)
+  ::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation)
 end

@@ -8,6 +8,35 @@ end
 
 if defined?(::Sinatra)
   describe Appsignal::Rack::SinatraInstrumentation do
+    let(:settings) { double(:raise_errors => false) }
+    let(:app) { double(:call => true, :settings => settings) }
+    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
+    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
+
+    describe "#call" do
+      before do
+        start_agent
+        middleware.stub(:raw_payload => {})
+        Appsignal.stub(:active? => true)
+      end
+
+      it "should call without monitoring" do
+        expect(Appsignal::Transaction).to_not receive(:create)
+      end
+
+      after { middleware.call(env) }
+    end
+
+    describe ".settings" do
+      subject { middleware.settings }
+
+      it "should return the app's settings" do
+        expect(subject).to eq(app.settings)
+      end
+    end
+  end
+
+  describe Appsignal::Rack::SinatraBaseInstrumentation do
     before :all do
       start_agent
     end
@@ -16,7 +45,7 @@ if defined?(::Sinatra)
     let(:app) { double(:call => true, :settings => settings) }
     let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
     let(:options) { {} }
-    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, options) }
+    let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
     describe "#call" do
       before do
