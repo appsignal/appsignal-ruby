@@ -238,18 +238,22 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
       return unless request.respond_to?(options[:params_method])
-      begin
-        return unless params = request.send(options[:params_method])
-      rescue Exception => ex
-        # Getting params from the request has been know to fail.
-        Appsignal.logger.debug "Exception while getting params: #{ex}"
-        return
+
+      params =
+        begin
+          request.send options[:params_method]
+        rescue Exception => ex
+          # Getting params from the request has been know to fail.
+          Appsignal.logger.debug "Exception while getting params: #{ex}"
+          nil
+        end
+      return unless params
+
+      options = {}
+      if Appsignal.config[:filter_parameters]
+        options[:filter_parameters] = Appsignal.config[:filter_parameters]
       end
-      if params.is_a?(Hash)
-        Appsignal::Utils::ParamsSanitizer.sanitize(params)
-      elsif params.is_a?(Array)
-        params
-      end
+      Appsignal::Utils::ParamsSanitizer.sanitize params, options
     end
 
     def sanitized_environment
@@ -279,7 +283,7 @@ module Appsignal
     def sanitized_tags
       @tags.select do |k, v|
         (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
-        (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
       end
     end
 
