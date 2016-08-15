@@ -1,3 +1,6 @@
+# 1.2.5
+* Bugfix in CPU utilization calculation for host metrics
+
 # 1.2.4
 * Support for adding a namespace when mounting Sinatra apps in Rails
 * Support for negative numbers and ILIKE in the sql lexer
