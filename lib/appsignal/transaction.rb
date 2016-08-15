@@ -190,6 +190,16 @@ module Appsignal
       )
     end
 
+    def record_event(name, title, body, duration, body_format=Appsignal::EventFormatter::DEFAULT)
+      @ext.record_event(
+        name,
+        title || BLANK,
+        body || BLANK,
+        duration,
+        body_format || Appsignal::EventFormatter::DEFAULT
+      )
+    end
+
     def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
       start_event
       r = yield

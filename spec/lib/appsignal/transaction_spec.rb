@@ -446,7 +446,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "finish_event" do
+    describe "#finish_event" do
       it "should finish the event in the extension" do
         transaction.ext.should_receive(:finish_event).with(
           'name',
@@ -475,6 +475,44 @@ describe Appsignal::Transaction do
           'name',
           nil,
           nil,
+          nil
+        )
+      end
+    end
+
+    describe "#record_event" do
+      it "should record the event in the extension" do
+        transaction.ext.should_receive(:record_event).with(
+          'name',
+          'title',
+          'body',
+          1000,
+          1
+        )
+
+        transaction.record_event(
+          'name',
+          'title',
+          'body',
+          1000,
+          1
+        )
+      end
+
+      it "should finish the event in the extension with nil arguments" do
+        transaction.ext.should_receive(:record_event).with(
+          'name',
+          '',
+          '',
+          1000,
+          0
+        )
+
+        transaction.record_event(
+          'name',
+          nil,
+          nil,
+          1000,
           nil
         )
       end

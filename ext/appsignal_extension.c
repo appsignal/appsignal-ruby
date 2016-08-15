@@ -91,6 +91,31 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   return Qnil;
 }
 
+static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE duration, VALUE body_format) {
+  appsignal_transaction_t* transaction;
+  int duration_type;
+
+  Check_Type(name, T_STRING);
+  Check_Type(title, T_STRING);
+  Check_Type(body, T_STRING);
+  duration_type = TYPE(duration);
+  if (duration_type != T_FIXNUM && duration_type != T_BIGNUM) {
+      rb_raise(rb_eTypeError, "duration should be a Fixnum or Bignum");
+  }
+  Check_Type(body_format, T_FIXNUM);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  appsignal_record_event(
+      transaction,
+      make_appsignal_string(name),
+      make_appsignal_string(title),
+      make_appsignal_string(body),
+      FIX2INT(body_format),
+      NUM2LONG(duration)
+  );
+  return Qnil;
+}
+
 static VALUE set_transaction_error(VALUE self, VALUE name, VALUE message, VALUE backtrace) {
   appsignal_transaction_t* transaction;
 
@@ -284,6 +309,7 @@ void Init_appsignal_extension(void) {
   // Transaction instance methods
   rb_define_method(ExtTransaction, "start_event",     start_event,                 0);
   rb_define_method(ExtTransaction, "finish_event",    finish_event,                4);
+  rb_define_method(ExtTransaction, "record_event",    record_event,                5);
   rb_define_method(ExtTransaction, "set_error",       set_transaction_error,       3);
   rb_define_method(ExtTransaction, "set_sample_data", set_transaction_sample_data, 2);
   rb_define_method(ExtTransaction, "set_action",      set_transaction_action,      1);
