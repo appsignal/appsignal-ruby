@@ -40,6 +40,7 @@ module Appsignal
       'APPSIGNAL_IGNORE_ERRORS'                  => :ignore_errors,
       'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
       'APPSIGNAL_FILTER_PARAMETERS'              => :filter_parameters,
+      'APPSIGNAL_SEND_PARAMS'                    => :send_params,
       'APPSIGNAL_HTTP_PROXY'                     => :http_proxy,
       'APPSIGNAL_ENABLE_ALLOCATION_TRACKING'     => :enable_allocation_tracking,
       'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation,
@@ -116,6 +117,7 @@ module Appsignal
       ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
       ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
       ENV['APPSIGNAL_FILTER_PARAMETERS']            = config_hash[:filter_parameters].join(',')
+      ENV['APPSIGNAL_SEND_PARAMS']                  = config_hash[:send_params].to_s
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
       ENV['APPSIGNAL_WORKING_DIR_PATH']             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV['APPSIGNAL_ENABLE_HOST_METRICS']          = config_hash[:enable_host_metrics].to_s
@@ -178,7 +180,8 @@ module Appsignal
       %w(APPSIGNAL_ACTIVE APPSIGNAL_DEBUG APPSIGNAL_INSTRUMENT_NET_HTTP
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
-         APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS).each do |var|
+         APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
+         APPSIGNAL_SEND_PARAMS).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
         end
