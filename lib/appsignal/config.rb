@@ -20,7 +20,7 @@ module Appsignal
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
       :running_in_container           => false,
-      :enable_host_metrics            => false,
+      :enable_host_metrics            => true,
       :hostname                       => Socket.gethostname
     }.freeze
 

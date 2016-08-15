@@ -35,7 +35,7 @@ describe Appsignal::Config do
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
         :running_in_container           => false,
-        :enable_host_metrics            => false,
+        :enable_host_metrics            => true,
         :hostname                       => Socket.gethostname
       }
     end
@@ -124,7 +124,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
         ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
         ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
-        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'false'
+        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'true'
         ENV['APPSIGNAL_HOSTNAME'].should                     == 'app1.local'
       end
 
