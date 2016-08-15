@@ -101,6 +101,11 @@ describe Appsignal do
           Appsignal::Extension.should_receive(:install_gc_event_hooks)
           Appsignal.start
         end
+
+        it "should add the gc probe to minutely" do
+          Appsignal::Minutely.should_receive(:add_gc_probe)
+          Appsignal.start
+        end
       end
 
       context "when allocation tracking and gc instrumentation have been disabled" do
@@ -112,6 +117,33 @@ describe Appsignal do
         it "should not install event hooks" do
           Appsignal::Extension.should_not_receive(:install_allocation_event_hook)
           Appsignal::Extension.should_not_receive(:install_gc_event_hooks)
+          Appsignal.start
+        end
+
+       it "should not add the gc probe to minutely" do
+          Appsignal::Minutely.should_not_receive(:add_gc_probe)
+          Appsignal.start
+       end
+      end
+
+      context "when minutely metrics has been enabled" do
+        before do
+          Appsignal.config.config_hash[:enable_minutely_probes] = true
+        end
+
+        it "should start minutely" do
+          Appsignal::Minutely.should_receive(:start)
+          Appsignal.start
+        end
+      end
+
+      context "when minutely metrics has been disabled" do
+        before do
+          Appsignal.config.config_hash[:enable_minutely_probes] = false
+        end
+
+        it "should not start minutely" do
+          Appsignal::Minutely.should_not_receive(:start)
           Appsignal.start
         end
       end
@@ -406,14 +438,14 @@ describe Appsignal do
 
     describe "custom stats" do
       describe ".set_gauge" do
-        it "should call set_gauge on the extension with a float" do
+        it "should call set_gauge on the extension with a string key and float" do
           Appsignal::Extension.should_receive(:set_gauge).with('key', 0.1)
           Appsignal.set_gauge('key', 0.1)
         end
 
-        it "should call set_gauge on the extension with an int" do
+        it "should call set_gauge on the extension with a symbol key and int" do
           Appsignal::Extension.should_receive(:set_gauge).with('key', 1.0)
-          Appsignal.set_gauge('key', 1)
+          Appsignal.set_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
@@ -426,14 +458,14 @@ describe Appsignal do
       end
 
       describe ".set_host_gauge" do
-        it "should call set_host_gauge on the extension with a float" do
+        it "should call set_host_gauge on the extension with a string key and float" do
           Appsignal::Extension.should_receive(:set_host_gauge).with('key', 0.1)
           Appsignal.set_host_gauge('key', 0.1)
         end
 
-        it "should call set_host_gauge on the extension with an int" do
+        it "should call set_host_gauge on the extension with a symbol key and int" do
           Appsignal::Extension.should_receive(:set_host_gauge).with('key', 1.0)
-          Appsignal.set_host_gauge('key', 1)
+          Appsignal.set_host_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
@@ -446,14 +478,14 @@ describe Appsignal do
       end
 
       describe ".set_process_gauge" do
-        it "should call set_process_gauge on the extension with a float" do
+        it "should call set_process_gauge on the extension with a string key and float" do
           Appsignal::Extension.should_receive(:set_process_gauge).with('key', 0.1)
           Appsignal.set_process_gauge('key', 0.1)
         end
 
-        it "should call set_process_gauge on the extension with an int" do
+        it "should call set_process_gauge on the extension with a symbol key and int" do
           Appsignal::Extension.should_receive(:set_process_gauge).with('key', 1.0)
-          Appsignal.set_process_gauge('key', 1)
+          Appsignal.set_process_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
@@ -466,9 +498,14 @@ describe Appsignal do
       end
 
       describe ".increment_counter" do
-        it "should call increment_counter on the extension" do
+        it "should call increment_counter on the extension with a string key" do
           Appsignal::Extension.should_receive(:increment_counter).with('key', 1)
           Appsignal.increment_counter('key')
+        end
+
+        it "should call increment_counter on the extension with a symbol key" do
+          Appsignal::Extension.should_receive(:increment_counter).with('key', 1)
+          Appsignal.increment_counter(:key)
         end
 
         it "should call increment_counter on the extension with a count" do
@@ -486,14 +523,14 @@ describe Appsignal do
       end
 
       describe ".add_distribution_value" do
-        it "should call add_distribution_value on the extension with a float" do
+        it "should call add_distribution_value on the extension with a string key and float" do
           Appsignal::Extension.should_receive(:add_distribution_value).with('key', 0.1)
           Appsignal.add_distribution_value('key', 0.1)
         end
 
-        it "should call add_distribution_value on the extension with an int" do
+        it "should call add_distribution_value on the extension with a symbol key and int" do
           Appsignal::Extension.should_receive(:add_distribution_value).with('key', 1.0)
-          Appsignal.add_distribution_value('key', 1)
+          Appsignal.add_distribution_value(:key, 1)
         end
 
         it "should not raise an exception when out of range" do

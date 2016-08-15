@@ -21,6 +21,7 @@ module Appsignal
       :enable_gc_instrumentation      => false,
       :running_in_container           => false,
       :enable_host_metrics            => true,
+      :enable_minutely_probes         => false,
       :hostname                       => Socket.gethostname
     }.freeze
 
@@ -47,6 +48,7 @@ module Appsignal
       'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container,
       'APPSIGNAL_WORKING_DIR_PATH'               => :working_dir_path,
       'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics,
+      'APPSIGNAL_ENABLE_MINUTELY_PROBES'         => :enable_minutely_probes,
       'APPSIGNAL_HOSTNAME'                       => :hostname
     }.freeze
 
@@ -121,7 +123,9 @@ module Appsignal
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
       ENV['APPSIGNAL_WORKING_DIR_PATH']             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV['APPSIGNAL_ENABLE_HOST_METRICS']          = config_hash[:enable_host_metrics].to_s
+      ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES']       = config_hash[:enable_minutely_probes].to_s
       ENV['APPSIGNAL_HOSTNAME']                     = config_hash[:hostname].to_s
+      ENV['APPSIGNAL_PROCESS_NAME']                 = $0
     end
 
     protected
@@ -181,7 +185,7 @@ module Appsignal
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
-         APPSIGNAL_SEND_PARAMS).each do |var|
+         APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
         end

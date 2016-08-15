@@ -58,7 +58,11 @@ module Appsignal
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
           Appsignal::Extension.install_allocation_event_hook if config[:enable_allocation_tracking]
-          Appsignal::Extension.install_gc_event_hooks if config[:enable_gc_instrumentation]
+          if config[:enable_gc_instrumentation]
+            Appsignal::Extension.install_gc_event_hooks
+            Appsignal::Minutely.add_gc_probe
+          end
+          Appsignal::Minutely.start if config[:enable_minutely_probes]
           @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")
@@ -185,31 +189,31 @@ module Appsignal
     end
 
     def set_gauge(key, value)
-      Appsignal::Extension.set_gauge(key, value.to_f)
+      Appsignal::Extension.set_gauge(key.to_s, value.to_f)
     rescue RangeError
       Appsignal.logger.warn("Gauge value #{value} for key '#{key}' is too big")
     end
 
     def set_host_gauge(key, value)
-      Appsignal::Extension.set_host_gauge(key, value.to_f)
+      Appsignal::Extension.set_host_gauge(key.to_s, value.to_f)
     rescue RangeError
       Appsignal.logger.warn("Host gauge value #{value} for key '#{key}' is too big")
     end
 
     def set_process_gauge(key, value)
-      Appsignal::Extension.set_process_gauge(key, value.to_f)
+      Appsignal::Extension.set_process_gauge(key.to_s, value.to_f)
     rescue RangeError
       Appsignal.logger.warn("Process gauge value #{value} for key '#{key}' is too big")
     end
 
     def increment_counter(key, value=1)
-      Appsignal::Extension.increment_counter(key, value)
+      Appsignal::Extension.increment_counter(key.to_s, value)
     rescue RangeError
       Appsignal.logger.warn("Counter value #{value} for key '#{key}' is too big")
     end
 
     def add_distribution_value(key, value)
-      Appsignal::Extension.add_distribution_value(key, value.to_f)
+      Appsignal::Extension.add_distribution_value(key.to_s, value.to_f)
     rescue RangeError
       Appsignal.logger.warn("Distribution value #{value} for key '#{key}' is too big")
     end
@@ -287,6 +291,7 @@ require 'appsignal/config'
 require 'appsignal/event_formatter'
 require 'appsignal/hooks'
 require 'appsignal/marker'
+require 'appsignal/minutely'
 require 'appsignal/params_sanitizer'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
