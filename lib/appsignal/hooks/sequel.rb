@@ -3,9 +3,11 @@ module Appsignal
     module SequelLogExtension
       # Add query instrumentation
       def log_yield(sql, args = nil)
-        ActiveSupport::Notifications.instrument(
+        Appsignal.instrument(
           'sql.sequel',
-          :sql => sql
+          nil,
+          sql,
+          Appsignal::EventFormatter::SQL_BODY_FORMAT
         ) do
           yield
         end
@@ -15,9 +17,11 @@ module Appsignal
     module SequelLogConnectionExtension
       # Add query instrumentation
       def log_connection_yield(sql, conn, args = nil)
-        ActiveSupport::Notifications.instrument(
+        Appsignal.instrument(
           'sql.sequel',
-          :sql => sql
+          nil,
+          sql,
+          Appsignal::EventFormatter::SQL_BODY_FORMAT
         ) do
           yield
         end
