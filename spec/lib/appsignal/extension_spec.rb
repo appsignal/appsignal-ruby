@@ -48,6 +48,10 @@ describe "extension loading and operation" do
           subject.finish_event('name', 'title', 'body', 0)
         end
 
+        it "should have a record_event method" do
+          subject.record_event('name', 'title', 'body', 0, 1000)
+        end
+
         it "should have a set_error method" do
           subject.set_error('name', 'message', '[backtrace]')
         end
