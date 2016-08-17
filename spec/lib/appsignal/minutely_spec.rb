@@ -43,9 +43,7 @@ describe Appsignal::Minutely do
   describe Appsignal::Minutely::GCProbe do
     describe "#call" do
       it "should collect GC metrics" do
-        expect(Appsignal).to receive(:set_process_gauge).with('gc.count', kind_of(Integer)).once
-        expect(Appsignal).to receive(:set_process_gauge).with('gc.heap_allocated_pages', kind_of(Integer)).once
-        expect(Appsignal).to receive(:set_process_gauge).at_least(10).times
+        expect(Appsignal).to receive(:set_process_gauge).at_least(8).times
 
         Appsignal::Minutely::GCProbe.new.call
       end
