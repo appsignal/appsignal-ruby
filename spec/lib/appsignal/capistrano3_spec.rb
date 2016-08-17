@@ -68,13 +68,13 @@ if capistrano3_present?
             )
           end
 
-          context "when rack_env is used instead of rails_env" do
+          context "when rack_env is the only env set" do
             before do
               @capistrano_config.delete(:rails_env)
               @capistrano_config.set(:rack_env, 'rack_production')
             end
 
-            it "should be instantiated with the right params" do
+            it "should be instantiated with the rack env" do
               Appsignal::Config.should_receive(:new).with(
                 project_fixture_path,
                 'rack_production',
@@ -84,16 +84,33 @@ if capistrano3_present?
             end
           end
 
-          context "when stage is used instead of rack_env / rails_env" do
+          context "when stage is set" do
             before do
-              @capistrano_config.delete(:rails_env)
+              @capistrano_config.set(:rack_env, 'rack_production')
               @capistrano_config.set(:stage, 'stage_production')
             end
 
-            it "should be instantiated with the right params" do
+            it "should prefer the stage rather than rails_env and rack_env" do
               Appsignal::Config.should_receive(:new).with(
                 project_fixture_path,
                 'stage_production',
+                {:name => 'AppName'},
+                kind_of(Logger)
+              )
+            end
+          end
+
+          context "when appsignal_env is set" do
+            before do
+              @capistrano_config.set(:rack_env, 'rack_production')
+              @capistrano_config.set(:stage, 'stage_production')
+              @capistrano_config.set(:appsignal_env, 'appsignal_production')
+            end
+
+            it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
+              Appsignal::Config.should_receive(:new).with(
+                project_fixture_path,
+                'appsignal_production',
                 {:name => 'AppName'},
                 kind_of(Logger)
               )
@@ -105,6 +122,7 @@ if capistrano3_present?
           invoke('appsignal:deploy')
           @capistrano_config.delete(:stage)
           @capistrano_config.delete(:rack_env)
+          @capistrano_config.delete(:appsignal_env)
         end
       end
 
