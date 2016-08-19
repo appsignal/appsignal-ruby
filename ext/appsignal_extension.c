@@ -44,15 +44,17 @@ static VALUE get_server_state(VALUE self, VALUE key) {
   }
 }
 
-static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace) {
+static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
 
   Check_Type(transaction_id, T_STRING);
   Check_Type(namespace, T_STRING);
+  Check_Type(gc_duration_ms, T_FIXNUM);
 
   transaction = appsignal_start_transaction(
       make_appsignal_string(transaction_id),
-      make_appsignal_string(namespace)
+      make_appsignal_string(namespace),
+      NUM2LONG(gc_duration_ms)
   );
 
   if (transaction) {
@@ -62,23 +64,26 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace
   }
 }
 
-static VALUE start_event(VALUE self) {
+static VALUE start_event(VALUE self, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
+
+  Check_Type(gc_duration_ms, T_FIXNUM);
 
   Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
-  appsignal_start_event(transaction);
+  appsignal_start_event(transaction, NUM2LONG(gc_duration_ms));
 
   return Qnil;
 }
 
-static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format) {
+static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
 
   Check_Type(name, T_STRING);
   Check_Type(title, T_STRING);
   Check_Type(body, T_STRING);
   Check_Type(body_format, T_FIXNUM);
+  Check_Type(gc_duration_ms, T_FIXNUM);
   Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_finish_event(
@@ -86,12 +91,13 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
       make_appsignal_string(name),
       make_appsignal_string(title),
       make_appsignal_string(body),
-      FIX2INT(body_format)
+      FIX2INT(body_format),
+      FIX2LONG(gc_duration_ms)
   );
   return Qnil;
 }
 
-static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE duration, VALUE body_format) {
+static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE duration, VALUE body_format, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
   int duration_type;
 
@@ -103,6 +109,7 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
       rb_raise(rb_eTypeError, "duration should be a Fixnum or Bignum");
   }
   Check_Type(body_format, T_FIXNUM);
+  Check_Type(gc_duration_ms, T_FIXNUM);
   Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
   appsignal_record_event(
@@ -111,7 +118,8 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
       make_appsignal_string(title),
       make_appsignal_string(body),
       NUM2LONG(duration),
-      FIX2INT(body_format)
+      FIX2INT(body_format),
+      NUM2LONG(gc_duration_ms)
   );
   return Qnil;
 }
@@ -194,13 +202,14 @@ static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-static VALUE finish_transaction(VALUE self) {
+static VALUE finish_transaction(VALUE self, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
   int sample;
 
+  Check_Type(gc_duration_ms, T_FIXNUM);
   Data_Get_Struct(self, appsignal_transaction_t, transaction);
 
-  sample = appsignal_finish_transaction(transaction);
+  sample = appsignal_finish_transaction(transaction, NUM2LONG(gc_duration_ms));
   return sample == 1 ? Qtrue : Qfalse;
 }
 
@@ -272,40 +281,12 @@ static void track_allocation(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID ar
   appsignal_track_allocation();
 }
 
-static void track_gc_start(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
-  appsignal_track_gc_start();
-}
-
-static void track_gc_end(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
-  appsignal_track_gc_end();
-}
-
 static VALUE install_allocation_event_hook() {
   // This event hook is only available on Ruby 2.1 and 2.2
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
   rb_add_event_hook(
       track_allocation,
       RUBY_INTERNAL_EVENT_NEWOBJ,
-      Qnil
-  );
-  #endif
-
-  return Qnil;
-}
-
-static VALUE install_gc_event_hooks() {
-  // These event hooks are only available on Ruby 2.1 and 2.2
-  #if defined(RUBY_INTERNAL_EVENT_GC_START)
-  rb_add_event_hook(
-      track_gc_start,
-      RUBY_INTERNAL_EVENT_GC_START,
-      Qnil
-  );
-  #endif
-  #if defined(RUBY_INTERNAL_EVENT_GC_END_MARK)
-  rb_add_event_hook(
-      track_gc_end,
-      RUBY_INTERNAL_EVENT_GC_END_MARK,
       Qnil
   );
   #endif
@@ -326,23 +307,22 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);
 
   // Start transaction
-  rb_define_singleton_method(Extension, "start_transaction", start_transaction, 2);
+  rb_define_singleton_method(Extension, "start_transaction", start_transaction, 3);
 
   // Transaction instance methods
-  rb_define_method(ExtTransaction, "start_event",     start_event,                 0);
-  rb_define_method(ExtTransaction, "finish_event",    finish_event,                4);
-  rb_define_method(ExtTransaction, "record_event",    record_event,                5);
+  rb_define_method(ExtTransaction, "start_event",     start_event,                 1);
+  rb_define_method(ExtTransaction, "finish_event",    finish_event,                5);
+  rb_define_method(ExtTransaction, "record_event",    record_event,                6);
   rb_define_method(ExtTransaction, "set_error",       set_transaction_error,       3);
   rb_define_method(ExtTransaction, "set_sample_data", set_transaction_sample_data, 2);
   rb_define_method(ExtTransaction, "set_action",      set_transaction_action,      1);
   rb_define_method(ExtTransaction, "set_queue_start", set_transaction_queue_start, 1);
   rb_define_method(ExtTransaction, "set_metadata",    set_transaction_metadata,    2);
-  rb_define_method(ExtTransaction, "finish",          finish_transaction,          0);
+  rb_define_method(ExtTransaction, "finish",          finish_transaction,          1);
   rb_define_method(ExtTransaction, "complete",        complete_transaction,        0);
 
   // Event hook installation
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
-  rb_define_singleton_method(Extension, "install_gc_event_hooks",        install_gc_event_hooks,        0);
 
   // Metrics
   rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);

@@ -91,18 +91,23 @@ describe Appsignal do
 
       context "when allocation tracking and gc instrumentation have been enabled" do
         before do
+          allow(GC::Profiler).to receive(:enable)
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
           Appsignal.config.config_hash[:enable_gc_instrumentation] = true
         end
 
-        it "should install event hooks" do
-          Appsignal::Extension.should_receive(:install_allocation_event_hook)
-          Appsignal::Extension.should_receive(:install_gc_event_hooks)
+        it "should enable Ruby's GC::Profiler" do
+          expect(GC::Profiler).to receive(:enable)
+          Appsignal.start
+        end
+
+        it "should install the allocation event hook" do
+          expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
           Appsignal.start
         end
 
         it "should add the gc probe to minutely" do
-          Appsignal::Minutely.should_receive(:add_gc_probe)
+          expect(Appsignal::Minutely).to receive(:add_gc_probe)
           Appsignal.start
         end
       end
@@ -113,14 +118,18 @@ describe Appsignal do
           Appsignal.config.config_hash[:enable_gc_instrumentation] = false
         end
 
-        it "should not install event hooks" do
-          Appsignal::Extension.should_not_receive(:install_allocation_event_hook)
-          Appsignal::Extension.should_not_receive(:install_gc_event_hooks)
+        it "should not enable Ruby's GC::Profiler" do
+          expect(GC::Profiler).not_to receive(:enable)
+          Appsignal.start
+        end
+
+        it "should not install the allocation event hook" do
+          expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
           Appsignal.start
         end
 
        it "should not add the gc probe to minutely" do
-          Appsignal::Minutely.should_not_receive(:add_gc_probe)
+          expect(Appsignal::Minutely).not_to receive(:add_gc_probe)
           Appsignal.start
        end
       end

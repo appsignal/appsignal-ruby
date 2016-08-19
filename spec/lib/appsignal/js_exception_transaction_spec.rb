@@ -21,7 +21,7 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#initialize" do
     it "should call all required methods" do
-      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc', 'frontend').and_return(1)
+      expect( Appsignal::Extension ).to receive(:start_transaction).with('123abc', 'frontend', 0).and_return(1)
 
       expect( transaction ).to receive(:set_action)
       expect( transaction ).to receive(:set_metadata)
