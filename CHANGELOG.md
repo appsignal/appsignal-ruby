@@ -11,6 +11,7 @@
 * `Appsignal.instrument` helper to easily instrument blocks of code
 * `record_event` method to instrument events without a start hook
 * `send_params` is now configurable via the environment
+* Add DataMapper integration
 
 # 1.2.5
 * Bugfix in CPU utilization calculation for host metrics
