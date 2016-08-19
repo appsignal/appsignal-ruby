@@ -4,7 +4,7 @@ module Appsignal
 
       def log(message)
         # Attempt to find the scheme used for this message
-        scheme = self.instance_variable_get(:@uri).scheme #rescue nil
+        scheme = instance_variable_get(:@uri).scheme
 
         # If scheme is SQL-like, try to sanitize it, otherwise clear the body
         if %w(sqlite sqlite3 mysql postgres).include?(scheme)
