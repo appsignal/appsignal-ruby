@@ -1,4 +1,6 @@
 ENV['RAILS_ENV'] ||= 'test'
+ENV['PADRINO_ENV'] ||= 'test'
+
 require 'rack'
 require 'rspec'
 require 'pry'
@@ -143,6 +145,7 @@ RSpec.configure do |config|
 
   config.before do
     ENV['RAILS_ENV'] = 'test'
+    ENV['PADRINO_ENV'] = 'test'
 
     # Clean environment
     ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
