@@ -103,6 +103,13 @@ rescue LoadError
   false
 end
 
+def webmachine_present?
+  require 'webmachine'
+  true
+rescue LoadError
+  false
+end
+
 require 'appsignal'
 
 Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
