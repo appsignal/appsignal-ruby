@@ -523,7 +523,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.level.should == Logger::INFO
           Appsignal.logger.error('Log to file')
-          File.exists?(log_file).should be_true
+          File.exist?(log_file).should be_true
           File.open(log_file).read.should include 'Log to file'
           File.open(log_file).read.should include 'Log something'
         end

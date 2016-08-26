@@ -59,7 +59,7 @@ describe Appsignal::Transmitter do
     subject { Appsignal::Transmitter::CA_FILE_PATH }
 
     it { should include('resources/cacert.pem') }
-    it("should exist") { File.exists?(subject).should be_true }
+    it("should exist") { File.exist?(subject).should be_true }
   end
 
   describe "#http_client" do
