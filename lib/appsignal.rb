@@ -15,8 +15,8 @@ end
 
 module Appsignal
   class << self
-    attr_accessor :config, :subscriber, :agent, :in_memory_log, :extension_loaded
-    attr_writer :logger
+    attr_accessor :config, :subscriber, :agent, :extension_loaded
+    attr_writer :logger, :in_memory_log
 
     def extensions
       @extensions ||= []
@@ -66,6 +66,14 @@ module Appsignal
         end
       else
         logger.error('Not starting, no valid config for this environment')
+      end
+    end
+
+    def in_memory_log
+      if defined?(@in_memory_log) && @in_memory_log
+        @in_memory_log
+      else
+        @in_memory_log = StringIO.new
       end
     end
 
@@ -209,8 +217,7 @@ module Appsignal
     end
 
     def logger
-      @in_memory_log = StringIO.new unless @in_memory_log
-      @logger ||= Logger.new(@in_memory_log).tap do |l|
+      @logger ||= Logger.new(in_memory_log).tap do |l|
         l.level = Logger::INFO
         l.formatter = log_formatter
       end
@@ -238,7 +245,10 @@ module Appsignal
       else
         @logger.level = Logger::INFO
       end
-      @logger << @in_memory_log.string if @in_memory_log
+
+      if in_memory_log
+        @logger << in_memory_log.string
+      end
 
       if path_arg
         @logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
