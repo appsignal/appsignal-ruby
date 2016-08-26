@@ -15,7 +15,8 @@ end
 
 module Appsignal
   class << self
-    attr_accessor :config, :subscriber, :logger, :agent, :in_memory_log, :extension_loaded
+    attr_accessor :config, :subscriber, :agent, :in_memory_log, :extension_loaded
+    attr_writer :logger
 
     def extensions
       @extensions ||= []
