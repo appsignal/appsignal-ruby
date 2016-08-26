@@ -49,7 +49,7 @@ module Appsignal
         def check_api_key
           start_appsignal
           auth_check = ::Appsignal::AuthCheck.new(Appsignal.config, Appsignal.logger)
-          status, result = auth_check.perform_with_result
+          status, _ = auth_check.perform_with_result
           if status == '200'
             puts "Checking API key: Ok"
           else
