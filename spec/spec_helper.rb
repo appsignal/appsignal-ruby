@@ -69,15 +69,6 @@ rescue LoadError
   false
 end
 
-def active_job_present?
-  begin
-    require 'active_job'
-    true
-  rescue LoadError
-    false
-  end
-end
-
 def sinatra_present?
   begin
     require 'sinatra'
