@@ -1,6 +1,6 @@
 module TransactionHelpers
   def uploaded_file
-    if rails_present?
+    if DependencyHelper.rails_present?
       ActionDispatch::Http::UploadedFile.new(:tempfile => '/tmp')
     else
       ::Rack::Multipart::UploadedFile.new(File.join(fixtures_dir, '/uploaded_file.txt'))

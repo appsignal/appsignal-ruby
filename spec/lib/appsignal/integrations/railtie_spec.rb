@@ -1,4 +1,4 @@
-if rails_present?
+if DependencyHelper.rails_present?
   describe Appsignal::Integrations::Railtie do
     context "after initializing the app" do
       it "should call initialize_appsignal" do

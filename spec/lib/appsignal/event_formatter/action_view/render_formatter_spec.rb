@@ -1,4 +1,4 @@
-if rails_present?
+if DependencyHelper.rails_present?
   require 'action_view'
 
   describe Appsignal::EventFormatter::ActionView::RenderFormatter do

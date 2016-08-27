@@ -1,6 +1,5 @@
 require 'spec_helper'
-if webmachine_present?
-
+if DependencyHelper.webmachine_present?
   require 'appsignal/integrations/webmachine'
 
   describe Appsignal::Integrations::WebmachinePlugin::FSM do

@@ -1,10 +1,6 @@
-begin
-  require 'sinatra'
+if DependencyHelper.sinatra_present?
   require 'appsignal/integrations/sinatra'
-rescue LoadError
-end
 
-if defined?(::Sinatra)
   describe Appsignal::Rack::SinatraInstrumentation do
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
