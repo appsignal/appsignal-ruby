@@ -1,15 +1,21 @@
 ENV['RAILS_ENV'] ||= 'test'
 ENV['PADRINO_ENV'] ||= 'test'
 
+APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
+
 require 'rack'
 require 'rspec'
 require 'pry'
 require 'timecop'
 require 'webmock/rspec'
 
-puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+Dir[File.join(APPSIGNAL_SPEC_DIR, 'support/helpers', '*.rb')].each do |f|
+  require f
+end
 
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), 'support/stubs'))
+$LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, 'support/stubs'))
+
+puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
 begin
   require 'rails'
@@ -20,6 +26,8 @@ rescue LoadError
   puts 'Rails not present, skipping Rails specific specs'
   RAILS_PRESENT = false
 end
+
+require 'appsignal'
 
 def rails_present?
   RAILS_PRESENT
@@ -101,26 +109,6 @@ rescue LoadError
   false
 end
 
-require 'appsignal'
-
-def spec_dir
-  File.dirname(__FILE__)
-end
-
-def tmp_dir
-  @tmp_dir ||= File.expand_path('tmp', spec_dir)
-end
-
-def fixtures_dir
-  @fixtures_dir ||= File.expand_path('support/fixtures', spec_dir)
-end
-
-def helpers_dir
-  @helpers_dir ||= File.expand_path('support/helpers', spec_dir)
-end
-
-Dir[File.join(helpers_dir, '*.rb')].each { |file| require file }
-
 # Add way to clear subscribers between specs
 module ActiveSupport
   module Notifications
@@ -134,6 +122,7 @@ module ActiveSupport
 end
 
 RSpec.configure do |config|
+  config.include DirectoryHelper
   config.include ConfigHelpers
   config.include EnvHelpers
   config.include NotificationHelpers
