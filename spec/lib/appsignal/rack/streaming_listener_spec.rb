@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'appsignal/rack/streaming_listener'
 
 describe Appsignal::Rack::StreamingListener do

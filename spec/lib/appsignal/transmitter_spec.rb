@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Transmitter do
   let(:config) { project_fixture_config }
   let(:action) { 'action' }

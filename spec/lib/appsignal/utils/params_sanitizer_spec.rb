@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Utils::ParamsSanitizer do
   let(:file) { uploaded_file }
   let(:params) do

@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if capistrano3_present?
   require 'capistrano/all'
   require 'capistrano/deploy'

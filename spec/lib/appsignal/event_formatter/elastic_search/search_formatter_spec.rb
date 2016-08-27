@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
   let(:klass)     { Appsignal::EventFormatter::ElasticSearch::SearchFormatter }
   let(:formatter) { klass.new }

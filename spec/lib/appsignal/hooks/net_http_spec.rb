@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::NetHttpHook do
   before :all do
     start_agent

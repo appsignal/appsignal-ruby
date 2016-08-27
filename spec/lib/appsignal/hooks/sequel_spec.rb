@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::SequelHook, if: sequel_present? do
   let(:db) { Sequel.sqlite }
 

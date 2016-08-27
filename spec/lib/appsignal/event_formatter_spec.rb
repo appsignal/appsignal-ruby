@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 class MockFormatter < Appsignal::EventFormatter
   register 'mock'
 

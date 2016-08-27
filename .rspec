@@ -1,1 +1,3 @@
---order default --warnings
+--order default
+--warnings
+--require spec_helper

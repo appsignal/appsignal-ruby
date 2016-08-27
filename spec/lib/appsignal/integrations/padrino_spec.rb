@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 begin
   require 'padrino'
 rescue LoadError

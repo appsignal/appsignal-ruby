@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
   let(:formatter) { Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter }
 

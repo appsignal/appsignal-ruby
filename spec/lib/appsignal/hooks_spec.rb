@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 class MockPresentHook < Appsignal::Hooks::Hook
   def dependencies_present?
     true

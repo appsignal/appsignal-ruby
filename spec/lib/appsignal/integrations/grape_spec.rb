@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if grape_present?
   require 'appsignal/integrations/grape'
 

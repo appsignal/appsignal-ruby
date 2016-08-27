@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::EventFormatter::Moped::QueryFormatter do
   let(:klass) { Appsignal::EventFormatter::Moped::QueryFormatter }
   let(:formatter) { klass.new }

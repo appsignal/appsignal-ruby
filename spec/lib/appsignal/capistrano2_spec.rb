@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if capistrano2_present?
   require 'capistrano'
   require 'capistrano/configuration'

@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 begin
   require 'sinatra'
   require 'appsignal/integrations/sinatra'

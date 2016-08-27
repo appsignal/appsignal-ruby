@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Utils::QueryParamsSanitizer do
   describe ".sanitize" do
     context "when only_top_level = true" do

@@ -1,7 +1,5 @@
 # encoding: UTF-8
 
-require 'spec_helper'
-
 describe Appsignal::Utils do
   describe ".json_generate" do
     subject { Appsignal::Utils.json_generate(body) }

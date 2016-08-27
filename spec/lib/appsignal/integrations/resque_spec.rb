@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if resque_present?
   describe "Resque integration" do
     let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }

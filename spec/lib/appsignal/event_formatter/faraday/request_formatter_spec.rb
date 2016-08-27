@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::EventFormatter::Faraday::RequestFormatter do
   let(:klass)     { Appsignal::EventFormatter::Faraday::RequestFormatter }
   let(:formatter) { klass.new }

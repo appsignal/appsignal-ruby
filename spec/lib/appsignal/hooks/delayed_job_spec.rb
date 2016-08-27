@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
     before(:all) do

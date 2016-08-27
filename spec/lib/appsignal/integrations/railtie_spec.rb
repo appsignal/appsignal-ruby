@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if rails_present?
   describe Appsignal::Integrations::Railtie do
     context "after initializing the app" do

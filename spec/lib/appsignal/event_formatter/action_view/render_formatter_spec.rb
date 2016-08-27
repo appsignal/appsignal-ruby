@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if rails_present?
   require 'action_view'
 

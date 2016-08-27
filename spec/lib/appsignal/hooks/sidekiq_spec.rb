@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::SidekiqPlugin do
   let(:worker) { double }
   let(:queue) { double }

@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'appsignal/integrations/data_mapper'
 
 describe Appsignal::Hooks::DataMapperLogListener do

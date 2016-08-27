@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if resque_present? && active_job_present?
   describe "Resque ActiveJob integration" do
     let(:file) { File.expand_path('lib/appsignal/integrations/resque_active_job.rb') }

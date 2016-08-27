@@ -1,6 +1,3 @@
-require 'spec_helper'
-
-
 describe Appsignal::Hooks::ShoryukenMiddleware do
   let(:current_transaction) { background_job_transaction }
 

@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'appsignal/integrations/mongo_ruby_driver'
 describe Appsignal::Hooks::MongoMonitorSubscriber do
   let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }

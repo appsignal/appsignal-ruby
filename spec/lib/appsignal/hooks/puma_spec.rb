@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::PumaHook do
   context "with puma" do
     before(:all) do

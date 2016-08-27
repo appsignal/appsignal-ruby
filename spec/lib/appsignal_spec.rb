@@ -1,4 +1,3 @@
-require 'spec_helper'
 require './spec/support/mocks/mock_extension'
 
 describe Appsignal do
