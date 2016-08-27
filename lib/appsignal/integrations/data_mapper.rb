@@ -1,13 +1,16 @@
 module Appsignal
   class Hooks
     module DataMapperLogListener
+      SQL_CLASSES = [
+        "DataObjects::SqlServer::Connection",
+        "DataObjects::Sqlite3::Connection",
+        "DataObjects::Mysql::Connection",
+        "DataObjects::Postgres::Connection"
+      ]
 
       def log(message)
-        # Attempt to find the scheme used for this message
-        scheme = instance_variable_get(:@uri).scheme
-
         # If scheme is SQL-like, try to sanitize it, otherwise clear the body
-        if %w(sqlite sqlite3 mysql postgres).include?(scheme)
+        if SQL_CLASSES.include?(self.class.to_s)
           body_content = message.query
           body_format = Appsignal::EventFormatter::SQL_BODY_FORMAT
         else
