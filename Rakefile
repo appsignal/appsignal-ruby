@@ -1,4 +1,6 @@
+require 'bundler'
 require 'rspec/core/rake_task'
+
 GEMFILES = %w(
   capistrano2
   capistrano3
@@ -106,8 +108,10 @@ end
 
 task :install do
   system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal_extension.h Makefile appsignal_extension.bundle && ruby extconf.rb && make && cd ..'
-  GEMFILES.each do |gemfile|
-    system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
+  Bundler.with_clean_env do
+    GEMFILES.each do |gemfile|
+      system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
+    end
   end
 end
 
