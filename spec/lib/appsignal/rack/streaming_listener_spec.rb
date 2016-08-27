@@ -89,7 +89,7 @@ describe Appsignal::Rack::StreamingListener do
 
     context "with an exception in the instrumentation call" do
       it "should add the exception to the transaction" do
-        allow( app ).to receive(:call).and_raise(VerySpecificError.new('broken'))
+        allow( app ).to receive(:call).and_raise(VerySpecificError.new)
 
         expect( transaction ).to receive(:set_error)
 
@@ -124,7 +124,7 @@ describe Appsignal::StreamWrapper do
     context "when each raises an error" do
       it "should add the exception to the transaction" do
         allow( stream ).to receive(:each)
-          .and_raise(VerySpecificError.new('broken'))
+          .and_raise(VerySpecificError.new)
 
         expect( transaction ).to receive(:set_error)
 
@@ -144,7 +144,7 @@ describe Appsignal::StreamWrapper do
     context "when each raises an error" do
       it "should add the exception to the transaction and close it" do
         allow( stream ).to receive(:close)
-          .and_raise(VerySpecificError.new('broken'))
+          .and_raise(VerySpecificError.new)
 
         expect( transaction ).to receive(:set_error)
         expect( Appsignal::Transaction ).to receive(:complete_current!)

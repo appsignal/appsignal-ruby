@@ -20,7 +20,7 @@ if resque_present?
           extend Appsignal::Integrations::ResquePlugin
 
           def self.perform
-            raise VerySpecificError.new('broken')
+            raise VerySpecificError.new
           end
         end
       end

@@ -51,7 +51,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   end
 
   context "with an erroring call" do
-    let(:error) { VerySpecificError.new('on fire') }
+    let(:error) { VerySpecificError.new }
 
     it "should add the exception to appsignal" do
       Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
