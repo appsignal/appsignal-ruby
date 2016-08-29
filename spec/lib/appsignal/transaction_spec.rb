@@ -24,7 +24,6 @@ describe Appsignal::Transaction do
 
   context "class methods" do
     describe ".create" do
-
       it "should add the transaction to thread local" do
         Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request')
 
@@ -447,7 +446,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "finish_event" do
+    describe "#finish_event" do
       it "should finish the event in the extension" do
         transaction.ext.should_receive(:finish_event).with(
           'name',
@@ -478,6 +477,63 @@ describe Appsignal::Transaction do
           nil,
           nil
         )
+      end
+    end
+
+    describe "#record_event" do
+      it "should record the event in the extension" do
+        transaction.ext.should_receive(:record_event).with(
+          'name',
+          'title',
+          'body',
+          1000,
+          1
+        )
+
+        transaction.record_event(
+          'name',
+          'title',
+          'body',
+          1000,
+          1
+        )
+      end
+
+      it "should finish the event in the extension with nil arguments" do
+        transaction.ext.should_receive(:record_event).with(
+          'name',
+          '',
+          '',
+          1000,
+          0
+        )
+
+        transaction.record_event(
+          'name',
+          nil,
+          nil,
+          1000,
+          nil
+        )
+      end
+    end
+
+    describe "#instrument" do
+      it "should start and finish an event around the given block" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        transaction.should_receive(:start_event)
+        transaction.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          0
+        )
+
+        transaction.instrument 'name', 'title', 'body' do
+          stub.method_call
+        end.should eq 'return value'
       end
     end
 
@@ -595,6 +651,12 @@ describe Appsignal::Transaction do
         it { should be_nil }
       end
 
+      context "when params method does not exist" do
+        let(:options) { {:params_method => :nonsense} }
+
+        it { should be_nil }
+      end
+
       context "when not sending params" do
         before { Appsignal.config.config_hash[:send_params] = false }
         after { Appsignal.config.config_hash[:send_params] = true }
@@ -602,31 +664,48 @@ describe Appsignal::Transaction do
         it { should be_nil }
       end
 
-      context "when params method does not exist" do
-        let(:options) { {:params_method => :nonsense} }
-
-        it { should be_nil }
-      end
-
       context "with an array" do
-        let(:request) { Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2'])) }
+        let(:request) do
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2']))
+        end
 
         it { should == ['arg1', 'arg2'] }
+
+        context "with AppSignal filtering" do
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it { should == ['arg1', 'arg2'] }
+        end
       end
 
       context "with env" do
-        it "should call the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_receive(:sanitize).with(kind_of(Hash)).and_return({
-            'controller' => 'blog_posts',
-            'action' => 'show',
-            'id' => '1'
-          })
+        context "with sanitization" do
+          let(:request) do
+            Appsignal::Transaction::GenericRequest.new \
+              http_request_env_with_data(:params => { :foo => :bar })
+          end
 
-          subject.should == {
-            'controller' => 'blog_posts',
-            'action' => 'show',
-            'id' => '1'
-          }
+          it "should call the params sanitizer" do
+            puts Appsignal.config.config_hash[:filter_parameters].inspect
+            subject.should == { :foo => :bar }
+          end
+        end
+
+        context "with AppSignal filtering" do
+          let(:request) do
+            Appsignal::Transaction::GenericRequest.new \
+              http_request_env_with_data(:params => { :foo => :bar, :baz => :bat })
+          end
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "should call the params sanitizer with filtering" do
+            subject.should == {
+              :foo => '[FILTERED]',
+              :baz => :bat
+            }
+          end
         end
       end
     end
@@ -684,7 +763,7 @@ describe Appsignal::Transaction do
         end
 
         it "passes the session data into the params sanitizer" do
-          Appsignal::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
+          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
             and_return(:sanitized_foo)
           subject.should == :sanitized_foo
         end
@@ -698,7 +777,7 @@ describe Appsignal::Transaction do
             end
 
             it "should return an session hash" do
-              Appsignal::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
+              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({'foo' => :bar}).
                 and_return(:sanitized_foo)
               subject
             end
@@ -719,7 +798,7 @@ describe Appsignal::Transaction do
           end
 
           it "does not pass the session data into the params sanitizer" do
-            Appsignal::ParamsSanitizer.should_not_receive(:sanitize)
+            Appsignal::Utils::ParamsSanitizer.should_not_receive(:sanitize)
             subject.should be_nil
           end
         end

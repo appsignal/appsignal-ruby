@@ -8,6 +8,7 @@ module Appsignal
       :debug                          => false,
       :ignore_errors                  => [],
       :ignore_actions                 => [],
+      :filter_parameters              => [],
       :send_params                    => true,
       :endpoint                       => 'https://push.appsignal.com',
       :instrument_net_http            => true,
@@ -19,7 +20,9 @@ module Appsignal
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
       :running_in_container           => false,
-      :enable_host_metrics            => false
+      :enable_host_metrics            => true,
+      :enable_minutely_probes         => false,
+      :hostname                       => Socket.gethostname
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -37,12 +40,16 @@ module Appsignal
       'APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING' => :enable_frontend_error_catching,
       'APPSIGNAL_IGNORE_ERRORS'                  => :ignore_errors,
       'APPSIGNAL_IGNORE_ACTIONS'                 => :ignore_actions,
+      'APPSIGNAL_FILTER_PARAMETERS'              => :filter_parameters,
+      'APPSIGNAL_SEND_PARAMS'                    => :send_params,
       'APPSIGNAL_HTTP_PROXY'                     => :http_proxy,
       'APPSIGNAL_ENABLE_ALLOCATION_TRACKING'     => :enable_allocation_tracking,
       'APPSIGNAL_ENABLE_GC_INSTRUMENTATION'      => :enable_gc_instrumentation,
       'APPSIGNAL_RUNNING_IN_CONTAINER'           => :running_in_container,
       'APPSIGNAL_WORKING_DIR_PATH'               => :working_dir_path,
-      'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics
+      'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics,
+      'APPSIGNAL_ENABLE_MINUTELY_PROBES'         => :enable_minutely_probes,
+      'APPSIGNAL_HOSTNAME'                       => :hostname
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -111,9 +118,14 @@ module Appsignal
       ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
       ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
       ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
+      ENV['APPSIGNAL_FILTER_PARAMETERS']            = config_hash[:filter_parameters].join(',')
+      ENV['APPSIGNAL_SEND_PARAMS']                  = config_hash[:send_params].to_s
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s
       ENV['APPSIGNAL_WORKING_DIR_PATH']             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV['APPSIGNAL_ENABLE_HOST_METRICS']          = config_hash[:enable_host_metrics].to_s
+      ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES']       = config_hash[:enable_minutely_probes].to_s
+      ENV['APPSIGNAL_HOSTNAME']                     = config_hash[:hostname].to_s
+      ENV['APPSIGNAL_PROCESS_NAME']                 = $0
     end
 
     protected
@@ -162,7 +174,7 @@ module Appsignal
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
-         APPSIGNAL_WORKING_DIR_PATH).each do |var|
+         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end
@@ -172,14 +184,16 @@ module Appsignal
       %w(APPSIGNAL_ACTIVE APPSIGNAL_DEBUG APPSIGNAL_INSTRUMENT_NET_HTTP
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
-         APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS).each do |var|
+         APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
+         APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var == 'true'
         end
       end
 
       # Configuration with array of strings type
-      %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS).each do |var|
+      %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS
+         APPSIGNAL_FILTER_PARAMETERS).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var.split(',')
         end

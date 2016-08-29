@@ -20,6 +20,7 @@ describe Appsignal::Config do
         :debug                          => false,
         :ignore_errors                  => [],
         :ignore_actions                 => [],
+        :filter_parameters              => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
@@ -34,7 +35,9 @@ describe Appsignal::Config do
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
         :running_in_container           => false,
-        :enable_host_metrics            => false
+        :enable_host_metrics            => true,
+        :enable_minutely_probes         => false,
+        :hostname                       => Socket.gethostname
       }
     end
 
@@ -102,6 +105,8 @@ describe Appsignal::Config do
         subject.config_hash[:http_proxy]     = 'http://localhost'
         subject.config_hash[:ignore_actions] = ['action1', 'action2']
         subject.config_hash[:log_path]  = '/tmp'
+        subject.config_hash[:hostname]  = 'app1.local'
+        subject.config_hash[:filter_parameters] = %w(password confirm_password)
         subject.write_to_environment
       end
 
@@ -119,9 +124,14 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should == Appsignal::VERSION
         ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
         ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
+        ENV['APPSIGNAL_FILTER_PARAMETERS'].should            == 'password,confirm_password'
+        ENV['APPSIGNAL_SEND_PARAMS'].should                  == 'true'
         ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
         ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
-        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'false'
+        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'true'
+        ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES'].should       == 'false'
+        ENV['APPSIGNAL_HOSTNAME'].should                     == 'app1.local'
+        ENV['APPSIGNAL_PROCESS_NAME'].should                 include 'rspec'
       end
 
       context "if working_dir_path is set" do

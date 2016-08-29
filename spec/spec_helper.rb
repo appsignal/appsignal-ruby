@@ -71,15 +71,6 @@ rescue LoadError
   false
 end
 
-def active_job_present?
-  begin
-    require 'active_job'
-    true
-  rescue LoadError
-    false
-  end
-end
-
 def sinatra_present?
   begin
     require 'sinatra'
@@ -112,15 +103,23 @@ end
 
 require 'appsignal'
 
-Dir[File.expand_path(File.join(File.dirname(__FILE__), 'support/helpers','*.rb'))].each {|f| require f}
+def spec_dir
+  File.dirname(__FILE__)
+end
 
 def tmp_dir
-  @tmp_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'tmp'))
+  @tmp_dir ||= File.expand_path('tmp', spec_dir)
 end
 
 def fixtures_dir
-  @fixtures_dir ||= File.expand_path(File.join(File.dirname(__FILE__), 'support/fixtures'))
+  @fixtures_dir ||= File.expand_path('support/fixtures', spec_dir)
 end
+
+def helpers_dir
+  @helpers_dir ||= File.expand_path('support/helpers', spec_dir)
+end
+
+Dir[File.join(helpers_dir, '*.rb')].each { |file| require file }
 
 # Add way to clear subscribers between specs
 module ActiveSupport

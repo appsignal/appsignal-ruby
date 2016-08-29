@@ -46,7 +46,7 @@ module Appsignal
           'query.mongodb',
           "#{event.command_name.to_s} | #{event.database_name} | #{result}",
           Appsignal::Utils.json_generate(command),
-          0
+          Appsignal::EventFormatter::DEFAULT
         )
       end
     end

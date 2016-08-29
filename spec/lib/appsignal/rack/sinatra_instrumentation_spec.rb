@@ -8,6 +8,35 @@ end
 
 if defined?(::Sinatra)
   describe Appsignal::Rack::SinatraInstrumentation do
+    let(:settings) { double(:raise_errors => false) }
+    let(:app) { double(:call => true, :settings => settings) }
+    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
+    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
+
+    describe "#call" do
+      before do
+        start_agent
+        middleware.stub(:raw_payload => {})
+        Appsignal.stub(:active? => true)
+      end
+
+      it "should call without monitoring" do
+        expect(Appsignal::Transaction).to_not receive(:create)
+      end
+
+      after { middleware.call(env) }
+    end
+
+    describe ".settings" do
+      subject { middleware.settings }
+
+      it "should return the app's settings" do
+        expect(subject).to eq(app.settings)
+      end
+    end
+  end
+
+  describe Appsignal::Rack::SinatraBaseInstrumentation do
     before :all do
       start_agent
     end
@@ -16,7 +45,7 @@ if defined?(::Sinatra)
     let(:app) { double(:call => true, :settings => settings) }
     let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
     let(:options) { {} }
-    let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app, options) }
+    let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
     describe "#call" do
       before do
@@ -99,8 +128,26 @@ if defined?(::Sinatra)
         end
       end
 
-      it "should set the action" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
+      describe "action name" do
+        it "should set the action" do
+          Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
+        end
+
+        context "with option to set path a mounted_at prefix" do
+          let(:options) {{ :mounted_at  => "/api/v2" }}
+
+          it "should call set_action with a prefix path" do
+            Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/v2/")
+          end
+        end
+
+        context "with mounted modular application" do
+          before { env['SCRIPT_NAME'] = '/api' }
+
+          it "should call set_action with an application prefix path" do
+            Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/")
+          end
+        end
       end
 
       it "should set metadata" do
@@ -120,13 +167,6 @@ if defined?(::Sinatra)
                           with(env.merge(:params_method => :filtered_params)).
                           at_least(:once).
                           and_return(request)
-        end
-      end
-
-      context "with option to set path prefix" do
-        let(:options) {{ :mounted_at  => "/api/v2" }}
-        it "should call set_action with a prefix path" do
-          Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/v2/")
         end
       end
 

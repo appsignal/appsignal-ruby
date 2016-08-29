@@ -1,3 +1,18 @@
+# 1.3.0
+* Host metrics is now enabled by default
+* Beta of minutely probes including GC metrics
+* Refactor of param sanitization
+* Param filtering for non-Rails frameworks
+* Support for modular Sinatra applications
+* Add Sinatra middleware to `Sinatra::Base` by default
+* Allow a new transaction to be forced by sinatra instrumentation
+* Allow hostname to be set with environment variable
+* Helpers for easy method instrumentation
+* `Appsignal.instrument` helper to easily instrument blocks of code
+* `record_event` method to instrument events without a start hook
+* `send_params` is now configurable via the environment
+* Add DataMapper integration
+
 # 1.2.5
 * Bugfix in CPU utilization calculation for host metrics
 

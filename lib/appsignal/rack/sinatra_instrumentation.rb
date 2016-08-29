@@ -2,7 +2,28 @@ require 'rack'
 
 module Appsignal
   module Rack
+    # Stub old middleware. Prevents Sinatra middleware being loaded twice.
+    # This can happen when users use the old method of including
+    # `use Appsignal::Rack::SinatraInstrumentation` in their modular Sinatra
+    # applications. This is no longer needed. Instead Appsignal now includes
+    # `use Appsignal::Rack::SinatraBaseInstrumentation` automatically.
     class SinatraInstrumentation
+      def initialize(app, options = {})
+        @app, @options = app, options
+        Appsignal.logger.warn 'Please remove Appsignal::Rack::SinatraInstrumentation '\
+          'from your Sinatra::Base class. This is no longer needed.'
+      end
+
+      def call(env)
+        @app.call(env)
+      end
+
+      def settings
+        @app.settings
+      end
+    end
+
+    class SinatraBaseInstrumentation
       attr_reader :raise_errors_on
 
       def initialize(app, options = {})
@@ -51,11 +72,13 @@ module Appsignal
         end
       end
 
-
       def action_name(env)
         if @options.fetch(:mounted_at, nil)
           method, route = env['sinatra.route'].split(" ")
-          "#{method} #{@options.fetch(:mounted_at, nil)}#{route}"
+          "#{method} #{@options[:mounted_at]}#{route}"
+        elsif env['SCRIPT_NAME']
+          method, route = env['sinatra.route'].split(" ")
+          "#{method} #{env['SCRIPT_NAME']}#{route}"
         else
           env['sinatra.route']
         end

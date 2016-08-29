@@ -61,10 +61,18 @@ module Appsignal
           require 'bundler/cli'
           require "bundler/cli/common"
           path     = Bundler::CLI::Common.select_spec('appsignal').full_gem_path
-          log_path = "#{path.strip}/ext/install.log"
-          puts "Showing last lines of extension install log: #{log_path}"
-          puts File.read(log_path)
+          install_log_path = "#{path.strip}/ext/install.log"
+          puts "Showing last lines of extension install log: #{install_log_path}"
+          puts File.read(install_log_path)
           puts "\n"
+          mkmf_log_path = "#{path.strip}/ext/mkmf.log"
+          if File.exists?(mkmf_log_path)
+            puts "Showing last lines of extension compilation log: #{mkmf_log_path}"
+            puts File.read(mkmf_log_path)
+            puts "\n"
+          else
+            puts "#{mkmf_log_path} not present"
+          end
         end
       end
     end

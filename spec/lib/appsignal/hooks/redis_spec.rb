@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Appsignal::Hooks::RedisHook do
   before :all do
-    Appsignal.config = project_fixture_config
+    start_agent
   end
 
   context "with redis" do
@@ -19,27 +19,25 @@ describe Appsignal::Hooks::RedisHook do
       end
 
       context "and redis instrumentation enabled" do
-        let(:events) { [] }
         before :all do
           Appsignal.config.config_hash[:instrument_redis] = true
           Appsignal::Hooks::RedisHook.new.install
-        end
-        before do
-          ActiveSupport::Notifications.subscribe(/^[^!]/) do |*args|
-            events << ActiveSupport::Notifications::Event.new(*args)
-          end
         end
         after(:all) { Object.send(:remove_const, :Redis) }
 
         its(:dependencies_present?) { should be_true }
 
-        it "should generate an event for a redis call" do
+        it "should instrument a redis call" do
+          Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test')
+          expect( Appsignal::Transaction.current ).to receive(:start_event)
+            .at_least(:once)
+          expect( Appsignal::Transaction.current ).to receive(:finish_event)
+            .at_least(:once)
+            .with('query.redis', nil, nil, 0)
+
           client = Redis::Client.new
 
           client.process([]).should == 1
-
-          event = events.last
-          event.name.should == 'query.redis'
         end
       end
     end
