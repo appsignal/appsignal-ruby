@@ -12,6 +12,10 @@
 * `record_event` method to instrument events without a start hook
 * `send_params` is now configurable via the environment
 * Add DataMapper integration
+* Add webmachine integration
+* Allow overriding Padrino environment with APPSIGNAL_APP_ENV
+* Add mkmf.log to diagnose command
+* Allow for local install with bundler `bundle exec rake install`
 
 # 1.2.5
 * Bugfix in CPU utilization calculation for host metrics
