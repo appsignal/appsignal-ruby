@@ -1,4 +1,7 @@
 # 1.3.0
+* Bugfix for problem when requiring config from installer
+
+# 1.3.0
 * Host metrics is now enabled by default
 * Beta of minutely probes including GC metrics
 * Refactor of param sanitization
