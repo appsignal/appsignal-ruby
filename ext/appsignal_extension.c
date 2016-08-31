@@ -1,6 +1,6 @@
 #include "ruby/ruby.h"
 #include "ruby/encoding.h"
-#include "appsignal_extension.h"
+#include "appsignal.h"
 
 static inline appsignal_string_t make_appsignal_string(VALUE str) {
   return (appsignal_string_t) {

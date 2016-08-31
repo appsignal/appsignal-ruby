@@ -49,7 +49,7 @@ def install
 
   unless File.exists?(ext_path('appsignal-agent')) &&
            File.exists?(ext_path('libappsignal.a')) &&
-           File.exists?(ext_path('appsignal_extension.h'))
+           File.exists?(ext_path('appsignal.h'))
     logger.info "Downloading agent release from #{arch_config['download_url']}"
 
     archive = open(arch_config['download_url'], :ssl_ca_cert => CA_CERT_PATH)
@@ -82,11 +82,11 @@ def install
     installation_failed 'Aborting installation, libappsignal not found'
   elsif !find_executable('appsignal-agent', EXT_PATH)
     installation_failed 'Aborting installation, appsignal-agent not found'
-  elsif !find_header('appsignal_extension.h', EXT_PATH)
-    installation_failed 'Aborting installation, appsignal_extension.h not found'
+  elsif !find_header('appsignal.h', EXT_PATH)
+    installation_failed 'Aborting installation, appsignal.h not found'
   else
     create_makefile 'appsignal_extension'
-    logger.info 'Successfully installed appsignal extension'
+    logger.info 'Successfully created Makefile for appsignal extension'
   end
 rescue => ex
   installation_failed "Exception while installing: #{ex}"

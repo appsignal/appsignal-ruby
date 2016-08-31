@@ -101,7 +101,7 @@ task :publish do
 end
 
 task :install do
-  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal_extension.h Makefile appsignal_extension.bundle && ruby extconf.rb && make && cd ..'
+  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal.h Makefile appsignal_extension.bundle && ruby extconf.rb && make && cd ..'
   GEMFILES.each do |gemfile|
     system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
   end
@@ -130,7 +130,7 @@ task :generate_bundle_and_spec_all do
       out << "#{switch_command.call(version)} || { echo 'Switching Ruby failed'; exit 1; }"
       out << "ruby -v"
       out << "echo 'Compiling extension'"
-      out << 'cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal_extension.h libappsignal.a Makefile && ruby extconf.rb  && make && cd ..'
+      out << 'cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal.h libappsignal.a Makefile && ruby extconf.rb  && make && cd ..'
       GEMFILES.each do |gemfile|
         unless EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(short_version)
           out << "echo 'Bundling #{gemfile} in #{short_version}'"
