@@ -196,6 +196,7 @@ end
 def install_extension
   `cd ext && ruby extconf.rb && make clean && make`
   puts `cat ext/install.log`
+  puts `ls -lah ext`
 end
 
 begin
