@@ -1,6 +1,7 @@
 require 'erb'
 require 'yaml'
 require 'uri'
+require 'socket'
 
 module Appsignal
   class Config
@@ -22,7 +23,7 @@ module Appsignal
       :running_in_container           => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => false,
-      :hostname                       => Socket.gethostname
+      :hostname                       => ::Socket.gethostname
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -69,7 +70,7 @@ module Appsignal
       load_from_environment
 
       # Load the config file if it exists
-      if config_file && File.exists?(config_file)
+      if config_file && File.exist?(config_file)
         load_from_disk
       end
 

@@ -1,4 +1,5 @@
-require 'rspec/core/rake_task'
+require 'bundler'
+
 GEMFILES = %w(
   capistrano2
   capistrano3
@@ -14,6 +15,8 @@ GEMFILES = %w(
   sequel
   sequel-435
   sinatra
+  grape
+  webmachine
 )
 
 RUBY_VERSIONS = %w(
@@ -101,9 +104,11 @@ task :publish do
 end
 
 task :install do
-  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal.h Makefile appsignal_extension.bundle && ruby extconf.rb && make && cd ..'
-  GEMFILES.each do |gemfile|
-    system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
+  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal_extension.h Makefile appsignal.bundle && ruby extconf.rb && make && cd ..'
+  Bundler.with_clean_env do
+    GEMFILES.each do |gemfile|
+      system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
+    end
   end
 end
 
@@ -168,8 +173,13 @@ task :install_extension do
   `cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make`
 end
 
-RSpec::Core::RakeTask.new(:rspec) do |t|
-  t.pattern = Dir.glob('spec/**/*_spec.rb')
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:rspec) do |t|
+    t.pattern = Dir.glob('spec/**/*_spec.rb')
+  end
+rescue LoadError
+  # When running rake install, there is no RSpec yet.
 end
 
 task :travis => [:install_extension, :rspec]

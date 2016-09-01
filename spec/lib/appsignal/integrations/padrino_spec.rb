@@ -38,6 +38,28 @@ if padrino_present?
         end
       end
 
+      context "when APPSIGNAL_APP_ENV ENV var is provided" do
+        it 'should use this as the environment' do
+          ENV['APPSIGNAL_APP_ENV'] = 'custom'
+
+          # Reset the plugin to pull down the latest data
+          Appsignal::Integrations::PadrinoPlugin.init
+
+          expect(Appsignal.config.env).to eq 'custom'
+        end
+      end
+
+      context "when APPSIGNAL_APP_ENV ENV var is not provided" do
+        it 'should use the Padrino environment' do
+          ENV['APPSIGNAL_APP_ENV'] = nil
+
+          # Reset the plugin to pull down the latest data
+          Appsignal::Integrations::PadrinoPlugin.init
+
+          expect(Appsignal.config.env).to eq Padrino.env.to_s
+        end
+      end
+
       after { Appsignal::Integrations::PadrinoPlugin.init }
     end
 

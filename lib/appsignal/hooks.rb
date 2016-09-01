@@ -21,6 +21,10 @@ module Appsignal
         Appsignal::Hooks.register(name, hook.new)
       end
 
+      def initialize
+        @installed = false
+      end
+
       def try_to_install(name)
         if dependencies_present? && !installed?
           Appsignal.logger.info("Installing #{name} hook")
@@ -34,7 +38,7 @@ module Appsignal
       end
 
       def installed?
-        !! @installed
+        @installed
       end
 
       def dependencies_present?
@@ -97,4 +101,5 @@ require 'appsignal/hooks/shoryuken'
 require 'appsignal/hooks/sidekiq'
 require 'appsignal/hooks/unicorn'
 require 'appsignal/hooks/mongo_ruby_driver'
+require 'appsignal/hooks/webmachine'
 require 'appsignal/hooks/data_mapper'

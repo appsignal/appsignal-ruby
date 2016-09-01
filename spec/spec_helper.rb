@@ -1,4 +1,6 @@
 ENV['RAILS_ENV'] ||= 'test'
+ENV['PADRINO_ENV'] ||= 'test'
+
 require 'rack'
 require 'rspec'
 require 'pry'
@@ -92,6 +94,13 @@ rescue LoadError
   false
 end
 
+def webmachine_present?
+  require 'webmachine'
+  true
+rescue LoadError
+  false
+end
+
 require 'appsignal'
 
 def spec_dir
@@ -142,6 +151,7 @@ RSpec.configure do |config|
 
   config.before do
     ENV['RAILS_ENV'] = 'test'
+    ENV['PADRINO_ENV'] = 'test'
 
     # Clean environment
     ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|

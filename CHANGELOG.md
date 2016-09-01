@@ -1,4 +1,7 @@
 # 1.3.0
+* Bugfix for problem when requiring config from installer
+
+# 1.3.0
 * Host metrics is now enabled by default
 * Beta of minutely probes including GC metrics
 * Refactor of param sanitization
@@ -12,6 +15,10 @@
 * `record_event` method to instrument events without a start hook
 * `send_params` is now configurable via the environment
 * Add DataMapper integration
+* Add webmachine integration
+* Allow overriding Padrino environment with APPSIGNAL_APP_ENV
+* Add mkmf.log to diagnose command
+* Allow for local install with bundler `bundle exec rake install`
 
 # 1.2.5
 * Bugfix in CPU utilization calculation for host metrics
