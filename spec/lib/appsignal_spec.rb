@@ -744,6 +744,25 @@ describe Appsignal do
       end
     end
 
+    describe ".instrument_sql" do
+      it "should instrument sql through the transaction" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        transaction.should_receive(:start_event)
+        transaction.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          1
+        )
+
+        Appsignal.instrument_sql 'name', 'title', 'body' do
+          stub.method_call
+        end.should eq 'return value'
+      end
+    end
+
     describe ".without_instrumentation" do
       let(:transaction) { double }
       before { Appsignal::Transaction.stub(:current => transaction) }
