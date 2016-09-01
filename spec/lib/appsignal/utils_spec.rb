@@ -18,7 +18,7 @@ describe Appsignal::Utils do
         }
       end
 
-      it { should == %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}}) }
+      it { should eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}}) }
     end
 
     context "with a body that contains strings with invalid utf-8 content" do
@@ -34,7 +34,7 @@ describe Appsignal::Utils do
         }
       } }
 
-      it { should == %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
+      it { should eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
     end
   end
 end

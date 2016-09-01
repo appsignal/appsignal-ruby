@@ -37,7 +37,7 @@ describe Appsignal::Hooks::RedisHook do
 
           client = Redis::Client.new
 
-          client.process([]).should == 1
+          client.process([]).should eq 1
         end
       end
     end

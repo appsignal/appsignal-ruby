@@ -99,13 +99,13 @@ if defined?(::Rails)
       context "with request id set" do
         let(:env) { {'action_dispatch.request_id' => 'id'} }
 
-        it { should == 'id' }
+        it { should eq 'id' }
       end
 
       context "with request id not set" do
         let(:env) { {} }
 
-        its(:length) { should == 36 }
+        its(:length) { should eq 36 }
       end
     end
   end

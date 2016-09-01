@@ -8,20 +8,17 @@ describe Appsignal::AuthCheck do
   describe "#perform_with_result" do
     it "should give success message" do
       auth_check.should_receive(:perform).and_return('200')
-      auth_check.perform_with_result.should ==
-        ['200', 'AppSignal has confirmed authorization!']
+      auth_check.perform_with_result.should eq ['200', 'AppSignal has confirmed authorization!']
     end
 
     it "should give 401 message" do
       auth_check.should_receive(:perform).and_return('401')
-      auth_check.perform_with_result.should ==
-        ['401', 'API key not valid with AppSignal...']
+      auth_check.perform_with_result.should eq ['401', 'API key not valid with AppSignal...']
     end
 
     it "should give an error message" do
       auth_check.should_receive(:perform).and_return('402')
-      auth_check.perform_with_result.should ==
-        ['402', 'Could not confirm authorization: 402']
+      auth_check.perform_with_result.should eq ['402', 'Could not confirm authorization: 402']
     end
   end
 

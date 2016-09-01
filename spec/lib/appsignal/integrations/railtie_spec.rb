@@ -29,17 +29,17 @@ if rails_present?
 
           it { should be_a(Appsignal::Config) }
 
-          its(:root_path)  { should == Pathname.new(project_fixture_path) }
-          its(:env)        { should == 'test' }
-          its([:name])     { should == 'TestApp' }
-          its([:log_path]) { should == Pathname.new(File.join(project_fixture_path, 'log')) }
+          its(:root_path)  { should eq Pathname.new(project_fixture_path) }
+          its(:env)        { should eq 'test' }
+          its([:name])     { should eq 'TestApp' }
+          its([:log_path]) { should eq Pathname.new(File.join(project_fixture_path, 'log')) }
         end
 
         context "initial config" do
           before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
           subject { Appsignal.config.initial_config }
 
-          its([:name]) { should == 'MyApp' }
+          its([:name]) { should eq 'MyApp' }
         end
 
         context "with APPSIGNAL_APP_ENV ENV var set" do
@@ -48,7 +48,7 @@ if rails_present?
             Appsignal::Integrations::Railtie.initialize_appsignal(app)
           end
 
-          its(:env) { should == 'env_test' }
+          its(:env) { should eq 'env_test' }
         end
       end
 

@@ -69,10 +69,10 @@ describe Appsignal::EventFormatter do
       klass.register('mock.specific', MockFormatter)
       Appsignal::EventFormatter.initialize_formatters
 
-      klass.formatter_classes['mock.specific'].should == MockFormatter
+      klass.formatter_classes['mock.specific'].should eq MockFormatter
       klass.registered?('mock.specific').should be_true
       klass.formatters['mock.specific'].should be_instance_of(MockFormatter)
-      klass.formatters['mock.specific'].body.should == 'some value'
+      klass.formatters['mock.specific'].body.should eq 'some value'
     end
 
     it "should not have a formatter that's not registered" do
@@ -92,11 +92,11 @@ describe Appsignal::EventFormatter do
 
   context "calling formatters" do
     it "should return nil if there is no formatter registered" do
-      klass.format('nonsense', {}).should == nil
+      klass.format('nonsense', {}).should be_nil
     end
 
     it "should call the formatter if it is registered and use a value set in the initializer" do
-      klass.format('mock', {}).should == ['title', 'some value']
+      klass.format('mock', {}).should eq ['title', 'some value']
     end
   end
 end

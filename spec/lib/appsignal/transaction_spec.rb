@@ -29,15 +29,15 @@ describe Appsignal::Transaction do
 
         created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
 
-        Thread.current[:appsignal_transaction].should == created_transaction
+        Thread.current[:appsignal_transaction].should eq created_transaction
       end
 
       it "should create a transaction" do
         created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
 
         created_transaction.should be_a Appsignal::Transaction
-        created_transaction.transaction_id.should == '1'
-        created_transaction.namespace.should == 'http_request'
+        created_transaction.transaction_id.should eq '1'
+        created_transaction.namespace.should eq 'http_request'
       end
 
       context "when a transaction is already running" do
@@ -78,7 +78,7 @@ describe Appsignal::Transaction do
         before { Appsignal::Transaction.create('1', namespace, request, options) }
 
         it "should return the correct transaction" do
-          should == transaction
+          should eq transaction
         end
 
         it "should indicate it's not a nil transaction" do
@@ -118,6 +118,25 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.complete_current!
 
         Thread.current[:appsignal_transaction].should be_nil
+      end
+
+      context "if a transaction is discarded" do
+        it "should not complete the transaction" do
+          Appsignal::Transaction.current.should_not_receive(:complete)
+
+          Appsignal::Transaction.current.discard!
+          expect(Appsignal::Transaction.current.discarded?).to be_true
+          Appsignal::Transaction.complete_current!
+
+          Thread.current[:appsignal_transaction].should be_nil
+        end
+
+        it "should not be discarded when restore! is called" do
+          Appsignal::Transaction.current.discard!
+          expect(Appsignal::Transaction.current.discarded?).to be_true
+          Appsignal::Transaction.current.restore!
+          expect(Appsignal::Transaction.current.discarded?).to be_false
+        end
       end
     end
   end
@@ -180,21 +199,21 @@ describe Appsignal::Transaction do
       subject { transaction }
 
       its(:ext)                { should_not be_nil }
-      its(:transaction_id)     { should == '1' }
-      its(:namespace)          { should == 'http_request' }
+      its(:transaction_id)     { should eq '1' }
+      its(:namespace)          { should eq 'http_request' }
       its(:request)            { should_not be_nil }
       its(:paused)             { should be_false }
-      its(:tags)               { should == {} }
+      its(:tags)               { should eq({}) }
 
       context "options" do
         subject { transaction.options }
 
-        its([:params_method]) { should == :params }
+        its([:params_method]) { should eq :params }
 
         context "with overridden options" do
           let(:options) { {:params_method => :filtered_params} }
 
-          its([:params_method]) { should == :filtered_params }
+          its([:params_method]) { should eq :filtered_params }
         end
       end
     end
@@ -553,8 +572,8 @@ describe Appsignal::Transaction do
           }
         end
 
-        its(:env) { should == env }
-        its(:params) { should == {:id => 1} }
+        its(:env) { should eq env }
+        its(:params) { should eq({:id => 1}) }
       end
     end
 
@@ -564,13 +583,13 @@ describe Appsignal::Transaction do
       subject { transaction.send(:background_queue_start) }
 
       context "when queue start is nil" do
-        it { should == nil }
+        it { should eq nil }
       end
 
       context "when queue start is set" do
         let(:env) { background_env_with_data }
 
-        it { should == 1389783590000 }
+        it { should eq 1389783590000 }
       end
     end
 
@@ -595,7 +614,7 @@ describe Appsignal::Transaction do
         context "with the HTTP_X_REQUEST_START header set" do
           let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}"} }
 
-          it { should == 1389783599600 }
+          it { should eq 1389783599600 }
 
           context "with unparsable content" do
             let(:env) { {'HTTP_X_REQUEST_START' => 'something'} }
@@ -606,7 +625,7 @@ describe Appsignal::Transaction do
           context "with some cruft" do
             let(:env) { {'HTTP_X_REQUEST_START' => "t=#{slightly_earlier_time_value}aaaa"} }
 
-            it { should == 1389783599600 }
+            it { should eq 1389783599600 }
           end
 
           context "with a really low number" do
@@ -618,7 +637,7 @@ describe Appsignal::Transaction do
           context "with the alternate HTTP_X_QUEUE_START header set" do
             let(:env) { {'HTTP_X_QUEUE_START' => "t=#{slightly_earlier_time_value}"} }
 
-            it { should == 1389783599600 }
+            it { should eq 1389783599600 }
           end
         end
       end
@@ -669,13 +688,13 @@ describe Appsignal::Transaction do
           Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ['arg1', 'arg2']))
         end
 
-        it { should == ['arg1', 'arg2'] }
+        it { should eq ['arg1', 'arg2'] }
 
         context "with AppSignal filtering" do
           before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { should == ['arg1', 'arg2'] }
+          it { should eq ['arg1', 'arg2'] }
         end
       end
 
@@ -688,7 +707,7 @@ describe Appsignal::Transaction do
 
           it "should call the params sanitizer" do
             puts Appsignal.config.config_hash[:filter_parameters].inspect
-            subject.should == { :foo => :bar }
+            subject.should eq({:foo => :bar })
           end
         end
 
@@ -701,10 +720,10 @@ describe Appsignal::Transaction do
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
           it "should call the params sanitizer with filtering" do
-            subject.should == {
+            subject.should eq({
               :foo => '[FILTERED]',
               :baz => :bat
-            }
+            })
           end
         end
       end
@@ -746,7 +765,7 @@ describe Appsignal::Transaction do
       context "when env is empty" do
         before { transaction.request.stub(:session => {}) }
 
-        it { should == {} }
+        it { should eq({}) }
       end
 
       context "when request class does not have a session method" do
@@ -765,7 +784,7 @@ describe Appsignal::Transaction do
         it "passes the session data into the params sanitizer" do
           Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
             and_return(:sanitized_foo)
-          subject.should == :sanitized_foo
+          subject.should eq :sanitized_foo
         end
 
         if defined? ActionDispatch::Request::Session
@@ -817,7 +836,7 @@ describe Appsignal::Transaction do
       context "when env is present" do
         let(:env) { {:metadata => {:key => 'value'}} }
 
-        it { should == env[:metadata] }
+        it { should eq env[:metadata] }
       end
     end
 
@@ -852,7 +871,7 @@ describe Appsignal::Transaction do
     describe "#cleaned_backtrace" do
       subject { transaction.send(:cleaned_backtrace, ['line 1']) }
 
-      it { should == ['line 1'] }
+      it { should eq ['line 1'] }
 
       pending "calls Rails backtrace cleaner if Rails is present"
     end

@@ -59,13 +59,14 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options
+    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
 
     def initialize(transaction_id, namespace, request, options={})
       @transaction_id = transaction_id
       @namespace = namespace
       @request = request
       @paused = false
+      @discarded = false
       @tags = {}
       @store = Hash.new({})
       @options = options
@@ -79,6 +80,10 @@ module Appsignal
     end
 
     def complete
+      if discarded?
+        Appsignal.logger.debug('Skipping transaction because it was manually discarded.'.freeze)
+        return
+      end
       if @ext.finish
         sample_data
       end
@@ -95,6 +100,18 @@ module Appsignal
 
     def paused?
       @paused == true
+    end
+
+    def discard!
+      @discarded = true
+    end
+
+    def restore!
+      @discarded = false
+    end
+
+    def discarded?
+      @discarded == true
     end
 
     def store(key)
