@@ -103,8 +103,8 @@ task :publish do
   end
 end
 
-task :install do
-  system 'cd ext && rm -f libappsignal.a appsignal-agent appsignal_extension.h Makefile appsignal.bundle && ruby extconf.rb && make && cd ..'
+desc 'Install the AppSignal gem, extension and all possible dependencies.'
+task :install => "extension:install" do
   Bundler.with_clean_env do
     GEMFILES.each do |gemfile|
       system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
@@ -114,8 +114,10 @@ end
 
 task :spec_all_gemfiles do
   GEMFILES.each do |gemfile|
-    puts "Running #{gemfile}"
-    raise 'Not successful' unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+    puts "Running tests for #{gemfile}"
+    unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+      raise 'Not successful'
+    end
   end
 end
 
@@ -135,7 +137,7 @@ task :generate_bundle_and_spec_all do
       out << "#{switch_command.call(version)} || { echo 'Switching Ruby failed'; exit 1; }"
       out << "ruby -v"
       out << "echo 'Compiling extension'"
-      out << 'cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal.h libappsignal.a Makefile && ruby extconf.rb  && make && cd ..'
+      out << 'cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal.h libappsignal.a Makefile && ruby extconf.rb && make && cd ..'
       GEMFILES.each do |gemfile|
         unless EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(short_version)
           out << "echo 'Bundling #{gemfile} in #{short_version}'"
@@ -169,19 +171,34 @@ task :console do
   IRB.start
 end
 
-task :install_extension do
-  `cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make`
+namespace :extension do
+  desc 'Install the AppSignal gem extension'
+  task :install => :clean do
+    system 'cd ext && ruby extconf.rb && make clean && make'
+  end
+
+  desc 'Clean the AppSignal gem extension directory of installation artifacts'
+  task :clean do
+    system <<-COMMAND
+      cd ext &&
+        rm -f appsignal.bundle \
+          appsignal-agent \
+          appsignal.h \
+          appsignal_extension.o \
+          install.log \
+          libappsignal.a \
+          Makefile \
+          mkmf.log
+      COMMAND
+  end
 end
 
 begin
   require 'rspec/core/rake_task'
-  RSpec::Core::RakeTask.new(:rspec) do |t|
-    t.pattern = Dir.glob('spec/**/*_spec.rb')
-  end
+  desc 'Run the AppSignal gem test suite.'
+  RSpec::Core::RakeTask.new :test
 rescue LoadError
   # When running rake install, there is no RSpec yet.
 end
-
-task :travis => [:install_extension, :rspec]
 
 task :default => [:generate_bundle_and_spec_all, :spec_all_gemfiles]
