@@ -105,7 +105,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
     end
 
     it "should only add items to the hash that do not appear in JOB_KEYS" do
-      plugin.formatted_metadata(item).should == {'foo' => 'bar'}
+      plugin.formatted_metadata(item).should eq({'foo' => 'bar'})
     end
   end
 end

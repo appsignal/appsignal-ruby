@@ -17,7 +17,7 @@ describe Appsignal do
       Appsignal.logger.should_not_receive(:level=)
 
       Appsignal.config = config
-      Appsignal.config.should == config
+      Appsignal.config.should eq config
     end
   end
 
@@ -54,7 +54,7 @@ describe Appsignal do
 
       it "should initialize logging" do
         Appsignal.start
-        Appsignal.logger.level.should == Logger::INFO
+        Appsignal.logger.level.should eq Logger::INFO
       end
 
       it "should start native" do
@@ -154,7 +154,7 @@ describe Appsignal do
 
       it "should change the log level" do
         Appsignal.start
-        Appsignal.logger.level.should == Logger::DEBUG
+        Appsignal.logger.level.should eq Logger::DEBUG
       end
     end
   end
@@ -259,7 +259,7 @@ describe Appsignal do
         lambda {
           Appsignal.monitor_transaction('perform_job.nothing') do
             object.some_method
-          end.should == 1
+          end.should eq 1
         }.should_not raise_error
       end
     end
@@ -334,10 +334,10 @@ describe Appsignal do
             background_env_with_data
           ) do
             current = Appsignal::Transaction.current
-            current.namespace.should == Appsignal::Transaction::BACKGROUND_JOB
+            current.namespace.should eq Appsignal::Transaction::BACKGROUND_JOB
             current.request.should be_a(Appsignal::Transaction::GenericRequest)
             object.some_method
-          end.should == 1
+          end.should eq 1
         end
 
         it "should instrument and complete for a http request" do
@@ -353,7 +353,7 @@ describe Appsignal do
             http_request_env_with_data
           ) do
             current = Appsignal::Transaction.current
-            current.namespace.should == Appsignal::Transaction::HTTP_REQUEST
+            current.namespace.should eq Appsignal::Transaction::HTTP_REQUEST
             current.request.should be_a(::Rack::Request)
             object.some_method
           end
@@ -571,7 +571,7 @@ describe Appsignal do
       context "when the log path is writable" do
         it "should log to file" do
           Appsignal.start_logger
-          Appsignal.logger.level.should == Logger::INFO
+          Appsignal.logger.level.should eq Logger::INFO
           Appsignal.logger.error('Log to file')
           File.exist?(log_file).should be_true
           File.open(log_file).read.should include 'Log to file'
@@ -587,7 +587,7 @@ describe Appsignal do
 
         it "should log to stdout" do
           Appsignal.start_logger
-          Appsignal.logger.level.should == Logger::INFO
+          Appsignal.logger.level.should eq Logger::INFO
           Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
           out_stream.string.should include 'Log something'
@@ -605,7 +605,7 @@ describe Appsignal do
         it "should set the log level to info" do
           Appsignal.config = nil
           Appsignal.start_logger
-          Appsignal.logger.level.should == Logger::INFO
+          Appsignal.logger.level.should eq Logger::INFO
         end
       end
 
@@ -613,7 +613,7 @@ describe Appsignal do
         it "should set the log level to debug" do
           Appsignal.config.config_hash[:debug] = true
           Appsignal.start_logger
-          Appsignal.logger.level.should == Logger::DEBUG
+          Appsignal.logger.level.should eq Logger::DEBUG
         end
       end
     end
@@ -623,8 +623,7 @@ describe Appsignal do
 
       it "should format a log line" do
         Process.stub(:pid => 100)
-        subject.call('Debug', Time.parse('2015-07-08'), nil, 'log line').should ==
-          "[2015-07-08T00:00:00 (process) #100][Debug] log line\n"
+        subject.call('Debug', Time.parse('2015-07-08'), nil, 'log line').should eq "[2015-07-08T00:00:00 (process) #100][Debug] log line\n"
       end
     end
 
@@ -633,7 +632,7 @@ describe Appsignal do
 
       it { should be_a Appsignal::Config }
       it 'should return configuration' do
-        subject[:endpoint].should == 'https://push.appsignal.com'
+        subject[:endpoint].should eq 'https://push.appsignal.com'
       end
     end
 

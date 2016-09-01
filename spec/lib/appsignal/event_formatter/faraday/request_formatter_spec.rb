@@ -18,6 +18,6 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
 
     subject { formatter.format(payload) }
 
-    it { should == ['GET http://example.org', 'GET http://example.org/hello/world'] }
+    it { should eq ['GET http://example.org', 'GET http://example.org/hello/world'] }
   end
 end

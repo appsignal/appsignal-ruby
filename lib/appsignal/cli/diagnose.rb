@@ -66,7 +66,7 @@ module Appsignal
           puts File.read(install_log_path)
           puts "\n"
           mkmf_log_path = "#{path.strip}/ext/mkmf.log"
-          if File.exists?(mkmf_log_path)
+          if File.exist?(mkmf_log_path)
             puts "Showing last lines of extension compilation log: #{mkmf_log_path}"
             puts File.read(mkmf_log_path)
             puts "\n"

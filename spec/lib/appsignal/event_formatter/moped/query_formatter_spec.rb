@@ -27,7 +27,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Command', '{:database=>"database.collection", :selector=>{"query"=>"?"}}'] }
+      it { should eq ['Command', '{:database=>"database.collection", :selector=>{"query"=>"?"}}'] }
     end
 
     context "Moped::Protocol::Query" do
@@ -43,7 +43,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Query', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[], :limit=>0, :skip=>0, :fields=>nil}'] }
+      it { should eq ['Query', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[], :limit=>0, :skip=>0, :fields=>nil}'] }
     end
 
     context "Moped::Protocol::Delete" do
@@ -56,7 +56,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Delete', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[]}'] }
+      it { should eq ['Delete', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Insert" do
@@ -72,7 +72,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Insert', '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
+      it { should eq ['Insert', '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Update" do
@@ -86,7 +86,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Update', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"user.?"=>"?"}, :flags=>[]}'] }
+      it { should eq ['Update', '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"user.?"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::KillCursors" do
@@ -97,7 +97,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['KillCursors', '{:number_of_cursor_ids=>2}'] }
+      it { should eq ['KillCursors', '{:number_of_cursor_ids=>2}'] }
     end
 
     context "Moped::Protocol::Other" do
@@ -108,7 +108,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should == ['Other', '{:database=>"database.collection"}'] }
+      it { should eq ['Other', '{:database=>"database.collection"}'] }
     end
   end
 

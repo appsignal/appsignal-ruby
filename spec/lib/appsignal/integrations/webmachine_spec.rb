@@ -69,7 +69,7 @@ if webmachine_present?
       after do
         begin
           fsm.send(:handle_exceptions) { raise error };
-        rescue VerySpecificError => e
+        rescue VerySpecificError
         end
       end
     end

@@ -21,7 +21,7 @@ describe Appsignal::Subscriber do
     it "should be in the subscriber list" do
       ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
         s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
-      end.count.should == 1
+      end.count.should eq 1
     end
   end
 
@@ -33,7 +33,7 @@ describe Appsignal::Subscriber do
 
         ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
           s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
-        end.count.should == 2
+        end.count.should eq 2
       end
     end
 
@@ -44,7 +44,7 @@ describe Appsignal::Subscriber do
 
         ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
           s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
-        end.count.should == 0
+        end.count.should eq 0
       end
     end
 
@@ -55,7 +55,7 @@ describe Appsignal::Subscriber do
 
         ActiveSupport::Notifications.notifier.instance_variable_get(:@subscribers).select do |s|
           s.instance_variable_get(:@delegate).is_a?(Appsignal::Subscriber)
-        end.count.should == 1
+        end.count.should eq 1
       end
     end
   end
