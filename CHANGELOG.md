@@ -1,3 +1,6 @@
+# 1.4.0
+* Support for a wider range of Linux versions, including Alpine
+
 # 1.3.2
 * Add method to discard a transaction
 * Run spec suite with warnings, fixes for warnings
