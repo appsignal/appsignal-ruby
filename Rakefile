@@ -182,17 +182,20 @@ end
 def clean_extension
   system <<-COMMAND
     cd ext &&
-      rm -f libappsignal.a \
+      rm -f appsignal.bundle \
         appsignal-agent \
         appsignal.h \
         appsignal_extension.o \
+        install.log \
+        libappsignal.a \
         Makefile \
-        appsignal.bundle
+        mkmf.log
     COMMAND
 end
 
 def install_extension
   `cd ext && ruby extconf.rb && make clean && make`
+  puts `cat ext/install.log`
 end
 
 begin
