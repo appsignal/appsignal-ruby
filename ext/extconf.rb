@@ -47,9 +47,9 @@ def install
 
   arch_config = AGENT_CONFIG['triples'][ARCH]
 
-  unless File.exists?(ext_path('appsignal-agent')) &&
-           File.exists?(ext_path('libappsignal.a')) &&
-           File.exists?(ext_path('appsignal_extension.h'))
+  unless File.exist?(ext_path('appsignal-agent')) &&
+           File.exist?(ext_path('libappsignal.a')) &&
+           File.exist?(ext_path('appsignal_extension.h'))
     logger.info "Downloading agent release from #{arch_config['download_url']}"
 
     archive = open(arch_config['download_url'], :ssl_ca_cert => CA_CERT_PATH)

@@ -11,7 +11,8 @@ module Appsignal
     AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
 
     class << self
-      attr_accessor :options, :config, :initial_config
+      attr_accessor :options, :initial_config
+      attr_writer :config
 
       def run(argv=ARGV)
         @options = {}

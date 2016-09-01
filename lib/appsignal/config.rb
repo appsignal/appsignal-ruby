@@ -70,7 +70,7 @@ module Appsignal
       load_from_environment
 
       # Load the config file if it exists
-      if config_file && File.exists?(config_file)
+      if config_file && File.exist?(config_file)
         load_from_disk
       end
 

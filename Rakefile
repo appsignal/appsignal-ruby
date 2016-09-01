@@ -1,5 +1,4 @@
 require 'bundler'
-require 'rspec/core/rake_task'
 
 GEMFILES = %w(
   capistrano2
@@ -174,8 +173,13 @@ task :install_extension do
   `cd ext && rm -f libappsignal.a && ruby extconf.rb && make clean && make`
 end
 
-RSpec::Core::RakeTask.new(:rspec) do |t|
-  t.pattern = Dir.glob('spec/**/*_spec.rb')
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:rspec) do |t|
+    t.pattern = Dir.glob('spec/**/*_spec.rb')
+  end
+rescue LoadError
+  # When running rake install, there is no RSpec yet.
 end
 
 task :travis => [:install_extension, :rspec]

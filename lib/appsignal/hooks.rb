@@ -21,6 +21,10 @@ module Appsignal
         Appsignal::Hooks.register(name, hook.new)
       end
 
+      def initialize
+        @installed = false
+      end
+
       def try_to_install(name)
         if dependencies_present? && !installed?
           Appsignal.logger.info("Installing #{name} hook")
@@ -34,7 +38,7 @@ module Appsignal
       end
 
       def installed?
-        !! @installed
+        @installed
       end
 
       def dependencies_present?
