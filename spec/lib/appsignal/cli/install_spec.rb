@@ -118,7 +118,7 @@ describe Appsignal::CLI::Install do
 
         subject { cli.rails_environments }
 
-        it { should == ['development', 'production'] }
+        it { should eq ['development', 'production'] }
       end
 
       describe ".installed_frameworks" do
@@ -271,7 +271,7 @@ describe Appsignal::CLI::Install do
         Gem.stub(:win_platform? => true)
       end
 
-      it { should == 'text' }
+      it { should eq 'text' }
     end
 
     context "not on windows" do
@@ -279,7 +279,7 @@ describe Appsignal::CLI::Install do
         Gem.stub(:win_platform? => false)
       end
 
-      it { should == "\e[32mtext\e[0m" }
+      it { should eq "\e[32mtext\e[0m" }
     end
   end
 
@@ -325,7 +325,7 @@ describe Appsignal::CLI::Install do
       cli.should_receive(:gets).once.and_return('')
       cli.should_receive(:gets).once.and_return('value')
 
-      cli.required_input('provide: ').should == 'value'
+      cli.required_input('provide: ').should eq 'value'
     end
   end
 

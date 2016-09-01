@@ -27,7 +27,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       it "should store command on the transaction" do
         subscriber.started(event)
 
-        transaction.store('mongo_driver').should == { 1 => {'foo' => '?'}}
+        transaction.store('mongo_driver').should eq({1 => {'foo' => '?'}})
       end
 
       it "should start an event in the extension" do

@@ -18,6 +18,6 @@ describe Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter do
 
     subject { formatter.format(payload) }
 
-    it { should == ['User', nil] }
+    it { should eq ['User', nil] }
   end
 end

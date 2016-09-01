@@ -36,7 +36,7 @@ describe Appsignal::Transmitter do
 
     subject { instance.transmit(:the => :payload) }
 
-    it { should == '200' }
+    it { should eq '200' }
   end
 
   describe "#http_post" do
@@ -46,12 +46,12 @@ describe Appsignal::Transmitter do
 
     subject { instance.send(:http_post, 'the' => 'payload') }
 
-    its(:body) { should == Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED) }
-    its(:path) { should == instance.uri.request_uri }
+    its(:body) { should eq Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED) }
+    its(:path) { should eq instance.uri.request_uri }
 
     it "should have the correct headers" do
-      subject['Content-Type'].should == 'application/json; charset=UTF-8'
-      subject['Content-Encoding'].should == 'gzip'
+      subject['Content-Type'].should eq 'application/json; charset=UTF-8'
+      subject['Content-Encoding'].should eq 'gzip'
     end
   end
 
@@ -79,7 +79,7 @@ describe Appsignal::Transmitter do
       it { should be_instance_of(Net::HTTP) }
       its(:proxy?) { should be_false }
       its(:use_ssl?) { should be_true }
-      its(:verify_mode) { should == OpenSSL::SSL::VERIFY_PEER }
+      its(:verify_mode) { should eq OpenSSL::SSL::VERIFY_PEER }
       its(:ca_file) { Appsignal::Transmitter::CA_FILE_PATH }
     end
 
@@ -87,8 +87,8 @@ describe Appsignal::Transmitter do
       let(:config) { project_fixture_config('production', :http_proxy => 'http://localhost:8080') }
 
       its(:proxy?) { should be_true }
-      its(:proxy_address) { should == 'localhost' }
-      its(:proxy_port) { should == 8080 }
+      its(:proxy_address) { should eq 'localhost' }
+      its(:proxy_port) { should eq 8080 }
     end
   end
 end

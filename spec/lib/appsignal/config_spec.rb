@@ -16,7 +16,7 @@ describe Appsignal::Config do
     its(:log_file_path) { should end_with('spec/support/project_fixture/appsignal.log') }
 
     it "should merge with the default config and fill the config hash" do
-      subject.config_hash.should == {
+      subject.config_hash.should eq({
         :debug                          => false,
         :ignore_errors                  => [],
         :ignore_actions                 => [],
@@ -38,7 +38,7 @@ describe Appsignal::Config do
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname
-      }
+      })
     end
 
     context "if a log file path is set" do
@@ -51,13 +51,13 @@ describe Appsignal::Config do
 
         let(:config) { project_fixture_config('production', :log_path => '/tmp/not-writable') }
 
-        its(:log_file_path) { should == '/tmp/appsignal.log' }
+        its(:log_file_path) { should eq '/tmp/appsignal.log' }
       end
 
       context "if it does not exist" do
         let(:config) { project_fixture_config('production', :log_path => '/non-existing') }
 
-        its(:log_file_path) { should == '/tmp/appsignal.log' }
+        its(:log_file_path) { should eq '/tmp/appsignal.log' }
       end
 
       context "if it is nil" do
@@ -65,7 +65,7 @@ describe Appsignal::Config do
 
         before { config.stub(:root_path => nil) }
 
-        its(:log_file_path) { should == '/tmp/appsignal.log' }
+        its(:log_file_path) { should eq '/tmp/appsignal.log' }
       end
     end
 
@@ -73,7 +73,7 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config('production', :endpoint => 'https://push.appsignal.com/1') }
 
       it "should strip the path" do
-        subject[:endpoint].should == 'https://push.appsignal.com'
+        subject[:endpoint].should eq 'https://push.appsignal.com'
       end
     end
 
@@ -81,18 +81,18 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config('production', :endpoint => 'http://localhost:4567') }
 
       it "should keep the port" do
-        subject[:endpoint].should == 'http://localhost:4567'
+        subject[:endpoint].should eq 'http://localhost:4567'
       end
     end
 
     describe "#[]= and #[]" do
       it "should get the value for an existing key" do
-        subject[:push_api_key].should == 'abc'
+        subject[:push_api_key].should eq 'abc'
       end
 
       it "should change and get the value for an existing key" do
         subject[:push_api_key] = 'abcde'
-        subject[:push_api_key].should == 'abcde'
+        subject[:push_api_key].should eq 'abcde'
       end
 
       it "should return nil for a non-existing key" do
@@ -111,26 +111,26 @@ describe Appsignal::Config do
       end
 
       it "should write the current config to env vars" do
-        ENV['APPSIGNAL_ACTIVE'].should                       == 'true'
+        ENV['APPSIGNAL_ACTIVE'].should                       eq 'true'
         ENV['APPSIGNAL_APP_PATH'].should                     end_with('spec/support/project_fixture')
         ENV['APPSIGNAL_AGENT_PATH'].should                   end_with('/ext')
-        ENV['APPSIGNAL_DEBUG_LOGGING'].should                == 'false'
+        ENV['APPSIGNAL_DEBUG_LOGGING'].should                eq 'false'
         ENV['APPSIGNAL_LOG_FILE_PATH'].should                end_with('/tmp/appsignal.log')
-        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            == 'https://push.appsignal.com'
-        ENV['APPSIGNAL_PUSH_API_KEY'].should                 == 'abc'
-        ENV['APPSIGNAL_APP_NAME'].should                     == 'TestApp'
-        ENV['APPSIGNAL_ENVIRONMENT'].should                  == 'production'
-        ENV['APPSIGNAL_AGENT_VERSION'].should                == Appsignal::Extension.agent_version
-        ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should == Appsignal::VERSION
-        ENV['APPSIGNAL_HTTP_PROXY'].should                   == 'http://localhost'
-        ENV['APPSIGNAL_IGNORE_ACTIONS'].should               == 'action1,action2'
-        ENV['APPSIGNAL_FILTER_PARAMETERS'].should            == 'password,confirm_password'
-        ENV['APPSIGNAL_SEND_PARAMS'].should                  == 'true'
-        ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         == 'false'
+        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            eq 'https://push.appsignal.com'
+        ENV['APPSIGNAL_PUSH_API_KEY'].should                 eq 'abc'
+        ENV['APPSIGNAL_APP_NAME'].should                     eq 'TestApp'
+        ENV['APPSIGNAL_ENVIRONMENT'].should                  eq 'production'
+        ENV['APPSIGNAL_AGENT_VERSION'].should                eq Appsignal::Extension.agent_version
+        ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should eq Appsignal::VERSION
+        ENV['APPSIGNAL_HTTP_PROXY'].should                   eq 'http://localhost'
+        ENV['APPSIGNAL_IGNORE_ACTIONS'].should               eq 'action1,action2'
+        ENV['APPSIGNAL_FILTER_PARAMETERS'].should            eq 'password,confirm_password'
+        ENV['APPSIGNAL_SEND_PARAMS'].should                  eq 'true'
+        ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         eq 'false'
         ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
-        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          == 'true'
-        ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES'].should       == 'false'
-        ENV['APPSIGNAL_HOSTNAME'].should                     == 'app1.local'
+        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          eq 'true'
+        ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES'].should       eq 'false'
+        ENV['APPSIGNAL_HOSTNAME'].should                     eq 'app1.local'
         ENV['APPSIGNAL_PROCESS_NAME'].should                 include 'rspec'
       end
 
@@ -141,7 +141,7 @@ describe Appsignal::Config do
         end
 
         it "should write the current config to env vars" do
-          ENV['APPSIGNAL_WORKING_DIR_PATH'].should == '/tmp/appsignal2'
+          ENV['APPSIGNAL_WORKING_DIR_PATH'].should eq '/tmp/appsignal2'
         end
       end
     end
@@ -159,11 +159,11 @@ describe Appsignal::Config do
       end
 
       it "should ignore env vars that are present in the config file" do
-        subject[:push_api_key].should == 'abc'
+        subject[:push_api_key].should eq 'abc'
       end
 
       it "should use env vars that are not present in the config file" do
-        subject[:debug].should == true
+        subject[:debug].should eq true
       end
 
       context "running on Heroku" do
@@ -184,8 +184,8 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config('production', :name => 'Initial name', :initial_key => 'value') }
 
       it "should merge with the config" do
-        subject[:name].should == 'TestApp'
-        subject[:initial_key].should == 'value'
+        subject[:name].should eq 'TestApp'
+        subject[:initial_key].should eq 'value'
       end
     end
 
@@ -193,11 +193,11 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config('old_api_key') }
 
       it "should fill the push_api_key with the old style key" do
-        subject[:push_api_key].should == 'def'
+        subject[:push_api_key].should eq 'def'
       end
 
       it "should fill ignore_errors with the old style ignore exceptions" do
-        subject[:ignore_errors].should == ['StandardError']
+        subject[:ignore_errors].should eq ['StandardError']
       end
     end
   end
@@ -239,11 +239,11 @@ describe Appsignal::Config do
       its(:valid?)  { should be_true }
       its(:active?) { should be_true }
 
-      its([:push_api_key])   { should == 'aaa-bbb-ccc' }
-      its([:active])         { should == true }
-      its([:name])           { should == 'App name' }
-      its([:debug])          { should == true }
-      its([:ignore_actions]) { should == ['action1', 'action2'] }
+      its([:push_api_key])   { should eq 'aaa-bbb-ccc' }
+      its([:active])         { should eq true }
+      its([:name])           { should eq 'App name' }
+      its([:debug])          { should eq true }
+      its([:ignore_actions]) { should eq ['action1', 'action2'] }
     end
   end
 

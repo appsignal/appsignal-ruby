@@ -87,20 +87,20 @@ describe Appsignal::Hooks::Helpers do
     end
 
     it "should truncate the text to 200 chars max" do
-      with_helpers.truncate(very_long_text).should == "#{'a' * 197}..."
+      with_helpers.truncate(very_long_text).should eq "#{'a' * 197}..."
     end
   end
 
   describe "#string_or_inspect" do
     context "when string" do
       it "should return the string" do
-        with_helpers.string_or_inspect('foo').should == 'foo'
+        with_helpers.string_or_inspect('foo').should eq 'foo'
       end
     end
 
     context "when integer" do
       it "should return the string" do
-        with_helpers.string_or_inspect(1).should == '1'
+        with_helpers.string_or_inspect(1).should eq '1'
       end
     end
 
@@ -108,7 +108,7 @@ describe Appsignal::Hooks::Helpers do
       let(:object) { Object.new }
 
       it "should return the string" do
-        with_helpers.string_or_inspect(object).should == object.inspect
+        with_helpers.string_or_inspect(object).should eq object.inspect
       end
     end
   end
@@ -120,7 +120,7 @@ describe Appsignal::Hooks::Helpers do
       context "when the key exists" do
         subject { with_helpers.extract_value(hash, :key) }
 
-        it { should == 'value' }
+        it { should eq 'value' }
       end
 
       context "when the key does not exist" do
@@ -131,7 +131,7 @@ describe Appsignal::Hooks::Helpers do
         context "with a default value" do
           subject { with_helpers.extract_value(hash, :nonexistent_key, 1) }
 
-          it { should == 1 }
+          it { should eq 1 }
         end
       end
     end
@@ -145,7 +145,7 @@ describe Appsignal::Hooks::Helpers do
       context "when the key exists" do
         subject { with_helpers.extract_value(struct, :key) }
 
-        it { should == 'value' }
+        it { should eq 'value' }
       end
 
       context "when the key does not exist" do
@@ -156,7 +156,7 @@ describe Appsignal::Hooks::Helpers do
         context "with a default value" do
           subject { with_helpers.extract_value(struct, :nonexistent_key, 1) }
 
-          it { should == 1 }
+          it { should eq 1 }
         end
       end
     end
@@ -167,7 +167,7 @@ describe Appsignal::Hooks::Helpers do
       context "when the method exists" do
         subject { with_helpers.extract_value(object, :existing_method) }
 
-        it { should == 'value' }
+        it { should eq 'value' }
       end
 
       context "when the method does not exist" do
@@ -178,7 +178,7 @@ describe Appsignal::Hooks::Helpers do
         context "and there is a default value" do
           subject { with_helpers.extract_value(object, :nonexistent_method, 1) }
 
-          it { should == 1 }
+          it { should eq 1 }
         end
       end
 
@@ -189,7 +189,7 @@ describe Appsignal::Hooks::Helpers do
 
       subject { with_helpers.extract_value(object, :existing_method, nil, true) }
 
-      it { should == '1' }
+      it { should eq '1' }
     end
   end
 
@@ -205,12 +205,12 @@ describe Appsignal::Hooks::Helpers do
     end
 
     it "should format the arguments" do
-      with_helpers.format_args(args).should == [
+      with_helpers.format_args(args).should eq([
         'Model',
         '1',
         object.inspect,
         'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ...'
-      ]
+      ])
     end
   end
 end

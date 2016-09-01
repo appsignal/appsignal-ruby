@@ -14,7 +14,7 @@ if rails_present?
     end
 
     describe "#root_path" do
-      its(:root_path) { should == '/var/www/app/20130101/' }
+      its(:root_path) { should eq '/var/www/app/20130101/' }
     end
 
     describe "#format" do
@@ -23,13 +23,13 @@ if rails_present?
       context "with an identifier" do
         let(:payload) { {:identifier => '/var/www/app/20130101/app/views/home/index/html.erb'} }
 
-        it { should == ['app/views/home/index/html.erb', nil] }
+        it { should eq ['app/views/home/index/html.erb', nil] }
       end
 
       context "with a frozen identifier" do
         let(:payload) { {:identifier => '/var/www/app/20130101/app/views/home/index/html.erb'.freeze} }
 
-        it { should == ['app/views/home/index/html.erb', nil] }
+        it { should eq ['app/views/home/index/html.erb', nil] }
       end
 
       context "without an identifier" do
