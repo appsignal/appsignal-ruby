@@ -15,7 +15,7 @@ end
 
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, 'support/stubs'))
 
-puts "Runnings specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
+puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
 begin
   require 'rails'
