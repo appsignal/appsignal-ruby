@@ -1,7 +1,4 @@
-require 'spec_helper'
-
 if webmachine_present?
-
   describe Appsignal::Hooks::WebmachineHook do
     context "with webmachine" do
       before(:all) do
