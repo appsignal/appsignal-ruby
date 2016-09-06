@@ -196,7 +196,7 @@ if capistrano3_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             invoke('appsignal:deploy')
-            out_stream.string.should include("Not notifying of deploy, config is not active")
+            out_stream.string.should include("Not notifying of deploy, config is not active for environment: nonsense")
           end
         end
       end
