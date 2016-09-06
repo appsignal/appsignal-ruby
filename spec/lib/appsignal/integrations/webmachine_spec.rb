@@ -49,7 +49,7 @@ if webmachine_present?
       end
 
       it "should instrument the original method" do
-        expect( ActiveSupport::Notifications ).to receive(:instrument).with('process_action.webmachine')
+        expect( Appsignal ).to receive(:instrument).with('process_action.webmachine')
       end
 
       it "should close the transaction" do

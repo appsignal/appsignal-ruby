@@ -33,7 +33,7 @@ module Padrino::Routing::InstanceMethods
       request
     )
     begin
-      ActiveSupport::Notifications.instrument('process_action.padrino') do
+      Appsignal.instrument('process_action.padrino') do
         route_without_appsignal(base, pass_block)
       end
     rescue => error

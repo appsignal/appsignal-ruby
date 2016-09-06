@@ -24,7 +24,7 @@ module Appsignal
           request
         )
         begin
-          ActiveSupport::Notifications.instrument('process_action.generic') do
+          Appsignal.instrument('process_action.generic') do
             @app.call(env)
           end
         rescue => error

@@ -251,7 +251,7 @@ describe Appsignal do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
         Appsignal::Transaction.should_not_receive(:create)
-        ActiveSupport::Notifications.should_not_receive(:instrument)
+        Appsignal.should_not_receive(:instrument)
         object = double
         object.should_receive(:some_method).and_return(1)
 
@@ -321,7 +321,7 @@ describe Appsignal do
     describe ".monitor_transaction" do
       context "with a successful call" do
         it "should instrument and complete for a background job" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+          Appsignal.should_receive(:instrument).with(
             'perform_job.something'
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
@@ -340,7 +340,7 @@ describe Appsignal do
         end
 
         it "should instrument and complete for a http request" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+          Appsignal.should_receive(:instrument).with(
             'process_action.something'
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
