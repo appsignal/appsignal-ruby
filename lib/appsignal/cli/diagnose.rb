@@ -26,6 +26,7 @@ module Appsignal
 
         def config
           start_appsignal
+          puts "Environment: #{Appsignal.config.env}"
           Appsignal.config.config_hash.each do |key, val|
             puts "Config #{key}: #{val}"
           end

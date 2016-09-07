@@ -17,6 +17,7 @@ describe Appsignal::CLI::Diagnose do
 
       out_stream.string.should include('Gem version')
       out_stream.string.should include('Agent version')
+      out_stream.string.should include('Environment')
       out_stream.string.should include('Config')
       out_stream.string.should include('Checking API key')
       out_stream.string.should include('Checking if required paths are writable')
