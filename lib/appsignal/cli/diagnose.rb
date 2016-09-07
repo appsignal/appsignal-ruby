@@ -61,12 +61,12 @@ module Appsignal
         def check_ext_install
           require 'bundler/cli'
           require "bundler/cli/common"
-          path     = Bundler::CLI::Common.select_spec('appsignal').full_gem_path
-          install_log_path = "#{path.strip}/ext/install.log"
+          path = Bundler::CLI::Common.select_spec('appsignal').full_gem_path.strip
+          install_log_path = "#{path}/ext/install.log"
           puts "Showing last lines of extension install log: #{install_log_path}"
           puts File.read(install_log_path)
           puts "\n"
-          mkmf_log_path = "#{path.strip}/ext/mkmf.log"
+          mkmf_log_path = "#{path}/ext/mkmf.log"
           if File.exist?(mkmf_log_path)
             puts "Showing last lines of extension compilation log: #{mkmf_log_path}"
             puts File.read(mkmf_log_path)
