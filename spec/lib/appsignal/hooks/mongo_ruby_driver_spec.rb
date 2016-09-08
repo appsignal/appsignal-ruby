@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::MongoRubyDriverHook do
   require 'appsignal/integrations/mongo_ruby_driver'
 

@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if sinatra_present? && !padrino_present?
   ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
   require 'appsignal/integrations/sinatra'

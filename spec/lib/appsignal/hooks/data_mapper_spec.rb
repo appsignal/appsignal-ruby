@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::DataMapperHook do
   context "with datamapper" do
     before :all do

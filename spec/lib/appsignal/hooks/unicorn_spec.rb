@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::UnicornHook do
   context "with unicorn" do
     before :all do

@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 class Smash < Hash
   def []=(key, val)
     raise 'the roof'

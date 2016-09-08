@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::PassengerHook do
   context "with passenger" do
     before(:all) do

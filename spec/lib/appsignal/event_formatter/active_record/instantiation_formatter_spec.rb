@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter do
   let(:klass)     { Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter }
   let(:formatter) { klass.new }

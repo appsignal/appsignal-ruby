@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if capistrano2_present?
   require 'capistrano'
   require 'capistrano/configuration'
@@ -81,9 +79,47 @@ if capistrano2_present?
               )
             end
           end
+
+          context "when stage is used instead of rack_env / rails_env" do
+            before do
+              @capistrano_config.unset(:rails_env)
+              @capistrano_config.set(:stage, 'stage_production')
+            end
+
+            it "should be instantiated with the right params" do
+              Appsignal::Config.should_receive(:new).with(
+                project_fixture_path,
+                'stage_production',
+                {:name => 'AppName'},
+                kind_of(Logger)
+              )
+            end
+          end
+
+          context "when appsignal_env is set" do
+            before do
+              @capistrano_config.set(:rack_env, 'rack_production')
+              @capistrano_config.set(:stage, 'stage_production')
+              @capistrano_config.set(:appsignal_env, 'appsignal_production')
+            end
+
+            it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
+              Appsignal::Config.should_receive(:new).with(
+                project_fixture_path,
+                'appsignal_production',
+                {:name => 'AppName'},
+                kind_of(Logger)
+              )
+            end
+          end
         end
 
-        after { @capistrano_config.find_and_execute_task('appsignal:deploy') }
+        after do
+          @capistrano_config.find_and_execute_task('appsignal:deploy')
+          @capistrano_config.unset(:stage)
+          @capistrano_config.unset(:rack_env)
+          @capistrano_config.unset(:appsignal_env)
+        end
       end
 
       context "send marker" do
@@ -168,7 +204,7 @@ if capistrano2_present?
           it "should not send deploy marker" do
             Appsignal::Marker.should_not_receive(:new)
             @capistrano_config.find_and_execute_task('appsignal:deploy')
-            out_stream.string.should include('Not notifying of deploy, config is not active')
+            out_stream.string.should include('Not notifying of deploy, config is not active for environment: nonsense')
           end
         end
       end

@@ -7,7 +7,7 @@ module Appsignal
 
         namespace :appsignal do
           task :deploy do
-            env = fetch(:rails_env, fetch(:rack_env, 'production'))
+            env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, 'production'))))
             user = ENV['USER'] || ENV['USERNAME']
             revision = fetch(:appsignal_revision, fetch(:current_revision))
 
@@ -31,7 +31,7 @@ module Appsignal
                 marker.transmit
               end
             else
-              puts 'Not notifying of deploy, config is not active'
+              puts "Not notifying of deploy, config is not active for environment: #{env}"
             end
           end
         end

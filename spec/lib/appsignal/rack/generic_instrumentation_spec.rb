@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Rack::GenericInstrumentation do
   before :all do
     start_agent

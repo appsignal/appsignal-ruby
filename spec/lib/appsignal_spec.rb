@@ -1,4 +1,3 @@
-require 'spec_helper'
 require './spec/support/mocks/mock_extension'
 
 describe Appsignal do
@@ -361,7 +360,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { VerySpecificError.new('the roof') }
+        let(:error) { VerySpecificError.new }
 
         it "should add the error to the current transaction and complete" do
           Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
@@ -392,7 +391,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { VerySpecificError.new('the roof') }
+        let(:error) { VerySpecificError.new }
 
         it "should call monitor_transaction and stop and then raise the error" do
           Appsignal.should_receive(:monitor_transaction).with(

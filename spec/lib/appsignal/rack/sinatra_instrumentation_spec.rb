@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 begin
   require 'sinatra'
   require 'appsignal/integrations/sinatra'
@@ -133,11 +131,27 @@ if defined?(::Sinatra)
           Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
         end
 
+        context "without 'sinatra.route' env" do
+          let(:env) { {:path => '/', :method => 'GET'} }
+
+          it "returns nil" do
+            Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
+          end
+        end
+
         context "with option to set path a mounted_at prefix" do
           let(:options) {{ :mounted_at  => "/api/v2" }}
 
           it "should call set_action with a prefix path" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/v2/")
+          end
+
+          context "without 'sinatra.route' env" do
+            let(:env) { {:path => '/', :method => 'GET'} }
+
+            it "returns nil" do
+              Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
+            end
           end
         end
 
@@ -146,6 +160,14 @@ if defined?(::Sinatra)
 
           it "should call set_action with an application prefix path" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/")
+          end
+
+          context "without 'sinatra.route' env" do
+            let(:env) { {:path => '/', :method => 'GET'} }
+
+            it "returns nil" do
+              Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
+            end
           end
         end
       end

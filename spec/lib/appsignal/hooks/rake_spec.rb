@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'rake'
 
 describe Appsignal::Hooks::RakeHook do

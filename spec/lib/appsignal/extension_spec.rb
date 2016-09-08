@@ -1,4 +1,3 @@
-require 'spec_helper'
 require 'fileutils'
 
 describe "extension loading and operation" do

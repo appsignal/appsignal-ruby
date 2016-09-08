@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::AuthCheck do
   let(:config) { project_fixture_config }
   let(:logger) { Logger.new(StringIO.new) }

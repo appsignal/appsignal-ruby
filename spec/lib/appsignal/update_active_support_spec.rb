@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe 'Appsignal::UpdateActiveSupport', :if => (
   Gem.loaded_specs['rails'] &&
   Gem.loaded_specs['rails'].version < Gem::Version.create('4.0')

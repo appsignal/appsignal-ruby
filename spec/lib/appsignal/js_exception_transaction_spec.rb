@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::JSExceptionTransaction do
   before { SecureRandom.stub(:uuid => '123abc') }
 

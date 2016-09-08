@@ -1,10 +1,6 @@
 require 'appsignal'
 require 'benchmark'
 
-class ::Appsignal::EventFormatter::ActiveRecord::SqlFormatter
-  def connection_config; {:adapter => 'mysql'}; end
-end
-
 GC.disable
 
 task :default => :'benchmark:all'

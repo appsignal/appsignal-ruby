@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Minutely do
   before do
     Appsignal::Minutely.probes.clear

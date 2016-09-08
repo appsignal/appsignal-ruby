@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 if resque_present?
   describe "Resque integration" do
     let(:file) { File.expand_path('lib/appsignal/integrations/resque.rb') }
@@ -20,7 +18,7 @@ if resque_present?
           extend Appsignal::Integrations::ResquePlugin
 
           def self.perform
-            raise VerySpecificError.new('broken')
+            raise VerySpecificError.new
           end
         end
       end

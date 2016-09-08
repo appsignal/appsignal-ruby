@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Rack::JSExceptionCatcher do
   let(:app)            { double(:call => true) }
   let(:options)        { double }

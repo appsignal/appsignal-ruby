@@ -1,5 +1,3 @@
-require 'spec_helper'
-
 describe Appsignal::Hooks::CelluloidHook do
   context "with celluloid" do
     before :all do
