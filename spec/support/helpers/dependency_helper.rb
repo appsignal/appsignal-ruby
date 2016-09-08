@@ -9,10 +9,6 @@ module DependencyHelper
     dependency_present? 'rails'
   end
 
-  def active_record_present?
-    dependency_present? 'active_record'
-  end
-
   def sequel_present?
     dependency_present? 'sequel'
   end
@@ -22,7 +18,11 @@ module DependencyHelper
   end
 
   def active_job_present?
-    dependency_present? 'active_job'
+    dependency_present? 'activejob'
+  end
+
+  def active_support_present?
+    dependency_present? 'activesupport'
   end
 
   def sinatra_present?
