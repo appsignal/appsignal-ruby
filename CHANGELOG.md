@@ -1,3 +1,10 @@
+# 1.3.3
+
+* Output AppSignal environment on `appsignal diagnose`
+* Prevent transaction crashes on Sinatra routes with optional parameters
+* Listen to `stage` option to Capistrano 2 for automatic environment detection
+* Add `appsignal_env` option to Capistrano 2 to set a custom environment
+
 # 1.3.2
 * Add method to discard a transaction
 * Run spec suite with warnings, fixes for warnings
@@ -23,6 +30,8 @@
 * Allow overriding Padrino environment with APPSIGNAL_APP_ENV
 * Add mkmf.log to diagnose command
 * Allow for local install with bundler `bundle exec rake install`
+* Listen to `stage` option to Capistrano 3 for automatic environment detection
+* Add `appsignal_env` option to Capistrano 3 to set a custom environment
 
 # 1.2.5
 * Bugfix in CPU utilization calculation for host metrics
