@@ -73,6 +73,8 @@ module Appsignal
       end
 
       def action_name(env)
+        return unless env['sinatra.route']
+
         if @options.fetch(:mounted_at, nil)
           method, route = env['sinatra.route'].split(" ")
           "#{method} #{@options[:mounted_at]}#{route}"
