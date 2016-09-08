@@ -8,7 +8,6 @@ module Appsignal
   class Transmitter
     CONTENT_TYPE = 'application/json; charset=UTF-8'.freeze
     CONTENT_ENCODING = 'gzip'.freeze
-    CA_FILE_PATH = File.expand_path(File.join(__FILE__, '../../../resources/cacert.pem'))
 
     HTTP_ERRORS = [
       EOFError,
@@ -42,7 +41,7 @@ module Appsignal
     end
 
     def transmit(payload)
-      Appsignal.logger.debug "Transmitting payload to #{uri}"
+      config.logger.debug "Transmitting payload to #{uri}"
       http_client.request(http_post(payload)).code
     end
 
@@ -71,7 +70,14 @@ module Appsignal
           http.use_ssl     = true
           http.ssl_version = :TLSv1
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-          http.ca_file     = CA_FILE_PATH
+
+          ca_file = config[:ca_file_path]
+          if ca_file && File.exist?(ca_file) && File.readable?(ca_file)
+            http.ca_file = ca_file
+          else
+            config.logger.warn "Ignoring non-existing or unreadable "\
+              "`ca_file_path`: #{ca_file}"
+          end
         end
       end
     end
