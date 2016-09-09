@@ -110,8 +110,8 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
       make_appsignal_string(name),
       make_appsignal_string(title),
       make_appsignal_string(body),
-      FIX2INT(body_format),
-      NUM2LONG(duration)
+      NUM2LONG(duration),
+      FIX2INT(body_format)
   );
   return Qnil;
 }
