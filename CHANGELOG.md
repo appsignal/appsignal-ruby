@@ -1,3 +1,7 @@
+# 1.3.4
+
+* Fix argument order for `record_event` in the AppSignal extension
+
 # 1.3.3
 
 * Output AppSignal environment on `appsignal diagnose`
