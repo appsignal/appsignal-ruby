@@ -78,6 +78,12 @@ def install
 
   logger.info "Creating makefile"
   require 'mkmf'
+  logger.info "find_library"
+  logger.info find_library('appsignal', 'appsignal_start', EXT_PATH).inspect
+  logger.info "find_executable"
+  logger.info find_executable('appsignal-agent', EXT_PATH).inspect
+  logger.info "find_header"
+  logger.info find_header('appsignal.h', EXT_PATH).inspect
   if !find_library('appsignal', 'appsignal_start', EXT_PATH)
     installation_failed 'Aborting installation, libappsignal not found'
   elsif !find_executable('appsignal-agent', EXT_PATH)
