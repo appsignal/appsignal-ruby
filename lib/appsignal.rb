@@ -123,7 +123,7 @@ module Appsignal
         request
       )
       begin
-        ActiveSupport::Notifications.instrument(name) do
+        Appsignal.instrument(name) do
           yield
         end
       rescue => error
