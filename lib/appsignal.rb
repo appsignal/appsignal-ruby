@@ -197,6 +197,10 @@ module Appsignal
       r
     end
 
+    def instrument_sql(name, title=nil, body=nil, &block)
+      instrument(name, title, body, Appsignal::EventFormatter::SQL_BODY_FORMAT, &block)
+    end
+
     def set_gauge(key, value)
       Appsignal::Extension.set_gauge(key.to_s, value.to_f)
     rescue RangeError
