@@ -1,4 +1,3 @@
-require 'spec_helper'
 if webmachine_present?
 
   require 'appsignal/integrations/webmachine'
