@@ -1,6 +1,9 @@
 # 1.3.5
 
 - Fix SSL certificate config in appsignal-agent. PR #151
+- Remove mounted_at Sinatra middleware option. Now detected by default. PR #146
+- Sinatra applications with middleware loading before AppSignal's middleware
+  would crash a request. Fixed in PR #156
 
 # 1.3.4
 
