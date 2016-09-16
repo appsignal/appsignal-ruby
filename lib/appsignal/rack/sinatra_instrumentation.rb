@@ -29,7 +29,7 @@ module Appsignal
       def initialize(app, options = {})
         Appsignal.logger.debug 'Initializing Appsignal::Rack::SinatraInstrumentation'
         @app, @options = app, options
-        @raise_errors_on = @app.settings.raise_errors
+        @raise_errors_on = raise_errors?(@app)
       end
 
       def call(env)
@@ -84,6 +84,14 @@ module Appsignal
         else
           env['sinatra.route']
         end
+      end
+
+      private
+
+      def raise_errors?(app)
+        app.respond_to?(:settings) &&
+          app.settings.respond_to?(:raise_errors) &&
+          app.settings.raise_errors
       end
     end
   end
