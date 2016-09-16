@@ -35,7 +35,8 @@ describe Appsignal::Config do
         :running_in_container           => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
-        :hostname                       => Socket.gethostname
+        :hostname                       => Socket.gethostname,
+        :ca_file_path                   => File.join(resources_dir, 'cacert.pem')
       })
     end
 
@@ -130,6 +131,7 @@ describe Appsignal::Config do
         ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES'].should       eq 'false'
         ENV['APPSIGNAL_HOSTNAME'].should                     eq 'app1.local'
         ENV['APPSIGNAL_PROCESS_NAME'].should                 include 'rspec'
+        ENV['APPSIGNAL_CA_FILE_PATH'].should                 eq File.join(resources_dir, "cacert.pem")
       end
 
       context "if working_dir_path is set" do

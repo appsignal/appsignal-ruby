@@ -23,7 +23,8 @@ module Appsignal
       :running_in_container           => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => false,
-      :hostname                       => ::Socket.gethostname
+      :hostname                       => ::Socket.gethostname,
+      :ca_file_path                   => File.expand_path(File.join('../../../resources/cacert.pem'), __FILE__)
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -50,7 +51,8 @@ module Appsignal
       'APPSIGNAL_WORKING_DIR_PATH'               => :working_dir_path,
       'APPSIGNAL_ENABLE_HOST_METRICS'            => :enable_host_metrics,
       'APPSIGNAL_ENABLE_MINUTELY_PROBES'         => :enable_minutely_probes,
-      'APPSIGNAL_HOSTNAME'                       => :hostname
+      'APPSIGNAL_HOSTNAME'                       => :hostname,
+      'APPSIGNAL_CA_FILE_PATH'                   => :ca_file_path
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -127,6 +129,7 @@ module Appsignal
       ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES']       = config_hash[:enable_minutely_probes].to_s
       ENV['APPSIGNAL_HOSTNAME']                     = config_hash[:hostname].to_s
       ENV['APPSIGNAL_PROCESS_NAME']                 = $0
+      ENV['APPSIGNAL_CA_FILE_PATH']                 = config_hash[:ca_file_path].to_s
     end
 
     protected
@@ -175,7 +178,7 @@ module Appsignal
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
-         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME).each do |var|
+         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end
