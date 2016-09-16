@@ -1,3 +1,7 @@
+# 1.3.5
+
+- Fix SSL certificate config in appsignal-agent. PR #151
+
 # 1.3.4
 
 * Fix argument order for `record_event` in the AppSignal extension
