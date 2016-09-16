@@ -45,6 +45,40 @@ if defined?(::Sinatra)
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
+    describe "#initialize" do
+      context "with no settings method in the Sinatra app" do
+        let(:app) { double(:call => true) }
+
+        it "should not raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with no raise_errors setting in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double) }
+
+        it "should not raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with raise_errors turned off in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double(:raise_errors => false)) }
+
+        it "should raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with raise_errors turned on in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double(:raise_errors => true)) }
+
+        it "should raise errors" do
+          expect( middleware.raise_errors_on ).to be(true)
+        end
+      end
+    end
+
     describe "#call" do
       before do
         middleware.stub(:raw_payload => {})
