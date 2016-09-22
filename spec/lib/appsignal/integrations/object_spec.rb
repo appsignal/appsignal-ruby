@@ -92,6 +92,21 @@ describe Object do
             expect(instance.foo).to eq(1)
           end
         end
+
+        context "with a method given a block" do
+          let(:klass) do
+            Class.new do
+              def foo
+                yield
+              end
+              appsignal_instrument_method :foo
+            end
+          end
+
+          it "should yield the block" do
+            expect(instance.foo { 42 }).to eq(42)
+          end
+        end
       end
 
       context "when not active" do
@@ -192,6 +207,21 @@ describe Object do
             transaction.should_receive(:finish_event).with \
               "my_method.group", nil, nil, 0
             expect(klass.bar).to eq(2)
+          end
+        end
+
+        context "with a method given a block" do
+          let(:klass) do
+            Class.new do
+              def self.bar
+                yield
+              end
+              appsignal_instrument_class_method :bar
+            end
+          end
+
+          it "should yield the block" do
+            expect(klass.bar { 42 }).to eq(42)
           end
         end
       end
