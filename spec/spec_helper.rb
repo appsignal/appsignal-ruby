@@ -1,4 +1,5 @@
 ENV['RAILS_ENV'] ||= 'test'
+ENV['RACK_ENV'] ||= 'test'
 ENV['PADRINO_ENV'] ||= 'test'
 
 APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
