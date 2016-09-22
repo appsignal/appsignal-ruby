@@ -5,6 +5,7 @@ require 'socket'
 
 module Appsignal
   class Config
+    SYSTEM_TMP_DIR = '/tmp'
     DEFAULT_CONFIG = {
       :debug                          => false,
       :ignore_errors                  => [],
@@ -91,12 +92,19 @@ module Appsignal
     def log_file_path
       path = config_hash[:log_path] || root_path
       if path && File.writable?(path)
-        File.join(File.realpath(path), 'appsignal.log')
-      else
-        '/tmp/appsignal.log'
+        return File.join(File.realpath(path), 'appsignal.log')
       end
-    rescue Errno::ENOENT
-      '/tmp/appsignal.log'
+
+      if File.writable? SYSTEM_TMP_DIR
+        $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
+          "'#{SYSTEM_TMP_DIR}' instead. Please check the "\
+          "permissions for the application's log directory."
+        File.join(SYSTEM_TMP_DIR, 'appsignal.log')
+      else
+        $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
+          "'#{SYSTEM_TMP_DIR}' fallback. Please check the permissions "\
+          "for the application's (log) directory."
+      end
     end
 
     def valid?

@@ -133,10 +133,11 @@ RSpec.configure do |config|
   config.before :all do
     FileUtils.rm_rf(tmp_dir)
     FileUtils.mkdir_p(tmp_dir)
-  end
 
-  config.after do
-    Thread.current[:appsignal_transaction] = nil
+    # Use modifiable SYSTEM_TMP_DIR
+    Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
+    Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
+      File.join(tmp_dir, 'system-tmp')
   end
 
   config.before do
@@ -147,6 +148,10 @@ RSpec.configure do |config|
     ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
       ENV[key] = nil
     end
+  end
+
+  config.after do
+    Thread.current[:appsignal_transaction] = nil
   end
 
   config.after :all do
