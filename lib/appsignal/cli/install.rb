@@ -93,11 +93,6 @@ module Appsignal
           puts
           puts "  require 'appsignal/integrations/sinatra'"
           press_any_key
-          puts "Configure subclass apps"
-          puts "  If your app is a subclass of Sinatra::Base you need to use this middleware:"
-          puts
-          puts "  use Appsignal::Rack::SinatraInstrumentation"
-          press_any_key
           done_notice
         end
 
