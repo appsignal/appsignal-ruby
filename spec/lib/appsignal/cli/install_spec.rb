@@ -19,10 +19,7 @@ describe Appsignal::CLI::Install do
     cli.stub(:press_any_key)
   end
   around do |example|
-    original_stdout = $stdout
-    $stdout = out_stream
-    example.run
-    $stdout = original_stdout
+    capture_stdout(out_stream) { example.run }
   end
 
   describe ".run" do

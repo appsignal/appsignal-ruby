@@ -124,6 +124,7 @@ end
 
 RSpec.configure do |config|
   config.include DirectoryHelper
+  config.include StdStreamsHelper
   config.include ConfigHelpers
   config.include EnvHelpers
   config.include NotificationHelpers

@@ -12,12 +12,8 @@ describe Appsignal::Marker do
     )
   }
   let(:out_stream) { StringIO.new }
-  before do
-    @original_stdout = $stdout
-    $stdout = out_stream
-  end
-  after do
-    $stdout = @original_stdout
+  around do |example|
+    capture_stdout(out_stream) { example.run }
   end
 
   context "transmit" do

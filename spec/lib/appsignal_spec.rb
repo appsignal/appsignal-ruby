@@ -555,16 +555,14 @@ describe Appsignal do
 
       before do
         FileUtils.rm_f(log_file)
-        @original_stdout = $stdout
-        $stdout = out_stream
         Appsignal.logger.error('Log something')
         Appsignal.config = project_fixture_config(
           'production',
           :log_path => log_path
         )
       end
-      after do
-        $stdout = @original_stdout
+      around do |example|
+        capture_stdout(out_stream) { example.run }
       end
 
       context "when the log path is writable" do

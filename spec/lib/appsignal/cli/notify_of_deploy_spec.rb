@@ -6,12 +6,10 @@ describe Appsignal::CLI::NotifyOfDeploy do
   let(:config) { Appsignal::Config.new(project_fixture_path, {}) }
   let(:marker_data) { {:revision => 'aaaaa', :user => 'thijs', :environment => 'production'} }
   before do
-    @original_stdout = $stdout
-    $stdout = out_stream
     config.stub(:active? => true)
   end
-  after do
-    $stdout = @original_stdout
+  around do |example|
+    capture_stdout(out_stream) { example.run }
   end
 
   describe ".run" do

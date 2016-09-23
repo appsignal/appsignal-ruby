@@ -14,17 +14,10 @@ if capistrano3_present?
       @capistrano_config = Capistrano::Configuration.env
       @capistrano_config.set(:log_level, :error)
       @capistrano_config.set(:logger, logger)
-    end
-    before do
-      @original_stdout = $stdout
-      $stdout = out_stream
-      @original_stderr = $stderr
-      $stderr = out_stream
-    end
-    after do
-      $stdout = @original_stdout
-      $stderr = @original_stderr
       Rake::Task['appsignal:deploy'].reenable
+    end
+    around do |example|
+      capture_std_streams(out_stream, out_stream) { example.run }
     end
 
     it "should have a deploy task" do
