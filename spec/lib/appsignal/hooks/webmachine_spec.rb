@@ -1,13 +1,10 @@
 if webmachine_present?
   describe Appsignal::Hooks::WebmachineHook do
     context "with webmachine" do
-      before(:all) do
-        Appsignal::Hooks::WebmachineHook.new.install
-      end
+      let(:fsm) { Webmachine::Decision::FSM.new(double(:trace? => false), double, double) }
+      before(:all) { start_agent }
 
       its(:dependencies_present?) { should be_true }
-
-      let(:fsm) { Webmachine::Decision::FSM.new(double(:trace? => false), double, double) }
 
       it "should include the run alias methods" do
         expect( fsm ).to respond_to(:run_with_appsignal)
