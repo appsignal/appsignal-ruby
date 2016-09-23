@@ -120,10 +120,11 @@ describe Appsignal::Transaction do
 
       context "if a transaction is discarded" do
         it "should not complete the transaction" do
-          Appsignal::Transaction.current.should_not_receive(:complete)
+          expect(Appsignal::Transaction.current.ext).to_not receive(:complete)
 
           Appsignal::Transaction.current.discard!
           expect(Appsignal::Transaction.current.discarded?).to be_true
+
           Appsignal::Transaction.complete_current!
 
           Thread.current[:appsignal_transaction].should be_nil
