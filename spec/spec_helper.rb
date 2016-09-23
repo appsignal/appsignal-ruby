@@ -130,6 +130,7 @@ RSpec.configure do |config|
   config.include NotificationHelpers
   config.include TimeHelpers
   config.include TransactionHelpers
+  config.include ApiRequestHelper
 
   config.before :all do
     FileUtils.rm_rf(tmp_dir)
