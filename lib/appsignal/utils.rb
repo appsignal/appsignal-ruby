@@ -52,5 +52,15 @@ module Appsignal
 
       extend ClassMethods
     end
+
+    class Gzip
+      module ClassMethods
+        def compress(body)
+          Zlib::Deflate.deflate(body, Zlib::BEST_SPEED)
+        end
+      end
+
+      extend ClassMethods
+    end
   end
 end
