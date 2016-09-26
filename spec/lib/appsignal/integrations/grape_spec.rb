@@ -1,4 +1,4 @@
-if grape_present?
+if DependencyHelper.grape_present?
   require 'appsignal/integrations/grape'
 
   describe Appsignal::Grape::Middleware do

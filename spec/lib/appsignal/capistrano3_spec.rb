@@ -1,4 +1,4 @@
-if capistrano3_present?
+if DependencyHelper.capistrano3_present?
   require 'capistrano/all'
   require 'capistrano/deploy'
   require 'appsignal/capistrano'

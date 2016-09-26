@@ -1,4 +1,4 @@
-if capistrano2_present?
+if DependencyHelper.capistrano2_present?
   require 'capistrano'
   require 'capistrano/configuration'
   require 'appsignal/capistrano'
