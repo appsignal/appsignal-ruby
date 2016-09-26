@@ -235,22 +235,26 @@ module Appsignal
     end
 
     def log_formatter
-        proc do |severity, datetime, progname, msg|
-          "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}\n"
-        end
+      proc do |severity, datetime, progname, msg|
+        "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}\n"
+      end
     end
 
     def start_logger(path_arg=nil)
       path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && !ENV['DYNO']
-        @logger = Logger.new(path)
-        @logger.formatter = log_formatter
-      else
-        @logger = Logger.new($stdout)
-        @logger.formatter = lambda do |severity, datetime, progname, msg|
-          "appsignal: #{msg}\n"
+      if path && !heroku?
+        begin
+          @logger = Logger.new(path)
+          @logger.formatter = log_formatter
+        rescue SystemCallError => error
+          start_stdout_logger
+          logger.warn "appsignal: Unable to start logger with log path '#{path}'."
+          logger.warn "appsignal: #{error}"
         end
+      else
+        start_stdout_logger
       end
+
       if config && config[:debug]
         @logger.level = Logger::DEBUG
       else
@@ -291,6 +295,19 @@ module Appsignal
       yield
     ensure
       Appsignal::Transaction.current.resume! if Appsignal::Transaction.current
+    end
+
+    private
+
+    def start_stdout_logger
+      @logger = Logger.new($stdout)
+      @logger.formatter = lambda do |severity, datetime, progname, msg|
+        "appsignal: #{msg}\n"
+      end
+    end
+
+    def heroku?
+      ENV['DYNO']
     end
   end
 end
