@@ -1,8 +1,17 @@
+# 1.3.6
+* Support blocks arguments on method instrumentation
+* Support `APPSIGNAL_APP_ENV` for Sinatra
+* Minor improvements to installer
+* More robust handing of non-writable log files
+* Cleaner internal exception handling
+* Support for mixed case keywords in sql lexing
+* Support for inserting multiple rows in sql lexing
+
 # 1.3.5
 
-- Fix SSL certificate config in appsignal-agent. PR #151
-- Remove mounted_at Sinatra middleware option. Now detected by default. PR #146
-- Sinatra applications with middleware loading before AppSignal's middleware
+* Fix SSL certificate config in appsignal-agent. PR #151
+* Remove mounted_at Sinatra middleware option. Now detected by default. PR #146
+* Sinatra applications with middleware loading before AppSignal's middleware
   would crash a request. Fixed in PR #156
 
 # 1.3.4
