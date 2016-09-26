@@ -52,7 +52,7 @@ module Appsignal
 
       def complete_current!
         current.complete
-      rescue Exception => e
+      rescue => e
         Appsignal.logger.error("Failed to complete transaction ##{current.transaction_id}. #{e.message}")
       ensure
         Thread.current[:appsignal_transaction] = nil
@@ -269,9 +269,9 @@ module Appsignal
       params =
         begin
           request.send options[:params_method]
-        rescue Exception => ex
+        rescue => e
           # Getting params from the request has been know to fail.
-          Appsignal.logger.debug "Exception while getting params: #{ex}"
+          Appsignal.logger.debug "Exception while getting params: #{e}"
           nil
         end
       return unless params
