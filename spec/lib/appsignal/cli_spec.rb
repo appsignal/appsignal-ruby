@@ -4,13 +4,11 @@ describe Appsignal::CLI do
   let(:out_stream) { StringIO.new }
   let(:cli) { Appsignal::CLI }
   before do
-    @original_stdout = $stdout
-    $stdout = out_stream
     Dir.stub(:pwd => project_fixture_path)
     cli.options = {:environment => 'production'}
   end
-  after do
-    $stdout = @original_stdout
+  around do |example|
+    capture_stdout(out_stream) { example.run }
   end
 
   describe "#config" do

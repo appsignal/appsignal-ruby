@@ -6,18 +6,12 @@ if capistrano2_present?
   describe "Capistrano 2 integration" do
     let(:out_stream) { StringIO.new }
     let(:config) { project_fixture_config }
-
-    before do
-      @original_stdout = $stdout
-      $stdout = out_stream
-    end
-    after do
-      $stdout = @original_stdout
-    end
-
     before :all do
       @capistrano_config = Capistrano::Configuration.new
       Appsignal::Capistrano.tasks(@capistrano_config)
+    end
+    around do |example|
+      capture_stdout(out_stream) { example.run }
     end
 
     it "should have a deploy task" do
