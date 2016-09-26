@@ -352,10 +352,10 @@ describe Appsignal::Transaction do
     end
 
     describe "set_sample_data" do
-      it "should generate json and set the data" do
+      it "should set the data" do
         transaction.ext.should_receive(:set_sample_data).with(
           'params',
-          '{"controller":"blog_posts","action":"show","id":"1"}'
+          Appsignal::Utils.data_generate({"controller" => "blog_posts", "action" => "show", "id" => "1"})
         ).once
 
         transaction.set_sample_data(
@@ -382,23 +382,29 @@ describe Appsignal::Transaction do
       it "should sample data" do
         transaction.ext.should_receive(:set_sample_data).with(
           'environment',
-          "{\"CONTENT_LENGTH\":\"0\",\"REQUEST_METHOD\":\"GET\",\"SERVER_NAME\":\"example.org\",\"SERVER_PORT\":\"80\",\"PATH_INFO\":\"/blog\"}"
+          Appsignal::Utils.data_generate({
+            "CONTENT_LENGTH" => "0",
+            "REQUEST_METHOD" => "GET",
+            "SERVER_NAME" => "example.org",
+            "SERVER_PORT" => "80",
+            "PATH_INFO" => "/blog"
+          })
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           'session_data',
-          "{}"
+          Appsignal::Utils.data_generate({})
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           'params',
-          '{"controller":"blog_posts","action":"show","id":"1"}'
+          Appsignal::Utils.data_generate({"controller" => "blog_posts", "action" => "show", "id" => "1"})
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           'metadata',
-          '{"key":"value"}'
+          Appsignal::Utils.data_generate({"key" => "value"})
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           'tags',
-          "{}"
+          Appsignal::Utils.data_generate({})
         ).once
 
         transaction.sample_data
@@ -432,7 +438,7 @@ describe Appsignal::Transaction do
           transaction.ext.should_receive(:set_error).with(
             'RSpec::Mocks::Mock',
             'test message',
-            "[\"line 1\"]"
+            Appsignal::Utils.data_generate(['line 1'])
           )
 
           transaction.set_error(error)
@@ -450,7 +456,7 @@ describe Appsignal::Transaction do
           transaction.ext.should_receive(:set_error).with(
             'RSpec::Mocks::Mock',
             '',
-            "[\"line 1\"]"
+            Appsignal::Utils.data_generate(['line 1'])
           )
 
           transaction.set_error(error)

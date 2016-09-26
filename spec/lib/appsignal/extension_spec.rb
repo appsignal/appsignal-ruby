@@ -52,11 +52,11 @@ describe "extension loading and operation" do
         end
 
         it "should have a set_error method" do
-          subject.set_error('name', 'message', '[backtrace]')
+          subject.set_error('name', 'message', Appsignal::Extension.data_map_new)
         end
 
         it "should have a set_sample_data method" do
-          subject.set_sample_data('params', '{}')
+          subject.set_sample_data('params', Appsignal::Extension.data_map_new)
         end
 
         it "should have a set_action method" do

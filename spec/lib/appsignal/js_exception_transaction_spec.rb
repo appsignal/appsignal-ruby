@@ -60,7 +60,7 @@ describe Appsignal::JSExceptionTransaction do
      expect( transaction.ext ).to receive(:set_error).with(
        'TypeError',
        'foo is not a valid method',
-       "[\"foo.bar/js:11:1\",\"foo.bar/js:22:2\"]"
+       Appsignal::Utils.data_generate(['foo.bar/js:11:1', 'foo.bar/js:22:2'])
      )
 
      transaction.set_error
@@ -71,7 +71,7 @@ describe Appsignal::JSExceptionTransaction do
    it "should call `Appsignal::Extension.set_transaction_error_data`" do
      expect( transaction.ext ).to receive(:set_sample_data).with(
       'tags',
-      '["tag1"]'
+      Appsignal::Utils.data_generate(['tag1'])
      )
 
      transaction.set_sample_data
