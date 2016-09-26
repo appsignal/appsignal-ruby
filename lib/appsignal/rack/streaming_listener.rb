@@ -54,13 +54,15 @@ module Appsignal
     def each
       @stream.each { |c| yield(c) }
     rescue Exception => e
-      @transaction.set_error(e); raise e
+      @transaction.set_error(e)
+      raise e
     end
 
     def close
       @stream.close if @stream.respond_to?(:close)
     rescue Exception => e
-      @transaction.set_error(e); raise e
+      @transaction.set_error(e)
+      raise e
     ensure
       Appsignal::Transaction.complete_current!
     end
