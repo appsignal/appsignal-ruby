@@ -34,6 +34,7 @@ module Appsignal
     def set_sample_data
       {
         :params       => @data['params'],
+        :session_data => @data['session_data'],
         :environment  => @data['environment'],
         :tags         => @data['tags']
       }.each do |key, data|
