@@ -27,7 +27,7 @@ describe Appsignal::Transmitter do
           "&environment=production&gem_version=#{Appsignal::VERSION}"\
           "&hostname=#{config.config_hash[:hostname]}&name=TestApp"
       ).with(
-        :body => Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED),
+        :body => Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}"),
         :headers => {
           'Content-Encoding' => 'gzip',
           'Content-Type' => 'application/json; charset=UTF-8',
@@ -84,13 +84,9 @@ describe Appsignal::Transmitter do
   end
 
   describe "#http_post" do
-    before do
-      Socket.stub(:gethostname => 'app1.local')
-    end
-
     subject { instance.send(:http_post, 'the' => 'payload') }
 
-    its(:body) { should eq Zlib::Deflate.deflate("{\"the\":\"payload\"}", Zlib::BEST_SPEED) }
+    its(:body) { should eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}") }
     its(:path) { should eq instance.uri.request_uri }
 
     it "should have the correct headers" do
