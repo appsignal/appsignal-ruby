@@ -26,7 +26,7 @@ module Appsignal
                    "#{status.nil? ? 'nil' : status}"
         end
         [status, result]
-      rescue Exception => e
+      rescue => e
         result = 'Something went wrong while trying to '\
                  "authenticate with AppSignal: #{e}"
         [nil, result]
