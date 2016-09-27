@@ -628,11 +628,10 @@ describe Appsignal do
 
       context "when on Heroku" do
         before do
-          ENV['DYNO'] = 'dyno1'
           Appsignal.start_logger
           Appsignal.logger.error('Log to stdout')
         end
-        after { ENV.delete('DYNO') }
+        around { |example| recognize_as_heroku { example.run } }
 
         it "should log to stdout" do
           out_stream.string.should include 'appsignal: Log to stdout'
