@@ -1,3 +1,5 @@
+require_relative '../../support/mocks/fake_gc_profiler'
+
 class Smash < Hash
   def []=(key, val)
     raise 'the roof'
@@ -23,7 +25,7 @@ describe Appsignal::Transaction do
   context "class methods" do
     describe ".create" do
       it "should add the transaction to thread local" do
-        Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request')
+        Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request', 0)
 
         created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
 
@@ -470,7 +472,8 @@ describe Appsignal::Transaction do
           'name',
           'title',
           'body',
-          1
+          1,
+          0
         )
 
         transaction.finish_event(
@@ -486,6 +489,7 @@ describe Appsignal::Transaction do
           'name',
           '',
           '',
+          0,
           0
         )
 
@@ -495,6 +499,14 @@ describe Appsignal::Transaction do
           nil,
           nil
         )
+      end
+
+      it "should add garbage collection time" do
+        allow_any_instance_of(Appsignal::GarbageCollectionProfiler)
+          .to receive(:internal_profiler)
+          .and_return(FakeGCProfiler.new(0.12345))
+
+        transaction.finish_event('name', nil, nil, nil)
       end
     end
 

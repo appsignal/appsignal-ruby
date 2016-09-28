@@ -5,7 +5,7 @@ module Appsignal
     def initialize(data)
       @data = data
       @uuid = SecureRandom.uuid
-      @ext = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND)
+      @ext = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND, 0)
 
       set_action
       set_metadata

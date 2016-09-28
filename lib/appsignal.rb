@@ -47,11 +47,16 @@ module Appsignal
           Appsignal::Hooks.load_hooks
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
-          Appsignal::Extension.install_allocation_event_hook if config[:enable_allocation_tracking]
+
+          if config[:enable_allocation_tracking]
+            Appsignal::Extension.install_allocation_event_hook
+          end
+
           if config[:enable_gc_instrumentation]
-            Appsignal::Extension.install_gc_event_hooks
+            GC::Profiler.enable
             Appsignal::Minutely.add_gc_probe
           end
+
           Appsignal::Minutely.start if config[:enable_minutely_probes]
         else
           logger.info("Not starting, not active for #{config.env}")
@@ -312,6 +317,7 @@ require 'appsignal/hooks'
 require 'appsignal/marker'
 require 'appsignal/minutely'
 require 'appsignal/params_sanitizer'
+require 'appsignal/garbage_collection_profiler'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
 require 'appsignal/integrations/resque_active_job'
