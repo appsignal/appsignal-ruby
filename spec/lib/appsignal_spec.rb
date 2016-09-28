@@ -550,69 +550,124 @@ describe Appsignal do
 
     describe ".start_logger" do
       let(:out_stream) { StringIO.new }
-      let(:log_path) { File.join(project_fixture_path, 'log') }
+      let(:log_path) { File.join(tmp_dir, 'log') }
       let(:log_file) { File.join(log_path, 'appsignal.log') }
 
       before do
-        FileUtils.rm_f(log_file)
-        @original_stdout = $stdout
-        $stdout = out_stream
-        Appsignal.logger.error('Log something')
+        FileUtils.mkdir_p(log_path)
+
+        Appsignal.logger.error('Log in memory')
         Appsignal.config = project_fixture_config(
           'production',
           :log_path => log_path
         )
       end
-      after do
-        $stdout = @original_stdout
+      around do |example|
+        capture_stdout(out_stream) { example.run }
       end
+      after { FileUtils.rm_rf(log_path) }
 
       context "when the log path is writable" do
-        it "should log to file" do
-          Appsignal.start_logger
-          Appsignal.logger.level.should eq Logger::INFO
-          Appsignal.logger.error('Log to file')
-          File.exist?(log_file).should be_true
-          File.open(log_file).read.should include 'Log to file'
-          File.open(log_file).read.should include 'Log something'
+        context "when the log file is writable" do
+          let(:log_file_contents) { File.open(log_file).read }
+          before do
+            Appsignal.start_logger
+            Appsignal.logger.error('Log to file')
+          end
+
+          it "logs to file" do
+            expect(File.exist?(log_file)).to be_true
+            expect(log_file_contents).to include 'Log to file'
+          end
+
+          it "amends in memory log to log file" do
+            expect(log_file_contents).to include 'Log in memory'
+          end
+        end
+
+        context "when the log file is not writable" do
+          before do
+            FileUtils.touch log_file
+            FileUtils.chmod 0444, log_file
+
+            Appsignal.start_logger
+            Appsignal.logger.error('Log to not writable log file')
+          end
+
+          it "logs to stdout" do
+            expect(File.writable?(log_file)).to be_false
+            expect(out_stream.string).to include 'Log to not writable log file'
+          end
+
+          it "outputs a warning" do
+            output = out_stream.string
+            expect(output).to include "appsignal: Unable to start logger with "\
+              "log path '#{log_file}'."
+            expect(output).to include "appsignal: Permission denied"
+          end
         end
       end
 
-      context "when we're on Heroku" do
+      context "when the log path is not writable" do
+        before do
+          FileUtils.chmod 0444, log_path
+
+          Appsignal.start_logger
+          Appsignal.logger.error('Log to not writable log path')
+        end
+
+        it "logs to stdout" do
+          expect(File.writable?(log_path)).to be_false
+          expect(out_stream.string).to include 'Log to not writable log path'
+        end
+
+        it "amends in memory log to stdout" do
+          expect(out_stream.string).to include 'Log in memory'
+        end
+      end
+
+      context "when on Heroku" do
         before do
           ENV['DYNO'] = 'dyno1'
+          Appsignal.start_logger
+          Appsignal.logger.error('Log to stdout')
         end
         after { ENV.delete('DYNO') }
 
         it "should log to stdout" do
-          Appsignal.start_logger
-          Appsignal.logger.level.should eq Logger::INFO
-          Appsignal.logger.error('Log to stdout')
           out_stream.string.should include 'appsignal: Log to stdout'
-          out_stream.string.should include 'Log something'
+        end
+
+        it "amends in memory log to stdout" do
+          expect(out_stream.string).to include 'Log in memory'
         end
       end
 
-      context "when there is no in memory log" do
-        it "should not crash" do
-          Appsignal.in_memory_log = nil
-          Appsignal.start_logger
-        end
-      end
+      describe "#logger#level" do
+        subject { Appsignal.logger.level }
 
-      context "when there is no config and debug is on" do
-        it "should set the log level to info" do
-          Appsignal.config = nil
-          Appsignal.start_logger
-          Appsignal.logger.level.should eq Logger::INFO
-        end
-      end
+        context "when there is no config" do
+          before do
+            Appsignal.config = nil
+            Appsignal.start_logger
+          end
 
-      context "when there is a config and debug is on" do
-        it "should set the log level to debug" do
-          Appsignal.config.config_hash[:debug] = true
-          Appsignal.start_logger
-          Appsignal.logger.level.should eq Logger::DEBUG
+          it "sets the log level to info" do
+            expect(subject).to eq Logger::INFO
+          end
+        end
+
+        context "when there is a config" do
+          context "when log level is configured to debug" do
+            before do
+              Appsignal.config.config_hash[:debug] = true
+              Appsignal.start_logger
+            end
+
+            it "sets the log level to debug" do
+              expect(subject).to eq Logger::DEBUG
+            end
+          end
         end
       end
     end

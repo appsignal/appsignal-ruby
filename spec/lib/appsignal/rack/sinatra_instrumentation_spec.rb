@@ -41,6 +41,40 @@ if DependencyHelper.sinatra_present?
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
+    describe "#initialize" do
+      context "with no settings method in the Sinatra app" do
+        let(:app) { double(:call => true) }
+
+        it "should not raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with no raise_errors setting in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double) }
+
+        it "should not raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with raise_errors turned off in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double(:raise_errors => false)) }
+
+        it "should raise errors" do
+          expect( middleware.raise_errors_on ).to be(false)
+        end
+      end
+
+      context "with raise_errors turned on in the Sinatra app" do
+        let(:app) { double(:call => true, :settings => double(:raise_errors => true)) }
+
+        it "should raise errors" do
+          expect( middleware.raise_errors_on ).to be(true)
+        end
+      end
+    end
+
     describe "#call" do
       before do
         middleware.stub(:raw_payload => {})
@@ -132,22 +166,6 @@ if DependencyHelper.sinatra_present?
 
           it "returns nil" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
-          end
-        end
-
-        context "with option to set path a mounted_at prefix" do
-          let(:options) {{ :mounted_at  => "/api/v2" }}
-
-          it "should call set_action with a prefix path" do
-            Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/v2/")
-          end
-
-          context "without 'sinatra.route' env" do
-            let(:env) { {:path => '/', :method => 'GET'} }
-
-            it "returns nil" do
-              Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
-            end
           end
         end
 

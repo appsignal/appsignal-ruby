@@ -29,7 +29,7 @@ module Appsignal
       def initialize(app, options = {})
         Appsignal.logger.debug 'Initializing Appsignal::Rack::SinatraInstrumentation'
         @app, @options = app, options
-        @raise_errors_on = @app.settings.raise_errors
+        @raise_errors_on = raise_errors?(@app)
       end
 
       def call(env)
@@ -75,15 +75,20 @@ module Appsignal
       def action_name(env)
         return unless env['sinatra.route']
 
-        if @options.fetch(:mounted_at, nil)
-          method, route = env['sinatra.route'].split(" ")
-          "#{method} #{@options[:mounted_at]}#{route}"
-        elsif env['SCRIPT_NAME']
+        if env['SCRIPT_NAME']
           method, route = env['sinatra.route'].split(" ")
           "#{method} #{env['SCRIPT_NAME']}#{route}"
         else
           env['sinatra.route']
         end
+      end
+
+      private
+
+      def raise_errors?(app)
+        app.respond_to?(:settings) &&
+          app.settings.respond_to?(:raise_errors) &&
+          app.settings.raise_errors
       end
     end
   end

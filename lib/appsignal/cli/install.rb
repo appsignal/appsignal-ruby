@@ -93,11 +93,6 @@ module Appsignal
           puts
           puts "  require 'appsignal/integrations/sinatra'"
           press_any_key
-          puts "Configure subclass apps"
-          puts "  If your app is a subclass of Sinatra::Base you need to use this middleware:"
-          puts
-          puts "  use Appsignal::Rack::SinatraInstrumentation"
-          press_any_key
           done_notice
         end
 
@@ -134,6 +129,21 @@ module Appsignal
           puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#grape"
           press_any_key
           done_notice
+        end
+
+        def install_for_capistrano
+          capfile = File.join(Dir.pwd, 'Capfile')
+          return unless File.exist?(capfile)
+          return if File.read(capfile) =~ %r{require ['|"]appsignal/capistrano}
+
+          puts 'Installing for Capistrano'
+          print '  Adding AppSignal integration to Capfile'
+          File.open(capfile, 'a') do |f|
+            f.write "\nrequire 'appsignal/capistrano'\n"
+          end
+          periods
+          puts
+          puts
         end
 
         def colorize(text, color)
@@ -187,16 +197,7 @@ module Appsignal
         end
 
         def configure(config, environments, name_overwritten)
-          deploy_rb_file = File.join(Dir.pwd, 'config/deploy.rb')
-          if File.exist?(deploy_rb_file) && (File.read(deploy_rb_file) =~ /require (\'|\").\/appsignal\/capistrano/).nil?
-            print 'Adding AppSignal integration to deploy.rb'
-            File.open(deploy_rb_file, 'a') do |f|
-              f.write "\nrequire 'appsignal/capistrano'\n"
-            end
-            periods
-            puts
-            puts
-          end
+          install_for_capistrano
 
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"

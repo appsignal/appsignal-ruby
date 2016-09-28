@@ -1,4 +1,5 @@
 ENV['RAILS_ENV'] ||= 'test'
+ENV['RACK_ENV'] ||= 'test'
 ENV['PADRINO_ENV'] ||= 'test'
 
 APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
@@ -37,20 +38,23 @@ end
 
 RSpec.configure do |config|
   config.include DirectoryHelper
+  config.include StdStreamsHelper
   config.include ConfigHelpers
   config.include EnvHelpers
   config.include NotificationHelpers
   config.include TimeHelpers
   config.include TransactionHelpers
+  config.include ApiRequestHelper
   config.extend DependencyHelper
 
   config.before :all do
     FileUtils.rm_rf(tmp_dir)
     FileUtils.mkdir_p(tmp_dir)
-  end
 
-  config.after do
-    Thread.current[:appsignal_transaction] = nil
+    # Use modifiable SYSTEM_TMP_DIR
+    Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
+    Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
+      File.join(tmp_dir, 'system-tmp')
   end
 
   config.before do
@@ -61,6 +65,10 @@ RSpec.configure do |config|
     ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
       ENV[key] = nil
     end
+  end
+
+  config.after do
+    Thread.current[:appsignal_transaction] = nil
   end
 
   config.after :all do

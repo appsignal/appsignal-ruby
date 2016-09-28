@@ -1,19 +1,15 @@
-require 'spec_helper'
 if DependencyHelper.webmachine_present?
   require 'appsignal/integrations/webmachine'
 
   describe Appsignal::Integrations::WebmachinePlugin::FSM do
-    before(:all) do
-      Appsignal::Hooks::WebmachineHook.new.install
-    end
     let(:request) do
       Webmachine::Request.new('GET', 'http://google.com:80/foo', {}, nil)
     end
     let(:resource)    { double(:trace? => false, :handle_exception => true) }
     let(:response)    { double }
     let(:transaction) { double(:set_action => true) }
-
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
+    before(:all) { start_agent }
 
     # Make sure the request responds to the method we need to get query params.
     describe "request" do
@@ -58,20 +54,16 @@ if DependencyHelper.webmachine_present?
       after { fsm.run }
     end
 
-    describe "handle_exceptions_with_appsignal" do
-      let(:error) { VerySpecificError.new('error') }
+    describe "#handle_exceptions_with_appsignal" do
+      let(:error) { VerySpecificError.new }
 
       it "should catch the error and send it to AppSignal" do
         expect( Appsignal ).to receive(:set_error).with(error)
       end
 
       after do
-        begin
-          fsm.send(:handle_exceptions) { raise error };
-        rescue VerySpecificError
-        end
+        fsm.send(:handle_exceptions) { raise error }
       end
     end
-
   end
 end

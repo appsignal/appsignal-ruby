@@ -8,15 +8,13 @@ describe Appsignal::CLI::Install do
 
   before do
     Dir.stub(:pwd => project_fixture_path)
-    @original_stdout = $stdout
-    $stdout = out_stream
     Appsignal::AuthCheck.stub(:new => auth_check)
     auth_check.stub(:perform => '200')
     cli.stub(:sleep)
     cli.stub(:press_any_key)
   end
-  after do
-    $stdout = @original_stdout
+  around do |example|
+    capture_stdout(out_stream) { example.run }
   end
 
   describe ".run" do
@@ -369,24 +367,50 @@ describe Appsignal::CLI::Install do
       end
     end
 
-    context "when deploy.rb is present" do
-      let(:config_dir) { File.join(tmp_dir, 'config') }
-      let(:deploy_rb_file) { File.join(tmp_dir, 'config/deploy.rb') }
+    context "with capistrano" do
+      let(:capfile) { File.join(tmp_dir, 'Capfile') }
       before do
         Dir.stub(:pwd => tmp_dir)
-        FileUtils.mkdir_p(config_dir)
-        FileUtils.touch(deploy_rb_file)
+        FileUtils.mkdir_p(tmp_dir)
         cli.should_receive(:gets).once.and_return('2')
       end
       after do
-        FileUtils.rm_rf(config_dir)
+        FileUtils.rm_rf(tmp_dir)
       end
 
-      it "should add a require to deploy.rb" do
-        cli.configure(config, [], false)
+      context "without Capfile" do
+        before { cli.configure(config, [], false) }
 
-        out_stream.string.should include 'Adding AppSignal integration to deploy.rb'
-        File.read(deploy_rb_file).should include "require 'appsignal/capistrano'"
+        it "does nothing" do
+          expect(out_stream.string).to_not include 'Adding AppSignal integration to Capfile'
+          expect(File.exist?(capfile)).to be_false
+        end
+      end
+
+      context "with Capfile" do
+        context "when already installed" do
+          before do
+            File.open(capfile, 'w') { |f| f.write("require 'appsignal/capistrano'") }
+            cli.configure(config, [], false)
+          end
+
+          it "does not add another require to Capfile" do
+            expect(out_stream.string).to_not include 'Adding AppSignal integration to Capfile'
+            expect(File.read(capfile).scan(/appsignal/).count).to eq(1)
+          end
+        end
+
+        context "when not installed" do
+          before do
+            FileUtils.touch(capfile)
+            cli.configure(config, [], false)
+          end
+
+          it "adds a require to Capfile" do
+            expect(out_stream.string).to include 'Adding AppSignal integration to Capfile'
+            expect(File.read(capfile)).to include "require 'appsignal/capistrano'"
+          end
+        end
       end
     end
   end

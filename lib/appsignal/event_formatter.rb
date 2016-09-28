@@ -46,7 +46,7 @@ module Appsignal
             else
               raise "#{f} does not have a format(payload) method"
             end
-          rescue Exception => ex
+          rescue => ex
             formatter_classes.delete(name)
             formatters.delete(name)
             Appsignal.logger.debug("'#{ex.message}' when initializing #{name} event formatter")

@@ -25,7 +25,7 @@ module Appsignal::Integrations
         handle_exceptions_without_appsignal do
           begin
             yield
-          rescue Exception => e
+          rescue => e
             Appsignal.set_error(e)
             raise e
           end
