@@ -15,7 +15,7 @@ describe Appsignal::Hooks::RakeHook do
 
   describe "#execute" do
     context "with transaction" do
-      let!(:transaction) { regular_transaction }
+      let!(:transaction) { background_job_transaction }
       let!(:agent)       { double('Agent', :send_queue => true) }
       before do
         transaction.stub(:set_action)

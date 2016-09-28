@@ -14,7 +14,7 @@ describe Object do
       let(:instance) { klass.new }
 
       context "when active" do
-        let(:transaction) { regular_transaction }
+        let(:transaction) { http_request_transaction }
         before { Appsignal.config = project_fixture_config }
         after { Appsignal.config = nil }
 
@@ -131,7 +131,7 @@ describe Object do
       end
 
       context "when active" do
-        let(:transaction) { regular_transaction }
+        let(:transaction) { http_request_transaction }
         before { Appsignal.config = project_fixture_config }
         after { Appsignal.config = nil }
 

@@ -8,7 +8,7 @@ describe Appsignal do
     Appsignal.extensions.clear
   end
 
-  let(:transaction) { regular_transaction }
+  let(:transaction) { http_request_transaction }
 
   describe ".config=" do
     it "should set the config" do
@@ -64,11 +64,6 @@ describe Appsignal do
       it "should initialize formatters" do
         Appsignal::EventFormatter.should_receive(:initialize_formatters)
         Appsignal.start
-      end
-
-      it "should create a subscriber" do
-        Appsignal.start
-        Appsignal.subscriber.should be_a(Appsignal::Subscriber)
       end
 
       context "when not active for this environment" do
@@ -162,7 +157,6 @@ describe Appsignal do
     context "when not active" do
       it "should should do nothing" do
         Appsignal::Extension.should_not_receive(:start)
-        Appsignal::Subscriber.should_not_receive(:new)
 
         Appsignal.forked
       end
@@ -176,7 +170,6 @@ describe Appsignal do
       it "should resubscribe and start the extension" do
         Appsignal.should_receive(:start_logger)
         Appsignal::Extension.should_receive(:start)
-        Appsignal::Subscriber.any_instance.should_receive(:resubscribe)
 
         Appsignal.forked
       end

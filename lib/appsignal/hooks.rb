@@ -89,6 +89,7 @@ module Appsignal
   end
 end
 
+require 'appsignal/hooks/active_support_notifications'
 require 'appsignal/hooks/celluloid'
 require 'appsignal/hooks/delayed_job'
 require 'appsignal/hooks/net_http'

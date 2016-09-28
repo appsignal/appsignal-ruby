@@ -41,7 +41,6 @@ RSpec.configure do |config|
   config.include StdStreamsHelper
   config.include ConfigHelpers
   config.include EnvHelpers
-  config.include NotificationHelpers
   config.include TimeHelpers
   config.include TransactionHelpers
   config.include ApiRequestHelper
@@ -72,7 +71,6 @@ RSpec.configure do |config|
   end
 
   config.after :all do
-    ActiveSupport::Notifications.notifier.clear_subscribers
     FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
     Appsignal.config = nil
     Appsignal.logger = nil

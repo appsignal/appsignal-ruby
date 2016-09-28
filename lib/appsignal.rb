@@ -2,20 +2,9 @@ require 'json'
 require 'logger'
 require 'securerandom'
 
-# Make sure we have the notification system
-begin
-  require 'active_support/notifications'
-  ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
-rescue LoadError
-  require 'vendor/active_support/notifications'
-rescue NameError
-  require 'appsignal/update_active_support'
-  Appsignal::UpdateActiveSupport.run
-end
-
 module Appsignal
   class << self
-    attr_accessor :config, :subscriber, :agent, :extension_loaded
+    attr_accessor :config, :agent, :extension_loaded
     attr_writer :logger, :in_memory_log
 
     def extensions
@@ -64,7 +53,6 @@ module Appsignal
             Appsignal::Minutely.add_gc_probe
           end
           Appsignal::Minutely.start if config[:enable_minutely_probes]
-          @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -95,7 +83,6 @@ module Appsignal
       Appsignal.start_logger
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
-      @subscriber.resubscribe
     end
 
     def get_server_state(key)
@@ -192,9 +179,9 @@ module Appsignal
 
     def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
       Appsignal::Transaction.current.start_event
-      r = yield
+      return_value = yield
       Appsignal::Transaction.current.finish_event(name, title, body, body_format)
-      r
+      return_value
     end
 
     def instrument_sql(name, title=nil, body=nil, &block)
@@ -328,7 +315,6 @@ require 'appsignal/params_sanitizer'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
 require 'appsignal/integrations/resque_active_job'
-require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
 require 'appsignal/rack/generic_instrumentation'
