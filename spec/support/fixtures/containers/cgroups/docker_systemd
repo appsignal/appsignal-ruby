@@ -1,0 +1,8 @@
+8:net_cls:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+7:freezer:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+6:devices:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+5:memory:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+4:blkio:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+3:cpu,cpuacct:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+2:cpuset:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope
+1:name=openrc:/system.slice/docker-09f1c4d420025670a3633edbc9b31450f1d6b2ff87b5912a10c320ad398c7215.scope

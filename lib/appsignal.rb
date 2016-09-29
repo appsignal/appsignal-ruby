@@ -238,7 +238,7 @@ module Appsignal
 
     def start_logger(path_arg=nil)
       path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && !heroku?
+      if path && !Appsignal::System.heroku?
         begin
           @logger = Logger.new(path)
           @logger.formatter = log_formatter
@@ -327,3 +327,4 @@ require 'appsignal/rack/generic_instrumentation'
 require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'
+require 'appsignal/system'

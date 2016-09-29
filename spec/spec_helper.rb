@@ -44,6 +44,7 @@ RSpec.configure do |config|
   config.include TimeHelpers
   config.include TransactionHelpers
   config.include ApiRequestHelper
+  config.include SystemHelpers
   config.extend DependencyHelper
 
   config.before :all do

@@ -13,31 +13,35 @@ describe Appsignal::Config do
     its(:active?)       { should be_true }
     its(:log_file_path) { should end_with('spec/support/project_fixture/appsignal.log') }
 
-    it "should merge with the default config and fill the config hash" do
-      subject.config_hash.should eq({
-        :debug                          => false,
-        :ignore_errors                  => [],
-        :ignore_actions                 => [],
-        :filter_parameters              => [],
-        :instrument_net_http            => true,
-        :instrument_redis               => true,
-        :instrument_sequel              => true,
-        :skip_session_data              => false,
-        :send_params                    => true,
-        :endpoint                       => 'https://push.appsignal.com',
-        :push_api_key                   => 'abc',
-        :name                           => 'TestApp',
-        :active                         => true,
-        :enable_frontend_error_catching => false,
-        :frontend_error_catching_path   => '/appsignal_error_catcher',
-        :enable_allocation_tracking     => true,
-        :enable_gc_instrumentation      => false,
-        :running_in_container           => false,
-        :enable_host_metrics            => true,
-        :enable_minutely_probes         => false,
-        :hostname                       => Socket.gethostname,
-        :ca_file_path                   => File.join(resources_dir, 'cacert.pem')
-      })
+    describe "default config" do
+      around { |example| recognize_as_container(:none) { example.run } }
+
+      it "merges with the defaults" do
+        subject.config_hash.should eq({
+          :debug                          => false,
+          :ignore_errors                  => [],
+          :ignore_actions                 => [],
+          :filter_parameters              => [],
+          :instrument_net_http            => true,
+          :instrument_redis               => true,
+          :instrument_sequel              => true,
+          :skip_session_data              => false,
+          :send_params                    => true,
+          :endpoint                       => 'https://push.appsignal.com',
+          :push_api_key                   => 'abc',
+          :name                           => 'TestApp',
+          :active                         => true,
+          :enable_frontend_error_catching => false,
+          :frontend_error_catching_path   => '/appsignal_error_catcher',
+          :enable_allocation_tracking     => true,
+          :enable_gc_instrumentation      => false,
+          :running_in_container           => false,
+          :enable_host_metrics            => true,
+          :enable_minutely_probes         => false,
+          :hostname                       => Socket.gethostname,
+          :ca_file_path                   => File.join(resources_dir, 'cacert.pem')
+        })
+      end
     end
 
     describe "#log_file_path" do
@@ -220,6 +224,7 @@ describe Appsignal::Config do
         subject.config_hash[:log_path]  = '/tmp'
         subject.config_hash[:hostname]  = 'app1.local'
         subject.config_hash[:filter_parameters] = %w(password confirm_password)
+        subject.config_hash[:running_in_container] = false
         subject.write_to_environment
       end
 
@@ -266,7 +271,7 @@ describe Appsignal::Config do
       its(:active?) { should be_true }
     end
 
-    context "and there's config in the environment" do
+    context "when there's config in the environment" do
       before do
         ENV['APPSIGNAL_PUSH_API_KEY'] = 'push_api_key'
         ENV['APPSIGNAL_DEBUG'] = 'true'
@@ -280,16 +285,31 @@ describe Appsignal::Config do
         subject[:debug].should eq true
       end
 
-      context "running on Heroku" do
-        before do
-          ENV['DYNO'] = 'true'
-        end
-        after do
-          ENV.delete('DYNO')
+      describe "running_in_container" do
+        subject { config[:running_in_container] }
+
+        context "when running on Heroku" do
+          around { |example| recognize_as_heroku { example.run } }
+
+          it "is set to true" do
+            expect(subject).to be_true
+          end
         end
 
-        it "should set running in container to true" do
-          subject[:running_in_container].should be_true
+        context "when running in container" do
+          around { |example| recognize_as_container(:docker) { example.run } }
+
+          it "is set to true" do
+            expect(subject).to be_true
+          end
+        end
+
+        context "when not running in container" do
+          around { |example| recognize_as_container(:none) { example.run } }
+
+          it "is set to false" do
+            expect(subject).to be_false
+          end
         end
       end
     end
