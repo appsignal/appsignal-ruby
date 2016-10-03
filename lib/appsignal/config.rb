@@ -65,9 +65,13 @@ module Appsignal
       @initial_config = initial_config
       @logger         = logger
       @valid          = false
+      @config_hash    = Hash[DEFAULT_CONFIG]
+
+      # Set config based on the system
+      detect_from_system
 
       # Initial config
-      @config_hash = DEFAULT_CONFIG.merge(initial_config)
+      merge(@config_hash, initial_config)
 
       # Load config from environment variables
       load_from_environment
@@ -147,6 +151,10 @@ module Appsignal
         root_path.nil? ? nil : File.join(root_path, 'config', 'appsignal.yml')
     end
 
+    def detect_from_system
+      self[:running_in_container] = true if Appsignal::System.container?
+    end
+
     def load_from_disk
       configurations = YAML.load(ERB.new(IO.read(config_file)).result)
       config_for_this_env = configurations[env]
@@ -177,8 +185,6 @@ module Appsignal
       if ENV['APPSIGNAL_PUSH_API_KEY']
         config[:active] = true
       end
-
-      config[:running_in_container] = true if Appsignal::System.container?
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
