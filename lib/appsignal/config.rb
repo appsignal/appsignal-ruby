@@ -243,15 +243,5 @@ module Appsignal
         @logger.error "Push api key not set after loading config"
       end
     end
-
-    def load_default_config_with_push_api_key_and_name_from_env(key)
-      # Get base config by doing the default merge and adding the push api key.
-      @config_hash = merge_config(
-        :push_api_key => key,
-        :active => true
-      )
-      @config_hash[:name]   = ENV['APPSIGNAL_APP_NAME'] if ENV['APPSIGNAL_APP_NAME']
-      @config_hash[:active] = ENV['APPSIGNAL_ACTIVE'] == 'true' if ENV['APPSIGNAL_ACTIVE']
-    end
   end
 end
