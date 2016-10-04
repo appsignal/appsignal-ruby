@@ -69,18 +69,12 @@ module Appsignal
 
       # Set config based on the system
       detect_from_system
-
       # Initial config
       merge(@config_hash, initial_config)
-
+      # Load the config file if it exists
+      load_from_disk
       # Load config from environment variables
       load_from_environment
-
-      # Load the config file if it exists
-      if config_file && File.exist?(config_file)
-        load_from_disk
-      end
-
       # Validate that we have a correct config
       validate
     end
@@ -116,7 +110,7 @@ module Appsignal
     end
 
     def active?
-      @valid && self[:active]
+      @valid && config_hash[:active]
     end
 
     def write_to_environment
@@ -156,6 +150,8 @@ module Appsignal
     end
 
     def load_from_disk
+      return if !config_file || !File.exist?(config_file)
+
       configurations = YAML.load(ERB.new(IO.read(config_file)).result)
       config_for_this_env = configurations[env]
       if config_for_this_env

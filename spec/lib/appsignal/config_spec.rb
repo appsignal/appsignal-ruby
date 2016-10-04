@@ -1,67 +1,417 @@
 describe Appsignal::Config do
-  subject { config }
+  describe "config based on the system" do
+    let(:config) { project_fixture_config(:none) }
 
-  describe "with a config file" do
+    describe ":running_in_container" do
+      subject { config[:running_in_container] }
+
+      context "when running on Heroku" do
+        around { |example| recognize_as_heroku { example.run } }
+
+        it "is set to true" do
+          expect(subject).to be_true
+        end
+      end
+
+      context "when running in container" do
+        around { |example| recognize_as_container(:docker) { example.run } }
+
+        it "is set to true" do
+          expect(subject).to be_true
+        end
+      end
+
+      context "when not running in container" do
+        around { |example| recognize_as_container(:none) { example.run } }
+
+        it "is set to false" do
+          expect(subject).to be_false
+        end
+      end
+    end
+  end
+
+  describe "initial config" do
+    let(:config) do
+      described_class.new(
+        "non-existing-path",
+        "production",
+        :push_api_key => "abc",
+        :name => "TestApp",
+        :active => true
+      )
+    end
+    around { |example| recognize_as_container(:none) { example.run } }
+
+    it "merges with the default config" do
+      expect(config.config_hash).to eq(
+        :debug                          => false,
+        :ignore_errors                  => [],
+        :ignore_actions                 => [],
+        :filter_parameters              => [],
+        :instrument_net_http            => true,
+        :instrument_redis               => true,
+        :instrument_sequel              => true,
+        :skip_session_data              => false,
+        :send_params                    => true,
+        :endpoint                       => 'https://push.appsignal.com',
+        :push_api_key                   => 'abc',
+        :name                           => 'TestApp',
+        :active                         => true,
+        :enable_frontend_error_catching => false,
+        :frontend_error_catching_path   => '/appsignal_error_catcher',
+        :enable_allocation_tracking     => true,
+        :enable_gc_instrumentation      => false,
+        :running_in_container           => false,
+        :enable_host_metrics            => true,
+        :enable_minutely_probes         => false,
+        :hostname                       => Socket.gethostname,
+        :ca_file_path                   => File.join(resources_dir, 'cacert.pem')
+      )
+    end
+
+    describe "overriding system detected config" do
+      let(:config) do
+        described_class.new(
+          "non-existing-path",
+          "production",
+          :running_in_container => true
+        )
+      end
+
+      it "overrides system detected config" do
+        expect(config[:running_in_container]).to be_true
+      end
+    end
+  end
+
+  context "when root path is nil" do
+    let(:config) { described_class.new(nil, 'production') }
+
+    it "is not valid or active" do
+      expect(config.valid?).to be_false
+      expect(config.active?).to be_false
+    end
+  end
+
+  context "without config file" do
+    let(:config) { described_class.new(tmp_dir, 'production') }
+
+    it "is not valid or active" do
+      expect(config.valid?).to be_false
+      expect(config.active?).to be_false
+    end
+  end
+
+  context "with a config file" do
     let(:config) { project_fixture_config('production') }
 
-    it "should not log an error" do
-      Logger.any_instance.should_not_receive(:log_error)
-      subject
+    it "is not valid or active" do
+      expect(config.valid?).to be_true
+      expect(config.active?).to be_true
     end
 
-    its(:valid?)        { should be_true }
-    its(:active?)       { should be_true }
-    its(:log_file_path) { should end_with('spec/support/project_fixture/appsignal.log') }
+    it "does not log an error" do
+      expect_any_instance_of(Logger).to_not receive(:error)
+      config
+    end
 
-    describe "default config" do
+    describe "overriding system and defaults config" do
+      let(:config) do
+        described_class.new(
+          "non-existing-path",
+          "production",
+          :running_in_container => true,
+          :debug => true
+        )
+      end
       around { |example| recognize_as_container(:none) { example.run } }
 
-      it "merges with the defaults" do
-        subject.config_hash.should eq({
-          :debug                          => false,
-          :ignore_errors                  => [],
-          :ignore_actions                 => [],
-          :filter_parameters              => [],
-          :instrument_net_http            => true,
-          :instrument_redis               => true,
-          :instrument_sequel              => true,
-          :skip_session_data              => false,
-          :send_params                    => true,
-          :endpoint                       => 'https://push.appsignal.com',
-          :push_api_key                   => 'abc',
-          :name                           => 'TestApp',
-          :active                         => true,
-          :enable_frontend_error_catching => false,
-          :frontend_error_catching_path   => '/appsignal_error_catcher',
-          :enable_allocation_tracking     => true,
-          :enable_gc_instrumentation      => false,
-          :running_in_container           => false,
-          :enable_host_metrics            => true,
-          :enable_minutely_probes         => false,
-          :hostname                       => Socket.gethostname,
-          :ca_file_path                   => File.join(resources_dir, 'cacert.pem')
-        })
+      it "overrides system detected and defaults config" do
+        expect(config[:running_in_container]).to be_true
+        expect(config[:debug]).to be_true
       end
     end
 
-    describe "#log_file_path" do
-      let(:stdout) { StringIO.new }
-      let(:config) { project_fixture_config('production', :log_path => log_path) }
-      subject { config.log_file_path }
-      around do |example|
-        original_stdout = $stdout
-        $stdout = stdout
-        example.run
-        $stdout = original_stdout
+    context "with the env name as a symbol" do
+      let(:config) { project_fixture_config(:production) }
+
+      it "loads the config" do
+        expect(config.valid?).to be_true
+        expect(config.active?).to be_true
+
+        expect(config[:push_api_key]).to eq('abc')
+      end
+    end
+
+    context "without the selected env" do
+      let(:config) { project_fixture_config('nonsense') }
+
+      it "is not valid or active" do
+        expect(config.valid?).to be_false
+        expect(config.active?).to be_false
       end
 
-      context "when path is writable" do
-        let(:log_path) { File.join(tmp_dir, 'writable-path') }
-        before { FileUtils.mkdir_p(log_path, :mode => 0755) }
-        after { FileUtils.rm_rf(log_path) }
+      it "logs an error" do
+        expect_any_instance_of(Logger).to receive(:error).once
+          .with("Not loading from config file: config for 'nonsense' not found")
+        expect_any_instance_of(Logger).to receive(:error).once
+          .with("Push api key not set after loading config")
+        config
+      end
+    end
 
-        it "returns log file path" do
-          expect(subject).to eq File.join(log_path, 'appsignal.log')
+    describe "old-style config keys" do
+      describe ":api_key" do
+        subject { config[:push_api_key] }
+
+        context "without :push_api_key" do
+          let(:config) { project_fixture_config('old_config') }
+
+          it "sets the :push_api_key with the old :api_key value" do
+            expect(subject).to eq 'def'
+          end
+        end
+
+        context "with :push_api_key" do
+          let(:config) { project_fixture_config('old_config_mixed_with_new_config') }
+
+          it "ignores the :api_key config" do
+            expect(subject).to eq 'ghi'
+          end
+        end
+      end
+
+      describe ":ignore_exceptions" do
+        subject { config[:ignore_errors] }
+
+        context "without :ignore_errors" do
+          let(:config) { project_fixture_config('old_config') }
+
+          it "sets :ignore_errors with the old :ignore_exceptions value" do
+            expect(subject).to eq ['StandardError']
+          end
+        end
+
+        context "with :ignore_errors" do
+          let(:config) { project_fixture_config('old_config_mixed_with_new_config') }
+
+          it "ignores the :ignore_exceptions config" do
+            expect(subject).to eq ['NoMethodError']
+          end
+        end
+      end
+    end
+  end
+
+  context "with config in the environment" do
+    let(:config) do
+      described_class.new(
+        "non-existing-path",
+        "production",
+        :running_in_container => true,
+        :debug => true
+      )
+    end
+    before do
+      ENV['APPSIGNAL_RUNNING_IN_CONTAINER'] = 'true'
+      ENV['APPSIGNAL_PUSH_API_KEY']         = 'aaa-bbb-ccc'
+      ENV['APPSIGNAL_ACTIVE']               = 'true'
+      ENV['APPSIGNAL_APP_NAME']             = 'App name'
+      ENV['APPSIGNAL_DEBUG']                = 'true'
+      ENV['APPSIGNAL_IGNORE_ACTIONS']       = 'action1,action2'
+    end
+    around { |example| recognize_as_container(:none) { example.run } }
+
+    it "overrides config with environment values" do
+      expect(config.valid?).to be_true
+      expect(config.active?).to be_true
+
+      expect(config[:running_in_container]).to be_true
+      expect(config[:push_api_key]).to eq 'aaa-bbb-ccc'
+      expect(config[:active]).to be_true
+      expect(config[:name]).to eq 'App name'
+      expect(config[:debug]).to be_true
+      expect(config[:ignore_actions]).to eq ['action1', 'action2']
+    end
+  end
+
+  describe "config keys" do
+    describe ":endpoint" do
+      subject { config[:endpoint] }
+
+      context "with an pre-0.12-style endpoint" do
+        let(:config) do
+          project_fixture_config('production', :endpoint => 'https://push.appsignal.com/1')
+        end
+
+        it "strips off the path" do
+          expect(subject).to eq 'https://push.appsignal.com'
+        end
+      end
+
+      context "with a non-standard port" do
+        let(:config) { project_fixture_config('production', :endpoint => 'http://localhost:4567') }
+
+        it "keeps the port" do
+          expect(subject).to eq 'http://localhost:4567'
+        end
+      end
+    end
+  end
+
+  describe "#[]" do
+    let(:config) { project_fixture_config(:none, :push_api_key => 'foo') }
+
+    context "with existing key" do
+      it "gets the value" do
+        expect(config[:push_api_key]).to eq 'foo'
+      end
+    end
+
+    context "without existing key" do
+      it "returns nil" do
+        expect(config[:nonsense]).to be_nil
+      end
+    end
+  end
+
+  describe "#[]=" do
+    let(:config) { project_fixture_config(:none) }
+
+    context "with existing key" do
+      it "changes the value" do
+        expect(config[:push_api_key]).to be_nil
+        config[:push_api_key] = 'abcde'
+        expect(config[:push_api_key]).to eq 'abcde'
+      end
+    end
+
+    context "with new key" do
+      it "sets the value" do
+        expect(config[:foo]).to be_nil
+        config[:foo] = 'bar'
+        expect(config[:foo]).to eq 'bar'
+      end
+    end
+  end
+
+  describe "#write_to_environment" do
+    let(:config) { project_fixture_config(:production) }
+    before do
+      config[:http_proxy] = 'http://localhost'
+      config[:ignore_actions] = ['action1', 'action2']
+      config[:log_path] = '/tmp'
+      config[:hostname] = 'app1.local'
+      config[:filter_parameters] = %w(password confirm_password)
+      config[:running_in_container] = false
+      config.write_to_environment
+    end
+
+    it "writes the current config to environment variables" do
+      expect(ENV['APPSIGNAL_ACTIVE']).to                       eq 'true'
+      expect(ENV['APPSIGNAL_APP_PATH']).to                     end_with('spec/support/project_fixture')
+      expect(ENV['APPSIGNAL_AGENT_PATH']).to                   end_with('/ext')
+      expect(ENV['APPSIGNAL_DEBUG_LOGGING']).to                eq 'false'
+      expect(ENV['APPSIGNAL_LOG_FILE_PATH']).to                end_with('/tmp/appsignal.log')
+      expect(ENV['APPSIGNAL_PUSH_API_ENDPOINT']).to            eq 'https://push.appsignal.com'
+      expect(ENV['APPSIGNAL_PUSH_API_KEY']).to                 eq 'abc'
+      expect(ENV['APPSIGNAL_APP_NAME']).to                     eq 'TestApp'
+      expect(ENV['APPSIGNAL_ENVIRONMENT']).to                  eq 'production'
+      expect(ENV['APPSIGNAL_AGENT_VERSION']).to                eq Appsignal::Extension.agent_version
+      expect(ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION']).to eq Appsignal::VERSION
+      expect(ENV['APPSIGNAL_HTTP_PROXY']).to                   eq 'http://localhost'
+      expect(ENV['APPSIGNAL_IGNORE_ACTIONS']).to               eq 'action1,action2'
+      expect(ENV['APPSIGNAL_FILTER_PARAMETERS']).to            eq 'password,confirm_password'
+      expect(ENV['APPSIGNAL_SEND_PARAMS']).to                  eq 'true'
+      expect(ENV['APPSIGNAL_RUNNING_IN_CONTAINER']).to         eq 'false'
+      expect(ENV['APPSIGNAL_ENABLE_HOST_METRICS']).to          eq 'true'
+      expect(ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES']).to       eq 'false'
+      expect(ENV['APPSIGNAL_HOSTNAME']).to                     eq 'app1.local'
+      expect(ENV['APPSIGNAL_PROCESS_NAME']).to                 include 'rspec'
+      expect(ENV['APPSIGNAL_CA_FILE_PATH']).to                 eq File.join(resources_dir, "cacert.pem")
+      expect(ENV).to_not                                       have_key('APPSIGNAL_WORKING_DIR_PATH')
+    end
+
+    context "with :working_dir_path" do
+      before do
+        config[:working_dir_path] = '/tmp/appsignal2'
+        config.write_to_environment
+      end
+
+      it "sets the modified :working_dir_path" do
+        expect(ENV['APPSIGNAL_WORKING_DIR_PATH']).to eq '/tmp/appsignal2'
+      end
+    end
+  end
+
+  describe "#log_file_path" do
+    let(:stdout) { StringIO.new }
+    let(:config) { project_fixture_config('production', :log_path => log_path) }
+    subject { config.log_file_path }
+    around { |example| capture_stdout(stdout) { example.run } }
+
+    context "when path is writable" do
+      let(:log_path) { File.join(tmp_dir, 'writable-path') }
+      before { FileUtils.mkdir_p(log_path, :mode => 0755) }
+      after { FileUtils.rm_rf(log_path) }
+
+      it "returns log file path" do
+        expect(subject).to eq File.join(log_path, 'appsignal.log')
+      end
+
+      it "prints no warning" do
+        subject
+        expect(stdout.string).to be_empty
+      end
+    end
+
+    shared_examples '#log_file_path: tmp path' do
+      let(:system_tmp_dir) { described_class::SYSTEM_TMP_DIR }
+      before { FileUtils.mkdir_p(system_tmp_dir) }
+      after { FileUtils.rm_rf(system_tmp_dir) }
+
+      context "when the /tmp fallback path is writable" do
+        before { FileUtils.chmod(0777, system_tmp_dir) }
+
+        it "returns returns the tmp location" do
+          expect(subject).to eq(File.join(system_tmp_dir, 'appsignal.log'))
+        end
+
+        it "prints a warning" do
+          subject
+          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}'. "\
+            "Logging to '#{system_tmp_dir}' instead."
+        end
+      end
+
+      context "when the /tmp fallback path is not writable" do
+        before { FileUtils.chmod(0555, system_tmp_dir) }
+
+        it "returns nil" do
+          expect(subject).to be_nil
+        end
+
+        it "prints a warning" do
+          subject
+          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
+            "or the '#{system_tmp_dir}' fallback."
+        end
+      end
+    end
+
+    context "when path is nil" do
+      let(:log_path) { nil }
+
+      context "when root_path is nil" do
+        before { allow(config).to receive(:root_path).and_return(nil) }
+
+        include_examples '#log_file_path: tmp path'
+      end
+
+      context "when root_path is set" do
+        it "returns returns the project log location" do
+          expect(subject).to eq File.join(config.root_path, 'appsignal.log')
         end
 
         it "prints no warning" do
@@ -69,323 +419,66 @@ describe Appsignal::Config do
           expect(stdout.string).to be_empty
         end
       end
+    end
 
-      shared_examples '#log_file_path: tmp path' do
-        let(:system_tmp_dir) { Appsignal::Config::SYSTEM_TMP_DIR }
-        before { FileUtils.mkdir_p(system_tmp_dir) }
-        after { FileUtils.rm_rf(system_tmp_dir) }
+    context "when path does not exist" do
+      let(:log_path) { '/non-existing' }
 
-        context "when the /tmp fallback path is writable" do
-          before { FileUtils.chmod(0777, system_tmp_dir) }
+      include_examples '#log_file_path: tmp path'
+    end
 
-          it "returns returns the tmp location" do
-            expect(subject).to eq(File.join(system_tmp_dir, 'appsignal.log'))
-          end
+    context "when path is not writable" do
+      let(:log_path) { File.join(tmp_dir, 'not-writable-path') }
+      before { FileUtils.mkdir_p(log_path, :mode => 0555) }
+      after { FileUtils.rm_rf(log_path) }
 
-          it "prints a warning" do
-            subject
-            expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}'. "\
-              "Logging to '#{system_tmp_dir}' instead."
-          end
-        end
+      include_examples '#log_file_path: tmp path'
+    end
 
-        context "when the /tmp fallback path is not writable" do
-          before { FileUtils.chmod(0555, system_tmp_dir) }
-
-          it "returns nil" do
-            expect(subject).to be_nil
-          end
-
-          it "prints a warning" do
-            subject
-            expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
-              "or the '#{system_tmp_dir}' fallback."
-          end
-        end
-      end
-
-      context "when path is nil" do
-        let(:log_path) { nil }
-
-        context "when root_path is nil" do
-          before { allow(config).to receive(:root_path).and_return(nil) }
-
-          include_examples '#log_file_path: tmp path'
-        end
-
-        context "when root_path is set" do
-          it "returns returns the project log location" do
-            expect(subject).to eq File.join(config.root_path, 'appsignal.log')
-          end
-
-          it "prints no warning" do
-            subject
-            expect(stdout.string).to be_empty
-          end
-        end
-      end
-
-      context "when path does not exist" do
-        let(:log_path) { '/non-existing' }
+    context "when path is a symlink" do
+      context "when linked path does not exist" do
+        let(:real_path) { File.join(tmp_dir, 'real-path') }
+        let(:log_path) { File.join(tmp_dir, 'symlink-path') }
+        before { File.symlink(real_path, log_path) }
+        after { FileUtils.rm(log_path) }
 
         include_examples '#log_file_path: tmp path'
       end
 
-      context "when path is not writable" do
-        let(:log_path) { File.join(tmp_dir, 'not-writable-path') }
-        before { FileUtils.mkdir_p(log_path, :mode => 0555) }
-        after { FileUtils.rm_rf(log_path) }
-
-        include_examples '#log_file_path: tmp path'
-      end
-
-      context "when path is a symlink" do
-        context "when linked path does not exist" do
+      context "when linked path exists" do
+        context "when linked path is not writable" do
           let(:real_path) { File.join(tmp_dir, 'real-path') }
           let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-          before { File.symlink(real_path, log_path) }
-          after { FileUtils.rm(log_path) }
+          before do
+            FileUtils.mkdir_p(real_path)
+            FileUtils.chmod(0444, real_path)
+            File.symlink(real_path, log_path)
+          end
+          after do
+            FileUtils.rm_rf(real_path)
+            FileUtils.rm(log_path)
+          end
 
           include_examples '#log_file_path: tmp path'
         end
 
-        context "when linked path exists" do
-          context "when linked path is not writable" do
-            let(:real_path) { File.join(tmp_dir, 'real-path') }
-            let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-            before do
-              FileUtils.mkdir_p(real_path)
-              FileUtils.chmod(0444, real_path)
-              File.symlink(real_path, log_path)
-            end
-            after do
-              FileUtils.rm_rf(real_path)
-              FileUtils.rm(log_path)
-            end
-
-            include_examples '#log_file_path: tmp path'
+        context "when linked path is writable" do
+          let(:real_path) { File.join(tmp_dir, 'real-path') }
+          let(:log_path) { File.join(tmp_dir, 'symlink-path') }
+          before do
+            FileUtils.mkdir_p(real_path)
+            File.symlink(real_path, log_path)
+          end
+          after do
+            FileUtils.rm_rf(real_path)
+            FileUtils.rm(log_path)
           end
 
-          context "when linked path is writable" do
-            let(:real_path) { File.join(tmp_dir, 'real-path') }
-            let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-            before do
-              FileUtils.mkdir_p(real_path)
-              File.symlink(real_path, log_path)
-            end
-            after do
-              FileUtils.rm_rf(real_path)
-              FileUtils.rm(log_path)
-            end
-
-            it "returns real path of log path" do
-              expect(subject).to eq(File.join(real_path, 'appsignal.log'))
-            end
+          it "returns real path of log path" do
+            expect(subject).to eq(File.join(real_path, 'appsignal.log'))
           end
         end
       end
     end
-
-    context "when there is a pre 0.12 style endpoint" do
-      let(:config) { project_fixture_config('production', :endpoint => 'https://push.appsignal.com/1') }
-
-      it "should strip the path" do
-        subject[:endpoint].should eq 'https://push.appsignal.com'
-      end
-    end
-
-    context "when there is an endpoint with a non-standard port" do
-      let(:config) { project_fixture_config('production', :endpoint => 'http://localhost:4567') }
-
-      it "should keep the port" do
-        subject[:endpoint].should eq 'http://localhost:4567'
-      end
-    end
-
-    describe "#[]= and #[]" do
-      it "should get the value for an existing key" do
-        subject[:push_api_key].should eq 'abc'
-      end
-
-      it "should change and get the value for an existing key" do
-        subject[:push_api_key] = 'abcde'
-        subject[:push_api_key].should eq 'abcde'
-      end
-
-      it "should return nil for a non-existing key" do
-        subject[:nonsense].should be_nil
-      end
-    end
-
-    describe "#write_to_environment" do
-      before do
-        subject.config_hash[:http_proxy]     = 'http://localhost'
-        subject.config_hash[:ignore_actions] = ['action1', 'action2']
-        subject.config_hash[:log_path]  = '/tmp'
-        subject.config_hash[:hostname]  = 'app1.local'
-        subject.config_hash[:filter_parameters] = %w(password confirm_password)
-        subject.config_hash[:running_in_container] = false
-        subject.write_to_environment
-      end
-
-      it "should write the current config to env vars" do
-        ENV['APPSIGNAL_ACTIVE'].should                       eq 'true'
-        ENV['APPSIGNAL_APP_PATH'].should                     end_with('spec/support/project_fixture')
-        ENV['APPSIGNAL_AGENT_PATH'].should                   end_with('/ext')
-        ENV['APPSIGNAL_DEBUG_LOGGING'].should                eq 'false'
-        ENV['APPSIGNAL_LOG_FILE_PATH'].should                end_with('/tmp/appsignal.log')
-        ENV['APPSIGNAL_PUSH_API_ENDPOINT'].should            eq 'https://push.appsignal.com'
-        ENV['APPSIGNAL_PUSH_API_KEY'].should                 eq 'abc'
-        ENV['APPSIGNAL_APP_NAME'].should                     eq 'TestApp'
-        ENV['APPSIGNAL_ENVIRONMENT'].should                  eq 'production'
-        ENV['APPSIGNAL_AGENT_VERSION'].should                eq Appsignal::Extension.agent_version
-        ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION'].should eq Appsignal::VERSION
-        ENV['APPSIGNAL_HTTP_PROXY'].should                   eq 'http://localhost'
-        ENV['APPSIGNAL_IGNORE_ACTIONS'].should               eq 'action1,action2'
-        ENV['APPSIGNAL_FILTER_PARAMETERS'].should            eq 'password,confirm_password'
-        ENV['APPSIGNAL_SEND_PARAMS'].should                  eq 'true'
-        ENV['APPSIGNAL_RUNNING_IN_CONTAINER'].should         eq 'false'
-        ENV['APPSIGNAL_WORKING_DIR_PATH'].should             be_nil
-        ENV['APPSIGNAL_ENABLE_HOST_METRICS'].should          eq 'true'
-        ENV['APPSIGNAL_ENABLE_MINUTELY_PROBES'].should       eq 'false'
-        ENV['APPSIGNAL_HOSTNAME'].should                     eq 'app1.local'
-        ENV['APPSIGNAL_PROCESS_NAME'].should                 include 'rspec'
-        ENV['APPSIGNAL_CA_FILE_PATH'].should                 eq File.join(resources_dir, "cacert.pem")
-      end
-
-      context "if working_dir_path is set" do
-        before do
-          subject.config_hash[:working_dir_path] = '/tmp/appsignal2'
-          subject.write_to_environment
-        end
-
-        it "should write the current config to env vars" do
-          ENV['APPSIGNAL_WORKING_DIR_PATH'].should eq '/tmp/appsignal2'
-        end
-      end
-    end
-
-    context "if the env is passed as a symbol" do
-      let(:config) { project_fixture_config(:production) }
-
-      its(:active?) { should be_true }
-    end
-
-    context "when there's config in the environment" do
-      before do
-        ENV['APPSIGNAL_PUSH_API_KEY'] = 'push_api_key'
-        ENV['APPSIGNAL_DEBUG'] = 'true'
-      end
-
-      it "should ignore env vars that are present in the config file" do
-        subject[:push_api_key].should eq 'abc'
-      end
-
-      it "should use env vars that are not present in the config file" do
-        subject[:debug].should eq true
-      end
-
-      describe "running_in_container" do
-        subject { config[:running_in_container] }
-
-        context "when running on Heroku" do
-          around { |example| recognize_as_heroku { example.run } }
-
-          it "is set to true" do
-            expect(subject).to be_true
-          end
-        end
-
-        context "when running in container" do
-          around { |example| recognize_as_container(:docker) { example.run } }
-
-          it "is set to true" do
-            expect(subject).to be_true
-          end
-        end
-
-        context "when not running in container" do
-          around { |example| recognize_as_container(:none) { example.run } }
-
-          it "is set to false" do
-            expect(subject).to be_false
-          end
-        end
-      end
-    end
-
-    context "and there is an initial config" do
-      let(:config) { project_fixture_config('production', :name => 'Initial name', :initial_key => 'value') }
-
-      it "should merge with the config" do
-        subject[:name].should eq 'TestApp'
-        subject[:initial_key].should eq 'value'
-      end
-    end
-
-    context "and there is an old-style config" do
-      let(:config) { project_fixture_config('old_api_key') }
-
-      it "should fill the push_api_key with the old style key" do
-        subject[:push_api_key].should eq 'def'
-      end
-
-      it "should fill ignore_errors with the old style ignore exceptions" do
-        subject[:ignore_errors].should eq ['StandardError']
-      end
-    end
-  end
-
-  context "when there is a config file without the current env" do
-    let(:config) { project_fixture_config('nonsense') }
-
-    it "should log an error" do
-      Logger.any_instance.should_receive(:error).with(
-        "Not loading from config file: config for 'nonsense' not found"
-      ).once
-      Logger.any_instance.should_receive(:error).with(
-        "Push api key not set after loading config"
-      ).once
-      subject
-    end
-
-    its(:valid?)  { should be_false }
-    its(:active?) { should be_false }
-  end
-
-  context "when there is no config file" do
-    let(:initial_config) { {} }
-    let(:config) { Appsignal::Config.new('/tmp', 'production', initial_config) }
-
-    its(:valid?)        { should be_false }
-    its(:active?)       { should be_false }
-    its(:log_file_path) { should end_with('/tmp/appsignal.log') }
-
-    context "with valid config in the environment" do
-      before do
-        ENV['APPSIGNAL_PUSH_API_KEY']   = 'aaa-bbb-ccc'
-        ENV['APPSIGNAL_ACTIVE']         = 'true'
-        ENV['APPSIGNAL_APP_NAME']       = 'App name'
-        ENV['APPSIGNAL_DEBUG']          = 'true'
-        ENV['APPSIGNAL_IGNORE_ACTIONS'] = 'action1,action2'
-      end
-
-      its(:valid?)  { should be_true }
-      its(:active?) { should be_true }
-
-      its([:push_api_key])   { should eq 'aaa-bbb-ccc' }
-      its([:active])         { should eq true }
-      its([:name])           { should eq 'App name' }
-      its([:debug])          { should eq true }
-      its([:ignore_actions]) { should eq ['action1', 'action2'] }
-    end
-  end
-
-  context "when a nil root path is passed" do
-    let(:initial_config) { {} }
-    let(:config) { Appsignal::Config.new(nil, 'production', initial_config) }
-
-    its(:valid?)  { should be_false }
-    its(:active?) { should be_false }
   end
 end
