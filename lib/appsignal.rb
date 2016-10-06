@@ -301,10 +301,6 @@ module Appsignal
         "appsignal: #{msg}\n"
       end
     end
-
-    def heroku?
-      ENV['DYNO']
-    end
   end
 end
 
