@@ -27,7 +27,7 @@ module Appsignal
       @ext.set_error(
         @data['name'],
         @data['message'],
-        Appsignal::Utils.json_generate(@data['backtrace'])
+        Appsignal::Utils.data_generate(@data['backtrace'])
       )
     end
 
@@ -39,14 +39,10 @@ module Appsignal
         :tags         => @data['tags']
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
-        begin
-          @ext.set_sample_data(
-            key.to_s,
-            Appsignal::Utils.json_generate(data)
-          )
-        rescue *Appsignal::Transaction::JSON_EXCEPTIONS => e
-          Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{backtrace.inspect}'")
-        end
+        @ext.set_sample_data(
+          key.to_s,
+          Appsignal::Utils.data_generate(data)
+        )
       end
     end
 
