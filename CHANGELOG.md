@@ -1,4 +1,13 @@
 # 1.4.0
+* Add Appsignal.instrument_sql convenience methods
+* Use Appsignal.instrument internally instead of AS instrument
+* Override AS instrument instead of subscribing
+* Use have_library to link libappsignal
+* Refactor rescueing of exceptions
+* Use GC::Profiler to track garbage collection time
+* Recognize wether we're running in container
+* Change load order to set system config first
+* Remove unused config method
 
 # 1.3.6
 * Support blocks arguments on method instrumentation
@@ -26,7 +35,6 @@
 * Prevent transaction crashes on Sinatra routes with optional parameters
 * Listen to `stage` option to Capistrano 2 for automatic environment detection
 * Add `appsignal_env` option to Capistrano 2 to set a custom environment
->>>>>>> master
 
 # 1.3.2
 * Add method to discard a transaction
