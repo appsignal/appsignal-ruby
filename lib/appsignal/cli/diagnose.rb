@@ -1,79 +1,128 @@
+require "bundler/cli"
+require "bundler/cli/common"
+
 module Appsignal
   class CLI
     class Diagnose
       class << self
         def run
-          gem_version
           agent_version
+          empty_line
+
           start_appsignal
           config
+          empty_line
+
           check_api_key
+          empty_line
+
           paths_writable
-          check_ext_install
+          empty_line
+
+          log_files
         end
 
-        def gem_version
-          puts "Gem version: #{Appsignal::VERSION}"
-        end
+        private
 
-        def agent_version
-          puts "Agent version: #{Appsignal::Extension.agent_version}"
+        def empty_line
+          puts "\n"
         end
 
         def start_appsignal
           Appsignal.start
         end
 
+        def agent_version
+          puts "AppSignal agent"
+          puts "  Gem version: #{Appsignal::VERSION}"
+          puts "  Agent version: #{Appsignal::Extension.agent_version}"
+        end
+
+        def environment
+          env = Appsignal.config.env
+          puts "  Environment: #{env}"
+          if env == ""
+            puts "    Warning: No environment set, no config loaded!"
+            puts "    Please make sure appsignal diagnose is run within your "
+            puts "    project directory with an environment."
+            puts "      APPSIGNAL_APP_ENV=production appsignal diagnose"
+          end
+        end
+
         def config
-          start_appsignal
-          puts "Environment: #{Appsignal.config.env}"
-          Appsignal.config.config_hash.each do |key, val|
-            puts "Config #{key}: #{val}"
+          puts "Configuration"
+          environment
+          Appsignal.config.config_hash.each do |key, value|
+            puts "  #{key}: #{value}"
           end
         end
 
         def paths_writable
-          start_appsignal
-          possible_paths = [
-            Appsignal.config.root_path,
-            Appsignal.config.log_file_path
-          ]
+          possible_paths = {
+            :root_path => Appsignal.config.root_path,
+            :log_file_path => Appsignal.config.log_file_path
+          }
 
-          puts "Checking if required paths are writable:"
-          possible_paths.each do |path|
-            result = File.writable?(path) ? 'Ok' : 'Failed'
-            puts "#{path} ...#{result}"
+          puts "Required paths"
+          possible_paths.each do |name, path|
+            result = "Not writable"
+            if path
+              if !File.exist? path
+                result = "Does not exist"
+              elsif File.writable? path
+                result = "Writable"
+              end
+            end
+            puts "  #{name}: #{path.to_s.inspect} - #{result}"
           end
-          puts "\n"
         end
 
         def check_api_key
-          start_appsignal
           auth_check = ::Appsignal::AuthCheck.new(Appsignal.config, Appsignal.logger)
+          print "Validating API key: "
           status, _ = auth_check.perform_with_result
-          if status == '200'
-            puts "Checking API key: Ok"
+          case status
+          when "200"
+            print "Valid"
+          when "401"
+            print "Invalid"
           else
-            puts "Checking API key: Failed"
+            print "Failed with status #{status}"
+          end
+          empty_line
+        end
+
+        def log_files
+          install_log
+          empty_line
+          mkmf_log
+        end
+
+        def install_log
+          install_log_path = File.join(gem_path, "ext", "install.log")
+          puts "Extension install log"
+          output_log_file install_log_path
+        end
+
+        def mkmf_log
+          mkmf_log_path = File.join(gem_path, "ext", "mkmf.log")
+          puts "Makefile install log"
+          output_log_file mkmf_log_path
+        end
+
+        def output_log_file(log_file)
+          puts "  Path: #{log_file.to_s.inspect}"
+          if File.exist? log_file
+            puts "  Contents:"
+            puts File.read(log_file)
+          else
+            puts "  File not found."
           end
         end
 
-        def check_ext_install
-          require 'bundler/cli'
-          require "bundler/cli/common"
-          path = Bundler::CLI::Common.select_spec('appsignal').full_gem_path.strip
-          install_log_path = "#{path}/ext/install.log"
-          puts "Showing last lines of extension install log: #{install_log_path}"
-          puts File.read(install_log_path)
-          puts "\n"
-          mkmf_log_path = "#{path}/ext/mkmf.log"
-          if File.exist?(mkmf_log_path)
-            puts "Showing last lines of extension compilation log: #{mkmf_log_path}"
-            puts File.read(mkmf_log_path)
-            puts "\n"
-          else
-            puts "#{mkmf_log_path} not present"
-          end
+        def gem_path
+          @gem_path ||= \
+            Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
         end
       end
     end
