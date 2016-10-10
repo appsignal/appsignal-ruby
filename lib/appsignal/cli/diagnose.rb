@@ -1,3 +1,4 @@
+require "rbconfig"
 require "bundler/cli"
 require "bundler/cli/common"
 
@@ -10,6 +11,9 @@ module Appsignal
           empty_line
 
           agent_version
+          empty_line
+
+          host_information
           empty_line
 
           start_appsignal
@@ -49,6 +53,14 @@ module Appsignal
           puts "AppSignal agent"
           puts "  Gem version: #{Appsignal::VERSION}"
           puts "  Agent version: #{Appsignal::Extension.agent_version}"
+        end
+
+        def host_information
+          rbconfig = RbConfig::CONFIG
+          puts "Host information"
+          puts "  Architecture: #{rbconfig["host_cpu"]}"
+          puts "  Operating System: #{rbconfig["host_os"]}"
+          puts "  Ruby version: #{rbconfig["RUBY_VERSION_NAME"]}"
         end
 
         def environment

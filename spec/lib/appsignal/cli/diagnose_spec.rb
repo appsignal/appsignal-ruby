@@ -38,6 +38,15 @@ describe Appsignal::CLI::Diagnose do
         "Agent version: #{Appsignal::Extension.agent_version}"
     end
 
+    it "outputs host information" do
+      run
+      expect(output).to include \
+        "Host information",
+        "Architecture: #{RbConfig::CONFIG["host_cpu"]}",
+        "Operating System: #{RbConfig::CONFIG["host_os"]}",
+        "Ruby version: #{RbConfig::CONFIG["RUBY_VERSION_NAME"]}"
+    end
+
     describe "configuration" do
       context "without environment" do
         let(:config) { project_fixture_config("") }
