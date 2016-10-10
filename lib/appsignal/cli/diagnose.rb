@@ -6,6 +6,9 @@ module Appsignal
     class Diagnose
       class << self
         def run
+          header
+          empty_line
+
           agent_version
           empty_line
 
@@ -30,6 +33,16 @@ module Appsignal
 
         def start_appsignal
           Appsignal.start
+        end
+
+        def header
+          puts "AppSignal diagnose"
+          puts "=" * 80
+          puts "Use this information to debug your configuration."
+          puts "More information is available on the documentation site."
+          puts "http://docs.appsignal.com/"
+          puts "Send this output to support@appsignal.com if you need help."
+          puts "=" * 80
         end
 
         def agent_version

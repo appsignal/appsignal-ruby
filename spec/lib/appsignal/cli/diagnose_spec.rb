@@ -23,6 +23,14 @@ describe Appsignal::CLI::Diagnose do
       end
     end
 
+    it "outputs header and support text" do
+      run
+      expect(output).to include \
+        "AppSignal diagnose",
+        "http://docs.appsignal.com/",
+        "support@appsignal.com"
+    end
+
     it "outputs version numbers" do
       run
       expect(output).to include \
