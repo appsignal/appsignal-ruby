@@ -1,92 +1,201 @@
 if DependencyHelper.grape_present?
-  require 'appsignal/integrations/grape'
+  require "appsignal/integrations/grape"
 
   describe Appsignal::Grape::Middleware do
-
-    before :all do
-      start_agent
+    let(:app) do
+      Class.new(::Grape::API) do
+        format :json
+        post :ping do
+          { :message => "Hello world!" }
+        end
+      end
     end
-
-    let(:app)          { double(:call => true) }
-    let(:api_endpoint) { double(:options => options) }
-    let(:options)      { {
-      :for    => 'Api::PostPut',
-      :method => ['POST'],
-      :path   => ['ping']
-    }}
+    let(:api_endpoint) { app.endpoints.first }
     let(:env) do
-      http_request_env_with_data('api.endpoint' => api_endpoint)
+      http_request_env_with_data \
+        "api.endpoint" => api_endpoint,
+        "REQUEST_METHOD" => "POST",
+        :path => "/ping"
     end
-    let(:middleware) { Appsignal::Grape::Middleware.new(app) }
+    let(:middleware) { Appsignal::Grape::Middleware.new(api_endpoint) }
+    around do |example|
+      GrapeExample = Module.new
+      GrapeExample.send(:const_set, :Api, app)
+      example.run
+      Object.send(:remove_const, :GrapeExample)
+    end
 
     describe "#call" do
-      context "when appsignal is active" do
-        before { Appsignal.stub(:active? => true) }
-
-        it "should call with monitoring" do
-          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
-        end
-      end
-
-      context "when appsignal is not active" do
-        before { Appsignal.stub(:active? => false) }
-
-        it "should not call with monitoring" do
-          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+      context "when AppSignal is not active" do
+        before(:all) do
+          Appsignal.config = nil
+          Appsignal::Hooks.load_hooks
         end
 
-        it "should call the app" do
-          expect( app ).to receive(:call).with(env)
+        it "creates no transaction" do
+          expect(Appsignal::Transaction).to_not receive(:create)
         end
+
+        it "calls the endpoint normally" do
+          expect(api_endpoint).to receive(:call).with(env)
+        end
+
+        after { middleware.call(env) }
       end
 
-      after { middleware.call(env) }
-    end
+      context "when AppSignal is active" do
+        let(:transaction) { http_request_transaction }
+        before :all do
+          Appsignal.config = project_fixture_config
+          expect(Appsignal.active?).to be_true
+        end
+        before do
+          expect(Appsignal::Transaction).to receive(:create).with(
+            kind_of(String),
+            Appsignal::Transaction::HTTP_REQUEST,
+            kind_of(::Rack::Request)
+          ).and_return(transaction)
+        end
 
-    describe "#call_with_appsignal_monitoring" do
-      before { SecureRandom.stub(:uuid => '1') }
+        context "without error" do
+          it "calls the endpoint" do
+            expect(api_endpoint).to receive(:call).with(env)
+          end
 
-      it "should create a transaction" do
-        Appsignal::Transaction.should_receive(:create).with(
-          '1',
-          Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(::Rack::Request)
-        ).and_return(
-          double(
-            :set_action                         => nil,
-            :set_http_or_background_queue_start => nil,
-            :set_metadata                       => nil
-          )
-        )
-      end
+          it "sets metadata" do
+            expect(transaction).to receive(:set_http_or_background_queue_start)
+            expect(transaction).to receive(:set_action).with("POST::GrapeExample::Api#/ping")
+            expect(transaction).to receive(:set_metadata).with("path", "/ping")
+            expect(transaction).to receive(:set_metadata).with("method", "POST")
+          end
 
-      it "should call the app" do
-        app.should_receive(:call).with(env)
-      end
+          after { middleware.call(env) }
+        end
 
-      context "with an error" do
-        let(:error) { VerySpecificError.new }
-        let(:app) do
-          double.tap do |d|
-            d.stub(:call).and_raise(error)
+        context "with error" do
+          let(:app) do
+            Class.new(::Grape::API) do
+              format :json
+              post :ping do
+                raise VerySpecificError
+              end
+            end
+          end
+
+          it "sets metadata" do
+            expect(transaction).to receive(:set_http_or_background_queue_start)
+            expect(transaction).to receive(:set_action).with("POST::GrapeExample::Api#/ping")
+            expect(transaction).to receive(:set_metadata).with("path", "/ping")
+            expect(transaction).to receive(:set_metadata).with("method", "POST")
+          end
+
+          it "sets the error" do
+            expect(transaction).to receive(:set_error).with(kind_of(VerySpecificError))
+          end
+
+          after do
+            expect { middleware.call(env) }.to raise_error VerySpecificError
           end
         end
 
-        it "should set the error" do
-          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+        context "with route_param" do
+          let(:app) do
+            Class.new(::Grape::API) do
+              format :json
+              resource :users do
+                route_param :id do
+                  get do
+                    { :name => "Tom" }
+                  end
+                end
+              end
+            end
+          end
+          let(:env) do
+            http_request_env_with_data \
+              "api.endpoint" => api_endpoint,
+              "REQUEST_METHOD" => "GET",
+              :path => ""
+          end
+
+          it "sets non-unique route_param path" do
+            expect(transaction).to receive(:set_action).with("GET::GrapeExample::Api#/users/:id/")
+            expect(transaction).to receive(:set_metadata).with("path", "/users/:id/")
+            expect(transaction).to receive(:set_metadata).with("method", "GET")
+          end
+
+          after { middleware.call(env) }
+        end
+
+        context "with namespaced path" do
+          context "with symbols" do
+            let(:app) do
+              Class.new(::Grape::API) do
+                format :json
+                namespace :v1 do
+                  namespace :beta do
+                    post :ping do
+                      { :message => "Hello namespaced world!" }
+                    end
+                  end
+                end
+              end
+            end
+
+            it "sets namespaced path" do
+              expect(transaction).to receive(:set_action).with("POST::GrapeExample::Api#/v1/beta/ping")
+              expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
+              expect(transaction).to receive(:set_metadata).with("method", "POST")
+            end
+          end
+
+          context "with strings" do
+            context "without / prefix" do
+              let(:app) do
+                Class.new(::Grape::API) do
+                  format :json
+                  namespace "v1" do
+                    namespace "beta" do
+                      post "ping" do
+                        { :message => "Hello namespaced world!" }
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "sets namespaced path" do
+                expect(transaction).to receive(:set_action).with("POST::GrapeExample::Api#/v1/beta/ping")
+                expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
+                expect(transaction).to receive(:set_metadata).with("method", "POST")
+              end
+            end
+
+            context "with / prefix" do
+              let(:app) do
+                Class.new(::Grape::API) do
+                  format :json
+                  namespace "/v1" do
+                    namespace "/beta" do
+                      post "/ping" do
+                        { :message => "Hello namespaced world!" }
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "sets namespaced path" do
+                expect(transaction).to receive(:set_action).with("POST::GrapeExample::Api#/v1/beta/ping")
+                expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
+                expect(transaction).to receive(:set_metadata).with("method", "POST")
+              end
+            end
+          end
+
+          after { middleware.call(env) }
         end
       end
-
-      it "should set metadata" do
-        Appsignal::Transaction.any_instance.should_receive(:set_metadata).twice
-      end
-
-      it "should set the action and queue start" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with('POST::Api::PostPut#ping')
-        Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
-      end
-
-      after { middleware.call(env) rescue VerySpecificError }
     end
   end
 end
