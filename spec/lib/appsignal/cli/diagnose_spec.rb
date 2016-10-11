@@ -89,6 +89,30 @@ describe Appsignal::CLI::Diagnose do
     end
 
     describe "configuration" do
+      context "without extension" do
+        before do
+          # When the extension isn't loaded the Appsignal.start operation exits
+          # early and doesn't load the configuration.
+          # Happens when the extension wasn't installed properly.
+          Appsignal.extension_loaded = false
+          run
+        end
+        after { Appsignal.extension_loaded = true }
+
+        it "outputs an error" do
+          expect(output).to include \
+            "Error: No config found!\nCould not start AppSignal."
+        end
+
+        it "outputs as much as it can" do
+          expect(output).to include \
+            "AppSignal agent\n  Gem version: #{Appsignal::VERSION}",
+            "Host information\n  Architecture: ",
+            %(Extension install log\n  Path: "),
+            %(Makefile install log\n  Path: ")
+        end
+      end
+
       context "without environment" do
         let(:config) { project_fixture_config("") }
         before do
@@ -97,6 +121,7 @@ describe Appsignal::CLI::Diagnose do
         end
 
         it "outputs a warning that no config is loaded" do
+          expect(output).to_not include "Error"
           expect(output).to include \
             "Environment: \n    Warning: No environment set, no config loaded!",
             "  APPSIGNAL_APP_ENV=production appsignal diagnose"
@@ -119,6 +144,7 @@ describe Appsignal::CLI::Diagnose do
 
         it "outputs configuration" do
           expect(output).to include("Configuration")
+          expect(output).to_not include "Error"
           Appsignal.config.config_hash.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end
@@ -138,6 +164,7 @@ describe Appsignal::CLI::Diagnose do
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
+          expect(output).to_not include "Error"
           Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end

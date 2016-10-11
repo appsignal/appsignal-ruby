@@ -37,6 +37,10 @@ module Appsignal
 
         def start_appsignal
           Appsignal.start
+          return if config?
+
+          puts "Error: No config found!"
+          puts "Could not start AppSignal."
         end
 
         def header
@@ -68,6 +72,16 @@ module Appsignal
           end
         end
 
+        def config
+          puts "Configuration"
+          return unless config?
+          environment
+
+          Appsignal.config.config_hash.each do |key, value|
+            puts "  #{key}: #{value}"
+          end
+        end
+
         def environment
           env = Appsignal.config.env
           puts "  Environment: #{env}"
@@ -79,21 +93,15 @@ module Appsignal
           end
         end
 
-        def config
-          puts "Configuration"
-          environment
-          Appsignal.config.config_hash.each do |key, value|
-            puts "  #{key}: #{value}"
-          end
-        end
-
         def paths_writable
+          puts "Required paths"
+          return unless config?
+
           possible_paths = {
             :root_path => Appsignal.config.root_path,
             :log_file_path => Appsignal.config.log_file_path
           }
 
-          puts "Required paths"
           possible_paths.each do |name, path|
             result = "Not writable"
             if path
@@ -110,14 +118,15 @@ module Appsignal
         def check_api_key
           auth_check = ::Appsignal::AuthCheck.new(Appsignal.config, Appsignal.logger)
           print "Validating API key: "
-          status, _ = auth_check.perform_with_result
+          status, error = auth_check.perform_with_result
           case status
           when "200"
             print "Valid"
           when "401"
             print "Invalid"
           else
-            print "Failed with status #{status}"
+            print "Failed with status #{status}\n"
+            puts error if error
           end
           empty_line
         end
@@ -153,6 +162,10 @@ module Appsignal
         def gem_path
           @gem_path ||= \
             Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
+        end
+
+        def config?
+          Appsignal.config
         end
       end
     end
