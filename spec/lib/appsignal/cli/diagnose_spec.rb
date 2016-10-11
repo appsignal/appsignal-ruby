@@ -33,9 +33,11 @@ describe Appsignal::CLI::Diagnose do
 
     it "outputs version numbers" do
       run
+      gem_path = Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
       expect(output).to include \
         "Gem version: #{Appsignal::VERSION}",
-        "Agent version: #{Appsignal::Extension.agent_version}"
+        "Agent version: #{Appsignal::Extension.agent_version}",
+        "Gem install path: #{gem_path}"
     end
 
     it "outputs host information" do

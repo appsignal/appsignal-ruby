@@ -53,6 +53,7 @@ module Appsignal
           puts "AppSignal agent"
           puts "  Gem version: #{Appsignal::VERSION}"
           puts "  Agent version: #{Appsignal::Extension.agent_version}"
+          puts "  Gem install path: #{gem_path}"
         end
 
         def host_information
