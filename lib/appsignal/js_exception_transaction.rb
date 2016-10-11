@@ -14,7 +14,7 @@ module Appsignal
     end
 
     def set_action
-      @ext.set_action(@data['action'])
+      @ext.set_action(@data['action']) if @data['action']
     end
 
     def set_metadata
@@ -26,8 +26,8 @@ module Appsignal
     def set_error
       @ext.set_error(
         @data['name'],
-        @data['message'],
-        Appsignal::Utils.data_generate(@data['backtrace'])
+        @data['message'] || '',
+        Appsignal::Utils.data_generate(@data['backtrace'] || [])
       )
     end
 

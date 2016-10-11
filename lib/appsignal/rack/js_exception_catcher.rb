@@ -8,11 +8,18 @@ module Appsignal
 
       def call(env)
         if env['PATH_INFO'] == Appsignal.config[:frontend_error_catching_path]
-          body        = JSON.parse(env['rack.input'].read)
-          transaction = JSExceptionTransaction.new(body)
-          transaction.complete!
+          body = JSON.parse(env['rack.input'].read)
 
-          return [ 200, {}, []]
+          if body['name'].is_a?(String) && body['name'].length > 0
+            transaction = JSExceptionTransaction.new(body)
+            transaction.complete!
+            code = 200
+          else
+            Appsignal.logger.debug "JSExceptionCatcher: Could not send exception, 'name' is empty."
+            code = 422
+          end
+
+          return [code, {}, []]
         else
           @app.call(env)
         end
