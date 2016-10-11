@@ -40,13 +40,52 @@ describe Appsignal::CLI::Diagnose do
         "Gem install path: #{gem_path}"
     end
 
-    it "outputs host information" do
-      run
-      expect(output).to include \
-        "Host information",
-        "Architecture: #{RbConfig::CONFIG["host_cpu"]}",
-        "Operating System: #{RbConfig::CONFIG["host_os"]}",
-        "Ruby version: #{RbConfig::CONFIG["RUBY_VERSION_NAME"]}"
+    describe "host information" do
+      it "outputs host information" do
+        run
+        expect(output).to include \
+          "Host information",
+          "Architecture: #{RbConfig::CONFIG["host_cpu"]}",
+          "Operating System: #{RbConfig::CONFIG["host_os"]}",
+          "Ruby version: #{RbConfig::CONFIG["RUBY_VERSION_NAME"]}"
+      end
+
+      describe "Heroku detection" do
+        context "when not on Heroku" do
+          before { recognize_as_container(:none) { run } }
+
+          it "does not output Heroku detection" do
+            expect(output).to_not include("Heroku:")
+          end
+        end
+
+        context "when on Heroku" do
+          before { recognize_as_heroku { run } }
+
+          it "outputs Heroku detection" do
+            expect(output).to include("Heroku: true")
+          end
+        end
+      end
+
+      describe "container detection" do
+        context "when not in container" do
+          before { recognize_as_container(:none) { run } }
+
+          it "does not output container detection" do
+            expect(output).to_not include("Container id:")
+          end
+        end
+
+        context "when in container" do
+          before { recognize_as_container(:docker) { run } }
+
+          it "outputs container information" do
+            expect(output).to include \
+              "Container id: 0c703b75cdeaad7c933aa68b4678cc5c37a12d5ef5d7cb52c9cefe684d98e575"
+          end
+        end
+      end
     end
 
     describe "configuration" do
@@ -54,7 +93,7 @@ describe Appsignal::CLI::Diagnose do
         let(:config) { project_fixture_config("") }
         before do
           ENV["APPSIGNAL_APP_ENV"] = ""
-          run
+          recognize_as_container(:none) { run }
         end
 
         it "outputs a warning that no config is loaded" do
@@ -90,7 +129,7 @@ describe Appsignal::CLI::Diagnose do
         let(:config) { project_fixture_config("foobar") }
         before do
           ENV["APPSIGNAL_APP_ENV"] = "foobar"
-          run
+          recognize_as_container(:none) { run }
         end
 
         it "outputs environment" do

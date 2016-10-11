@@ -62,6 +62,10 @@ module Appsignal
           puts "  Architecture: #{rbconfig["host_cpu"]}"
           puts "  Operating System: #{rbconfig["host_os"]}"
           puts "  Ruby version: #{rbconfig["RUBY_VERSION_NAME"]}"
+          puts "  Heroku: true" if Appsignal::System.heroku?
+          if Appsignal::System.container?
+            puts "  Container id: #{Appsignal::System::Container.id}"
+          end
         end
 
         def environment
