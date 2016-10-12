@@ -1,11 +1,14 @@
 # 1.3.6
-* Support blocks arguments on method instrumentation
-* Support `APPSIGNAL_APP_ENV` for Sinatra
-* Minor improvements to installer
-* More robust handing of non-writable log files
-* Cleaner internal exception handling
-* Support for mixed case keywords in sql lexing
-* Support for inserting multiple rows in sql lexing
+* Support blocks arguments on method instrumentation. PR #163
+* Support `APPSIGNAL_APP_ENV` for Sinatra. PR #164
+* Remove Sinatra install step from "appsignal install". PR #165
+* Install Capistrano integration in `Capfile` instead of `deploy.rb`. #166
+* More robust handing of non-writable log files. PR #160 #158
+* Cleaner internal exception handling. PR #169 #170 #171 #172 #173
+* Support for mixed case keywords in sql lexing. appsignal/sql_lexer#8
+* Support for inserting multiple rows in sql lexing. appsignal/sql_lexer#9
+* Add session_overview to JS transaction data.
+  Commit af2d365bc124c01d7e9363e8d825404027835765
 
 # 1.3.5
 
