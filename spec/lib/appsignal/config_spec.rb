@@ -29,6 +29,26 @@ describe Appsignal::Config do
         end
       end
     end
+
+    describe ":log" do
+      subject { config[:log] }
+
+      context "when running on Heroku" do
+        around { |example| recognize_as_heroku { example.run } }
+
+        it "is set to stdout" do
+          expect(subject).to eq("stdout")
+        end
+      end
+
+      context "when not running on Heroku" do
+        around { |example| recognize_as_container(:none) { example.run } }
+
+        it "is set to file" do
+          expect(subject).to eq("file")
+        end
+      end
+    end
   end
 
   describe "initial config" do
@@ -46,6 +66,7 @@ describe Appsignal::Config do
     it "merges with the default config" do
       expect(config.config_hash).to eq(
         :debug                          => false,
+        :log                            => 'file',
         :ignore_errors                  => [],
         :ignore_actions                 => [],
         :filter_parameters              => [],
@@ -347,71 +368,34 @@ describe Appsignal::Config do
 
   describe "#log_file_path" do
     let(:stdout) { StringIO.new }
-    let(:config) { project_fixture_config('production', :log_path => log_path) }
     subject { config.log_file_path }
-    around { |example| capture_stdout(stdout) { example.run } }
-
-    context "when path is writable" do
-      let(:log_path) { File.join(tmp_dir, 'writable-path') }
-      before { FileUtils.mkdir_p(log_path, :mode => 0755) }
-      after { FileUtils.rm_rf(log_path) }
-
-      it "returns log file path" do
-        expect(subject).to eq File.join(log_path, 'appsignal.log')
-      end
-
-      it "prints no warning" do
-        subject
-        expect(stdout.string).to be_empty
+    around do |example|
+      recognize_as_container(:none) do
+        capture_stdout(stdout) { example.run }
       end
     end
 
-    shared_examples '#log_file_path: tmp path' do
-      let(:system_tmp_dir) { described_class::SYSTEM_TMP_DIR }
-      before { FileUtils.mkdir_p(system_tmp_dir) }
-      after { FileUtils.rm_rf(system_tmp_dir) }
+    context "when :log is stdout" do
+      before { config[:log] = "stdout" }
 
-      context "when the /tmp fallback path is writable" do
-        before { FileUtils.chmod(0777, system_tmp_dir) }
-
-        it "returns returns the tmp location" do
-          expect(subject).to eq(File.join(system_tmp_dir, 'appsignal.log'))
-        end
-
-        it "prints a warning" do
-          subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}'. "\
-            "Logging to '#{system_tmp_dir}' instead."
-        end
-      end
-
-      context "when the /tmp fallback path is not writable" do
-        before { FileUtils.chmod(0555, system_tmp_dir) }
+      context "with :log_path" do
+        let(:config) { project_fixture_config('production', :log_path => tmp_dir) }
 
         it "returns nil" do
           expect(subject).to be_nil
         end
 
-        it "prints a warning" do
+        it "prints no warning" do
           subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
-            "or the '#{system_tmp_dir}' fallback."
+          expect(stdout.string).to be_empty
         end
       end
-    end
 
-    context "when path is nil" do
-      let(:log_path) { nil }
+      context "without :log_path" do
+        let(:config) { project_fixture_config('production') }
 
-      context "when root_path is nil" do
-        before { allow(config).to receive(:root_path).and_return(nil) }
-
-        include_examples '#log_file_path: tmp path'
-      end
-
-      context "when root_path is set" do
-        it "returns returns the project log location" do
-          expect(subject).to eq File.join(config.root_path, 'appsignal.log')
+        it "returns nil" do
+          expect(subject).to be_nil
         end
 
         it "prints no warning" do
@@ -421,61 +405,135 @@ describe Appsignal::Config do
       end
     end
 
-    context "when path does not exist" do
-      let(:log_path) { '/non-existing' }
+    context "when :log is file" do
+      let(:config) { project_fixture_config('production', :log_path => log_path) }
 
-      include_examples '#log_file_path: tmp path'
-    end
+      context "when path is writable" do
+        let(:log_path) { File.join(tmp_dir, 'writable-path') }
+        before { FileUtils.mkdir_p(log_path, :mode => 0755) }
+        after { FileUtils.rm_rf(log_path) }
 
-    context "when path is not writable" do
-      let(:log_path) { File.join(tmp_dir, 'not-writable-path') }
-      before { FileUtils.mkdir_p(log_path, :mode => 0555) }
-      after { FileUtils.rm_rf(log_path) }
+        it "returns log file path" do
+          expect(subject).to eq File.join(log_path, 'appsignal.log')
+        end
 
-      include_examples '#log_file_path: tmp path'
-    end
-
-    context "when path is a symlink" do
-      context "when linked path does not exist" do
-        let(:real_path) { File.join(tmp_dir, 'real-path') }
-        let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-        before { File.symlink(real_path, log_path) }
-        after { FileUtils.rm(log_path) }
-
-        include_examples '#log_file_path: tmp path'
+        it "prints no warning" do
+          subject
+          expect(stdout.string).to be_empty
+        end
       end
 
-      context "when linked path exists" do
-        context "when linked path is not writable" do
-          let(:real_path) { File.join(tmp_dir, 'real-path') }
-          let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-          before do
-            FileUtils.mkdir_p(real_path)
-            FileUtils.chmod(0444, real_path)
-            File.symlink(real_path, log_path)
+      shared_examples '#log_file_path: tmp path' do
+        let(:system_tmp_dir) { described_class::SYSTEM_TMP_DIR }
+        before { FileUtils.mkdir_p(system_tmp_dir) }
+        after { FileUtils.rm_rf(system_tmp_dir) }
+
+        context "when the /tmp fallback path is writable" do
+          before { FileUtils.chmod(0777, system_tmp_dir) }
+
+          it "returns returns the tmp location" do
+            expect(subject).to eq(File.join(system_tmp_dir, 'appsignal.log'))
           end
-          after do
-            FileUtils.rm_rf(real_path)
-            FileUtils.rm(log_path)
+
+          it "prints a warning" do
+            subject
+            expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}'. "\
+              "Logging to '#{system_tmp_dir}' instead."
           end
+        end
+
+        context "when the /tmp fallback path is not writable" do
+          before { FileUtils.chmod(0555, system_tmp_dir) }
+
+          it "returns nil" do
+            expect(subject).to be_nil
+          end
+
+          it "prints a warning" do
+            subject
+            expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
+              "or the '#{system_tmp_dir}' fallback."
+          end
+        end
+      end
+
+      context "when path is nil" do
+        let(:log_path) { nil }
+
+        context "when root_path is nil" do
+          before { allow(config).to receive(:root_path).and_return(nil) }
 
           include_examples '#log_file_path: tmp path'
         end
 
-        context "when linked path is writable" do
-          let(:real_path) { File.join(tmp_dir, 'real-path') }
-          let(:log_path) { File.join(tmp_dir, 'symlink-path') }
-          before do
-            FileUtils.mkdir_p(real_path)
-            File.symlink(real_path, log_path)
-          end
-          after do
-            FileUtils.rm_rf(real_path)
-            FileUtils.rm(log_path)
+        context "when root_path is set" do
+          it "returns returns the project log location" do
+            expect(subject).to eq File.join(config.root_path, 'appsignal.log')
           end
 
-          it "returns real path of log path" do
-            expect(subject).to eq(File.join(real_path, 'appsignal.log'))
+          it "prints no warning" do
+            subject
+            expect(stdout.string).to be_empty
+          end
+        end
+      end
+
+      context "when path does not exist" do
+        let(:log_path) { '/non-existing' }
+
+        include_examples '#log_file_path: tmp path'
+      end
+
+      context "when path is not writable" do
+        let(:log_path) { File.join(tmp_dir, 'not-writable-path') }
+        before { FileUtils.mkdir_p(log_path, :mode => 0555) }
+        after { FileUtils.rm_rf(log_path) }
+
+        include_examples '#log_file_path: tmp path'
+      end
+
+      context "when path is a symlink" do
+        context "when linked path does not exist" do
+          let(:real_path) { File.join(tmp_dir, 'real-path') }
+          let(:log_path) { File.join(tmp_dir, 'symlink-path') }
+          before { File.symlink(real_path, log_path) }
+          after { FileUtils.rm(log_path) }
+
+          include_examples '#log_file_path: tmp path'
+        end
+
+        context "when linked path exists" do
+          context "when linked path is not writable" do
+            let(:real_path) { File.join(tmp_dir, 'real-path') }
+            let(:log_path) { File.join(tmp_dir, 'symlink-path') }
+            before do
+              FileUtils.mkdir_p(real_path)
+              FileUtils.chmod(0444, real_path)
+              File.symlink(real_path, log_path)
+            end
+            after do
+              FileUtils.rm_rf(real_path)
+              FileUtils.rm(log_path)
+            end
+
+            include_examples '#log_file_path: tmp path'
+          end
+
+          context "when linked path is writable" do
+            let(:real_path) { File.join(tmp_dir, 'real-path') }
+            let(:log_path) { File.join(tmp_dir, 'symlink-path') }
+            before do
+              FileUtils.mkdir_p(real_path)
+              File.symlink(real_path, log_path)
+            end
+            after do
+              FileUtils.rm_rf(real_path)
+              FileUtils.rm(log_path)
+            end
+
+            it "returns real path of log path" do
+              expect(subject).to eq(File.join(real_path, 'appsignal.log'))
+            end
           end
         end
       end

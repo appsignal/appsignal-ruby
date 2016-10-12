@@ -565,7 +565,9 @@ describe Appsignal do
         )
       end
       around do |example|
-        capture_stdout(out_stream) { example.run }
+        recognize_as_container(:none) do
+          capture_stdout(out_stream) { example.run }
+        end
       end
       after { FileUtils.rm_rf(log_path) }
 
