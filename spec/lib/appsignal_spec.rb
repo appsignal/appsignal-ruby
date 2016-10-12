@@ -599,11 +599,14 @@ describe Appsignal do
             expect(out_stream.string).to include 'Log to not writable log file'
           end
 
+          it "amends in memory log to stdout" do
+            expect(out_stream.string).to include 'Log in memory'
+          end
+
           it "outputs a warning" do
-            output = out_stream.string
-            expect(output).to include "appsignal: Unable to start logger with "\
-              "log path '#{log_file}'."
-            expect(output).to include "appsignal: Permission denied"
+            expect(out_stream.string).to include \
+              "appsignal: Unable to start logger with log path '#{log_file}'.",
+              "appsignal: Permission denied"
           end
         end
       end
@@ -624,6 +627,12 @@ describe Appsignal do
         it "amends in memory log to stdout" do
           expect(out_stream.string).to include 'Log in memory'
         end
+
+        it "outputs a warning" do
+          expect(out_stream.string).to include \
+            "appsignal: Unable to log to '#{log_path}' "\
+            "or the '#{Appsignal::Config::SYSTEM_TMP_DIR}' fallback."
+        end
       end
 
       context "when on Heroku" do
@@ -634,8 +643,8 @@ describe Appsignal do
         end
         after { ENV.delete('DYNO') }
 
-        it "should log to stdout" do
-          out_stream.string.should include 'appsignal: Log to stdout'
+        it "logs to stdout" do
+          expect(out_stream.string).to include 'appsignal: Log to stdout'
         end
 
         it "amends in memory log to stdout" do
