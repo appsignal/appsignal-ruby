@@ -1,13 +1,17 @@
 # 1.4.0
-* Add Appsignal.instrument_sql convenience methods
-* Use Appsignal.instrument internally instead of AS instrument
-* Override AS instrument instead of subscribing
-* Use have_library to link libappsignal
-* Refactor rescueing of exceptions
-* Use GC::Profiler to track garbage collection time
-* Recognize wether we're running in container
-* Change load order to set system config first
-* Remove unused config method
+* Add `Appsignal.instrument_sql` convenience methods. PR #136
+* Use `Appsignal.instrument` internally instead of ActiveSupport
+  instrumentation. PR #142
+* Override ActiveSupport instrument instead of subscribing. PR #150
+* Use have_library to link the AppSignal extension `libappsignal`. PR #148
+* Rename `appsignal_extension.h` to `appsignal.h`.
+  Commit 9ed7c8d83f622d5a79c5c21d352b3360fd7e8113
+* Refactor rescuing of Exception. PR #173
+* Use GC::Profiler to track garbage collection time. PR #134
+* Detect if AppSignal is running in a container or Heroku. PR #177 #178
+* Change configuration load order to load environment settings after
+  `appsignal.yml`. PR #178
+* Speed up payload generation by letting the extension handle it. PR #175
 
 # 1.3.6
 * Support blocks arguments on method instrumentation
