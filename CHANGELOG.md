@@ -12,6 +12,7 @@
 * Change configuration load order to load environment settings after
   `appsignal.yml`. PR #178
 * Speed up payload generation by letting the extension handle it. PR #175
+* Improve `appsignal diagnose` formatting and output more data. PR #187
 
 # 1.3.6
 * Support blocks arguments on method instrumentation
