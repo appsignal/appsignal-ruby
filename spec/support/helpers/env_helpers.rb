@@ -1,7 +1,8 @@
 module EnvHelpers
   def http_request_env_with_data(args={})
+    path = args.delete(:path) || "/blog"
     Rack::MockRequest.env_for(
-      '/blog',
+      path,
       :params => {
         'controller' => 'blog_posts',
         'action' => 'show',
