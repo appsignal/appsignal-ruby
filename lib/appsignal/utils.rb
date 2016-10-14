@@ -3,17 +3,6 @@ require 'appsignal/utils/query_params_sanitizer'
 
 module Appsignal
   module Utils
-    module ClassMethods
-      extend Gem::Deprecate
-
-      def sanitize(params, only_top_level = false, key_sanitizer = nil)
-        QueryParamsSanitizer.sanitize(params, only_top_level, key_sanitizer)
-      end
-
-      deprecate :sanitize, "AppSignal::Utils::QueryParamsSanitizer.sanitize", 2016, 9
-    end
-    extend ClassMethods
-
     def self.data_generate(body)
       Data.generate(body)
     end
@@ -126,5 +115,4 @@ module Appsignal
       end
     end
   end
-
 end

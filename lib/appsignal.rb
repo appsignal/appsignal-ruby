@@ -314,7 +314,6 @@ require 'appsignal/event_formatter'
 require 'appsignal/hooks'
 require 'appsignal/marker'
 require 'appsignal/minutely'
-require 'appsignal/params_sanitizer'
 require 'appsignal/garbage_collection_profiler'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
