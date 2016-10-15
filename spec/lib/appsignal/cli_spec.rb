@@ -35,7 +35,7 @@ describe Appsignal::CLI do
         cli.run([arg])
       }.should raise_error(SystemExit)
 
-      out_stream.string.should include 'Appsignal'
+      out_stream.string.should include 'AppSignal'
       out_stream.string.should include '.'
     end
   end

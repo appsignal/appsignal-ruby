@@ -30,8 +30,8 @@ describe Appsignal::Marker do
       it "outputs success" do
         output = out_stream.string
         expect(output).to include \
-          'Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
-          'Appsignal has been notified of this deploy!'
+          'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
+          'AppSignal has been notified of this deploy!'
       end
     end
 
@@ -44,11 +44,11 @@ describe Appsignal::Marker do
       it "outputs failure" do
         output = out_stream.string
         expect(output).to include \
-          'Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
-          "Something went wrong while trying to notify Appsignal: 500 at "\
+          'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
+          "Something went wrong while trying to notify AppSignal: 500 at "\
           "#{config[:endpoint]}/1/markers"
         expect(output).to_not include \
-          'Appsignal has been notified of this deploy!'
+          'AppSignal has been notified of this deploy!'
       end
     end
   end
