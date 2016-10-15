@@ -58,7 +58,7 @@ module Appsignal
           o.banner = 'Usage: appsignal <command> [options]'
 
           o.on '-v', '--version', "Print version and exit" do |arg|
-            puts "Appsignal #{Appsignal::VERSION}"
+            puts "AppSignal #{Appsignal::VERSION}"
             exit(0)
           end
 
