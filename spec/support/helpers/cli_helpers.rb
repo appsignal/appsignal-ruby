@@ -14,4 +14,13 @@ module CLIHelpers
       end
     end
   end
+
+  def set_input(value)
+    $stdin.puts value
+  end
+
+  def prepare_input
+    # Prepare the input by rewinding the pointer in the StringIO
+    $stdin.rewind
+  end
 end

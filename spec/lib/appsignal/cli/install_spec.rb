@@ -1,495 +1,627 @@
-require 'appsignal/cli'
+require "appsignal/cli"
 
 describe Appsignal::CLI::Install do
-  let(:out_stream) { StringIO.new }
-  let(:cli) { Appsignal::CLI::Install }
-  let(:config) { Appsignal::Config.new(nil, {}) }
-  let(:auth_check) { double }
+  include CLIHelpers
 
+  let(:out_stream) { StringIO.new }
+  let(:output) { out_stream.string }
+  let(:push_api_key) { "my_key" }
+  let(:config) { Appsignal::Config.new(tmp_dir, "") }
+  let(:config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
+  let(:config_file) { File.read(config_file_path) }
   before do
-    Dir.stub(:pwd => project_fixture_path)
-    Appsignal::AuthCheck.stub(:new => auth_check)
-    auth_check.stub(:perform => '200')
-    cli.stub(:sleep)
-    cli.stub(:press_any_key)
+    stub_api_validation_request
+    # Stub calls to speed up tests
+    allow(described_class).to receive(:sleep)
+    allow(described_class).to receive(:press_any_key)
+    allow(Appsignal::Demo).to receive(:transmit).and_return(true)
   end
   around do |example|
+    original_stdin = $stdin
+    $stdin = StringIO.new
     capture_stdout(out_stream) { example.run }
+    $stdin = original_stdin
   end
 
-  describe ".run" do
-    it "should not continue if there is no key" do
-      cli.run(nil, config)
-
-      out_stream.string.should include('Problem encountered:')
-      out_stream.string.should include('No push API key entered')
-    end
-
-    context "auth check" do
-      it "should exit if the key is invalid" do
-        auth_check.stub(:perform => '402')
-
-        cli.run('key', config)
-
-        out_stream.string.should include("API key 'key' is not valid")
-      end
-
-      it "should exit if there was an error" do
-        auth_check.stub(:perform).and_raise(StandardError.new)
-
-        cli.run('key', config)
-
-        out_stream.string.should include("There was an error validating your API key")
-      end
+  define :include_complete_install do
+    match do |actual|
+      actual.include?("AppSignal installation complete")
     end
   end
 
-  context "with rails" do
-    if rails_present?
-      describe ".run" do
-        it "should install with environment variables" do
-          cli.should_receive(:gets).once.and_return('n')
-          cli.should_receive(:gets).once.and_return('2')
+  define :include_env_push_api_key do |key|
+    match do |actual|
+      actual.include?("export APPSIGNAL_PUSH_API_KEY=#{key}")
+    end
+  end
+  define :include_env_app_name do |name|
+    match do |actual|
+      actual.include?("export APPSIGNAL_APP_NAME=#{name}")
+    end
+  end
 
-          cli.run('key', config)
+  define :configure_app_name do |name|
+    match do |file_contents|
+      file_contents =~ /^  name: "#{name}"/
+    end
+  end
+  define :configure_push_api_key do |key|
+    match do |file_contents|
+      file_contents =~ /^  push_api_key: "#{key}"/
+    end
+  end
+  define :configure_environment do |env|
+    match do |file_contents|
+      file_contents =~ /^#{env}:$/
+    end
+  end
+  define :include_file_config do
+    match do |log|
+      log.include?("Config file written to config/appsignal.yml")
+    end
+  end
 
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal installation complete")
-        end
+  define :include_demo_transmission do
+    match do |log|
+      log.include?("Sending example data to AppSignal") &&
+        log.include?("Example data sent!")
+    end
+  end
 
-        it "should install with config file" do
-          cli.should_receive(:gets).once.and_return('n')
-          cli.should_receive(:gets).once.and_return('1')
-          cli.should_receive(:write_config_file)
+  def stub_api_validation_request
+    config[:push_api_key] = push_api_key
+    stub_api_request config, "auth"
+  end
 
-          cli.run('key', config)
+  alias_method :enter_app_name, :set_input
 
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("AppSignal installation complete")
-        end
+  def choose_config_file
+    set_input "1"
+  end
 
-        it "should install with an overridden app name and environment variables" do
-          cli.should_receive(:gets).once.and_return('y')
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('2')
+  def choose_environment_config
+    set_input "2"
+  end
 
-          cli.run('key', config)
+  def run
+    Dir.chdir tmp_dir do
+      prepare_input
+      run_cli(["install", push_api_key])
+    end
+  end
 
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
-          out_stream.string.should include("AppSignal installation complete")
-        end
+  shared_examples "push_api_key validation" do
+    context "without key" do
+      let(:push_api_key) {}
 
-        it "should install with an overridden app name and a config file" do
-          cli.should_receive(:gets).once.and_return('y')
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('1')
-          cli.should_receive(:write_config_file)
+      it "does not install" do
+        run
 
-          cli.run('key', config)
+        expect(output).to include "Problem encountered:",
+          "No push API key entered"
+      end
+    end
 
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Ruby on Rails")
-          out_stream.string.should include("AppSignal installation complete")
+    context "with key" do
+      let(:push_api_key) { "my_key" }
+
+      context "when the key is valid" do
+        before { stub_api_validation_request.to_return(:status => 200) }
+
+        it "continues with the installer" do
+          enter_app_name "Test App"
+          choose_environment_config
+          run
+
+          expect(output).to include("Validating API key...", "API key valid")
         end
       end
 
-      describe ".rails_environments" do
+      context "when the key is invalid" do
+        before { stub_api_validation_request.to_return(:status => 402) }
+
+        it "prints an error" do
+          run
+          expect(output).to include "API key 'my_key' is not valid"
+        end
+      end
+
+      context "when there is an error validating" do
         before do
-          Dir.stub(:pwd => project_fixture_path)
+          expect(Appsignal::AuthCheck).to receive(:new).and_raise(StandardError)
         end
 
-        subject { cli.rails_environments }
-
-        it { should eq ['development', 'production'] }
-      end
-
-      describe ".installed_frameworks" do
-        subject { cli.installed_frameworks }
-
-        it { should include(:rails) }
+        it "prints an error" do
+          run
+          expect(output).to include "There was an error validating your API key"
+        end
       end
     end
   end
 
-  context "with sinatra" do
-    if sinatra_present? && !padrino_present? && !rails_present?
-      describe ".install" do
-        it "should install with environment variables" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('2')
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Sinatra")
-          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-
-        it "should install with a config file" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('1')
-          cli.should_receive(:write_config_file)
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Sinatra")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-      end
-
-      describe ".installed_frameworks" do
-        subject { cli.installed_frameworks }
-
-        it { should include(:sinatra) }
-      end
-    end
-  end
-
-  context "with padrino" do
-    if padrino_present?
-      describe ".install" do
-        it "should install with environment variables" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('2')
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Padrino")
-          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-
-        it "should install with a config file" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('1')
-          cli.should_receive(:write_config_file)
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Padrino")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-      end
-
-      describe ".installed_frameworks" do
-        subject { cli.installed_frameworks }
-
-        it { should include(:padrino) }
-      end
-    end
-  end
-
-  context "with grape" do
-    if grape_present?
-      describe ".install" do
-        it "should install with environment variables" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('2')
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Grape")
-          out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-
-        it "should install with a config file" do
-          cli.should_receive(:gets).once.and_return('Appname')
-          cli.should_receive(:gets).once.and_return('1')
-          cli.should_receive(:write_config_file)
-
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("Installing for Grape")
-          out_stream.string.should include("AppSignal installation complete")
-        end
-      end
-
-      describe ".installed_frameworks" do
-        subject { cli.installed_frameworks }
-
-        it { should include(:grape) }
-      end
-    end
-  end
-
-  context "with unknown framework" do
-    if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present?
-      describe ".install" do
-        it "should give a message about unknown framework" do
-          cli.run('key', config)
-
-          out_stream.string.should include("Validating API key...")
-          out_stream.string.should include("API key valid")
-          out_stream.string.should include("We could not detect which framework you are using.")
-        end
-      end
-
-      describe ".installed_frameworks" do
-        subject { cli.installed_frameworks }
-
-        it { should be_empty }
-      end
-    end
-  end
-
-  describe ".colorize" do
-    subject { cli.colorize('text', :green) }
-
-    context "on windows" do
-      before do
-        Gem.stub(:win_platform? => true)
-      end
-
-      it { should eq 'text' }
-    end
-
-    context "not on windows" do
-      before do
-        Gem.stub(:win_platform? => false)
-      end
-
-      it { should eq "\e[32mtext\e[0m" }
-    end
-  end
-
-  describe ".periods" do
-    it "should output three periods" do
-      cli.periods
-      out_stream.string.should include('...')
-    end
-  end
-
-  describe ".press_any_key" do
+  shared_examples "requires an application name" do
     before do
-      cli.unstub(:press_any_key)
-      STDIN.stub(:getch)
+      enter_app_name ""
+      enter_app_name "Test app"
+      choose_environment_config
+      run
     end
 
-    it "should continue" do
-      cli.press_any_key
-      out_stream.string.should include('Press any key')
-    end
-  end
-
-  describe ".yes_or_no" do
-    it "should take yes for an answer" do
-      cli.should_receive(:gets).once.and_return('')
-      cli.should_receive(:gets).once.and_return('nonsense')
-      cli.should_receive(:gets).once.and_return('y')
-
-      cli.yes_or_no('yes or no?: ').should be_true
-    end
-
-    it "should take no for an answer" do
-      cli.should_receive(:gets).once.and_return('')
-      cli.should_receive(:gets).once.and_return('nonsense')
-      cli.should_receive(:gets).once.and_return('n')
-
-      cli.yes_or_no('yes or no?: ').should be_false
+    it "requires an application name" do
+      expect(output.scan(/Enter application name:/).length).to eq(2)
     end
   end
 
-  describe ".required_input" do
-    it "should collect required input" do
-      cli.should_receive(:gets).once.and_return('')
-      cli.should_receive(:gets).once.and_return('value')
-
-      cli.required_input('provide: ').should eq 'value'
-    end
-  end
-
-  describe ".configure" do
+  shared_examples "capistrano install" do
+    let(:capfile) { File.join(tmp_dir, "Capfile") }
     before do
-      config[:push_api_key] = 'key'
-      config[:name] = 'Appname'
+      FileUtils.mkdir_p(tmp_dir)
+
+      enter_app_name "foo"
+      set_input "n"
+      choose_environment_config
+    end
+    after do
+      FileUtils.rm_rf(tmp_dir)
+      FileUtils.mkdir_p(tmp_dir)
     end
 
-    context "environment variables" do
-      it "should output the environment variables" do
-        cli.should_receive(:gets).once.and_return('2')
+    context "without Capfile" do
+      it "does nothing" do
+        run
 
-        cli.configure(config, [], false)
-
-        out_stream.string.should include("Add the following environment variables to configure AppSignal")
-        out_stream.string.should include("export APPSIGNAL_ACTIVE=true")
-        out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-      end
-
-      it "should output the environment variables with name overwritten" do
-        cli.should_receive(:gets).once.and_return('2')
-
-        cli.configure(config, [], true)
-
-        out_stream.string.should include("Add the following environment variables to configure AppSignal")
-        out_stream.string.should include("export APPSIGNAL_ACTIVE=true")
-        out_stream.string.should include("export APPSIGNAL_PUSH_API_KEY=key")
-        out_stream.string.should include("export APPSIGNAL_APP_NAME=Appname")
+        expect(output).to_not include "Adding AppSignal integration to Capfile"
+        expect(File.exist?(capfile)).to be_false
       end
     end
 
-    context "config file" do
-      it "should write the config file" do
-        cli.should_receive(:gets).once.and_return('1')
+    context "with Capfile" do
+      context "when already installed" do
+        before { File.open(capfile, "w") { |f| f.write("require 'appsignal/capistrano'") } }
 
-        cli.should_receive(:write_config_file).with(
-          :push_api_key => 'key',
-          :app_name => config[:name],
-          :environments => []
-        )
+        it "does not add another require to Capfile" do
+          run
 
-        cli.configure(config, [], false)
-
-        out_stream.string.should include("Writing config file")
-        out_stream.string.should include("Config file written to config/appsignal.yml")
-      end
-    end
-
-    context "with capistrano" do
-      let(:capfile) { File.join(tmp_dir, 'Capfile') }
-      before do
-        Dir.stub(:pwd => tmp_dir)
-        FileUtils.mkdir_p(tmp_dir)
-        cli.should_receive(:gets).once.and_return('2')
-      end
-      after do
-        FileUtils.rm_rf(tmp_dir)
-      end
-
-      context "without Capfile" do
-        before { cli.configure(config, [], false) }
-
-        it "does nothing" do
-          expect(out_stream.string).to_not include 'Adding AppSignal integration to Capfile'
-          expect(File.exist?(capfile)).to be_false
+          expect(output).to_not include "Adding AppSignal integration to Capfile"
+          expect(File.read(capfile).scan(/appsignal/).count).to eq(1)
         end
       end
 
-      context "with Capfile" do
-        context "when already installed" do
+      context "when not installed" do
+        before { FileUtils.touch(capfile) }
+
+        it "adds a require to Capfile" do
+          run
+
+          expect(output).to include "Adding AppSignal integration to Capfile"
+          expect(File.read(capfile)).to include "require 'appsignal/capistrano'"
+        end
+      end
+    end
+  end
+
+  shared_examples "windows installation" do
+    before do
+      allow(Gem).to receive(:win_platform?).and_return(true)
+      expect(Appsignal::Demo).to_not receive(:transmit)
+      run
+    end
+
+    it "prints a warning for windows" do
+      expect(output).to include("The AppSignal agent currently does not work on Windows")
+      expect(output).to include("test/staging/production environment")
+    end
+  end
+
+  shared_examples "demo data" do
+    context "with demo data sent" do
+      before do
+        expect(Appsignal::Demo).to receive(:transmit).and_return(true)
+        run
+      end
+
+      it "prints sending demo data" do
+        expect(output).to include "Sending example data to AppSignal", "Example data sent!"
+      end
+    end
+
+    context "without demo data being sent" do
+      before do
+        expect(Appsignal::Demo).to receive(:transmit).and_return(false)
+        run
+      end
+
+      it "prints that it couldn't send the demo data" do
+        expect(output).to include "Sending example data to AppSignal",
+          "Couldn't start the AppSignal agent and send example data",
+          "`appsignal diagnose`"
+      end
+    end
+  end
+
+  if rails_present?
+    context "with rails" do
+      let(:installation_instructions) { ["Installing for Ruby on Rails"] }
+      let(:app_name) { "MyApp" }
+      let(:config_dir) { File.join(tmp_dir, "config") }
+      let(:environments_dir) { File.join(config_dir, "environments") }
+      before do
+        # Fake Rails directory
+        FileUtils.mkdir_p(config_dir)
+        FileUtils.mkdir_p(environments_dir)
+        FileUtils.touch(File.join(config_dir, "application.rb"))
+        FileUtils.touch(File.join(environments_dir, "development.rb"))
+        FileUtils.touch(File.join(environments_dir, "staging.rb"))
+        FileUtils.touch(File.join(environments_dir, "production.rb"))
+        enter_app_name app_name
+      end
+
+      describe "environments" do
+        before do
+          File.delete(File.join(environments_dir, "development.rb"))
+          File.delete(File.join(environments_dir, "staging.rb"))
+          set_input "n"
+          choose_config_file
+        end
+
+        it "only configures the available environments" do
+          run
+
+          expect(output).to include_file_config
+          expect(config_file).to configure_app_name(app_name)
+          expect(config_file).to configure_push_api_key(push_api_key)
+          expect(config_file).to_not configure_environment("development")
+          expect(config_file).to_not configure_environment("staging")
+          expect(config_file).to configure_environment("production")
+
+          expect(output).to include(*installation_instructions)
+          expect(output).to include_complete_install
+          expect(output).to include_demo_transmission
+        end
+      end
+
+      context "without custom name" do
+        before { set_input "n" }
+
+        it_behaves_like "push_api_key validation"
+
+        context "with configuration using environment variables" do
+          before { choose_environment_config }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to_not include_env_app_name
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        context "with configuration using a configuration file" do
+          before { choose_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+      end
+
+      context "with custom name" do
+        let(:app_name) { "Custom name" }
+        before { set_input "y" }
+
+        it_behaves_like "push_api_key validation"
+
+        it "requires the custom name" do
+          enter_app_name ""
+          enter_app_name app_name
+          choose_environment_config
+          run
+
+          expect(output.scan(/Choose app's display name:/).length).to eq(2)
+        end
+
+        context "with configuration using environment variables" do
           before do
-            File.open(capfile, 'w') { |f| f.write("require 'appsignal/capistrano'") }
-            cli.configure(config, [], false)
+            enter_app_name app_name
+            choose_environment_config
           end
 
-          it "does not add another require to Capfile" do
-            expect(out_stream.string).to_not include 'Adding AppSignal integration to Capfile'
-            expect(File.read(capfile).scan(/appsignal/).count).to eq(1)
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
           end
         end
 
-        context "when not installed" do
+        context "with configuration using a configuration file" do
           before do
-            FileUtils.touch(capfile)
-            cli.configure(config, [], false)
+            enter_app_name app_name
+            choose_config_file
           end
 
-          it "adds a require to Capfile" do
-            expect(out_stream.string).to include 'Adding AppSignal integration to Capfile'
-            expect(File.read(capfile)).to include "require 'appsignal/capistrano'"
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
           end
         end
       end
     end
   end
 
-  describe ".done_notice" do
-    subject { out_stream.string }
+  if sinatra_present? && !padrino_present? && !rails_present?
+    context "with sinatra" do
+      it_behaves_like "push_api_key validation"
+      it_behaves_like "requires an application name"
 
-    context "on windows" do
-      before do
-        Gem.stub(:win_platform? => true)
-        cli.done_notice
-      end
+      describe "sinatra specific tests" do
+        let(:installation_instructions) do
+          [
+            "Installing for Sinatra",
+            "Sinatra requires some manual configuration.",
+            "require 'appsignal/integrations/sinatra'",
+            "http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
+          ]
+        end
+        let(:app_name) { "Test app" }
+        before { enter_app_name app_name }
 
-      it { should include('The AppSignal agent currently does not work on Windows') }
-      it { should include('test/staging/production environment') }
-    end
+        describe "configuration with environment variables" do
+          before { choose_environment_config }
 
-    context "not on windows" do
-      before { Gem.stub(:win_platform? => false) }
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
 
-      context "with demo data sent" do
-        before do
-          expect(Appsignal::Demo).to receive(:transmit).and_return(true)
-          cli.done_notice
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
         end
 
-        it "prints sending demo data" do
-          expect(subject).to include "Sending example data to AppSignal", "Example data sent!"
-        end
-      end
+        describe "configure with a configuration file" do
+          before { choose_config_file }
 
-      context "without demo data being sent" do
-        before do
-          expect(Appsignal::Demo).to receive(:transmit).and_return(false)
-          cli.done_notice
-        end
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
 
-        it "prints that it couldn't send the demo data" do
-          expect(subject).to include "Sending example data to AppSignal",
-            "Couldn't start the AppSignal agent and send example data",
-            "`appsignal diagnose`"
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
         end
       end
     end
   end
 
-  context ".write_config_file" do
-    before do
-      Dir.stub(:pwd => tmp_dir)
+  if padrino_present?
+    context "with padrino" do
+      it_behaves_like "push_api_key validation"
+      it_behaves_like "requires an application name"
+
+      describe "padrino specific tests" do
+        let(:installation_instructions) do
+          [
+            "Installing for Padrino",
+            "Padrino requires some manual configuration.",
+            "http://docs.appsignal.com/getting-started/supported-frameworks.html#padrino"
+          ]
+        end
+        let(:app_name) { "Test app" }
+        before { enter_app_name app_name }
+
+        describe "configuration with environment variables" do
+          before { choose_environment_config }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a configuration file" do
+          before { choose_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+      end
     end
+  end
 
-    it "should write a config file with environments" do
-      cli.write_config_file(
-        :push_api_key => 'key',
-        :app_name => 'App name',
-        :environments => [:staging, :production]
-      )
+  if grape_present?
+    context "with grape" do
+      it_behaves_like "push_api_key validation"
+      it_behaves_like "requires an application name"
 
-      config = File.read(File.join(tmp_dir, 'config/appsignal.yml'))
+      describe "grape specific tests" do
+        let(:installation_instructions) do
+          [
+            "Installing for Grape",
+            "Manual Grape configuration needed",
+            "http://docs.appsignal.com/getting-started/supported-frameworks.html#grape"
+          ]
+        end
+        let(:app_name) { "Test app" }
+        before { enter_app_name app_name }
 
-      config.should include('name: "App name"')
-      config.should include('push_api_key: "key"')
-      config.should include('staging:')
-      config.should include('production:')
+        describe "configuration with environment variables" do
+          before { choose_environment_config }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a configuration file" do
+          before { choose_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+      end
     end
+  end
 
-    it "should write a config file without environments" do
-      cli.write_config_file(
-        :push_api_key => 'key',
-        :app_name => 'App name',
-        :environments => []
-      )
+  if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present?
+    context "with unknown framework" do
+      let(:push_api_key) { "my_key" }
 
-      config = File.read(File.join(tmp_dir, 'config/appsignal.yml'))
+      it_behaves_like "push_api_key validation"
 
-      config.should include('name: "App name"')
-      config.should include('push_api_key: "key"')
-      config.should_not include('staging:')
-      config.should_not include('production:')
+      it "prints a message about unknown framework" do
+        run
+
+        expect(output).to include "We could not detect which framework you are using."
+        expect(output).to_not include_env_push_api_key
+        expect(output).to_not include_env_app_name
+        expect(File.exist?(config_file_path)).to be_false
+      end
     end
   end
 end

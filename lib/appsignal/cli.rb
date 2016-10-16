@@ -2,6 +2,7 @@ require 'optparse'
 require 'logger'
 require 'yaml'
 require 'appsignal'
+require 'appsignal/cli/helpers'
 require 'appsignal/cli/demo'
 require 'appsignal/cli/diagnose'
 require 'appsignal/cli/install'
@@ -29,7 +30,7 @@ module Appsignal
             when :diagnose
               Appsignal::CLI::Diagnose.run
             when :install
-              Appsignal::CLI::Install.run(argv.shift, config)
+              Appsignal::CLI::Install.run(argv.shift)
             when :notify_of_deploy
               Appsignal::CLI::NotifyOfDeploy.run(options)
             end
@@ -43,15 +44,6 @@ module Appsignal
           puts global
           exit(0)
         end
-      end
-
-      def config
-        Appsignal::Config.new(
-          Dir.pwd,
-          options[:environment],
-          {},
-          Logger.new(StringIO.new)
-        )
       end
 
       def global_option_parser

@@ -5,17 +5,9 @@ describe Appsignal::CLI do
   let(:cli) { Appsignal::CLI }
   before do
     Dir.stub(:pwd => project_fixture_path)
-    cli.options = {:environment => 'production'}
   end
   around do |example|
     capture_stdout(out_stream) { example.run }
-  end
-
-  describe "#config" do
-    subject { cli.config }
-
-    it { should be_instance_of(Appsignal::Config) }
-    its(:valid?) { should be_true }
   end
 
   it "should print the help with no arguments, -h and --help" do
@@ -56,20 +48,6 @@ describe Appsignal::CLI do
 
       cli.run([
         'diagnose'
-      ])
-    end
-  end
-
-  describe "install" do
-    it "should call Appsignal::Install.install" do
-      Appsignal::CLI::Install.should_receive(:run).with(
-        'api-key',
-        instance_of(Appsignal::Config)
-      )
-
-      cli.run([
-        'install',
-        'api-key'
       ])
     end
   end
