@@ -72,26 +72,4 @@ describe Appsignal::CLI do
       ])
     end
   end
-
-  describe "notify_of_deploy" do
-    it "should call Appsignal::Install.install" do
-      Appsignal::CLI::NotifyOfDeploy.should_receive(:run).with(
-        {
-           :revision => "aaaaa",
-           :user => "thijs",
-           :environment => "production",
-           :name => "project-production"
-        },
-        instance_of(Appsignal::Config)
-      )
-
-      cli.run([
-        'notify_of_deploy',
-        '--name=project-production',
-        '--revision=aaaaa',
-        '--user=thijs',
-        '--environment=production'
-      ])
-    end
-  end
 end

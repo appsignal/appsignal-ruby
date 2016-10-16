@@ -12,7 +12,6 @@ module Appsignal
 
     class << self
       attr_accessor :options
-      attr_writer :config
 
       def run(argv=ARGV)
         @options = {}
@@ -29,7 +28,7 @@ module Appsignal
             when :install
               Appsignal::CLI::Install.run(argv.shift, config)
             when :notify_of_deploy
-              Appsignal::CLI::NotifyOfDeploy.run(options, config)
+              Appsignal::CLI::NotifyOfDeploy.run(options)
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
