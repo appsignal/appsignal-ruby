@@ -11,12 +11,11 @@ module Appsignal
     AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
 
     class << self
-      attr_accessor :options, :initial_config
+      attr_accessor :options
       attr_writer :config
 
       def run(argv=ARGV)
         @options = {}
-        @initial_config = {}
         global = global_option_parser
         commands = command_option_parser
         global.order!(argv)
@@ -48,7 +47,7 @@ module Appsignal
         Appsignal::Config.new(
           Dir.pwd,
           options[:environment],
-          initial_config,
+          {},
           Logger.new(StringIO.new)
         )
       end
@@ -92,7 +91,7 @@ module Appsignal
             end
 
             o.on '--name=<name>', "The name of the app (optional)" do |arg|
-              initial_config[:name] = arg
+              options[:name] = arg
             end
           end
         }

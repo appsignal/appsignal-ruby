@@ -3,8 +3,11 @@ module Appsignal
     class NotifyOfDeploy
       class << self
         def run(options, config)
+          config[:name] = options[:name] if options[:name]
           validate_active_config(config)
-          validate_required_options(options, [:revision, :user, :environment])
+          required_config = [:revision, :user, :environment]
+          required_config << :name if !config[:name] || config[:name].empty?
+          validate_required_options(options, required_config)
 
           Appsignal::Marker.new(
             {
