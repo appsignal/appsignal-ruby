@@ -237,7 +237,7 @@ module Appsignal
     end
 
     def start_logger(path_arg = nil)
-      if config && config.log_file_path
+      if config && config[:log] == "file" && config.log_file_path
         start_file_logger(config.log_file_path)
       else
         start_stdout_logger
