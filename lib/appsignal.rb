@@ -249,6 +249,7 @@ module Appsignal
         else
           Logger::INFO
         end
+      logger.formatter = log_formatter
 
       if in_memory_log
         logger << in_memory_log.string
@@ -290,14 +291,10 @@ module Appsignal
 
     def start_stdout_logger
       @logger = Logger.new($stdout)
-      @logger.formatter = lambda do |severity, datetime, progname, msg|
-        "appsignal: #{msg}\n"
-      end
     end
 
     def start_file_logger(path)
       @logger = Logger.new(path)
-      @logger.formatter = log_formatter
     rescue SystemCallError => error
       start_stdout_logger
       logger.warn "appsignal: Unable to start logger with log path '#{path}'."
