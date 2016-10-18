@@ -13,6 +13,14 @@
   `appsignal.yml`. PR #178
 * Speed up payload generation by letting the extension handle it. PR #175
 * Improve `appsignal diagnose` formatting and output more data. PR #187
+* Remove outdated `appsignal:diagnose` rake tasks. Use `appsignal diagnose`
+  instead. PR #193
+* Fix JavaScript exception without names resulting in errors themselves. PR #188
+* Support namespaces in Grape routes. PR #189
+* Change STDOUT output to always mention "AppSignal", not "Appsignal". PR #192
+* `appsignal notify_of_deploy` refactor. `--name` will override any
+  other `name` config. `--environment` is only required if it's not set in the
+  environment. PR #194
 
 # 1.3.6
 * Support blocks arguments on method instrumentation
