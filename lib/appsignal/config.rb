@@ -8,6 +8,7 @@ module Appsignal
     SYSTEM_TMP_DIR = '/tmp'
     DEFAULT_CONFIG = {
       :debug                          => false,
+      :log                            => 'file',
       :ignore_errors                  => [],
       :ignore_actions                 => [],
       :filter_parameters              => [],
@@ -35,6 +36,7 @@ module Appsignal
       'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
       'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
       'APPSIGNAL_DEBUG'                          => :debug,
+      'APPSIGNAL_LOG'                            => :log,
       'APPSIGNAL_LOG_PATH'                       => :log_path,
       'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
       'APPSIGNAL_INSTRUMENT_REDIS'               => :instrument_redis,
@@ -96,7 +98,7 @@ module Appsignal
       if File.writable? SYSTEM_TMP_DIR
         $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
           "'#{SYSTEM_TMP_DIR}' instead. Please check the "\
-          "permissions for the application's log directory."
+          "permissions for the application's (log) directory."
         File.join(SYSTEM_TMP_DIR, 'appsignal.log')
       else
         $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
@@ -146,7 +148,8 @@ module Appsignal
     end
 
     def detect_from_system
-      self[:running_in_container] = true if Appsignal::System.container?
+      config_hash[:running_in_container] = true if Appsignal::System.container?
+      config_hash[:log] = 'stdout' if Appsignal::System.heroku?
     end
 
     def load_from_disk
@@ -184,8 +187,9 @@ module Appsignal
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
-         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY
+         APPSIGNAL_LOG APPSIGNAL_LOG_PATH APPSIGNAL_WORKING_DIR_PATH
+         APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end

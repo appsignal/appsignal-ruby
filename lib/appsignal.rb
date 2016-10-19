@@ -236,33 +236,26 @@ module Appsignal
       end
     end
 
-    def start_logger(path_arg=nil)
-      path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && !Appsignal::System.heroku?
-        begin
-          @logger = Logger.new(path)
-          @logger.formatter = log_formatter
-        rescue SystemCallError => error
-          start_stdout_logger
-          logger.warn "appsignal: Unable to start logger with log path '#{path}'."
-          logger.warn "appsignal: #{error}"
-        end
+    def start_logger(path_arg = nil)
+      if config && config[:log] == "file" && config.log_file_path
+        start_file_logger(config.log_file_path)
       else
         start_stdout_logger
       end
 
-      if config && config[:debug]
-        @logger.level = Logger::DEBUG
-      else
-        @logger.level = Logger::INFO
-      end
+      logger.level =
+        if config && config[:debug]
+          Logger::DEBUG
+        else
+          Logger::INFO
+        end
 
       if in_memory_log
-        @logger << in_memory_log.string
+        logger << in_memory_log.string
       end
 
       if path_arg
-        @logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
+        logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
       end
     end
 
@@ -300,6 +293,15 @@ module Appsignal
       @logger.formatter = lambda do |severity, datetime, progname, msg|
         "appsignal: #{msg}\n"
       end
+    end
+
+    def start_file_logger(path)
+      @logger = Logger.new(path)
+      @logger.formatter = log_formatter
+    rescue SystemCallError => error
+      start_stdout_logger
+      logger.warn "appsignal: Unable to start logger with log path '#{path}'."
+      logger.warn "appsignal: #{error}"
     end
   end
 end

@@ -29,6 +29,26 @@ describe Appsignal::Config do
         end
       end
     end
+
+    describe ":log" do
+      subject { config[:log] }
+
+      context "when running on Heroku" do
+        around { |example| recognize_as_heroku { example.run } }
+
+        it "is set to stdout" do
+          expect(subject).to eq("stdout")
+        end
+      end
+
+      context "when not running on Heroku" do
+        around { |example| recognize_as_container(:none) { example.run } }
+
+        it "is set to file" do
+          expect(subject).to eq("file")
+        end
+      end
+    end
   end
 
   describe "initial config" do
@@ -46,6 +66,7 @@ describe Appsignal::Config do
     it "merges with the default config" do
       expect(config.config_hash).to eq(
         :debug                          => false,
+        :log                            => 'file',
         :ignore_errors                  => [],
         :ignore_actions                 => [],
         :filter_parameters              => [],
@@ -349,7 +370,11 @@ describe Appsignal::Config do
     let(:stdout) { StringIO.new }
     let(:config) { project_fixture_config('production', :log_path => log_path) }
     subject { config.log_file_path }
-    around { |example| capture_stdout(stdout) { example.run } }
+    around do |example|
+      recognize_as_container(:none) do
+        capture_stdout(stdout) { example.run }
+      end
+    end
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, 'writable-path') }
