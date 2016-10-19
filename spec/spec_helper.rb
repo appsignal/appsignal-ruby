@@ -58,12 +58,13 @@ RSpec.configure do |config|
   end
 
   config.before do
-    ENV['RAILS_ENV'] = 'test'
-    ENV['PADRINO_ENV'] = 'test'
+    ENV['RAILS_ENV'] ||= 'test'
+    ENV['RACK_ENV'] ||= 'test'
+    ENV['PADRINO_ENV'] ||= 'test'
 
     # Clean environment
     ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
-      ENV[key] = nil
+      ENV.delete(key)
     end
   end
 
