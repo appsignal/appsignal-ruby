@@ -21,6 +21,8 @@
 * `appsignal notify_of_deploy` refactor. `--name` will override any
   other `name` config. `--environment` is only required if it's not set in the
   environment. PR #194
+* Allow logging to STDOUT. Available for the Ruby gem and C extension. The
+  `appsignal-agent` process will continue log to file. PR #190
 
 # 1.3.6
 * Support blocks arguments on method instrumentation. PR #163
