@@ -429,13 +429,31 @@ describe Appsignal::CLI::Install do
     end
 
     context "not on windows" do
-      before do
-        Gem.stub(:win_platform? => false)
-        cli.done_notice
+      before { Gem.stub(:win_platform? => false) }
+
+      context "with demo data sent" do
+        before do
+          expect(Appsignal::Demo).to receive(:transmit).and_return(true)
+          cli.done_notice
+        end
+
+        it "prints sending demo data" do
+          expect(subject).to include "Sending example data to AppSignal", "Example data sent!"
+        end
       end
 
-      it { should include('You can do this on your dev environment') }
-      it { should include('Or deploy to staging or production') }
+      context "without demo data being sent" do
+        before do
+          expect(Appsignal::Demo).to receive(:transmit).and_return(false)
+          cli.done_notice
+        end
+
+        it "prints that it couldn't send the demo data" do
+          expect(subject).to include "Sending example data to AppSignal",
+            "Couldn't start the AppSignal agent and send example data",
+            "`appsignal diagnose`"
+        end
+      end
     end
   end
 
