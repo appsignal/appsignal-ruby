@@ -1,72 +1,55 @@
 require 'rake'
 
 describe Appsignal::Hooks::RakeHook do
-  let(:app)  { double(:current_scope => nil) }
-  let(:task) { Rake::Task.new('task', app) }
-  before do
-    task.stub(
-      :name                      => 'task:name',
-      :execute_without_appsignal => true
-    )
-  end
-  before :all do
-    Appsignal::Hooks::RakeHook.new.install
+  let(:task) { Rake::Task.new('task:name', Rake::Application.new) }
+  before(:all) do
+    Appsignal.config = project_fixture_config
+    expect(Appsignal.active?).to be_true
+    Appsignal::Hooks.load_hooks
   end
 
   describe "#execute" do
-    context "with transaction" do
-      let!(:transaction) { regular_transaction }
-      let!(:agent)       { double('Agent', :send_queue => true) }
-      before do
-        transaction.stub(:set_action)
-        transaction.stub(:set_error)
-        transaction.stub(:complete)
-        SecureRandom.stub(:uuid => '123')
-        Appsignal::Transaction.stub(:create => transaction)
-        Appsignal.stub(:active? => true)
+    context "without error" do
+      it "creates no transaction" do
+        expect(Appsignal::Transaction).to_not receive(:create)
       end
 
-      it "should call the original task" do
-        expect( task ).to receive(:execute_without_appsignal).with('foo')
+      it "calls the original task" do
+        expect(task).to receive(:execute_without_appsignal).with('foo')
       end
 
-      it "should not create a transaction" do
-        expect( Appsignal::Transaction ).not_to receive(:create)
-      end
-
-      context "with an exception" do
-        let(:exception) { VerySpecificError.new }
-
-        before do
-          task.stub(:execute_without_appsignal).and_raise(exception)
-        end
-
-        it "should create a transaction" do
-          expect( Appsignal::Transaction ).to receive(:create).with(
-            '123',
-            Appsignal::Transaction::BACKGROUND_JOB,
-            kind_of(Appsignal::Transaction::GenericRequest)
-          )
-        end
-
-        it "should set the action on the transaction" do
-          expect( transaction ).to receive(:set_action).with('task:name')
-        end
-
-        it "should add the exception to the transaction" do
-          expect( transaction ).to receive(:set_error).with(exception)
-        end
-
-        it "should call complete! on the transaction" do
-          expect( transaction ).to receive(:complete)
-        end
-
-        it "should stop appsignal" do
-          expect( Appsignal ).to receive(:stop)
-        end
-      end
+      after { task.execute('foo') }
     end
 
-    after { task.execute('foo') rescue VerySpecificError }
+    context "with error" do
+      let(:error) { VerySpecificError.new }
+      let(:transaction) { background_job_transaction }
+      before do
+        task.enhance { raise error }
+
+        expect(Appsignal::Transaction).to receive(:create).with(
+          kind_of(String),
+          Appsignal::Transaction::BACKGROUND_JOB,
+          kind_of(Appsignal::Transaction::GenericRequest)
+        ).and_return(transaction)
+      end
+
+      it "sets the action" do
+        expect(transaction).to receive(:set_action).with('task:name')
+      end
+
+      it "sets the error" do
+        expect(transaction).to receive(:set_error).with(error)
+      end
+
+      it "completes the transaction and stops" do
+        expect(transaction).to receive(:complete).ordered
+        expect(Appsignal).to receive(:stop).with('rake').ordered
+      end
+
+      after do
+        expect { task.execute('foo') }.to raise_error VerySpecificError
+      end
+    end
   end
 end

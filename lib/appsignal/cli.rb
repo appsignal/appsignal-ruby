@@ -11,12 +11,10 @@ module Appsignal
     AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
 
     class << self
-      attr_accessor :options, :initial_config
-      attr_writer :config
+      attr_accessor :options
 
       def run(argv=ARGV)
         @options = {}
-        @initial_config = {}
         global = global_option_parser
         commands = command_option_parser
         global.order!(argv)
@@ -30,7 +28,7 @@ module Appsignal
             when :install
               Appsignal::CLI::Install.run(argv.shift, config)
             when :notify_of_deploy
-              Appsignal::CLI::NotifyOfDeploy.run(options, config)
+              Appsignal::CLI::NotifyOfDeploy.run(options)
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -48,7 +46,7 @@ module Appsignal
         Appsignal::Config.new(
           Dir.pwd,
           options[:environment],
-          initial_config,
+          {},
           Logger.new(StringIO.new)
         )
       end
@@ -58,7 +56,7 @@ module Appsignal
           o.banner = 'Usage: appsignal <command> [options]'
 
           o.on '-v', '--version', "Print version and exit" do |arg|
-            puts "Appsignal #{Appsignal::VERSION}"
+            puts "AppSignal #{Appsignal::VERSION}"
             exit(0)
           end
 
@@ -92,7 +90,7 @@ module Appsignal
             end
 
             o.on '--name=<name>', "The name of the app (optional)" do |arg|
-              initial_config[:name] = arg
+              options[:name] = arg
             end
           end
         }

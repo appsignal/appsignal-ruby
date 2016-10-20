@@ -8,6 +8,7 @@ module Appsignal
     SYSTEM_TMP_DIR = '/tmp'
     DEFAULT_CONFIG = {
       :debug                          => false,
+      :log                            => 'file',
       :ignore_errors                  => [],
       :ignore_actions                 => [],
       :filter_parameters              => [],
@@ -35,6 +36,7 @@ module Appsignal
       'APPSIGNAL_PUSH_API_ENDPOINT'              => :endpoint,
       'APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH'   => :frontend_error_catching_path,
       'APPSIGNAL_DEBUG'                          => :debug,
+      'APPSIGNAL_LOG'                            => :log,
       'APPSIGNAL_LOG_PATH'                       => :log_path,
       'APPSIGNAL_INSTRUMENT_NET_HTTP'            => :instrument_net_http,
       'APPSIGNAL_INSTRUMENT_REDIS'               => :instrument_redis,
@@ -65,18 +67,16 @@ module Appsignal
       @initial_config = initial_config
       @logger         = logger
       @valid          = false
+      @config_hash    = Hash[DEFAULT_CONFIG]
 
+      # Set config based on the system
+      detect_from_system
       # Initial config
-      @config_hash = DEFAULT_CONFIG.merge(initial_config)
-
+      merge(@config_hash, initial_config)
+      # Load the config file if it exists
+      load_from_disk
       # Load config from environment variables
       load_from_environment
-
-      # Load the config file if it exists
-      if config_file && File.exist?(config_file)
-        load_from_disk
-      end
-
       # Validate that we have a correct config
       validate
     end
@@ -98,7 +98,7 @@ module Appsignal
       if File.writable? SYSTEM_TMP_DIR
         $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
           "'#{SYSTEM_TMP_DIR}' instead. Please check the "\
-          "permissions for the application's log directory."
+          "permissions for the application's (log) directory."
         File.join(SYSTEM_TMP_DIR, 'appsignal.log')
       else
         $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
@@ -112,7 +112,7 @@ module Appsignal
     end
 
     def active?
-      @valid && self[:active]
+      @valid && config_hash[:active]
     end
 
     def write_to_environment
@@ -147,7 +147,14 @@ module Appsignal
         root_path.nil? ? nil : File.join(root_path, 'config', 'appsignal.yml')
     end
 
+    def detect_from_system
+      config_hash[:running_in_container] = true if Appsignal::System.container?
+      config_hash[:log] = 'stdout' if Appsignal::System.heroku?
+    end
+
     def load_from_disk
+      return if !config_file || !File.exist?(config_file)
+
       configurations = YAML.load(ERB.new(IO.read(config_file)).result)
       config_for_this_env = configurations[env]
       if config_for_this_env
@@ -178,15 +185,11 @@ module Appsignal
         config[:active] = true
       end
 
-      # Heroku is a container based system
-      if ENV['DYNO']
-        config[:running_in_container] = true
-      end
-
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
-         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY APPSIGNAL_LOG_PATH
-         APPSIGNAL_WORKING_DIR_PATH APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
+         APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY
+         APPSIGNAL_LOG APPSIGNAL_LOG_PATH APPSIGNAL_WORKING_DIR_PATH
+         APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
         if env_var = ENV[var]
           config[ENV_TO_KEY_MAPPING[var]] = env_var
         end
@@ -239,16 +242,6 @@ module Appsignal
         @valid = false
         @logger.error "Push api key not set after loading config"
       end
-    end
-
-    def load_default_config_with_push_api_key_and_name_from_env(key)
-      # Get base config by doing the default merge and adding the push api key.
-      @config_hash = merge_config(
-        :push_api_key => key,
-        :active => true
-      )
-      @config_hash[:name]   = ENV['APPSIGNAL_APP_NAME'] if ENV['APPSIGNAL_APP_NAME']
-      @config_hash[:active] = ENV['APPSIGNAL_ACTIVE'] == 'true' if ENV['APPSIGNAL_ACTIVE']
     end
   end
 end

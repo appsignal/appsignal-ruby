@@ -1,9 +1,4 @@
-begin
-  require 'padrino'
-rescue LoadError
-end
-
-if padrino_present?
+if DependencyHelper.padrino_present?
   describe "Padrino integration"   do
     require File.expand_path('lib/appsignal/integrations/padrino.rb')
 
@@ -98,7 +93,7 @@ if padrino_present?
           end
 
           it "should not instrument the request" do
-            expect( ActiveSupport::Notifications ).to_not receive(:instrument)
+            expect( Appsignal ).to_not receive(:instrument)
           end
 
           after { router.route!(base) }
@@ -112,7 +107,7 @@ if padrino_present?
           end
 
           it "should not instrument the request" do
-            expect( ActiveSupport::Notifications ).to_not receive(:instrument)
+            expect( Appsignal ).to_not receive(:instrument)
           end
 
           after { router.route!(base) }
@@ -144,7 +139,7 @@ if padrino_present?
             end
 
             it "should instrument the action" do
-              expect( ActiveSupport::Notifications ).to receive(:instrument).with('process_action.padrino')
+              expect( Appsignal ).to receive(:instrument).with('process_action.padrino')
             end
 
             it "should set metadata" do

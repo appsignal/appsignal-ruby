@@ -16,8 +16,17 @@ test:
   debug: true
   active: true
 
-old_api_key:
+old_config:
   api_key: "def"
   active: true
+  ignore_exceptions:
+    - StandardError
+
+old_config_mixed_with_new_config:
+  push_api_key: "ghi"
+  api_key: "def"
+  active: true
+  ignore_errors:
+    - NoMethodError
   ignore_exceptions:
     - StandardError

@@ -28,5 +28,11 @@ module Appsignal
         # Do nothing if the extension methods are not loaded
       end
     end
+
+    class Data
+      def inspect
+        "#<#{self.class.name}:#{object_id} #{to_s}>"
+      end
+    end
   end
 end

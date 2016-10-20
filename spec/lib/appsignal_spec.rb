@@ -8,7 +8,7 @@ describe Appsignal do
     Appsignal.extensions.clear
   end
 
-  let(:transaction) { regular_transaction }
+  let(:transaction) { http_request_transaction }
 
   describe ".config=" do
     it "should set the config" do
@@ -66,11 +66,6 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "should create a subscriber" do
-        Appsignal.start
-        Appsignal.subscriber.should be_a(Appsignal::Subscriber)
-      end
-
       context "when not active for this environment" do
         before { Appsignal.config = project_fixture_config('staging') }
 
@@ -91,18 +86,23 @@ describe Appsignal do
 
       context "when allocation tracking and gc instrumentation have been enabled" do
         before do
+          allow(GC::Profiler).to receive(:enable)
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
           Appsignal.config.config_hash[:enable_gc_instrumentation] = true
         end
 
-        it "should install event hooks" do
-          Appsignal::Extension.should_receive(:install_allocation_event_hook)
-          Appsignal::Extension.should_receive(:install_gc_event_hooks)
+        it "should enable Ruby's GC::Profiler" do
+          expect(GC::Profiler).to receive(:enable)
+          Appsignal.start
+        end
+
+        it "should install the allocation event hook" do
+          expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
           Appsignal.start
         end
 
         it "should add the gc probe to minutely" do
-          Appsignal::Minutely.should_receive(:add_gc_probe)
+          expect(Appsignal::Minutely).to receive(:add_gc_probe)
           Appsignal.start
         end
       end
@@ -113,14 +113,18 @@ describe Appsignal do
           Appsignal.config.config_hash[:enable_gc_instrumentation] = false
         end
 
-        it "should not install event hooks" do
-          Appsignal::Extension.should_not_receive(:install_allocation_event_hook)
-          Appsignal::Extension.should_not_receive(:install_gc_event_hooks)
+        it "should not enable Ruby's GC::Profiler" do
+          expect(GC::Profiler).not_to receive(:enable)
+          Appsignal.start
+        end
+
+        it "should not install the allocation event hook" do
+          expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
           Appsignal.start
         end
 
        it "should not add the gc probe to minutely" do
-          Appsignal::Minutely.should_not_receive(:add_gc_probe)
+          expect(Appsignal::Minutely).not_to receive(:add_gc_probe)
           Appsignal.start
        end
       end
@@ -162,7 +166,6 @@ describe Appsignal do
     context "when not active" do
       it "should should do nothing" do
         Appsignal::Extension.should_not_receive(:start)
-        Appsignal::Subscriber.should_not_receive(:new)
 
         Appsignal.forked
       end
@@ -176,7 +179,6 @@ describe Appsignal do
       it "should resubscribe and start the extension" do
         Appsignal.should_receive(:start_logger)
         Appsignal::Extension.should_receive(:start)
-        Appsignal::Subscriber.any_instance.should_receive(:resubscribe)
 
         Appsignal.forked
       end
@@ -251,7 +253,7 @@ describe Appsignal do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
         Appsignal::Transaction.should_not_receive(:create)
-        ActiveSupport::Notifications.should_not_receive(:instrument)
+        Appsignal.should_not_receive(:instrument)
         object = double
         object.should_receive(:some_method).and_return(1)
 
@@ -321,7 +323,7 @@ describe Appsignal do
     describe ".monitor_transaction" do
       context "with a successful call" do
         it "should instrument and complete for a background job" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+          Appsignal.should_receive(:instrument).with(
             'perform_job.something'
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
@@ -340,7 +342,7 @@ describe Appsignal do
         end
 
         it "should instrument and complete for a http request" do
-          ActiveSupport::Notifications.should_receive(:instrument).with(
+          Appsignal.should_receive(:instrument).with(
             'process_action.something'
           ).and_yield
           Appsignal::Transaction.should_receive(:complete_current!)
@@ -563,7 +565,9 @@ describe Appsignal do
         )
       end
       around do |example|
-        capture_stdout(out_stream) { example.run }
+        recognize_as_container(:none) do
+          capture_stdout(out_stream) { example.run }
+        end
       end
       after { FileUtils.rm_rf(log_path) }
 
@@ -637,11 +641,10 @@ describe Appsignal do
 
       context "when on Heroku" do
         before do
-          ENV['DYNO'] = 'dyno1'
           Appsignal.start_logger
           Appsignal.logger.error('Log to stdout')
         end
-        after { ENV.delete('DYNO') }
+        around { |example| recognize_as_heroku { example.run } }
 
         it "logs to stdout" do
           expect(out_stream.string).to include 'appsignal: Log to stdout'
@@ -802,6 +805,25 @@ describe Appsignal do
         )
 
         Appsignal.instrument 'name', 'title', 'body' do
+          stub.method_call
+        end.should eq 'return value'
+      end
+    end
+
+    describe ".instrument_sql" do
+      it "should instrument sql through the transaction" do
+        stub = double
+        stub.should_receive(:method_call).and_return('return value')
+
+        transaction.should_receive(:start_event)
+        transaction.should_receive(:finish_event).with(
+          'name',
+          'title',
+          'body',
+          1
+        )
+
+        Appsignal.instrument_sql 'name', 'title', 'body' do
           stub.method_call
         end.should eq 'return value'
       end

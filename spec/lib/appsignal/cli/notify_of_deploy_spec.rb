@@ -1,122 +1,170 @@
-require 'appsignal/cli'
+require "appsignal/cli"
 
 describe Appsignal::CLI::NotifyOfDeploy do
+  include CLIHelpers
+
   let(:out_stream) { StringIO.new }
-  let(:cli) { Appsignal::CLI::NotifyOfDeploy }
-  let(:config) { Appsignal::Config.new(project_fixture_path, {}) }
-  let(:marker_data) { {:revision => 'aaaaa', :user => 'thijs', :environment => 'production'} }
-  before do
-    config.stub(:active? => true)
-  end
+  let(:output) { out_stream.string }
   around do |example|
     capture_stdout(out_stream) { example.run }
   end
 
-  describe ".run" do
-    it "should validate that the config has been loaded and all options have been supplied" do
-      cli.should_receive(:validate_active_config)
-      cli.should_receive(:validate_required_options).with(
-        {},
-        [:revision, :user, :environment]
-      )
-      Appsignal::Marker.should_receive(:new).and_return(double(:transmit => true))
-
-      cli.run({}, config)
+  define :include_deploy_notification do
+    match do |log|
+      log.include?("Notifying AppSignal of deploy with: ") &&
+        log.include?("AppSignal has been notified of this deploy!")
     end
-
-    it "should notify of a deploy" do
-      marker = double
-      Appsignal::Marker.should_receive(:new).with(
-        {
-          :revision => 'aaaaa',
-          :user => 'thijs'
-        },
-        kind_of(Appsignal::Config)
-      ).and_return(marker)
-      marker.should_receive(:transmit)
-
-      cli.run(marker_data, config)
+  end
+  define :include_deploy_notification_with do |options|
+    match do |log|
+      return false unless options
+      values = "revision: #{options[:revision]}, user: #{options[:user]}"
+      log.include?("Notifying AppSignal of deploy with: #{values}") &&
+        log.include?("AppSignal has been notified of this deploy!")
     end
-
-    it "should notify of a deploy with no config file and a name specified" do
-      ENV['PWD'] = '/nonsense'
-      ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
-
-      marker = double
-      Appsignal::Marker.should_receive(:new).with(
-        {
-          :revision => 'aaaaa',
-          :user => 'thijs'
-        },
-        kind_of(Appsignal::Config)
-      ).and_return(marker)
-      marker.should_receive(:transmit)
-
-      cli.run(marker_data, config)
+  end
+  define :include_config_error do
+    match do |log|
+      log.include? "Error: No valid config found."
+    end
+  end
+  define :include_missing_options do |options|
+    match do |log|
+      log.include? "Error: Missing options: #{options.join(", ")}"
     end
   end
 
-  describe "#validate_required_options" do
-    let(:required_options) { [:option_1, :option_2, :option_3] }
-
-    it "should do nothing with all options supplied" do
-      cli.send(
-        :validate_required_options,
-        {
-          :option_1 => 1,
-          :option_2 => 2,
-          :option_3 => 3
-        },
-        required_options
-      )
-      out_stream.string.should be_empty
-    end
-
-    it "should print a message with one option missing and exit" do
-      lambda {
-        cli.send(
-          :validate_required_options,
-          {
-            :option_1 => 1,
-            :option_2 => 2
-          },
-          required_options
-        )
-      }.should raise_error(SystemExit)
-      out_stream.string.should include('Missing options: option_3')
-    end
-
-    it "should print a message with multiple options missing and exit" do
-      lambda {
-        cli.send(
-          :validate_required_options,
-          {
-            :option_1 => 1,
-            :option_2 => ''
-          },
-          required_options
-        )
-      }.should raise_error(SystemExit)
-      out_stream.string.should include("Missing options: option_2, option_3")
-    end
+  def run
+    run_cli("notify_of_deploy", options)
   end
 
-  describe "#validate_active_config" do
-    context "when config is present" do
-      it "should do nothing" do
-        cli.send(:validate_active_config, config)
-        out_stream.string.should be_empty
+  context "without config" do
+    let(:config) { Appsignal::Config.new(tmp_dir, "production") }
+    let(:options) { {} }
+    around do |example|
+      Dir.chdir tmp_dir do
+        example.run
       end
     end
 
-    context "when config is not active" do
-      before { config.stub(:active? => false) }
+    it "prints a config error" do
+      expect { run }.to raise_error(SystemExit)
+      expect(output).to include_config_error
+      expect(output).to_not include_deploy_notification
+    end
+  end
 
-      it "should print a message and exit" do
-        lambda {
-          cli.send(:validate_active_config, config)
-        }.should raise_error(SystemExit)
-        out_stream.string.should include('Exiting: No config file or push api key env var found')
+  context "with config" do
+    let(:config) { project_fixture_config }
+    before do
+      config[:name] = options[:name] if options[:name]
+      stub_api_request config, "markers", {
+        :revision => options[:revision],
+        :user => options[:user]
+      }
+    end
+    around do |example|
+      Dir.chdir project_fixture_path do
+        example.run
+      end
+    end
+
+    context "without environment" do
+      let(:options) { {:environment => "", :revision => "foo", :user => "thijs"} }
+      before do
+        # Makes the config "active"
+        ENV["APPSIGNAL_PUSH_API_KEY"] = "foo"
+      end
+
+      it "requires environment option" do
+        expect { run }.to raise_error(SystemExit)
+        expect(output).to include_missing_options(%w(environment))
+        expect(output).to_not include_deploy_notification
+      end
+    end
+
+    context "without known environment" do
+      let(:options) { {:environment => "foo"} }
+
+      it "prints a config error" do
+        expect { run }.to raise_error(SystemExit)
+        expect(output).to include_config_error
+        expect(output).to_not include_missing_options([])
+        expect(output).to_not include_deploy_notification
+      end
+    end
+
+    context "with known environment" do
+      context "without required options" do
+        let(:options) { {:environment => "production"} }
+
+        it "prints a missing required options error" do
+          expect { run }.to raise_error(SystemExit)
+          expect(output).to_not include_config_error
+          expect(output).to include_missing_options(%w(revision user))
+          expect(output).to_not include_deploy_notification
+        end
+
+        context "with empty required option" do
+          let(:options) { {:environment => "production", :revision => "foo", :user => ""} }
+
+          it "prints a missing required option error" do
+            expect { run }.to raise_error(SystemExit)
+            expect(output).to_not include_config_error
+            expect(output).to include_missing_options(%w(user))
+            expect(output).to_not include_deploy_notification
+          end
+        end
+      end
+
+      context "with required options" do
+        let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs"} }
+
+        it "notifies of a deploy" do
+          run
+          expect(output).to_not include_config_error
+          expect(output).to_not include_missing_options([])
+          expect(output).to include_deploy_notification_with(options)
+        end
+
+        context "with no app name configured" do
+          before { ENV["APPSIGNAL_APP_NAME"] = "" }
+
+          context "without name option" do
+            let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs"} }
+
+            it "requires name option" do
+              expect { run }.to raise_error(SystemExit)
+              expect(output).to_not include_config_error
+              expect(output).to include_missing_options(%w(name))
+              expect(output).to_not include_deploy_notification
+            end
+          end
+
+          context "with name option" do
+            let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo"} }
+
+            it "notifies of a deploy with a custom name" do
+              run
+              expect(output).to_not include_config_error
+              expect(output).to_not include_missing_options([])
+              expect(output).to include_deploy_notification_with(options)
+            end
+          end
+        end
+
+        context "with name option" do
+          let(:options) do
+            {:environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo"}
+          end
+
+          it "notifies of a deploy with a custom name" do
+            run
+            expect(output).to_not include_config_error
+            expect(output).to_not include_missing_options([])
+            expect(output).to include_deploy_notification_with(options)
+          end
+        end
       end
     end
   end

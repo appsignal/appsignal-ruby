@@ -52,7 +52,7 @@ module Appsignal
           {:force => @options.include?(:force) && @options[:force]}
         )
         begin
-          ActiveSupport::Notifications.instrument('process_action.sinatra') do
+          Appsignal.instrument('process_action.sinatra') do
             @app.call(env)
           end
         rescue => error

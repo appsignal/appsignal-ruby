@@ -45,4 +45,6 @@ matrix:
 env:
   global: "RAILS_ENV=test"
 
-script: "bundle exec rake travis"
+before_script: "bundle exec rake extension:install"
+
+script: "bundle exec rake test"

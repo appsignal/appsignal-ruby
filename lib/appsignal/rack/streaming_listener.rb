@@ -25,7 +25,7 @@ module Appsignal
 
         # Instrument a `process_action`, to set params/action name
         status, headers, body =
-          ActiveSupport::Notifications.instrument('process_action.rack') do
+          Appsignal.instrument('process_action.rack') do
             begin
               @app.call(env)
             rescue Exception => e

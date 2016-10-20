@@ -12,7 +12,7 @@ module Appsignal::Integrations
 
         transaction.set_action("#{resource.class.name}##{request.method}")
 
-        ActiveSupport::Notifications.instrument('process_action.webmachine') do
+        Appsignal.instrument('process_action.webmachine') do
           run_without_appsignal
         end
 

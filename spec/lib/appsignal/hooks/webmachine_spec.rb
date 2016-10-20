@@ -1,5 +1,5 @@
-if webmachine_present?
-  describe Appsignal::Hooks::WebmachineHook do
+describe Appsignal::Hooks::WebmachineHook do
+  if DependencyHelper.webmachine_present?
     context "with webmachine" do
       let(:fsm) { Webmachine::Decision::FSM.new(double(:trace? => false), double, double) }
       before(:all) { start_agent }
@@ -22,5 +22,4 @@ if webmachine_present?
       end
     end
   end
-
 end

@@ -1,18 +1,18 @@
 ---
-version: 220a888
+version: 61c23ea
 triples:
   x86_64-linux:
-    checksum: 5e313156339389b339c289592327ac1c3d57999df93cd31ce9c69fa4ede1e38f
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/220a888/appsignal-x86_64-linux-all-static.tar.gz
+    checksum: 6a0a1ebf6a1a9c7d2ac939f9077fd279155359ed72c74284d70daf0f53b27b10
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/61c23ea/appsignal-x86_64-linux-all-static.tar.gz
   i686-linux:
-    checksum: caeac8747e368bc122e56fdebd498b8c381a6d19d2b2dfaf01b648a6a973b28d
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/220a888/appsignal-i686-linux-all-static.tar.gz
+    checksum: 498e11631eae3418a55a733ac13b993c35afb782be9fb5c4e5b6be0f52f4f76c
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/61c23ea/appsignal-i686-linux-all-static.tar.gz
   x86-linux:
-    checksum: caeac8747e368bc122e56fdebd498b8c381a6d19d2b2dfaf01b648a6a973b28d
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/220a888/appsignal-i686-linux-all-static.tar.gz
+    checksum: 498e11631eae3418a55a733ac13b993c35afb782be9fb5c4e5b6be0f52f4f76c
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/61c23ea/appsignal-i686-linux-all-static.tar.gz
   x86_64-darwin:
-    checksum: 949a325baf8b1a40978288082cf1689c22d48cdef6acbbc389d5613d670f6fb9
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/220a888/appsignal-x86_64-darwin-all-static.tar.gz
+    checksum: 62a6ffc8d379bcba0cf7e48f92690b62ffacee81f3e996ace215f56eb03d2be6
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/61c23ea/appsignal-x86_64-darwin-all-static.tar.gz
   universal-darwin:
-    checksum: 949a325baf8b1a40978288082cf1689c22d48cdef6acbbc389d5613d670f6fb9
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/220a888/appsignal-x86_64-darwin-all-static.tar.gz
+    checksum: 62a6ffc8d379bcba0cf7e48f92690b62ffacee81f3e996ace215f56eb03d2be6
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/61c23ea/appsignal-x86_64-darwin-all-static.tar.gz

@@ -2,20 +2,9 @@ require 'json'
 require 'logger'
 require 'securerandom'
 
-# Make sure we have the notification system
-begin
-  require 'active_support/notifications'
-  ActiveSupport::Notifications::Fanout::Subscribers::Timed # See it it's recent enough
-rescue LoadError
-  require 'vendor/active_support/notifications'
-rescue NameError
-  require 'appsignal/update_active_support'
-  Appsignal::UpdateActiveSupport.run
-end
-
 module Appsignal
   class << self
-    attr_accessor :config, :subscriber, :agent, :extension_loaded
+    attr_accessor :config, :agent, :extension_loaded
     attr_writer :logger, :in_memory_log
 
     def extensions
@@ -58,13 +47,17 @@ module Appsignal
           Appsignal::Hooks.load_hooks
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
-          Appsignal::Extension.install_allocation_event_hook if config[:enable_allocation_tracking]
+
+          if config[:enable_allocation_tracking]
+            Appsignal::Extension.install_allocation_event_hook
+          end
+
           if config[:enable_gc_instrumentation]
-            Appsignal::Extension.install_gc_event_hooks
+            GC::Profiler.enable
             Appsignal::Minutely.add_gc_probe
           end
+
           Appsignal::Minutely.start if config[:enable_minutely_probes]
-          @subscriber = Appsignal::Subscriber.new
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -95,7 +88,6 @@ module Appsignal
       Appsignal.start_logger
       logger.debug('Forked process, resubscribing and restarting extension')
       Appsignal::Extension.start
-      @subscriber.resubscribe
     end
 
     def get_server_state(key)
@@ -123,7 +115,7 @@ module Appsignal
         request
       )
       begin
-        ActiveSupport::Notifications.instrument(name) do
+        Appsignal.instrument(name) do
           yield
         end
       rescue => error
@@ -192,9 +184,13 @@ module Appsignal
 
     def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
       Appsignal::Transaction.current.start_event
-      r = yield
+      return_value = yield
       Appsignal::Transaction.current.finish_event(name, title, body, body_format)
-      r
+      return_value
+    end
+
+    def instrument_sql(name, title=nil, body=nil, &block)
+      instrument(name, title, body, Appsignal::EventFormatter::SQL_BODY_FORMAT, &block)
     end
 
     def set_gauge(key, value)
@@ -240,33 +236,26 @@ module Appsignal
       end
     end
 
-    def start_logger(path_arg=nil)
-      path = Appsignal.config ? Appsignal.config.log_file_path : nil
-      if path && !heroku?
-        begin
-          @logger = Logger.new(path)
-          @logger.formatter = log_formatter
-        rescue SystemCallError => error
-          start_stdout_logger
-          logger.warn "appsignal: Unable to start logger with log path '#{path}'."
-          logger.warn "appsignal: #{error}"
-        end
+    def start_logger(path_arg = nil)
+      if config && config[:log] == "file" && config.log_file_path
+        start_file_logger(config.log_file_path)
       else
         start_stdout_logger
       end
 
-      if config && config[:debug]
-        @logger.level = Logger::DEBUG
-      else
-        @logger.level = Logger::INFO
-      end
+      logger.level =
+        if config && config[:debug]
+          Logger::DEBUG
+        else
+          Logger::INFO
+        end
 
       if in_memory_log
-        @logger << in_memory_log.string
+        logger << in_memory_log.string
       end
 
       if path_arg
-        @logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
+        logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
       end
     end
 
@@ -306,8 +295,13 @@ module Appsignal
       end
     end
 
-    def heroku?
-      ENV['DYNO']
+    def start_file_logger(path)
+      @logger = Logger.new(path)
+      @logger.formatter = log_formatter
+    rescue SystemCallError => error
+      start_stdout_logger
+      logger.warn "appsignal: Unable to start logger with log path '#{path}'."
+      logger.warn "appsignal: #{error}"
     end
   end
 end
@@ -321,13 +315,14 @@ require 'appsignal/hooks'
 require 'appsignal/marker'
 require 'appsignal/minutely'
 require 'appsignal/params_sanitizer'
+require 'appsignal/garbage_collection_profiler'
 require 'appsignal/integrations/railtie' if defined?(::Rails)
 require 'appsignal/integrations/resque'
 require 'appsignal/integrations/resque_active_job'
-require 'appsignal/subscriber'
 require 'appsignal/transaction'
 require 'appsignal/version'
 require 'appsignal/rack/generic_instrumentation'
 require 'appsignal/rack/js_exception_catcher'
 require 'appsignal/js_exception_transaction'
 require 'appsignal/transmitter'
+require 'appsignal/system'

@@ -23,7 +23,7 @@ bundle_and_spec_all_rbenv
 bundle_and_spec_all_rvm
 ext/libappsignal.*
 ext/appsignal-agent
-ext/appsignal_extension.h
+ext/appsignal.h
 ext/Makefile
 ext/*.bundle
 ext/*.o

@@ -59,7 +59,7 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     it "should instrument the call" do
-      expect( ActiveSupport::Notifications ).to receive(:instrument)
+      expect( Appsignal ).to receive(:instrument)
         .with('process_action.rack')
         .and_yield
 
@@ -67,7 +67,7 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     it "should add `appsignal.action` to the transaction" do
-      allow( ActiveSupport::Notifications ).to receive(:instrument).and_yield
+      allow( Appsignal ).to receive(:instrument).and_yield
 
       env['appsignal.action'] = 'Action'
 
@@ -77,7 +77,7 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     it "should add the path, method and queue start to the transaction" do
-      allow( ActiveSupport::Notifications ).to receive(:instrument).and_yield
+      allow( Appsignal ).to receive(:instrument).and_yield
 
       expect( transaction ).to receive(:set_metadata).with('path', '/homepage')
       expect( transaction ).to receive(:set_metadata).with('method', 'GET')

@@ -1,3 +1,4 @@
+require 'active_support'
 require 'appsignal'
 require 'benchmark'
 
@@ -42,9 +43,8 @@ def run_benchmark
       )
       Appsignal::Transaction.create("transaction_#{i}", Appsignal::Transaction::HTTP_REQUEST, request)
 
-      ActiveSupport::Notifications.instrument('process_action.action_controller') do
-        ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users`
-                                                                              WHERE `users`.`id` = ?')
+      Appsignal.instrument('process_action.action_controller') do
+        ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
         10.times do
           ActiveSupport::Notifications.instrument('sql.active_record', :sql => 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
         end

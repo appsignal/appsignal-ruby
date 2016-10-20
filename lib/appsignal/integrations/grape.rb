@@ -1,41 +1,48 @@
 module Appsignal
   module Grape
     class Middleware < ::Grape::Middleware::Base
-      def initialize(app)
-        @app = app
-      end
-
       def call(env)
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
-          @app.call(env)
+          app.call(env)
         end
       end
 
       def call_with_appsignal_monitoring(env)
-        request      = ::Rack::Request.new(env)
-        transaction  = Appsignal::Transaction.create(
+        request     = ::Rack::Request.new(env)
+        transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
           request
         )
         begin
-          @app.call(env)
+          app.call(env)
         rescue => error
           transaction.set_error(error)
           raise error
         ensure
-          api_endpoint = env['api.endpoint']
-          if api_endpoint && options = api_endpoint.options
-            method = options[:method].first
-            klass  = options[:for]
-            action = options[:path].first
-            transaction.set_action("#{method}::#{klass}##{action}")
+          request_method = request.request_method
+          path = request.path # Path without namespaces
+          endpoint = env["api.endpoint"]
+
+          if endpoint && endpoint.options
+            options = endpoint.options
+            request_method = options[:method].first
+            klass = options[:for]
+            namespace = endpoint.namespace
+            namespace = "" if namespace == "/"
+
+            path = options[:path].first.to_s
+            path = "/#{path}" if path[0] != "/"
+            path = "#{namespace}#{path}"
+
+            transaction.set_action("#{request_method}::#{klass}##{path}")
           end
+
           transaction.set_http_or_background_queue_start
-          transaction.set_metadata('path', request.path)
-          transaction.set_metadata('method', env['REQUEST_METHOD'])
+          transaction.set_metadata("path", path)
+          transaction.set_metadata("method", request_method)
           Appsignal::Transaction.complete_current!
         end
       end

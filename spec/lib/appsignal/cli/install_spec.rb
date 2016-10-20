@@ -1,10 +1,5 @@
 require 'appsignal/cli'
 
-begin
-  require 'sinatra'
-rescue LoadError
-end
-
 describe Appsignal::CLI::Install do
   let(:out_stream) { StringIO.new }
   let(:cli) { Appsignal::CLI::Install }

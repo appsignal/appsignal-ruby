@@ -1,5 +1,4 @@
-if webmachine_present?
-
+if DependencyHelper.webmachine_present?
   require 'appsignal/integrations/webmachine'
 
   describe Appsignal::Integrations::WebmachinePlugin::FSM do
@@ -45,7 +44,7 @@ if webmachine_present?
       end
 
       it "should instrument the original method" do
-        expect( ActiveSupport::Notifications ).to receive(:instrument).with('process_action.webmachine')
+        expect( Appsignal ).to receive(:instrument).with('process_action.webmachine')
       end
 
       it "should close the transaction" do
@@ -66,6 +65,5 @@ if webmachine_present?
         fsm.send(:handle_exceptions) { raise error }
       end
     end
-
   end
 end

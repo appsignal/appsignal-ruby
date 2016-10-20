@@ -1,4 +1,4 @@
-if capistrano3_present?
+if DependencyHelper.capistrano3_present?
   require 'capistrano/all'
   require 'capistrano/deploy'
   require 'appsignal/capistrano'
@@ -135,8 +135,8 @@ if capistrano3_present?
             invoke('appsignal:deploy')
 
             expect(out_stream.string).to include \
-              'Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
-              'Appsignal has been notified of this deploy!'
+              'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
+              'AppSignal has been notified of this deploy!'
           end
 
           context "with overridden revision" do
@@ -148,8 +148,8 @@ if capistrano3_present?
 
             it "transmits the overriden revision" do
               expect(out_stream.string).to include \
-                'Notifying Appsignal of deploy with: revision: abc123, user: batman',
-                'Appsignal has been notified of this deploy!'
+                'Notifying AppSignal of deploy with: revision: abc123, user: batman',
+                'AppSignal has been notified of this deploy!'
             end
           end
 
@@ -162,9 +162,9 @@ if capistrano3_present?
             it "does not transmit marker" do
               output = out_stream.string
               expect(output).to include \
-                'Notifying Appsignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
-                'Something went wrong while trying to notify Appsignal:'
-              expect(output).to_not include 'Appsignal has been notified of this deploy!'
+                'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
+                'Something went wrong while trying to notify AppSignal:'
+              expect(output).to_not include 'AppSignal has been notified of this deploy!'
             end
           end
         end

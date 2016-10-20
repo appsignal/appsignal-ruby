@@ -35,7 +35,7 @@ describe Appsignal::CLI do
         cli.run([arg])
       }.should raise_error(SystemExit)
 
-      out_stream.string.should include 'Appsignal'
+      out_stream.string.should include 'AppSignal'
       out_stream.string.should include '.'
     end
   end
@@ -69,23 +69,6 @@ describe Appsignal::CLI do
       cli.run([
         'install',
         'api-key'
-      ])
-    end
-  end
-
-  describe "notify_of_deploy" do
-    it "should call Appsignal::Install.install" do
-      Appsignal::CLI::NotifyOfDeploy.should_receive(:run).with(
-        {:revision=>"aaaaa", :user=>"thijs", :environment=>"production"},
-        instance_of(Appsignal::Config)
-      )
-
-      cli.run([
-        'notify_of_deploy',
-        '--name=project-production',
-        '--revision=aaaaa',
-        '--user=thijs',
-        '--environment=production'
       ])
     end
   end

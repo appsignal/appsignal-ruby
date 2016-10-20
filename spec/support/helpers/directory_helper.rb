@@ -1,4 +1,6 @@
 module DirectoryHelper
+  module_function
+
   def project_dir
     @project_dir ||= File.expand_path('..', spec_dir)
   end

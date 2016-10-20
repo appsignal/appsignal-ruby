@@ -1,3 +1,27 @@
+# 1.4.0
+* Add `Appsignal.instrument_sql` convenience methods. PR #136
+* Use `Appsignal.instrument` internally instead of ActiveSupport
+  instrumentation. PR #142
+* Override ActiveSupport instrument instead of subscribing. PR #150
+* Use have_library to link the AppSignal extension `libappsignal`. PR #148
+* Rename `appsignal_extension.h` to `appsignal.h`.
+  Commit 9ed7c8d83f622d5a79c5c21d352b3360fd7e8113
+* Refactor rescuing of Exception. PR #173
+* Use GC::Profiler to track garbage collection time. PR #134
+* Detect if AppSignal is running in a container or Heroku. PR #177 #178
+* Change configuration load order to load environment settings after
+  `appsignal.yml`. PR #178
+* Speed up payload generation by letting the extension handle it. PR #175
+* Improve `appsignal diagnose` formatting and output more data. PR #187
+* Remove outdated `appsignal:diagnose` rake tasks. Use `appsignal diagnose`
+  instead. PR #193
+* Fix JavaScript exception without names resulting in errors themselves. PR #188
+* Support namespaces in Grape routes. PR #189
+* Change STDOUT output to always mention "AppSignal", not "Appsignal". PR #192
+* `appsignal notify_of_deploy` refactor. `--name` will override any
+  other `name` config. `--environment` is only required if it's not set in the
+  environment. PR #194
+
 # 1.3.6
 * Support blocks arguments on method instrumentation. PR #163
 * Support `APPSIGNAL_APP_ENV` for Sinatra. PR #164

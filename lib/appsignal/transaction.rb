@@ -19,13 +19,6 @@ module Appsignal
     HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP HTTP_RANGE
     HTTP_X_AUTH_TOKEN)
 
-    JSON_EXCEPTIONS = [
-      IOError,
-      NotImplementedError,
-      JSON::GeneratorError,
-      Encoding::UndefinedConversionError
-    ].freeze
-
     class << self
       def create(id, namespace, request, options={})
         # Allow middleware to force a new transaction
@@ -57,6 +50,10 @@ module Appsignal
       ensure
         Thread.current[:appsignal_transaction] = nil
       end
+
+      def garbage_collection_profiler
+        @garbage_collection_profiler ||= Appsignal::GarbageCollectionProfiler.new
+      end
     end
 
     attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
@@ -72,7 +69,11 @@ module Appsignal
       @options = options
       @options[:params_method] ||= :params
 
-      @ext = Appsignal::Extension.start_transaction(@transaction_id, @namespace)
+      @ext = Appsignal::Extension.start_transaction(
+        @transaction_id,
+        @namespace,
+        self.class.garbage_collection_profiler.total_time
+      )
     end
 
     def nil_transaction?
@@ -84,7 +85,7 @@ module Appsignal
         Appsignal.logger.debug('Skipping transaction because it was manually discarded.'.freeze)
         return
       end
-      if @ext.finish
+      if @ext.finish(self.class.garbage_collection_profiler.total_time)
         sample_data
       end
       @ext.complete
@@ -160,10 +161,10 @@ module Appsignal
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
       @ext.set_sample_data(
         key.to_s,
-        Appsignal::Utils.json_generate(data)
+        Appsignal::Utils.data_generate(data)
       )
-    rescue *JSON_EXCEPTIONS => e
-      Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{data.inspect}'")
+    rescue RuntimeError => e
+      Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{data.inspect}'")
     end
 
     def sample_data
@@ -187,15 +188,13 @@ module Appsignal
       @ext.set_error(
         error.class.name,
         error.message.to_s,
-        backtrace ? Appsignal::Utils.json_generate(backtrace) : ''
+        backtrace ? Appsignal::Utils.data_generate(backtrace) : Appsignal::Extension.data_array_new
       )
-    rescue *JSON_EXCEPTIONS => e
-      Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{backtrace.inspect}'")
     end
     alias_method :add_exception, :set_error
 
     def start_event
-      @ext.start_event
+      @ext.start_event(self.class.garbage_collection_profiler.total_time)
     end
 
     def finish_event(name, title, body, body_format=Appsignal::EventFormatter::DEFAULT)
@@ -203,7 +202,8 @@ module Appsignal
         name,
         title || BLANK,
         body || BLANK,
-        body_format || Appsignal::EventFormatter::DEFAULT
+        body_format || Appsignal::EventFormatter::DEFAULT,
+        self.class.garbage_collection_profiler.total_time
       )
     end
 

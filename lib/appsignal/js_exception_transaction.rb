@@ -5,7 +5,7 @@ module Appsignal
     def initialize(data)
       @data = data
       @uuid = SecureRandom.uuid
-      @ext = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND)
+      @ext = Appsignal::Extension.start_transaction(@uuid, Appsignal::Transaction::FRONTEND, 0)
 
       set_action
       set_metadata
@@ -14,7 +14,7 @@ module Appsignal
     end
 
     def set_action
-      @ext.set_action(@data['action'])
+      @ext.set_action(@data['action']) if @data['action']
     end
 
     def set_metadata
@@ -26,8 +26,8 @@ module Appsignal
     def set_error
       @ext.set_error(
         @data['name'],
-        @data['message'],
-        Appsignal::Utils.json_generate(@data['backtrace'])
+        @data['message'] || '',
+        Appsignal::Utils.data_generate(@data['backtrace'] || [])
       )
     end
 
@@ -39,14 +39,10 @@ module Appsignal
         :tags         => @data['tags']
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
-        begin
-          @ext.set_sample_data(
-            key.to_s,
-            Appsignal::Utils.json_generate(data)
-          )
-        rescue *Appsignal::Transaction::JSON_EXCEPTIONS => e
-          Appsignal.logger.error("Error generating JSON (#{e.class}: #{e.message}) for '#{backtrace.inspect}'")
-        end
+        @ext.set_sample_data(
+          key.to_s,
+          Appsignal::Utils.data_generate(data)
+        )
       end
     end
 

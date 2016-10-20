@@ -1,8 +1,9 @@
-AppSignal agent
-=================
+# AppSignal agent
 
-This gem collects error and performance data from your Rails
-applications and sends it to [AppSignal](https://appsignal.com)
+This gem collects error and performance data from your Ruby
+applications and sends it to [AppSignal](https://appsignal.com).
+
+- [Documentation](http://docs.appsignal.com/)
 
 [![Build Status](https://travis-ci.org/appsignal/appsignal-ruby.png?branch=master)](https://travis-ci.org/appsignal/appsignal-ruby)
 [![Gem Version](https://badge.fury.io/rb/appsignal.svg)](http://badge.fury.io/rb/appsignal)
@@ -43,7 +44,7 @@ If you have either Rvm or Rbenv installed you can also use
 `rake generate_bundle_and_spec_all` to generate a script that runs specs for
 all Ruby versions and gem combinations we support.
 
-On Travis we run the suite against all of the Gemfiles mentioned above and on
+We run the suite against all of the Gemfiles mentioned above and on
 a number of different Ruby versions.
 
 ## Branches and versions
