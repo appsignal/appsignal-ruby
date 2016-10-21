@@ -340,7 +340,7 @@ describe Appsignal::Config do
       expect(ENV['APPSIGNAL_APP_NAME']).to                     eq 'TestApp'
       expect(ENV['APPSIGNAL_ENVIRONMENT']).to                  eq 'production'
       expect(ENV['APPSIGNAL_AGENT_VERSION']).to                eq Appsignal::Extension.agent_version
-      expect(ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION']).to eq Appsignal::VERSION
+      expect(ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION']).to eq "ruby-#{Appsignal::VERSION}"
       expect(ENV['APPSIGNAL_HTTP_PROXY']).to                   eq 'http://localhost'
       expect(ENV['APPSIGNAL_IGNORE_ACTIONS']).to               eq 'action1,action2'
       expect(ENV['APPSIGNAL_FILTER_PARAMETERS']).to            eq 'password,confirm_password'
