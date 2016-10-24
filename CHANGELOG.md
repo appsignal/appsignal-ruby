@@ -25,6 +25,9 @@
   environment. PR #194
 * Allow logging to STDOUT. Available for the Ruby gem and C extension. The
   `appsignal-agent` process will continue log to file. PR #190
+* Remove deprecated methods. PR #191
+* Send "ruby" implementation name with version number for better identifying
+  different language implementations. PR #198
 
 # 1.3.6
 * Support blocks arguments on method instrumentation. PR #163
