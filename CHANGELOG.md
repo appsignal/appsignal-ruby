@@ -1,8 +1,10 @@
-# 1.4.0
+# 2.0.0
 * Add `Appsignal.instrument_sql` convenience methods. PR #136
 * Use `Appsignal.instrument` internally instead of ActiveSupport
   instrumentation. PR #142
 * Override ActiveSupport instrument instead of subscribing. PR #150
+* Remove required dependency on ActiveSupport. Recommended you use
+  `Appsignal.instrument` if you don't need `ActiveSupport`. PR #150 #142
 * Use have_library to link the AppSignal extension `libappsignal`. PR #148
 * Rename `appsignal_extension.h` to `appsignal.h`.
   Commit 9ed7c8d83f622d5a79c5c21d352b3360fd7e8113
