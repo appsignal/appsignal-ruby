@@ -28,6 +28,8 @@
 * Remove deprecated methods. PR #191
 * Send "ruby" implementation name with version number for better identifying
   different language implementations. PR #198
+* Send demonstration samples to AppSignal using the `appsignal install`
+  command instead of asking the user to start their app. PR #196
 
 # 1.3.6
 * Support blocks arguments on method instrumentation. PR #163
