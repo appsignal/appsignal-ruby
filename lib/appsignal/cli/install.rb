@@ -1,6 +1,7 @@
 require 'erb'
 require 'ostruct'
 require 'io/console'
+require 'appsignal/demo'
 
 module Appsignal
   class CLI
@@ -199,6 +200,8 @@ module Appsignal
         def configure(config, environments, name_overwritten)
           install_for_capistrano
 
+          ENV["APPSIGNAL_APP_ENV"] = "development"
+
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
           puts "  (2) environment variables"
@@ -219,6 +222,10 @@ module Appsignal
               puts
               break
             elsif input == '2'
+              ENV["APPSIGNAL_ACTIVE"] = "true"
+              ENV["APPSIGNAL_PUSH_API_KEY"] = config[:push_api_key]
+              ENV["APPSIGNAL_APP_NAME"] = config[:name]
+
               puts
               puts "Add the following environment variables to configure AppSignal:"
               puts "  export APPSIGNAL_ACTIVE=true"
@@ -242,20 +249,19 @@ module Appsignal
           puts colorize "#####################################", :green
           sleep 0.3
           puts
-          puts '  Now you need to send us some data...'
-          puts
           if Gem.win_platform?
             puts 'The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment'
           else
-            puts "  Run your app with AppSignal activated:"
-            puts "  - You can do this on your dev environment"
-            puts "  - Or deploy to staging or production"
-            puts
-            puts "  Test if AppSignal is receiving data:"
-            puts "  - Requests > 200ms are shown in AppSignal"
-            puts "  - Generate an error to test (e.g. add .xml to a url)"
-            puts
-            puts "Please return to your browser and follow the instructions."
+            puts "  Sending example data to AppSignal..."
+            if Appsignal::Demo.transmit
+              puts "  Example data sent!"
+              puts "  It may take about a minute for the data to appear on AppSignal.com/accounts"
+              puts
+              puts "  Please return to your browser and follow the instructions."
+            else
+              puts "  Couldn't start the AppSignal agent and send example data to AppSignal.com"
+              puts "  Please use `appsignal diagnose` to debug your configuration."
+            end
           end
         end
 
