@@ -2,13 +2,14 @@ require 'optparse'
 require 'logger'
 require 'yaml'
 require 'appsignal'
+require 'appsignal/cli/demo'
 require 'appsignal/cli/diagnose'
 require 'appsignal/cli/install'
 require 'appsignal/cli/notify_of_deploy'
 
 module Appsignal
   class CLI
-    AVAILABLE_COMMANDS = %w(diagnose install notify_of_deploy).freeze
+    AVAILABLE_COMMANDS = %w(demo diagnose install notify_of_deploy).freeze
 
     class << self
       attr_accessor :options
@@ -23,6 +24,8 @@ module Appsignal
           if AVAILABLE_COMMANDS.include?(command)
             commands[command].parse!(argv)
             case command.to_sym
+            when :demo
+              Appsignal::CLI::Demo.run(options)
             when :diagnose
               Appsignal::CLI::Diagnose.run
             when :install
@@ -72,6 +75,13 @@ module Appsignal
 
       def command_option_parser
         {
+          'demo' => OptionParser.new do |o|
+            o.banner = 'Usage: appsignal demo [options]'
+
+            o.on '--environment=<rails_env>', "The environment to demo" do |arg|
+              options[:environment] = arg
+            end
+          end,
           'diagnose' => OptionParser.new,
           'install' => OptionParser.new,
           'notify_of_deploy' => OptionParser.new do |o|

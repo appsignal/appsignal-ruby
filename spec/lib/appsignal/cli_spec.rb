@@ -25,7 +25,8 @@ describe Appsignal::CLI do
       }.should raise_error(SystemExit)
 
       out_stream.string.should include 'appsignal <command> [options]'
-      out_stream.string.should include 'Available commands: diagnose, install, notify_of_deploy'
+      out_stream.string.should include \
+        'Available commands: demo, diagnose, install, notify_of_deploy'
     end
   end
 
