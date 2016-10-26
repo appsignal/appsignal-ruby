@@ -886,11 +886,22 @@ describe Appsignal::Transaction do
     end
 
     describe "#cleaned_backtrace" do
-      subject { transaction.send(:cleaned_backtrace, ['line 1']) }
+      subject { transaction.send(:cleaned_backtrace, ['line 1', 'line 2']) }
 
-      it { should eq ['line 1'] }
+      it "returns the backtrace" do
+        expect(subject).to eq ['line 1', 'line 2']
+      end
 
-      pending "calls Rails backtrace cleaner if Rails is present"
+      if rails_present?
+        context "with rails" do
+          it "cleans the backtrace with the Rails backtrace cleaner" do
+            ::Rails.backtrace_cleaner.add_filter do |line|
+              line.tr("2", "?")
+            end
+            expect(subject).to eq ['line 1', 'line ?']
+          end
+        end
+      end
     end
   end
 
