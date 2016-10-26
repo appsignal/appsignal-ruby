@@ -792,6 +792,10 @@ describe Appsignal do
     end
 
     describe ".instrument" do
+      before do
+        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+      end
+
       it "should instrument through the transaction" do
         stub = double
         stub.should_receive(:method_call).and_return('return value')
@@ -811,6 +815,10 @@ describe Appsignal do
     end
 
     describe ".instrument_sql" do
+      before do
+        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+      end
+
       it "should instrument sql through the transaction" do
         stub = double
         stub.should_receive(:method_call).and_return('return value')
