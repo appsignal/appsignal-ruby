@@ -30,6 +30,8 @@
   different language implementations. PR #198
 * Send demonstration samples to AppSignal using the `appsignal install`
   command instead of asking the user to start their app. PR #196
+* Add `appsignal demo` command to test the AppSignal demonstration samples
+  instrumentation manually and not just during the installation. PR #199
 
 # 1.3.6
 * Support blocks arguments on method instrumentation. PR #163
