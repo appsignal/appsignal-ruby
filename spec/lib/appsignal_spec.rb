@@ -797,20 +797,14 @@ describe Appsignal do
       end
 
       it "should instrument through the transaction" do
-        stub = double
-        stub.should_receive(:method_call).and_return('return value')
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event)
+          .with('name', 'title', 'body', Appsignal::EventFormatter::DEFAULT)
 
-        transaction.should_receive(:start_event)
-        transaction.should_receive(:finish_event).with(
-          'name',
-          'title',
-          'body',
-          0
-        )
-
-        Appsignal.instrument 'name', 'title', 'body' do
-          stub.method_call
-        end.should eq 'return value'
+        result = Appsignal.instrument 'name', 'title', 'body' do
+          'return value'
+        end
+        expect(result).to eq 'return value'
       end
     end
 
@@ -820,20 +814,14 @@ describe Appsignal do
       end
 
       it "should instrument sql through the transaction" do
-        stub = double
-        stub.should_receive(:method_call).and_return('return value')
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event)
+          .with('name', 'title', 'body', Appsignal::EventFormatter::SQL_BODY_FORMAT)
 
-        transaction.should_receive(:start_event)
-        transaction.should_receive(:finish_event).with(
-          'name',
-          'title',
-          'body',
-          1
-        )
-
-        Appsignal.instrument_sql 'name', 'title', 'body' do
-          stub.method_call
-        end.should eq 'return value'
+        result = Appsignal.instrument_sql 'name', 'title', 'body' do
+          'return value'
+        end
+        expect(result).to eq 'return value'
       end
     end
 
