@@ -8,7 +8,7 @@ module TransactionHelpers
   end
 
   def background_job_transaction(args={})
-    Appsignal::Transaction.create(
+    Appsignal::Transaction.new(
       '1',
       Appsignal::Transaction::BACKGROUND_JOB,
       Appsignal::Transaction::GenericRequest.new({
@@ -19,7 +19,7 @@ module TransactionHelpers
   end
 
   def http_request_transaction(args={})
-    Appsignal::Transaction.create(
+    Appsignal::Transaction.new(
       '1',
       Appsignal::Transaction::HTTP_REQUEST,
       Appsignal::Transaction::GenericRequest.new({
