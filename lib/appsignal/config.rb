@@ -63,7 +63,7 @@ module Appsignal
 
     def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
       @root_path      = root_path
-      @env            = env.to_s
+      @env            = ENV.fetch("APPSIGNAL_APP_ENV".freeze, env.to_s)
       @initial_config = initial_config
       @logger         = logger
       @valid          = false

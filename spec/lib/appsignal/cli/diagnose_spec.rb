@@ -1,13 +1,14 @@
 require "appsignal/cli"
 
-describe Appsignal::CLI::Diagnose do
+describe Appsignal::CLI::Diagnose, :api_stub => true do
   describe ".run" do
     let(:out_stream) { StringIO.new }
     let(:config) { project_fixture_config }
     let(:cli) { described_class }
     let(:output) { out_stream.string }
-    before do
-      ENV["APPSIGNAL_APP_ENV"] = "production"
+
+    before { ENV["APPSIGNAL_APP_ENV"] = config.env }
+    before :api_stub => true do
       stub_api_request config, "auth"
     end
     after { Appsignal.config = nil }
@@ -113,10 +114,13 @@ describe Appsignal::CLI::Diagnose do
         end
       end
 
-      context "without environment" do
-        let(:config) { project_fixture_config("") }
+      context "without environment", :api_stub => false do
+        let(:config) { project_fixture_config(nil) }
         before do
-          ENV["APPSIGNAL_APP_ENV"] = ""
+          ENV.delete("APPSIGNAL_APP_ENV")
+          ENV.delete("RAILS_ENV") # From spec_helper
+          ENV.delete("RACK_ENV")
+          stub_api_request config, "auth"
           recognize_as_container(:none) { run }
         end
 
@@ -153,10 +157,7 @@ describe Appsignal::CLI::Diagnose do
 
       context "with unconfigured environment" do
         let(:config) { project_fixture_config("foobar") }
-        before do
-          ENV["APPSIGNAL_APP_ENV"] = "foobar"
-          recognize_as_container(:none) { run }
-        end
+        before { recognize_as_container(:none) { run } }
 
         it "outputs environment" do
           expect(output).to include("Environment: foobar")
@@ -172,7 +173,7 @@ describe Appsignal::CLI::Diagnose do
       end
     end
 
-    describe "API key validation" do
+    describe "API key validation", :api_stub => false do
       context "with valid key" do
         before do
           stub_api_request(config, "auth").to_return(:status => 200)
