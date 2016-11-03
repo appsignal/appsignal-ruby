@@ -1,3 +1,7 @@
+# 2.0.1
+* Fix configuration load order regression for the `APPSIGNAL_PUSH_API_KEY`
+  environment variable's activation behavior. PR #208
+
 # 2.0.0
 * Add `Appsignal.instrument_sql` convenience methods. PR #136
 * Use `Appsignal.instrument` internally instead of ActiveSupport
