@@ -150,6 +150,9 @@ module Appsignal
     def detect_from_system
       config_hash[:running_in_container] = true if Appsignal::System.container?
       config_hash[:log] = 'stdout' if Appsignal::System.heroku?
+
+      # Make active by default if APPSIGNAL_PUSH_API_KEY is present
+      config_hash[:active] = true if ENV['APPSIGNAL_PUSH_API_KEY']
     end
 
     def load_from_disk
@@ -179,11 +182,6 @@ module Appsignal
 
     def load_from_environment
       config = {}
-
-      # Make active by default if APPSIGNAL_PUSH_API_KEY is present
-      if ENV['APPSIGNAL_PUSH_API_KEY']
-        config[:active] = true
-      end
 
       # Configuration with string type
       %w(APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT

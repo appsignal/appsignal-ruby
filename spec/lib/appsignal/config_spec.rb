@@ -2,6 +2,24 @@ describe Appsignal::Config do
   describe "config based on the system" do
     let(:config) { project_fixture_config(:none) }
 
+    describe ":active" do
+      subject { config[:active] }
+
+      context "with APPSIGNAL_PUSH_API_KEY env variable" do
+        before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
+
+        it "becomes active" do
+          expect(subject).to be_true
+        end
+      end
+
+      context "without APPSIGNAL_PUSH_API_KEY env variable" do
+        it "remains inactive" do
+          expect(subject).to be_false
+        end
+      end
+    end
+
     describe ":running_in_container" do
       subject { config[:running_in_container] }
 
@@ -92,16 +110,38 @@ describe Appsignal::Config do
     end
 
     describe "overriding system detected config" do
-      let(:config) do
-        described_class.new(
-          "non-existing-path",
-          "production",
-          :running_in_container => true
-        )
+      describe ":running_in_container" do
+        let(:config) do
+          described_class.new(
+            "non-existing-path",
+            "production",
+            :running_in_container => true
+          )
+        end
+        subject { config[:running_in_container] }
+
+        it "overrides system detected config" do
+          expect(subject).to be_true
+        end
       end
 
-      it "overrides system detected config" do
-        expect(config[:running_in_container]).to be_true
+      describe ":active" do
+        subject { config[:active] }
+
+        context "with APPSIGNAL_PUSH_API_KEY env variable" do
+          let(:config) do
+            described_class.new(
+              "non-existing-path",
+              "production",
+              :active => false
+            )
+          end
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
+
+          it "sets given config rather than env variable" do
+            expect(subject).to be_false
+          end
+        end
       end
     end
   end
