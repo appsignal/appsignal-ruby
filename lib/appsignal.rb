@@ -230,9 +230,10 @@ module Appsignal
       end
     end
 
-    def log_formatter
+    def log_formatter(prefix = nil)
+      prefix = "#{prefix}: " if prefix
       proc do |severity, datetime, progname, msg|
-        "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{msg}\n"
+        "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{prefix}#{msg}\n"
       end
     end
 
@@ -249,7 +250,6 @@ module Appsignal
         else
           Logger::INFO
         end
-      logger.formatter = log_formatter
 
       if in_memory_log
         logger << in_memory_log.string
@@ -289,12 +289,14 @@ module Appsignal
 
     private
 
-    def start_stdout_logger
+    def start_stdout_logger(prefix = "appsignal")
       @logger = Logger.new($stdout)
+      logger.formatter = log_formatter(prefix)
     end
 
     def start_file_logger(path)
       @logger = Logger.new(path)
+      logger.formatter = log_formatter
     rescue SystemCallError => error
       start_stdout_logger
       logger.warn "appsignal: Unable to start logger with log path '#{path}'."
