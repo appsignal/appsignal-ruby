@@ -9,15 +9,21 @@ describe Appsignal::Hooks::SequelHook do
     its(:dependencies_present?) { should be_true }
 
     context "with a transaction" do
+      let(:transaction) { Appsignal::Transaction.current }
+      before do
+        Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+        db.logger = Logger.new($stdout) # To test #log_duration call
+      end
+
       it "should instrument queries" do
-        Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test')
-        expect( Appsignal::Transaction.current ).to receive(:start_event)
-          .at_least(:once)
-        expect( Appsignal::Transaction.current ).to receive(:finish_event)
+        expect(transaction).to receive(:start_event).at_least(:once)
+        expect(transaction).to receive(:finish_event)
           .at_least(:once)
           .with("sql.sequel", nil, kind_of(String), 1)
 
-        db['SELECT 1'].all.to_a
+        expect(db).to receive(:log_duration).at_least(:once)
+
+        db["SELECT 1"].all.to_a
       end
     end
   else
