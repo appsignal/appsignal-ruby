@@ -1,3 +1,6 @@
+# 2.0.2
+* Fix Sequel instrumentation overriding existing logic from extensions. PR #209
+
 # 2.0.1
 * Fix configuration load order regression for the `APPSIGNAL_PUSH_API_KEY`
   environment variable's activation behavior. PR #208
