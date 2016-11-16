@@ -9,7 +9,7 @@ module Appsignal
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT
         ) do
-          yield
+          super
         end
       end
     end
@@ -23,7 +23,7 @@ module Appsignal
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT
         ) do
-          yield
+          super
         end
       end
     end
