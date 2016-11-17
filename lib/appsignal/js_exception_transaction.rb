@@ -47,7 +47,7 @@ module Appsignal
     end
 
     def complete!
-      @ext.finish
+      @ext.finish(0)
       @ext.complete
     end
   end
