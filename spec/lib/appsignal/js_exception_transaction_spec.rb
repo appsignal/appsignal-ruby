@@ -120,8 +120,8 @@ describe Appsignal::JSExceptionTransaction do
 
   describe "#complete!" do
     it "should call all required methods" do
-      expect(transaction.ext).to receive(:finish)
-      expect(transaction.ext).to receive(:complete)
+      expect(transaction.ext).to receive(:finish).and_call_original
+      expect(transaction.ext).to receive(:complete).and_call_original
       transaction.complete!
     end
   end
