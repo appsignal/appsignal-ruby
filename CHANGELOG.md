@@ -1,3 +1,7 @@
+# 2.0.3
+* Fix JavaScript exception catcher throwing an error on finishing a
+  transaction. PR #210
+
 # 2.0.2
 * Fix Sequel instrumentation overriding existing logic from extensions. PR #209
 
