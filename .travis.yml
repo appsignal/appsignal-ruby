@@ -32,6 +32,7 @@ gemfile:
   - "gemfiles/grape.gemfile"
 
 matrix:
+  fast_finish: true
   exclude:
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.0.gemfile"
