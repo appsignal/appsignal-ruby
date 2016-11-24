@@ -1,6 +1,7 @@
 require "rbconfig"
 require "bundler/cli"
 require "bundler/cli/common"
+require "etc"
 
 module Appsignal
   class CLI
@@ -97,22 +98,53 @@ module Appsignal
           puts "Required paths"
           return unless config?
 
-          possible_paths = {
-            :root_path => Appsignal.config.root_path,
-            :log_file_path => Appsignal.config.log_file_path
-          }
-
-          possible_paths.each do |name, path|
-            result = "Not writable"
-            if path
-              if !File.exist? path
-                result = "Does not exist"
-              elsif File.writable? path
-                result = "Writable"
-              end
+          appsignal_paths.each do |name, path|
+            puts "  #{name}: #{path.to_s.inspect}"
+            unless path
+              puts "    - Configured?: no"
+              next
             end
-            puts "  #{name}: #{path.to_s.inspect} - #{result}"
+            unless File.exist? path
+              puts "    - Exists?: no"
+              next
+            end
+
+            print "    - Writable?: "
+            puts File.writable?(path) ? "yes" : "no"
+
+            ownership = path_ownership(path)
+            process_owner = ownership[:process]
+            file_owner = ownership[:file]
+            print "    - Ownership?: "
+            owned = process_owner[:uid] == file_owner[:uid]
+            print owned ? "yes" : "no"
+            print " (file: #{file_owner[:name]}:#{file_owner[:uid]}, "
+            puts "process: #{process_owner[:name]}:#{process_owner[:uid]})"
           end
+        end
+
+        def path_ownership(path)
+          process_uid = Process.uid
+          file_uid = File.stat(path).uid
+          {
+            :process => {
+              :uid => process_uid,
+              :name => Etc.getpwuid(process_uid).name
+            },
+            :file => {
+              :uid => file_uid,
+              :name => Etc.getpwuid(file_uid).name
+            }
+          }
+        end
+
+        def appsignal_paths
+          config = Appsignal.config
+          {
+            :current_path => Dir.pwd,
+            :root_path => config.root_path,
+            :log_file_path => config.log_file_path,
+          }
         end
 
         def check_api_key
