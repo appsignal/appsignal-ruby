@@ -6,7 +6,9 @@ module Appsignal
   class CLI
     class Diagnose
       class << self
-        def run
+        def run(options = {})
+          ENV["APPSIGNAL_APP_ENV"] = options[:environment] if options[:environment]
+
           header
           empty_line
 
@@ -89,7 +91,7 @@ module Appsignal
             puts "    Warning: No environment set, no config loaded!"
             puts "    Please make sure appsignal diagnose is run within your "
             puts "    project directory with an environment."
-            puts "      APPSIGNAL_APP_ENV=production appsignal diagnose"
+            puts "      appsignal diagnose --environment=production"
           end
         end
 
