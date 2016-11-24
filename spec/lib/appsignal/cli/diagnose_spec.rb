@@ -282,6 +282,18 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         end
       end
 
+      describe "current_path" do
+        let(:root_path) { tmp_dir }
+        let(:config) { Appsignal::Config.new(root_path, "production") }
+        before { run_within_dir root_path }
+
+        it "outputs current path" do
+          expect(output).to include \
+            "Required paths",
+            %(current_path: "#{tmp_dir}"\n    - Writable?: yes)
+        end
+      end
+
       describe "root_path" do
         context "when writable" do
           let(:root_path) { File.join(tmp_dir, "writable_path") }
@@ -308,7 +320,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
               it "lists log file as writable" do
                 expect(output).to include \
-                  %(root_path: "#{root_path}"\n    - Writable?: yes),
                   %(log_file_path: "#{File.join(root_path, "appsignal.log")}"\n    - Writable?: yes)
               end
             end
@@ -322,7 +333,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
               it "lists log file as not writable" do
                 expect(output).to include \
-                  %(root_path: "#{root_path}"\n    - Writable?: yes),
                   %(log_file_path: "#{File.join(root_path, "appsignal.log")}"\n    - Writable?: no)
               end
             end
