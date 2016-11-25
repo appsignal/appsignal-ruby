@@ -51,6 +51,26 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           "Ruby version: #{RbConfig::CONFIG["RUBY_VERSION_NAME"]}"
       end
 
+      describe "root user detection" do
+        context "when not root user" do
+          it "prints no" do
+            run
+            expect(output).to include "root user: no"
+          end
+        end
+
+        context "when root user" do
+          before do
+            allow(Process).to receive(:uid).and_return(0)
+            run
+          end
+
+          it "prints yes, with warning" do
+            expect(output).to include "root user: yes (not recommended)"
+          end
+        end
+      end
+
       describe "Heroku detection" do
         context "when not on Heroku" do
           before { recognize_as_container(:none) { run } }
