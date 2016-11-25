@@ -6,8 +6,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
     let(:config) { project_fixture_config }
     let(:cli) { described_class }
     let(:output) { out_stream.string }
+    let(:options) { { :environment => config.env } }
 
-    before { ENV["APPSIGNAL_APP_ENV"] = config.env }
     before :api_stub => true do
       stub_api_request config, "auth"
     end
@@ -20,7 +20,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
     def run_within_dir(chdir)
       Dir.chdir chdir do
-        cli.run
+        cli.run(options)
       end
     end
 
@@ -136,8 +136,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
       context "without environment", :api_stub => false do
         let(:config) { project_fixture_config(nil) }
+        let(:options) { {} }
         before do
-          ENV.delete("APPSIGNAL_APP_ENV")
           ENV.delete("RAILS_ENV") # From spec_helper
           ENV.delete("RACK_ENV")
           stub_api_request config, "auth"
@@ -148,7 +148,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           expect(output).to_not include "Error"
           expect(output).to include \
             "Environment: \n    Warning: No environment set, no config loaded!",
-            "  APPSIGNAL_APP_ENV=production appsignal diagnose"
+            "  appsignal diagnose --environment=production"
         end
 
         it "outputs config defaults" do

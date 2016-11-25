@@ -28,7 +28,7 @@ module Appsignal
             when :demo
               Appsignal::CLI::Demo.run(options)
             when :diagnose
-              Appsignal::CLI::Diagnose.run
+              Appsignal::CLI::Diagnose.run(options)
             when :install
               Appsignal::CLI::Install.run(argv.shift)
             when :notify_of_deploy
@@ -70,11 +70,17 @@ module Appsignal
           'demo' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal demo [options]'
 
-            o.on '--environment=<rails_env>', "The environment to demo" do |arg|
+            o.on '--environment=<app_env>', "The environment to demo" do |arg|
               options[:environment] = arg
             end
           end,
-          'diagnose' => OptionParser.new,
+          'diagnose' => OptionParser.new do |o|
+            o.banner = 'Usage: appsignal diagnose [options]'
+
+            o.on '--environment=<app_env>', "The environment to diagnose" do |arg|
+              options[:environment] = arg
+            end
+          end,
           'install' => OptionParser.new,
           'notify_of_deploy' => OptionParser.new do |o|
             o.banner = 'Usage: appsignal notify_of_deploy [options]'
@@ -87,7 +93,7 @@ module Appsignal
               options[:user] = arg
             end
 
-            o.on '--environment=<rails_env>', "The environment you're deploying to" do |arg|
+            o.on '--environment=<app_env>', "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
 
