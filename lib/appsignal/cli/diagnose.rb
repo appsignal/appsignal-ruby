@@ -8,10 +8,10 @@ module Appsignal
     class Diagnose
       class << self
         def run(options = {})
-          ENV["APPSIGNAL_APP_ENV"] = options[:environment] if options[:environment]
-
           header
           empty_line
+
+          start_appsignal(options)
 
           agent_version
           empty_line
@@ -19,7 +19,6 @@ module Appsignal
           host_information
           empty_line
 
-          start_appsignal
           config
           empty_line
 
@@ -34,16 +33,21 @@ module Appsignal
 
         private
 
-        def empty_line
-          puts "\n"
-        end
+        def start_appsignal(options)
+          current_path = Dir.pwd
+          initial_config = {}
+          if rails_app?
+            current_path = Rails.root
+            initial_config[:name] = Rails.application.class.parent_name
+            initial_config[:log_path] = Rails.root.join("log")
+          end
 
-        def start_appsignal
+          Appsignal.config = Appsignal::Config.new(
+            current_path,
+            options[:environment],
+            initial_config
+          )
           Appsignal.start
-          return if config?
-
-          puts "Error: No config found!"
-          puts "Could not start AppSignal."
         end
 
         def header
@@ -61,6 +65,8 @@ module Appsignal
           puts "  Gem version: #{Appsignal::VERSION}"
           puts "  Agent version: #{Appsignal::Extension.agent_version}"
           puts "  Gem install path: #{gem_path}"
+          print "  Extension loaded: "
+          puts Appsignal.extension_loaded ? "yes" : "no"
         end
 
         def host_information
@@ -79,7 +85,6 @@ module Appsignal
 
         def config
           puts "Configuration"
-          return unless config?
           environment
 
           Appsignal.config.config_hash.each do |key, value|
@@ -100,7 +105,6 @@ module Appsignal
 
         def paths_writable
           puts "Required paths"
-          return unless config?
 
           appsignal_paths.each do |name, path|
             puts "  #{name}: #{path.to_s.inspect}"
@@ -144,10 +148,12 @@ module Appsignal
 
         def appsignal_paths
           config = Appsignal.config
+          log_file_path = config.log_file_path
           {
             :current_path => Dir.pwd,
             :root_path => config.root_path,
-            :log_file_path => config.log_file_path,
+            :log_dir_path => log_file_path ? File.dirname(log_file_path) : "",
+            :log_file_path => log_file_path,
           }
         end
 
@@ -195,13 +201,21 @@ module Appsignal
           end
         end
 
+        def empty_line
+          puts "\n"
+        end
+
+        def rails_app?
+          require "rails"
+          require File.expand_path(File.join(Dir.pwd, "config", "application.rb"))
+          true
+        rescue LoadError
+          false
+        end
+
         def gem_path
           @gem_path ||= \
             Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
-        end
-
-        def config?
-          Appsignal.config
         end
       end
     end
