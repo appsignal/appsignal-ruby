@@ -31,7 +31,7 @@ AppSignal will automatically monitor requests, report any exceptions that are
 thrown and any performance issues that might have occurred.
 
 You can also add extra information to requests by adding custom instrumentation
-and by adding metadata.
+and by adding tags.
 
 ### Track any error
 
@@ -50,15 +50,19 @@ end
 
 Read more about [Exception handling][exception-handling] in our documentation.
 
-### Set metadata
+### Tagging
 
-Need more information with errors and performance issues? Add metadata to your
+Need more information with errors and performance issues? Add tags to your
 requests to identify common factors for problems.
 
 ```ruby
-Appsignal.set_metadata("user id", user.id)
-Appsignal.set_metadata("comments count", user.comments.count)
+Appsignal.tag_request(
+  user: current_user.id,
+  locale: I18n.locale
+)
 ```
+
+Read more about [Tagging][tagging] in our documentation.
 
 ### Custom instrumentation
 
