@@ -90,7 +90,8 @@ module Appsignal
     end
 
     def log_file_path
-      path = config_hash[:log_path] || root_path
+      path = config_hash[:log_path] ||
+        (root_path.nil? ? nil : File.join(root_path, '/log'))
       if path && File.writable?(path)
         return File.join(File.realpath(path), 'appsignal.log')
       end

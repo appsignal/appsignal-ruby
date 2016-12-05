@@ -634,7 +634,7 @@ describe Appsignal do
 
         it "outputs a warning" do
           expect(out_stream.string).to include \
-            "appsignal: WARNING: Unable to log to '#{log_path}' "\
+            "appsignal: Unable to log to '#{log_path}' "\
             "or the '#{Appsignal::Config::SYSTEM_TMP_DIR}' fallback."
         end
       end
