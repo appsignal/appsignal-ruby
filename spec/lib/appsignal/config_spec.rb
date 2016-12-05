@@ -374,7 +374,7 @@ describe Appsignal::Config do
       expect(ENV['APPSIGNAL_APP_PATH']).to                     end_with('spec/support/project_fixture')
       expect(ENV['APPSIGNAL_AGENT_PATH']).to                   end_with('/ext')
       expect(ENV['APPSIGNAL_DEBUG_LOGGING']).to                eq 'false'
-      expect(ENV['APPSIGNAL_LOG_FILE_PATH']).to                end_with('/tmp/appsignal.log')
+      expect(ENV['APPSIGNAL_LOG_FILE_PATH']).to                end_with('tmp/appsignal.log')
       expect(ENV['APPSIGNAL_PUSH_API_ENDPOINT']).to            eq 'https://push.appsignal.com'
       expect(ENV['APPSIGNAL_PUSH_API_KEY']).to                 eq 'abc'
       expect(ENV['APPSIGNAL_APP_NAME']).to                     eq 'TestApp'
@@ -459,7 +459,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
+          expect(stdout.string).to include "appsignal: WARNING: Unable to log to '#{log_path}' "\
             "or the '#{system_tmp_dir}' fallback."
         end
       end
@@ -476,7 +476,7 @@ describe Appsignal::Config do
 
       context "when root_path is set" do
         it "returns returns the project log location" do
-          expect(subject).to eq File.join(config.root_path, 'appsignal.log')
+          expect(subject).to eq File.join(config.root_path, 'log/appsignal.log')
         end
 
         it "prints no warning" do

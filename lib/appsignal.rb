@@ -291,7 +291,7 @@ module Appsignal
     def start_stdout_logger
       @logger = Logger.new($stdout)
       @logger.formatter = lambda do |severity, datetime, progname, msg|
-        "appsignal: #{msg}\n"
+        "appsignal (process): [#{severity}] #{msg}\n"
       end
     end
 

@@ -90,7 +90,8 @@ module Appsignal
     end
 
     def log_file_path
-      path = config_hash[:log_path] || root_path
+      path = config_hash[:log_path] ||
+        (root_path.nil? ? nil : File.join(root_path, '/log'))
       if path && File.writable?(path)
         return File.join(File.realpath(path), 'appsignal.log')
       end
@@ -101,7 +102,7 @@ module Appsignal
           "permissions for the application's (log) directory."
         File.join(SYSTEM_TMP_DIR, 'appsignal.log')
       else
-        $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
+        $stdout.puts "appsignal: WARNING: Unable to log to '#{path}' or the "\
           "'#{SYSTEM_TMP_DIR}' fallback. Please check the permissions "\
           "for the application's (log) directory."
       end

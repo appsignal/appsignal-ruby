@@ -647,7 +647,7 @@ describe Appsignal do
         around { |example| recognize_as_heroku { example.run } }
 
         it "logs to stdout" do
-          expect(out_stream.string).to include 'appsignal: Log to stdout'
+          expect(out_stream.string).to include 'appsignal (process): [ERROR] Log to stdout'
         end
 
         it "amends in memory log to stdout" do
