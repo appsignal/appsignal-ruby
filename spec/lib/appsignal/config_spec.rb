@@ -459,7 +459,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
+          expect(stdout.string).to include "appsignal: WARNING: Unable to log to '#{log_path}' "\
             "or the '#{system_tmp_dir}' fallback."
         end
       end

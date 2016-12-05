@@ -634,7 +634,7 @@ describe Appsignal do
 
         it "outputs a warning" do
           expect(out_stream.string).to include \
-            "appsignal: Unable to log to '#{log_path}' "\
+            "appsignal: WARNING: Unable to log to '#{log_path}' "\
             "or the '#{Appsignal::Config::SYSTEM_TMP_DIR}' fallback."
         end
       end
@@ -647,7 +647,7 @@ describe Appsignal do
         around { |example| recognize_as_heroku { example.run } }
 
         it "logs to stdout" do
-          expect(out_stream.string).to include 'appsignal: Log to stdout'
+          expect(out_stream.string).to include 'appsignal (process): [ERROR] Log to stdout'
         end
 
         it "amends in memory log to stdout" do
