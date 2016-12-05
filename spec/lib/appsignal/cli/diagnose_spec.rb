@@ -8,6 +8,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
     let(:output) { out_stream.string }
     let(:options) { { :environment => config.env } }
 
+    before do
+      if DependencyHelper.rails_present?
+        allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))
+      end
+    end
     before :api_stub => true do
       stub_api_request config, "auth"
     end
@@ -32,13 +37,37 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         "support@appsignal.com"
     end
 
-    it "outputs version numbers" do
-      run
-      gem_path = Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
-      expect(output).to include \
-        "Gem version: #{Appsignal::VERSION}",
-        "Agent version: #{Appsignal::Extension.agent_version}",
-        "Gem install path: #{gem_path}"
+    describe "agent information" do
+      it "outputs version numbers" do
+        run
+        gem_path = Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
+        expect(output).to include \
+          "Gem version: #{Appsignal::VERSION}",
+          "Agent version: #{Appsignal::Extension.agent_version}",
+          "Gem install path: #{gem_path}"
+      end
+
+      context "with extension" do
+        it "outputs extension is loaded" do
+          run
+          expect(output).to include "Extension loaded: yes"
+        end
+      end
+
+      context "without extension" do
+        before do
+          # When the extension isn't loaded the Appsignal.start operation exits
+          # early and doesn't load the configuration.
+          # Happens when the extension wasn't installed properly.
+          Appsignal.extension_loaded = false
+          run
+        end
+        after { Appsignal.extension_loaded = true }
+
+        it "outputs extension is not loaded" do
+          expect(output).to include "Extension loaded: no"
+        end
+      end
     end
 
     describe "host information" do
@@ -110,38 +139,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
     end
 
     describe "configuration" do
-      context "without extension" do
-        before do
-          # When the extension isn't loaded the Appsignal.start operation exits
-          # early and doesn't load the configuration.
-          # Happens when the extension wasn't installed properly.
-          Appsignal.extension_loaded = false
-          run
-        end
-        after { Appsignal.extension_loaded = true }
-
-        it "outputs an error" do
-          expect(output).to include \
-            "Error: No config found!\nCould not start AppSignal."
-        end
-
-        it "outputs as much as it can" do
-          expect(output).to include \
-            "AppSignal agent\n  Gem version: #{Appsignal::VERSION}",
-            "Host information\n  Architecture: ",
-            %(Extension install log\n  Path: "),
-            %(Makefile install log\n  Path: ")
-        end
-      end
-
-      context "without environment", :api_stub => false do
+      context "without environment" do
         let(:config) { project_fixture_config(nil) }
         let(:options) { {} }
         before do
           ENV.delete("RAILS_ENV") # From spec_helper
           ENV.delete("RACK_ENV")
-          stub_api_request config, "auth"
-          recognize_as_container(:none) { run }
+          recognize_as_container(:none) { run_within_dir tmp_dir }
         end
 
         it "outputs a warning that no config is loaded" do
@@ -177,7 +181,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
       context "with unconfigured environment" do
         let(:config) { project_fixture_config("foobar") }
-        before { recognize_as_container(:none) { run } }
+        before { recognize_as_container(:none) { run_within_dir tmp_dir } }
 
         it "outputs environment" do
           expect(output).to include("Environment: foobar")
@@ -253,7 +257,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         let(:execution_path) { File.join(tmp_dir, "not_existing_dir") }
         let(:config) { Appsignal::Config.new(execution_path, "production") }
         before do
-          Appsignal.config = config
+          allow(Dir).to receive(:pwd).and_return(execution_path)
           run_within_dir tmp_dir
         end
 
@@ -354,6 +358,24 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
               it "lists log file as not writable" do
                 expect(output).to include \
                   %(log_file_path: "#{File.join(root_path, "appsignal.log")}"\n    - Writable?: no)
+              end
+            end
+
+            if DependencyHelper.rails_present?
+              context "when in a Rails project" do
+                let(:config) { Appsignal::Config.new(project_fixture_path, "production") }
+                let(:log_dir) { File.join(project_fixture_path, "log") }
+                before do
+                  config[:name] = Rails.application.class.parent_name
+                  config[:log_path] = Rails.root.join("log")
+                  run_within_dir project_fixture_path
+                end
+
+                it "returns the path prefixed with 'log/'" do
+                  expect(output).to include \
+                    %(log_dir_path: "#{log_dir}"\n    - Writable?: yes),
+                    %(log_file_path: "#{File.join(log_dir, "appsignal.log")}"\n    - Writable?: yes)
+                end
               end
             end
           end
