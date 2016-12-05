@@ -49,7 +49,7 @@ RSpec.configure do |config|
 
   config.before :all do
     FileUtils.rm_rf(tmp_dir)
-    FileUtils.mkdir_p(tmp_dir)
+    FileUtils.mkdir_p(File.join(tmp_dir, 'system-tmp'))
 
     # Use modifiable SYSTEM_TMP_DIR
     Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR

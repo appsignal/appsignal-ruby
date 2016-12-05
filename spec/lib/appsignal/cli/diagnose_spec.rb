@@ -208,11 +208,11 @@ describe Appsignal::CLI::Diagnose do
     end
 
     describe "paths" do
-      before { FileUtils.mkdir_p(root_path) }
+      before { FileUtils.mkdir_p(File.join(root_path, 'log')) }
 
       context "when a directory is writable" do
         let(:root_path) { File.join(tmp_dir, "writable_path") }
-        let(:log_file) { File.join(root_path, "appsignal.log") }
+        let(:log_file) { File.join(root_path, "log/appsignal.log") }
         let(:config) { Appsignal::Config.new(root_path, "production") }
 
         context "without log file" do
@@ -236,7 +236,7 @@ describe Appsignal::CLI::Diagnose do
             it "lists log file as writable" do
               expect(output).to include \
                 %(root_path: "#{root_path}" - Writable),
-                %(log_file_path: "#{File.join(root_path, "appsignal.log")}" - Writable)
+                %(log_file_path: "#{File.join(root_path, "log/appsignal.log")}" - Writable)
             end
           end
 
@@ -250,7 +250,7 @@ describe Appsignal::CLI::Diagnose do
             it "lists log file as not writable" do
               expect(output).to include \
                 %(root_path: "#{root_path}" - Writable),
-                %(log_file_path: "#{File.join(root_path, "appsignal.log")}" - Not writable)
+                %(log_file_path: "#{File.join(root_path, "log/appsignal.log")}" - Not writable)
             end
           end
         end
@@ -268,7 +268,7 @@ describe Appsignal::CLI::Diagnose do
           expect(output).to include \
             "Required paths",
             %(root_path: "#{root_path}" - Not writable),
-            %(log_file_path: "" - Not writable)
+            %(log_file_path: "#{File.join(tmp_dir, "system-tmp")}/appsignal.log" - Does not exist)
         end
       end
 
