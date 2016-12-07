@@ -5,7 +5,7 @@ require 'socket'
 
 module Appsignal
   class Config
-    SYSTEM_TMP_DIR = '/tmp'
+    SYSTEM_TMP_DIR = File.realpath('/tmp')
     DEFAULT_CONFIG = {
       :debug                          => false,
       :log                            => 'file',
