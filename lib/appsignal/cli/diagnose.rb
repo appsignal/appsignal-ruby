@@ -1,14 +1,17 @@
 require "rbconfig"
 require "bundler/cli"
 require "bundler/cli/common"
+require "etc"
 
 module Appsignal
   class CLI
     class Diagnose
       class << self
-        def run
+        def run(options = {})
           header
           empty_line
+
+          start_appsignal(options)
 
           agent_version
           empty_line
@@ -16,7 +19,6 @@ module Appsignal
           host_information
           empty_line
 
-          start_appsignal
           config
           empty_line
 
@@ -31,16 +33,21 @@ module Appsignal
 
         private
 
-        def empty_line
-          puts "\n"
-        end
+        def start_appsignal(options)
+          current_path = Dir.pwd
+          initial_config = {}
+          if rails_app?
+            current_path = Rails.root
+            initial_config[:name] = Rails.application.class.parent_name
+            initial_config[:log_path] = Rails.root.join("log")
+          end
 
-        def start_appsignal
+          Appsignal.config = Appsignal::Config.new(
+            current_path,
+            options[:environment],
+            initial_config
+          )
           Appsignal.start
-          return if config?
-
-          puts "Error: No config found!"
-          puts "Could not start AppSignal."
         end
 
         def header
@@ -58,6 +65,8 @@ module Appsignal
           puts "  Gem version: #{Appsignal::VERSION}"
           puts "  Agent version: #{Appsignal::Extension.agent_version}"
           puts "  Gem install path: #{gem_path}"
+          print "  Extension loaded: "
+          puts Appsignal.extension_loaded ? "yes" : "no"
         end
 
         def host_information
@@ -67,6 +76,8 @@ module Appsignal
           puts "  Operating System: #{rbconfig["host_os"]}"
           puts "  Ruby version: #{rbconfig["RUBY_VERSION_NAME"]}"
           puts "  Heroku: true" if Appsignal::System.heroku?
+          print "  root user: "
+          puts Process.uid == 0 ? "yes (not recommended)" : "no"
           if Appsignal::System.container?
             puts "  Container id: #{Appsignal::System::Container.id}"
           end
@@ -74,7 +85,6 @@ module Appsignal
 
         def config
           puts "Configuration"
-          return unless config?
           environment
 
           Appsignal.config.config_hash.each do |key, value|
@@ -89,30 +99,62 @@ module Appsignal
             puts "    Warning: No environment set, no config loaded!"
             puts "    Please make sure appsignal diagnose is run within your "
             puts "    project directory with an environment."
-            puts "      APPSIGNAL_APP_ENV=production appsignal diagnose"
+            puts "      appsignal diagnose --environment=production"
           end
         end
 
         def paths_writable
           puts "Required paths"
-          return unless config?
 
-          possible_paths = {
-            :root_path => Appsignal.config.root_path,
-            :log_file_path => Appsignal.config.log_file_path
-          }
-
-          possible_paths.each do |name, path|
-            result = "Not writable"
-            if path
-              if !File.exist? path
-                result = "Does not exist"
-              elsif File.writable? path
-                result = "Writable"
-              end
+          appsignal_paths.each do |name, path|
+            puts "  #{name}: #{path.to_s.inspect}"
+            unless path
+              puts "    - Configured?: no"
+              next
             end
-            puts "  #{name}: #{path.to_s.inspect} - #{result}"
+            unless File.exist? path
+              puts "    - Exists?: no"
+              next
+            end
+
+            print "    - Writable?: "
+            puts File.writable?(path) ? "yes" : "no"
+
+            ownership = path_ownership(path)
+            process_owner = ownership[:process]
+            file_owner = ownership[:file]
+            print "    - Ownership?: "
+            owned = process_owner[:uid] == file_owner[:uid]
+            print owned ? "yes" : "no"
+            print " (file: #{file_owner[:name]}:#{file_owner[:uid]}, "
+            puts "process: #{process_owner[:name]}:#{process_owner[:uid]})"
           end
+        end
+
+        def path_ownership(path)
+          process_uid = Process.uid
+          file_uid = File.stat(path).uid
+          {
+            :process => {
+              :uid => process_uid,
+              :name => Etc.getpwuid(process_uid).name
+            },
+            :file => {
+              :uid => file_uid,
+              :name => Etc.getpwuid(file_uid).name
+            }
+          }
+        end
+
+        def appsignal_paths
+          config = Appsignal.config
+          log_file_path = config.log_file_path
+          {
+            :current_path => Dir.pwd,
+            :root_path => config.root_path,
+            :log_dir_path => log_file_path ? File.dirname(log_file_path) : "",
+            :log_file_path => log_file_path,
+          }
         end
 
         def check_api_key
@@ -159,13 +201,21 @@ module Appsignal
           end
         end
 
+        def empty_line
+          puts "\n"
+        end
+
+        def rails_app?
+          require "rails"
+          require File.expand_path(File.join(Dir.pwd, "config", "application.rb"))
+          true
+        rescue LoadError
+          false
+        end
+
         def gem_path
           @gem_path ||= \
             Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
-        end
-
-        def config?
-          Appsignal.config
         end
       end
     end

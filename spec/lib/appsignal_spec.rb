@@ -581,11 +581,11 @@ describe Appsignal do
 
           it "logs to file" do
             expect(File.exist?(log_file)).to be_true
-            expect(log_file_contents).to include 'Log to file'
+            expect(log_file_contents).to include '[ERROR] Log to file'
           end
 
           it "amends in memory log to log file" do
-            expect(log_file_contents).to include 'Log in memory'
+            expect(log_file_contents).to include '[ERROR] appsignal: Log in memory'
           end
         end
 
@@ -600,17 +600,17 @@ describe Appsignal do
 
           it "logs to stdout" do
             expect(File.writable?(log_file)).to be_false
-            expect(out_stream.string).to include 'Log to not writable log file'
+            expect(out_stream.string).to include '[ERROR] appsignal: Log to not writable log file'
           end
 
           it "amends in memory log to stdout" do
-            expect(out_stream.string).to include 'Log in memory'
+            expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
           end
 
           it "outputs a warning" do
             expect(out_stream.string).to include \
-              "appsignal: Unable to start logger with log path '#{log_file}'.",
-              "appsignal: Permission denied"
+              "[WARN] appsignal: Unable to start logger with log path '#{log_file}'.",
+              "[WARN] appsignal: Permission denied"
           end
         end
       end
@@ -625,11 +625,11 @@ describe Appsignal do
 
         it "logs to stdout" do
           expect(File.writable?(log_path)).to be_false
-          expect(out_stream.string).to include 'Log to not writable log path'
+          expect(out_stream.string).to include '[ERROR] appsignal: Log to not writable log path'
         end
 
         it "amends in memory log to stdout" do
-          expect(out_stream.string).to include 'Log in memory'
+          expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
         end
 
         it "outputs a warning" do
@@ -647,11 +647,11 @@ describe Appsignal do
         around { |example| recognize_as_heroku { example.run } }
 
         it "logs to stdout" do
-          expect(out_stream.string).to include 'appsignal: Log to stdout'
+          expect(out_stream.string).to include '[ERROR] appsignal: Log to stdout'
         end
 
         it "amends in memory log to stdout" do
-          expect(out_stream.string).to include 'Log in memory'
+          expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
         end
       end
 
@@ -685,11 +685,21 @@ describe Appsignal do
     end
 
     describe ".log_formatter" do
-      subject { Appsignal.log_formatter }
+      subject { Appsignal.log_formatter.call('Debug', Time.parse('2015-07-08'), nil, 'log line') }
 
-      it "should format a log line" do
-        Process.stub(:pid => 100)
-        subject.call('Debug', Time.parse('2015-07-08'), nil, 'log line').should eq "[2015-07-08T00:00:00 (process) #100][Debug] log line\n"
+      it "formats a log" do
+        expect(subject).to eq "[2015-07-08T00:00:00 (process) ##{Process.pid}][Debug] log line\n"
+      end
+
+      context "with prefix" do
+        subject do
+          Appsignal.log_formatter("prefix").call('Debug', Time.parse('2015-07-08'), nil, 'log line')
+        end
+
+        it "adds a prefix" do
+          expect(subject)
+            .to eq "[2015-07-08T00:00:00 (process) ##{Process.pid}][Debug] prefix: log line\n"
+        end
       end
     end
 
@@ -792,40 +802,36 @@ describe Appsignal do
     end
 
     describe ".instrument" do
+      before do
+        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+      end
+
       it "should instrument through the transaction" do
-        stub = double
-        stub.should_receive(:method_call).and_return('return value')
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event)
+          .with('name', 'title', 'body', Appsignal::EventFormatter::DEFAULT)
 
-        transaction.should_receive(:start_event)
-        transaction.should_receive(:finish_event).with(
-          'name',
-          'title',
-          'body',
-          0
-        )
-
-        Appsignal.instrument 'name', 'title', 'body' do
-          stub.method_call
-        end.should eq 'return value'
+        result = Appsignal.instrument 'name', 'title', 'body' do
+          'return value'
+        end
+        expect(result).to eq 'return value'
       end
     end
 
     describe ".instrument_sql" do
+      before do
+        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+      end
+
       it "should instrument sql through the transaction" do
-        stub = double
-        stub.should_receive(:method_call).and_return('return value')
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event)
+          .with('name', 'title', 'body', Appsignal::EventFormatter::SQL_BODY_FORMAT)
 
-        transaction.should_receive(:start_event)
-        transaction.should_receive(:finish_event).with(
-          'name',
-          'title',
-          'body',
-          1
-        )
-
-        Appsignal.instrument_sql 'name', 'title', 'body' do
-          stub.method_call
-        end.should eq 'return value'
+        result = Appsignal.instrument_sql 'name', 'title', 'body' do
+          'return value'
+        end
+        expect(result).to eq 'return value'
       end
     end
 

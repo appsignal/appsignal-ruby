@@ -36,10 +36,12 @@ describe Appsignal::Demo do
     let(:config) { project_fixture_config("production") }
     before do
       Appsignal.config = config
-      expect(Appsignal::Transaction).to receive(:create)
-        .ordered
-        .with(kind_of(String), Appsignal::Transaction::HTTP_REQUEST, kind_of(::Rack::Request))
-        .and_return(error_transaction)
+      expect(Appsignal::Transaction).to receive(:new).with(
+        kind_of(String),
+        Appsignal::Transaction::HTTP_REQUEST,
+        kind_of(::Rack::Request),
+        kind_of(Hash)
+      ).and_return(error_transaction)
     end
     subject { described_class.send(:create_example_error_request) }
 
@@ -57,9 +59,12 @@ describe Appsignal::Demo do
     let(:config) { project_fixture_config("production") }
     before do
       Appsignal.config = config
-      expect(Appsignal::Transaction).to receive(:create)
-        .with(kind_of(String), Appsignal::Transaction::HTTP_REQUEST, kind_of(::Rack::Request))
-        .and_return(performance_transaction)
+      expect(Appsignal::Transaction).to receive(:new).with(
+        kind_of(String),
+        Appsignal::Transaction::HTTP_REQUEST,
+        kind_of(::Rack::Request),
+        kind_of(Hash)
+      ).and_return(performance_transaction)
     end
     subject { described_class.send(:create_example_performance_request) }
 

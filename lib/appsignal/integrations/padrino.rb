@@ -8,7 +8,7 @@ module Appsignal::Integrations
       root             = Padrino.mounted_root
       Appsignal.config = Appsignal::Config.new(
         root,
-        ENV.fetch('APPSIGNAL_APP_ENV'.freeze, Padrino.env.to_s),
+        Padrino.env,
         :log_path => File.join(root, 'log')
       )
 

@@ -13,7 +13,7 @@ module Appsignal
         # Load config
         Appsignal.config = Appsignal::Config.new(
           Rails.root,
-          ENV.fetch('APPSIGNAL_APP_ENV', Rails.env),
+          Rails.env,
           :name => Rails.application.class.parent_name,
           :log_path => Rails.root.join('log')
         )

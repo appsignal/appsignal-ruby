@@ -6,7 +6,7 @@ Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
 app_settings = ::Sinatra::Application.settings
 Appsignal.config = Appsignal::Config.new(
   app_settings.root || Dir.pwd,
-  ENV.fetch('APPSIGNAL_APP_ENV'.freeze, app_settings.environment)
+  app_settings.environment
 )
 
 Appsignal.start_logger

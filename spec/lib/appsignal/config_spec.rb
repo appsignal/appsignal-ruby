@@ -1,4 +1,34 @@
 describe Appsignal::Config do
+  describe "#initialize" do
+    subject { config.env }
+
+    describe "environment" do
+      context "when environment is nil" do
+        let(:config) { described_class.new("", "") }
+
+        it "sets an empty string" do
+          expect(subject).to eq("")
+        end
+      end
+
+      context "when environment is given" do
+        let(:config) { described_class.new("", "my_env") }
+
+        it "sets the environment" do
+          expect(subject).to eq("my_env")
+        end
+
+        context "with APPSIGNAL_APP_ENV environment variable" do
+          before { ENV["APPSIGNAL_APP_ENV"] = "my_env_env" }
+
+          it "uses the environment variable" do
+            expect(subject).to eq("my_env_env")
+          end
+        end
+      end
+    end
+  end
+
   describe "config based on the system" do
     let(:config) { project_fixture_config(:none) }
 
