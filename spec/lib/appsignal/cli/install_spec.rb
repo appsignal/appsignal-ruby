@@ -3,8 +3,8 @@ require "appsignal/cli"
 describe Appsignal::CLI::Install do
   include CLIHelpers
 
-  let(:out_stream) { StringIO.new }
-  let(:output) { out_stream.string }
+  let(:out_stream) { std_stream }
+  let(:output) { out_stream.read }
   let(:push_api_key) { "my_key" }
   let(:config) { Appsignal::Config.new(tmp_dir, "") }
   let(:config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
@@ -19,7 +19,7 @@ describe Appsignal::CLI::Install do
   around do |example|
     original_stdin = $stdin
     $stdin = StringIO.new
-    capture_stdout(out_stream) { example.run }
+    example.run
     $stdin = original_stdin
   end
 
@@ -86,7 +86,9 @@ describe Appsignal::CLI::Install do
   def run
     Dir.chdir tmp_dir do
       prepare_input
-      run_cli(["install", push_api_key])
+      capture_stdout(out_stream) do
+        run_cli(["install", push_api_key])
+      end
     end
   end
 

@@ -437,12 +437,13 @@ describe Appsignal::Config do
   end
 
   describe "#log_file_path" do
-    let(:stdout) { StringIO.new }
+    let(:out_stream) { std_stream }
+    let(:output) { out_stream.read }
     let(:config) { project_fixture_config('production', :log_path => log_path) }
-    subject { config.log_file_path }
+    subject { capture_stdout(out_stream) { config.log_file_path } }
     around do |example|
       recognize_as_container(:none) do
-        capture_stdout(stdout) { example.run }
+        example.run
       end
     end
 
@@ -457,7 +458,7 @@ describe Appsignal::Config do
 
       it "prints no warning" do
         subject
-        expect(stdout.string).to be_empty
+        expect(output).to be_empty
       end
     end
 
@@ -475,7 +476,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}'. "\
+          expect(output).to include "appsignal: Unable to log to '#{log_path}'. "\
             "Logging to '#{system_tmp_dir}' instead."
         end
       end
@@ -489,7 +490,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(stdout.string).to include "appsignal: Unable to log to '#{log_path}' "\
+          expect(output).to include "appsignal: Unable to log to '#{log_path}' "\
             "or the '#{system_tmp_dir}' fallback."
         end
       end
@@ -511,7 +512,7 @@ describe Appsignal::Config do
 
         it "prints no warning" do
           subject
-          expect(stdout.string).to be_empty
+          expect(output).to be_empty
         end
       end
     end

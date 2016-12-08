@@ -551,7 +551,8 @@ describe Appsignal do
     end
 
     describe ".start_logger" do
-      let(:out_stream) { StringIO.new }
+      let(:out_stream) { std_stream }
+      let(:output) { out_stream.read }
       let(:log_path) { File.join(tmp_dir, 'log') }
       let(:log_file) { File.join(log_path, 'appsignal.log') }
 
@@ -564,24 +565,23 @@ describe Appsignal do
           :log_path => log_path
         )
       end
-      around do |example|
-        recognize_as_container(:none) do
-          capture_stdout(out_stream) { example.run }
-        end
-      end
+      around { |example| recognize_as_container(:none) { example.run } }
       after { FileUtils.rm_rf(log_path) }
 
       context "when the log path is writable" do
         context "when the log file is writable" do
           let(:log_file_contents) { File.open(log_file).read }
           before do
-            Appsignal.start_logger
-            Appsignal.logger.error('Log to file')
+            capture_stdout(out_stream) do
+              Appsignal.start_logger
+              Appsignal.logger.error('Log to file')
+            end
           end
 
           it "logs to file" do
             expect(File.exist?(log_file)).to be_true
             expect(log_file_contents).to include '[ERROR] Log to file'
+            expect(output).to be_empty
           end
 
           it "amends in memory log to log file" do
@@ -594,21 +594,23 @@ describe Appsignal do
             FileUtils.touch log_file
             FileUtils.chmod 0444, log_file
 
-            Appsignal.start_logger
-            Appsignal.logger.error('Log to not writable log file')
+            capture_stdout(out_stream) do
+              Appsignal.start_logger
+              Appsignal.logger.error('Log to not writable log file')
+            end
           end
 
           it "logs to stdout" do
             expect(File.writable?(log_file)).to be_false
-            expect(out_stream.string).to include '[ERROR] appsignal: Log to not writable log file'
+            expect(output).to include '[ERROR] appsignal: Log to not writable log file'
           end
 
           it "amends in memory log to stdout" do
-            expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
+            expect(output).to include '[ERROR] appsignal: Log in memory'
           end
 
           it "outputs a warning" do
-            expect(out_stream.string).to include \
+            expect(output).to include \
               "[WARN] appsignal: Unable to start logger with log path '#{log_file}'.",
               "[WARN] appsignal: Permission denied"
           end
@@ -619,21 +621,23 @@ describe Appsignal do
         before do
           FileUtils.chmod 0444, log_path
 
-          Appsignal.start_logger
-          Appsignal.logger.error('Log to not writable log path')
+          capture_stdout(out_stream) do
+            Appsignal.start_logger
+            Appsignal.logger.error('Log to not writable log path')
+          end
         end
 
         it "logs to stdout" do
           expect(File.writable?(log_path)).to be_false
-          expect(out_stream.string).to include '[ERROR] appsignal: Log to not writable log path'
+          expect(output).to include '[ERROR] appsignal: Log to not writable log path'
         end
 
         it "amends in memory log to stdout" do
-          expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
+          expect(output).to include '[ERROR] appsignal: Log in memory'
         end
 
         it "outputs a warning" do
-          expect(out_stream.string).to include \
+          expect(output).to include \
             "appsignal: Unable to log to '#{log_path}' "\
             "or the '#{Appsignal::Config::SYSTEM_TMP_DIR}' fallback."
         end
@@ -641,17 +645,19 @@ describe Appsignal do
 
       context "when on Heroku" do
         before do
-          Appsignal.start_logger
-          Appsignal.logger.error('Log to stdout')
+          capture_stdout(out_stream) do
+            Appsignal.start_logger
+            Appsignal.logger.error('Log to stdout')
+          end
         end
         around { |example| recognize_as_heroku { example.run } }
 
         it "logs to stdout" do
-          expect(out_stream.string).to include '[ERROR] appsignal: Log to stdout'
+          expect(output).to include '[ERROR] appsignal: Log to stdout'
         end
 
         it "amends in memory log to stdout" do
-          expect(out_stream.string).to include '[ERROR] appsignal: Log in memory'
+          expect(output).to include '[ERROR] appsignal: Log in memory'
         end
       end
 
@@ -661,7 +667,9 @@ describe Appsignal do
         context "when there is no config" do
           before do
             Appsignal.config = nil
-            Appsignal.start_logger
+            capture_stdout(out_stream) do
+              Appsignal.start_logger
+            end
           end
 
           it "sets the log level to info" do
@@ -673,7 +681,9 @@ describe Appsignal do
           context "when log level is configured to debug" do
             before do
               Appsignal.config.config_hash[:debug] = true
-              Appsignal.start_logger
+              capture_stdout(out_stream) do
+                Appsignal.start_logger
+              end
             end
 
             it "sets the log level to debug" do

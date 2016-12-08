@@ -11,13 +11,13 @@ module Appsignal
           header
           empty_line
 
-          start_appsignal(options)
-
           agent_version
           empty_line
 
           host_information
           empty_line
+
+          start_appsignal(options)
 
           config
           empty_line

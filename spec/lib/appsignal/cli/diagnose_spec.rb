@@ -2,12 +2,12 @@ require "appsignal/cli"
 
 describe Appsignal::CLI::Diagnose, :api_stub => true do
   describe ".run" do
-    let(:out_stream) { StringIO.new }
+    let(:out_stream) { std_stream }
+    let(:output) { out_stream.read }
     let(:config) { project_fixture_config }
     let(:cli) { described_class }
-    let(:output) { out_stream.string }
     let(:options) { { :environment => config.env } }
-
+    before(:all) { Appsignal.stop }
     before do
       if DependencyHelper.rails_present?
         allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))
@@ -17,7 +17,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
       stub_api_request config, "auth"
     end
     after { Appsignal.config = nil }
-    around { |example| capture_stdout(out_stream) { example.run } }
 
     def run
       run_within_dir project_fixture_path
@@ -25,7 +24,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
     def run_within_dir(chdir)
       Dir.chdir chdir do
-        cli.run(options)
+        capture_stdout(out_stream) { cli.run(options) }
       end
     end
 
@@ -51,6 +50,17 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         it "outputs extension is loaded" do
           run
           expect(output).to include "Extension loaded: yes"
+        end
+
+        it "starts the agent in diagnose mode and outputs a log" do
+          run
+          expect(output).to include \
+            "Agent diagnostics:",
+            "Running agent in diagnose mode",
+            "Valid config present",
+            "Logger initialized successfully",
+            "Lock path is writable",
+            "Agent diagnose finished"
         end
       end
 

@@ -4,8 +4,9 @@ describe Appsignal::CLI::Demo do
   include CLIHelpers
 
   let(:options) { {} }
-  let(:out_stream) { StringIO.new }
-  let(:output) { out_stream.string }
+  let(:out_stream) { std_stream }
+  let(:output) { out_stream.read }
+  before(:all) { Appsignal.stop }
   before do
     ENV.delete("APPSIGNAL_APP_ENV")
     ENV.delete("RAILS_ENV")
@@ -13,7 +14,6 @@ describe Appsignal::CLI::Demo do
     stub_api_request config, "auth"
   end
   after { Appsignal.config = nil }
-  around { |example| capture_stdout(out_stream) { example.run } }
 
   def run
     run_within_dir project_fixture_path
@@ -21,7 +21,7 @@ describe Appsignal::CLI::Demo do
 
   def run_within_dir(chdir)
     Dir.chdir chdir do
-      run_cli("demo", options)
+      capture_stdout(out_stream) { run_cli("demo", options) }
     end
   end
 
