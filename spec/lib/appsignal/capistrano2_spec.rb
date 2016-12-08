@@ -4,7 +4,8 @@ if DependencyHelper.capistrano2_present?
   require 'appsignal/capistrano'
 
   describe "Capistrano 2 integration" do
-    let(:out_stream) { StringIO.new }
+    let(:out_stream) { std_stream }
+    let(:output) { out_stream.read }
     let(:config) { project_fixture_config }
     let(:capistrano_config) do
       Capistrano::Configuration.new.tap do |c|
@@ -16,11 +17,12 @@ if DependencyHelper.capistrano2_present?
         c.dry_run = false
       end
     end
-    before do
-      Appsignal::Capistrano.tasks(capistrano_config)
-    end
-    around do |example|
-      capture_stdout(out_stream) { example.run }
+    before { Appsignal::Capistrano.tasks(capistrano_config) }
+
+    def run
+      capture_stdout(out_stream) do
+        capistrano_config.find_and_execute_task('appsignal:deploy')
+      end
     end
 
     it "should have a deploy task" do
@@ -111,9 +113,7 @@ if DependencyHelper.capistrano2_present?
           end
         end
 
-        after do
-          capistrano_config.find_and_execute_task('appsignal:deploy')
-        end
+        after { run }
       end
 
       describe "markers" do
@@ -131,9 +131,9 @@ if DependencyHelper.capistrano2_present?
         context "when active for this environment" do
           it "transmits marker" do
             stub_marker_request.to_return(:status => 200)
-            capistrano_config.find_and_execute_task('appsignal:deploy')
+            run
 
-            expect(out_stream.string).to include \
+            expect(output).to include \
               'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
               'AppSignal has been notified of this deploy!'
           end
@@ -142,11 +142,11 @@ if DependencyHelper.capistrano2_present?
             before do
               capistrano_config.set(:appsignal_revision, 'abc123')
               stub_marker_request(:revision => 'abc123').to_return(:status => 200)
-              capistrano_config.find_and_execute_task('appsignal:deploy')
+              run
             end
 
             it "transmits the overriden revision" do
-              expect(out_stream.string).to include \
+              expect(output).to include \
                 'Notifying AppSignal of deploy with: revision: abc123, user: batman',
                 'AppSignal has been notified of this deploy!'
             end
@@ -155,11 +155,10 @@ if DependencyHelper.capistrano2_present?
           context "with failed request" do
             before do
               stub_marker_request.to_return(:status => 500)
-              capistrano_config.find_and_execute_task('appsignal:deploy')
+              run
             end
 
             it "does not transmit marker" do
-              output = out_stream.string
               expect(output).to include \
                 'Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: batman',
                 'Something went wrong while trying to notify AppSignal:'
@@ -170,11 +169,11 @@ if DependencyHelper.capistrano2_present?
           context "when dry run" do
             before do
               capistrano_config.dry_run = true
-              capistrano_config.find_and_execute_task('appsignal:deploy')
+              run
             end
 
             it "does not transmit marker" do
-              expect(out_stream.string).to include \
+              expect(output).to include \
                 'Dry run: AppSignal deploy marker not actually sent.'
             end
           end
@@ -183,11 +182,11 @@ if DependencyHelper.capistrano2_present?
         context "when not active for this environment" do
           before do
             capistrano_config.set(:rails_env, 'nonsense')
-            capistrano_config.find_and_execute_task('appsignal:deploy')
+            run
           end
 
           it "does not transmit marker" do
-            expect(out_stream.string).to include \
+            expect(output).to include \
               "Not notifying of deploy, config is not active for environment: nonsense"
           end
         end

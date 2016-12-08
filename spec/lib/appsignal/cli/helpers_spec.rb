@@ -3,8 +3,8 @@ require "appsignal/cli/helpers"
 describe Appsignal::CLI::Helpers do
   include CLIHelpers
 
-  let(:out_stream) { StringIO.new }
-  let(:output) { out_stream.string }
+  let(:out_stream) { std_stream }
+  let(:output) { out_stream.read }
   let(:cli) do
     Class.new do
       extend Appsignal::CLI::Helpers
@@ -17,7 +17,7 @@ describe Appsignal::CLI::Helpers do
   around do |example|
     original_stdin = $stdin
     $stdin = StringIO.new
-    capture_stdout(out_stream) { example.run }
+    example.run
     $stdin = original_stdin
   end
 
@@ -43,7 +43,7 @@ describe Appsignal::CLI::Helpers do
 
   describe ".periods" do
     it "prints three periods" do
-      cli.send :periods
+      capture_stdout(out_stream) { cli.send :periods }
       expect(output).to include("...")
     end
   end
@@ -54,19 +54,23 @@ describe Appsignal::CLI::Helpers do
     end
 
     it "continues after press" do
-      cli.send :press_any_key
+      capture_stdout(out_stream) { cli.send :press_any_key }
       expect(output).to include("Press any key")
     end
   end
 
   describe ".yes_or_no" do
+    def yes_or_no
+      capture_stdout(out_stream) { cli.send(:yes_or_no, "yes or no?: ") }
+    end
+
     it "takes yes for an answer" do
       set_input ""
       set_input "nonsense"
       set_input "y"
       prepare_input
 
-      expect(cli.send(:yes_or_no, "yes or no?: ")).to be_true
+      expect(yes_or_no).to be_true
     end
 
     it "takes no for an answer" do
@@ -75,17 +79,21 @@ describe Appsignal::CLI::Helpers do
       set_input "n"
       prepare_input
 
-      expect(cli.send(:yes_or_no, "yes or no?: ")).to be_false
+      expect(yes_or_no).to be_false
     end
   end
 
   describe ".required_input" do
+    def required_input
+      capture_stdout(out_stream) { cli.send(:required_input, "provide: ") }
+    end
+
     it "collects required input" do
       set_input ""
       set_input "value"
       prepare_input
 
-      expect(cli.send(:required_input, "provide: ")).to eq("value")
+      expect(required_input).to eq("value")
     end
   end
 end
