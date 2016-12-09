@@ -11,7 +11,7 @@ describe Appsignal::Demo do
 
     context "without config" do
       it "returns false" do
-        expect(subject).to be_false
+        expect(silence { subject }).to be_false
       end
     end
 

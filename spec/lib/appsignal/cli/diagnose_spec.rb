@@ -233,22 +233,24 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
     end
 
     describe "paths" do
-      before { FileUtils.mkdir_p(root_path) if root_path }
+      let(:system_tmp_dir) { Appsignal::Config::SYSTEM_TMP_DIR }
+      before do
+        FileUtils.mkdir_p(root_path)
+        FileUtils.mkdir_p(system_tmp_dir)
+      end
+      after { FileUtils.rm_rf([root_path, system_tmp_dir]) }
 
       context "when a directory is not configured" do
         let(:root_path) { File.join(tmp_dir, "writable_path") }
-        let(:config) do
-          Appsignal::Config.new(root_path, "production", :log_file => nil)
-        end
+        let(:config) { Appsignal::Config.new(root_path, "production", :log_file => nil) }
         before do
-          FileUtils.chmod(0555, root_path)
+          FileUtils.mkdir_p(File.join(root_path, "log"), :mode => 0555)
+          FileUtils.chmod(0555, system_tmp_dir)
           run_within_dir root_path
         end
 
-        it "outputs unconfigured path" do
-          expect(output).to include \
-            "Required paths",
-            %(log_file_path: ""\n    - Configured?: no)
+        it "outputs unconfigured directory" do
+          expect(output).to include %(log_file_path: ""\n    - Configured?: no)
         end
       end
 
@@ -262,9 +264,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         end
 
         it "outputs not existing path" do
-          expect(output).to include \
-            "Required paths",
-            %(root_path: "#{execution_path}"\n    - Exists?: no)
+          expect(output).to include %(root_path: "#{execution_path}"\n    - Exists?: no)
         end
       end
 
@@ -273,13 +273,10 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           let(:root_path) { File.join(tmp_dir, "owned_path") }
           let(:config) { Appsignal::Config.new(root_path, "production") }
           let(:process_user) { Etc.getpwuid(Process.uid).name }
-          before do
-            run_within_dir root_path
-          end
+          before { run_within_dir root_path }
 
           it "outputs ownership" do
             expect(output).to include \
-              "Required paths",
               %(root_path: "#{root_path}"\n    - Writable?: yes\n    ) \
                 "- Ownership?: yes (file: #{process_user}:#{Process.uid}, "\
                 "process: #{process_user}:#{Process.uid})"
@@ -299,7 +296,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
           it "outputs no ownership" do
             expect(output).to include \
-              "Required paths",
               %(root_path: "#{root_path}"\n    - Writable?: yes\n    ) \
                 "- Ownership?: no (file: root:0, process: #{process_user}:#{Process.uid})"
           end
@@ -312,75 +308,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         before { run_within_dir root_path }
 
         it "outputs current path" do
-          expect(output).to include \
-            "Required paths",
-            %(current_path: "#{tmp_dir}"\n    - Writable?: yes)
+          expect(output).to include %(current_path: "#{tmp_dir}"\n    - Writable?: yes)
         end
       end
 
       describe "root_path" do
-        context "when writable" do
-          let(:root_path) { File.join(tmp_dir, "writable_path") }
-          let(:log_file) { File.join(root_path, "appsignal.log") }
-          let(:config) { Appsignal::Config.new(root_path, "production") }
-
-          context "without log file" do
-            before { run_within_dir root_path }
-
-            it "outputs writable" do
-              expect(output).to include \
-                "Required paths",
-                %(root_path: "#{root_path}"\n    - Writable?: yes),
-                %(log_file_path: "#{log_file}"\n    - Exists?: no)
-            end
-          end
-
-          context "with log file" do
-            context "when writable" do
-              before do
-                FileUtils.touch(log_file)
-                run_within_dir root_path
-              end
-
-              it "lists log file as writable" do
-                expect(output).to include \
-                  %(log_file_path: "#{File.join(root_path, "appsignal.log")}"\n    - Writable?: yes)
-              end
-            end
-
-            context "when not writable" do
-              before do
-                FileUtils.touch(log_file)
-                FileUtils.chmod(0444, log_file)
-                run_within_dir root_path
-              end
-
-              it "lists log file as not writable" do
-                expect(output).to include \
-                  %(log_file_path: "#{File.join(root_path, "appsignal.log")}"\n    - Writable?: no)
-              end
-            end
-
-            if DependencyHelper.rails_present?
-              context "when in a Rails project" do
-                let(:config) { Appsignal::Config.new(project_fixture_path, "production") }
-                let(:log_dir) { File.join(project_fixture_path, "log") }
-                before do
-                  config[:name] = Rails.application.class.parent_name
-                  config[:log_path] = Rails.root.join("log")
-                  run_within_dir project_fixture_path
-                end
-
-                it "returns the path prefixed with 'log/'" do
-                  expect(output).to include \
-                    %(log_dir_path: "#{log_dir}"\n    - Writable?: yes),
-                    %(log_file_path: "#{File.join(log_dir, "appsignal.log")}"\n    - Writable?: yes)
-                end
-              end
-            end
-          end
-        end
-
+        let(:system_tmp_log_file) { File.join(system_tmp_dir, "appsignal.log") }
         context "when not writable" do
           let(:root_path) { File.join(tmp_dir, "not_writable_path") }
           let(:config) { Appsignal::Config.new(root_path, "production") }
@@ -389,16 +322,96 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
             run_within_dir root_path
           end
 
-          it "outputs not writable" do
+          it "outputs not writable root path" do
+            expect(output).to include %(root_path: "#{root_path}"\n    - Writable?: no)
+          end
+
+          it "log files fall back on system tmp directory" do
             expect(output).to include \
-              "Required paths",
-              %(root_path: "#{root_path}"\n    - Writable?: no),
-              %(log_file_path: ""\n    - Configured?: no)
+              %(log_dir_path: "#{system_tmp_dir}"\n    - Writable?: yes)
+              %(log_file_path: "#{system_tmp_log_file}"\n    - Exist?: false)
+          end
+        end
+
+        context "when writable" do
+          let(:root_path) { File.join(tmp_dir, "writable_path") }
+          let(:config) { Appsignal::Config.new(root_path, "production") }
+
+          context "without log dir" do
+            before do
+              FileUtils.chmod(0777, root_path)
+              run_within_dir root_path
+            end
+
+            it "outputs writable root path" do
+              expect(output).to include %(root_path: "#{root_path}"\n    - Writable?: yes)
+            end
+
+            it "log files fall back on system tmp directory" do
+              expect(output).to include \
+                %(log_dir_path: "#{system_tmp_dir}"\n    - Writable?: yes),
+                %(log_file_path: "#{system_tmp_log_file}"\n    - Exists?: no)
+            end
+          end
+
+          context "with log dir" do
+            let(:log_dir) { File.join(root_path, "log") }
+            let(:log_file) { File.join(log_dir, "appsignal.log") }
+            before { FileUtils.mkdir_p(log_dir) }
+
+            context "when not writable" do
+              before do
+                FileUtils.chmod(0444, log_dir)
+                run_within_dir root_path
+              end
+
+              it "log files fall back on system tmp directory" do
+                expect(output).to include \
+                  %(log_dir_path: "#{system_tmp_dir}"\n    - Writable?: yes),
+                  %(log_file_path: "#{system_tmp_log_file}"\n    - Exists?: no)
+              end
+            end
+
+            context "when writable" do
+              context "without log file" do
+                before { run_within_dir root_path }
+
+                it "outputs writable but without log file" do
+                  expect(output).to include \
+                    %(root_path: "#{root_path}"\n    - Writable?: yes),
+                    %(log_dir_path: "#{log_dir}"\n    - Writable?: yes),
+                    %(log_file_path: "#{log_file}"\n    - Exists?: no)
+                end
+              end
+
+              context "with log file" do
+                context "when writable" do
+                  before do
+                    FileUtils.touch(log_file)
+                    run_within_dir root_path
+                  end
+
+                  it "lists log file as writable" do
+                    expect(output).to include %(log_file_path: "#{log_file}"\n    - Writable?: yes)
+                  end
+                end
+
+                context "when not writable" do
+                  before do
+                    FileUtils.touch(log_file)
+                    FileUtils.chmod(0444, log_file)
+                    run_within_dir root_path
+                  end
+
+                  it "lists log file as not writable" do
+                    expect(output).to include %(log_file_path: "#{log_file}"\n    - Writable?: no)
+                  end
+                end
+              end
+            end
           end
         end
       end
-
-      after { FileUtils.rm_rf(root_path) }
     end
 
     describe "logs" do

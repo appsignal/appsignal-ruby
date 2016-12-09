@@ -32,4 +32,19 @@ module StdStreamsHelper
     $stdout = original_stdout
     $stderr = original_stderr
   end
+
+  def silence
+    std_stream = Tempfile.new(SecureRandom.uuid)
+    original_stdout = $stdout.dup
+    original_stderr = $stderr.dup
+    $stdout.reopen std_stream
+    $stderr.reopen std_stream
+
+    yield
+  ensure
+    $stdout.reopen original_stdout
+    $stderr.reopen original_stderr
+    std_stream.rewind
+    std_stream.unlink
+  end
 end

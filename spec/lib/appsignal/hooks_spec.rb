@@ -44,6 +44,7 @@ describe Appsignal::Hooks do
     Appsignal::Hooks.load_hooks
     Appsignal::Hooks.load_hooks
     Appsignal::Hooks.hooks[:mock_present_hook].installed?.should be_true
+    Appsignal::Hooks.hooks.delete(:mock_present_hook)
   end
 
   it "should not install if depencies are not present" do
@@ -57,6 +58,7 @@ describe Appsignal::Hooks do
     Appsignal::Hooks.load_hooks
 
     Appsignal::Hooks.hooks[:mock_not_present_hook].installed?.should be_false
+    Appsignal::Hooks.hooks.delete(:mock_not_present_hook)
   end
 
   it "should not install if there is an error while installing" do
@@ -70,6 +72,7 @@ describe Appsignal::Hooks do
     Appsignal::Hooks.load_hooks
 
     Appsignal::Hooks.hooks[:mock_error_hook].installed?.should be_false
+    Appsignal::Hooks.hooks.delete(:mock_error_hook)
   end
 end
 
