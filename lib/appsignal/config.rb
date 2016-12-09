@@ -96,14 +96,15 @@ module Appsignal
       end
 
       if File.writable? SYSTEM_TMP_DIR
-        $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
+        logger.warn "Unable to log to '#{path}'. Logging to "\
           "'#{SYSTEM_TMP_DIR}' instead. Please check the "\
           "permissions for the application's (log) directory."
         File.join(SYSTEM_TMP_DIR, 'appsignal.log')
       else
-        $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
+        logger.warn "Unable to log to '#{path}' or the "\
           "'#{SYSTEM_TMP_DIR}' fallback. Please check the permissions "\
           "for the application's (log) directory."
+        nil
       end
     end
 
