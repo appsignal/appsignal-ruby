@@ -437,15 +437,9 @@ describe Appsignal::Config do
   end
 
   describe "#log_file_path" do
-    let(:out_stream) { std_stream }
-    let(:output) { out_stream.read }
     let(:config) { project_fixture_config('production', :log_path => log_path) }
-    subject { capture_stdout(out_stream) { config.log_file_path } }
-    around do |example|
-      recognize_as_container(:none) do
-        example.run
-      end
-    end
+    subject { config.log_file_path }
+    around { |example| recognize_as_container(:none) { example.run } }
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, 'writable-path') }
@@ -457,8 +451,8 @@ describe Appsignal::Config do
       end
 
       it "prints no warning" do
+        expect(Appsignal.logger).not_to receive(:warn)
         subject
-        expect(output).to be_empty
       end
     end
 
@@ -475,9 +469,10 @@ describe Appsignal::Config do
         end
 
         it "prints a warning" do
+          expect(Appsignal.logger).to receive(:warn).with(
+            /Unable to log to '#{log_path}'. Logging to '#{system_tmp_dir}' instead/
+          )
           subject
-          expect(output).to include "appsignal: Unable to log to '#{log_path}'. "\
-            "Logging to '#{system_tmp_dir}' instead."
         end
       end
 
@@ -489,9 +484,10 @@ describe Appsignal::Config do
         end
 
         it "prints a warning" do
+          expect(Appsignal.logger).to receive(:warn).with(
+            /Unable to log to '#{log_path}' or the '#{system_tmp_dir}' fallback/
+          )
           subject
-          expect(output).to include "appsignal: Unable to log to '#{log_path}' "\
-            "or the '#{system_tmp_dir}' fallback."
         end
       end
     end
@@ -511,8 +507,8 @@ describe Appsignal::Config do
         end
 
         it "prints no warning" do
+          expect(Appsignal.logger).not_to receive(:warn)
           subject
-          expect(output).to be_empty
         end
       end
     end
