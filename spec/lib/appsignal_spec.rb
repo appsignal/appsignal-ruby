@@ -44,7 +44,9 @@ describe Appsignal do
       it "should create a config from the env" do
         ENV['APPSIGNAL_PUSH_API_KEY'] = 'something'
         Appsignal::Extension.should_receive(:start)
-        Appsignal.start
+        expect(Appsignal.logger).not_to receive(:error)
+        silence { Appsignal.start }
+        expect(Appsignal.config[:push_api_key]).to eq('something')
       end
     end
 
@@ -574,6 +576,7 @@ describe Appsignal do
       context "when the log path is writable" do
         context "when the log file is writable" do
           let(:log_file_contents) { File.open(log_file).read }
+
           before do
             Appsignal.start_logger
             Appsignal.logger.error('Log to file')
@@ -615,12 +618,16 @@ describe Appsignal do
         end
       end
 
-      context "when the log path is not writable" do
+      context "when the log path and fallback path are not writable" do
         before do
           FileUtils.chmod 0444, log_path
+          FileUtils.chmod 0444, Appsignal::Config::SYSTEM_TMP_DIR
 
           Appsignal.start_logger
           Appsignal.logger.error('Log to not writable log path')
+        end
+        after do
+          FileUtils.chmod 0755, Appsignal::Config::SYSTEM_TMP_DIR
         end
 
         it "logs to stdout" do

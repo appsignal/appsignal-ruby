@@ -48,13 +48,13 @@ RSpec.configure do |config|
   config.extend DependencyHelper
 
   config.before :all do
-    FileUtils.rm_rf(tmp_dir)
-    FileUtils.mkdir_p(tmp_dir)
-
-    # Use modifiable SYSTEM_TMP_DIR
+    # Use modified SYSTEM_TMP_DIR
     Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
     Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
       File.join(tmp_dir, 'system-tmp')
+
+    FileUtils.rm_rf(tmp_dir)
+    FileUtils.mkdir_p(Appsignal::Config::SYSTEM_TMP_DIR)
   end
 
   config.before do

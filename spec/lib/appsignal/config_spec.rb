@@ -506,7 +506,7 @@ describe Appsignal::Config do
 
       context "when root_path is set" do
         it "returns returns the project log location" do
-          expect(subject).to eq File.join(config.root_path, 'appsignal.log')
+          expect(subject).to eq File.join(config.root_path, 'log/appsignal.log')
         end
 
         it "prints no warning" do

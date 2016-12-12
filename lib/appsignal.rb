@@ -300,7 +300,7 @@ module Appsignal
     rescue SystemCallError => error
       start_stdout_logger
       logger.warn "Unable to start logger with log path '#{path}'."
-      logger.warn "#{error}"
+      logger.warn error
     end
   end
 end
