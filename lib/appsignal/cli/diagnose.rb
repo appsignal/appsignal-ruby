@@ -11,13 +11,13 @@ module Appsignal
           header
           empty_line
 
-          start_appsignal(options)
-
           agent_version
           empty_line
 
           host_information
           empty_line
+
+          start_appsignal(options)
 
           config
           empty_line
@@ -42,6 +42,7 @@ module Appsignal
             initial_config[:log_path] = Rails.root.join("log")
           end
 
+          ENV['APPSIGNAL_DIAGNOSE'] = 'true'
           Appsignal.config = Appsignal::Config.new(
             current_path,
             options[:environment],

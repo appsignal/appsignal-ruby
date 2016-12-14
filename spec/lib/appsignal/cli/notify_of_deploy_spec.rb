@@ -3,11 +3,8 @@ require "appsignal/cli"
 describe Appsignal::CLI::NotifyOfDeploy do
   include CLIHelpers
 
-  let(:out_stream) { StringIO.new }
-  let(:output) { out_stream.string }
-  around do |example|
-    capture_stdout(out_stream) { example.run }
-  end
+  let(:out_stream) { std_stream }
+  let(:output) { out_stream.read }
 
   define :include_deploy_notification do
     match do |log|
@@ -35,7 +32,9 @@ describe Appsignal::CLI::NotifyOfDeploy do
   end
 
   def run
-    run_cli("notify_of_deploy", options)
+    capture_stdout(out_stream) do
+      run_cli("notify_of_deploy", options)
+    end
   end
 
   context "without config" do
