@@ -1,3 +1,25 @@
+# 2.0.4
+* Use consistent log format for both file and STDOUT logs. PR #203
+* Fix log path in `appsignal diagnose` for Rails applications. PR #218, #222
+* Change default log path to `./log` rather than project root for all non-Rails
+  applications. PR #222
+* Load the `APPSIGNAL_APP_ENV` environment configuration option consistently
+  for all integrations. PR #204
+* Support the `--environment` option on the `appsignal diagnose` command. PR
+  #214
+* Use the real system `/tmp` directory, not a symlink. PR #219
+* Run the AppSignal agent in diagnose mode in the `appsignal diagnose` command.
+  PR #221
+* Test for directory and file ownership and permissions in the
+  `appsignal diagnose` command. PR #216
+* Test if current user is `root` in the `appsignal diagnose` command. PR #215
+* Output last couple of lines from `appsignal.log` on agent connection
+  failures.
+* Agent will no longer fail to start if no writable log path is found.
+  Commit 8920865f6158229a46ed4bd1cc98d99a849884c0, change in agent.
+* Internal refactoring of the test suite and the `appsignal install` command.
+  PR #200, #205
+
 # 2.0.3
 * Fix JavaScript exception catcher throwing an error on finishing a
   transaction. PR #210
