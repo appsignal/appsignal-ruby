@@ -64,15 +64,17 @@ module Appsignal
       end
 
       def extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
-        value = if object_or_hash.respond_to?(:[])
-          begin
-            object_or_hash[field]
-          rescue NameError
-            nil
-          end
-        elsif object_or_hash.respond_to?(field)
-          object_or_hash.send(field)
-        end || default_value
+        value =
+          if object_or_hash.respond_to?(:[])
+            begin
+              object_or_hash[field]
+            rescue NameError
+              nil
+            end
+          elsif object_or_hash.respond_to?(field)
+            object_or_hash.send(field)
+          end || default_value
+
         if convert_to_s
           value.to_s
         else

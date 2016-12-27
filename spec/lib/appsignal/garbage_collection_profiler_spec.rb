@@ -33,8 +33,8 @@ describe Appsignal::GarbageCollectionProfiler do
   describe "when the total GC time becomes too high" do
     it "should reset" do
       profiler = Appsignal::GarbageCollectionProfiler.new
-        internal_profiler.total_time = 2_147_483_647
-        expect(profiler.total_time).to eq(0)
+      internal_profiler.total_time = 2_147_483_647
+      expect(profiler.total_time).to eq(0)
     end
   end
 

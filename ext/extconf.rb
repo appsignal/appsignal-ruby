@@ -23,7 +23,7 @@ end
 def installation_failed(reason)
   logger.error "Installation failed: #{reason}"
   File.open(File.join(EXT_PATH, "Makefile"), "w") do |file|
-      file.write "default:\nclean:\ninstall:"
+    file.write "default:\nclean:\ninstall:"
   end
 end
 

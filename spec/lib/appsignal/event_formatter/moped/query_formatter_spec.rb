@@ -109,5 +109,4 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       it { should eq ["Other", '{:database=>"database.collection"}'] }
     end
   end
-
 end

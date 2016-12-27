@@ -193,26 +193,6 @@ Style/EmptyElse:
 
 # Offense count: 1
 # Cop supports --auto-correct.
-# Configuration parameters: AllowAdjacentOneLineDefs.
-Style/EmptyLineBetweenDefs:
-  Exclude:
-    - 'spec/lib/appsignal/transaction_spec.rb'
-
-# Offense count: 8
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: empty_lines, no_empty_lines
-Style/EmptyLinesAroundBlockBody:
-  Exclude:
-    - 'lib/appsignal/integrations/resque_active_job.rb'
-    - 'spec/lib/appsignal/event_formatter/moped/query_formatter_spec.rb'
-    - 'spec/lib/appsignal/hooks_spec.rb'
-    - 'spec/lib/appsignal/integrations/data_mapper_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
 Style/EmptyLiteral:
   Exclude:
     - 'spec/lib/appsignal/transaction_spec.rb'
@@ -260,44 +240,6 @@ Style/IfUnlessModifier:
   Exclude:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/garbage_collection_profiler.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, IndentationWidth.
-# SupportedStyles: special_inside_parentheses, consistent, align_brackets
-Style/IndentArray:
-  Exclude:
-    - 'lib/appsignal/hooks/sidekiq.rb'
-
-# Offense count: 6
-# Cop supports --auto-correct.
-# Configuration parameters: SupportedStyles, IndentationWidth.
-# SupportedStyles: special_inside_parentheses, consistent, align_braces
-Style/IndentHash:
-  EnforcedStyle: consistent
-
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: normal, rails
-Style/IndentationConsistency:
-  Exclude:
-    - 'spec/lib/appsignal/cli/diagnose_spec.rb'
-    - 'spec/lib/appsignal/garbage_collection_profiler_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
-
-# Offense count: 7
-# Cop supports --auto-correct.
-# Configuration parameters: Width.
-Style/IndentationWidth:
-  Exclude:
-    - 'ext/extconf.rb'
-    - 'lib/appsignal/hooks.rb'
-    - 'lib/appsignal/rack/streaming_listener.rb'
-    - 'lib/appsignal/transmitter.rb'
-    - 'spec/lib/appsignal/integrations/padrino_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
 
 # Offense count: 2
 Style/MethodMissing:
@@ -455,13 +397,6 @@ Style/RescueModifier:
     - 'spec/lib/appsignal/rack/rails_instrumentation_spec.rb'
     - 'spec/lib/appsignal/rack/sinatra_instrumentation_spec.rb'
     - 'spec/lib/appsignal/rack/streaming_listener_spec.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: AllowIfMethodIsEmpty.
-Style/SingleLineMethods:
-  Exclude:
-    - 'spec/lib/appsignal/transaction_spec.rb'
 
 # Offense count: 2
 # Cop supports --auto-correct.

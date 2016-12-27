@@ -47,8 +47,8 @@ module Appsignal
 
   class StreamWrapper
     def initialize(stream, transaction)
-       @stream      = stream
-       @transaction = transaction
+      @stream = stream
+      @transaction = transaction
     end
 
     def each

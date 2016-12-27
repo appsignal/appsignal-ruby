@@ -5,10 +5,10 @@ module Appsignal
 
       def job_keys
         @job_keys ||= Set.new(%w(
-            class args retried_at failed_at
-            error_message error_class backtrace
-            error_backtrace enqueued_at retry
-            jid retry created_at wrapped
+          class args retried_at failed_at
+          error_message error_class backtrace
+          error_backtrace enqueued_at retry
+          jid retry created_at wrapped
         ))
       end
 

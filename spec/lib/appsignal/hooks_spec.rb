@@ -182,7 +182,6 @@ describe Appsignal::Hooks::Helpers do
           it { should eq 1 }
         end
       end
-
     end
 
     context "when we need to call to_s on the value" do

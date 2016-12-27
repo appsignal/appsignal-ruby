@@ -1,7 +1,6 @@
 require "appsignal/integrations/data_mapper"
 
 describe Appsignal::Hooks::DataMapperLogListener do
-
   module DataMapperLog
     def log(message)
     end

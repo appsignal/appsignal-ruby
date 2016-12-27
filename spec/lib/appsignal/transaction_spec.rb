@@ -65,7 +65,6 @@ describe Appsignal::Transaction do
             ).to_not eq(running_transaction)
           end
         end
-
       end
     end
 
@@ -180,7 +179,6 @@ describe Appsignal::Transaction do
     end
 
     describe "#paused?" do
-
       it "should return the pause state" do
         expect(transaction.paused?).to be_false
       end
@@ -242,11 +240,11 @@ describe Appsignal::Transaction do
 
     describe "set_action" do
       it "should set the action in extension" do
-          transaction.ext.should_receive(:set_action).with(
-            "PagesController#show"
-          ).once
+        transaction.ext.should_receive(:set_action).with(
+          "PagesController#show"
+        ).once
 
-          transaction.set_action("PagesController#show")
+        transaction.set_action("PagesController#show")
       end
 
       it "should not set the action in extension when value is nil" do
@@ -842,8 +840,13 @@ describe Appsignal::Transaction do
 
             def action_dispatch_session
               store = Class.new do
-                def load_session(env); [1, { :foo => :bar }]; end
-                def session_exists?(env); true; end
+                def load_session(env)
+                  [1, { :foo => :bar }]
+                end
+
+                def session_exists?(env)
+                  true
+                end
               end.new
               ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new("rack.input" => StringIO.new), {})
             end

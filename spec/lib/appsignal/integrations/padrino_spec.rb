@@ -115,13 +115,13 @@ if DependencyHelper.padrino_present?
 
         context "with a dynamic request" do
           let(:transaction) do
-              double(
-                :set_http_or_background_action => nil,
-                :set_http_or_background_queue_start => nil,
-                :set_metadata => nil,
-                :set_action => nil,
-                :set_error => nil
-              )
+            double(
+              :set_http_or_background_action => nil,
+              :set_http_or_background_queue_start => nil,
+              :set_metadata => nil,
+              :set_action => nil,
+              :set_error => nil
+            )
           end
           before { Appsignal::Transaction.stub(:create => transaction) }
 

@@ -125,10 +125,10 @@ describe Appsignal do
           Appsignal.start
         end
 
-       it "should not add the gc probe to minutely" do
+        it "should not add the gc probe to minutely" do
           expect(Appsignal::Minutely).not_to receive(:add_gc_probe)
           Appsignal.start
-       end
+        end
       end
 
       context "when minutely metrics has been enabled" do
@@ -419,7 +419,6 @@ describe Appsignal do
       context "with transaction" do
         let(:transaction) { double }
         it "should call set_tags on transaction" do
-
           transaction.should_receive(:set_tags).with("a" => "b")
         end
 
