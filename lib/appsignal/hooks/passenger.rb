@@ -8,7 +8,7 @@ module Appsignal
       end
 
       def install
-        ::PhusionPassenger.on_event(:starting_worker_process) do |forked|
+        ::PhusionPassenger.on_event(:starting_worker_process) do |_forked|
           Appsignal.forked
         end
 

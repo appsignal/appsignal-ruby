@@ -142,7 +142,7 @@ module Appsignal
       stop("monitor_single_transaction")
     end
 
-    def listen_for_error(&block)
+    def listen_for_error
       yield
     rescue => error
       send_error(error)
@@ -234,7 +234,7 @@ module Appsignal
 
     def log_formatter(prefix = nil)
       pre = "#{prefix}: " if prefix
-      proc do |severity, datetime, progname, msg|
+      proc do |severity, datetime, _progname, msg|
         "[#{datetime.strftime("%Y-%m-%dT%H:%M:%S")} (process) ##{Process.pid}][#{severity}] #{pre}#{msg}\n"
       end
     end

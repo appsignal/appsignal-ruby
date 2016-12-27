@@ -383,7 +383,7 @@ module Appsignal
       end
 
       # Instrument should still yield
-      def instrument(*args)
+      def instrument(*_args)
         yield
       end
 

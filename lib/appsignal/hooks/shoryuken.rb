@@ -1,7 +1,7 @@
 module Appsignal
   class Hooks
     class ShoryukenMiddleware
-      def call(worker_instance, queue, sqs_msg, body)
+      def call(_worker_instance, queue, sqs_msg, body)
         metadata = {
           :queue => queue
         }

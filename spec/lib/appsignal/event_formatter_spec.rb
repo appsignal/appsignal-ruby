@@ -7,7 +7,7 @@ class MockFormatter < Appsignal::EventFormatter
     @body = "some value"
   end
 
-  def format(payload)
+  def format(_payload)
     ["title", @body]
   end
 end

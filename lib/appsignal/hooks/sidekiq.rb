@@ -12,7 +12,7 @@ module Appsignal
         ))
       end
 
-      def call(worker, item, queue)
+      def call(_worker, item, _queue)
         params =
           if item["class"] == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
             format_args(item["args"].first["arguments"])

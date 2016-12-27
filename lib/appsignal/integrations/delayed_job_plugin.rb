@@ -8,7 +8,7 @@ module Appsignal
           invoke_with_instrumentation(job, block)
         end
 
-        lifecycle.after(:execute) do |execute|
+        lifecycle.after(:execute) do |_execute|
           Appsignal.stop("delayed job")
         end
       end

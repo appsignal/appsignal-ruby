@@ -25,11 +25,11 @@ RSpec::Matchers.define :delegate do |method|
     "delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 
-  failure_message_for_should do |text|
+  failure_message_for_should do |_text|
     "expected #{@delegator} to delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 
-  failure_message_for_should_not do |text|
+  failure_message_for_should_not do |_text|
     "expected #{@delegator} not to delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 

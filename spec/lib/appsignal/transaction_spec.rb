@@ -1,7 +1,7 @@
 require_relative "../../support/mocks/fake_gc_profiler"
 
 class Smash < Hash
-  def []=(key, val)
+  def []=(_key, _val)
     raise "the roof"
   end
 end
@@ -840,11 +840,11 @@ describe Appsignal::Transaction do
 
             def action_dispatch_session
               store = Class.new do
-                def load_session(env)
+                def load_session(_env)
                   [1, { :foo => :bar }]
                 end
 
-                def session_exists?(env)
+                def session_exists?(_env)
                   true
                 end
               end.new

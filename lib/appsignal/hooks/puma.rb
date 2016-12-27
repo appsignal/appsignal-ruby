@@ -11,12 +11,12 @@ module Appsignal
 
       def install
         ::Puma.cli_config.options[:before_worker_boot] ||= []
-        ::Puma.cli_config.options[:before_worker_boot] << Proc.new do |id|
+        ::Puma.cli_config.options[:before_worker_boot] << Proc.new do |_id|
           Appsignal.forked
         end
 
         ::Puma.cli_config.options[:before_worker_shutdown] ||= []
-        ::Puma.cli_config.options[:before_worker_shutdown] << Proc.new do |id|
+        ::Puma.cli_config.options[:before_worker_shutdown] << Proc.new do |_id|
           Appsignal.stop("puma before_worker_shutdown")
         end
 

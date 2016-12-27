@@ -8,7 +8,7 @@ describe Appsignal::Hooks::RedisHook do
       before :all do
         class Redis
           class Client
-            def process(commands, &block)
+            def process(_commands)
               1
             end
           end

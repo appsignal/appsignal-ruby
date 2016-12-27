@@ -49,32 +49,6 @@ Lint/UnifiedInteger:
     - 'lib/appsignal/utils.rb'
     - 'lib/appsignal/utils/params_sanitizer.rb'
 
-# Offense count: 8
-# Cop supports --auto-correct.
-# Configuration parameters: IgnoreEmptyBlocks, AllowUnusedKeywordArguments.
-Lint/UnusedBlockArgument:
-  Exclude:
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/cli.rb'
-    - 'lib/appsignal/hooks/passenger.rb'
-    - 'lib/appsignal/hooks/puma.rb'
-    - 'lib/appsignal/integrations/delayed_job_plugin.rb'
-    - 'spec/support/delegate_matcher.rb'
-
-# Offense count: 13
-# Cop supports --auto-correct.
-# Configuration parameters: AllowUnusedKeywordArguments, IgnoreEmptyMethods.
-Lint/UnusedMethodArgument:
-  Exclude:
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/hooks/shoryuken.rb'
-    - 'lib/appsignal/hooks/sidekiq.rb'
-    - 'lib/appsignal/integrations/resque.rb'
-    - 'lib/appsignal/transaction.rb'
-    - 'spec/lib/appsignal/event_formatter_spec.rb'
-    - 'spec/lib/appsignal/hooks/redis_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-
 # Offense count: 1
 # Configuration parameters: ContextCreatingMethods.
 Lint/UselessAccessModifier:

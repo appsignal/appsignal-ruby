@@ -50,7 +50,7 @@ module Appsignal
         OptionParser.new do |o|
           o.banner = "Usage: appsignal <command> [options]"
 
-          o.on "-v", "--version", "Print version and exit" do |arg|
+          o.on "-v", "--version", "Print version and exit" do |_arg|
             puts "AppSignal #{Appsignal::VERSION}"
             exit(0)
           end
