@@ -84,19 +84,13 @@ module Appsignal
     end
 
     def proxy_addr
-      if config[:http_proxy]
-        proxy_uri.host
-      else
-        nil
-      end
+      return unless config[:http_proxy]
+      proxy_uri.host
     end
 
     def proxy_port
-      if config[:http_proxy]
-        proxy_uri.port
-      else
-        nil
-      end
+      return unless config[:http_proxy]
+      proxy_uri.port
     end
   end
 end

@@ -23,10 +23,10 @@ module Appsignal
       end
 
       def unregister(name, formatter = self)
-        if formatter_classes[name] == formatter
-          formatter_classes.delete(name)
-          formatters.delete(name)
-        end
+        return unless formatter_classes[name] == formatter
+
+        formatter_classes.delete(name)
+        formatters.delete(name)
       end
 
       def registered?(name, klass = nil)

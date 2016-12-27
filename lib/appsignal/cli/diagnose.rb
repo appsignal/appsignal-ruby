@@ -79,9 +79,9 @@ module Appsignal
           puts "  Heroku: true" if Appsignal::System.heroku?
           print "  root user: "
           puts Process.uid == 0 ? "yes (not recommended)" : "no"
-          if Appsignal::System.container?
-            puts "  Container id: #{Appsignal::System::Container.id}"
-          end
+
+          return unless Appsignal::System.container?
+          puts "  Container id: #{Appsignal::System::Container.id}"
         end
 
         def config
@@ -96,12 +96,12 @@ module Appsignal
         def environment
           env = Appsignal.config.env
           puts "  Environment: #{env}"
-          if env == ""
-            puts "    Warning: No environment set, no config loaded!"
-            puts "    Please make sure appsignal diagnose is run within your "
-            puts "    project directory with an environment."
-            puts "      appsignal diagnose --environment=production"
-          end
+
+          return unless env == ""
+          puts "    Warning: No environment set, no config loaded!"
+          puts "    Please make sure appsignal diagnose is run within your "
+          puts "    project directory with an environment."
+          puts "      appsignal diagnose --environment=production"
         end
 
         def paths_writable

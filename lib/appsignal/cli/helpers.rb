@@ -43,7 +43,7 @@ module Appsignal
         loop do
           print prompt
           value = ask_for_input
-          return value if value.length > 0
+          return value unless value.empty?
         end
       end
 

@@ -11,7 +11,7 @@ module Appsignal
         if env["PATH_INFO"] == Appsignal.config[:frontend_error_catching_path]
           body = JSON.parse(env["rack.input"].read)
 
-          if body["name"].is_a?(String) && body["name"].length > 0
+          if body["name"].is_a?(String) && !body["name"].empty?
             transaction = JSExceptionTransaction.new(body)
             transaction.complete!
             code = 200

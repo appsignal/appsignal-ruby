@@ -38,7 +38,7 @@ describe Appsignal::Hooks::DelayedJobHook do
         }
       end
       let(:job) { double(job_data) }
-      let(:invoked_block) { Proc.new {} }
+      let(:invoked_block) { proc {} }
       let(:error) { StandardError.new }
 
       context "with a normal call" do
