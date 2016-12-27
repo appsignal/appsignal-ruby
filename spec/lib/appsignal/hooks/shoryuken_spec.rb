@@ -30,7 +30,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         :method => "perform",
         :metadata => {
           :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217123200000
+          "SentTimestamp" => 217_123_200_000
         },
         :params => ["Model", "1"],
         :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc

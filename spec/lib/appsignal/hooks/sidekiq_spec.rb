@@ -32,7 +32,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
         },
         :params      => ["Model", "1"],
         :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
-        :queue_time  => 60000.to_f
+        :queue_time  => 60_000.to_f
       )
     end
 
@@ -65,7 +65,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
           },
           :params      => ["Model", "1"],
           :queue_start => Time.parse("01-01-2001 10:00:00UTC").to_f,
-          :queue_time  => 60000.to_f
+          :queue_time  => 60_000.to_f
         )
       end
     end

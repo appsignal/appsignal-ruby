@@ -287,11 +287,6 @@ Style/NumericLiteralPrefix:
     - 'spec/lib/appsignal_spec.rb'
     - 'spec/support/helpers/time_helpers.rb'
 
-# Offense count: 9
-# Cop supports --auto-correct.
-Style/NumericLiterals:
-  MinDigits: 14
-
 # Offense count: 1
 # Cop supports --auto-correct.
 # Configuration parameters: AutoCorrect, EnforcedStyle, SupportedStyles.

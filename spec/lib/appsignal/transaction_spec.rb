@@ -314,7 +314,7 @@ describe Appsignal::Transaction do
         let(:env) { { "HTTP_X_REQUEST_START" => (fixed_time * 1000).to_s } }
 
         it "should set the queue start on the transaction" do
-          transaction.should_receive(:set_queue_start).with(13897836000)
+          transaction.should_receive(:set_queue_start).with(13_897_836_000)
 
           transaction.set_http_or_background_queue_start
         end
@@ -325,7 +325,7 @@ describe Appsignal::Transaction do
         let(:env) { { :queue_start => fixed_time } }
 
         it "should set the queue start on the transaction" do
-          transaction.should_receive(:set_queue_start).with(1389783600000)
+          transaction.should_receive(:set_queue_start).with(1_389_783_600_000)
 
           transaction.set_http_or_background_queue_start
         end
@@ -607,7 +607,7 @@ describe Appsignal::Transaction do
       context "when queue start is set" do
         let(:env) { background_env_with_data }
 
-        it { should eq 1389783590000 }
+        it { should eq 1_389_783_590_000 }
       end
     end
 
@@ -638,7 +638,7 @@ describe Appsignal::Transaction do
         context "with the HTTP_X_REQUEST_START header set" do
           let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}" } }
 
-          it { should eq 1389783599600 }
+          it { should eq 1_389_783_599_600 }
 
           context "with unparsable content" do
             let(:env) { { "HTTP_X_REQUEST_START" => "something" } }
@@ -649,7 +649,7 @@ describe Appsignal::Transaction do
           context "with some cruft" do
             let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa" } }
 
-            it { should eq 1389783599600 }
+            it { should eq 1_389_783_599_600 }
           end
 
           context "with a really low number" do
@@ -661,7 +661,7 @@ describe Appsignal::Transaction do
           context "with the alternate HTTP_X_QUEUE_START header set" do
             let(:env) { { "HTTP_X_QUEUE_START" => "t=#{slightly_earlier_time_value}" } }
 
-            it { should eq 1389783599600 }
+            it { should eq 1_389_783_599_600 }
           end
         end
       end
