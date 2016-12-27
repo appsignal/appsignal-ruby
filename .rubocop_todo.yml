@@ -101,12 +101,6 @@ Style/Alias:
     - 'lib/appsignal/hooks/webmachine.rb'
     - 'lib/appsignal/transaction.rb'
 
-# Offense count: 8
-# Cop supports --auto-correct.
-Style/AlignArray:
-  Exclude:
-    - 'lib/appsignal/transaction.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.
