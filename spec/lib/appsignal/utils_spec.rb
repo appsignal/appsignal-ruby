@@ -34,16 +34,18 @@ describe Appsignal::Utils do
 
     context "with a body that contains strings with invalid utf-8 content" do
       let(:string_with_invalid_utf8) { [0x61, 0x61, 0x85].pack("c*") }
-      let(:body) { {
-        "field_one" => [0x61, 0x61].pack("c*"),
-        :field_two => string_with_invalid_utf8,
-        "field_three" => [
-          "one", string_with_invalid_utf8
-        ],
-        "field_four" => {
-          "one" => string_with_invalid_utf8
+      let(:body) do
+        {
+          "field_one" => [0x61, 0x61].pack("c*"),
+          :field_two => string_with_invalid_utf8,
+          "field_three" => [
+            "one", string_with_invalid_utf8
+          ],
+          "field_four" => {
+            "one" => string_with_invalid_utf8
+          }
         }
-      } }
+      end
 
       its(:to_s) { should eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"}) }
     end
@@ -52,9 +54,9 @@ describe Appsignal::Utils do
       let(:body) { "body" }
 
       it "should raise a type error" do
-        expect {
+        expect do
           subject
-        }.to raise_error TypeError
+        end.to raise_error TypeError
       end
     end
   end
@@ -79,16 +81,18 @@ describe Appsignal::Utils do
 
     context "with a body that contains strings with invalid utf-8 content" do
       let(:string_with_invalid_utf8) { [0x61, 0x61, 0x85].pack("c*") }
-      let(:body) { {
-        "field_one" => [0x61, 0x61].pack("c*"),
-        :field_two => string_with_invalid_utf8,
-        "field_three" => [
-          "one", string_with_invalid_utf8
-        ],
-        "field_four" => {
-          "one" => string_with_invalid_utf8
+      let(:body) do
+        {
+          "field_one" => [0x61, 0x61].pack("c*"),
+          :field_two => string_with_invalid_utf8,
+          "field_three" => [
+            "one", string_with_invalid_utf8
+          ],
+          "field_four" => {
+            "one" => string_with_invalid_utf8
+          }
         }
-      } }
+      end
 
       it { should eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
     end

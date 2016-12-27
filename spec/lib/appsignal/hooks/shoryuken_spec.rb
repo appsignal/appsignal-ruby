@@ -3,10 +3,8 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
 
   let(:worker_instance) { double }
   let(:queue) { double }
-  let(:sqs_msg) {
-    double(:attributes => {})
-  }
-  let(:body) {{}}
+  let(:sqs_msg) { double(:attributes => {}) }
+  let(:body) { {} }
 
   before do
     Appsignal::Transaction.stub(:current => current_transaction)
@@ -15,13 +13,15 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
 
   context "with a performance call" do
     let(:queue) { "some-funky-queue-name" }
-    let(:sqs_msg) {
+    let(:sqs_msg) do
       double(:attributes => { "SentTimestamp" => Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 })
-    }
-    let(:body) {{
-      "job_class" => "TestClass",
-      "arguments" => ["Model", "1"],
-    }}
+    end
+    let(:body) do
+      {
+        "job_class" => "TestClass",
+        "arguments" => ["Model", "1"],
+      }
+    end
 
     it "should wrap in a transaction with the correct params" do
       Appsignal.should_receive(:monitor_transaction).with(

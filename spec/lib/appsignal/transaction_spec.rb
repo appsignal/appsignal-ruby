@@ -163,9 +163,9 @@ describe Appsignal::Transaction do
   context "pausing" do
     describe "#pause!" do
       it "should change the pause flag to true" do
-        expect{
+        expect do
           transaction.pause!
-        }.to change(transaction, :paused).from(false).to(true)
+        end.to change(transaction, :paused).from(false).to(true)
       end
     end
 
@@ -173,9 +173,9 @@ describe Appsignal::Transaction do
       before { transaction.pause! }
 
       it "should change the pause flag to false" do
-        expect{
+        expect do
           transaction.resume!
-        }.to change(transaction, :paused).from(true).to(false)
+        end.to change(transaction, :paused).from(true).to(false)
       end
     end
 
@@ -234,9 +234,9 @@ describe Appsignal::Transaction do
 
     describe "#set_tags" do
       it "should add tags to transaction" do
-        expect {
+        expect do
           transaction.set_tags("a" => "b")
-        }.to change(transaction, :tags).to("a" => "b")
+        end.to change(transaction, :tags).to("a" => "b")
       end
     end
 
@@ -304,9 +304,9 @@ describe Appsignal::Transaction do
 
         Appsignal.logger.should_receive(:warn).with("Queue start value 10 is too big")
 
-        lambda {
+        lambda do
           transaction.set_queue_start(10)
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
 
@@ -440,7 +440,7 @@ describe Appsignal::Transaction do
         let(:error) { double(:error, :message => nil, :backtrace => ["line 1"]) }
 
         it "should not raise an error" do
-          expect{ transaction.set_error(error) }.to_not raise_error
+          expect { transaction.set_error(error) }.to_not raise_error
         end
 
         it "should set an error in the extension" do
@@ -841,10 +841,10 @@ describe Appsignal::Transaction do
             end
 
             def action_dispatch_session
-              store = Class.new {
+              store = Class.new do
                 def load_session(env); [1, { :foo => :bar }]; end
                 def session_exists?(env); true; end
-              }.new
+              end.new
               ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new("rack.input" => StringIO.new), {})
             end
           end
@@ -935,7 +935,7 @@ describe Appsignal::Transaction do
     subject { Appsignal::Transaction::NilTransaction.new }
 
     it "should have method stubs" do
-      lambda {
+      lambda do
         subject.complete
         subject.pause!
         subject.resume!
@@ -950,7 +950,7 @@ describe Appsignal::Transaction do
         subject.set_sample_data("key", "data")
         subject.sample_data
         subject.set_error("a")
-      }.should_not raise_error
+      end.should_not raise_error
     end
   end
 end

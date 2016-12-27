@@ -94,7 +94,7 @@ module Appsignal
     end
 
     def get_server_state(key)
-      Appsignal::Extension::get_server_state(key)
+      Appsignal::Extension.get_server_state(key)
     end
 
     # Wrap a transaction with appsignal monitoring.

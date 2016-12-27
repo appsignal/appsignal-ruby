@@ -109,9 +109,9 @@ describe "extension loading and operation" do
     end
 
     it "should not raise errors when methods are called" do
-      expect {
+      expect do
         subject.something
-      }.not_to raise_error
+      end.not_to raise_error
     end
   end
 end

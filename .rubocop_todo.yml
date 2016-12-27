@@ -157,23 +157,6 @@ Style/AndOr:
   Exclude:
     - 'lib/appsignal.rb'
 
-# Offense count: 30
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, ProceduralMethods, FunctionalMethods, IgnoredMethods.
-# SupportedStyles: line_count_based, semantic, braces_for_chaining
-# ProceduralMethods: benchmark, bm, bmbm, create, each_with_object, measure, new, realtime, tap, with_object
-# FunctionalMethods: let, let!, subject, watch
-# IgnoredMethods: lambda, proc, it
-Style/BlockDelimiters:
-  Exclude:
-    - 'spec/lib/appsignal/extension_spec.rb'
-    - 'spec/lib/appsignal/hooks/delayed_job_spec.rb'
-    - 'spec/lib/appsignal/hooks/shoryuken_spec.rb'
-    - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-    - 'spec/lib/appsignal/utils_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
-
 # Offense count: 3
 # Configuration parameters: EnforcedStyle, SupportedStyles.
 # SupportedStyles: nested, compact
@@ -501,36 +484,6 @@ Style/RescueModifier:
 Style/SingleLineMethods:
   Exclude:
     - 'spec/lib/appsignal/transaction_spec.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment.
-Style/SpaceAroundOperators:
-  Exclude:
-    - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
-    - 'spec/lib/appsignal/integrations/padrino_spec.rb'
-    - 'spec/lib/appsignal/js_exception_transaction_spec.rb'
-    - 'spec/lib/appsignal/rack/js_exception_catcher_spec.rb'
-    - 'spec/lib/appsignal/rack/rails_instrumentation_spec.rb'
-
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: space, no_space
-Style/SpaceBeforeBlockBraces:
-  Exclude:
-    - 'lib/appsignal/hooks/shoryuken.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-
-# Offense count: 6
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, EnforcedStyleForEmptyBraces, SpaceBeforeBlockParameters.
-# SupportedStyles: space, no_space
-Style/SpaceInsideBlockBraces:
-  Exclude:
-    - 'spec/lib/appsignal/hooks/delayed_job_spec.rb'
-    - 'spec/lib/appsignal/hooks/shoryuken_spec.rb'
-    - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
 
 # Offense count: 2
 # Cop supports --auto-correct.

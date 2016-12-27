@@ -57,7 +57,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
       context "when `frontend_error_catching_path` is different" do
         let(:config_options) do
           {
-            :frontend_error_catching_path   => "/foo"
+            :frontend_error_catching_path => "/foo"
           }
         end
 

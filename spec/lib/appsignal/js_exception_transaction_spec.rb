@@ -13,7 +13,7 @@ describe Appsignal::JSExceptionTransaction do
         "foo.bar/js:11:1",
         "foo.bar/js:22:2",
       ],
-      "tags"        => [
+      "tags" => [
         "tag1"
       ]
     }

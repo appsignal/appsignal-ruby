@@ -167,7 +167,7 @@ if DependencyHelper.padrino_present?
       end
 
       describe "#get_payload_action" do
-        before { router.stub(:settings  => settings) }
+        before { router.stub(:settings => settings) }
 
         context "when request is nil" do
           it "should return the site" do

@@ -2,14 +2,16 @@ describe Appsignal::Hooks::SidekiqPlugin do
   let(:worker) { double }
   let(:queue) { double }
   let(:current_transaction) { background_job_transaction }
-  let(:item) {{
-    "class"       => "TestClass",
-    "retry_count" => 0,
-    "queue"       => "default",
-    "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC"),
-    "args"        => ["Model", 1],
-    "extra"       => "data"
-  }}
+  let(:item) do
+    {
+      "class"       => "TestClass",
+      "retry_count" => 0,
+      "queue"       => "default",
+      "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC"),
+      "args"        => ["Model", 1],
+      "extra"       => "data"
+    }
+  end
   let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
 
   before do
@@ -35,21 +37,23 @@ describe Appsignal::Hooks::SidekiqPlugin do
     end
 
     context "when wrapped by ActiveJob" do
-      let(:item) {{
-        "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-        "wrapped" => "TestClass",
-        "queue" => "default",
-        "args"=> [{
-          "job_class" => "TestJob",
-          "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
-          "queue_name" => "default",
-          "arguments" => ["Model", 1],
-        }],
-        "retry" => true,
-        "jid" => "efb140489485999d32b5504c",
-        "created_at" => Time.parse("01-01-2001 10:00:00UTC").to_f,
-        "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f
-      }}
+      let(:item) do
+        {
+          "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+          "wrapped" => "TestClass",
+          "queue" => "default",
+          "args" => [{
+            "job_class" => "TestJob",
+            "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+            "queue_name" => "default",
+            "arguments" => ["Model", 1],
+          }],
+          "retry" => true,
+          "jid" => "efb140489485999d32b5504c",
+          "created_at" => Time.parse("01-01-2001 10:00:00UTC").to_f,
+          "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f
+        }
+      end
 
       it "should wrap in a transaction with the correct params" do
         Appsignal.should_receive(:monitor_transaction).with(

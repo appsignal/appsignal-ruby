@@ -38,7 +38,7 @@ describe Appsignal::Hooks::DelayedJobHook do
         }
       end
       let(:job) { double(job_data) }
-      let(:invoked_block) { Proc.new { } }
+      let(:invoked_block) { Proc.new {} }
       let(:error) { StandardError.new }
 
       context "with a normal call" do
@@ -137,9 +137,9 @@ describe Appsignal::Hooks::DelayedJobHook do
 
           invoked_block.stub(:call).and_raise(error)
 
-          lambda {
+          lambda do
             plugin.invoke_with_instrumentation(job, invoked_block)
-          }.should raise_error(StandardError)
+          end.should raise_error(StandardError)
         end
       end
     end

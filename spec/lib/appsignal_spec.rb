@@ -259,46 +259,46 @@ describe Appsignal do
         object = double
         object.should_receive(:some_method).and_return(1)
 
-        lambda {
+        lambda do
           Appsignal.monitor_transaction("perform_job.nothing") do
             object.some_method
           end.should eq 1
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
 
     describe ".listen_for_error" do
       it "should do nothing" do
         error = RuntimeError.new("specific error")
-        lambda {
+        lambda do
           Appsignal.listen_for_error do
             raise error
           end
-        }.should raise_error(error)
+        end.should raise_error(error)
       end
     end
 
     describe ".send_error" do
       it "should do nothing" do
-        lambda {
+        lambda do
           Appsignal.send_error(RuntimeError.new)
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
 
     describe ".set_error" do
       it "should do nothing" do
-        lambda {
+        lambda do
           Appsignal.set_error(RuntimeError.new)
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
 
     describe ".tag_request" do
       it "should do nothing" do
-        lambda {
+        lambda do
           Appsignal.tag_request(:tag => "tag")
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
 
@@ -307,11 +307,11 @@ describe Appsignal do
         stub = double
         stub.should_receive(:method_call).and_return("return value")
 
-        lambda {
+        lambda do
           Appsignal.instrument "name" do
             stub.method_call
           end.should eq "return value"
-        }.should_not raise_error
+        end.should_not raise_error
       end
     end
   end
@@ -370,11 +370,11 @@ describe Appsignal do
           Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
           Appsignal::Transaction.should_receive(:complete_current!)
 
-          lambda {
+          lambda do
             Appsignal.monitor_transaction("perform_job.something") do
               raise error
             end
-          }.should raise_error(error)
+          end.should raise_error(error)
         end
       end
     end
@@ -404,11 +404,11 @@ describe Appsignal do
           ).and_yield
           Appsignal.should_receive(:stop)
 
-          lambda {
+          lambda do
             Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
               raise error
             end
-          }.should raise_error(error)
+          end.should raise_error(error)
         end
       end
     end
@@ -454,9 +454,9 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           Appsignal::Extension.should_receive(:set_gauge).with("key", 10).and_raise(RangeError)
           Appsignal.logger.should_receive(:warn).with("Gauge value 10 for key 'key' is too big")
-          lambda {
+          lambda do
             Appsignal.set_gauge("key", 10)
-          }.should_not raise_error
+          end.should_not raise_error
         end
       end
 
@@ -474,9 +474,9 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           Appsignal::Extension.should_receive(:set_host_gauge).with("key", 10).and_raise(RangeError)
           Appsignal.logger.should_receive(:warn).with("Host gauge value 10 for key 'key' is too big")
-          lambda {
+          lambda do
             Appsignal.set_host_gauge("key", 10)
-          }.should_not raise_error
+          end.should_not raise_error
         end
       end
 
@@ -494,9 +494,9 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           Appsignal::Extension.should_receive(:set_process_gauge).with("key", 10).and_raise(RangeError)
           Appsignal.logger.should_receive(:warn).with("Process gauge value 10 for key 'key' is too big")
-          lambda {
+          lambda do
             Appsignal.set_process_gauge("key", 10)
-          }.should_not raise_error
+          end.should_not raise_error
         end
       end
 
@@ -519,9 +519,9 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           Appsignal::Extension.should_receive(:increment_counter).with("key", 10).and_raise(RangeError)
           Appsignal.logger.should_receive(:warn).with("Counter value 10 for key 'key' is too big")
-          lambda {
+          lambda do
             Appsignal.increment_counter("key", 10)
-          }.should_not raise_error
+          end.should_not raise_error
         end
       end
 
@@ -539,9 +539,9 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           Appsignal::Extension.should_receive(:add_distribution_value).with("key", 10).and_raise(RangeError)
           Appsignal.logger.should_receive(:warn).with("Distribution value 10 for key 'key' is too big")
-          lambda {
+          lambda do
             Appsignal.add_distribution_value("key", 10)
-          }.should_not raise_error
+          end.should_not raise_error
         end
       end
     end
@@ -772,11 +772,11 @@ describe Appsignal do
     describe ".listen_for_error" do
       it "should call send_error and re-raise" do
         Appsignal.should_receive(:send_error).with(kind_of(Exception))
-        lambda {
+        lambda do
           Appsignal.listen_for_error do
             raise "I am an exception"
           end
-        }.should raise_error(RuntimeError, "I am an exception")
+        end.should raise_error(RuntimeError, "I am an exception")
       end
     end
 

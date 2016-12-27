@@ -52,7 +52,7 @@ if DependencyHelper.rails_present?
           "1",
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(ActionDispatch::Request),
-          :params_method=>:filtered_parameters
+          :params_method => :filtered_parameters
         ).and_return(
           double(
             :set_action => nil,
