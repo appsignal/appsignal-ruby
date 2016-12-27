@@ -77,7 +77,7 @@ module Appsignal
       end
     end
 
-    def stop(called_by=nil)
+    def stop(called_by = nil)
       if called_by
         logger.debug("Stopping appsignal (#{called_by})")
       else
@@ -98,7 +98,7 @@ module Appsignal
     end
 
     # Wrap a transaction with appsignal monitoring.
-    def monitor_transaction(name, env={})
+    def monitor_transaction(name, env = {})
       unless active?
         return yield
       end
@@ -136,7 +136,7 @@ module Appsignal
     #
     # Useful for cases such as Rake tasks and Resque-like systems where a process is
     # forked and immediately exits after the transaction finishes.
-    def monitor_single_transaction(name, env={}, &block)
+    def monitor_single_transaction(name, env = {}, &block)
       monitor_transaction(name, env, &block)
     ensure
       stop("monitor_single_transaction")
@@ -150,7 +150,7 @@ module Appsignal
     end
     alias :listen_for_exception :listen_for_error
 
-    def send_error(error, tags=nil, namespace=Appsignal::Transaction::HTTP_REQUEST)
+    def send_error(error, tags = nil, namespace = Appsignal::Transaction::HTTP_REQUEST)
       return if !active?
       unless error.is_a?(Exception)
         logger.error('Can\'t send error, given value is not an exception')
@@ -176,7 +176,7 @@ module Appsignal
     alias :set_exception :set_error
     alias :add_exception :set_error
 
-    def tag_request(params={})
+    def tag_request(params = {})
       return unless active?
       transaction = Appsignal::Transaction.current
       return false unless transaction
@@ -184,14 +184,14 @@ module Appsignal
     end
     alias :tag_job :tag_request
 
-    def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
+    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       Appsignal::Transaction.current.start_event
       return_value = yield
       Appsignal::Transaction.current.finish_event(name, title, body, body_format)
       return_value
     end
 
-    def instrument_sql(name, title=nil, body=nil, &block)
+    def instrument_sql(name, title = nil, body = nil, &block)
       instrument(name, title, body, Appsignal::EventFormatter::SQL_BODY_FORMAT, &block)
     end
 
@@ -213,7 +213,7 @@ module Appsignal
       Appsignal.logger.warn("Process gauge value #{value} for key '#{key}' is too big")
     end
 
-    def increment_counter(key, value=1)
+    def increment_counter(key, value = 1)
       Appsignal::Extension.increment_counter(key.to_s, value)
     rescue RangeError
       Appsignal.logger.warn("Counter value #{value} for key '#{key}' is too big")

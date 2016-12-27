@@ -21,7 +21,7 @@ end
 module Padrino::Routing::InstanceMethods
   alias route_without_appsignal route!
 
-  def route!(base=settings, pass_block=nil)
+  def route!(base = settings, pass_block = nil)
     if !Appsignal.active? || env["sinatra.static_file"]
       route_without_appsignal(base, pass_block)
       return

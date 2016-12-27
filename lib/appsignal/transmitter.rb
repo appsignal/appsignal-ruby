@@ -23,7 +23,7 @@ module Appsignal
 
     attr_reader :config, :action
 
-    def initialize(action, config=Appsignal.config)
+    def initialize(action, config = Appsignal.config)
       @action = action
       @config = config
     end

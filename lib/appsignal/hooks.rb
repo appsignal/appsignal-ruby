@@ -17,7 +17,7 @@ module Appsignal
     end
 
     class Hook
-      def self.register(name, hook=self)
+      def self.register(name, hook = self)
         Appsignal::Hooks.register(name, hook.new)
       end
 
@@ -63,7 +63,7 @@ module Appsignal
         text.size > 200 ? "#{text[0...197]}..." : text
       end
 
-      def extract_value(object_or_hash, field, default_value=nil, convert_to_s=false)
+      def extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
         value = if object_or_hash.respond_to?(:[])
           begin
             object_or_hash[field]

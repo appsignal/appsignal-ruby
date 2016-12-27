@@ -61,7 +61,7 @@ module Appsignal
     attr_reader :root_path, :env, :initial_config, :config_hash
     attr_accessor :logger
 
-    def initialize(root_path, env, initial_config={}, logger=Appsignal.logger)
+    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger)
       @root_path      = root_path
       @env            = ENV.fetch("APPSIGNAL_APP_ENV".freeze, env.to_s)
       @initial_config = initial_config

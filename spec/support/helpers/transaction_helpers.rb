@@ -7,7 +7,7 @@ module TransactionHelpers
     end
   end
 
-  def background_job_transaction(args={})
+  def background_job_transaction(args = {})
     Appsignal::Transaction.new(
       "1",
       Appsignal::Transaction::BACKGROUND_JOB,
@@ -18,7 +18,7 @@ module TransactionHelpers
     )
   end
 
-  def http_request_transaction(args={})
+  def http_request_transaction(args = {})
     Appsignal::Transaction.new(
       "1",
       Appsignal::Transaction::HTTP_REQUEST,

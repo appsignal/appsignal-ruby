@@ -15,7 +15,7 @@ module Appsignal
     class << self
       attr_accessor :options
 
-      def run(argv=ARGV)
+      def run(argv = ARGV)
         @options = {}
         global = global_option_parser
         commands = command_option_parser

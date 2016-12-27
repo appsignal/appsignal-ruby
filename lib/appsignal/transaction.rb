@@ -20,7 +20,7 @@ module Appsignal
     HTTP_X_AUTH_TOKEN)
 
     class << self
-      def create(id, namespace, request, options={})
+      def create(id, namespace, request, options = {})
         # Allow middleware to force a new transaction
         if options.include?(:force) && options[:force]
           Thread.current[:appsignal_transaction] = nil
@@ -58,7 +58,7 @@ module Appsignal
 
     attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
 
-    def initialize(transaction_id, namespace, request, options={})
+    def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
       @namespace = namespace
       @request = request
@@ -119,7 +119,7 @@ module Appsignal
       @store[key]
     end
 
-    def set_tags(given_tags={})
+    def set_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
 
@@ -128,7 +128,7 @@ module Appsignal
       @ext.set_action(action)
     end
 
-    def set_http_or_background_action(from=request.params)
+    def set_http_or_background_action(from = request.params)
       return unless from
       group_and_action = [
         from[:controller] || from[:class],
@@ -196,7 +196,7 @@ module Appsignal
       @ext.start_event(self.class.garbage_collection_profiler.total_time)
     end
 
-    def finish_event(name, title, body, body_format=Appsignal::EventFormatter::DEFAULT)
+    def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       @ext.finish_event(
         name,
         title || BLANK,
@@ -206,7 +206,7 @@ module Appsignal
       )
     end
 
-    def record_event(name, title, body, duration, body_format=Appsignal::EventFormatter::DEFAULT)
+    def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       @ext.record_event(
         name,
         title || BLANK,
@@ -216,7 +216,7 @@ module Appsignal
       )
     end
 
-    def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
+    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
       r = yield
       finish_event(name, title, body, body_format)

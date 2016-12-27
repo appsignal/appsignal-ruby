@@ -18,18 +18,18 @@ module Appsignal
         @@formatter_classes ||= {}
       end
 
-      def register(name, formatter=self)
+      def register(name, formatter = self)
         formatter_classes[name] = formatter
       end
 
-      def unregister(name, formatter=self)
+      def unregister(name, formatter = self)
         if formatter_classes[name] == formatter
           formatter_classes.delete(name)
           formatters.delete(name)
         end
       end
 
-      def registered?(name, klass=nil)
+      def registered?(name, klass = nil)
         if klass
           formatter_classes[name] == klass
         else

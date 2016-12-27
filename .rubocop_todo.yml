@@ -556,27 +556,6 @@ Style/SingleLineMethods:
   Exclude:
     - 'spec/lib/appsignal/transaction_spec.rb'
 
-# Offense count: 43
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: space, no_space
-Style/SpaceAroundEqualsInParameterDefault:
-  Exclude:
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/auth_check.rb'
-    - 'lib/appsignal/cli.rb'
-    - 'lib/appsignal/config.rb'
-    - 'lib/appsignal/event_formatter.rb'
-    - 'lib/appsignal/hooks.rb'
-    - 'lib/appsignal/hooks/active_support_notifications.rb'
-    - 'lib/appsignal/hooks/net_http.rb'
-    - 'lib/appsignal/integrations/padrino.rb'
-    - 'lib/appsignal/transaction.rb'
-    - 'lib/appsignal/transmitter.rb'
-    - 'spec/support/helpers/config_helpers.rb'
-    - 'spec/support/helpers/env_helpers.rb'
-    - 'spec/support/helpers/transaction_helpers.rb'
-
 # Offense count: 5
 # Cop supports --auto-correct.
 # Configuration parameters: AllowForAlignment.

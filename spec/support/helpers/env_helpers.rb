@@ -1,5 +1,5 @@
 module EnvHelpers
-  def http_request_env_with_data(args={})
+  def http_request_env_with_data(args = {})
     path = args.delete(:path) || "/blog"
     Rack::MockRequest.env_for(
       path,
@@ -20,7 +20,7 @@ module EnvHelpers
     ).merge(args)
   end
 
-  def background_env_with_data(args={})
+  def background_env_with_data(args = {})
     {
       :class => "BackgroundJob",
       :method => "perform",
