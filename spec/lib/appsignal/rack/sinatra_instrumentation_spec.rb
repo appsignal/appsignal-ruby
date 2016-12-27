@@ -199,10 +199,10 @@ if DependencyHelper.sinatra_present?
 
         it "should use the overridden request class and params method" do
           request = ::Rack::Request.new(env)
-          ::Rack::Request.should_receive(:new).
-                          with(env.merge(:params_method => :filtered_params)).
-                          at_least(:once).
-                          and_return(request)
+          ::Rack::Request.should_receive(:new)
+            .with(env.merge(:params_method => :filtered_params))
+            .at_least(:once)
+            .and_return(request)
         end
       end
 

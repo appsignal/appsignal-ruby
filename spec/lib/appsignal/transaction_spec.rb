@@ -821,8 +821,8 @@ describe Appsignal::Transaction do
         end
 
         it "passes the session data into the params sanitizer" do
-          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(:foo => :bar).
-            and_return(:sanitized_foo)
+          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(:foo => :bar)
+            .and_return(:sanitized_foo)
           subject.should eq :sanitized_foo
         end
 
@@ -835,8 +835,8 @@ describe Appsignal::Transaction do
             end
 
             it "should return an session hash" do
-              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with("foo" => :bar).
-                and_return(:sanitized_foo)
+              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with("foo" => :bar)
+                .and_return(:sanitized_foo)
               subject
             end
 

@@ -27,7 +27,7 @@ module Appsignal
         )
 
         if Appsignal.config.active? &&
-          Appsignal.config[:enable_frontend_error_catching] == true
+            Appsignal.config[:enable_frontend_error_catching] == true
           app.middleware.insert_before(
             Appsignal::Rack::RailsInstrumentation,
             Appsignal::Rack::JSExceptionCatcher,

@@ -5,7 +5,7 @@ module Appsignal
 
       def dependencies_present?
         defined?(::DataMapper) &&
-        defined?(::DataObjects::Connection)
+          defined?(::DataObjects::Connection)
       end
 
       def install

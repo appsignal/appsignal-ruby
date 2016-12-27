@@ -189,21 +189,6 @@ Style/ClassVars:
     - 'lib/appsignal/minutely.rb'
 
 # Offense count: 1
-# Cop supports --auto-correct.
-Style/ColonMethodCall:
-  Exclude:
-    - 'lib/appsignal.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: leading, trailing
-Style/DotPosition:
-  Exclude:
-    - 'spec/lib/appsignal/rack/sinatra_instrumentation_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-
-# Offense count: 1
 Style/DoubleNegation:
   Exclude:
     - 'lib/appsignal.rb'
@@ -372,25 +357,6 @@ Style/MultilineBlockLayout:
 Style/MultilineIfModifier:
   Exclude:
     - 'lib/appsignal/js_exception_transaction.rb'
-
-# Offense count: 3
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, IndentationWidth.
-# SupportedStyles: aligned, indented, indented_relative_to_receiver
-Style/MultilineMethodCallIndentation:
-  Exclude:
-    - 'spec/lib/appsignal/rack/sinatra_instrumentation_spec.rb'
-
-# Offense count: 7
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, IndentationWidth.
-# SupportedStyles: aligned, indented
-Style/MultilineOperationIndentation:
-  Exclude:
-    - 'ext/extconf.rb'
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/hooks/data_mapper.rb'
-    - 'lib/appsignal/integrations/railtie.rb'
 
 # Offense count: 9
 # Cop supports --auto-correct.

@@ -169,8 +169,8 @@ module Appsignal
 
     def set_error(exception)
       return if !active? ||
-                Appsignal::Transaction.current.nil? ||
-                exception.nil?
+          Appsignal::Transaction.current.nil? ||
+          exception.nil?
       Appsignal::Transaction.current.set_error(exception)
     end
     alias :set_exception :set_error
