@@ -7,7 +7,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
   end
 
   describe "#format" do
-    let(:payload) { {:ops => [op]} }
+    let(:payload) { { :ops => [op] } }
     subject { formatter.format(payload) }
 
     context "without ops in the payload" do
@@ -20,7 +20,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       let(:op) do
         double(
           :full_collection_name => "database.collection",
-          :selector             => {"query" => {"_id" => "abc"}},
+          :selector             => { "query" => { "_id" => "abc" } },
           :class                => double(:to_s => "Moped::Protocol::Command")
         )
       end
@@ -32,7 +32,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       let(:op) do
         double(
           :full_collection_name => "database.collection",
-          :selector             => {"_id" => "abc"},
+          :selector             => { "_id" => "abc" },
           :flags                => [],
           :limit                => 0,
           :skip                 => 0,
@@ -48,7 +48,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       let(:op) do
         double(
           :full_collection_name => "database.collection",
-          :selector             => {"_id" => "abc"},
+          :selector             => { "_id" => "abc" },
           :flags                => [],
           :class                => double(:to_s => "Moped::Protocol::Delete")
         )
@@ -63,8 +63,8 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
           :full_collection_name => "database.collection",
           :flags                => [],
           :documents            => [
-            {"_id" => "abc", "events" => {"foo" => [{"bar" => "baz"}]}},
-            {"_id" => "def", "events" => {"foo" => [{"baz" => "bar"}]}}
+            { "_id" => "abc", "events" => { "foo" => [{ "bar" => "baz" }] } },
+            { "_id" => "def", "events" => { "foo" => [{ "baz" => "bar" }] } }
           ],
           :class                => double(:to_s => "Moped::Protocol::Insert")
         )
@@ -77,8 +77,8 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       let(:op) do
         double(
           :full_collection_name => "database.collection",
-          :selector             => {"_id" => "abc"},
-          :update               => {"user.name" => "James Bond"},
+          :selector             => { "_id" => "abc" },
+          :update               => { "user.name" => "James Bond" },
           :flags                => [],
           :class                => double(:to_s => "Moped::Protocol::Update")
         )

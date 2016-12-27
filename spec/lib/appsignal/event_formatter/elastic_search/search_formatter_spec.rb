@@ -13,7 +13,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
       {
         :name   => "Search",
         :klass  => "User",
-        :search => {:index => "users", :type => "user", :q => "John Doe"}
+        :search => { :index => "users", :type => "user", :q => "John Doe" }
       }
     end
 
@@ -38,7 +38,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     it "should sanitize non-whitelisted params" do
       expect(
         formatter.sanitized_search(search)
-      ).to eql({:index => "users", :type => "user", :q => "?", :other => "?"})
+      ).to eql(:index => "users", :type => "user", :q => "?", :other => "?")
     end
 
     it "should return nil string when search is nil" do

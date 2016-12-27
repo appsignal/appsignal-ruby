@@ -57,10 +57,8 @@ describe Appsignal::CLI::NotifyOfDeploy do
     let(:config) { project_fixture_config }
     before do
       config[:name] = options[:name] if options[:name]
-      stub_api_request config, "markers", {
-        :revision => options[:revision],
+      stub_api_request config, "markers", :revision => options[:revision],
         :user => options[:user]
-      }
     end
     around do |example|
       Dir.chdir project_fixture_path do
@@ -69,7 +67,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
     end
 
     context "without environment" do
-      let(:options) { {:environment => "", :revision => "foo", :user => "thijs"} }
+      let(:options) { { :environment => "", :revision => "foo", :user => "thijs" } }
       before do
         # Makes the config "active"
         ENV["APPSIGNAL_PUSH_API_KEY"] = "foo"
@@ -83,7 +81,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
     end
 
     context "without known environment" do
-      let(:options) { {:environment => "foo"} }
+      let(:options) { { :environment => "foo" } }
 
       it "prints a config error" do
         expect { run }.to raise_error(SystemExit)
@@ -95,7 +93,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
 
     context "with known environment" do
       context "without required options" do
-        let(:options) { {:environment => "production"} }
+        let(:options) { { :environment => "production" } }
 
         it "prints a missing required options error" do
           expect { run }.to raise_error(SystemExit)
@@ -105,7 +103,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
         end
 
         context "with empty required option" do
-          let(:options) { {:environment => "production", :revision => "foo", :user => ""} }
+          let(:options) { { :environment => "production", :revision => "foo", :user => "" } }
 
           it "prints a missing required option error" do
             expect { run }.to raise_error(SystemExit)
@@ -117,7 +115,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
       end
 
       context "with required options" do
-        let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs"} }
+        let(:options) { { :environment => "production", :revision => "aaaaa", :user => "thijs" } }
 
         it "notifies of a deploy" do
           run
@@ -130,7 +128,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
           before { ENV["APPSIGNAL_APP_NAME"] = "" }
 
           context "without name option" do
-            let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs"} }
+            let(:options) { { :environment => "production", :revision => "aaaaa", :user => "thijs" } }
 
             it "requires name option" do
               expect { run }.to raise_error(SystemExit)
@@ -141,7 +139,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
           end
 
           context "with name option" do
-            let(:options) { {:environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo"} }
+            let(:options) { { :environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo" } }
 
             it "notifies of a deploy with a custom name" do
               run
@@ -154,7 +152,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
 
         context "with name option" do
           let(:options) do
-            {:environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo"}
+            { :environment => "production", :revision => "aaaaa", :user => "thijs", :name => "foo" }
           end
 
           it "notifies of a deploy with a custom name" do

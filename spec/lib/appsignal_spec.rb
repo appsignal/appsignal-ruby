@@ -420,10 +420,10 @@ describe Appsignal do
         let(:transaction) { double }
         it "should call set_tags on transaction" do
 
-          transaction.should_receive(:set_tags).with({"a" => "b"})
+          transaction.should_receive(:set_tags).with("a" => "b")
         end
 
-        after { Appsignal.tag_request({"a" => "b"}) }
+        after { Appsignal.tag_request("a" => "b") }
       end
 
       context "without transaction" do
@@ -738,7 +738,7 @@ describe Appsignal do
       end
 
       context "with tags" do
-        let(:tags) { {:a => "a", :b => "b"} }
+        let(:tags) { { :a => "a", :b => "b" } }
 
         it "should tag the request before sending" do
           transaction = Appsignal::Transaction.new(
@@ -869,7 +869,7 @@ describe Appsignal do
       let(:stderr) { err_stream.read }
       before do
         Appsignal.stub(
-          :config => {:ignore_errors => ["StandardError"]}
+          :config => { :ignore_errors => ["StandardError"] }
         )
       end
 
@@ -903,7 +903,7 @@ describe Appsignal do
       let(:stderr) { err_stream.read }
       before do
         Appsignal.stub(
-          :config => {:ignore_actions => "TestController#isup"}
+          :config => { :ignore_actions => "TestController#isup" }
         )
       end
 

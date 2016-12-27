@@ -12,13 +12,13 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         double(
           :request_id   => 1,
           :command_name => "find",
-          :command      => {"foo" => "bar"}
+          :command      => { "foo" => "bar" }
         )
       end
 
       it "should sanitize command" do
         Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter
-          .should receive(:format).with("find", {"foo" => "bar"})
+          .should receive(:format).with("find", "foo" => "bar")
 
         subscriber.started(event)
       end
@@ -26,7 +26,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       it "should store command on the transaction" do
         subscriber.started(event)
 
-        transaction.store("mongo_driver").should eq({1 => {"foo" => "?"}})
+        transaction.store("mongo_driver").should eq(1 => { "foo" => "?" })
       end
 
       it "should start an event in the extension" do
@@ -57,7 +57,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
 
     describe "#finish" do
-      let(:command) { {"foo" => "?"} }
+      let(:command) { { "foo" => "?" } }
       let(:event) do
         double(
           :request_id    => 2,
@@ -81,7 +81,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         transaction.should receive(:finish_event).with(
           "query.mongodb",
           "find | test | SUCCEEDED",
-          Appsignal::Utils.data_generate({"foo" => "?"}),
+          Appsignal::Utils.data_generate("foo" => "?"),
           0
         )
 

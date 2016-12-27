@@ -42,7 +42,7 @@ describe Appsignal::Rack::StreamingListener do
       )
     end
     let(:wrapper)     { Appsignal::StreamWrapper.new("body", transaction) }
-    let(:raw_payload) { {:foo => :bar} }
+    let(:raw_payload) { { :foo => :bar } }
 
     before do
       SecureRandom.stub(:uuid => "123")

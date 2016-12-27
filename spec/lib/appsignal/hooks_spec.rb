@@ -116,7 +116,7 @@ describe Appsignal::Hooks::Helpers do
 
   describe "#extract_value" do
     context "for a hash" do
-      let(:hash) { {:key => "value"} }
+      let(:hash) { { :key => "value" } }
 
       context "when the key exists" do
         subject { with_helpers.extract_value(hash, :key) }

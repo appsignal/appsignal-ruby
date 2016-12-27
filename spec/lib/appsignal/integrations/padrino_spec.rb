@@ -65,8 +65,8 @@ if DependencyHelper.padrino_present?
       describe "#route!" do
         let(:request) do
           double(
-            :params          => {"id" => 1},
-            :session         => {"user_id" => 123},
+            :params          => { "id" => 1 },
+            :session         => { "user_id" => 123 },
             :request_method  => "GET",
             :path            => "/users/1",
             :controller      => "users",
@@ -86,7 +86,7 @@ if DependencyHelper.padrino_present?
         end
 
         context "when Sinatra tells us it's a static file" do
-          let(:env) { {"sinatra.static_file" => true} }
+          let(:env) { { "sinatra.static_file" => true } }
 
           it "should call the original method" do
             expect(router).to receive(:route_without_appsignal)

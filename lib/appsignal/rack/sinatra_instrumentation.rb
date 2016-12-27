@@ -49,7 +49,7 @@ module Appsignal
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
           request,
-          {:force => @options.include?(:force) && @options[:force]}
+          :force => @options.include?(:force) && @options[:force]
         )
         begin
           Appsignal.instrument("process_action.sinatra") do

@@ -30,13 +30,11 @@ module Appsignal
 
     def uri
       @uri ||= URI("#{config[:endpoint]}/1/#{action}").tap do |uri|
-        uri.query = ::Rack::Utils.build_query({
-          :api_key => config[:push_api_key],
+        uri.query = ::Rack::Utils.build_query(:api_key => config[:push_api_key],
           :name => config[:name],
           :environment => config.env,
           :hostname => config[:hostname],
-          :gem_version => Appsignal::VERSION
-        })
+          :gem_version => Appsignal::VERSION)
       end
     end
 

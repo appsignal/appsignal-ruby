@@ -12,9 +12,9 @@ describe Appsignal::Utils do
           "float" => 1.0,
           1 => true,
           nil => "test",
-          :foo => [1, 2, "three", {"foo" => "bar"}],
+          :foo => [1, 2, "three", { "foo" => "bar" }],
           "bar" => nil,
-          "baz" => {"foo" => "bʊr", "arr" => [1, 2]}
+          "baz" => { "foo" => "bʊr", "arr" => [1, 2] }
         }
       end
 
@@ -26,7 +26,7 @@ describe Appsignal::Utils do
 
     context "with a valid array body" do
       let(:body) do
-        [1, "string", 10, {"foo" => "bʊr"}]
+        [1, "string", 10, { "foo" => "bʊr" }]
       end
 
       its(:to_s) { should eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
@@ -70,7 +70,7 @@ describe Appsignal::Utils do
           nil => "test",
           :foo => [1, 2, "three"],
           "bar" => nil,
-          "baz" => {"foo" => "bar"}
+          "baz" => { "foo" => "bar" }
         }
       end
 

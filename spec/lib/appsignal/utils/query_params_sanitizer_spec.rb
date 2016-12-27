@@ -4,7 +4,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       subject { described_class.sanitize(value, true) }
 
       context "when value is a hash" do
-        let(:value) { {"foo" => "bar"} }
+        let(:value) { { "foo" => "bar" } }
 
         it "should only return the first level of the object" do
           expect(subject).to eq("foo" => "?")
@@ -17,7 +17,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is a nested hash" do
-        let(:value) { {"foo" => { "bar" => "baz" }} }
+        let(:value) { { "foo" => { "bar" => "baz" } } }
 
         it "should only return the first level of the object" do
           expect(subject).to eq("foo" => "?")
@@ -76,7 +76,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       subject { described_class.sanitize(value, false) }
 
       context "when value is a hash" do
-        let(:value) { {"foo" => "bar"} }
+        let(:value) { { "foo" => "bar" } }
 
         it "should sanitize all hash values with a questionmark" do
           expect(subject).to eq("foo" => "?")
@@ -89,15 +89,15 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is a nested hash" do
-        let(:value) { {"foo" => { "bar" => "baz" }} }
+        let(:value) { { "foo" => { "bar" => "baz" } } }
 
         it "should replaces values" do
-          expect(subject).to eq("foo" => {"bar" => "?"})
+          expect(subject).to eq("foo" => { "bar" => "?" })
         end
 
         it "should not modify source value" do
           subject
-          expect(value).to eq("foo" => {"bar" => "baz"})
+          expect(value).to eq("foo" => { "bar" => "baz" })
         end
       end
 
@@ -145,7 +145,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       subject { described_class.sanitize(value) }
 
       context "when dots are in the key" do
-        let(:value) { {"foo.bar" => "bar"} }
+        let(:value) { { "foo.bar" => "bar" } }
 
         it "should not sanitize the key" do
           expect(subject).to eql("foo.bar" => "?")
@@ -153,7 +153,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when key is a symbol" do
-        let(:value) { {:ismaster => "bar"} }
+        let(:value) { { :ismaster => "bar" } }
 
         it "should sanitize the key" do
           expect(subject).to eql(:ismaster => "?")
@@ -165,7 +165,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       subject { described_class.sanitize(value, false, :mongodb) }
 
       context "when no dots are in the key" do
-        let(:value) { {"foo" => "bar"} }
+        let(:value) { { "foo" => "bar" } }
 
         it "should not sanitize the key" do
           expect(subject).to eql("foo" => "?")
@@ -173,7 +173,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when dots are in the key" do
-        let(:value) { {"foo.bar" => "bar"} }
+        let(:value) { { "foo.bar" => "bar" } }
 
         it "should sanitize the key" do
           expect(subject).to eql("foo.?" => "?")
@@ -181,7 +181,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when key is a symbol" do
-        let(:value) { {:ismaster => "bar"} }
+        let(:value) { { :ismaster => "bar" } }
 
         it "should sanitize the key" do
           expect(subject).to eql("ismaster" => "?")

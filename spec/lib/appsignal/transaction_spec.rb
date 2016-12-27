@@ -58,7 +58,7 @@ describe Appsignal::Transaction do
         end
 
         context "with option to force a new transaction" do
-          let(:options) { {:force => true} }
+          let(:options) { { :force => true } }
           it "should not create a new transaction" do
             expect(
               Appsignal::Transaction.create("1", namespace, request, options)
@@ -212,7 +212,7 @@ describe Appsignal::Transaction do
         its([:params_method]) { should eq :params }
 
         context "with overridden options" do
-          let(:options) { {:params_method => :filtered_params} }
+          let(:options) { { :params_method => :filtered_params } }
 
           its([:params_method]) { should eq :filtered_params }
         end
@@ -228,15 +228,15 @@ describe Appsignal::Transaction do
         transaction_store = transaction.store("test")
         transaction_store["transaction"] = "value"
 
-        expect(transaction.store("test")).to eql({"transaction" => "value"})
+        expect(transaction.store("test")).to eql("transaction" => "value")
       end
     end
 
     describe "#set_tags" do
       it "should add tags to transaction" do
         expect {
-          transaction.set_tags({"a" => "b"})
-        }.to change(transaction, :tags).to({"a" => "b"})
+          transaction.set_tags("a" => "b")
+        }.to change(transaction, :tags).to("a" => "b")
       end
     end
 
@@ -258,7 +258,7 @@ describe Appsignal::Transaction do
 
     describe "#set_http_or_background_action" do
       context "for a hash with controller and action" do
-        let(:from) { {:controller => "HomeController", :action => "show"} }
+        let(:from) { { :controller => "HomeController", :action => "show" } }
 
         it "should set the action" do
           transaction.should_receive(:set_action).with("HomeController#show")
@@ -266,7 +266,7 @@ describe Appsignal::Transaction do
       end
 
       context "for a hash with just action" do
-        let(:from) { {:action => "show"} }
+        let(:from) { { :action => "show" } }
 
         it "should set the action" do
           transaction.should_receive(:set_action).with("show")
@@ -274,7 +274,7 @@ describe Appsignal::Transaction do
       end
 
       context "for a hash with class and method" do
-        let(:from) { {:class => "Worker", :method => "perform"} }
+        let(:from) { { :class => "Worker", :method => "perform" } }
 
         it "should set the action" do
           transaction.should_receive(:set_action).with("Worker#perform")
@@ -313,7 +313,7 @@ describe Appsignal::Transaction do
     describe "#set_http_or_background_queue_start" do
       context "for a http transaction" do
         let(:namespace) { Appsignal::Transaction::HTTP_REQUEST }
-        let(:env) { {"HTTP_X_REQUEST_START" => (fixed_time * 1000).to_s} }
+        let(:env) { { "HTTP_X_REQUEST_START" => (fixed_time * 1000).to_s } }
 
         it "should set the queue start on the transaction" do
           transaction.should_receive(:set_queue_start).with(13897836000)
@@ -324,7 +324,7 @@ describe Appsignal::Transaction do
 
       context "for a background transaction" do
         let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
-        let(:env) { {:queue_start => fixed_time} }
+        let(:env) { { :queue_start => fixed_time } }
 
         it "should set the queue start on the transaction" do
           transaction.should_receive(:set_queue_start).with(1389783600000)
@@ -355,16 +355,14 @@ describe Appsignal::Transaction do
       it "should set the data" do
         transaction.ext.should_receive(:set_sample_data).with(
           "params",
-          Appsignal::Utils.data_generate({"controller" => "blog_posts", "action" => "show", "id" => "1"})
+          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
         ).once
 
         transaction.set_sample_data(
           "params",
-          {
-            :controller => "blog_posts",
-            :action     => "show",
-            :id         => "1"
-          }
+          :controller => "blog_posts",
+          :action     => "show",
+          :id         => "1"
         )
       end
 
@@ -382,13 +380,13 @@ describe Appsignal::Transaction do
       it "should sample data" do
         transaction.ext.should_receive(:set_sample_data).with(
           "environment",
-          Appsignal::Utils.data_generate({
+          Appsignal::Utils.data_generate(
             "CONTENT_LENGTH" => "0",
             "REQUEST_METHOD" => "GET",
             "SERVER_NAME" => "example.org",
             "SERVER_PORT" => "80",
             "PATH_INFO" => "/blog"
-          })
+          )
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           "session_data",
@@ -396,11 +394,11 @@ describe Appsignal::Transaction do
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           "params",
-          Appsignal::Utils.data_generate({"controller" => "blog_posts", "action" => "show", "id" => "1"})
+          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           "metadata",
-          Appsignal::Utils.data_generate({"key" => "value"})
+          Appsignal::Utils.data_generate("key" => "value")
         ).once
         transaction.ext.should_receive(:set_sample_data).with(
           "tags",
@@ -577,13 +575,13 @@ describe Appsignal::Transaction do
       context "with a filled env" do
         let(:env) do
           {
-            :params => {:id => 1},
+            :params => { :id => 1 },
             :queue_start => 10
           }
         end
 
         its(:env) { should eq env }
-        its(:params) { should eq({:id => 1}) }
+        its(:params) { should eq(:id => 1) }
       end
     end
 
@@ -640,30 +638,30 @@ describe Appsignal::Transaction do
         end
 
         context "with the HTTP_X_REQUEST_START header set" do
-          let(:env) { {"HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}"} }
+          let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}" } }
 
           it { should eq 1389783599600 }
 
           context "with unparsable content" do
-            let(:env) { {"HTTP_X_REQUEST_START" => "something"} }
+            let(:env) { { "HTTP_X_REQUEST_START" => "something" } }
 
             it { should be_nil }
           end
 
           context "with some cruft" do
-            let(:env) { {"HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa"} }
+            let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa" } }
 
             it { should eq 1389783599600 }
           end
 
           context "with a really low number" do
-            let(:env) { {"HTTP_X_REQUEST_START" => "t=100"} }
+            let(:env) { { "HTTP_X_REQUEST_START" => "t=100" } }
 
             it { should be_nil }
           end
 
           context "with the alternate HTTP_X_QUEUE_START header set" do
-            let(:env) { {"HTTP_X_QUEUE_START" => "t=#{slightly_earlier_time_value}"} }
+            let(:env) { { "HTTP_X_QUEUE_START" => "t=#{slightly_earlier_time_value}" } }
 
             it { should eq 1389783599600 }
           end
@@ -699,7 +697,7 @@ describe Appsignal::Transaction do
       end
 
       context "when params method does not exist" do
-        let(:options) { {:params_method => :nonsense} }
+        let(:options) { { :params_method => :nonsense } }
 
         it { should be_nil }
       end
@@ -735,7 +733,7 @@ describe Appsignal::Transaction do
 
           it "should call the params sanitizer" do
             puts Appsignal.config.config_hash[:filter_parameters].inspect
-            subject.should eq({:foo => :bar })
+            subject.should eq(:foo => :bar)
           end
         end
 
@@ -748,10 +746,7 @@ describe Appsignal::Transaction do
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
           it "should call the params sanitizer with filtering" do
-            subject.should eq({
-              :foo => "[FILTERED]",
-              :baz => :bat
-            })
+            subject.should eq(:foo => "[FILTERED]", :baz => :bat)
           end
         end
       end
@@ -821,12 +816,12 @@ describe Appsignal::Transaction do
       context "when there is a session" do
         before do
           transaction.should respond_to(:request)
-          transaction.stub_chain(:request, :session => {:foo => :bar})
+          transaction.stub_chain(:request, :session => { :foo => :bar })
           transaction.stub_chain(:request, :fullpath => :bar)
         end
 
         it "passes the session data into the params sanitizer" do
-          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({:foo => :bar}).
+          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(:foo => :bar).
             and_return(:sanitized_foo)
           subject.should eq :sanitized_foo
         end
@@ -840,14 +835,14 @@ describe Appsignal::Transaction do
             end
 
             it "should return an session hash" do
-              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with({"foo" => :bar}).
+              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with("foo" => :bar).
                 and_return(:sanitized_foo)
               subject
             end
 
             def action_dispatch_session
               store = Class.new {
-                def load_session(env); [1, {:foo => :bar}]; end
+                def load_session(env); [1, { :foo => :bar }]; end
                 def session_exists?(env); true; end
               }.new
               ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new("rack.input" => StringIO.new), {})
@@ -857,7 +852,7 @@ describe Appsignal::Transaction do
 
         context "when skipping session data" do
           before do
-            Appsignal.config = {:skip_session_data => true}
+            Appsignal.config = { :skip_session_data => true }
           end
 
           it "does not pass the session data into the params sanitizer" do
@@ -884,7 +879,7 @@ describe Appsignal::Transaction do
       end
 
       context "when env is present" do
-        let(:env) { {:metadata => {:key => "value"}} }
+        let(:env) { { :metadata => { :key => "value" } } }
 
         it { should eq env[:metadata] }
       end
@@ -893,17 +888,15 @@ describe Appsignal::Transaction do
     describe "#sanitized_tags" do
       before do
         transaction.set_tags(
-          {
-            :valid_key => "valid_value",
-            "valid_string_key" => "valid_value",
-            :both_symbols => :valid_value,
-            :integer_value => 1,
-            :hash_value => {"invalid" => "hash"},
-            :array_value => ["invalid", "array"],
-            :to_long_value => SecureRandom.urlsafe_base64(101),
-            :object => Object.new,
-            SecureRandom.urlsafe_base64(101) => "to_long_key"
-          }
+          :valid_key => "valid_value",
+          "valid_string_key" => "valid_value",
+          :both_symbols => :valid_value,
+          :integer_value => 1,
+          :hash_value => { "invalid" => "hash" },
+          :array_value => ["invalid", "array"],
+          :to_long_value => SecureRandom.urlsafe_base64(101),
+          :object => Object.new,
+          SecureRandom.urlsafe_base64(101) => "to_long_key"
         )
       end
       subject { transaction.send(:sanitized_tags).keys }

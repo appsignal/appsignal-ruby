@@ -6,13 +6,13 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
     let(:command) do
       {
         "find"   => "users",
-        "filter" => {"_id" => 1}
+        "filter" => { "_id" => 1 }
       }
     end
 
     it "should apply a strategy for each key" do
       expect(formatter).to receive(:apply_strategy)
-        .with(:sanitize_document, {"_id" => 1})
+        .with(:sanitize_document, "_id" => 1)
 
       expect(formatter).to receive(:apply_strategy)
         .with(:allow, "users")
@@ -40,7 +40,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
   describe ".apply_strategy" do
     context "when strategy is allow" do
       let(:strategy) { :allow }
-      let(:value)    { {"_id" => 1} }
+      let(:value)    { { "_id" => 1 } }
 
       it "should return the given value" do
         expect(formatter.apply_strategy(strategy, value)).to eql(value)
@@ -49,7 +49,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
     context "when strategy is deny" do
       let(:strategy) { :deny }
-      let(:value)    { {"_id" => 1} }
+      let(:value)    { { "_id" => 1 } }
 
       it "should return a '?'" do
         expect(formatter.apply_strategy(strategy, value)).to eql("?")
@@ -58,7 +58,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
     context "when strategy is deny_array" do
       let(:strategy) { :deny_array }
-      let(:value)    { {"_id" => 1} }
+      let(:value)    { { "_id" => 1 } }
 
       it "should return a sanitized array string" do
         expect(formatter.apply_strategy(strategy, value)).to eql("[?]")
@@ -67,34 +67,34 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
     context "when strategy is sanitize_document" do
       let(:strategy) { :sanitize_document }
-      let(:value)    { {"_id" => 1} }
+      let(:value)    { { "_id" => 1 } }
 
       it "should return a sanitized document" do
-        expect(formatter.apply_strategy(strategy, value)).to eql({"_id" => "?"})
+        expect(formatter.apply_strategy(strategy, value)).to eql("_id" => "?")
       end
     end
 
     context "when strategy is sanitize_bulk" do
       let(:strategy) { :sanitize_bulk }
-      let(:value)    { [{"q" => {"_id" => 1}, "u" => [{"foo" => "bar"}]}] }
+      let(:value)    { [{ "q" => { "_id" => 1 }, "u" => [{ "foo" => "bar" }] }] }
 
       it "should return an array of sanitized bulk documents" do
         expect(formatter.apply_strategy(strategy, value)).to eql([
-          {"q" => {"_id" => "?"}, "u" => "[?]"}
+          { "q" => { "_id" => "?" }, "u" => "[?]" }
         ])
       end
 
       context "when bulk has more than one update" do
         let(:value) do
           [
-            {"q" => {"_id" => 1}, "u" => [{"foo" => "bar"}]},
-            {"q" => {"_id" => 2}, "u" => [{"foo" => "baz"}]},
+            { "q" => { "_id" => 1 }, "u" => [{ "foo" => "bar" }] },
+            { "q" => { "_id" => 2 }, "u" => [{ "foo" => "baz" }] },
           ]
         end
 
         it "should return only the first value of sanitized bulk documents" do
           expect(formatter.apply_strategy(strategy, value)).to eql([
-            {"q" => {"_id" => "?"}, "u" => "[?]"},
+            { "q" => { "_id" => "?" }, "u" => "[?]" },
             "[...]"
           ])
         end
@@ -103,7 +103,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
     context "when strategy is missing" do
       let(:strategy) { nil }
-      let(:value)    { {"_id" => 1} }
+      let(:value)    { { "_id" => 1 } }
 
       it "should return a '?'" do
         expect(formatter.apply_strategy(strategy, value)).to eql("?")

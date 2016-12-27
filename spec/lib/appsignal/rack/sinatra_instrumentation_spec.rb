@@ -4,7 +4,7 @@ if DependencyHelper.sinatra_present?
   describe Appsignal::Rack::SinatraInstrumentation do
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
-    let(:env) { {"sinatra.route" => "GET /", :path => "/", :method => "GET"} }
+    let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
     describe "#call" do
@@ -37,7 +37,7 @@ if DependencyHelper.sinatra_present?
 
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
-    let(:env) { {"sinatra.route" => "GET /", :path => "/", :method => "GET"} }
+    let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
@@ -133,7 +133,7 @@ if DependencyHelper.sinatra_present?
 
       context "with an error in sinatra.error" do
         let(:error) { VerySpecificError.new }
-        let(:env) { {"sinatra.error" => error} }
+        let(:env) { { "sinatra.error" => error } }
 
         it "should set the error" do
           Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
@@ -148,7 +148,7 @@ if DependencyHelper.sinatra_present?
         end
 
         context "if sinatra.skip_appsignal_error is set" do
-          let(:env) { {"sinatra.error" => error, "sinatra.skip_appsignal_error" => true} }
+          let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
 
           it "should not set the error" do
             Appsignal::Transaction.any_instance.should_not_receive(:set_error)
@@ -162,7 +162,7 @@ if DependencyHelper.sinatra_present?
         end
 
         context "without 'sinatra.route' env" do
-          let(:env) { {:path => "/", :method => "GET"} }
+          let(:env) { { :path => "/", :method => "GET" } }
 
           it "returns nil" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
@@ -177,7 +177,7 @@ if DependencyHelper.sinatra_present?
           end
 
           context "without 'sinatra.route' env" do
-            let(:env) { {:path => "/", :method => "GET"} }
+            let(:env) { { :path => "/", :method => "GET" } }
 
             it "returns nil" do
               Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
@@ -195,7 +195,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with overridden request class and params method" do
-        let(:options) { {:request_class => ::Rack::Request, :params_method => :filtered_params} }
+        let(:options) { { :request_class => ::Rack::Request, :params_method => :filtered_params } }
 
         it "should use the overridden request class and params method" do
           request = ::Rack::Request.new(env)

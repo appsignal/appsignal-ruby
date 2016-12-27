@@ -79,7 +79,7 @@ describe Appsignal::JSExceptionTransaction do
   end
 
   context "when sending just the name" do
-    let(:data) { {"name" => "TypeError"} }
+    let(:data) { { "name" => "TypeError" } }
 
     describe "#set_action" do
       it "should not call `Appsignal::Extension.set_action`" do

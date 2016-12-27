@@ -174,26 +174,6 @@ Style/BlockDelimiters:
     - 'spec/lib/appsignal/utils_spec.rb'
     - 'spec/lib/appsignal_spec.rb'
 
-# Offense count: 31
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: braces, no_braces, context_dependent
-Style/BracesAroundHashParameters:
-  Exclude:
-    - 'lib/appsignal/integrations/webmachine.rb'
-    - 'lib/appsignal/rack/sinatra_instrumentation.rb'
-    - 'lib/appsignal/transmitter.rb'
-    - 'spec/lib/appsignal/cli/notify_of_deploy_spec.rb'
-    - 'spec/lib/appsignal/event_formatter/elastic_search/search_formatter_spec.rb'
-    - 'spec/lib/appsignal/event_formatter/mongo_ruby_driver/query_formatter_spec.rb'
-    - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
-    - 'spec/lib/appsignal/integrations/mongo_ruby_driver_spec.rb'
-    - 'spec/lib/appsignal/integrations/resque_spec.rb'
-    - 'spec/lib/appsignal/integrations/webmachine_spec.rb'
-    - 'spec/lib/appsignal/rack/js_exception_catcher_spec.rb'
-    - 'spec/lib/appsignal/transaction_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
-
 # Offense count: 3
 # Configuration parameters: EnforcedStyle, SupportedStyles.
 # SupportedStyles: nested, compact
@@ -585,19 +565,6 @@ Style/SpaceInsideBlockBraces:
     - 'spec/lib/appsignal/hooks/delayed_job_spec.rb'
     - 'spec/lib/appsignal/hooks/shoryuken_spec.rb'
     - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-Style/SpaceInsideBrackets:
-  Exclude:
-    - 'lib/appsignal/hooks/shoryuken.rb'
-
-# Offense count: 269
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SupportedStyles.
-# SupportedStyles: space, no_space, compact
-Style/SpaceInsideHashLiteralBraces:
-  Enabled: false
 
 # Offense count: 2
 # Cop supports --auto-correct.

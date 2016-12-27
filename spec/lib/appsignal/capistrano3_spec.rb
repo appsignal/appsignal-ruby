@@ -58,7 +58,7 @@ if DependencyHelper.capistrano3_present?
             Appsignal::Config.should_receive(:new).with(
               project_fixture_path,
               "production",
-              {:name => "AppName"},
+              { :name => "AppName" },
               kind_of(Logger)
             )
           end
@@ -73,7 +73,7 @@ if DependencyHelper.capistrano3_present?
               Appsignal::Config.should_receive(:new).with(
                 project_fixture_path,
                 "rack_production",
-                {:name => "AppName"},
+                { :name => "AppName" },
                 kind_of(Logger)
               )
             end
@@ -89,7 +89,7 @@ if DependencyHelper.capistrano3_present?
               Appsignal::Config.should_receive(:new).with(
                 project_fixture_path,
                 "stage_production",
-                {:name => "AppName"},
+                { :name => "AppName" },
                 kind_of(Logger)
               )
             end
@@ -106,7 +106,7 @@ if DependencyHelper.capistrano3_present?
               Appsignal::Config.should_receive(:new).with(
                 project_fixture_path,
                 "appsignal_production",
-                {:name => "AppName"},
+                { :name => "AppName" },
                 kind_of(Logger)
               )
             end

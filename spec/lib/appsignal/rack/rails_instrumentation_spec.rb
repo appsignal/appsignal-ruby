@@ -95,7 +95,7 @@ if DependencyHelper.rails_present?
       subject { middleware.request_id(env) }
 
       context "with request id set" do
-        let(:env) { {"action_dispatch.request_id" => "id"} }
+        let(:env) { { "action_dispatch.request_id" => "id" } }
 
         it { should eq "id" }
       end

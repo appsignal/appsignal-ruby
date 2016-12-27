@@ -19,13 +19,13 @@ if DependencyHelper.rails_present?
       subject { formatter.format(payload) }
 
       context "with an identifier" do
-        let(:payload) { {:identifier => "/var/www/app/20130101/app/views/home/index/html.erb"} }
+        let(:payload) { { :identifier => "/var/www/app/20130101/app/views/home/index/html.erb" } }
 
         it { should eq ["app/views/home/index/html.erb", nil] }
       end
 
       context "with a frozen identifier" do
-        let(:payload) { {:identifier => "/var/www/app/20130101/app/views/home/index/html.erb".freeze} }
+        let(:payload) { { :identifier => "/var/www/app/20130101/app/views/home/index/html.erb".freeze } }
 
         it { should eq ["app/views/home/index/html.erb", nil] }
       end

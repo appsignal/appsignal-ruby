@@ -31,7 +31,7 @@ if DependencyHelper.webmachine_present?
           "uuid",
           Appsignal::Transaction::HTTP_REQUEST,
           request,
-          {:params_method => :query}
+          :params_method => :query
         ).and_return(transaction)
       end
 

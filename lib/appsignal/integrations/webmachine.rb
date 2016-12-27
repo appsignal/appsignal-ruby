@@ -7,7 +7,7 @@ module Appsignal::Integrations
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
           request,
-          {:params_method => :query}
+          :params_method => :query
         )
 
         transaction.set_action("#{resource.class.name}##{request.method}")

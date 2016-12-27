@@ -2,7 +2,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
   let(:app)            { double(:call => true) }
   let(:options)        { double }
   let(:active)         { true }
-  let(:config_options) { {:enable_frontend_error_catching => true} }
+  let(:config_options) { { :enable_frontend_error_catching => true } }
   let(:config)         { project_fixture_config("production", config_options) }
 
   before do
@@ -23,7 +23,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
     let(:catcher) { Appsignal::Rack::JSExceptionCatcher.new(app, options) }
 
     context "when path is not `/appsignal_error_catcher`" do
-      let(:env) { {"PATH_INFO" => "/foo"} }
+      let(:env) { { "PATH_INFO" => "/foo" } }
 
       it "should call the next middleware" do
         expect(app).to receive(:call).with(env)
@@ -41,7 +41,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
 
       it "should create a JSExceptionTransaction" do
         expect(Appsignal::JSExceptionTransaction).to receive(:new)
-          .with({"name" => "error"})
+          .with("name" => "error")
           .and_return(transaction)
 
         expect(transaction).to receive(:complete!)

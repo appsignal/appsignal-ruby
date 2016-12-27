@@ -4,7 +4,7 @@ describe Appsignal::Rack::GenericInstrumentation do
   end
 
   let(:app) { double(:call => true) }
-  let(:env) { {:path => "/", :method => "GET"} }
+  let(:env) { { :path => "/", :method => "GET" } }
   let(:options) { {} }
   let(:middleware) { Appsignal::Rack::GenericInstrumentation.new(app, options) }
 

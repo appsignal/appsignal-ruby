@@ -16,7 +16,7 @@ module EnvHelpers
       :status => "200",
       :view_runtime => 500,
       :db_runtime => 500,
-      :metadata => {:key => "value"}
+      :metadata => { :key => "value" }
     ).merge(args)
   end
 
