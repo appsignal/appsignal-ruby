@@ -5,11 +5,11 @@ module Appsignal
     end
 
     def self.heroku?
-      ENV.key? 'DYNO'.freeze
+      ENV.key? "DYNO".freeze
     end
 
     module Container
-      CGROUP_FILE = '/proc/self/cgroup'.freeze
+      CGROUP_FILE = "/proc/self/cgroup".freeze
 
       def self.id
         case cgroups

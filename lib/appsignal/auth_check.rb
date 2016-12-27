@@ -1,6 +1,6 @@
 module Appsignal
   class AuthCheck
-    ACTION = 'auth'.freeze
+    ACTION = "auth".freeze
 
     attr_reader :config, :logger
 
@@ -24,11 +24,11 @@ module Appsignal
             "API key not valid with AppSignal..."
           else
             "Could not confirm authorization: " \
-              "#{status.nil? ? 'nil' : status}"
+              "#{status.nil? ? "nil" : status}"
           end
         [status, result]
       rescue => e
-        result = 'Something went wrong while trying to '\
+        result = "Something went wrong while trying to "\
                  "authenticate with AppSignal: #{e}"
         [nil, result]
       end

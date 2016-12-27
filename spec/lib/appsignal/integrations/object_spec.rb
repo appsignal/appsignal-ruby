@@ -1,4 +1,4 @@
-require 'appsignal/integrations/object'
+require "appsignal/integrations/object"
 
 describe Object do
   describe "#instrument_method" do

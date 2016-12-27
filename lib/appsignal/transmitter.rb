@@ -1,13 +1,13 @@
-require 'net/http'
-require 'net/https'
-require 'uri'
-require 'rack/utils'
-require 'json'
+require "net/http"
+require "net/https"
+require "uri"
+require "rack/utils"
+require "json"
 
 module Appsignal
   class Transmitter
-    CONTENT_TYPE = 'application/json; charset=UTF-8'.freeze
-    CONTENT_ENCODING = 'gzip'.freeze
+    CONTENT_TYPE = "application/json; charset=UTF-8".freeze
+    CONTENT_ENCODING = "gzip".freeze
 
     HTTP_ERRORS = [
       EOFError,
@@ -49,8 +49,8 @@ module Appsignal
 
     def http_post(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
-        request['Content-Type'] = CONTENT_TYPE
-        request['Content-Encoding'] = CONTENT_ENCODING
+        request["Content-Type"] = CONTENT_TYPE
+        request["Content-Encoding"] = CONTENT_ENCODING
         request.body = Appsignal::Utils::Gzip.compress \
           Appsignal::Utils::JSON.generate(payload)
       end
@@ -64,7 +64,7 @@ module Appsignal
       end
 
       client.tap do |http|
-        if uri.scheme == 'https'
+        if uri.scheme == "https"
           http.use_ssl     = true
           http.ssl_version = :TLSv1
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER

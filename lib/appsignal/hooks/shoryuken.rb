@@ -10,14 +10,14 @@ module Appsignal
         metadata.merge!(sqs_msg.attributes)
 
         options = {
-          :class => body['job_class'],
-          :method => 'perform',
+          :class => body["job_class"],
+          :method => "perform",
           :metadata => metadata
         }
-        options[:params] = body['arguments'] if body.key?('arguments')
-        options[:queue_start] = Time.at(sqs_msg.attributes['SentTimestamp'].to_i / 1000) if sqs_msg.attributes.key?('SentTimestamp')
+        options[:params] = body["arguments"] if body.key?("arguments")
+        options[:queue_start] = Time.at(sqs_msg.attributes["SentTimestamp"].to_i / 1000) if sqs_msg.attributes.key?("SentTimestamp")
 
-        Appsignal.monitor_transaction('perform_job.shoryuken', options) do
+        Appsignal.monitor_transaction("perform_job.shoryuken", options) do
           yield
         end
       end

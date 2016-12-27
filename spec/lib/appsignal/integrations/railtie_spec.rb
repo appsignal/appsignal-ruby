@@ -28,25 +28,25 @@ if DependencyHelper.rails_present?
           it { should be_a(Appsignal::Config) }
 
           its(:root_path)  { should eq Pathname.new(project_fixture_path) }
-          its(:env)        { should eq 'test' }
-          its([:name])     { should eq 'TestApp' }
-          its([:log_path]) { should eq Pathname.new(File.join(project_fixture_path, 'log')) }
+          its(:env)        { should eq "test" }
+          its([:name])     { should eq "TestApp" }
+          its([:log_path]) { should eq Pathname.new(File.join(project_fixture_path, "log")) }
         end
 
         context "initial config" do
           before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
           subject { Appsignal.config.initial_config }
 
-          its([:name]) { should eq 'MyApp' }
+          its([:name]) { should eq "MyApp" }
         end
 
         context "with APPSIGNAL_APP_ENV ENV var set" do
           before do
-            ENV.should_receive(:fetch).with('APPSIGNAL_APP_ENV', 'test').and_return('env_test')
+            ENV.should_receive(:fetch).with("APPSIGNAL_APP_ENV", "test").and_return("env_test")
             Appsignal::Integrations::Railtie.initialize_appsignal(app)
           end
 
-          its(:env) { should eq 'env_test' }
+          its(:env) { should eq "env_test" }
         end
       end
 
@@ -62,8 +62,8 @@ if DependencyHelper.rails_present?
           let(:config) do
             Appsignal::Config.new(
               project_fixture_path,
-              'test',
-              :name => 'MyApp',
+              "test",
+              :name => "MyApp",
               :enable_frontend_error_catching => true
             )
           end

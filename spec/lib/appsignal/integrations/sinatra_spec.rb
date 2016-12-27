@@ -1,6 +1,6 @@
 if DependencyHelper.sinatra_present?
-  ENV['APPSIGNAL_PUSH_API_KEY'] = 'key'
-  require 'appsignal/integrations/sinatra'
+  ENV["APPSIGNAL_PUSH_API_KEY"] = "key"
+  require "appsignal/integrations/sinatra"
 
   describe "Sinatra integration" do
     context "Appsignal.logger" do
@@ -22,22 +22,22 @@ if DependencyHelper.sinatra_present?
 
       context "without APPSIGNAL_APP_ENV" do
         before do
-          load File.expand_path('lib/appsignal/integrations/sinatra.rb', project_dir)
+          load File.expand_path("lib/appsignal/integrations/sinatra.rb", project_dir)
         end
 
         it "uses the app environment" do
-          expect(subject).to eq('test')
+          expect(subject).to eq("test")
         end
       end
 
       context "with APPSIGNAL_APP_ENV" do
         before do
-          ENV['APPSIGNAL_APP_ENV'] = 'env-staging'
-          load File.expand_path('lib/appsignal/integrations/sinatra.rb', project_dir)
+          ENV["APPSIGNAL_APP_ENV"] = "env-staging"
+          load File.expand_path("lib/appsignal/integrations/sinatra.rb", project_dir)
         end
 
         it "uses the environment variable" do
-          expect(subject).to eq('env-staging')
+          expect(subject).to eq("env-staging")
         end
       end
     end

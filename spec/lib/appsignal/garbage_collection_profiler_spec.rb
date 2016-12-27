@@ -1,5 +1,5 @@
-require 'spec_helper'
-require_relative '../../support/mocks/fake_gc_profiler'
+require "spec_helper"
+require_relative "../../support/mocks/fake_gc_profiler"
 
 describe Appsignal::GarbageCollectionProfiler do
   let(:internal_profiler) { FakeGCProfiler.new }

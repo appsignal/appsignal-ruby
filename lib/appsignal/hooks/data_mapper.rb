@@ -9,7 +9,7 @@ module Appsignal
       end
 
       def install
-        require 'appsignal/integrations/data_mapper'
+        require "appsignal/integrations/data_mapper"
         ::DataObjects::Connection.send(:include, Appsignal::Hooks::DataMapperLogListener)
       end
     end

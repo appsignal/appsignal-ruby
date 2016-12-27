@@ -1,11 +1,11 @@
-require 'json'
+require "json"
 
 module Appsignal
   class Transaction
-    HTTP_REQUEST   = 'http_request'.freeze
-    BACKGROUND_JOB = 'background_job'.freeze
-    FRONTEND       = 'frontend'.freeze
-    BLANK          = ''.freeze
+    HTTP_REQUEST   = "http_request".freeze
+    BACKGROUND_JOB = "background_job".freeze
+    FRONTEND       = "frontend".freeze
+    BLANK          = "".freeze
 
     # Based on what Rails uses + some variables we'd like to show
     ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
@@ -82,7 +82,7 @@ module Appsignal
 
     def complete
       if discarded?
-        Appsignal.logger.debug('Skipping transaction because it was manually discarded.'.freeze)
+        Appsignal.logger.debug("Skipping transaction because it was manually discarded.".freeze)
         return
       end
       if @ext.finish(self.class.garbage_collection_profiler.total_time)
@@ -134,7 +134,7 @@ module Appsignal
         from[:controller] || from[:class],
         from[:action] || from[:method]
       ]
-      set_action(group_and_action.compact.join('#'))
+      set_action(group_and_action.compact.join("#"))
     end
 
     def set_queue_start(start)

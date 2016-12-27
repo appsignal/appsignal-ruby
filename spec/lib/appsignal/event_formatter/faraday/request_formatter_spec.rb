@@ -3,7 +3,7 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
   let(:formatter) { klass.new }
 
   it "should register request.faraday" do
-    Appsignal::EventFormatter.registered?('request.faraday', klass).should be_true
+    Appsignal::EventFormatter.registered?("request.faraday", klass).should be_true
   end
 
   describe "#format" do
@@ -16,6 +16,6 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
 
     subject { formatter.format(payload) }
 
-    it { should eq ['GET http://example.org', 'GET http://example.org/hello/world'] }
+    it { should eq ["GET http://example.org", "GET http://example.org/hello/world"] }
   end
 end

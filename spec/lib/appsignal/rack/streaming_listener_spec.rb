@@ -1,16 +1,16 @@
-require 'appsignal/rack/streaming_listener'
+require "appsignal/rack/streaming_listener"
 
 describe Appsignal::Rack::StreamingListener do
   let(:headers)  { {} }
   let(:env) do
     {
-      'rack.input'     => StringIO.new,
-      'REQUEST_METHOD' => 'GET',
-      'PATH_INFO'      => '/homepage',
-      'QUERY_STRING'   => 'param=something'
+      "rack.input"     => StringIO.new,
+      "REQUEST_METHOD" => "GET",
+      "PATH_INFO"      => "/homepage",
+      "QUERY_STRING"   => "param=something"
     }
   end
-  let(:app)      { double(:call => [200, headers, 'body']) }
+  let(:app)      { double(:call => [200, headers, "body"]) }
   let(:listener) { Appsignal::Rack::StreamingListener.new(app, {}) }
 
   describe "#call" do
@@ -41,18 +41,18 @@ describe Appsignal::Rack::StreamingListener do
         ::Rack::Request.new(env)
       )
     end
-    let(:wrapper)     { Appsignal::StreamWrapper.new('body', transaction) }
+    let(:wrapper)     { Appsignal::StreamWrapper.new("body", transaction) }
     let(:raw_payload) { {:foo => :bar} }
 
     before do
-      SecureRandom.stub(:uuid => '123')
+      SecureRandom.stub(:uuid => "123")
       listener.stub(:raw_payload => raw_payload)
       Appsignal::Transaction.stub(:create => transaction)
     end
 
     it "should create a transaction" do
       expect( Appsignal::Transaction ).to receive(:create)
-        .with('123', Appsignal::Transaction::HTTP_REQUEST, instance_of(Rack::Request))
+        .with("123", Appsignal::Transaction::HTTP_REQUEST, instance_of(Rack::Request))
         .and_return(transaction)
 
       listener.call_with_appsignal_monitoring(env)
@@ -60,7 +60,7 @@ describe Appsignal::Rack::StreamingListener do
 
     it "should instrument the call" do
       expect( Appsignal ).to receive(:instrument)
-        .with('process_action.rack')
+        .with("process_action.rack")
         .and_yield
 
       listener.call_with_appsignal_monitoring(env)
@@ -69,9 +69,9 @@ describe Appsignal::Rack::StreamingListener do
     it "should add `appsignal.action` to the transaction" do
       allow( Appsignal ).to receive(:instrument).and_yield
 
-      env['appsignal.action'] = 'Action'
+      env["appsignal.action"] = "Action"
 
-      expect( transaction ).to receive(:set_action).with('Action')
+      expect( transaction ).to receive(:set_action).with("Action")
 
       listener.call_with_appsignal_monitoring(env)
     end
@@ -79,8 +79,8 @@ describe Appsignal::Rack::StreamingListener do
     it "should add the path, method and queue start to the transaction" do
       allow( Appsignal ).to receive(:instrument).and_yield
 
-      expect( transaction ).to receive(:set_metadata).with('path', '/homepage')
-      expect( transaction ).to receive(:set_metadata).with('method', 'GET')
+      expect( transaction ).to receive(:set_metadata).with("path", "/homepage")
+      expect( transaction ).to receive(:set_metadata).with("method", "GET")
       expect( transaction ).to receive(:set_http_or_background_queue_start)
 
       listener.call_with_appsignal_monitoring(env)
@@ -98,7 +98,7 @@ describe Appsignal::Rack::StreamingListener do
 
     it "should wrap the body in a wrapper" do
       expect( Appsignal::StreamWrapper ).to receive(:new)
-        .with('body', transaction)
+        .with("body", transaction)
         .and_return(wrapper)
 
       body = listener.call_with_appsignal_monitoring(env)[2]

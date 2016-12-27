@@ -12,7 +12,7 @@ module Appsignal
           .format(event.command_name, event.command)
 
         # Store the query on the transaction, we need it when the event finishes
-        store                   = transaction.store('mongo_driver')
+        store                   = transaction.store("mongo_driver")
         store[event.request_id] = command
 
         # Start this event
@@ -22,13 +22,13 @@ module Appsignal
       # Called by Mongo::Monitor when query succeeds
       def succeeded(event)
         # Finish the event as succeeded
-        finish('SUCCEEDED', event)
+        finish("SUCCEEDED", event)
       end
 
       # Called by Mongo::Monitor when query fails
       def failed(event)
         # Finish the event as failed
-        finish('FAILED', event)
+        finish("FAILED", event)
       end
 
       # Finishes the event in the AppSignal extension
@@ -38,12 +38,12 @@ module Appsignal
         return if transaction.paused?
 
         # Get the query from the transaction store
-        store   = transaction.store('mongo_driver')
+        store   = transaction.store("mongo_driver")
         command = store.delete(event.request_id) || {}
 
         # Finish the event in the extension.
         transaction.finish_event(
-          'query.mongodb',
+          "query.mongodb",
           "#{event.command_name.to_s} | #{event.database_name} | #{result}",
           Appsignal::Utils.data_generate(command),
           Appsignal::EventFormatter::DEFAULT

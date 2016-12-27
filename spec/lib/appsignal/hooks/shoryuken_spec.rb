@@ -14,31 +14,31 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   end
 
   context "with a performance call" do
-    let(:queue) { 'some-funky-queue-name' }
+    let(:queue) { "some-funky-queue-name" }
     let(:sqs_msg) {
-      double(:attributes => { 'SentTimestamp' => Time.parse('1976-11-18 0:00:00UTC').to_i * 1000 })
+      double(:attributes => { "SentTimestamp" => Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 })
     }
     let(:body) {{
-      'job_class' => 'TestClass',
-      'arguments' => ['Model', "1"],
+      "job_class" => "TestClass",
+      "arguments" => ["Model", "1"],
     }}
 
     it "should wrap in a transaction with the correct params" do
       Appsignal.should_receive(:monitor_transaction).with(
-        'perform_job.shoryuken',
-        :class => 'TestClass',
-        :method => 'perform',
+        "perform_job.shoryuken",
+        :class => "TestClass",
+        :method => "perform",
         :metadata => {
-          :queue => 'some-funky-queue-name',
-          'SentTimestamp' => 217123200000
+          :queue => "some-funky-queue-name",
+          "SentTimestamp" => 217123200000
         },
-        :params => ['Model', "1"],
-        :queue_start => Time.parse('1976-11-18 0:00:00UTC').utc
+        :params => ["Model", "1"],
+        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
       )
     end
 
     after do
-      Timecop.freeze(Time.parse('01-01-2001 10:01:00UTC')) do
+      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
         Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
           # nothing
         end
@@ -55,7 +55,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
 
     after do
       begin
-        Timecop.freeze(Time.parse('01-01-2001 10:01:00UTC')) do
+        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
           Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
             raise error
           end

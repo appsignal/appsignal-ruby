@@ -30,7 +30,7 @@ module Appsignal
           end
           return unless missing.any?
 
-          puts "Error: Missing options: #{missing.join(', ')}"
+          puts "Error: Missing options: #{missing.join(", ")}"
           exit 1
         end
 

@@ -1,5 +1,5 @@
 describe Appsignal::Hooks::MongoRubyDriverHook do
-  require 'appsignal/integrations/mongo_ruby_driver'
+  require "appsignal/integrations/mongo_ruby_driver"
 
   context "with mongo ruby driver" do
     let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
@@ -8,7 +8,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     before(:all) do
       module Mongo
         module Monitoring
-          COMMAND = 'command'
+          COMMAND = "command"
 
           class Global
             def subscribe
@@ -23,7 +23,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
 
     it "adds a subscriber to Mongo::Monitoring" do
       Mongo::Monitoring::Global.should receive(:subscribe)
-        .with('command', subscriber)
+        .with("command", subscriber)
         .at_least(:once)
 
       Appsignal::Hooks::MongoRubyDriverHook.new.install

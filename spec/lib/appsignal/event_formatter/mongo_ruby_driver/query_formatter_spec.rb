@@ -52,7 +52,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
       let(:value)    { {"_id" => 1} }
 
       it "should return a '?'" do
-        expect( formatter.apply_strategy(strategy, value) ).to eql('?')
+        expect( formatter.apply_strategy(strategy, value) ).to eql("?")
       end
     end
 
@@ -70,7 +70,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
       let(:value)    { {"_id" => 1} }
 
       it "should return a sanitized document" do
-        expect( formatter.apply_strategy(strategy, value) ).to eql({"_id" => '?'})
+        expect( formatter.apply_strategy(strategy, value) ).to eql({"_id" => "?"})
       end
     end
 
@@ -80,7 +80,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
       it "should return an array of sanitized bulk documents" do
         expect( formatter.apply_strategy(strategy, value) ).to eql([
-          {"q" => {"_id" => '?'}, "u" => '[?]'}
+          {"q" => {"_id" => "?"}, "u" => "[?]"}
         ])
       end
 
@@ -94,7 +94,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
 
         it "should return only the first value of sanitized bulk documents" do
           expect( formatter.apply_strategy(strategy, value) ).to eql([
-            {"q" => {"_id" => '?'}, "u" => '[?]'},
+            {"q" => {"_id" => "?"}, "u" => "[?]"},
             "[...]"
           ])
         end
@@ -106,7 +106,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
       let(:value)    { {"_id" => 1} }
 
       it "should return a '?'" do
-        expect( formatter.apply_strategy(strategy, value) ).to eql('?')
+        expect( formatter.apply_strategy(strategy, value) ).to eql("?")
       end
     end
   end

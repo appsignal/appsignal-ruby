@@ -8,9 +8,9 @@ module Appsignal
       # see http://docs.appsignal.com/background-monitoring/custom.html
       def around_perform_resque_plugin(*args)
         Appsignal.monitor_single_transaction(
-          'perform_job.resque',
+          "perform_job.resque",
           :class => self.to_s,
-          :method => 'perform'
+          :method => "perform"
         ) do
           yield
         end

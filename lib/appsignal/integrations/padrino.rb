@@ -1,4 +1,4 @@
-require 'appsignal'
+require "appsignal"
 
 module Appsignal::Integrations
   module PadrinoPlugin
@@ -9,7 +9,7 @@ module Appsignal::Integrations
       Appsignal.config = Appsignal::Config.new(
         root,
         Padrino.env,
-        :log_path => File.join(root, 'log')
+        :log_path => File.join(root, "log")
       )
 
       Appsignal.start_logger
@@ -22,7 +22,7 @@ module Padrino::Routing::InstanceMethods
   alias route_without_appsignal route!
 
   def route!(base=settings, pass_block=nil)
-    if !Appsignal.active? || env['sinatra.static_file']
+    if !Appsignal.active? || env["sinatra.static_file"]
       route_without_appsignal(base, pass_block)
       return
     end
@@ -33,7 +33,7 @@ module Padrino::Routing::InstanceMethods
       request
     )
     begin
-      Appsignal.instrument('process_action.padrino') do
+      Appsignal.instrument("process_action.padrino") do
         route_without_appsignal(base, pass_block)
       end
     rescue => error
@@ -41,8 +41,8 @@ module Padrino::Routing::InstanceMethods
       raise error
     ensure
       transaction.set_action(get_payload_action(request))
-      transaction.set_metadata('path', request.path)
-      transaction.set_metadata('method', request.request_method)
+      transaction.set_metadata("path", request.path)
+      transaction.set_metadata("method", request.request_method)
       transaction.set_http_or_background_queue_start
       Appsignal::Transaction.complete_current!
     end

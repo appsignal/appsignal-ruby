@@ -1,10 +1,10 @@
-require 'rack'
+require "rack"
 
 module Appsignal
   module Rack
     class RailsInstrumentation
       def initialize(app, options = {})
-        Appsignal.logger.debug 'Initializing Appsignal::Rack::RailsInstrumentation'
+        Appsignal.logger.debug "Initializing Appsignal::Rack::RailsInstrumentation"
         @app, @options = app, options
       end
 
@@ -30,19 +30,19 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          controller = env['action_controller.instance']
+          controller = env["action_controller.instance"]
           if controller
             transaction.set_action("#{controller.class.to_s}##{controller.action_name}")
           end
           transaction.set_http_or_background_queue_start
-          transaction.set_metadata('path', request.path)
-          transaction.set_metadata('method', request.request_method)
+          transaction.set_metadata("path", request.path)
+          transaction.set_metadata("method", request.request_method)
           Appsignal::Transaction.complete_current!
         end
       end
 
       def request_id(env)
-        env['action_dispatch.request_id'] || SecureRandom.uuid
+        env["action_dispatch.request_id"] || SecureRandom.uuid
       end
     end
   end

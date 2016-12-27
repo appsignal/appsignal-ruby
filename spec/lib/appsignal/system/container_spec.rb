@@ -43,7 +43,7 @@ describe Appsignal::System::Container do
     context "when no permission to read cgroup file" do
       let(:out_stream) { StringIO.new }
       let(:no_permission_file) do
-        File.join(fixtures_dir, 'containers', 'cgroups', 'no_permission')
+        File.join(fixtures_dir, "containers", "cgroups", "no_permission")
       end
       before do
         File.chmod 0333, no_permission_file

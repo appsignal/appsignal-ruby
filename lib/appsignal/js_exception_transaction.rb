@@ -14,29 +14,29 @@ module Appsignal
     end
 
     def set_action
-      @ext.set_action(@data['action']) if @data['action']
+      @ext.set_action(@data["action"]) if @data["action"]
     end
 
     def set_metadata
       @ext.set_metadata(
-        'path', @data['path']
-      ) if @data['path']
+        "path", @data["path"]
+      ) if @data["path"]
     end
 
     def set_error
       @ext.set_error(
-        @data['name'],
-        @data['message'] || '',
-        Appsignal::Utils.data_generate(@data['backtrace'] || [])
+        @data["name"],
+        @data["message"] || "",
+        Appsignal::Utils.data_generate(@data["backtrace"] || [])
       )
     end
 
     def set_sample_data
       {
-        :params       => @data['params'],
-        :session_data => @data['session_data'],
-        :environment  => @data['environment'],
-        :tags         => @data['tags']
+        :params       => @data["params"],
+        :session_data => @data["session_data"],
+        :environment  => @data["environment"],
+        :tags         => @data["tags"]
       }.each do |key, data|
         next unless data.is_a?(Array) || data.is_a?(Hash)
         @ext.set_sample_data(

@@ -1,6 +1,6 @@
 if DependencyHelper.padrino_present?
   describe "Padrino integration"   do
-    require File.expand_path('lib/appsignal/integrations/padrino.rb')
+    require File.expand_path("lib/appsignal/integrations/padrino.rb")
 
     class ClassWithRouter
       include Padrino::Routing
@@ -32,19 +32,19 @@ if DependencyHelper.padrino_present?
       end
 
       context "when APPSIGNAL_APP_ENV ENV var is provided" do
-        it 'should use this as the environment' do
-          ENV['APPSIGNAL_APP_ENV'] = 'custom'
+        it "should use this as the environment" do
+          ENV["APPSIGNAL_APP_ENV"] = "custom"
 
           # Reset the plugin to pull down the latest data
           Appsignal::Integrations::PadrinoPlugin.init
 
-          expect(Appsignal.config.env).to eq 'custom'
+          expect(Appsignal.config.env).to eq "custom"
         end
       end
 
       context "when APPSIGNAL_APP_ENV ENV var is not provided" do
-        it 'should use the Padrino environment' do
-          ENV['APPSIGNAL_APP_ENV'] = nil
+        it "should use the Padrino environment" do
+          ENV["APPSIGNAL_APP_ENV"] = nil
 
           # Reset the plugin to pull down the latest data
           Appsignal::Integrations::PadrinoPlugin.init
@@ -60,17 +60,17 @@ if DependencyHelper.padrino_present?
       let(:base)     { double }
       let(:router)   { ClassWithRouter.new }
       let(:env)      { {} }
-      let(:settings) { double(:name => 'TestApp') }
+      let(:settings) { double(:name => "TestApp") }
 
       describe "#route!" do
         let(:request) do
           double(
-            :params          => {'id' => 1},
-            :session         => {'user_id' => 123},
-            :request_method  => 'GET',
-            :path            => '/users/1',
-            :controller      => 'users',
-            :action          => 'show',
+            :params          => {"id" => 1},
+            :session         => {"user_id" => 123},
+            :request_method  => "GET",
+            :path            => "/users/1",
+            :controller      => "users",
+            :action          => "show",
             :env             => {}
           )
         end
@@ -81,12 +81,12 @@ if DependencyHelper.padrino_present?
             :request                 => request,
             :env                     => env,
             :settings                => settings,
-            :get_payload_action      => 'controller#action'
+            :get_payload_action      => "controller#action"
           )
         end
 
         context "when Sinatra tells us it's a static file" do
-          let(:env) { {'sinatra.static_file' => true} }
+          let(:env) { {"sinatra.static_file" => true} }
 
           it "should call the original method" do
             expect( router ).to receive(:route_without_appsignal)
@@ -139,7 +139,7 @@ if DependencyHelper.padrino_present?
             end
 
             it "should instrument the action" do
-              expect( Appsignal ).to receive(:instrument).with('process_action.padrino')
+              expect( Appsignal ).to receive(:instrument).with("process_action.padrino")
             end
 
             it "should set metadata" do
@@ -147,7 +147,7 @@ if DependencyHelper.padrino_present?
             end
 
             it "should set the action on the transaction" do
-              expect( transaction ).to receive(:set_action).with('controller#action')
+              expect( transaction ).to receive(:set_action).with("controller#action")
             end
 
             after { router.route!(base) }
@@ -171,33 +171,33 @@ if DependencyHelper.padrino_present?
 
         context "when request is nil" do
           it "should return the site" do
-            expect( router.get_payload_action(nil) ).to eql('TestApp')
+            expect( router.get_payload_action(nil) ).to eql("TestApp")
           end
         end
 
         context "when there's no route object" do
-          let(:request) { double(:controller => 'Controller', :action => 'action') }
+          let(:request) { double(:controller => "Controller", :action => "action") }
 
           it "should return the site name, controller and action" do
-            expect( router.get_payload_action(request) ).to eql('TestApp:Controller#action')
+            expect( router.get_payload_action(request) ).to eql("TestApp:Controller#action")
           end
 
           context "when there's no action" do
-            let(:request) { double(:controller => 'Controller', :fullpath => '/action') }
+            let(:request) { double(:controller => "Controller", :fullpath => "/action") }
 
             it "should return the site name, controller and fullpath" do
-              expect( router.get_payload_action(request) ).to eql('TestApp:Controller#/action')
+              expect( router.get_payload_action(request) ).to eql("TestApp:Controller#/action")
             end
           end
         end
 
         context "when request has a route object" do
           let(:request)      { double }
-          let(:route_object) { double(:original_path => '/accounts/edit/:id') }
+          let(:route_object) { double(:original_path => "/accounts/edit/:id") }
           before             { request.stub(:route_obj => route_object) }
 
           it "should return the original path" do
-            expect( router.get_payload_action(request) ).to eql('TestApp:/accounts/edit/:id')
+            expect( router.get_payload_action(request) ).to eql("TestApp:/accounts/edit/:id")
           end
         end
       end

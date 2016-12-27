@@ -1,10 +1,10 @@
-require 'rack'
+require "rack"
 
 module Appsignal
   module Rack
     class GenericInstrumentation
       def initialize(app, options = {})
-        Appsignal.logger.debug 'Initializing Appsignal::Rack::GenericInstrumentation'
+        Appsignal.logger.debug "Initializing Appsignal::Rack::GenericInstrumentation"
         @app, @options = app, options
       end
 
@@ -24,20 +24,20 @@ module Appsignal
           request
         )
         begin
-          Appsignal.instrument('process_action.generic') do
+          Appsignal.instrument("process_action.generic") do
             @app.call(env)
           end
         rescue => error
           transaction.set_error(error)
           raise error
         ensure
-          if env['appsignal.route']
-            transaction.set_action(env['appsignal.route'])
+          if env["appsignal.route"]
+            transaction.set_action(env["appsignal.route"])
           else
-            transaction.set_action('unknown')
+            transaction.set_action("unknown")
           end
-          transaction.set_metadata('path', request.path)
-          transaction.set_metadata('method', request.request_method)
+          transaction.set_metadata("path", request.path)
+          transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current!
         end

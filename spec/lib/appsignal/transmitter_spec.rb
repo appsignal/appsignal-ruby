@@ -1,21 +1,21 @@
 describe Appsignal::Transmitter do
   let(:config) { project_fixture_config }
-  let(:action) { 'action' }
+  let(:action) { "action" }
   let(:log) { StringIO.new }
   let(:instance) { Appsignal::Transmitter.new(action, config) }
   before do
-    config.config_hash[:hostname] = 'app1.local'
+    config.config_hash[:hostname] = "app1.local"
     config.logger = Logger.new(log)
   end
 
   describe "#uri" do
     subject { instance.uri.to_s }
 
-    it { should include 'https://push.appsignal.com/1/action?' }
-    it { should include 'api_key=abc' }
-    it { should include 'hostname=app1.local' }
-    it { should include 'name=TestApp' }
-    it { should include 'environment=production' }
+    it { should include "https://push.appsignal.com/1/action?" }
+    it { should include "api_key=abc" }
+    it { should include "hostname=app1.local" }
+    it { should include "name=TestApp" }
+    it { should include "environment=production" }
     it { should include "gem_version=#{Appsignal::VERSION}" }
   end
 
@@ -29,8 +29,8 @@ describe Appsignal::Transmitter do
       ).with(
         :body => Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}"),
         :headers => {
-          'Content-Encoding' => 'gzip',
-          'Content-Type' => 'application/json; charset=UTF-8',
+          "Content-Encoding" => "gzip",
+          "Content-Type" => "application/json; charset=UTF-8",
         }
       ).to_return(
         :status => 200
@@ -38,7 +38,7 @@ describe Appsignal::Transmitter do
     end
     subject { instance.transmit(:the => :payload) }
 
-    it { should eq '200' }
+    it { should eq "200" }
 
     context "with ca_file_path config option set" do
       context "when not existing file" do
@@ -47,7 +47,7 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq '200'
+          expect(subject).to eq "200"
           expect(log.string).to_not include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -59,7 +59,7 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq '200'
+          expect(subject).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -73,7 +73,7 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq '200'
+          expect(subject).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -84,14 +84,14 @@ describe Appsignal::Transmitter do
   end
 
   describe "#http_post" do
-    subject { instance.send(:http_post, 'the' => 'payload') }
+    subject { instance.send(:http_post, "the" => "payload") }
 
     its(:body) { should eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}") }
     its(:path) { should eq instance.uri.request_uri }
 
     it "should have the correct headers" do
-      subject['Content-Type'].should eq 'application/json; charset=UTF-8'
-      subject['Content-Encoding'].should eq 'gzip'
+      subject["Content-Type"].should eq "application/json; charset=UTF-8"
+      subject["Content-Encoding"].should eq "gzip"
     end
   end
 
@@ -99,7 +99,7 @@ describe Appsignal::Transmitter do
     subject { instance.send(:http_client) }
 
     context "with a http uri" do
-      let(:config) { project_fixture_config('test') }
+      let(:config) { project_fixture_config("test") }
 
       it { should be_instance_of(Net::HTTP) }
       its(:proxy?) { should be_false }
@@ -107,7 +107,7 @@ describe Appsignal::Transmitter do
     end
 
     context "with a https uri" do
-      let(:config) { project_fixture_config('production') }
+      let(:config) { project_fixture_config("production") }
 
       it { should be_instance_of(Net::HTTP) }
       its(:proxy?) { should be_false }
@@ -117,10 +117,10 @@ describe Appsignal::Transmitter do
     end
 
     context "with a proxy" do
-      let(:config) { project_fixture_config('production', :http_proxy => 'http://localhost:8080') }
+      let(:config) { project_fixture_config("production", :http_proxy => "http://localhost:8080") }
 
       its(:proxy?) { should be_true }
-      its(:proxy_address) { should eq 'localhost' }
+      its(:proxy_address) { should eq "localhost" }
       its(:proxy_port) { should eq 8080 }
     end
   end

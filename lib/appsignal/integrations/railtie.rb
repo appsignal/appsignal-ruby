@@ -1,11 +1,11 @@
 Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
-require 'appsignal/rack/rails_instrumentation'
+require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
   module Integrations
     class Railtie < ::Rails::Railtie
-      initializer 'appsignal.configure_rails_initialization' do |app|
+      initializer "appsignal.configure_rails_initialization" do |app|
         Appsignal::Integrations::Railtie.initialize_appsignal(app)
       end
 
@@ -15,7 +15,7 @@ module Appsignal
           Rails.root,
           Rails.env,
           :name => Rails.application.class.parent_name,
-          :log_path => Rails.root.join('log')
+          :log_path => Rails.root.join("log")
         )
 
         # Start logger

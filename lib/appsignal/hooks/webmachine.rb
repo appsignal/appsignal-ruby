@@ -8,7 +8,7 @@ module Appsignal
       end
 
       def install
-        require 'appsignal/integrations/webmachine'
+        require "appsignal/integrations/webmachine"
         ::Webmachine::Decision::FSM.class_eval do
           include Appsignal::Integrations::WebmachinePlugin::FSM
           alias run_without_appsignal run

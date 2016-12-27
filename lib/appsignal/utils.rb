@@ -1,5 +1,5 @@
-require 'appsignal/utils/params_sanitizer'
-require 'appsignal/utils/query_params_sanitizer'
+require "appsignal/utils/params_sanitizer"
+require "appsignal/utils/query_params_sanitizer"
 
 module Appsignal
   module Utils
@@ -101,7 +101,7 @@ module Appsignal
 
         def encode_utf8(value)
           value.encode(
-            'utf-8'.freeze,
+            "utf-8".freeze,
             :invalid => :replace,
             :undef   => :replace
           )

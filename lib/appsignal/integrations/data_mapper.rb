@@ -20,8 +20,8 @@ module Appsignal
 
         # Record event
         Appsignal::Transaction.current.record_event(
-          'query.data_mapper',
-          'DataMapper Query',
+          "query.data_mapper",
+          "DataMapper Query",
           body_content,
           message.duration,
           body_format

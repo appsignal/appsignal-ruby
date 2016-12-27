@@ -3,7 +3,7 @@ module Appsignal
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
       register :active_support_notifications
 
-      BANG = '!'.freeze
+      BANG = "!".freeze
 
       def dependencies_present?
         defined?(::ActiveSupport::Notifications::Instrumenter)

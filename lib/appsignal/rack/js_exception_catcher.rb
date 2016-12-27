@@ -2,15 +2,15 @@ module Appsignal
   module Rack
     class JSExceptionCatcher
       def initialize(app, options = {})
-        Appsignal.logger.debug 'Initializing Appsignal::Rack::JSExceptionCatcher'
+        Appsignal.logger.debug "Initializing Appsignal::Rack::JSExceptionCatcher"
         @app, @options = app, options
       end
 
       def call(env)
-        if env['PATH_INFO'] == Appsignal.config[:frontend_error_catching_path]
-          body = JSON.parse(env['rack.input'].read)
+        if env["PATH_INFO"] == Appsignal.config[:frontend_error_catching_path]
+          body = JSON.parse(env["rack.input"].read)
 
-          if body['name'].is_a?(String) && body['name'].length > 0
+          if body["name"].is_a?(String) && body["name"].length > 0
             transaction = JSExceptionTransaction.new(body)
             transaction.complete!
             code = 200

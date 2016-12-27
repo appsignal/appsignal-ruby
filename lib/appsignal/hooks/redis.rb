@@ -14,7 +14,7 @@ module Appsignal
           alias process_without_appsignal process
 
           def process(commands, &block)
-            Appsignal.instrument 'query.redis' do
+            Appsignal.instrument "query.redis" do
               process_without_appsignal(commands, &block)
             end
           end

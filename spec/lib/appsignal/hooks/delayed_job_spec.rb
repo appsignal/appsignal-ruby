@@ -25,16 +25,16 @@ describe Appsignal::Hooks::DelayedJobHook do
 
     describe ".invoke_with_instrumentation" do
       let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
-      let(:time) { Time.parse('01-01-2001 10:01:00UTC') }
+      let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
       let(:job_data) do
         {
           :id             => 123,
-          :name           => 'TestClass#perform',
+          :name           => "TestClass#perform",
           :priority       => 1,
           :attempts       => 1,
-          :queue          => 'default',
+          :queue          => "default",
           :created_at     => time - 60_000,
-          :payload_object => double(:args => ['argument']),
+          :payload_object => double(:args => ["argument"]),
         }
       end
       let(:job) { double(job_data) }
@@ -44,16 +44,16 @@ describe Appsignal::Hooks::DelayedJobHook do
       context "with a normal call" do
         it "should wrap in a transaction with the correct params" do
           Appsignal.should_receive(:monitor_transaction).with(
-            'perform_job.delayed_job',
-            :class    => 'TestClass',
-            :method   => 'perform',
+            "perform_job.delayed_job",
+            :class    => "TestClass",
+            :method   => "perform",
             :metadata => {
               :priority => 1,
               :attempts => 1,
-              :queue    => 'default',
-              :id       => '123'
+              :queue    => "default",
+              :id       => "123"
             },
-            :params      => ['argument'],
+            :params      => ["argument"],
             :queue_start => time - 60_000,
           )
 
@@ -66,29 +66,29 @@ describe Appsignal::Hooks::DelayedJobHook do
           let(:job_data) do
             {
               :payload_object => double(
-                :appsignal_name => 'CustomClass#perform',
-                :args           => ['argument']
+                :appsignal_name => "CustomClass#perform",
+                :args           => ["argument"]
               ),
-              :id         => '123',
-              :name       => 'TestClass#perform',
+              :id         => "123",
+              :name       => "TestClass#perform",
               :priority   => 1,
               :attempts   => 1,
-              :queue      => 'default',
+              :queue      => "default",
               :created_at => time - 60_000
             }
           end
           it "should wrap in a transaction with the correct params" do
             Appsignal.should_receive(:monitor_transaction).with(
-              'perform_job.delayed_job',
-              :class => 'CustomClass',
-              :method => 'perform',
+              "perform_job.delayed_job",
+              :class => "CustomClass",
+              :method => "perform",
               :metadata => {
                 :priority => 1,
                 :attempts => 1,
-                :queue    => 'default',
-                :id       => '123'
+                :queue    => "default",
+                :id       => "123"
               },
-              :params      => ['argument'],
+              :params      => ["argument"],
               :queue_start => time - 60_000
             )
 
@@ -99,26 +99,26 @@ describe Appsignal::Hooks::DelayedJobHook do
         end
 
         if active_job_present?
-          require 'active_job'
+          require "active_job"
 
           context "when wrapped by ActiveJob" do
             before do
-              job_data[:args] = ['argument']
+              job_data[:args] = ["argument"]
             end
             let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
 
             it "should wrap in a transaction with the correct params" do
               Appsignal.should_receive(:monitor_transaction).with(
-                'perform_job.delayed_job',
-                :class    => 'TestClass',
-                :method   => 'perform',
+                "perform_job.delayed_job",
+                :class    => "TestClass",
+                :method   => "perform",
                 :metadata => {
                   :priority => 1,
                   :attempts => 1,
-                  :queue    => 'default',
-                  :id       => '123'
+                  :queue    => "default",
+                  :id       => "123"
                 },
-                :params      => ['argument'],
+                :params      => ["argument"],
                 :queue_start => time - 60_000,
               )
 

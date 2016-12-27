@@ -1,7 +1,7 @@
 module Appsignal
   module Utils
     class ParamsSanitizer
-      FILTERED = '[FILTERED]'.freeze
+      FILTERED = "[FILTERED]".freeze
 
       class << self
         def sanitize(params, options = {})

@@ -1,5 +1,5 @@
-require 'appsignal'
-require 'appsignal/rack/sinatra_instrumentation'
+require "appsignal"
+require "appsignal/rack/sinatra_instrumentation"
 
 Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
 

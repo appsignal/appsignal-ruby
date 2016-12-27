@@ -650,29 +650,6 @@ Style/SpecialGlobalVars:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/config.rb'
 
-# Offense count: 1629
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, ConsistentQuotesInMultiline.
-# SupportedStyles: single_quotes, double_quotes
-Style/StringLiterals:
-  Enabled: false
-
-# Offense count: 17
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: single_quotes, double_quotes
-Style/StringLiteralsInInterpolation:
-  Exclude:
-    - 'ext/extconf.rb'
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/auth_check.rb'
-    - 'lib/appsignal/cli.rb'
-    - 'lib/appsignal/cli/notify_of_deploy.rb'
-    - 'lib/appsignal/hooks/net_http.rb'
-    - 'lib/appsignal/rack/sinatra_instrumentation.rb'
-    - 'spec/lib/appsignal/hooks_spec.rb'
-    - 'spec/support/delegate_matcher.rb'
-
 # Offense count: 4
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyleForMultiline, SupportedStyles.

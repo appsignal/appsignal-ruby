@@ -27,7 +27,7 @@ class MockErrorHook < Appsignal::Hooks::Hook
   end
 
   def install
-    raise 'error'
+    raise "error"
   end
 end
 
@@ -88,20 +88,20 @@ describe Appsignal::Hooks::Helpers do
     end
 
     it "should truncate the text to 200 chars max" do
-      with_helpers.truncate(very_long_text).should eq "#{'a' * 197}..."
+      with_helpers.truncate(very_long_text).should eq "#{"a" * 197}..."
     end
   end
 
   describe "#string_or_inspect" do
     context "when string" do
       it "should return the string" do
-        with_helpers.string_or_inspect('foo').should eq 'foo'
+        with_helpers.string_or_inspect("foo").should eq "foo"
       end
     end
 
     context "when integer" do
       it "should return the string" do
-        with_helpers.string_or_inspect(1).should eq '1'
+        with_helpers.string_or_inspect(1).should eq "1"
       end
     end
 
@@ -116,12 +116,12 @@ describe Appsignal::Hooks::Helpers do
 
   describe "#extract_value" do
     context "for a hash" do
-      let(:hash) { {:key => 'value'} }
+      let(:hash) { {:key => "value"} }
 
       context "when the key exists" do
         subject { with_helpers.extract_value(hash, :key) }
 
-        it { should eq 'value' }
+        it { should eq "value" }
       end
 
       context "when the key does not exist" do
@@ -141,12 +141,12 @@ describe Appsignal::Hooks::Helpers do
       before :all do
         TestStruct = Struct.new(:key)
       end
-      let(:struct) { TestStruct.new('value') }
+      let(:struct) { TestStruct.new("value") }
 
       context "when the key exists" do
         subject { with_helpers.extract_value(struct, :key) }
 
-        it { should eq 'value' }
+        it { should eq "value" }
       end
 
       context "when the key does not exist" do
@@ -163,12 +163,12 @@ describe Appsignal::Hooks::Helpers do
     end
 
     context "for an object" do
-      let(:object) { double(:existing_method => 'value') }
+      let(:object) { double(:existing_method => "value") }
 
       context "when the method exists" do
         subject { with_helpers.extract_value(object, :existing_method) }
 
-        it { should eq 'value' }
+        it { should eq "value" }
       end
 
       context "when the method does not exist" do
@@ -190,7 +190,7 @@ describe Appsignal::Hooks::Helpers do
 
       subject { with_helpers.extract_value(object, :existing_method, nil, true) }
 
-      it { should eq '1' }
+      it { should eq "1" }
     end
   end
 
@@ -198,19 +198,19 @@ describe Appsignal::Hooks::Helpers do
     let(:object) { Object.new }
     let(:args) do
       [
-        'Model',
+        "Model",
         1,
         object,
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'
+        "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
       ]
     end
 
     it "should format the arguments" do
       with_helpers.format_args(args).should eq([
-        'Model',
-        '1',
+        "Model",
+        "1",
         object.inspect,
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ...'
+        "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ..."
       ])
     end
   end

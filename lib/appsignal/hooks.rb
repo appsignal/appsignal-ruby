@@ -89,18 +89,18 @@ module Appsignal
   end
 end
 
-require 'appsignal/hooks/active_support_notifications'
-require 'appsignal/hooks/celluloid'
-require 'appsignal/hooks/delayed_job'
-require 'appsignal/hooks/net_http'
-require 'appsignal/hooks/passenger'
-require 'appsignal/hooks/puma'
-require 'appsignal/hooks/rake'
-require 'appsignal/hooks/redis'
-require 'appsignal/hooks/sequel'
-require 'appsignal/hooks/shoryuken'
-require 'appsignal/hooks/sidekiq'
-require 'appsignal/hooks/unicorn'
-require 'appsignal/hooks/mongo_ruby_driver'
-require 'appsignal/hooks/webmachine'
-require 'appsignal/hooks/data_mapper'
+require "appsignal/hooks/active_support_notifications"
+require "appsignal/hooks/celluloid"
+require "appsignal/hooks/delayed_job"
+require "appsignal/hooks/net_http"
+require "appsignal/hooks/passenger"
+require "appsignal/hooks/puma"
+require "appsignal/hooks/rake"
+require "appsignal/hooks/redis"
+require "appsignal/hooks/sequel"
+require "appsignal/hooks/shoryuken"
+require "appsignal/hooks/sidekiq"
+require "appsignal/hooks/unicorn"
+require "appsignal/hooks/mongo_ruby_driver"
+require "appsignal/hooks/webmachine"
+require "appsignal/hooks/data_mapper"

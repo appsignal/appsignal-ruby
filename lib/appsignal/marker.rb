@@ -1,7 +1,7 @@
 module Appsignal
   class Marker
     attr_reader :marker_data, :config
-    ACTION = 'markers'
+    ACTION = "markers"
 
     def initialize(marker_data, config)
       @marker_data = marker_data
@@ -14,8 +14,8 @@ module Appsignal
         "revision: #{marker_data[:revision]}, user: #{marker_data[:user]}"
 
       result = transmitter.transmit(marker_data)
-      if result == '200'
-        puts 'AppSignal has been notified of this deploy!'
+      if result == "200"
+        puts "AppSignal has been notified of this deploy!"
       else
         raise "#{result} at #{transmitter.uri}"
       end

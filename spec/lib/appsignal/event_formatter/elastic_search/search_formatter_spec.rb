@@ -4,16 +4,16 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
 
   it "should register query.moped" do
     expect(
-      Appsignal::EventFormatter.registered?('search.elasticsearch', klass)
+      Appsignal::EventFormatter.registered?("search.elasticsearch", klass)
     ).to be_true
   end
 
   describe "#format" do
     let(:payload) do
       {
-        :name   => 'Search',
-        :klass  => 'User',
-        :search => {:index => 'users', :type => 'user', :q => 'John Doe'}
+        :name   => "Search",
+        :klass  => "User",
+        :search => {:index => "users", :type => "user", :q => "John Doe"}
       }
     end
 
@@ -28,17 +28,17 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
   describe "#sanitized_search" do
     let(:search) do
       {
-        :index => 'users',
-        :type  => 'user',
-        :q     => 'John Doe',
-        :other => 'Other'
+        :index => "users",
+        :type  => "user",
+        :q     => "John Doe",
+        :other => "Other"
       }
     end
 
     it "should sanitize non-whitelisted params" do
       expect(
         formatter.sanitized_search(search)
-      ).to eql({:index => 'users', :type => 'user', :q => '?', :other => '?'})
+      ).to eql({:index => "users", :type => "user", :q => "?", :other => "?"})
     end
 
     it "should return nil string when search is nil" do

@@ -1,6 +1,6 @@
-require 'json'
-require 'logger'
-require 'securerandom'
+require "json"
+require "logger"
+require "securerandom"
 
 module Appsignal
   class << self
@@ -14,7 +14,7 @@ module Appsignal
     end
 
     def initialize_extensions
-      Appsignal.logger.debug('Initializing extensions')
+      Appsignal.logger.debug("Initializing extensions")
       extensions.each do |extension|
         Appsignal.logger.debug("Initializing #{extension}")
         extension.initializer
@@ -23,16 +23,16 @@ module Appsignal
 
     def start
       unless extension_loaded?
-        logger.info('Not starting appsignal, extension is not loaded')
+        logger.info("Not starting appsignal, extension is not loaded")
         return
       else
-        logger.debug('Starting appsignal')
+        logger.debug("Starting appsignal")
       end
 
       unless @config
         @config = Config.new(
           Dir.pwd,
-          ENV['APPSIGNAL_APP_ENV'] || ENV['RAILS_ENV'] || ENV['RACK_ENV']
+          ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV["RACK_ENV"]
         )
       end
 
@@ -65,7 +65,7 @@ module Appsignal
           logger.info("Not starting, not active for #{config.env}")
         end
       else
-        logger.error('Not starting, no valid config for this environment')
+        logger.error("Not starting, no valid config for this environment")
       end
     end
 
@@ -81,7 +81,7 @@ module Appsignal
       if called_by
         logger.debug("Stopping appsignal (#{called_by})")
       else
-        logger.debug('Stopping appsignal')
+        logger.debug("Stopping appsignal")
       end
       Appsignal::Extension.stop
     end
@@ -89,7 +89,7 @@ module Appsignal
     def forked
       return unless active?
       Appsignal.start_logger
-      logger.debug('Forked process, resubscribing and restarting extension')
+      logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
     end
 
@@ -103,10 +103,10 @@ module Appsignal
         return yield
       end
 
-      if name.start_with?('perform_job'.freeze)
+      if name.start_with?("perform_job".freeze)
         namespace = Appsignal::Transaction::BACKGROUND_JOB
         request   = Appsignal::Transaction::GenericRequest.new(env)
-      elsif name.start_with?('process_action'.freeze)
+      elsif name.start_with?("process_action".freeze)
         namespace = Appsignal::Transaction::HTTP_REQUEST
         request   = ::Rack::Request.new(env)
       else
@@ -139,7 +139,7 @@ module Appsignal
     def monitor_single_transaction(name, env={}, &block)
       monitor_transaction(name, env, &block)
     ensure
-      stop('monitor_single_transaction')
+      stop("monitor_single_transaction")
     end
 
     def listen_for_error(&block)
@@ -235,7 +235,7 @@ module Appsignal
     def log_formatter(prefix = nil)
       pre = "#{prefix}: " if prefix
       proc do |severity, datetime, progname, msg|
-        "[#{datetime.strftime('%Y-%m-%dT%H:%M:%S')} (process) ##{Process.pid}][#{severity}] #{pre}#{msg}\n"
+        "[#{datetime.strftime("%Y-%m-%dT%H:%M:%S")} (process) ##{Process.pid}][#{severity}] #{pre}#{msg}\n"
       end
     end
 
@@ -258,7 +258,7 @@ module Appsignal
       end
 
       if path_arg
-        logger.info('Setting the path in start_logger has no effect anymore, set it in the config instead')
+        logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
       end
     end
 
@@ -309,22 +309,22 @@ module Appsignal
   end
 end
 
-require 'appsignal/utils'
-require 'appsignal/extension'
-require 'appsignal/auth_check'
-require 'appsignal/config'
-require 'appsignal/event_formatter'
-require 'appsignal/hooks'
-require 'appsignal/marker'
-require 'appsignal/minutely'
-require 'appsignal/garbage_collection_profiler'
-require 'appsignal/integrations/railtie' if defined?(::Rails)
-require 'appsignal/integrations/resque'
-require 'appsignal/integrations/resque_active_job'
-require 'appsignal/transaction'
-require 'appsignal/version'
-require 'appsignal/rack/generic_instrumentation'
-require 'appsignal/rack/js_exception_catcher'
-require 'appsignal/js_exception_transaction'
-require 'appsignal/transmitter'
-require 'appsignal/system'
+require "appsignal/utils"
+require "appsignal/extension"
+require "appsignal/auth_check"
+require "appsignal/config"
+require "appsignal/event_formatter"
+require "appsignal/hooks"
+require "appsignal/marker"
+require "appsignal/minutely"
+require "appsignal/garbage_collection_profiler"
+require "appsignal/integrations/railtie" if defined?(::Rails)
+require "appsignal/integrations/resque"
+require "appsignal/integrations/resque_active_job"
+require "appsignal/transaction"
+require "appsignal/version"
+require "appsignal/rack/generic_instrumentation"
+require "appsignal/rack/js_exception_catcher"
+require "appsignal/js_exception_transaction"
+require "appsignal/transmitter"
+require "appsignal/system"

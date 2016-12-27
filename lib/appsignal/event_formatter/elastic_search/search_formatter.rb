@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     module ElasticSearch
       class SearchFormatter < Appsignal::EventFormatter
-        register 'search.elasticsearch'
+        register "search.elasticsearch"
 
         def format(payload)
           [

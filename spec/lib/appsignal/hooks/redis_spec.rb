@@ -12,7 +12,7 @@ describe Appsignal::Hooks::RedisHook do
               1
             end
           end
-          VERSION = '1.0'
+          VERSION = "1.0"
         end
       end
 
@@ -26,12 +26,12 @@ describe Appsignal::Hooks::RedisHook do
         its(:dependencies_present?) { should be_true }
 
         it "should instrument a redis call" do
-          Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test')
+          Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
           expect( Appsignal::Transaction.current ).to receive(:start_event)
             .at_least(:once)
           expect( Appsignal::Transaction.current ).to receive(:finish_event)
             .at_least(:once)
-            .with('query.redis', nil, nil, 0)
+            .with("query.redis", nil, nil, 0)
 
           client = Redis::Client.new
 

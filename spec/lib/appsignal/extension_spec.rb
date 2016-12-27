@@ -1,11 +1,11 @@
-require 'fileutils'
+require "fileutils"
 
 describe "extension loading and operation" do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
 
-    it { should have_key('version') }
-    it { should have_key('triples') }
+    it { should have_key("version") }
+    it { should have_key("triples") }
   end
 
   describe ".agent_version" do
@@ -37,30 +37,30 @@ describe "extension loading and operation" do
       end
 
       context "with a transaction" do
-        subject { Appsignal::Extension.start_transaction('request_id', 'http_request', 0) }
+        subject { Appsignal::Extension.start_transaction("request_id", "http_request", 0) }
 
         it "should have a start_event method" do
           subject.start_event(0)
         end
 
         it "should have a finish_event method" do
-          subject.finish_event('name', 'title', 'body', 0, 0)
+          subject.finish_event("name", "title", "body", 0, 0)
         end
 
         it "should have a record_event method" do
-          subject.record_event('name', 'title', 'body', 1000, 0, 1000)
+          subject.record_event("name", "title", "body", 1000, 0, 1000)
         end
 
         it "should have a set_error method" do
-          subject.set_error('name', 'message', Appsignal::Extension.data_map_new)
+          subject.set_error("name", "message", Appsignal::Extension.data_map_new)
         end
 
         it "should have a set_sample_data method" do
-          subject.set_sample_data('params', Appsignal::Extension.data_map_new)
+          subject.set_sample_data("params", Appsignal::Extension.data_map_new)
         end
 
         it "should have a set_action method" do
-          subject.set_action('value')
+          subject.set_action("value")
         end
 
         it "should have a set_queue_start method" do
@@ -68,7 +68,7 @@ describe "extension loading and operation" do
         end
 
         it "should have a set_metadata method" do
-          subject.set_metadata('key', 'value')
+          subject.set_metadata("key", "value")
         end
 
         it "should have a finish method" do
@@ -81,15 +81,15 @@ describe "extension loading and operation" do
       end
 
       it "should have a set_gauge method" do
-        subject.set_gauge('key', 1.0)
+        subject.set_gauge("key", 1.0)
       end
 
       it "should have a increment_counter method" do
-        subject.increment_counter('key', 1)
+        subject.increment_counter("key", 1)
       end
 
       it "should have a add_distribution_value method" do
-        subject.add_distribution_value('key', 1.0)
+        subject.add_distribution_value("key", 1.0)
       end
     end
   end

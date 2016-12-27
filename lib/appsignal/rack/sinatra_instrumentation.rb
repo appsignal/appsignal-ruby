@@ -1,4 +1,4 @@
-require 'rack'
+require "rack"
 
 module Appsignal
   module Rack
@@ -10,8 +10,8 @@ module Appsignal
     class SinatraInstrumentation
       def initialize(app, options = {})
         @app, @options = app, options
-        Appsignal.logger.warn 'Please remove Appsignal::Rack::SinatraInstrumentation '\
-          'from your Sinatra::Base class. This is no longer needed.'
+        Appsignal.logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation "\
+          "from your Sinatra::Base class. This is no longer needed."
       end
 
       def call(env)
@@ -27,7 +27,7 @@ module Appsignal
       attr_reader :raise_errors_on
 
       def initialize(app, options = {})
-        Appsignal.logger.debug 'Initializing Appsignal::Rack::SinatraInstrumentation'
+        Appsignal.logger.debug "Initializing Appsignal::Rack::SinatraInstrumentation"
         @app, @options = app, options
         @raise_errors_on = raise_errors?(@app)
       end
@@ -52,7 +52,7 @@ module Appsignal
           {:force => @options.include?(:force) && @options[:force]}
         )
         begin
-          Appsignal.instrument('process_action.sinatra') do
+          Appsignal.instrument("process_action.sinatra") do
             @app.call(env)
           end
         rescue => error
@@ -61,25 +61,25 @@ module Appsignal
         ensure
           # If raise_error is off versions of Sinatra don't raise errors, but store
           # them in the sinatra.error env var.
-          if !@raise_errors_on && env['sinatra.error'] && !env['sinatra.skip_appsignal_error']
-            transaction.set_error(env['sinatra.error'])
+          if !@raise_errors_on && env["sinatra.error"] && !env["sinatra.skip_appsignal_error"]
+            transaction.set_error(env["sinatra.error"])
           end
           transaction.set_action(action_name(env))
-          transaction.set_metadata('path', request.path)
-          transaction.set_metadata('method', request.request_method)
+          transaction.set_metadata("path", request.path)
+          transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current!
         end
       end
 
       def action_name(env)
-        return unless env['sinatra.route']
+        return unless env["sinatra.route"]
 
-        if env['SCRIPT_NAME']
-          method, route = env['sinatra.route'].split(" ")
-          "#{method} #{env['SCRIPT_NAME']}#{route}"
+        if env["SCRIPT_NAME"]
+          method, route = env["sinatra.route"].split(" ")
+          "#{method} #{env["SCRIPT_NAME"]}#{route}"
         else
-          env['sinatra.route']
+          env["sinatra.route"]
         end
       end
 

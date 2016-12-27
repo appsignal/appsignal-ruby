@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     module Faraday
       class RequestFormatter < Appsignal::EventFormatter
-        register 'request.faraday'
+        register "request.faraday"
 
         def format(payload)
           http_method = payload[:method].to_s.upcase

@@ -29,7 +29,7 @@ module Appsignal
           alias close_without_appsignal close
 
           def close
-            Appsignal.stop('unicorn')
+            Appsignal.stop("unicorn")
             close_without_appsignal
           end
         end

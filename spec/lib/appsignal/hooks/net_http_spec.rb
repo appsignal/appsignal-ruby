@@ -7,29 +7,29 @@ describe Appsignal::Hooks::NetHttpHook do
     its(:dependencies_present?) { should be_true }
 
     it "should instrument a http request" do
-      Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test')
+      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
       expect( Appsignal::Transaction.current ).to receive(:start_event)
         .at_least(:once)
       expect( Appsignal::Transaction.current ).to receive(:finish_event)
         .at_least(:once)
         .with("request.net_http", "GET http://www.google.com", nil, 0)
 
-      stub_request(:any, 'http://www.google.com/')
+      stub_request(:any, "http://www.google.com/")
 
-      Net::HTTP.get_response(URI.parse('http://www.google.com'))
+      Net::HTTP.get_response(URI.parse("http://www.google.com"))
     end
 
     it "should instrument a https request" do
-      Appsignal::Transaction.create('uuid', Appsignal::Transaction::HTTP_REQUEST, 'test')
+      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
       expect( Appsignal::Transaction.current ).to receive(:start_event)
         .at_least(:once)
       expect( Appsignal::Transaction.current ).to receive(:finish_event)
         .at_least(:once)
         .with("request.net_http", "GET https://www.google.com", nil, 0)
 
-      stub_request(:any, 'https://www.google.com/')
+      stub_request(:any, "https://www.google.com/")
 
-      uri = URI.parse('https://www.google.com')
+      uri = URI.parse("https://www.google.com")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
       http.get(uri.request_uri)

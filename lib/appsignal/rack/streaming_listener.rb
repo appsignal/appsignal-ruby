@@ -3,7 +3,7 @@ module Appsignal
   module Rack
     class StreamingListener
       def initialize(app, options = {})
-        Appsignal.logger.debug 'Initializing Appsignal::Rack::StreamingListener'
+        Appsignal.logger.debug "Initializing Appsignal::Rack::StreamingListener"
         @app, @options = app, options
       end
 
@@ -25,16 +25,16 @@ module Appsignal
 
         # Instrument a `process_action`, to set params/action name
         status, headers, body =
-          Appsignal.instrument('process_action.rack') do
+          Appsignal.instrument("process_action.rack") do
             begin
               @app.call(env)
             rescue Exception => e
               transaction.set_error(e)
               raise e
             ensure
-              transaction.set_action(env['appsignal.action'])
-              transaction.set_metadata('path', request.path)
-              transaction.set_metadata('method', request.request_method)
+              transaction.set_action(env["appsignal.action"])
+              transaction.set_metadata("path", request.path)
+              transaction.set_metadata("method", request.request_method)
               transaction.set_http_or_background_queue_start
             end
           end
