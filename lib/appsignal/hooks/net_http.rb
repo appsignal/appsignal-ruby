@@ -16,7 +16,7 @@ module Appsignal
           def request(request, body = nil, &block)
             Appsignal.instrument(
               "request.net_http",
-              "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || self.address}"
+              "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || address}"
             ) do
               request_without_appsignal(request, body, &block)
             end

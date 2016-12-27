@@ -11,7 +11,7 @@ describe Appsignal::JSExceptionTransaction do
       "environment" => "development",
       "backtrace"   => [
         "foo.bar/js:11:1",
-        "foo.bar/js:22:2",
+        "foo.bar/js:22:2"
       ],
       "tags" => [
         "tag1"

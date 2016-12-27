@@ -14,7 +14,7 @@ module Appsignal
               :metadata => {
                 :id       => job.job_id,
                 :queue    => job.queue_name
-              },
+              }
             ) do
               block.call
             end

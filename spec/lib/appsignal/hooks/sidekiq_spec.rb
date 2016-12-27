@@ -46,7 +46,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
             "job_class" => "TestJob",
             "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
             "queue_name" => "default",
-            "arguments" => ["Model", 1],
+            "arguments" => ["Model", 1]
           }],
           "retry" => true,
           "jid" => "efb140489485999d32b5504c",
@@ -102,7 +102,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
     let(:item) do
       {
         "foo"   => "bar",
-        "class" => "TestClass",
+        "class" => "TestClass"
       }
     end
 

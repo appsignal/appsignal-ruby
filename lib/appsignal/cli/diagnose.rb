@@ -154,7 +154,7 @@ module Appsignal
             :current_path => Dir.pwd,
             :root_path => config.root_path,
             :log_dir_path => log_file_path ? File.dirname(log_file_path) : "",
-            :log_file_path => log_file_path,
+            :log_file_path => log_file_path
           }
         end
 

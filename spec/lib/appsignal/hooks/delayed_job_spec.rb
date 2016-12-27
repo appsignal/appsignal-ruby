@@ -34,7 +34,7 @@ describe Appsignal::Hooks::DelayedJobHook do
           :attempts       => 1,
           :queue          => "default",
           :created_at     => time - 60_000,
-          :payload_object => double(:args => ["argument"]),
+          :payload_object => double(:args => ["argument"])
         }
       end
       let(:job) { double(job_data) }
@@ -54,7 +54,7 @@ describe Appsignal::Hooks::DelayedJobHook do
               :id       => "123"
             },
             :params      => ["argument"],
-            :queue_start => time - 60_000,
+            :queue_start => time - 60_000
           )
 
           Timecop.freeze(time) do
@@ -119,7 +119,7 @@ describe Appsignal::Hooks::DelayedJobHook do
                   :id       => "123"
                 },
                 :params      => ["argument"],
-                :queue_start => time - 60_000,
+                :queue_start => time - 60_000
               )
 
               Timecop.freeze(time) do

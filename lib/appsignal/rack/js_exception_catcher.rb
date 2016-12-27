@@ -20,7 +20,7 @@ module Appsignal
             code = 422
           end
 
-          return [code, {}, []]
+          [code, {}, []]
         else
           @app.call(env)
         end

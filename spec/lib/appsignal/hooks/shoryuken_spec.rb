@@ -19,7 +19,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     let(:body) do
       {
         "job_class" => "TestClass",
-        "arguments" => ["Model", "1"],
+        "arguments" => ["Model", "1"]
       }
     end
 

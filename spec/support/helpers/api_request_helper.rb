@@ -10,7 +10,7 @@ module ApiRequestHelper
       },
       :headers => {
         "Content-Encoding" => "gzip",
-        "Content-Type" => "application/json; charset=UTF-8",
+        "Content-Type" => "application/json; charset=UTF-8"
       }
     }
     if body.is_a? Hash

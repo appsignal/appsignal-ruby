@@ -30,7 +30,7 @@ module Appsignal
             Appsignal.config[:enable_frontend_error_catching] == true
           app.middleware.insert_before(
             Appsignal::Rack::RailsInstrumentation,
-            Appsignal::Rack::JSExceptionCatcher,
+            Appsignal::Rack::JSExceptionCatcher
           )
         end
 

@@ -350,33 +350,6 @@ Style/RaiseArgs:
     - 'lib/appsignal/utils.rb'
     - 'spec/lib/appsignal/integrations/resque_spec.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Style/RedundantBegin:
-  Exclude:
-    - 'lib/appsignal/auth_check.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-Style/RedundantParentheses:
-  Exclude:
-    - 'lib/appsignal/transaction.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: AllowMultipleReturnValues.
-Style/RedundantReturn:
-  Exclude:
-    - 'lib/appsignal/rack/js_exception_catcher.rb'
-
-# Offense count: 5
-# Cop supports --auto-correct.
-Style/RedundantSelf:
-  Exclude:
-    - 'lib/appsignal/event_formatter/mongo_ruby_driver/query_formatter.rb'
-    - 'lib/appsignal/hooks/net_http.rb'
-    - 'lib/appsignal/integrations/resque.rb'
-
 # Offense count: 7
 # Cop supports --auto-correct.
 Style/RescueModifier:
@@ -395,33 +368,6 @@ Style/SpecialGlobalVars:
   Exclude:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/config.rb'
-
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyleForMultiline, SupportedStyles.
-# SupportedStyles: comma, consistent_comma, no_comma
-Style/TrailingCommaInArguments:
-  Exclude:
-    - 'lib/appsignal/integrations/railtie.rb'
-    - 'lib/appsignal/integrations/resque_active_job.rb'
-    - 'spec/lib/appsignal/hooks/delayed_job_spec.rb'
-
-# Offense count: 13
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyleForMultiline, SupportedStyles.
-# SupportedStyles: comma, consistent_comma, no_comma
-Style/TrailingCommaInLiteral:
-  Exclude:
-    - 'lib/appsignal/cli/diagnose.rb'
-    - 'lib/appsignal/event_formatter/moped/query_formatter.rb'
-    - 'spec/lib/appsignal/event_formatter/mongo_ruby_driver/query_formatter_spec.rb'
-    - 'spec/lib/appsignal/hooks/delayed_job_spec.rb'
-    - 'spec/lib/appsignal/hooks/shoryuken_spec.rb'
-    - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
-    - 'spec/lib/appsignal/js_exception_transaction_spec.rb'
-    - 'spec/lib/appsignal/transmitter_spec.rb'
-    - 'spec/support/helpers/api_request_helper.rb'
-    - 'spec/support/helpers/env_helpers.rb'
 
 # Offense count: 1
 # Cop supports --auto-correct.

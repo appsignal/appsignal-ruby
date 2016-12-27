@@ -364,7 +364,7 @@ module Appsignal
     def sanitized_tags
       @tags.select do |k, v|
         (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
-          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || v.is_a?(Integer))
       end
     end
 

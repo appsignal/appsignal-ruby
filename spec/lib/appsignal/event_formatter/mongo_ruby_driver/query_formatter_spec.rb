@@ -88,7 +88,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
         let(:value) do
           [
             { "q" => { "_id" => 1 }, "u" => [{ "foo" => "bar" }] },
-            { "q" => { "_id" => 2 }, "u" => [{ "foo" => "baz" }] },
+            { "q" => { "_id" => 2 }, "u" => [{ "foo" => "baz" }] }
           ]
         end
 

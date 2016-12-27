@@ -30,7 +30,7 @@ describe Appsignal::Transmitter do
         :body => Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}"),
         :headers => {
           "Content-Encoding" => "gzip",
-          "Content-Type" => "application/json; charset=UTF-8",
+          "Content-Type" => "application/json; charset=UTF-8"
         }
       ).to_return(
         :status => 200

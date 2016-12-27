@@ -57,7 +57,7 @@ module Appsignal
 
           {}.tap do |hsh|
             command.each do |key, val|
-              hsh[key] = self.apply_strategy(strategies[key], val)
+              hsh[key] = apply_strategy(strategies[key], val)
             end
           end
         end
@@ -73,11 +73,11 @@ module Appsignal
           when :sanitize_bulk
             if val.length > 1
               [
-                self.format(:bulk, val.first),
+                format(:bulk, val.first),
                 "[...]"
               ]
             else
-              val.map { |v| self.format(:bulk, v) }
+              val.map { |v| format(:bulk, v) }
             end
           else "?"
           end

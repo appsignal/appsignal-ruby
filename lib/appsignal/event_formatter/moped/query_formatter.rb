@@ -26,21 +26,21 @@ module Appsignal
               return ["Delete", {
                 :database => op.full_collection_name,
                 :selector => sanitize(op.selector, false, :mongodb),
-                :flags    => op.flags,
+                :flags    => op.flags
               }.inspect]
             when "Moped::Protocol::Insert"
               return ["Insert", {
                 :database   => op.full_collection_name,
                 :documents  => sanitize(op.documents, true, :mongodb),
                 :count      => op.documents.count,
-                :flags      => op.flags,
+                :flags      => op.flags
               }.inspect]
             when "Moped::Protocol::Update"
               return ["Update", {
                 :database => op.full_collection_name,
                 :selector => sanitize(op.selector, false, :mongodb),
                 :update   => sanitize(op.update, true, :mongodb),
-                :flags    => op.flags,
+                :flags    => op.flags
               }.inspect]
             when "Moped::Protocol::KillCursors"
               return ["KillCursors", {
