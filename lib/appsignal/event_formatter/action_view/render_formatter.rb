@@ -10,7 +10,7 @@ module Appsignal
         attr_reader :root_path
 
         def initialize
-          @root_path = "#{Rails.root.to_s}/".freeze
+          @root_path = "#{Rails.root}/".freeze
         end
 
         def format(payload)

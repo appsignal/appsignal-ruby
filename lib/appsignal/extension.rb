@@ -31,7 +31,7 @@ module Appsignal
 
     class Data
       def inspect
-        "#<#{self.class.name}:#{object_id} #{to_s}>"
+        "#<#{self.class.name}:#{object_id} #{self}>"
       end
     end
   end

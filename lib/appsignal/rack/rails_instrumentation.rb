@@ -32,7 +32,7 @@ module Appsignal
         ensure
           controller = env["action_controller.instance"]
           if controller
-            transaction.set_action("#{controller.class.to_s}##{controller.action_name}")
+            transaction.set_action("#{controller.class}##{controller.action_name}")
           end
           transaction.set_http_or_background_queue_start
           transaction.set_metadata("path", request.path)

@@ -44,7 +44,7 @@ module Appsignal
         # Finish the event in the extension.
         transaction.finish_event(
           "query.mongodb",
-          "#{event.command_name.to_s} | #{event.database_name} | #{result}",
+          "#{event.command_name} | #{event.database_name} | #{result}",
           Appsignal::Utils.data_generate(command),
           Appsignal::EventFormatter::DEFAULT
         )

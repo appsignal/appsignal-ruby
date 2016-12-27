@@ -42,15 +42,6 @@ Lint/RescueException:
     - 'lib/appsignal/minutely.rb'
     - 'lib/appsignal/rack/streaming_listener.rb'
 
-# Offense count: 4
-# Cop supports --auto-correct.
-Lint/StringConversionInInterpolation:
-  Exclude:
-    - 'lib/appsignal/event_formatter/action_view/render_formatter.rb'
-    - 'lib/appsignal/extension.rb'
-    - 'lib/appsignal/integrations/mongo_ruby_driver.rb'
-    - 'lib/appsignal/rack/rails_instrumentation.rb'
-
 # Offense count: 3
 # Cop supports --auto-correct.
 Lint/UnifiedInteger:
@@ -682,12 +673,6 @@ Style/TrailingCommaInLiteral:
 Style/UnlessElse:
   Exclude:
     - 'lib/appsignal.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-Style/UnneededInterpolation:
-  Exclude:
-    - 'lib/appsignal/integrations/padrino.rb'
 
 # Offense count: 16
 # Cop supports --auto-correct.

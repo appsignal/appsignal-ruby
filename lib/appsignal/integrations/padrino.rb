@@ -50,7 +50,7 @@ module Padrino::Routing::InstanceMethods
 
   def get_payload_action(request)
     # Short-circut is there's no request object to obtain information from
-    return "#{settings.name}" if request.nil?
+    return settings.name.to_s if request.nil?
 
     # Older versions of Padrino work with a route object
     route_obj = defined?(request.route_obj) && request.route_obj
