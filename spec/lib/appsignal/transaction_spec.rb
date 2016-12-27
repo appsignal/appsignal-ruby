@@ -771,7 +771,7 @@ describe Appsignal::Transaction do
 
       context "when env is present" do
         let(:env) do
-          Hash.new.tap do |hash|
+          {}.tap do |hash|
             whitelisted_keys.each { |o| hash[o] = 1 } # use all whitelisted keys
             hash[whitelisted_keys] = nil # don't add if nil
             hash[:not_whitelisted] = "I will be sanitized"

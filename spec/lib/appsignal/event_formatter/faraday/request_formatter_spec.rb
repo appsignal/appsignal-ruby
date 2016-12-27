@@ -9,8 +9,8 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
   describe "#format" do
     let(:payload) do
       {
-        method: :get,
-        url: URI.parse("http://example.org/hello/world?some=param")
+        :method => :get,
+        :url => URI.parse("http://example.org/hello/world?some=param")
       }
     end
 

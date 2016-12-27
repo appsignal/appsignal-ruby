@@ -191,12 +191,6 @@ Style/EmptyElse:
   Exclude:
     - 'lib/appsignal/transmitter.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Style/EmptyLiteral:
-  Exclude:
-    - 'spec/lib/appsignal/transaction_spec.rb'
-
 # Offense count: 9
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.
@@ -221,17 +215,6 @@ Style/GuardClause:
     - 'lib/appsignal/event_formatter/moped/query_formatter.rb'
     - 'lib/appsignal/hooks.rb'
     - 'lib/appsignal/marker.rb'
-
-# Offense count: 8
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, UseHashRocketsWithSymbolValues, PreferHashRocketsForNonAlnumEndingSymbols.
-# SupportedStyles: ruby19, hash_rockets, no_mixed_keys, ruby19_no_mixed_keys
-Style/HashSyntax:
-  Exclude:
-    - 'spec/lib/appsignal/event_formatter/active_record/instantiation_formatter_spec.rb'
-    - 'spec/lib/appsignal/event_formatter/active_record/sql_formatter_spec.rb'
-    - 'spec/lib/appsignal/event_formatter/faraday/request_formatter_spec.rb'
-    - 'spec/lib/appsignal/integrations/object_spec.rb'
 
 # Offense count: 3
 # Cop supports --auto-correct.

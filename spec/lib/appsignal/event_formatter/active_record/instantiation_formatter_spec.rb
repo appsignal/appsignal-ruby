@@ -9,8 +9,8 @@ describe Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter do
   describe "#format" do
     let(:payload) do
       {
-        record_count: 1,
-        class_name: "User"
+        :record_count => 1,
+        :class_name => "User"
       }
     end
 

@@ -84,7 +84,7 @@ describe Object do
               def foo
                 1
               end
-              appsignal_instrument_method :foo, name: "my_method.group"
+              appsignal_instrument_method :foo, :name => "my_method.group"
             end
           end
 
@@ -206,7 +206,7 @@ describe Object do
               def self.bar
                 2
               end
-              appsignal_instrument_class_method :bar, name: "my_method.group"
+              appsignal_instrument_class_method :bar, :name => "my_method.group"
             end
           end
 

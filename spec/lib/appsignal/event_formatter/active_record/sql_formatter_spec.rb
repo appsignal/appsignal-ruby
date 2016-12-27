@@ -9,8 +9,8 @@ describe Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter do
   describe "#format" do
     let(:payload) do
       {
-        name: "User load",
-        sql: "SELECT * FROM users"
+        :name => "User load",
+        :sql => "SELECT * FROM users"
       }
     end
 

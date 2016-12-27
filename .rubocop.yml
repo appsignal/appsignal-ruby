@@ -37,8 +37,5 @@ Style/AlignHash:
 Style/IndentArray:
   EnforcedStyle: consistent
 
-Style/FormatString:
-  EnforcedStyle: sprintf
-
 # Metrics/LineLength:
 #   Max: 80
