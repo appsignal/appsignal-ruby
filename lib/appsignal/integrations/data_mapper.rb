@@ -28,7 +28,6 @@ module Appsignal
         )
         super
       end
-
     end
   end
 end

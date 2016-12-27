@@ -211,17 +211,6 @@ Style/EmptyLinesAroundBlockBody:
     - 'spec/lib/appsignal/transaction_spec.rb'
     - 'spec/lib/appsignal_spec.rb'
 
-# Offense count: 4
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines
-Style/EmptyLinesAroundModuleBody:
-  Exclude:
-    - 'lib/appsignal/integrations/data_mapper.rb'
-    - 'lib/appsignal/integrations/resque.rb'
-    - 'lib/appsignal/integrations/resque_active_job.rb'
-    - 'lib/appsignal/integrations/webmachine.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 Style/EmptyLiteral:
@@ -241,17 +230,6 @@ Style/EmptyMethod:
     - 'spec/lib/appsignal/hooks/unicorn_spec.rb'
     - 'spec/lib/appsignal/integrations/data_mapper_spec.rb'
     - 'spec/lib/appsignal/integrations/resque_active_job_spec.rb'
-
-# Offense count: 6
-# Cop supports --auto-correct.
-# Configuration parameters: AllowForAlignment, ForceEqualSignAlignment.
-Style/ExtraSpacing:
-  Exclude:
-    - 'spec/lib/appsignal/integrations/padrino_spec.rb'
-    - 'spec/lib/appsignal/integrations/railtie_spec.rb'
-    - 'spec/lib/appsignal/integrations/resque_spec.rb'
-    - 'spec/lib/appsignal/rack/streaming_listener_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
 
 # Offense count: 8
 # Configuration parameters: MinBodyLength.

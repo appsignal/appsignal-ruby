@@ -23,7 +23,7 @@ if DependencyHelper.rails_present?
       context "config" do
         subject { Appsignal.config }
         context "basics" do
-          before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
+          before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
 
           it { should be_a(Appsignal::Config) }
 

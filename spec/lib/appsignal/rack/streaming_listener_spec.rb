@@ -1,7 +1,7 @@
 require "appsignal/rack/streaming_listener"
 
 describe Appsignal::Rack::StreamingListener do
-  let(:headers)  { {} }
+  let(:headers) { {} }
   let(:env) do
     {
       "rack.input"     => StringIO.new,

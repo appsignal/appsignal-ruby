@@ -5,7 +5,6 @@ module Appsignal
 
       def self.included(base)
         base.class_eval do
-
           around_perform do |job, block|
             Appsignal.monitor_single_transaction(
               "perform_job.resque",
@@ -20,10 +19,8 @@ module Appsignal
               block.call
             end
           end
-
         end
       end
-
     end
   end
 end

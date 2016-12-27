@@ -1,7 +1,6 @@
 module Appsignal::Integrations
   module WebmachinePlugin
     module FSM
-
       def run_with_appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,

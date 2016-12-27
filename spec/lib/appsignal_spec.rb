@@ -730,7 +730,7 @@ describe Appsignal do
     end
 
     describe ".send_error" do
-      let(:tags)      { nil }
+      let(:tags) { nil }
       let(:error) { VerySpecificError.new }
 
       it "should send the error to AppSignal" do

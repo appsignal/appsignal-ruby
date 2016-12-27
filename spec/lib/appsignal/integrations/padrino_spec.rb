@@ -1,5 +1,5 @@
 if DependencyHelper.padrino_present?
-  describe "Padrino integration"   do
+  describe "Padrino integration" do
     require File.expand_path("lib/appsignal/integrations/padrino.rb")
 
     class ClassWithRouter

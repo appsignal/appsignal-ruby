@@ -49,7 +49,7 @@ if DependencyHelper.resque_present?
             transaction.should_receive(:complete)
           end
 
-          after { job.perform  }
+          after { job.perform }
         end
 
         context "with exception" do
