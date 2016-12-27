@@ -13,11 +13,12 @@ module Appsignal
       end
 
       def call(worker, item, queue)
-        if item['class'] == 'ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper'
-          params = format_args(item['args'].first['arguments'])
-        else
-          params = format_args(item['args'])
-        end
+        params =
+          if item['class'] == 'ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper'
+            format_args(item['args'].first['arguments'])
+          else
+            format_args(item['args'])
+          end
 
         Appsignal.monitor_transaction(
           'perform_job.sidekiq',

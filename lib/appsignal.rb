@@ -37,11 +37,12 @@ module Appsignal
       end
 
       if config.valid?
-        if config[:debug]
-          logger.level = Logger::DEBUG
-        else
-          logger.level = Logger::INFO
-        end
+        logger.level =
+          if config[:debug]
+            Logger::DEBUG
+          else
+            Logger::INFO
+          end
         if config.active?
           logger.info("Starting AppSignal #{Appsignal::VERSION} (#{$0}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})")
           config.write_to_environment

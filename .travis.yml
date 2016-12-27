@@ -34,6 +34,9 @@ gemfile:
 
 matrix:
   fast_finish: true
+  include:
+    - rvm: "2.3.0"
+      script: "bundle exec rubocop"
   exclude:
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.0.gemfile"

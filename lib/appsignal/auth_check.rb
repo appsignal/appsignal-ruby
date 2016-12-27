@@ -16,15 +16,16 @@ module Appsignal
     def perform_with_result
       begin
         status = perform
-        case status
-        when '200'
-          result = 'AppSignal has confirmed authorization!'
-        when '401'
-          result = 'API key not valid with AppSignal...'
-        else
-          result = 'Could not confirm authorization: '\
-                   "#{status.nil? ? 'nil' : status}"
-        end
+        result =
+          case status
+          when "200"
+            "AppSignal has confirmed authorization!"
+          when "401"
+            "API key not valid with AppSignal..."
+          else
+            "Could not confirm authorization: " \
+              "#{status.nil? ? 'nil' : status}"
+          end
         [status, result]
       rescue => e
         result = 'Something went wrong while trying to '\
