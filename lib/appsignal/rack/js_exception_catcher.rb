@@ -3,7 +3,8 @@ module Appsignal
     class JSExceptionCatcher
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::JSExceptionCatcher"
-        @app, @options = app, options
+        @app = app
+        @options = options
       end
 
       def call(env)

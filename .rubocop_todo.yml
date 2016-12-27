@@ -318,17 +318,6 @@ Style/NumericPredicate:
     - 'spec/**/*'
     - 'lib/appsignal/cli/diagnose.rb'
 
-# Offense count: 7
-# Cop supports --auto-correct.
-Style/ParallelAssignment:
-  Exclude:
-    - 'lib/appsignal/rack/generic_instrumentation.rb'
-    - 'lib/appsignal/rack/js_exception_catcher.rb'
-    - 'lib/appsignal/rack/rails_instrumentation.rb'
-    - 'lib/appsignal/rack/sinatra_instrumentation.rb'
-    - 'lib/appsignal/rack/streaming_listener.rb'
-    - 'spec/lib/appsignal/garbage_collection_profiler_spec.rb'
-
 # Offense count: 2
 # Cop supports --auto-correct.
 Style/PerlBackrefs:

@@ -9,7 +9,8 @@ module Appsignal
     # `use Appsignal::Rack::SinatraBaseInstrumentation` automatically.
     class SinatraInstrumentation
       def initialize(app, options = {})
-        @app, @options = app, options
+        @app = app
+        @options = options
         Appsignal.logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation "\
           "from your Sinatra::Base class. This is no longer needed."
       end
@@ -28,7 +29,8 @@ module Appsignal
 
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::SinatraInstrumentation"
-        @app, @options = app, options
+        @app = app
+        @options = options
         @raise_errors_on = raise_errors?(@app)
       end
 

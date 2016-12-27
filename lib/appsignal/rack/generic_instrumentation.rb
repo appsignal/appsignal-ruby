@@ -5,7 +5,8 @@ module Appsignal
     class GenericInstrumentation
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::GenericInstrumentation"
-        @app, @options = app, options
+        @app = app
+        @options = options
       end
 
       def call(env)

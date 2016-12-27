@@ -53,7 +53,8 @@ describe Appsignal::GarbageCollectionProfiler do
 
   describe "in multiple threads, with a slow GC::Profiler" do
     it "should not count garbage collection times twice" do
-      threads, results = [], []
+      threads = []
+      results = []
       internal_profiler.clear_delay = 0.001
       internal_profiler.total_time = 0.12345
 

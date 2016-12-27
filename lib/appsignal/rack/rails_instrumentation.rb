@@ -5,7 +5,8 @@ module Appsignal
     class RailsInstrumentation
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::RailsInstrumentation"
-        @app, @options = app, options
+        @app = app
+        @options = options
       end
 
       def call(env)
