@@ -27,7 +27,7 @@ if DependencyHelper.rails_present?
         before { Appsignal.stub(:active? => true) }
 
         it "should call with monitoring" do
-          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
 
@@ -35,11 +35,11 @@ if DependencyHelper.rails_present?
         before { Appsignal.stub(:active? => false) }
 
         it "should not call with monitoring" do
-          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
         end
 
         it "should call the app" do
-          expect( app ).to receive(:call).with(env)
+          expect(app).to receive(:call).with(env)
         end
       end
 

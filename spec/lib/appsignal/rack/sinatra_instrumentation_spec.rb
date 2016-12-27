@@ -46,7 +46,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true) }
 
         it "should not raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -54,7 +54,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double) }
 
         it "should not raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -62,7 +62,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double(:raise_errors => false)) }
 
         it "should raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -70,7 +70,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double(:raise_errors => true)) }
 
         it "should raise errors" do
-          expect( middleware.raise_errors_on ).to be(true)
+          expect(middleware.raise_errors_on).to be(true)
         end
       end
     end
@@ -84,7 +84,7 @@ if DependencyHelper.sinatra_present?
         before { Appsignal.stub(:active? => true) }
 
         it "should call with monitoring" do
-          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
 
@@ -92,11 +92,11 @@ if DependencyHelper.sinatra_present?
         before { Appsignal.stub(:active? => false) }
 
         it "should not call with monitoring" do
-          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
         end
 
         it "should call the stack" do
-          expect( app ).to receive(:call).with(env)
+          expect(app).to receive(:call).with(env)
         end
       end
 

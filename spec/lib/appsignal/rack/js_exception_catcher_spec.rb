@@ -48,7 +48,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
       end
 
       it "should return 200" do
-        allow( Appsignal::JSExceptionTransaction).to receive(:new)
+        allow(Appsignal::JSExceptionTransaction).to receive(:new)
           .and_return(transaction)
 
         expect(catcher.call(env)).to eql([200, {}, []])

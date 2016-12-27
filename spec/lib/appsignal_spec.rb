@@ -756,11 +756,11 @@ describe Appsignal do
         let(:error) { double }
 
         it "should log a message" do
-          expect( Appsignal.logger ).to receive(:error).with('Can\'t send error, given value is not an exception')
+          expect(Appsignal.logger).to receive(:error).with('Can\'t send error, given value is not an exception')
         end
 
         it "should not send the error" do
-          expect( Appsignal::Transaction ).to_not receive(:create)
+          expect(Appsignal::Transaction).to_not receive(:create)
         end
       end
 

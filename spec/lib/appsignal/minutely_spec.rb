@@ -4,13 +4,13 @@ describe Appsignal::Minutely do
   end
 
   it "should have a list of probes" do
-    expect( Appsignal::Minutely.probes ).to be_instance_of(Array)
+    expect(Appsignal::Minutely.probes).to be_instance_of(Array)
   end
 
   describe ".start" do
     it "should call the probes periodically" do
       probe = double
-      expect( probe ).to receive(:call).at_least(:twice)
+      expect(probe).to receive(:call).at_least(:twice)
       Appsignal::Minutely.probes << probe
       Appsignal::Minutely.stub(:wait_time => 0.1)
 
@@ -23,18 +23,18 @@ describe Appsignal::Minutely do
   describe ".wait_time" do
     it "should get the time to the next minute" do
       Time.any_instance.stub(:sec => 30)
-      expect( Appsignal::Minutely.wait_time ).to eq 30
+      expect(Appsignal::Minutely.wait_time).to eq 30
     end
   end
 
   describe ".add_gc_probe" do
     it "should add the gc probe to the list" do
-      expect( Appsignal::Minutely.probes ).to be_empty
+      expect(Appsignal::Minutely.probes).to be_empty
 
       Appsignal::Minutely.add_gc_probe
 
-      expect( Appsignal::Minutely.probes ).to have(1).item
-      expect( Appsignal::Minutely.probes[0] ).to be_instance_of(Appsignal::Minutely::GCProbe)
+      expect(Appsignal::Minutely.probes).to have(1).item
+      expect(Appsignal::Minutely.probes[0]).to be_instance_of(Appsignal::Minutely::GCProbe)
     end
   end
 

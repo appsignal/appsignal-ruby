@@ -13,9 +13,9 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     its(:dependencies_present?) { should be_true }
 
     it "should instrument an AS notifications instrument call with a block" do
-      expect( Appsignal::Transaction.current ).to receive(:start_event)
+      expect(Appsignal::Transaction.current).to receive(:start_event)
         .at_least(:once)
-      expect( Appsignal::Transaction.current ).to receive(:finish_event)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
         .at_least(:once)
         .with("sql.active_record", nil, "SQL", 1)
 
@@ -27,8 +27,8 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     end
 
     it "should not instrument events whose name starts with a bang" do
-      expect( Appsignal::Transaction.current ).not_to receive(:start_event)
-      expect( Appsignal::Transaction.current ).not_to receive(:finish_event)
+      expect(Appsignal::Transaction.current).not_to receive(:start_event)
+      expect(Appsignal::Transaction.current).not_to receive(:finish_event)
 
       return_value = instrumenter.instrument("!sql.active_record", :sql => "SQL") do
         "value"

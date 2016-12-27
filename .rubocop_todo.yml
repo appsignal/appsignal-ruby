@@ -556,13 +556,6 @@ Style/SingleLineMethods:
   Exclude:
     - 'spec/lib/appsignal/transaction_spec.rb'
 
-# Offense count: 2
-# Cop supports --auto-correct.
-Style/SpaceAfterComma:
-  Exclude:
-    - 'bin/appsignal'
-    - 'spec/support/helpers/config_helpers.rb'
-
 # Offense count: 43
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.
@@ -625,11 +618,6 @@ Style/SpaceInsideBrackets:
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SupportedStyles.
 # SupportedStyles: space, no_space, compact
 Style/SpaceInsideHashLiteralBraces:
-  Enabled: false
-
-# Offense count: 218
-# Cop supports --auto-correct.
-Style/SpaceInsideParens:
   Enabled: false
 
 # Offense count: 2

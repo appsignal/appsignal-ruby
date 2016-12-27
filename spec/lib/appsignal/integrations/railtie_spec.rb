@@ -2,7 +2,7 @@ if DependencyHelper.rails_present?
   describe Appsignal::Integrations::Railtie do
     context "after initializing the app" do
       it "should call initialize_appsignal" do
-        expect( Appsignal::Integrations::Railtie ).to receive(:initialize_appsignal)
+        expect(Appsignal::Integrations::Railtie).to receive(:initialize_appsignal)
 
         MyApp::Application.config.root = project_fixture_path
         MyApp::Application.initialize!
@@ -52,7 +52,7 @@ if DependencyHelper.rails_present?
 
       context "listener middleware" do
         it "should have added the listener middleware" do
-          expect( app.middleware ).to receive(:insert_before).with(
+          expect(app.middleware).to receive(:insert_before).with(
             ActionDispatch::RemoteIp,
             Appsignal::Rack::RailsInstrumentation
           )
@@ -73,12 +73,12 @@ if DependencyHelper.rails_present?
           end
 
           it "should have added the listener and JSExceptionCatcher middleware" do
-            expect( app.middleware ).to receive(:insert_before).with(
+            expect(app.middleware).to receive(:insert_before).with(
               ActionDispatch::RemoteIp,
               Appsignal::Rack::RailsInstrumentation
             )
 
-            expect( app.middleware ).to receive(:insert_before).with(
+            expect(app.middleware).to receive(:insert_before).with(
               Appsignal::Rack::RailsInstrumentation,
               Appsignal::Rack::JSExceptionCatcher
             )

@@ -51,7 +51,7 @@ describe Appsignal::Transaction do
         end
 
         it "should output a debug message" do
-          expect( Appsignal.logger ).to receive(:debug)
+          expect(Appsignal.logger).to receive(:debug)
             .with("Trying to start new transaction 1 but 2 is already running. Using 2")
 
           Appsignal::Transaction.create("1", namespace, request, options)
@@ -182,14 +182,14 @@ describe Appsignal::Transaction do
     describe "#paused?" do
 
       it "should return the pause state" do
-        expect( transaction.paused? ).to be_false
+        expect(transaction.paused?).to be_false
       end
 
       context "when paused" do
         before { transaction.pause! }
 
         it "should return the pause state" do
-          expect( transaction.paused? ).to be_true
+          expect(transaction.paused?).to be_true
         end
       end
     end
@@ -221,14 +221,14 @@ describe Appsignal::Transaction do
 
     describe "#store" do
       it "should return an empty store when it's not already present" do
-        expect( transaction.store("test") ).to eql({})
+        expect(transaction.store("test")).to eql({})
       end
 
       it "should store changes to the store" do
         transaction_store = transaction.store("test")
         transaction_store["transaction"] = "value"
 
-        expect( transaction.store("test") ).to eql({"transaction" => "value"})
+        expect(transaction.store("test")).to eql({"transaction" => "value"})
       end
     end
 

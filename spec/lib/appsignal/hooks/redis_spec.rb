@@ -27,9 +27,9 @@ describe Appsignal::Hooks::RedisHook do
 
         it "should instrument a redis call" do
           Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-          expect( Appsignal::Transaction.current ).to receive(:start_event)
+          expect(Appsignal::Transaction.current).to receive(:start_event)
             .at_least(:once)
-          expect( Appsignal::Transaction.current ).to receive(:finish_event)
+          expect(Appsignal::Transaction.current).to receive(:finish_event)
             .at_least(:once)
             .with("query.redis", nil, nil, 0)
 

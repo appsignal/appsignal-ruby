@@ -16,18 +16,18 @@ if DependencyHelper.padrino_present?
 
     describe "Appsignal::Integrations::PadrinoPlugin" do
       it "should start the logger on init" do
-        expect( Appsignal ).to receive(:start_logger)
+        expect(Appsignal).to receive(:start_logger)
       end
 
       it "should start appsignal on init" do
-        expect( Appsignal ).to receive(:start)
+        expect(Appsignal).to receive(:start)
       end
 
       context "when not active" do
         before { Appsignal.stub(:active? => false) }
 
         it "should not add the Listener middleware to the stack" do
-          expect( Padrino ).to_not receive(:use)
+          expect(Padrino).to_not receive(:use)
         end
       end
 
@@ -89,11 +89,11 @@ if DependencyHelper.padrino_present?
           let(:env) { {"sinatra.static_file" => true} }
 
           it "should call the original method" do
-            expect( router ).to receive(:route_without_appsignal)
+            expect(router).to receive(:route_without_appsignal)
           end
 
           it "should not instrument the request" do
-            expect( Appsignal ).to_not receive(:instrument)
+            expect(Appsignal).to_not receive(:instrument)
           end
 
           after { router.route!(base) }
@@ -103,11 +103,11 @@ if DependencyHelper.padrino_present?
           before { Appsignal.stub(:active? => false) }
 
           it "should call the original method" do
-            expect( router ).to receive(:route_without_appsignal)
+            expect(router).to receive(:route_without_appsignal)
           end
 
           it "should not instrument the request" do
-            expect( Appsignal ).to_not receive(:instrument)
+            expect(Appsignal).to_not receive(:instrument)
           end
 
           after { router.route!(base) }
@@ -127,7 +127,7 @@ if DependencyHelper.padrino_present?
 
           context "without an error" do
             it "should create a transaction" do
-              expect( Appsignal::Transaction ).to receive(:create).with(
+              expect(Appsignal::Transaction).to receive(:create).with(
                 kind_of(String),
                 Appsignal::Transaction::HTTP_REQUEST,
                 request
@@ -135,19 +135,19 @@ if DependencyHelper.padrino_present?
             end
 
             it "should call the original routing method" do
-              expect( router ).to receive(:route_without_appsignal)
+              expect(router).to receive(:route_without_appsignal)
             end
 
             it "should instrument the action" do
-              expect( Appsignal ).to receive(:instrument).with("process_action.padrino")
+              expect(Appsignal).to receive(:instrument).with("process_action.padrino")
             end
 
             it "should set metadata" do
-              expect( transaction ).to receive(:set_metadata).twice
+              expect(transaction).to receive(:set_metadata).twice
             end
 
             it "should set the action on the transaction" do
-              expect( transaction ).to receive(:set_action).with("controller#action")
+              expect(transaction).to receive(:set_action).with("controller#action")
             end
 
             after { router.route!(base) }
@@ -158,7 +158,7 @@ if DependencyHelper.padrino_present?
             before { router.stub(:route_without_appsignal).and_raise(error) }
 
             it "should add the exception to the current transaction" do
-              expect( transaction ).to receive(:set_error).with(error)
+              expect(transaction).to receive(:set_error).with(error)
 
               router.route!(base) rescue VerySpecificError
             end
@@ -171,7 +171,7 @@ if DependencyHelper.padrino_present?
 
         context "when request is nil" do
           it "should return the site" do
-            expect( router.get_payload_action(nil) ).to eql("TestApp")
+            expect(router.get_payload_action(nil)).to eql("TestApp")
           end
         end
 
@@ -179,14 +179,14 @@ if DependencyHelper.padrino_present?
           let(:request) { double(:controller => "Controller", :action => "action") }
 
           it "should return the site name, controller and action" do
-            expect( router.get_payload_action(request) ).to eql("TestApp:Controller#action")
+            expect(router.get_payload_action(request)).to eql("TestApp:Controller#action")
           end
 
           context "when there's no action" do
             let(:request) { double(:controller => "Controller", :fullpath => "/action") }
 
             it "should return the site name, controller and fullpath" do
-              expect( router.get_payload_action(request) ).to eql("TestApp:Controller#/action")
+              expect(router.get_payload_action(request)).to eql("TestApp:Controller#/action")
             end
           end
         end
@@ -197,7 +197,7 @@ if DependencyHelper.padrino_present?
           before             { request.stub(:route_obj => route_object) }
 
           it "should return the original path" do
-            expect( router.get_payload_action(request) ).to eql("TestApp:/accounts/edit/:id")
+            expect(router.get_payload_action(request)).to eql("TestApp:/accounts/edit/:id")
           end
         end
       end

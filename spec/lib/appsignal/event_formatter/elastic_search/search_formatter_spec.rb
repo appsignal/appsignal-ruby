@@ -18,7 +18,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     end
 
     it "should return a payload with name and sanitized body" do
-      expect( formatter.format(payload) ).to eql([
+      expect(formatter.format(payload)).to eql([
         "Search: User",
         "{:index=>\"users\", :type=>\"user\", :q=>\"?\"}"
       ])
@@ -42,11 +42,11 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     end
 
     it "should return nil string when search is nil" do
-      expect( formatter.sanitized_search(nil) ).to be_nil
+      expect(formatter.sanitized_search(nil)).to be_nil
     end
 
     it "should return nil string when search is not a hash" do
-      expect( formatter.sanitized_search([]) ).to be_nil
+      expect(formatter.sanitized_search([])).to be_nil
     end
   end
 end

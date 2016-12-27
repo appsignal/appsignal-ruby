@@ -8,9 +8,9 @@ describe Appsignal::Hooks::NetHttpHook do
 
     it "should instrument a http request" do
       Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect( Appsignal::Transaction.current ).to receive(:start_event)
+      expect(Appsignal::Transaction.current).to receive(:start_event)
         .at_least(:once)
-      expect( Appsignal::Transaction.current ).to receive(:finish_event)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
         .at_least(:once)
         .with("request.net_http", "GET http://www.google.com", nil, 0)
 
@@ -21,9 +21,9 @@ describe Appsignal::Hooks::NetHttpHook do
 
     it "should instrument a https request" do
       Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect( Appsignal::Transaction.current ).to receive(:start_event)
+      expect(Appsignal::Transaction.current).to receive(:start_event)
         .at_least(:once)
-      expect( Appsignal::Transaction.current ).to receive(:finish_event)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
         .at_least(:once)
         .with("request.net_http", "GET https://www.google.com", nil, 0)
 

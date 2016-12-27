@@ -29,7 +29,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
     before { Appsignal::Transaction.stub(:current) { transaction } }
 
     it "should record the log entry in an event" do
-      expect( transaction ).to receive(:record_event).with(
+      expect(transaction).to receive(:record_event).with(
         "query.data_mapper",
         "DataMapper Query",
         "SELECT * from users",
@@ -51,7 +51,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
 
       it "should record the log entry in an event without body" do
-        expect( transaction ).to receive(:record_event).with(
+        expect(transaction).to receive(:record_event).with(
           "query.data_mapper",
           "DataMapper Query",
           "",
