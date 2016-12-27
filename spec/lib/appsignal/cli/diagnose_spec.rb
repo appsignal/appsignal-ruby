@@ -338,8 +338,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
           it "log files fall back on system tmp directory" do
             expect(output).to include \
-              %(log_dir_path: "#{system_tmp_dir}"\n    - Writable?: yes)
-              %(log_file_path: "#{system_tmp_log_file}"\n    - Exist?: false)
+              %(log_dir_path: "#{system_tmp_dir}"\n    - Writable?: yes),
+              %(log_file_path: "#{system_tmp_log_file}"\n    - Exists?: no)
           end
         end
 
