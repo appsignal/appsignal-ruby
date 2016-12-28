@@ -6,3 +6,7 @@ gem 'sinatra'
 gem 'mime-types', '~> 2.6'
 
 gemspec :path => '../'
+
+if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.1.0")
+  gem 'nokogiri', '~> 1.6.0'
+end
