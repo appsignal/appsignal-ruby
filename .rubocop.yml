@@ -6,6 +6,8 @@ AllCops:
     - "Gemfile"
   Exclude:
     - "tmp/**/*"
+    - "gemfiles/vendor/**/*"
+    - "vendor/**/*"
   DisplayCopNames: true
   UseCache: true
   CacheRootDirectory: ./tmp

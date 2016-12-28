@@ -36,6 +36,7 @@ matrix:
   fast_finish: true
   include:
     - rvm: "2.3.0"
+      gemfile: "gemfiles/no_dependencies.gemfile"
       script: "bundle exec rubocop"
   exclude:
     - rvm: "2.0.0"
