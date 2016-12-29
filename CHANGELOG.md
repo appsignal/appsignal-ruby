@@ -1,3 +1,6 @@
+# 2.1.0
+* Add support for musl libc
+
 # 2.0.4
 * Use consistent log format for both file and STDOUT logs. PR #203
 * Fix log path in `appsignal diagnose` for Rails applications. PR #218, #222
