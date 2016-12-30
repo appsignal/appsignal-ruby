@@ -1,6 +1,6 @@
 ---
-version: 21f0b26
+version: d2e9bb9
 triples:
   x86_64-linux:
-    checksum: e965ea8d4a01ea2caf9b50a6520c2f2385a00c00bc5d259079f93baddca0b28c
-    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/21f0b26/appsignal-x86_64-linux-all-static.tar.gz
+    checksum: 4de36bfc1b196dc75b7024e79f8d142d80d9a748db2cb275f6e44f4bcb3ad9bf
+    download_url: https://appsignal-agent-releases.global.ssl.fastly.net/d2e9bb9/appsignal-x86_64-linux-all-static.tar.gz
