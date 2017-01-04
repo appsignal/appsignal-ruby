@@ -3,6 +3,7 @@
 .sass-cache
 capybara-*.html
 *.log
+/doc
 /.bundle
 /vendor/bundle
 /tmp/*
