@@ -22,7 +22,7 @@ describe Appsignal::Transaction do
   before { Timecop.freeze(time) }
   after  { Timecop.return }
 
-  context "class methods" do
+  describe "class methods" do
     describe ".create" do
       it "should add the transaction to thread local" do
         Appsignal::Extension.should_receive(:start_transaction).with('1', 'http_request', 0)
@@ -599,6 +599,18 @@ describe Appsignal::Transaction do
     describe "#background_queue_start" do
       subject { transaction.send(:background_queue_start) }
 
+      context "when request is nil" do
+        let(:request) { nil }
+
+        it { should eq nil }
+      end
+
+      context "when env is nil" do
+        before { expect(transaction.request).to receive(:env).and_return(nil) }
+
+        it { should eq nil }
+      end
+
       context "when queue start is nil" do
         it { should eq nil }
       end
@@ -616,8 +628,14 @@ describe Appsignal::Transaction do
       subject { transaction.send(:http_queue_start) }
 
       shared_examples "http queue start" do
+        context "when request is nil" do
+          let(:request) { nil }
+
+          it { should be_nil }
+        end
+
         context "when env is nil" do
-          before { transaction.request.stub(:env => nil) }
+          before { expect(transaction.request).to receive(:env).and_return(nil) }
 
           it { should be_nil }
         end
@@ -751,8 +769,16 @@ describe Appsignal::Transaction do
 
       subject { transaction.send(:sanitized_environment) }
 
+      context "when request is nil" do
+        let(:request) { nil }
+
+        it "returns nil" do
+          expect(subject).to be_nil
+        end
+      end
+
       context "when env is nil" do
-        before { transaction.request.stub(:env => nil) }
+        before { expect(transaction.request).to receive(:env).and_return(nil) }
 
         it { should be_nil }
       end
@@ -773,14 +799,22 @@ describe Appsignal::Transaction do
     describe '#sanitized_session_data' do
       subject { transaction.send(:sanitized_session_data) }
 
-      context "when env is nil" do
-        before { transaction.request.stub(:session => nil) }
+      context "when request is nil" do
+        let(:request) { nil }
+
+        it "returns nil" do
+          expect(subject).to be_nil
+        end
+      end
+
+      context "when session is nil" do
+        before { expect(transaction.request).to receive(:session).and_return(nil) }
 
         it { should be_nil }
       end
 
-      context "when env is empty" do
-        before { transaction.request.stub(:session => {}) }
+      context "when session is empty" do
+        before { expect(transaction.request).to receive(:session).and_return({}) }
 
         it { should eq({}) }
       end
@@ -844,8 +878,14 @@ describe Appsignal::Transaction do
     describe "#metadata" do
       subject { transaction.send(:metadata) }
 
+      context "when request is nil" do
+        let(:request) { nil }
+
+        it { should be_nil }
+      end
+
       context "when env is nil" do
-        before { transaction.request.stub(:env => nil) }
+        before { expect(transaction.request).to receive(:env).and_return(nil) }
 
         it { should be_nil }
       end
