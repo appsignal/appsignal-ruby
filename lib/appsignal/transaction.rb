@@ -238,23 +238,40 @@ module Appsignal
 
     protected
 
+    # Returns calculated background queue start time in milliseconds, based on
+    # environment values.
+    #
+    # @return [nil] if no {#environment} is present.
+    # @return [nil] if there is no `:queue_start` in the {#environment}.
+    # @return [Integer]
     def background_queue_start
-      return unless request.env
-      return unless queue_start = request.env[:queue_start]
+      env = environment
+      return unless env
+      queue_start = env[:queue_start]
+      return unless queue_start
+
       (queue_start.to_f * 1000.0).to_i
     end
 
+    # Returns HTTP queue start time in milliseconds.
+    #
+    # @return [nil] if no queue start time is found.
+    # @return [nil] if begin time is too low to be plausible.
+    # @return [Integer] queue start in milliseconds.
     def http_queue_start
-      return unless request.env
-      return unless env_var = request.env['HTTP_X_QUEUE_START'.freeze] || request.env['HTTP_X_REQUEST_START'.freeze]
-      cleaned_value = env_var.tr('^0-9'.freeze, ''.freeze)
+      env = environment
+      return unless env
+      env_var = env["HTTP_X_QUEUE_START".freeze] || env["HTTP_X_REQUEST_START".freeze]
+      return unless env_var
+      cleaned_value = env_var.tr("^0-9".freeze, "".freeze)
       return if cleaned_value.empty?
+
       value = cleaned_value.to_i
       if value > 4_102_441_200_000
-        # Value is in microseconds
+        # Value is in microseconds. Transform to milliseconds.
         value / 1_000
       elsif value < 946_681_200_000
-        # Value is to low to be plausible
+        # Value is too low to be plausible
         nil
       else
         # Value is in milliseconds
@@ -283,24 +300,62 @@ module Appsignal
       Appsignal::Utils::ParamsSanitizer.sanitize params, options
     end
 
+    # Returns sanitized environment for a transaction.
+    #
+    # The environment of a transaction can contain a lot of information, not
+    # all of it useful for debugging.
+    #
+    # Only the values from the keys specified in `ENV_METHODS` are returned.
+    #
+    # @return [nil] if no environment is present.
+    # @return [Hash<String, Object>]
     def sanitized_environment
-      return unless request.env
+      env = environment
+      return if env.empty?
+
       {}.tap do |out|
         ENV_METHODS.each do |key|
-          out[key] = request.env[key] if request.env[key]
+          out[key] = env[key] if env[key]
         end
       end
     end
 
+    # Returns sanitized session data.
+    #
+    # The session data is sanitized by the {Appsignal::Utils::ParamsSanitizer}.
+    #
+    # @return [nil] if `:skip_session_data` config is set to `true`.
+    # @return [nil] if the {#request} object doesn't respond to `#session`.
+    # @return [nil] if the {#request} session data is `nil`.
+    # @return [Hash<String, Object>]
     def sanitized_session_data
-      return if Appsignal.config[:skip_session_data] || !request.respond_to?(:session)
-      return unless session = request.session
+      return if Appsignal.config[:skip_session_data] ||
+          !request.respond_to?(:session)
+      session = request.session
+      return unless session
+
       Appsignal::Utils::ParamsSanitizer.sanitize(session.to_hash)
     end
 
+    # Returns metadata from the environment.
+    #
+    # @return [nil] if no `:metadata` key is present in the {#environment}.
+    # @return [Hash<String, Object>]
     def metadata
-      return unless request.env
-      request.env[:metadata]
+      environment[:metadata]
+    end
+
+    # Returns the environment for a transaction.
+    #
+    # Returns an empty Hash when the {#request} object doesn't listen to the
+    # `#env` method or the `#env` is nil.
+    #
+    # @return [Hash<String, Object>]
+    def environment
+      return {} unless request.respond_to?(:env)
+      return {} unless request.env
+
+      request.env
     end
 
     # Only keep tags if they meet the following criteria:

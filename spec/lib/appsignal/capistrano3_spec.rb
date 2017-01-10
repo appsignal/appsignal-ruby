@@ -3,9 +3,8 @@ if DependencyHelper.capistrano3_present?
   require 'capistrano/deploy'
   require 'appsignal/capistrano'
 
-  include Capistrano::DSL
-
   describe "Capistrano 3 integration" do
+    let(:capistrano) { Class.new.extend(Capistrano::DSL) }
     let(:config) { project_fixture_config }
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
@@ -26,7 +25,7 @@ if DependencyHelper.capistrano3_present?
 
     def run
       capture_std_streams(out_stream, out_stream) do
-        invoke('appsignal:deploy')
+        capistrano.invoke('appsignal:deploy')
       end
     end
 
