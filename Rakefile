@@ -57,7 +57,7 @@ task :publish do
       puts "# Creating tag #{version}"
       puts `git tag #{version}`
       puts `git push origin #{version}`
-      puts `git push origin #{branch}`
+      puts `git push origin #{current_branch}`
     rescue
       raise "Tag: '#{version}' already exists"
     end
@@ -75,14 +75,8 @@ task :publish do
     @version ||= 'v' << gem_version
   end
 
-  def branch
-    if gem_version.include?('alpha') ||
-         gem_version.include?('beta') ||
-         gem_version.include?('rc')
-      'develop'
-    else
-      'master'
-    end
+  def current_branch
+    `git rev-parse --abbrev-ref HEAD`.chomp
   end
 
   def git_status_to_array(changes)

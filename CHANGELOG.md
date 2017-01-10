@@ -1,3 +1,6 @@
+# 2.1.0
+* Add support for musl libc
+
 # 2.0.5
 * Improved logging for agent connection issues
 * Handle nil request/environments in transactions
