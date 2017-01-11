@@ -1,9 +1,14 @@
 # 2.1.0
-* Add support for musl libc
+* Add support for musl based libc (Alpine Linux). PR #229
+* Implement `Appsignal.is_ignored_error?` and `Appsignal.is_ignored_action?`
+  logic in the AppSignal extension. PR #224
+* Deprecate `Appsignal.is_ignored_error?`. PR #224
+* Deprecate `Appsignal.is_ignored_action?`. PR #224
 
 # 2.0.5
-* Improved logging for agent connection issues
-* Handle nil request/environments in transactions
+* Improved logging for agent connection issues.
+  Commit cdf9d3286d704e22473eb901c839cab4fab45a6f
+* Handle nil request/environments in transactions. PR #231
 
 # 2.0.4
 * Use consistent log format for both file and STDOUT logs. PR #203
