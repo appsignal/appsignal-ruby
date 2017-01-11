@@ -899,16 +899,27 @@ describe Appsignal do
 
     describe ".is_ignored_action?" do
       let(:action) { 'TestController#isup' }
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
       before do
         Appsignal.stub(
           :config => {:ignore_actions => 'TestController#isup'}
         )
       end
 
-      subject { Appsignal.is_ignored_action?(action) }
+      subject do
+        capture_std_streams(std_stream, err_stream) do
+          Appsignal.is_ignored_action?(action)
+        end
+      end
 
       it "should return true if it's in the ignored list" do
         should be_true
+      end
+
+      it "outputs deprecated warning" do
+        subject
+        expect(stderr).to include("Appsignal.is_ignored_action? is deprecated with no replacement.")
       end
 
       context "when action is not in the ingore list" do

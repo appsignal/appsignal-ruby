@@ -278,6 +278,7 @@ module Appsignal
     def is_ignored_action?(action)
       Appsignal.config[:ignore_actions].include?(action)
     end
+    deprecate :is_ignored_action?, :none, 2017, 3
 
     # Convenience method for skipping instrumentations around a block of code.
     #
