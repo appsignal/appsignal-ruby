@@ -182,7 +182,6 @@ module Appsignal
     def set_error(error)
       return unless error
       return unless Appsignal.active?
-      return if Appsignal.is_ignored_error?(error)
 
       backtrace = cleaned_backtrace(error.backtrace)
       @ext.set_error(

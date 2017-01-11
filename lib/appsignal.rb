@@ -4,6 +4,8 @@ require 'securerandom'
 
 module Appsignal
   class << self
+    extend Gem::Deprecate
+
     attr_accessor :config, :agent, :extension_loaded
     attr_writer :logger, :in_memory_log
 
@@ -148,7 +150,7 @@ module Appsignal
     alias :listen_for_exception :listen_for_error
 
     def send_error(error, tags=nil, namespace=Appsignal::Transaction::HTTP_REQUEST)
-      return if !active? || is_ignored_error?(error)
+      return if !active?
       unless error.is_a?(Exception)
         logger.error('Can\'t send error, given value is not an exception')
         return
@@ -167,8 +169,7 @@ module Appsignal
     def set_error(exception)
       return if !active? ||
                 Appsignal::Transaction.current.nil? ||
-                exception.nil? ||
-                is_ignored_error?(exception)
+                exception.nil?
       Appsignal::Transaction.current.set_error(exception)
     end
     alias :set_exception :set_error
@@ -272,6 +273,7 @@ module Appsignal
       Appsignal.config[:ignore_errors].include?(error.class.name)
     end
     alias :is_ignored_exception? :is_ignored_error?
+    deprecate :is_ignored_error?, :none, 2017, 3
 
     def is_ignored_action?(action)
       Appsignal.config[:ignore_actions].include?(action)

@@ -752,11 +752,6 @@ describe Appsignal do
         end
       end
 
-      it "should not send the error if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_error? => true)
-        Appsignal::Transaction.should_not_receive(:create)
-      end
-
       context "when given class is not an error" do
         let(:error) { double }
 
@@ -797,14 +792,6 @@ describe Appsignal do
 
       it "should do nothing if there is no current transaction" do
         Appsignal::Transaction.stub(:current => nil)
-
-        transaction.should_not_receive(:set_error)
-
-        Appsignal.set_error(error)
-      end
-
-      it "should not add the error if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_error? => true)
 
         transaction.should_not_receive(:set_error)
 
@@ -878,16 +865,27 @@ describe Appsignal do
 
     describe ".is_ignored_error?" do
       let(:error) { StandardError.new }
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
       before do
         Appsignal.stub(
           :config => {:ignore_errors => ['StandardError']}
         )
       end
 
-      subject { Appsignal.is_ignored_error?(error) }
+      subject do
+        capture_std_streams(std_stream, err_stream) do
+          Appsignal.is_ignored_error?(error)
+        end
+      end
 
       it "should return true if it's in the ignored list" do
         should be_true
+      end
+
+      it "outputs deprecated warning" do
+        subject
+        expect(stderr).to include("Appsignal.is_ignored_error? is deprecated with no replacement.")
       end
 
       context "when error is not in the ignored list" do
