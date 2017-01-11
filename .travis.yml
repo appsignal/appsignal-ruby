@@ -4,7 +4,6 @@ branches:
   only:
     - "master"
     - "develop"
-    - "musl"
 
 language: ruby
 cache: bundler
