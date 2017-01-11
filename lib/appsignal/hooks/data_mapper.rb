@@ -5,11 +5,11 @@ module Appsignal
 
       def dependencies_present?
         defined?(::DataMapper) &&
-        defined?(::DataObjects::Connection)
+          defined?(::DataObjects::Connection)
       end
 
       def install
-        require 'appsignal/integrations/data_mapper'
+        require "appsignal/integrations/data_mapper"
         ::DataObjects::Connection.send(:include, Appsignal::Hooks::DataMapperLogListener)
       end
     end

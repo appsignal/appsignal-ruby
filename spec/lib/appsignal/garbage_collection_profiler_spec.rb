@@ -1,5 +1,5 @@
-require 'spec_helper'
-require_relative '../../support/mocks/fake_gc_profiler'
+require "spec_helper"
+require_relative "../../support/mocks/fake_gc_profiler"
 
 describe Appsignal::GarbageCollectionProfiler do
   let(:internal_profiler) { FakeGCProfiler.new }
@@ -33,8 +33,8 @@ describe Appsignal::GarbageCollectionProfiler do
   describe "when the total GC time becomes too high" do
     it "should reset" do
       profiler = Appsignal::GarbageCollectionProfiler.new
-        internal_profiler.total_time = 2_147_483_647
-        expect(profiler.total_time).to eq(0)
+      internal_profiler.total_time = 2_147_483_647
+      expect(profiler.total_time).to eq(0)
     end
   end
 
@@ -53,7 +53,8 @@ describe Appsignal::GarbageCollectionProfiler do
 
   describe "in multiple threads, with a slow GC::Profiler" do
     it "should not count garbage collection times twice" do
-      threads, results = [], []
+      threads = []
+      results = []
       internal_profiler.clear_delay = 0.001
       internal_profiler.total_time = 0.12345
 

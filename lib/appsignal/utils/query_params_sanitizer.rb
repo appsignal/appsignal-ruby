@@ -1,7 +1,7 @@
 module Appsignal
   module Utils
     class QueryParamsSanitizer
-      REPLACEMENT_KEY = '?'.freeze
+      REPLACEMENT_KEY = "?".freeze
 
       module ClassMethods
         def sanitize(params, only_top_level = false, key_sanitizer = nil)

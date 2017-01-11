@@ -1,10 +1,10 @@
 module Appsignal
   class AuthCheck
-    ACTION = 'auth'.freeze
+    ACTION = "auth".freeze
 
     attr_reader :config, :logger
 
-    def initialize(config, logger=Appsignal.logger)
+    def initialize(config, logger = Appsignal.logger)
       @config = config
       @logger = logger
     end
@@ -14,23 +14,22 @@ module Appsignal
     end
 
     def perform_with_result
-      begin
-        status = perform
+      status = perform
+      result =
         case status
-        when '200'
-          result = 'AppSignal has confirmed authorization!'
-        when '401'
-          result = 'API key not valid with AppSignal...'
+        when "200"
+          "AppSignal has confirmed authorization!"
+        when "401"
+          "API key not valid with AppSignal..."
         else
-          result = 'Could not confirm authorization: '\
-                   "#{status.nil? ? 'nil' : status}"
+          "Could not confirm authorization: " \
+            "#{status.nil? ? "nil" : status}"
         end
-        [status, result]
-      rescue => e
-        result = 'Something went wrong while trying to '\
-                 "authenticate with AppSignal: #{e}"
-        [nil, result]
-      end
+      [status, result]
+    rescue => e
+      result = "Something went wrong while trying to "\
+               "authenticate with AppSignal: #{e}"
+      [nil, result]
     end
   end
 end

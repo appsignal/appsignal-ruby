@@ -18,7 +18,7 @@ module Appsignal
             alias shutdown_without_appsignal shutdown
 
             def shutdown
-              Appsignal.stop('celluloid')
+              Appsignal.stop("celluloid")
               shutdown_without_appsignal
             end
           end

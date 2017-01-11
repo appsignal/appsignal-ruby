@@ -16,21 +16,21 @@ RSpec::Matchers.define :delegate do |method|
     rescue NoMethodError
       raise "#{@delegator} does not respond to #{@to}!"
     end
-    @delegator.stub(@to => double('receiver'))
+    @delegator.stub(@to => double("receiver"))
     @delegator.send(@to).stub(method => :called)
     @delegator.send(@method) == :called
   end
 
   description do
-    "delegate :#{@method} to its #{@to}#{@prefix ? ' with prefix' : ''}"
+    "delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 
-  failure_message_for_should do |text|
-    "expected #{@delegator} to delegate :#{@method} to its #{@to}#{@prefix ? ' with prefix' : ''}"
+  failure_message_for_should do |_text|
+    "expected #{@delegator} to delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 
-  failure_message_for_should_not do |text|
-    "expected #{@delegator} not to delegate :#{@method} to its #{@to}#{@prefix ? ' with prefix' : ''}"
+  failure_message_for_should_not do |_text|
+    "expected #{@delegator} not to delegate :#{@method} to its #{@to}#{@prefix ? " with prefix" : ""}"
   end
 
   chain(:to) { |receiver| @to = receiver }

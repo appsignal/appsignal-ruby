@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..','lib'))
-require 'appsignal/cli'
+$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), "..", "lib"))
+require "appsignal/cli"
 
 begin
   Appsignal::CLI.run

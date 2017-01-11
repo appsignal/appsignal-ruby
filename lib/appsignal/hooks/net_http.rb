@@ -1,4 +1,4 @@
-require 'net/http'
+require "net/http"
 
 module Appsignal
   class Hooks
@@ -13,10 +13,10 @@ module Appsignal
         Net::HTTP.class_eval do
           alias request_without_appsignal request
 
-          def request(request, body=nil, &block)
+          def request(request, body = nil, &block)
             Appsignal.instrument(
-              'request.net_http',
-              "#{request.method} #{use_ssl? ? 'https' : 'http'}://#{request['host'] || self.address}"
+              "request.net_http",
+              "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || address}"
             ) do
               request_without_appsignal(request, body, &block)
             end

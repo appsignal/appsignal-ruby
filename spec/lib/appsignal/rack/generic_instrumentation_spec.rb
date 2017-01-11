@@ -4,7 +4,7 @@ describe Appsignal::Rack::GenericInstrumentation do
   end
 
   let(:app) { double(:call => true) }
-  let(:env) { {:path => '/', :method => 'GET'} }
+  let(:env) { { :path => "/", :method => "GET" } }
   let(:options) { {} }
   let(:middleware) { Appsignal::Rack::GenericInstrumentation.new(app, options) }
 
@@ -17,7 +17,7 @@ describe Appsignal::Rack::GenericInstrumentation do
       before { Appsignal.stub(:active? => true) }
 
       it "should call with monitoring" do
-        expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+        expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
       end
     end
 
@@ -25,11 +25,11 @@ describe Appsignal::Rack::GenericInstrumentation do
       before { Appsignal.stub(:active? => false) }
 
       it "should not call with monitoring" do
-        expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+        expect(middleware).to_not receive(:call_with_appsignal_monitoring)
       end
 
       it "should call the stack" do
-        expect( app ).to receive(:call).with(env)
+        expect(app).to receive(:call).with(env)
       end
     end
 
@@ -63,16 +63,16 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     it "should set the action to unknown" do
-      Appsignal::Transaction.any_instance.should_receive(:set_action).with('unknown')
+      Appsignal::Transaction.any_instance.should_receive(:set_action).with("unknown")
     end
 
     context "with a route specified in the env" do
       before do
-        env['appsignal.route'] = 'GET /'
+        env["appsignal.route"] = "GET /"
       end
 
       it "should set the action" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
+        Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /")
       end
     end
 

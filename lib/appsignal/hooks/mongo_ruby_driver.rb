@@ -8,7 +8,7 @@ module Appsignal
       end
 
       def install
-        require 'appsignal/integrations/mongo_ruby_driver'
+        require "appsignal/integrations/mongo_ruby_driver"
 
         Mongo::Monitoring::Global.subscribe(
           Mongo::Monitoring::COMMAND,

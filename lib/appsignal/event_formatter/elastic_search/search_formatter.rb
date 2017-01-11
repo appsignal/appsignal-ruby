@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     module ElasticSearch
       class SearchFormatter < Appsignal::EventFormatter
-        register 'search.elasticsearch'
+        register "search.elasticsearch"
 
         def format(payload)
           [
@@ -12,14 +12,16 @@ module Appsignal
         end
 
         def sanitized_search(search)
-          return nil unless search.is_a?(Hash)
+          return unless search.is_a?(Hash)
+
           {}.tap do |hsh|
             search.each do |key, val|
-              if [:index, :type].include?(key)
-                hsh[key] = val
-              else
-                hsh[key] = Appsignal::Utils::QueryParamsSanitizer.sanitize(val)
-              end
+              hsh[key] =
+                if [:index, :type].include?(key)
+                  val
+                else
+                  Appsignal::Utils::QueryParamsSanitizer.sanitize(val)
+                end
             end
           end
         end

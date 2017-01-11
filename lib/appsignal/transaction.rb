@@ -1,26 +1,29 @@
-require 'json'
+require "json"
 
 module Appsignal
   class Transaction
-    HTTP_REQUEST   = 'http_request'.freeze
-    BACKGROUND_JOB = 'background_job'.freeze
-    FRONTEND       = 'frontend'.freeze
-    BLANK          = ''.freeze
+    HTTP_REQUEST   = "http_request".freeze
+    BACKGROUND_JOB = "background_job".freeze
+    FRONTEND       = "frontend".freeze
+    BLANK          = "".freeze
 
     # Based on what Rails uses + some variables we'd like to show
-    ENV_METHODS = %w(CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
-    PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
-    REQUEST_METHOD SERVER_NAME SERVER_PORT SERVER_PROTOCOL REQUEST_URI PATH_INFO
+    ENV_METHODS = %w(
+      CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
+      PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
+      REQUEST_METHOD SERVER_NAME SERVER_PORT SERVER_PROTOCOL REQUEST_URI
+      PATH_INFO
 
-    HTTP_X_REQUEST_START HTTP_X_MIDDLEWARE_START HTTP_X_QUEUE_START
-    HTTP_X_QUEUE_TIME HTTP_X_HEROKU_QUEUE_WAIT_TIME HTTP_X_APPLICATION_START
-    HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE
-    HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM HTTP_NEGOTIATE
-    HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR HTTP_CLIENT_IP HTTP_RANGE
-    HTTP_X_AUTH_TOKEN)
+      HTTP_X_REQUEST_START HTTP_X_MIDDLEWARE_START HTTP_X_QUEUE_START
+      HTTP_X_QUEUE_TIME HTTP_X_HEROKU_QUEUE_WAIT_TIME HTTP_X_APPLICATION_START
+      HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE
+      HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM
+      HTTP_NEGOTIATE HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR
+      HTTP_CLIENT_IP HTTP_RANGE HTTP_X_AUTH_TOKEN
+    )
 
     class << self
-      def create(id, namespace, request, options={})
+      def create(id, namespace, request, options = {})
         # Allow middleware to force a new transaction
         if options.include?(:force) && options[:force]
           Thread.current[:appsignal_transaction] = nil
@@ -58,7 +61,7 @@ module Appsignal
 
     attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
 
-    def initialize(transaction_id, namespace, request, options={})
+    def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
       @namespace = namespace
       @request = request
@@ -82,7 +85,7 @@ module Appsignal
 
     def complete
       if discarded?
-        Appsignal.logger.debug('Skipping transaction because it was manually discarded.'.freeze)
+        Appsignal.logger.debug("Skipping transaction because it was manually discarded.".freeze)
         return
       end
       if @ext.finish(self.class.garbage_collection_profiler.total_time)
@@ -119,7 +122,7 @@ module Appsignal
       @store[key]
     end
 
-    def set_tags(given_tags={})
+    def set_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
 
@@ -128,13 +131,13 @@ module Appsignal
       @ext.set_action(action)
     end
 
-    def set_http_or_background_action(from=request.params)
+    def set_http_or_background_action(from = request.params)
       return unless from
       group_and_action = [
         from[:controller] || from[:class],
         from[:action] || from[:method]
       ]
-      set_action(group_and_action.compact.join('#'))
+      set_action(group_and_action.compact.join("#"))
     end
 
     def set_queue_start(start)
@@ -196,7 +199,7 @@ module Appsignal
       @ext.start_event(self.class.garbage_collection_profiler.total_time)
     end
 
-    def finish_event(name, title, body, body_format=Appsignal::EventFormatter::DEFAULT)
+    def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       @ext.finish_event(
         name,
         title || BLANK,
@@ -206,7 +209,7 @@ module Appsignal
       )
     end
 
-    def record_event(name, title, body, duration, body_format=Appsignal::EventFormatter::DEFAULT)
+    def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       @ext.record_event(
         name,
         title || BLANK,
@@ -216,7 +219,7 @@ module Appsignal
       )
     end
 
-    def instrument(name, title=nil, body=nil, body_format=Appsignal::EventFormatter::DEFAULT)
+    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
       r = yield
       finish_event(name, title, body, body_format)
@@ -364,7 +367,7 @@ module Appsignal
     def sanitized_tags
       @tags.select do |k, v|
         (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
-          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || (v.is_a?(Integer)))
+          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || v.is_a?(Integer))
       end
     end
 
@@ -383,7 +386,7 @@ module Appsignal
       end
 
       # Instrument should still yield
-      def instrument(*args)
+      def instrument(*_args)
         yield
       end
 

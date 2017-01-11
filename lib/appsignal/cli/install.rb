@@ -1,14 +1,14 @@
-require 'erb'
-require 'ostruct'
-require 'io/console'
-require 'appsignal/demo'
+require "erb"
+require "ostruct"
+require "io/console"
+require "appsignal/demo"
 
 module Appsignal
   class CLI
     class Install
       extend CLI::Helpers
 
-      EXCLUDED_ENVIRONMENTS = ['test'].freeze
+      EXCLUDED_ENVIRONMENTS = ["test"].freeze
 
       class << self
         def run(push_api_key)
@@ -21,23 +21,23 @@ module Appsignal
           puts colorize "#######################################", :green
           puts
           unless push_api_key
-            puts colorize 'Problem encountered:', :red
-            puts '  No push API key entered.'
-            puts '  - Sign up for AppSignal and follow the instructions'
+            puts colorize "Problem encountered:", :red
+            puts "  No push API key entered."
+            puts "  - Sign up for AppSignal and follow the instructions"
             puts "  - Already signed up? Click 'New app' on the account overview page"
             puts
-            puts colorize 'Exiting installer...', :red
+            puts colorize "Exiting installer...", :red
             return
           end
           config = new_config
           config[:push_api_key] = push_api_key
 
-          print 'Validating API key'
+          print "Validating API key"
           periods
           puts
           begin
             auth_check = Appsignal::AuthCheck.new(config)
-            unless auth_check.perform == '200'
+            unless auth_check.perform == "200"
               puts "\n  API key '#{config[:push_api_key]}' is not valid, please get a new one on https://appsignal.com"
               return
             end
@@ -47,7 +47,7 @@ module Appsignal
             puts "  Please try again"
             return
           end
-          puts colorize '  API key valid!', :green
+          puts colorize "  API key valid!", :green
           puts
 
           if installed_frameworks.include?(:rails)
@@ -64,9 +64,9 @@ module Appsignal
         end
 
         def install_for_rails(config)
-          require File.expand_path(File.join(Dir.pwd, 'config/application.rb'))
+          require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
 
-          puts 'Installing for Ruby on Rails'
+          puts "Installing for Ruby on Rails"
 
           config[:name] = Rails.application.class.parent_name
 
@@ -82,10 +82,10 @@ module Appsignal
         end
 
         def install_for_sinatra(config)
-          puts 'Installing for Sinatra'
-          config[:name] = required_input('  Enter application name: ')
+          puts "Installing for Sinatra"
+          config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, ['development', 'production', 'staging'], true)
+          configure(config, ["development", "production", "staging"], true)
 
           puts "Finish Sinatra configuration"
           puts "  Sinatra requires some manual configuration."
@@ -100,10 +100,10 @@ module Appsignal
         end
 
         def install_for_padrino(config)
-          puts 'Installing for Padrino'
-          config[:name] = required_input('  Enter application name: ')
+          puts "Installing for Padrino"
+          config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, ['development', 'production', 'staging'], true)
+          configure(config, ["development", "production", "staging"], true)
 
           puts "Finish Padrino installation"
           puts "  Padrino requires some manual configuration."
@@ -118,12 +118,12 @@ module Appsignal
         end
 
         def install_for_grape(config)
-          puts 'Installing for Grape'
+          puts "Installing for Grape"
 
-          config[:name] = required_input('  Enter application name: ')
+          config[:name] = required_input("  Enter application name: ")
           puts
 
-          configure(config, ['development', 'production', 'staging'], true)
+          configure(config, ["development", "production", "staging"], true)
 
           puts "Manual Grape configuration needed"
           puts "  See the installation instructions at:"
@@ -133,13 +133,13 @@ module Appsignal
         end
 
         def install_for_capistrano
-          capfile = File.join(Dir.pwd, 'Capfile')
+          capfile = File.join(Dir.pwd, "Capfile")
           return unless File.exist?(capfile)
           return if File.read(capfile) =~ %r{require ['|"]appsignal/capistrano}
 
-          puts 'Installing for Capistrano'
-          print '  Adding AppSignal integration to Capfile'
-          File.open(capfile, 'a') do |f|
+          puts "Installing for Capistrano"
+          print "  Adding AppSignal integration to Capfile"
+          File.open(capfile, "a") do |f|
             f.write "\nrequire 'appsignal/capistrano'\n"
           end
           periods
@@ -158,7 +158,7 @@ module Appsignal
           loop do
             print "  Choose (1/2): "
             case ask_for_input
-            when '1'
+            when "1"
               puts
               print "Writing config file"
               periods
@@ -171,7 +171,7 @@ module Appsignal
               )
               puts
               break
-            when '2'
+            when "2"
               ENV["APPSIGNAL_ACTIVE"] = "true"
               ENV["APPSIGNAL_PUSH_API_KEY"] = config[:push_api_key]
               ENV["APPSIGNAL_APP_NAME"] = config[:name]
@@ -199,7 +199,7 @@ module Appsignal
           sleep 0.3
           puts
           if Gem.win_platform?
-            puts 'The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment'
+            puts "The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment"
           else
             puts "  Sending example data to AppSignal..."
             if Appsignal::Demo.transmit
@@ -217,22 +217,22 @@ module Appsignal
         def installed_frameworks
           [].tap do |out|
             begin
-              require 'rails'
+              require "rails"
               out << :rails
             rescue LoadError
             end
             begin
-              require 'sinatra'
+              require "sinatra"
               out << :sinatra
             rescue LoadError
             end
             begin
-              require 'padrino'
+              require "padrino"
               out << :padrino
             rescue LoadError
             end
             begin
-              require 'grape'
+              require "grape"
               out << :grape
             rescue LoadError
             end
@@ -241,7 +241,7 @@ module Appsignal
 
         def rails_environments
           Dir.glob(
-            File.join(Dir.pwd, 'config/environments/*.rb')
+            File.join(Dir.pwd, "config/environments/*.rb")
           ).map { |o| File.basename(o, ".rb") }.sort - EXCLUDED_ENVIRONMENTS
         end
 
@@ -249,13 +249,13 @@ module Appsignal
           template = ERB.new(
             File.read(File.join(File.dirname(__FILE__), "../../../resources/appsignal.yml.erb")),
             nil,
-            '-'
+            "-"
           )
 
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
-          FileUtils.mkdir_p(File.join(Dir.pwd, 'config'))
-          File.write(File.join(Dir.pwd, 'config/appsignal.yml'), config)
+          FileUtils.mkdir_p(File.join(Dir.pwd, "config"))
+          File.write(File.join(Dir.pwd, "config/appsignal.yml"), config)
         end
 
         def new_config

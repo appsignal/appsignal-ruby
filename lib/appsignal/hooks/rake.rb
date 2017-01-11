@@ -24,7 +24,7 @@ module Appsignal
             transaction.set_action(name)
             transaction.set_error(error)
             transaction.complete
-            Appsignal.stop('rake')
+            Appsignal.stop("rake")
             raise error
           end
         end

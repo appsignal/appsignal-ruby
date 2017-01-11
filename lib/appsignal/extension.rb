@@ -1,7 +1,7 @@
-require 'yaml'
+require "yaml"
 
 begin
-  require 'appsignal_extension'
+  require "appsignal_extension"
   Appsignal.extension_loaded = true
 rescue LoadError => err
   Appsignal.logger.error(
@@ -16,12 +16,12 @@ module Appsignal
     class << self
       def agent_config
         @agent_config ||= YAML.load(
-          File.read(File.join(File.dirname(__FILE__), '../../ext/agent.yml'))
+          File.read(File.join(File.dirname(__FILE__), "../../ext/agent.yml"))
         )
       end
 
       def agent_version
-        agent_config['version']
+        agent_config["version"]
       end
 
       def method_missing(m, *args, &block)
@@ -31,7 +31,7 @@ module Appsignal
 
     class Data
       def inspect
-        "#<#{self.class.name}:#{object_id} #{to_s}>"
+        "#<#{self.class.name}:#{object_id} #{self}>"
       end
     end
   end

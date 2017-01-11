@@ -7,8 +7,8 @@ describe Appsignal::Hooks::WebmachineHook do
       its(:dependencies_present?) { should be_true }
 
       it "should include the run alias methods" do
-        expect( fsm ).to respond_to(:run_with_appsignal)
-        expect( fsm ).to respond_to(:run_without_appsignal)
+        expect(fsm).to respond_to(:run_with_appsignal)
+        expect(fsm).to respond_to(:run_without_appsignal)
       end
 
       it "should include the handle_exceptions alias methods" do

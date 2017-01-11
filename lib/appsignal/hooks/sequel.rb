@@ -4,7 +4,7 @@ module Appsignal
       # Add query instrumentation
       def log_yield(sql, args = nil)
         Appsignal.instrument(
-          'sql.sequel',
+          "sql.sequel",
           nil,
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT
@@ -18,7 +18,7 @@ module Appsignal
       # Add query instrumentation
       def log_connection_yield(sql, conn, args = nil)
         Appsignal.instrument(
-          'sql.sequel',
+          "sql.sequel",
           nil,
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT

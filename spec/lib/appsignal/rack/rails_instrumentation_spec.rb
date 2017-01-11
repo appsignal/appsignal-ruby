@@ -9,10 +9,10 @@ if DependencyHelper.rails_present?
 
     let(:app) { double(:call => true) }
     let(:env) do
-      http_request_env_with_data('action_dispatch.request_id' => '1').tap do |request|
-        request['action_controller.instance'] = double(
+      http_request_env_with_data("action_dispatch.request_id" => "1").tap do |request|
+        request["action_controller.instance"] = double(
           :class => MockController,
-          :action_name => 'index'
+          :action_name => "index"
         )
       end
     end
@@ -27,7 +27,7 @@ if DependencyHelper.rails_present?
         before { Appsignal.stub(:active? => true) }
 
         it "should call with monitoring" do
-          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
 
@@ -35,11 +35,11 @@ if DependencyHelper.rails_present?
         before { Appsignal.stub(:active? => false) }
 
         it "should not call with monitoring" do
-          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
         end
 
         it "should call the app" do
-          expect( app ).to receive(:call).with(env)
+          expect(app).to receive(:call).with(env)
         end
       end
 
@@ -49,10 +49,10 @@ if DependencyHelper.rails_present?
     describe "#call_with_appsignal_monitoring" do
       it "should create a transaction" do
         Appsignal::Transaction.should_receive(:create).with(
-          '1',
+          "1",
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(ActionDispatch::Request),
-          :params_method=>:filtered_parameters
+          :params_method => :filtered_parameters
         ).and_return(
           double(
             :set_action => nil,
@@ -84,7 +84,7 @@ if DependencyHelper.rails_present?
       end
 
       it "should set the action and queue start" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with('MockController#index')
+        Appsignal::Transaction.any_instance.should_receive(:set_action).with("MockController#index")
         Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
       end
 
@@ -95,9 +95,9 @@ if DependencyHelper.rails_present?
       subject { middleware.request_id(env) }
 
       context "with request id set" do
-        let(:env) { {'action_dispatch.request_id' => 'id'} }
+        let(:env) { { "action_dispatch.request_id" => "id" } }
 
-        it { should eq 'id' }
+        it { should eq "id" }
       end
 
       context "with request id not set" do

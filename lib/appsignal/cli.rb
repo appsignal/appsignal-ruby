@@ -1,12 +1,12 @@
-require 'optparse'
-require 'logger'
-require 'yaml'
-require 'appsignal'
-require 'appsignal/cli/helpers'
-require 'appsignal/cli/demo'
-require 'appsignal/cli/diagnose'
-require 'appsignal/cli/install'
-require 'appsignal/cli/notify_of_deploy'
+require "optparse"
+require "logger"
+require "yaml"
+require "appsignal"
+require "appsignal/cli/helpers"
+require "appsignal/cli/demo"
+require "appsignal/cli/diagnose"
+require "appsignal/cli/install"
+require "appsignal/cli/notify_of_deploy"
 
 module Appsignal
   class CLI
@@ -15,7 +15,7 @@ module Appsignal
     class << self
       attr_accessor :options
 
-      def run(argv=ARGV)
+      def run(argv = ARGV)
         @options = {}
         global = global_option_parser
         commands = command_option_parser
@@ -48,56 +48,56 @@ module Appsignal
 
       def global_option_parser
         OptionParser.new do |o|
-          o.banner = 'Usage: appsignal <command> [options]'
+          o.banner = "Usage: appsignal <command> [options]"
 
-          o.on '-v', '--version', "Print version and exit" do |arg|
+          o.on "-v", "--version", "Print version and exit" do |_arg|
             puts "AppSignal #{Appsignal::VERSION}"
             exit(0)
           end
 
-          o.on '-h', '--help', "Show help and exit" do
+          o.on "-h", "--help", "Show help and exit" do
             puts o
             exit(0)
           end
 
-          o.separator ''
-          o.separator "Available commands: #{AVAILABLE_COMMANDS.join(', ')}"
+          o.separator ""
+          o.separator "Available commands: #{AVAILABLE_COMMANDS.join(", ")}"
         end
       end
 
       def command_option_parser
         {
-          'demo' => OptionParser.new do |o|
-            o.banner = 'Usage: appsignal demo [options]'
+          "demo" => OptionParser.new do |o|
+            o.banner = "Usage: appsignal demo [options]"
 
-            o.on '--environment=<app_env>', "The environment to demo" do |arg|
+            o.on "--environment=<app_env>", "The environment to demo" do |arg|
               options[:environment] = arg
             end
           end,
-          'diagnose' => OptionParser.new do |o|
-            o.banner = 'Usage: appsignal diagnose [options]'
+          "diagnose" => OptionParser.new do |o|
+            o.banner = "Usage: appsignal diagnose [options]"
 
-            o.on '--environment=<app_env>', "The environment to diagnose" do |arg|
+            o.on "--environment=<app_env>", "The environment to diagnose" do |arg|
               options[:environment] = arg
             end
           end,
-          'install' => OptionParser.new,
-          'notify_of_deploy' => OptionParser.new do |o|
-            o.banner = 'Usage: appsignal notify_of_deploy [options]'
+          "install" => OptionParser.new,
+          "notify_of_deploy" => OptionParser.new do |o|
+            o.banner = "Usage: appsignal notify_of_deploy [options]"
 
-            o.on '--revision=<revision>', "The revision you're deploying" do |arg|
+            o.on "--revision=<revision>", "The revision you're deploying" do |arg|
               options[:revision] = arg
             end
 
-            o.on '--user=<user>', "The name of the user that's deploying" do |arg|
+            o.on "--user=<user>", "The name of the user that's deploying" do |arg|
               options[:user] = arg
             end
 
-            o.on '--environment=<app_env>', "The environment you're deploying to" do |arg|
+            o.on "--environment=<app_env>", "The environment you're deploying to" do |arg|
               options[:environment] = arg
             end
 
-            o.on '--name=<name>', "The name of the app (optional)" do |arg|
+            o.on "--name=<name>", "The name of the app (optional)" do |arg|
               options[:name] = arg
             end
           end

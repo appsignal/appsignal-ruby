@@ -2,8 +2,8 @@ describe Appsignal::Rack::JSExceptionCatcher do
   let(:app)            { double(:call => true) }
   let(:options)        { double }
   let(:active)         { true }
-  let(:config_options) { {:enable_frontend_error_catching => true} }
-  let(:config)         { project_fixture_config('production', config_options) }
+  let(:config_options) { { :enable_frontend_error_catching => true } }
+  let(:config)         { project_fixture_config("production", config_options) }
 
   before do
     Appsignal.stub(:config => config)
@@ -13,7 +13,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
   describe "#initialize" do
     it "should log to the logger" do
       expect(Appsignal.logger).to receive(:debug)
-        .with('Initializing Appsignal::Rack::JSExceptionCatcher')
+        .with("Initializing Appsignal::Rack::JSExceptionCatcher")
 
       Appsignal::Rack::JSExceptionCatcher.new(app, options)
     end
@@ -23,7 +23,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
     let(:catcher) { Appsignal::Rack::JSExceptionCatcher.new(app, options) }
 
     context "when path is not `/appsignal_error_catcher`" do
-      let(:env) { {'PATH_INFO' => '/foo'} }
+      let(:env) { { "PATH_INFO" => "/foo" } }
 
       it "should call the next middleware" do
         expect(app).to receive(:call).with(env)
@@ -34,21 +34,21 @@ describe Appsignal::Rack::JSExceptionCatcher do
       let(:transaction) { double(:complete! => true) }
       let(:env) do
         {
-          'PATH_INFO'  => '/appsignal_error_catcher',
-          'rack.input' => double(:read => '{"name": "error"}')
+          "PATH_INFO"  => "/appsignal_error_catcher",
+          "rack.input" => double(:read => '{"name": "error"}')
         }
       end
 
       it "should create a JSExceptionTransaction" do
         expect(Appsignal::JSExceptionTransaction).to receive(:new)
-          .with({'name' => 'error'})
+          .with("name" => "error")
           .and_return(transaction)
 
         expect(transaction).to receive(:complete!)
       end
 
       it "should return 200" do
-        allow( Appsignal::JSExceptionTransaction).to receive(:new)
+        allow(Appsignal::JSExceptionTransaction).to receive(:new)
           .and_return(transaction)
 
         expect(catcher.call(env)).to eql([200, {}, []])
@@ -57,7 +57,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
       context "when `frontend_error_catching_path` is different" do
         let(:config_options) do
           {
-            :frontend_error_catching_path   => '/foo'
+            :frontend_error_catching_path => "/foo"
           }
         end
 
@@ -73,8 +73,8 @@ describe Appsignal::Rack::JSExceptionCatcher do
       context "when `name` is empty" do
         let(:env) do
           {
-            'PATH_INFO'  => '/appsignal_error_catcher',
-            'rack.input' => double(:read => '{"name": ""}')
+            "PATH_INFO"  => "/appsignal_error_catcher",
+            "rack.input" => double(:read => '{"name": ""}')
           }
         end
 
@@ -90,8 +90,8 @@ describe Appsignal::Rack::JSExceptionCatcher do
       context "when `name` doesn't exist" do
         let(:env) do
           {
-            'PATH_INFO'  => '/appsignal_error_catcher',
-            'rack.input' => double(:read => '{"foo": ""}')
+            "PATH_INFO"  => "/appsignal_error_catcher",
+            "rack.input" => double(:read => '{"foo": ""}')
           }
         end
 

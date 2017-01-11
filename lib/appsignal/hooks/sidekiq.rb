@@ -5,28 +5,29 @@ module Appsignal
 
       def job_keys
         @job_keys ||= Set.new(%w(
-            class args retried_at failed_at
-            error_message error_class backtrace
-            error_backtrace enqueued_at retry
-            jid retry created_at wrapped
+          class args retried_at failed_at
+          error_message error_class backtrace
+          error_backtrace enqueued_at retry
+          jid retry created_at wrapped
         ))
       end
 
-      def call(worker, item, queue)
-        if item['class'] == 'ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper'
-          params = format_args(item['args'].first['arguments'])
-        else
-          params = format_args(item['args'])
-        end
+      def call(_worker, item, _queue)
+        params =
+          if item["class"] == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
+            format_args(item["args"].first["arguments"])
+          else
+            format_args(item["args"])
+          end
 
         Appsignal.monitor_transaction(
-          'perform_job.sidekiq',
-          :class       => item['wrapped'] || item['class'],
-          :method      => 'perform',
+          "perform_job.sidekiq",
+          :class       => item["wrapped"] || item["class"],
+          :method      => "perform",
           :metadata    => formatted_metadata(item),
           :params      => params,
-          :queue_start => item['enqueued_at'],
-          :queue_time  => (Time.now.to_f - item['enqueued_at'].to_f) * 1000
+          :queue_start => item["enqueued_at"],
+          :queue_time  => (Time.now.to_f - item["enqueued_at"].to_f) * 1000
         ) do
           yield
         end

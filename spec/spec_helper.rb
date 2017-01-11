@@ -1,26 +1,26 @@
-ENV['RAILS_ENV'] ||= 'test'
-ENV['RACK_ENV'] ||= 'test'
-ENV['PADRINO_ENV'] ||= 'test'
+ENV["RAILS_ENV"] ||= "test"
+ENV["RACK_ENV"] ||= "test"
+ENV["PADRINO_ENV"] ||= "test"
 
 APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
-$LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, 'support/stubs'))
+$LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
 Bundler.require :default
-require 'rack'
-require 'rspec'
-require 'pry'
-require 'timecop'
-require 'webmock/rspec'
+require "rack"
+require "rspec"
+require "pry"
+require "timecop"
+require "webmock/rspec"
 
-Dir[File.join(APPSIGNAL_SPEC_DIR, 'support/helpers', '*.rb')].each do |f|
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/helpers", "*.rb")].each do |f|
   require f
 end
 if DependencyHelper.rails_present?
-  Dir[File.join(DirectoryHelper.support_dir, 'rails', '*.rb')].each do |f|
+  Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].each do |f|
     require f
   end
 end
-require 'appsignal'
+require "appsignal"
 
 puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
@@ -51,19 +51,19 @@ RSpec.configure do |config|
     # Use modified SYSTEM_TMP_DIR
     Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
     Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
-      File.join(tmp_dir, 'system-tmp')
+      File.join(tmp_dir, "system-tmp")
 
     FileUtils.rm_rf(tmp_dir)
     FileUtils.mkdir_p(Appsignal::Config::SYSTEM_TMP_DIR)
   end
 
   config.before do
-    ENV['RAILS_ENV'] ||= 'test'
-    ENV['RACK_ENV'] ||= 'test'
-    ENV['PADRINO_ENV'] ||= 'test'
+    ENV["RAILS_ENV"] ||= "test"
+    ENV["RACK_ENV"] ||= "test"
+    ENV["PADRINO_ENV"] ||= "test"
 
     # Clean environment
-    ENV.keys.select { |key| key.start_with?('APPSIGNAL_') }.each do |key|
+    ENV.keys.select { |key| key.start_with?("APPSIGNAL_") }.each do |key|
       ENV.delete(key)
     end
   end
@@ -73,7 +73,7 @@ RSpec.configure do |config|
   end
 
   config.after :all do
-    FileUtils.rm_f(File.join(project_fixture_path, 'log/appsignal.log'))
+    FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
     Appsignal.config = nil
     Appsignal.logger = nil
   end

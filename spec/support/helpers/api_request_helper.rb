@@ -9,8 +9,8 @@ module ApiRequestHelper
         :gem_version => Appsignal::VERSION
       },
       :headers => {
-        'Content-Encoding' => 'gzip',
-        'Content-Type' => 'application/json; charset=UTF-8',
+        "Content-Encoding" => "gzip",
+        "Content-Type" => "application/json; charset=UTF-8"
       }
     }
     if body.is_a? Hash

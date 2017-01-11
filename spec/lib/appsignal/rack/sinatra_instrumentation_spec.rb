@@ -1,10 +1,10 @@
 if DependencyHelper.sinatra_present?
-  require 'appsignal/integrations/sinatra'
+  require "appsignal/integrations/sinatra"
 
   describe Appsignal::Rack::SinatraInstrumentation do
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
-    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
+    let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
     describe "#call" do
@@ -37,7 +37,7 @@ if DependencyHelper.sinatra_present?
 
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
-    let(:env) { {'sinatra.route' => 'GET /', :path => '/', :method => 'GET'} }
+    let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
@@ -46,7 +46,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true) }
 
         it "should not raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -54,7 +54,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double) }
 
         it "should not raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -62,7 +62,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double(:raise_errors => false)) }
 
         it "should raise errors" do
-          expect( middleware.raise_errors_on ).to be(false)
+          expect(middleware.raise_errors_on).to be(false)
         end
       end
 
@@ -70,7 +70,7 @@ if DependencyHelper.sinatra_present?
         let(:app) { double(:call => true, :settings => double(:raise_errors => true)) }
 
         it "should raise errors" do
-          expect( middleware.raise_errors_on ).to be(true)
+          expect(middleware.raise_errors_on).to be(true)
         end
       end
     end
@@ -84,7 +84,7 @@ if DependencyHelper.sinatra_present?
         before { Appsignal.stub(:active? => true) }
 
         it "should call with monitoring" do
-          expect( middleware ).to receive(:call_with_appsignal_monitoring).with(env)
+          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
 
@@ -92,11 +92,11 @@ if DependencyHelper.sinatra_present?
         before { Appsignal.stub(:active? => false) }
 
         it "should not call with monitoring" do
-          expect( middleware ).to_not receive(:call_with_appsignal_monitoring)
+          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
         end
 
         it "should call the stack" do
-          expect( app ).to receive(:call).with(env)
+          expect(app).to receive(:call).with(env)
         end
       end
 
@@ -133,7 +133,7 @@ if DependencyHelper.sinatra_present?
 
       context "with an error in sinatra.error" do
         let(:error) { VerySpecificError.new }
-        let(:env) { {'sinatra.error' => error} }
+        let(:env) { { "sinatra.error" => error } }
 
         it "should set the error" do
           Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
@@ -148,7 +148,7 @@ if DependencyHelper.sinatra_present?
         end
 
         context "if sinatra.skip_appsignal_error is set" do
-          let(:env) { {'sinatra.error' => error, 'sinatra.skip_appsignal_error' => true} }
+          let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
 
           it "should not set the error" do
             Appsignal::Transaction.any_instance.should_not_receive(:set_error)
@@ -158,11 +158,11 @@ if DependencyHelper.sinatra_present?
 
       describe "action name" do
         it "should set the action" do
-          Appsignal::Transaction.any_instance.should_receive(:set_action).with('GET /')
+          Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /")
         end
 
         context "without 'sinatra.route' env" do
-          let(:env) { {:path => '/', :method => 'GET'} }
+          let(:env) { { :path => "/", :method => "GET" } }
 
           it "returns nil" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
@@ -170,14 +170,14 @@ if DependencyHelper.sinatra_present?
         end
 
         context "with mounted modular application" do
-          before { env['SCRIPT_NAME'] = '/api' }
+          before { env["SCRIPT_NAME"] = "/api" }
 
           it "should call set_action with an application prefix path" do
             Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /api/")
           end
 
           context "without 'sinatra.route' env" do
-            let(:env) { {:path => '/', :method => 'GET'} }
+            let(:env) { { :path => "/", :method => "GET" } }
 
             it "returns nil" do
               Appsignal::Transaction.any_instance.should_receive(:set_action).with(nil)
@@ -195,14 +195,14 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with overridden request class and params method" do
-        let(:options) { {:request_class => ::Rack::Request, :params_method => :filtered_params} }
+        let(:options) { { :request_class => ::Rack::Request, :params_method => :filtered_params } }
 
         it "should use the overridden request class and params method" do
           request = ::Rack::Request.new(env)
-          ::Rack::Request.should_receive(:new).
-                          with(env.merge(:params_method => :filtered_params)).
-                          at_least(:once).
-                          and_return(request)
+          ::Rack::Request.should_receive(:new)
+            .with(env.merge(:params_method => :filtered_params))
+            .at_least(:once)
+            .and_return(request)
         end
       end
 
