@@ -9,7 +9,6 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   let(:body) {{}}
 
   before do
-    Appsignal.stub(:is_ignored_exception? => false)
     Appsignal::Transaction.stub(:current => current_transaction)
     start_agent
   end

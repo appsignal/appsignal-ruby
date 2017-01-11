@@ -129,6 +129,7 @@ module Appsignal
       ENV['APPSIGNAL_APP_NAME']                     = config_hash[:name]
       ENV['APPSIGNAL_HTTP_PROXY']                   = config_hash[:http_proxy]
       ENV['APPSIGNAL_IGNORE_ACTIONS']               = config_hash[:ignore_actions].join(',')
+      ENV['APPSIGNAL_IGNORE_ERRORS']                = config_hash[:ignore_errors].join(',')
       ENV['APPSIGNAL_FILTER_PARAMETERS']            = config_hash[:filter_parameters].join(',')
       ENV['APPSIGNAL_SEND_PARAMS']                  = config_hash[:send_params].to_s
       ENV['APPSIGNAL_RUNNING_IN_CONTAINER']         = config_hash[:running_in_container].to_s

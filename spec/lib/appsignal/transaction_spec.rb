@@ -419,13 +419,6 @@ describe Appsignal::Transaction do
         transaction.should respond_to(:add_exception)
       end
 
-      it "should not add the error if it's in the ignored list" do
-        Appsignal.stub(:is_ignored_error? => true)
-        transaction.ext.should_not_receive(:set_error)
-
-        transaction.set_error(error)
-      end
-
       it "should not add the error if appsignal is not active" do
         Appsignal.stub(:active? => false)
         transaction.ext.should_not_receive(:set_error)

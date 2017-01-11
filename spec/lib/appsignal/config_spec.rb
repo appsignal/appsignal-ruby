@@ -392,6 +392,7 @@ describe Appsignal::Config do
     before do
       config[:http_proxy] = 'http://localhost'
       config[:ignore_actions] = ['action1', 'action2']
+      config[:ignore_errors] = ['VerySpecificError', 'AnotherError']
       config[:log_path] = '/tmp'
       config[:hostname] = 'app1.local'
       config[:filter_parameters] = %w(password confirm_password)
@@ -413,6 +414,7 @@ describe Appsignal::Config do
       expect(ENV['APPSIGNAL_LANGUAGE_INTEGRATION_VERSION']).to eq "ruby-#{Appsignal::VERSION}"
       expect(ENV['APPSIGNAL_HTTP_PROXY']).to                   eq 'http://localhost'
       expect(ENV['APPSIGNAL_IGNORE_ACTIONS']).to               eq 'action1,action2'
+      expect(ENV['APPSIGNAL_IGNORE_ERRORS']).to                eq 'VerySpecificError,AnotherError'
       expect(ENV['APPSIGNAL_FILTER_PARAMETERS']).to            eq 'password,confirm_password'
       expect(ENV['APPSIGNAL_SEND_PARAMS']).to                  eq 'true'
       expect(ENV['APPSIGNAL_RUNNING_IN_CONTAINER']).to         eq 'false'
