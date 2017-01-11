@@ -151,7 +151,7 @@ module Appsignal
     alias :listen_for_exception :listen_for_error
 
     def send_error(error, tags = nil, namespace = Appsignal::Transaction::HTTP_REQUEST)
-      return if !active?
+      return unless active?
       unless error.is_a?(Exception)
         logger.error('Can\'t send error, given value is not an exception')
         return

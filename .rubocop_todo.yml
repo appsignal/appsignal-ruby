@@ -71,7 +71,8 @@ Metrics/MethodLength:
 # Offense count: 1
 # Configuration parameters: CountComments.
 Metrics/ModuleLength:
-  Max: 252
+  Exclude:
+    - "lib/appsignal.rb"
 
 # Offense count: 8
 Metrics/PerceivedComplexity:
