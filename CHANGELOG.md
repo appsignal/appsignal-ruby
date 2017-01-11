@@ -4,6 +4,7 @@
   logic in the AppSignal extension. PR #224
 * Deprecate `Appsignal.is_ignored_error?`. PR #224
 * Deprecate `Appsignal.is_ignored_action?`. PR #224
+* Enforce a coding styleguide with RuboCop. PR #226
 
 # 2.0.5
 * Improved logging for agent connection issues.
