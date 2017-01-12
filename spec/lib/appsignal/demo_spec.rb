@@ -50,6 +50,7 @@ describe Appsignal::Demo do
       expect(error_transaction).to receive(:set_metadata).with("path", "/hello")
       expect(error_transaction).to receive(:set_metadata).with("method", "GET")
       expect(error_transaction).to receive(:set_metadata).with("demo_sample", "true")
+      expect(error_transaction).to receive(:complete)
       subject
     end
   end
@@ -79,6 +80,7 @@ describe Appsignal::Demo do
       expect(performance_transaction).to receive(:set_metadata).with("path", "/hello")
       expect(performance_transaction).to receive(:set_metadata).with("method", "GET")
       expect(performance_transaction).to receive(:set_metadata).with("demo_sample", "true")
+      expect(performance_transaction).to receive(:complete)
       subject
     end
   end
