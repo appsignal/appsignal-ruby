@@ -425,7 +425,7 @@ describe Appsignal::Transaction do
       context "for a http request" do
         it "should set an error in the extension" do
           transaction.ext.should_receive(:set_error).with(
-            "RSpec::Mocks::Mock",
+            "RSpec::Mocks::Double",
             "test message",
             Appsignal::Utils.data_generate(["line 1"])
           )
@@ -443,7 +443,7 @@ describe Appsignal::Transaction do
 
         it "should set an error in the extension" do
           transaction.ext.should_receive(:set_error).with(
-            "RSpec::Mocks::Mock",
+            "RSpec::Mocks::Double",
             "",
             Appsignal::Utils.data_generate(["line 1"])
           )
