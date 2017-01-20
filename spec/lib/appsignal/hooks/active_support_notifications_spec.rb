@@ -10,7 +10,10 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     let(:notifier) { ActiveSupport::Notifications::Fanout.new }
     let(:instrumenter) { ActiveSupport::Notifications::Instrumenter.new(notifier) }
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
 
     it "should instrument an AS notifications instrument call with a block" do
       expect(Appsignal::Transaction.current).to receive(:start_event)
@@ -37,6 +40,9 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
       expect(return_value).to eq "value"
     end
   else
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

@@ -11,12 +11,12 @@ describe Appsignal::Transmitter do
   describe "#uri" do
     subject { instance.uri.to_s }
 
-    it { should include "https://push.appsignal.com/1/action?" }
-    it { should include "api_key=abc" }
-    it { should include "hostname=app1.local" }
-    it { should include "name=TestApp" }
-    it { should include "environment=production" }
-    it { should include "gem_version=#{Appsignal::VERSION}" }
+    it { is_expected.to include "https://push.appsignal.com/1/action?" }
+    it { is_expected.to include "api_key=abc" }
+    it { is_expected.to include "hostname=app1.local" }
+    it { is_expected.to include "name=TestApp" }
+    it { is_expected.to include "environment=production" }
+    it { is_expected.to include "gem_version=#{Appsignal::VERSION}" }
   end
 
   describe "#transmit" do
@@ -38,7 +38,7 @@ describe Appsignal::Transmitter do
     end
     subject { instance.transmit(:the => :payload) }
 
-    it { should eq "200" }
+    it { is_expected.to eq "200" }
 
     context "with ca_file_path config option set" do
       context "when not existing file" do
@@ -86,12 +86,19 @@ describe Appsignal::Transmitter do
   describe "#http_post" do
     subject { instance.send(:http_post, "the" => "payload") }
 
-    its(:body) { should eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}") }
-    its(:path) { should eq instance.uri.request_uri }
+    describe '#body' do
+      subject { super().body }
+      it { is_expected.to eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}") }
+    end
+
+    describe '#path' do
+      subject { super().path }
+      it { is_expected.to eq instance.uri.request_uri }
+    end
 
     it "should have the correct headers" do
-      subject["Content-Type"].should eq "application/json; charset=UTF-8"
-      subject["Content-Encoding"].should eq "gzip"
+      expect(subject["Content-Type"]).to eq "application/json; charset=UTF-8"
+      expect(subject["Content-Encoding"]).to eq "gzip"
     end
   end
 
@@ -101,27 +108,62 @@ describe Appsignal::Transmitter do
     context "with a http uri" do
       let(:config) { project_fixture_config("test") }
 
-      it { should be_instance_of(Net::HTTP) }
-      its(:proxy?) { should be_false }
-      its(:use_ssl?) { should be_false }
+      it { is_expected.to be_instance_of(Net::HTTP) }
+
+      describe '#proxy?' do
+        subject { super().proxy? }
+        it { is_expected.to be_falsy }
+      end
+
+      describe '#use_ssl?' do
+        subject { super().use_ssl? }
+        it { is_expected.to be_falsy }
+      end
     end
 
     context "with a https uri" do
       let(:config) { project_fixture_config("production") }
 
-      it { should be_instance_of(Net::HTTP) }
-      its(:proxy?) { should be_false }
-      its(:use_ssl?) { should be_true }
-      its(:verify_mode) { should eq OpenSSL::SSL::VERIFY_PEER }
-      its(:ca_file) { should eq config[:ca_file_path] }
+      it { is_expected.to be_instance_of(Net::HTTP) }
+
+      describe '#proxy?' do
+        subject { super().proxy? }
+        it { is_expected.to be_falsy }
+      end
+
+      describe '#use_ssl?' do
+        subject { super().use_ssl? }
+        it { is_expected.to be_truthy }
+      end
+
+      describe '#verify_mode' do
+        subject { super().verify_mode }
+        it { is_expected.to eq OpenSSL::SSL::VERIFY_PEER }
+      end
+
+      describe '#ca_file' do
+        subject { super().ca_file }
+        it { is_expected.to eq config[:ca_file_path] }
+      end
     end
 
     context "with a proxy" do
       let(:config) { project_fixture_config("production", :http_proxy => "http://localhost:8080") }
 
-      its(:proxy?) { should be_true }
-      its(:proxy_address) { should eq "localhost" }
-      its(:proxy_port) { should eq 8080 }
+      describe '#proxy?' do
+        subject { super().proxy? }
+        it { is_expected.to be_truthy }
+      end
+
+      describe '#proxy_address' do
+        subject { super().proxy_address }
+        it { is_expected.to eq "localhost" }
+      end
+
+      describe '#proxy_port' do
+        subject { super().proxy_port }
+        it { is_expected.to eq 8080 }
+      end
     end
   end
 end

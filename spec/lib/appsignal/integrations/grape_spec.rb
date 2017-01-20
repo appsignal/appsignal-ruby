@@ -47,7 +47,7 @@ if DependencyHelper.grape_present?
         let(:transaction) { http_request_transaction }
         before :all do
           Appsignal.config = project_fixture_config
-          expect(Appsignal.active?).to be_true
+          expect(Appsignal.active?).to be_truthy
         end
         before do
           expect(Appsignal::Transaction).to receive(:create).with(

@@ -6,17 +6,23 @@ describe Appsignal::Hooks::PassengerHook do
     end
     after(:all) { Object.send(:remove_const, :PhusionPassenger) }
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
 
     it "adds behavior to stopping_worker_process and starting_worker_process" do
-      PhusionPassenger.should_receive(:on_event).with(:starting_worker_process)
-      PhusionPassenger.should_receive(:on_event).with(:stopping_worker_process)
+      expect(PhusionPassenger).to receive(:on_event).with(:starting_worker_process)
+      expect(PhusionPassenger).to receive(:on_event).with(:stopping_worker_process)
 
       Appsignal::Hooks::PassengerHook.new.install
     end
   end
 
   context "without passenger" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

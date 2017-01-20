@@ -5,7 +5,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
   it "should register query.moped" do
     expect(
       Appsignal::EventFormatter.registered?("search.elasticsearch", klass)
-    ).to be_true
+    ).to be_truthy
   end
 
   describe "#format" do

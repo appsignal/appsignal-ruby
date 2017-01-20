@@ -13,37 +13,37 @@ describe Appsignal do
   describe ".config=" do
     it "should set the config" do
       config = project_fixture_config
-      Appsignal.logger.should_not_receive(:level=)
+      expect(Appsignal.logger).to_not receive(:level=)
 
       Appsignal.config = config
-      Appsignal.config.should eq config
+      expect(Appsignal.config).to eq config
     end
   end
 
   describe ".extensions" do
     it "should keep a list of extensions" do
-      Appsignal.extensions.should be_empty
+      expect(Appsignal.extensions).to be_empty
       Appsignal.extensions << Appsignal::MockExtension
-      Appsignal.extensions.should have(1).item
+      expect(Appsignal.extensions.size).to eq(1)
     end
   end
 
   describe ".start" do
     context "with no config set beforehand" do
       it "should do nothing when config is not set and there is no valid config in the env" do
-        Appsignal.logger.should_receive(:error).with(
+        expect(Appsignal.logger).to receive(:error).with(
           "Push api key not set after loading config"
         ).once
-        Appsignal.logger.should_receive(:error).with(
+        expect(Appsignal.logger).to receive(:error).with(
           "Not starting, no valid config for this environment"
         ).once
-        Appsignal::Extension.should_not_receive(:start)
+        expect(Appsignal::Extension).to_not receive(:start)
         Appsignal.start
       end
 
       it "should create a config from the env" do
         ENV["APPSIGNAL_PUSH_API_KEY"] = "something"
-        Appsignal::Extension.should_receive(:start)
+        expect(Appsignal::Extension).to receive(:start)
         expect(Appsignal.logger).not_to receive(:error)
         silence { Appsignal.start }
         expect(Appsignal.config[:push_api_key]).to eq("something")
@@ -55,16 +55,16 @@ describe Appsignal do
 
       it "should initialize logging" do
         Appsignal.start
-        Appsignal.logger.level.should eq Logger::INFO
+        expect(Appsignal.logger.level).to eq Logger::INFO
       end
 
       it "should start native" do
-        Appsignal::Extension.should_receive(:start)
+        expect(Appsignal::Extension).to receive(:start)
         Appsignal.start
       end
 
       it "should initialize formatters" do
-        Appsignal::EventFormatter.should_receive(:initialize_formatters)
+        expect(Appsignal::EventFormatter).to receive(:initialize_formatters)
         Appsignal.start
       end
 
@@ -73,7 +73,7 @@ describe Appsignal do
 
         it "should do nothing" do
           Appsignal.start
-          Appsignal.agent.should be_nil
+          expect(Appsignal.agent).to be_nil
         end
       end
 
@@ -81,7 +81,7 @@ describe Appsignal do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
         it "should call the extension's initializer" do
-          Appsignal::MockExtension.should_receive(:initializer)
+          expect(Appsignal::MockExtension).to receive(:initializer)
           Appsignal.start
         end
       end
@@ -137,7 +137,7 @@ describe Appsignal do
         end
 
         it "should start minutely" do
-          Appsignal::Minutely.should_receive(:start)
+          expect(Appsignal::Minutely).to receive(:start)
           Appsignal.start
         end
       end
@@ -148,7 +148,7 @@ describe Appsignal do
         end
 
         it "should not start minutely" do
-          Appsignal::Minutely.should_not_receive(:start)
+          expect(Appsignal::Minutely).to_not receive(:start)
           Appsignal.start
         end
       end
@@ -159,7 +159,7 @@ describe Appsignal do
 
       it "should change the log level" do
         Appsignal.start
-        Appsignal.logger.level.should eq Logger::DEBUG
+        expect(Appsignal.logger.level).to eq Logger::DEBUG
       end
     end
   end
@@ -167,7 +167,7 @@ describe Appsignal do
   describe ".forked" do
     context "when not active" do
       it "should should do nothing" do
-        Appsignal::Extension.should_not_receive(:start)
+        expect(Appsignal::Extension).to_not receive(:start)
 
         Appsignal.forked
       end
@@ -179,8 +179,8 @@ describe Appsignal do
       end
 
       it "should resubscribe and start the extension" do
-        Appsignal.should_receive(:start_logger)
-        Appsignal::Extension.should_receive(:start)
+        expect(Appsignal).to receive(:start_logger)
+        expect(Appsignal::Extension).to receive(:start)
 
         Appsignal.forked
       end
@@ -189,18 +189,18 @@ describe Appsignal do
 
   describe ".stop" do
     it "should call stop on the extension" do
-      Appsignal.logger.should_receive(:debug).with("Stopping appsignal")
-      Appsignal::Extension.should_receive(:stop)
+      expect(Appsignal.logger).to receive(:debug).with("Stopping appsignal")
+      expect(Appsignal::Extension).to receive(:stop)
       Appsignal.stop
-      Appsignal.active?.should be_false
+      expect(Appsignal.active?).to be_falsy
     end
 
     context "with context specified" do
       it "should log the context" do
-        Appsignal.logger.should_receive(:debug).with("Stopping appsignal (something)")
-        Appsignal::Extension.should_receive(:stop)
+        expect(Appsignal.logger).to receive(:debug).with("Stopping appsignal (something)")
+        expect(Appsignal::Extension).to receive(:stop)
         Appsignal.stop("something")
-        Appsignal.active?.should be_false
+        expect(Appsignal.active?).to be_falsy
       end
     end
   end
@@ -213,7 +213,7 @@ describe Appsignal do
         Appsignal.config = nil
       end
 
-      it { should be_false }
+      it { is_expected.to be_falsy }
     end
 
     context "with inactive config" do
@@ -221,7 +221,7 @@ describe Appsignal do
         Appsignal.config = project_fixture_config("nonsense")
       end
 
-      it { should be_false }
+      it { is_expected.to be_falsy }
     end
 
     context "with active config" do
@@ -229,89 +229,89 @@ describe Appsignal do
         Appsignal.config = project_fixture_config
       end
 
-      it { should be_true }
+      it { is_expected.to be_truthy }
     end
   end
 
   describe ".add_exception" do
     it "should alias this method" do
-      Appsignal.should respond_to(:add_exception)
+      expect(Appsignal).to respond_to(:add_exception)
     end
   end
 
   describe ".get_server_state" do
     it "should call server state on the extension" do
-      Appsignal::Extension.should_receive(:get_server_state).with("key")
+      expect(Appsignal::Extension).to receive(:get_server_state).with("key")
 
       Appsignal.get_server_state("key")
     end
 
     it "should get nil by default" do
-      Appsignal.get_server_state("key").should be_nil
+      expect(Appsignal.get_server_state("key")).to be_nil
     end
   end
 
   context "not active" do
     describe ".monitor_transaction" do
       it "should do nothing but still yield the block" do
-        Appsignal::Transaction.should_not_receive(:create)
-        Appsignal.should_not_receive(:instrument)
+        expect(Appsignal::Transaction).to_not receive(:create)
+        expect(Appsignal).to_not receive(:instrument)
         object = double
-        object.should_receive(:some_method).and_return(1)
+        expect(object).to receive(:some_method).and_return(1)
 
-        lambda do
-          Appsignal.monitor_transaction("perform_job.nothing") do
+        expect do
+          expect(Appsignal.monitor_transaction("perform_job.nothing") do
             object.some_method
-          end.should eq 1
-        end.should_not raise_error
+          end).to eq 1
+        end.to_not raise_error
       end
     end
 
     describe ".listen_for_error" do
       it "should do nothing" do
         error = RuntimeError.new("specific error")
-        lambda do
+        expect do
           Appsignal.listen_for_error do
             raise error
           end
-        end.should raise_error(error)
+        end.to raise_error(error)
       end
     end
 
     describe ".send_error" do
       it "should do nothing" do
-        lambda do
+        expect do
           Appsignal.send_error(RuntimeError.new)
-        end.should_not raise_error
+        end.to_not raise_error
       end
     end
 
     describe ".set_error" do
       it "should do nothing" do
-        lambda do
+        expect do
           Appsignal.set_error(RuntimeError.new)
-        end.should_not raise_error
+        end.to_not raise_error
       end
     end
 
     describe ".tag_request" do
       it "should do nothing" do
-        lambda do
+        expect do
           Appsignal.tag_request(:tag => "tag")
-        end.should_not raise_error
+        end.to_not raise_error
       end
     end
 
     describe ".instrument" do
       it "should not instrument, but still call the block" do
         stub = double
-        stub.should_receive(:method_call).and_return("return value")
+        expect(stub).to receive(:method_call).and_return("return value")
 
-        lambda do
-          Appsignal.instrument "name" do
+        expect do
+          expect(Appsignal.instrument "name" do
             stub.method_call
-          end.should eq "return value"
-        end.should_not raise_error
+          end).to eq "return value"
+        end.to_not raise_error
       end
     end
   end
@@ -325,39 +325,39 @@ describe Appsignal do
     describe ".monitor_transaction" do
       context "with a successful call" do
         it "should instrument and complete for a background job" do
-          Appsignal.should_receive(:instrument).with(
+          expect(Appsignal).to receive(:instrument).with(
             "perform_job.something"
           ).and_yield
-          Appsignal::Transaction.should_receive(:complete_current!)
+          expect(Appsignal::Transaction).to receive(:complete_current!)
           object = double
-          object.should_receive(:some_method).and_return(1)
+          expect(object).to receive(:some_method).and_return(1)
 
-          Appsignal.monitor_transaction(
+          expect(Appsignal.monitor_transaction(
             "perform_job.something",
             background_env_with_data
           ) do
             current = Appsignal::Transaction.current
-            current.namespace.should eq Appsignal::Transaction::BACKGROUND_JOB
-            current.request.should be_a(Appsignal::Transaction::GenericRequest)
+            expect(current.namespace).to eq Appsignal::Transaction::BACKGROUND_JOB
+            expect(current.request).to be_a(Appsignal::Transaction::GenericRequest)
             object.some_method
-          end.should eq 1
+          end).to eq 1
         end
 
         it "should instrument and complete for a http request" do
-          Appsignal.should_receive(:instrument).with(
+          expect(Appsignal).to receive(:instrument).with(
             "process_action.something"
           ).and_yield
-          Appsignal::Transaction.should_receive(:complete_current!)
+          expect(Appsignal::Transaction).to receive(:complete_current!)
           object = double
-          object.should_receive(:some_method)
+          expect(object).to receive(:some_method)
 
           Appsignal.monitor_transaction(
             "process_action.something",
             http_request_env_with_data
           ) do
             current = Appsignal::Transaction.current
-            current.namespace.should eq Appsignal::Transaction::HTTP_REQUEST
-            current.request.should be_a(::Rack::Request)
+            expect(current.namespace).to eq Appsignal::Transaction::HTTP_REQUEST
+            expect(current.request).to be_a(::Rack::Request)
             object.some_method
           end
         end
@@ -367,14 +367,14 @@ describe Appsignal do
         let(:error) { VerySpecificError.new }
 
         it "should add the error to the current transaction and complete" do
-          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
-          Appsignal::Transaction.should_receive(:complete_current!)
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+          expect(Appsignal::Transaction).to receive(:complete_current!)
 
-          lambda do
+          expect do
             Appsignal.monitor_transaction("perform_job.something") do
               raise error
             end
-          end.should raise_error(error)
+          end.to raise_error(error)
         end
       end
     end
@@ -382,11 +382,11 @@ describe Appsignal do
     describe ".monitor_single_transaction" do
       context "with a successful call" do
         it "should call monitor_transaction and stop" do
-          Appsignal.should_receive(:monitor_transaction).with(
+          expect(Appsignal).to receive(:monitor_transaction).with(
             "perform_job.something",
             :key => :value
           ).and_yield
-          Appsignal.should_receive(:stop)
+          expect(Appsignal).to receive(:stop)
 
           Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
             # nothing
@@ -398,28 +398,28 @@ describe Appsignal do
         let(:error) { VerySpecificError.new }
 
         it "should call monitor_transaction and stop and then raise the error" do
-          Appsignal.should_receive(:monitor_transaction).with(
+          expect(Appsignal).to receive(:monitor_transaction).with(
             "perform_job.something",
             :key => :value
           ).and_yield
-          Appsignal.should_receive(:stop)
+          expect(Appsignal).to receive(:stop)
 
-          lambda do
+          expect do
             Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
               raise error
             end
-          end.should raise_error(error)
+          end.to raise_error(error)
         end
       end
     end
 
     describe ".tag_request" do
-      before { Appsignal::Transaction.stub(:current => transaction) }
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       context "with transaction" do
         let(:transaction) { double }
         it "should call set_tags on transaction" do
-          transaction.should_receive(:set_tags).with("a" => "b")
+          expect(transaction).to receive(:set_tags).with("a" => "b")
         end
 
         after { Appsignal.tag_request("a" => "b") }
@@ -429,118 +429,118 @@ describe Appsignal do
         let(:transaction) { nil }
 
         it "should call set_tags on transaction" do
-          Appsignal.tag_request.should be_false
+          expect(Appsignal.tag_request).to be_falsy
         end
       end
 
       it "should also listen to tag_job" do
-        Appsignal.should respond_to(:tag_job)
+        expect(Appsignal).to respond_to(:tag_job)
       end
     end
 
     describe "custom stats" do
       describe ".set_gauge" do
         it "should call set_gauge on the extension with a string key and float" do
-          Appsignal::Extension.should_receive(:set_gauge).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1)
           Appsignal.set_gauge("key", 0.1)
         end
 
         it "should call set_gauge on the extension with a symbol key and int" do
-          Appsignal::Extension.should_receive(:set_gauge).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 1.0)
           Appsignal.set_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          Appsignal::Extension.should_receive(:set_gauge).with("key", 10).and_raise(RangeError)
-          Appsignal.logger.should_receive(:warn).with("Gauge value 10 for key 'key' is too big")
-          lambda do
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn).with("Gauge value 10 for key 'key' is too big")
+          expect do
             Appsignal.set_gauge("key", 10)
-          end.should_not raise_error
+          end.to_not raise_error
         end
       end
 
       describe ".set_host_gauge" do
         it "should call set_host_gauge on the extension with a string key and float" do
-          Appsignal::Extension.should_receive(:set_host_gauge).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 0.1)
           Appsignal.set_host_gauge("key", 0.1)
         end
 
         it "should call set_host_gauge on the extension with a symbol key and int" do
-          Appsignal::Extension.should_receive(:set_host_gauge).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 1.0)
           Appsignal.set_host_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          Appsignal::Extension.should_receive(:set_host_gauge).with("key", 10).and_raise(RangeError)
-          Appsignal.logger.should_receive(:warn).with("Host gauge value 10 for key 'key' is too big")
-          lambda do
+          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn).with("Host gauge value 10 for key 'key' is too big")
+          expect do
             Appsignal.set_host_gauge("key", 10)
-          end.should_not raise_error
+          end.to_not raise_error
         end
       end
 
       describe ".set_process_gauge" do
         it "should call set_process_gauge on the extension with a string key and float" do
-          Appsignal::Extension.should_receive(:set_process_gauge).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 0.1)
           Appsignal.set_process_gauge("key", 0.1)
         end
 
         it "should call set_process_gauge on the extension with a symbol key and int" do
-          Appsignal::Extension.should_receive(:set_process_gauge).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 1.0)
           Appsignal.set_process_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          Appsignal::Extension.should_receive(:set_process_gauge).with("key", 10).and_raise(RangeError)
-          Appsignal.logger.should_receive(:warn).with("Process gauge value 10 for key 'key' is too big")
-          lambda do
+          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn).with("Process gauge value 10 for key 'key' is too big")
+          expect do
             Appsignal.set_process_gauge("key", 10)
-          end.should_not raise_error
+          end.to_not raise_error
         end
       end
 
       describe ".increment_counter" do
         it "should call increment_counter on the extension with a string key" do
-          Appsignal::Extension.should_receive(:increment_counter).with("key", 1)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1)
           Appsignal.increment_counter("key")
         end
 
         it "should call increment_counter on the extension with a symbol key" do
-          Appsignal::Extension.should_receive(:increment_counter).with("key", 1)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1)
           Appsignal.increment_counter(:key)
         end
 
         it "should call increment_counter on the extension with a count" do
-          Appsignal::Extension.should_receive(:increment_counter).with("key", 5)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 5)
           Appsignal.increment_counter("key", 5)
         end
 
         it "should not raise an exception when out of range" do
-          Appsignal::Extension.should_receive(:increment_counter).with("key", 10).and_raise(RangeError)
-          Appsignal.logger.should_receive(:warn).with("Counter value 10 for key 'key' is too big")
-          lambda do
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn).with("Counter value 10 for key 'key' is too big")
+          expect do
             Appsignal.increment_counter("key", 10)
-          end.should_not raise_error
+          end.to_not raise_error
         end
       end
 
       describe ".add_distribution_value" do
         it "should call add_distribution_value on the extension with a string key and float" do
-          Appsignal::Extension.should_receive(:add_distribution_value).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1)
           Appsignal.add_distribution_value("key", 0.1)
         end
 
         it "should call add_distribution_value on the extension with a symbol key and int" do
-          Appsignal::Extension.should_receive(:add_distribution_value).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 1.0)
           Appsignal.add_distribution_value(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          Appsignal::Extension.should_receive(:add_distribution_value).with("key", 10).and_raise(RangeError)
-          Appsignal.logger.should_receive(:warn).with("Distribution value 10 for key 'key' is too big")
-          lambda do
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn).with("Distribution value 10 for key 'key' is too big")
+          expect do
             Appsignal.add_distribution_value("key", 10)
-          end.should_not raise_error
+          end.to_not raise_error
         end
       end
     end
@@ -548,7 +548,7 @@ describe Appsignal do
     describe ".logger" do
       subject { Appsignal.logger }
 
-      it { should be_a Logger }
+      it { is_expected.to be_a Logger }
     end
 
     describe ".start_logger" do
@@ -581,7 +581,7 @@ describe Appsignal do
           end
 
           it "logs to file" do
-            expect(File.exist?(log_file)).to be_true
+            expect(File.exist?(log_file)).to be_truthy
             expect(log_file_contents).to include "[ERROR] Log to file"
             expect(output).to be_empty
           end
@@ -603,7 +603,7 @@ describe Appsignal do
           end
 
           it "logs to stdout" do
-            expect(File.writable?(log_file)).to be_false
+            expect(File.writable?(log_file)).to be_falsy
             expect(output).to include "[ERROR] appsignal: Log to not writable log file"
           end
 
@@ -634,7 +634,7 @@ describe Appsignal do
         end
 
         it "logs to stdout" do
-          expect(File.writable?(log_path)).to be_false
+          expect(File.writable?(log_path)).to be_falsy
           expect(output).to include "[ERROR] appsignal: Log to not writable log path"
         end
 
@@ -722,9 +722,9 @@ describe Appsignal do
     describe ".config" do
       subject { Appsignal.config }
 
-      it { should be_a Appsignal::Config }
+      it { is_expected.to be_a Appsignal::Config }
       it "should return configuration" do
-        subject[:endpoint].should eq "https://push.appsignal.com"
+        expect(subject[:endpoint]).to eq "https://push.appsignal.com"
       end
     end
 
@@ -733,7 +733,7 @@ describe Appsignal do
       let(:error) { VerySpecificError.new }
 
       it "should send the error to AppSignal" do
-        Appsignal::Transaction.should_receive(:new).and_call_original
+        expect(Appsignal::Transaction).to receive(:new).and_call_original
       end
 
       context "with tags" do
@@ -745,9 +745,9 @@ describe Appsignal do
             Appsignal::Transaction::HTTP_REQUEST,
             Appsignal::Transaction::GenericRequest.new({})
           )
-          Appsignal::Transaction.stub(:new => transaction)
-          transaction.should_receive(:set_tags).with(tags)
-          transaction.should_receive(:complete)
+          allow(Appsignal::Transaction).to receive(:new).and_return(transaction)
+          expect(transaction).to receive(:set_tags).with(tags)
+          expect(transaction).to receive(:complete)
         end
       end
 
@@ -770,35 +770,35 @@ describe Appsignal do
 
     describe ".listen_for_error" do
       it "should call send_error and re-raise" do
-        Appsignal.should_receive(:send_error).with(kind_of(Exception))
-        lambda do
+        expect(Appsignal).to receive(:send_error).with(kind_of(Exception))
+        expect do
           Appsignal.listen_for_error do
             raise "I am an exception"
           end
-        end.should raise_error(RuntimeError, "I am an exception")
+        end.to raise_error(RuntimeError, "I am an exception")
       end
     end
 
     describe ".set_error" do
-      before { Appsignal::Transaction.stub(:current => transaction) }
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
       let(:error) { RuntimeError.new("I am an exception") }
 
       it "should add the error to the current transaction" do
-        transaction.should_receive(:set_error).with(error)
+        expect(transaction).to receive(:set_error).with(error)
 
         Appsignal.set_error(error)
       end
 
       it "should do nothing if there is no current transaction" do
-        Appsignal::Transaction.stub(:current => nil)
+        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
 
-        transaction.should_not_receive(:set_error)
+        expect(transaction).to_not receive(:set_error)
 
         Appsignal.set_error(error)
       end
 
       it "should do nothing if the error is nil" do
-        transaction.should_not_receive(:set_error)
+        expect(transaction).to_not receive(:set_error)
 
         Appsignal.set_error(nil)
       end
@@ -840,11 +840,11 @@ describe Appsignal do
 
     describe ".without_instrumentation" do
       let(:transaction) { double }
-      before { Appsignal::Transaction.stub(:current => transaction) }
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       it "should pause and unpause the transaction around the block" do
-        transaction.should_receive(:pause!)
-        transaction.should_receive(:resume!)
+        expect(transaction).to receive(:pause!)
+        expect(transaction).to receive(:resume!)
       end
 
       context "without transaction" do
@@ -867,9 +867,7 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       before do
-        Appsignal.stub(
-          :config => { :ignore_errors => ["StandardError"] }
-        )
+        allow(Appsignal).to receive(:config).and_return({ :ignore_errors => ["StandardError"] })
       end
 
       subject do
@@ -879,7 +877,7 @@ describe Appsignal do
       end
 
       it "should return true if it's in the ignored list" do
-        should be_true
+        is_expected.to be_truthy
       end
 
       it "outputs deprecated warning" do
@@ -891,7 +889,7 @@ describe Appsignal do
         let(:error) { Object.new }
 
         it "should return false" do
-          should be_false
+          is_expected.to be_falsy
         end
       end
     end
@@ -901,9 +899,7 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       before do
-        Appsignal.stub(
-          :config => { :ignore_actions => "TestController#isup" }
-        )
+        allow(Appsignal).to receive(:config).and_return({ :ignore_actions => "TestController#isup" })
       end
 
       subject do
@@ -913,7 +909,7 @@ describe Appsignal do
       end
 
       it "should return true if it's in the ignored list" do
-        should be_true
+        is_expected.to be_truthy
       end
 
       it "outputs deprecated warning" do
@@ -925,7 +921,7 @@ describe Appsignal do
         let(:action) { "TestController#other_action" }
 
         it "should return false" do
-          should be_false
+          is_expected.to be_falsy
         end
       end
     end

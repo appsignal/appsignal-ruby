@@ -11,13 +11,13 @@ if DependencyHelper.rails_present?
 
     describe "#initialize_appsignal" do
       let(:app) { MyApp::Application }
-      before { app.middleware.stub(:insert_before => true) }
+      before { allow(app.middleware).to receive(:insert_before).and_return(true) }
 
       context "logger" do
         before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
         subject { Appsignal.logger }
 
-        it { should be_a Logger }
+        it { is_expected.to be_a Logger }
       end
 
       context "config" do
@@ -25,28 +25,49 @@ if DependencyHelper.rails_present?
         context "basics" do
           before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
 
-          it { should be_a(Appsignal::Config) }
+          it { is_expected.to be_a(Appsignal::Config) }
 
-          its(:root_path)  { should eq Pathname.new(project_fixture_path) }
-          its(:env)        { should eq "test" }
-          its([:name])     { should eq "TestApp" }
-          its([:log_path]) { should eq Pathname.new(File.join(project_fixture_path, "log")) }
+          describe '#root_path' do
+            subject { super().root_path }
+            it { is_expected.to eq Pathname.new(project_fixture_path) }
+          end
+
+          describe '#env' do
+            subject { super().env }
+            it { is_expected.to eq "test" }
+          end
+
+          describe '[:name]' do
+            subject { super()[:name] }
+            it { is_expected.to eq "TestApp" }
+          end
+
+          describe '[:log_path]' do
+            subject { super()[:log_path] }
+            it { is_expected.to eq Pathname.new(File.join(project_fixture_path, "log")) }
+          end
         end
 
         context "initial config" do
           before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
           subject { Appsignal.config.initial_config }
 
-          its([:name]) { should eq "MyApp" }
+          describe '[:name]' do
+            subject { super()[:name] }
+            it { is_expected.to eq "MyApp" }
+          end
         end
 
         context "with APPSIGNAL_APP_ENV ENV var set" do
           before do
-            ENV.should_receive(:fetch).with("APPSIGNAL_APP_ENV", "test").and_return("env_test")
+            expect(ENV).to receive(:fetch).with("APPSIGNAL_APP_ENV", "test").and_return("env_test")
             Appsignal::Integrations::Railtie.initialize_appsignal(app)
           end
 
-          its(:env) { should eq "env_test" }
+          describe '#env' do
+            subject { super().env }
+            it { is_expected.to eq "env_test" }
+          end
         end
       end
 
@@ -69,7 +90,7 @@ if DependencyHelper.rails_present?
           end
 
           before do
-            Appsignal.stub(:config => config)
+            allow(Appsignal).to receive(:config).and_return(config)
           end
 
           it "should have added the listener and JSExceptionCatcher middleware" do

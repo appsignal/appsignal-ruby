@@ -6,12 +6,12 @@ if DependencyHelper.sinatra_present?
     context "Appsignal.logger" do
       subject { Appsignal.logger }
 
-      it { should be_a Logger }
+      it { is_expected.to be_a Logger }
     end
 
     describe "middleware" do
       it "adds the instrumentation middleware to Sinatra::Base" do
-        Sinatra::Base.middleware.to_a.should include(
+        expect(Sinatra::Base.middleware.to_a).to include(
           [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
         )
       end

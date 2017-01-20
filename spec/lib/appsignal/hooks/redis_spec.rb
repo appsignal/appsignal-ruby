@@ -23,7 +23,10 @@ describe Appsignal::Hooks::RedisHook do
         end
         after(:all) { Object.send(:remove_const, :Redis) }
 
-        its(:dependencies_present?) { should be_true }
+        describe '#dependencies_present?' do
+          subject { super().dependencies_present? }
+          it { is_expected.to be_truthy }
+        end
 
         it "should instrument a redis call" do
           Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
@@ -35,7 +38,7 @@ describe Appsignal::Hooks::RedisHook do
 
           client = Redis::Client.new
 
-          client.process([]).should eq 1
+          expect(client.process([])).to eq 1
         end
       end
     end
@@ -45,11 +48,17 @@ describe Appsignal::Hooks::RedisHook do
         Appsignal.config.config_hash[:instrument_net_http] = false
       end
 
-      its(:dependencies_present?) { should be_false }
+      describe '#dependencies_present?' do
+        subject { super().dependencies_present? }
+        it { is_expected.to be_falsy }
+      end
     end
   end
 
   context "without redis" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

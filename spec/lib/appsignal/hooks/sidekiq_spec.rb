@@ -15,13 +15,13 @@ describe Appsignal::Hooks::SidekiqPlugin do
   let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
 
   before do
-    Appsignal::Transaction.stub(:current => current_transaction)
+    allow(Appsignal::Transaction).to receive(:current).and_return(current_transaction)
     start_agent
   end
 
   context "with a performance call" do
     it "should wrap in a transaction with the correct params" do
-      Appsignal.should_receive(:monitor_transaction).with(
+      expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.sidekiq",
         :class    => "TestClass",
         :method   => "perform",
@@ -56,7 +56,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
       end
 
       it "should wrap in a transaction with the correct params" do
-        Appsignal.should_receive(:monitor_transaction).with(
+        expect(Appsignal).to receive(:monitor_transaction).with(
           "perform_job.sidekiq",
           :class    => "TestClass",
           :method   => "perform",
@@ -83,7 +83,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
     let(:error) { VerySpecificError.new }
 
     it "should add the exception to appsignal" do
-      Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
     end
 
     after do
@@ -107,7 +107,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
     end
 
     it "should only add items to the hash that do not appear in JOB_KEYS" do
-      plugin.formatted_metadata(item).should eq("foo" => "bar")
+      expect(plugin.formatted_metadata(item)).to eq("foo" => "bar")
     end
   end
 end
@@ -123,10 +123,16 @@ describe Appsignal::Hooks::SidekiqHook do
     end
     after(:all) { Object.send(:remove_const, :Sidekiq) }
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
   end
 
   context "without sidekiq" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

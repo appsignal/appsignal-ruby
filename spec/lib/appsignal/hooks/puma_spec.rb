@@ -22,7 +22,10 @@ describe Appsignal::Hooks::PumaHook do
     end
     after(:all) { Object.send(:remove_const, :Puma) }
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
 
     context "when installed" do
       before do
@@ -32,8 +35,8 @@ describe Appsignal::Hooks::PumaHook do
       it "adds behavior to Unicorn::Worker#close" do
         cluster = Puma::Cluster.new
 
-        Appsignal.should_receive(:stop)
-        cluster.should_receive(:stop_workers_without_appsignal)
+        expect(Appsignal).to receive(:stop)
+        expect(cluster).to receive(:stop_workers_without_appsignal)
 
         cluster.stop_workers
       end
@@ -47,8 +50,8 @@ describe Appsignal::Hooks::PumaHook do
       end
 
       it "should add a before shutdown worker callback" do
-        Puma.cli_config.options[:before_worker_boot].first.should be_a(Proc)
-        Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
+        expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
+        expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
       end
     end
 
@@ -60,13 +63,16 @@ describe Appsignal::Hooks::PumaHook do
       end
 
       it "should add a before shutdown worker callback" do
-        Puma.cli_config.options[:before_worker_boot].first.should be_a(Proc)
-        Puma.cli_config.options[:before_worker_shutdown].first.should be_a(Proc)
+        expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
+        expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
       end
     end
   end
 
   context "without puma" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

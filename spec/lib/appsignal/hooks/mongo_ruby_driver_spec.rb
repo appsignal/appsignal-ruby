@@ -3,7 +3,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
 
   context "with mongo ruby driver" do
     let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
-    before { Appsignal::Hooks::MongoMonitorSubscriber.stub(:new => subscriber) }
+    before { allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber) }
 
     before(:all) do
       module Mongo
@@ -19,10 +19,13 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     end
     after(:all) { Object.send(:remove_const, :Mongo) }
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
 
     it "adds a subscriber to Mongo::Monitoring" do
-      Mongo::Monitoring::Global.should receive(:subscribe)
+      expect(Mongo::Monitoring::Global).to receive(:subscribe)
         .with("command", subscriber)
         .at_least(:once)
 
@@ -31,6 +34,9 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
   end
 
   context "without mongo ruby driver" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

@@ -4,7 +4,10 @@ describe Appsignal::Hooks::NetHttpHook do
   end
 
   context "with Net::HTTP instrumentation enabled" do
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
 
     it "should instrument a http request" do
       Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
@@ -40,6 +43,9 @@ describe Appsignal::Hooks::NetHttpHook do
     before { Appsignal.config.config_hash[:instrument_net_http] = false }
     after { Appsignal.config.config_hash[:instrument_net_http] = true }
 
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

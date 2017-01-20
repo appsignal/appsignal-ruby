@@ -7,7 +7,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   let(:body) { {} }
 
   before do
-    Appsignal::Transaction.stub(:current => current_transaction)
+    allow(Appsignal::Transaction).to receive(:current).and_return(current_transaction)
     start_agent
   end
 
@@ -24,7 +24,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     end
 
     it "should wrap in a transaction with the correct params" do
-      Appsignal.should_receive(:monitor_transaction).with(
+      expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.shoryuken",
         :class => "TestClass",
         :method => "perform",
@@ -50,7 +50,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     let(:error) { VerySpecificError.new }
 
     it "should add the exception to appsignal" do
-      Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
     end
 
     after do
@@ -80,10 +80,16 @@ describe Appsignal::Hooks::ShoryukenHook do
       Object.send(:remove_const, :Shoryuken)
     end
 
-    its(:dependencies_present?) { should be_true }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_truthy }
+    end
   end
 
   context "without shoryuken" do
-    its(:dependencies_present?) { should be_false }
+    describe '#dependencies_present?' do
+      subject { super().dependencies_present? }
+      it { is_expected.to be_falsy }
+    end
   end
 end

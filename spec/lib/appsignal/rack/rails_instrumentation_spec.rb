@@ -20,11 +20,11 @@ if DependencyHelper.rails_present?
 
     describe "#call" do
       before do
-        middleware.stub(:raw_payload => {})
+        allow(middleware).to receive(:raw_payload).and_return({})
       end
 
       context "when appsignal is active" do
-        before { Appsignal.stub(:active? => true) }
+        before { allow(Appsignal).to receive(:active?).and_return(true) }
 
         it "should call with monitoring" do
           expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
@@ -32,7 +32,7 @@ if DependencyHelper.rails_present?
       end
 
       context "when appsignal is not active" do
-        before { Appsignal.stub(:active? => false) }
+        before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "should not call with monitoring" do
           expect(middleware).to_not receive(:call_with_appsignal_monitoring)
@@ -48,7 +48,7 @@ if DependencyHelper.rails_present?
 
     describe "#call_with_appsignal_monitoring" do
       it "should create a transaction" do
-        Appsignal::Transaction.should_receive(:create).with(
+        expect(Appsignal::Transaction).to receive(:create).with(
           "1",
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(ActionDispatch::Request),
@@ -63,29 +63,29 @@ if DependencyHelper.rails_present?
       end
 
       it "should call the app" do
-        app.should_receive(:call).with(env)
+        expect(app).to receive(:call).with(env)
       end
 
       context "with an error" do
         let(:error) { VerySpecificError.new }
         let(:app) do
           double.tap do |d|
-            d.stub(:call).and_raise(error)
+            allow(d).to receive(:call).and_raise(error)
           end
         end
 
         it "should set the error" do
-          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
         end
       end
 
       it "should set metadata" do
-        Appsignal::Transaction.any_instance.should_receive(:set_metadata).twice
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
       end
 
       it "should set the action and queue start" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with("MockController#index")
-        Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("MockController#index")
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
       end
 
       after { middleware.call(env) rescue VerySpecificError }
@@ -97,13 +97,16 @@ if DependencyHelper.rails_present?
       context "with request id set" do
         let(:env) { { "action_dispatch.request_id" => "id" } }
 
-        it { should eq "id" }
+        it { is_expected.to eq "id" }
       end
 
       context "with request id not set" do
         let(:env) { {} }
 
-        its(:length) { should eq 36 }
+        describe '#length' do
+          subject { super().length }
+          it { is_expected.to eq 36 }
+        end
       end
     end
   end

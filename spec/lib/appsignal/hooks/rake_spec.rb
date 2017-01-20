@@ -4,7 +4,7 @@ describe Appsignal::Hooks::RakeHook do
   let(:task) { Rake::Task.new("task:name", Rake::Application.new) }
   before(:all) do
     Appsignal.config = project_fixture_config
-    expect(Appsignal.active?).to be_true
+    expect(Appsignal.active?).to be_truthy
     Appsignal::Hooks.load_hooks
   end
 

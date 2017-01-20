@@ -25,19 +25,19 @@ describe Appsignal::Transaction do
   describe "class methods" do
     describe ".create" do
       it "should add the transaction to thread local" do
-        Appsignal::Extension.should_receive(:start_transaction).with("1", "http_request", 0)
+        expect(Appsignal::Extension).to receive(:start_transaction).with("1", "http_request", 0)
 
         created_transaction = Appsignal::Transaction.create("1", namespace, request, options)
 
-        Thread.current[:appsignal_transaction].should eq created_transaction
+        expect(Thread.current[:appsignal_transaction]).to eq created_transaction
       end
 
       it "should create a transaction" do
         created_transaction = Appsignal::Transaction.create("1", namespace, request, options)
 
-        created_transaction.should be_a Appsignal::Transaction
-        created_transaction.transaction_id.should eq "1"
-        created_transaction.namespace.should eq "http_request"
+        expect(created_transaction).to be_a Appsignal::Transaction
+        expect(created_transaction.transaction_id).to eq "1"
+        expect(created_transaction.namespace).to eq "http_request"
       end
 
       context "when a transaction is already running" do
@@ -77,11 +77,11 @@ describe Appsignal::Transaction do
         before { Appsignal::Transaction.create("1", namespace, request, options) }
 
         it "should return the correct transaction" do
-          should eq transaction
+          is_expected.to eq transaction
         end
 
         it "should indicate it's not a nil transaction" do
-          subject.nil_transaction?.should be_false
+          expect(subject.nil_transaction?).to be_falsy
         end
       end
 
@@ -91,11 +91,11 @@ describe Appsignal::Transaction do
         end
 
         it "should return a nil transaction stub" do
-          should be_a Appsignal::Transaction::NilTransaction
+          is_expected.to be_a Appsignal::Transaction::NilTransaction
         end
 
         it "should indicate it's a nil transaction" do
-          subject.nil_transaction?.should be_true
+          expect(subject.nil_transaction?).to be_truthy
         end
       end
     end
@@ -104,19 +104,19 @@ describe Appsignal::Transaction do
       before { Appsignal::Transaction.create("2", Appsignal::Transaction::HTTP_REQUEST, {}) }
 
       it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-        Appsignal::Transaction.current.should_receive(:complete)
+        expect(Appsignal::Transaction.current).to receive(:complete)
 
         Appsignal::Transaction.complete_current!
 
-        Thread.current[:appsignal_transaction].should be_nil
+        expect(Thread.current[:appsignal_transaction]).to be_nil
       end
 
       it "should still clear the transaction if there is an error" do
-        Appsignal::Transaction.current.should_receive(:complete).and_raise "Error"
+        expect(Appsignal::Transaction.current).to receive(:complete).and_raise "Error"
 
         Appsignal::Transaction.complete_current!
 
-        Thread.current[:appsignal_transaction].should be_nil
+        expect(Thread.current[:appsignal_transaction]).to be_nil
       end
 
       context "if a transaction is discarded" do
@@ -124,18 +124,18 @@ describe Appsignal::Transaction do
           expect(Appsignal::Transaction.current.ext).to_not receive(:complete)
 
           Appsignal::Transaction.current.discard!
-          expect(Appsignal::Transaction.current.discarded?).to be_true
+          expect(Appsignal::Transaction.current.discarded?).to be_truthy
 
           Appsignal::Transaction.complete_current!
 
-          Thread.current[:appsignal_transaction].should be_nil
+          expect(Thread.current[:appsignal_transaction]).to be_nil
         end
 
         it "should not be discarded when restore! is called" do
           Appsignal::Transaction.current.discard!
-          expect(Appsignal::Transaction.current.discarded?).to be_true
+          expect(Appsignal::Transaction.current.discarded?).to be_truthy
           Appsignal::Transaction.current.restore!
-          expect(Appsignal::Transaction.current.discarded?).to be_false
+          expect(Appsignal::Transaction.current.discarded?).to be_falsy
         end
       end
     end
@@ -143,17 +143,17 @@ describe Appsignal::Transaction do
 
   describe "#complete" do
     it "should sample data if it needs to be sampled" do
-      transaction.ext.should_receive(:finish).and_return(true)
-      transaction.should_receive(:sample_data)
-      transaction.ext.should_receive(:complete)
+      expect(transaction.ext).to receive(:finish).and_return(true)
+      expect(transaction).to receive(:sample_data)
+      expect(transaction.ext).to receive(:complete)
 
       transaction.complete
     end
 
     it "should not sample data if it does not need to be sampled" do
-      transaction.ext.should_receive(:finish).and_return(false)
-      transaction.should_not_receive(:sample_data)
-      transaction.ext.should_receive(:complete)
+      expect(transaction.ext).to receive(:finish).and_return(false)
+      expect(transaction).to_not receive(:sample_data)
+      expect(transaction.ext).to receive(:complete)
 
       transaction.complete
     end
@@ -180,14 +180,14 @@ describe Appsignal::Transaction do
 
     describe "#paused?" do
       it "should return the pause state" do
-        expect(transaction.paused?).to be_false
+        expect(transaction.paused?).to be_falsy
       end
 
       context "when paused" do
         before { transaction.pause! }
 
         it "should return the pause state" do
-          expect(transaction.paused?).to be_true
+          expect(transaction.paused?).to be_truthy
         end
       end
     end
@@ -197,22 +197,51 @@ describe Appsignal::Transaction do
     context "initialization" do
       subject { transaction }
 
-      its(:ext)                { should_not be_nil }
-      its(:transaction_id)     { should eq "1" }
-      its(:namespace)          { should eq "http_request" }
-      its(:request)            { should_not be_nil }
-      its(:paused)             { should be_false }
-      its(:tags)               { should eq({}) }
+      describe '#ext' do
+        subject { super().ext }
+        it { is_expected.to_not be_nil }
+      end
+
+      describe '#transaction_id' do
+        subject { super().transaction_id }
+        it { is_expected.to eq "1" }
+      end
+
+      describe '#namespace' do
+        subject { super().namespace }
+        it { is_expected.to eq "http_request" }
+      end
+
+      describe '#request' do
+        subject { super().request }
+        it { is_expected.to_not be_nil }
+      end
+
+      describe '#paused' do
+        subject { super().paused }
+        it { is_expected.to be_falsy }
+      end
+
+      describe '#tags' do
+        subject { super().tags }
+        it { is_expected.to eq({}) }
+      end
 
       context "options" do
         subject { transaction.options }
 
-        its([:params_method]) { should eq :params }
+        describe '[:params_method]' do
+          subject { super()[:params_method] }
+          it { is_expected.to eq :params }
+        end
 
         context "with overridden options" do
           let(:options) { { :params_method => :filtered_params } }
 
-          its([:params_method]) { should eq :filtered_params }
+          describe '[:params_method]' do
+            subject { super()[:params_method] }
+            it { is_expected.to eq :filtered_params }
+          end
         end
       end
     end
@@ -240,7 +269,7 @@ describe Appsignal::Transaction do
 
     describe "set_action" do
       it "should set the action in extension" do
-        transaction.ext.should_receive(:set_action).with(
+        expect(transaction.ext).to receive(:set_action).with(
           "PagesController#show"
         ).once
 
@@ -248,7 +277,7 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the action in extension when value is nil" do
-        Appsignal::Extension.should_not_receive(:set_transaction_action)
+        expect(Appsignal::Extension).to_not receive(:set_transaction_action)
 
         transaction.set_action(nil)
       end
@@ -259,7 +288,7 @@ describe Appsignal::Transaction do
         let(:from) { { :controller => "HomeController", :action => "show" } }
 
         it "should set the action" do
-          transaction.should_receive(:set_action).with("HomeController#show")
+          expect(transaction).to receive(:set_action).with("HomeController#show")
         end
       end
 
@@ -267,7 +296,7 @@ describe Appsignal::Transaction do
         let(:from) { { :action => "show" } }
 
         it "should set the action" do
-          transaction.should_receive(:set_action).with("show")
+          expect(transaction).to receive(:set_action).with("show")
         end
       end
 
@@ -275,7 +304,7 @@ describe Appsignal::Transaction do
         let(:from) { { :class => "Worker", :method => "perform" } }
 
         it "should set the action" do
-          transaction.should_receive(:set_action).with("Worker#perform")
+          expect(transaction).to receive(:set_action).with("Worker#perform")
         end
       end
 
@@ -284,7 +313,7 @@ describe Appsignal::Transaction do
 
     describe "set_queue_start" do
       it "should set the queue start in extension" do
-        transaction.ext.should_receive(:set_queue_start).with(
+        expect(transaction.ext).to receive(:set_queue_start).with(
           10.0
         ).once
 
@@ -292,19 +321,19 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the queue start in extension when value is nil" do
-        transaction.ext.should_not_receive(:set_queue_start)
+        expect(transaction.ext).to_not receive(:set_queue_start)
 
         transaction.set_queue_start(nil)
       end
 
       it "should not raise an error when the queue start is too big" do
-        transaction.ext.should_receive(:set_queue_start).and_raise(RangeError)
+        expect(transaction.ext).to receive(:set_queue_start).and_raise(RangeError)
 
-        Appsignal.logger.should_receive(:warn).with("Queue start value 10 is too big")
+        expect(Appsignal.logger).to receive(:warn).with("Queue start value 10 is too big")
 
-        lambda do
+        expect do
           transaction.set_queue_start(10)
-        end.should_not raise_error
+        end.to_not raise_error
       end
     end
 
@@ -314,7 +343,7 @@ describe Appsignal::Transaction do
         let(:env) { { "HTTP_X_REQUEST_START" => (fixed_time * 1000).to_s } }
 
         it "should set the queue start on the transaction" do
-          transaction.should_receive(:set_queue_start).with(13_897_836_000)
+          expect(transaction).to receive(:set_queue_start).with(13_897_836_000)
 
           transaction.set_http_or_background_queue_start
         end
@@ -325,7 +354,7 @@ describe Appsignal::Transaction do
         let(:env) { { :queue_start => fixed_time } }
 
         it "should set the queue start on the transaction" do
-          transaction.should_receive(:set_queue_start).with(1_389_783_600_000)
+          expect(transaction).to receive(:set_queue_start).with(1_389_783_600_000)
 
           transaction.set_http_or_background_queue_start
         end
@@ -334,7 +363,7 @@ describe Appsignal::Transaction do
 
     describe "#set_metadata" do
       it "should set the metdata in extension" do
-        transaction.ext.should_receive(:set_metadata).with(
+        expect(transaction.ext).to receive(:set_metadata).with(
           "request_method",
           "GET"
         ).once
@@ -343,7 +372,7 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the metdata in extension when value is nil" do
-        transaction.ext.should_not_receive(:set_metadata)
+        expect(transaction.ext).to_not receive(:set_metadata)
 
         transaction.set_metadata("request_method", nil)
       end
@@ -351,7 +380,7 @@ describe Appsignal::Transaction do
 
     describe "set_sample_data" do
       it "should set the data" do
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "params",
           Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
         ).once
@@ -365,7 +394,7 @@ describe Appsignal::Transaction do
       end
 
       it "should do nothing if the data cannot be converted to json" do
-        transaction.ext.should_not_receive(:set_sample_data).with(
+        expect(transaction.ext).to_not receive(:set_sample_data).with(
           "params",
           kind_of(String)
         )
@@ -376,7 +405,7 @@ describe Appsignal::Transaction do
 
     describe "#sample_data" do
       it "should sample data" do
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "environment",
           Appsignal::Utils.data_generate(
             "CONTENT_LENGTH" => "0",
@@ -386,19 +415,19 @@ describe Appsignal::Transaction do
             "PATH_INFO" => "/blog"
           )
         ).once
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "session_data",
           Appsignal::Utils.data_generate({})
         ).once
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "params",
           Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
         ).once
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "metadata",
           Appsignal::Utils.data_generate("key" => "value")
         ).once
-        transaction.ext.should_receive(:set_sample_data).with(
+        expect(transaction.ext).to receive(:set_sample_data).with(
           "tags",
           Appsignal::Utils.data_generate({})
         ).once
@@ -412,19 +441,19 @@ describe Appsignal::Transaction do
       let(:error) { double(:error, :message => "test message", :backtrace => ["line 1"]) }
 
       it "should also respond to add_exception for backwords compatibility" do
-        transaction.should respond_to(:add_exception)
+        expect(transaction).to respond_to(:add_exception)
       end
 
       it "should not add the error if appsignal is not active" do
-        Appsignal.stub(:active? => false)
-        transaction.ext.should_not_receive(:set_error)
+        allow(Appsignal).to receive(:active?).and_return(false)
+        expect(transaction.ext).to_not receive(:set_error)
 
         transaction.set_error(error)
       end
 
       context "for a http request" do
         it "should set an error in the extension" do
-          transaction.ext.should_receive(:set_error).with(
+          expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "test message",
             Appsignal::Utils.data_generate(["line 1"])
@@ -442,7 +471,7 @@ describe Appsignal::Transaction do
         end
 
         it "should set an error in the extension" do
-          transaction.ext.should_receive(:set_error).with(
+          expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "",
             Appsignal::Utils.data_generate(["line 1"])
@@ -455,7 +484,7 @@ describe Appsignal::Transaction do
 
     describe "#start_event" do
       it "should start the event in the extension" do
-        transaction.ext.should_receive(:start_event)
+        expect(transaction.ext).to receive(:start_event)
 
         transaction.start_event
       end
@@ -463,7 +492,7 @@ describe Appsignal::Transaction do
 
     describe "#finish_event" do
       it "should finish the event in the extension" do
-        transaction.ext.should_receive(:finish_event).with(
+        expect(transaction.ext).to receive(:finish_event).with(
           "name",
           "title",
           "body",
@@ -480,7 +509,7 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
-        transaction.ext.should_receive(:finish_event).with(
+        expect(transaction.ext).to receive(:finish_event).with(
           "name",
           "",
           "",
@@ -507,7 +536,7 @@ describe Appsignal::Transaction do
 
     describe "#record_event" do
       it "should record the event in the extension" do
-        transaction.ext.should_receive(:record_event).with(
+        expect(transaction.ext).to receive(:record_event).with(
           "name",
           "title",
           "body",
@@ -525,7 +554,7 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
-        transaction.ext.should_receive(:record_event).with(
+        expect(transaction.ext).to receive(:record_event).with(
           "name",
           "",
           "",
@@ -546,19 +575,19 @@ describe Appsignal::Transaction do
     describe "#instrument" do
       it "should start and finish an event around the given block" do
         stub = double
-        stub.should_receive(:method_call).and_return("return value")
+        expect(stub).to receive(:method_call).and_return("return value")
 
-        transaction.should_receive(:start_event)
-        transaction.should_receive(:finish_event).with(
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event).with(
           "name",
           "title",
           "body",
           0
         )
 
-        transaction.instrument "name", "title", "body" do
+        expect(transaction.instrument "name", "title", "body" do
           stub.method_call
-        end.should eq "return value"
+        end).to eq "return value"
       end
     end
 
@@ -567,7 +596,7 @@ describe Appsignal::Transaction do
       subject { Appsignal::Transaction::GenericRequest.new(env) }
 
       it "should initialize with an empty env" do
-        subject.env.should be_empty
+        expect(subject.env).to be_empty
       end
 
       context "with a filled env" do
@@ -578,8 +607,15 @@ describe Appsignal::Transaction do
           }
         end
 
-        its(:env) { should eq env }
-        its(:params) { should eq(:id => 1) }
+        describe '#env' do
+          subject { super().env }
+          it { is_expected.to eq env }
+        end
+
+        describe '#params' do
+          subject { super().params }
+          it { is_expected.to eq(:id => 1) }
+        end
       end
     end
 
@@ -591,23 +627,23 @@ describe Appsignal::Transaction do
       context "when request is nil" do
         let(:request) { nil }
 
-        it { should eq nil }
+        it { is_expected.to eq nil }
       end
 
       context "when env is nil" do
         before { expect(transaction.request).to receive(:env).and_return(nil) }
 
-        it { should eq nil }
+        it { is_expected.to eq nil }
       end
 
       context "when queue start is nil" do
-        it { should eq nil }
+        it { is_expected.to eq nil }
       end
 
       context "when queue start is set" do
         let(:env) { background_env_with_data }
 
-        it { should eq 1_389_783_590_000 }
+        it { is_expected.to eq 1_389_783_590_000 }
       end
     end
 
@@ -620,48 +656,48 @@ describe Appsignal::Transaction do
         context "when request is nil" do
           let(:request) { nil }
 
-          it { should be_nil }
+          it { is_expected.to be_nil }
         end
 
         context "when env is nil" do
           before { expect(transaction.request).to receive(:env).and_return(nil) }
 
-          it { should be_nil }
+          it { is_expected.to be_nil }
         end
 
         context "with no relevant header set" do
           let(:env) { {} }
 
-          it { should be_nil }
+          it { is_expected.to be_nil }
         end
 
         context "with the HTTP_X_REQUEST_START header set" do
           let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}" } }
 
-          it { should eq 1_389_783_599_600 }
+          it { is_expected.to eq 1_389_783_599_600 }
 
           context "with unparsable content" do
             let(:env) { { "HTTP_X_REQUEST_START" => "something" } }
 
-            it { should be_nil }
+            it { is_expected.to be_nil }
           end
 
           context "with some cruft" do
             let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa" } }
 
-            it { should eq 1_389_783_599_600 }
+            it { is_expected.to eq 1_389_783_599_600 }
           end
 
           context "with a really low number" do
             let(:env) { { "HTTP_X_REQUEST_START" => "t=100" } }
 
-            it { should be_nil }
+            it { is_expected.to be_nil }
           end
 
           context "with the alternate HTTP_X_QUEUE_START header set" do
             let(:env) { { "HTTP_X_QUEUE_START" => "t=#{slightly_earlier_time_value}" } }
 
-            it { should eq 1_389_783_599_600 }
+            it { is_expected.to eq 1_389_783_599_600 }
           end
         end
       end
@@ -683,28 +719,28 @@ describe Appsignal::Transaction do
       subject { transaction.send(:sanitized_params) }
 
       context "without params" do
-        before { transaction.request.stub(:params => nil) }
+        before { allow(transaction.request).to receive(:params).and_return(nil) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when params crashes" do
-        before { transaction.request.stub(:params).and_raise(NoMethodError) }
+        before { allow(transaction.request).to receive(:params).and_raise(NoMethodError) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when params method does not exist" do
         let(:options) { { :params_method => :nonsense } }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when not sending params" do
         before { Appsignal.config.config_hash[:send_params] = false }
         after { Appsignal.config.config_hash[:send_params] = true }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "with an array" do
@@ -712,13 +748,13 @@ describe Appsignal::Transaction do
           Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ["arg1", "arg2"]))
         end
 
-        it { should eq ["arg1", "arg2"] }
+        it { is_expected.to eq ["arg1", "arg2"] }
 
         context "with AppSignal filtering" do
           before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { should eq ["arg1", "arg2"] }
+          it { is_expected.to eq ["arg1", "arg2"] }
         end
       end
 
@@ -731,7 +767,7 @@ describe Appsignal::Transaction do
 
           it "should call the params sanitizer" do
             puts Appsignal.config.config_hash[:filter_parameters].inspect
-            subject.should eq(:foo => :bar)
+            expect(subject).to eq(:foo => :bar)
           end
         end
 
@@ -744,7 +780,7 @@ describe Appsignal::Transaction do
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
           it "should call the params sanitizer with filtering" do
-            subject.should eq(:foo => "[FILTERED]", :baz => :bat)
+            expect(subject).to eq(:foo => "[FILTERED]", :baz => :bat)
           end
         end
       end
@@ -766,7 +802,7 @@ describe Appsignal::Transaction do
       context "when env is nil" do
         before { expect(transaction.request).to receive(:env).and_return(nil) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when env is present" do
@@ -778,7 +814,10 @@ describe Appsignal::Transaction do
           end
         end
 
-        its(:keys) { should =~ whitelisted_keys[0, whitelisted_keys.length] }
+        describe '#keys' do
+          subject { super().keys }
+          it { is_expected.to match_array(whitelisted_keys[0, whitelisted_keys.length]) }
+        end
       end
     end
 
@@ -796,44 +835,44 @@ describe Appsignal::Transaction do
       context "when session is nil" do
         before { expect(transaction.request).to receive(:session).and_return(nil) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when session is empty" do
         before { expect(transaction.request).to receive(:session).and_return({}) }
 
-        it { should eq({}) }
+        it { is_expected.to eq({}) }
       end
 
       context "when request class does not have a session method" do
         let(:request) { Appsignal::Transaction::GenericRequest.new({}) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when there is a session" do
         before do
-          transaction.should respond_to(:request)
+          expect(transaction).to respond_to(:request)
           transaction.stub_chain(:request, :session => { :foo => :bar })
           transaction.stub_chain(:request, :fullpath => :bar)
         end
 
         it "passes the session data into the params sanitizer" do
-          Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with(:foo => :bar)
+          expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with(:foo => :bar)
             .and_return(:sanitized_foo)
-          subject.should eq :sanitized_foo
+          expect(subject).to eq :sanitized_foo
         end
 
         if defined? ActionDispatch::Request::Session
           context "with ActionDispatch::Request::Session" do
             before do
-              transaction.should respond_to(:request)
+              expect(transaction).to respond_to(:request)
               transaction.stub_chain(:request, :session => action_dispatch_session)
               transaction.stub_chain(:request, :fullpath => :bar)
             end
 
             it "should return an session hash" do
-              Appsignal::Utils::ParamsSanitizer.should_receive(:sanitize).with("foo" => :bar)
+              expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with("foo" => :bar)
                 .and_return(:sanitized_foo)
               subject
             end
@@ -859,8 +898,8 @@ describe Appsignal::Transaction do
           end
 
           it "does not pass the session data into the params sanitizer" do
-            Appsignal::Utils::ParamsSanitizer.should_not_receive(:sanitize)
-            subject.should be_nil
+            expect(Appsignal::Utils::ParamsSanitizer).to_not receive(:sanitize)
+            expect(subject).to be_nil
           end
         end
       end
@@ -872,19 +911,19 @@ describe Appsignal::Transaction do
       context "when request is nil" do
         let(:request) { nil }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when env is nil" do
         before { expect(transaction.request).to receive(:env).and_return(nil) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
       end
 
       context "when env is present" do
         let(:env) { { :metadata => { :key => "value" } } }
 
-        it { should eq env[:metadata] }
+        it { is_expected.to eq env[:metadata] }
       end
     end
 
@@ -905,12 +944,12 @@ describe Appsignal::Transaction do
       subject { transaction.send(:sanitized_tags).keys }
 
       it "should only return whitelisted data" do
-        should =~ [
+        is_expected.to match_array([
           :valid_key,
           "valid_string_key",
           :both_symbols,
           :integer_value
-        ]
+        ])
       end
     end
 
@@ -938,7 +977,7 @@ describe Appsignal::Transaction do
     subject { Appsignal::Transaction::NilTransaction.new }
 
     it "should have method stubs" do
-      lambda do
+      expect do
         subject.complete
         subject.pause!
         subject.resume!
@@ -953,7 +992,7 @@ describe Appsignal::Transaction do
         subject.set_sample_data("key", "data")
         subject.sample_data
         subject.set_error("a")
-      end.should_not raise_error
+      end.to_not raise_error
     end
   end
 end

@@ -6,7 +6,7 @@ describe Appsignal::System do
       around { |example| recognize_as_heroku { example.run } }
 
       it "returns true" do
-        expect(subject).to be_true
+        expect(subject).to be_truthy
       end
     end
 
@@ -14,7 +14,7 @@ describe Appsignal::System do
       around { |example| recognize_as_container(:docker) { example.run } }
 
       it "returns true" do
-        expect(subject).to be_true
+        expect(subject).to be_truthy
       end
     end
 
@@ -22,7 +22,7 @@ describe Appsignal::System do
       around { |example| recognize_as_container(:none) { example.run } }
 
       it "returns false" do
-        expect(subject).to be_false
+        expect(subject).to be_falsy
       end
     end
   end
@@ -34,7 +34,7 @@ describe Appsignal::System do
       around { |example| recognize_as_heroku { example.run } }
 
       it "returns true" do
-        expect(subject).to be_true
+        expect(subject).to be_truthy
       end
     end
 
@@ -42,7 +42,7 @@ describe Appsignal::System do
       around { |example| recognize_as_container(:none) { example.run } }
 
       it "returns false" do
-        expect(subject).to be_false
+        expect(subject).to be_falsy
       end
     end
   end

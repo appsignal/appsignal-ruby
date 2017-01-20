@@ -4,7 +4,7 @@ describe Appsignal::CLI do
   let(:out_stream) { std_stream }
   let(:output) { out_stream.read }
   let(:cli) { Appsignal::CLI }
-  before { Dir.stub(:pwd => project_fixture_path) }
+  before { allow(Dir).to receive(:pwd).and_return(project_fixture_path) }
 
   it "should print the help with no arguments, -h and --help" do
     [nil, "-h", "--help"].each do |arg|
@@ -46,7 +46,7 @@ describe Appsignal::CLI do
 
   describe "diagnose" do
     it "should call Appsignal::Diagnose.install" do
-      Appsignal::CLI::Diagnose.should_receive(:run)
+      expect(Appsignal::CLI::Diagnose).to receive(:run)
 
       cli.run([
         "diagnose"

@@ -173,7 +173,7 @@ describe Appsignal::CLI::Install do
         run
 
         expect(output).to_not include "Adding AppSignal integration to Capfile"
-        expect(File.exist?(capfile)).to be_false
+        expect(File.exist?(capfile)).to be_falsy
       end
     end
 
@@ -622,7 +622,7 @@ describe Appsignal::CLI::Install do
         expect(output).to include "We could not detect which framework you are using."
         expect(output).to_not include_env_push_api_key
         expect(output).to_not include_env_app_name
-        expect(File.exist?(config_file_path)).to be_false
+        expect(File.exist?(config_file_path)).to be_falsy
       end
     end
   end

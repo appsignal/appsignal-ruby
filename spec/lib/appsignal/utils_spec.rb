@@ -18,10 +18,14 @@ describe Appsignal::Utils do
         }
       end
 
-      it { should eq Appsignal::Utils.data_generate(body) }
-      it { should_not eq Appsignal::Utils.data_generate({}) }
-      it { should_not eq "a string" }
-      its(:to_s) { should eq %({"":"test","1":true,"bar":null,"baz":{"arr":[1,2],"foo":"bʊr"},"float":1.0,"foo":[1,2,"three",{"foo":"bar"}],"int":1,"the":"payload"}) }
+      it { is_expected.to eq Appsignal::Utils.data_generate(body) }
+      it { is_expected.to_not eq Appsignal::Utils.data_generate({}) }
+      it { is_expected.to_not eq "a string" }
+
+      describe '#to_s' do
+        subject { super().to_s }
+        it { is_expected.to eq %({"":"test","1":true,"bar":null,"baz":{"arr":[1,2],"foo":"bʊr"},"float":1.0,"foo":[1,2,"three",{"foo":"bar"}],"int":1,"the":"payload"}) }
+      end
     end
 
     context "with a valid array body" do
@@ -29,7 +33,10 @@ describe Appsignal::Utils do
         [1, "string", 10, { "foo" => "bʊr" }]
       end
 
-      its(:to_s) { should eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
+      describe '#to_s' do
+        subject { super().to_s }
+        it { is_expected.to eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
+      end
     end
 
     context "with a body that contains strings with invalid utf-8 content" do
@@ -47,7 +54,10 @@ describe Appsignal::Utils do
         }
       end
 
-      its(:to_s) { should eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"}) }
+      describe '#to_s' do
+        subject { super().to_s }
+        it { is_expected.to eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"}) }
+      end
     end
 
     context "with an invalid body" do
@@ -76,7 +86,7 @@ describe Appsignal::Utils do
         }
       end
 
-      it { should eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}}) }
+      it { is_expected.to eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}}) }
     end
 
     context "with a body that contains strings with invalid utf-8 content" do
@@ -94,7 +104,7 @@ describe Appsignal::Utils do
         }
       end
 
-      it { should eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
+      it { is_expected.to eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
     end
   end
 end

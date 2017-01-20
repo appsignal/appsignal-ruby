@@ -17,8 +17,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       end
 
       it "should sanitize command" do
-        Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter
-          .should receive(:format).with("find", "foo" => "bar")
+        expect(Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter)
+          .to receive(:format).with("find", "foo" => "bar")
 
         subscriber.started(event)
       end
@@ -26,11 +26,11 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       it "should store command on the transaction" do
         subscriber.started(event)
 
-        transaction.store("mongo_driver").should eq(1 => { "foo" => "?" })
+        expect(transaction.store("mongo_driver")).to eq(1 => { "foo" => "?" })
       end
 
       it "should start an event in the extension" do
-        transaction.should receive(:start_event)
+        expect(transaction).to receive(:start_event)
 
         subscriber.started(event)
       end
@@ -40,7 +40,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       let(:event) { double }
 
       it "should finish the event" do
-        subscriber.should receive(:finish).with("SUCCEEDED", event)
+        expect(subscriber).to receive(:finish).with("SUCCEEDED", event)
 
         subscriber.succeeded(event)
       end
@@ -50,7 +50,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       let(:event) { double }
 
       it "should finish the event" do
-        subscriber.should receive(:finish).with("FAILED", event)
+        expect(subscriber).to receive(:finish).with("FAILED", event)
 
         subscriber.failed(event)
       end
@@ -72,13 +72,13 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       end
 
       it "should get the query from the store" do
-        transaction.should receive(:store).with("mongo_driver").and_return(command)
+        expect(transaction).to receive(:store).with("mongo_driver").and_return(command)
 
         subscriber.finish("SUCCEEDED", event)
       end
 
       it "should finish the transaction in the extension" do
-        transaction.should receive(:finish_event).with(
+        expect(transaction).to receive(:finish_event).with(
           "query.mongodb",
           "find | test | SUCCEEDED",
           Appsignal::Utils.data_generate("foo" => "?"),
@@ -92,19 +92,17 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
 
   context "without transaction" do
     before do
-      Appsignal::Transaction.stub(
-        :current => Appsignal::Transaction::NilTransaction.new
-      )
+      allow(Appsignal::Transaction).to receive(:current).and_return(Appsignal::Transaction::NilTransaction.new)
     end
 
     it "should not attempt to start an event" do
-      Appsignal::Extension.should_not receive(:start_event)
+      expect(Appsignal::Extension).to_not receive(:start_event)
 
       subscriber.started(double)
     end
 
     it "should not attempt to finish an event" do
-      Appsignal::Extension.should_not receive(:finish_event)
+      expect(Appsignal::Extension).to_not receive(:finish_event)
 
       subscriber.finish("SUCCEEDED", double)
     end
@@ -112,16 +110,16 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
 
   context "when appsignal is paused" do
     let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
-    before { Appsignal::Transaction.stub(:current => transaction) }
+    before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
     it "should not attempt to start an event" do
-      Appsignal::Extension.should_not receive(:start_event)
+      expect(Appsignal::Extension).to_not receive(:start_event)
 
       subscriber.started(double)
     end
 
     it "should not attempt to finish an event" do
-      Appsignal::Extension.should_not receive(:finish_event)
+      expect(Appsignal::Extension).to_not receive(:finish_event)
 
       subscriber.finish("SUCCEEDED", double)
     end

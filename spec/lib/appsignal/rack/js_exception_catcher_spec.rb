@@ -6,8 +6,8 @@ describe Appsignal::Rack::JSExceptionCatcher do
   let(:config)         { project_fixture_config("production", config_options) }
 
   before do
-    Appsignal.stub(:config => config)
-    config.stub(:active? => active)
+    allow(Appsignal).to receive(:config).and_return(config)
+    allow(config).to receive(:active?).and_return(active)
   end
 
   describe "#initialize" do
