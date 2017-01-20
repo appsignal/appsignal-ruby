@@ -585,9 +585,10 @@ describe Appsignal::Transaction do
           0
         )
 
-        expect(transaction.instrument "name", "title", "body" do
+        return_value = transaction.instrument "name", "title", "body" do
           stub.method_call
-        end).to eq "return value"
+        end
+        expect(return_value).to eq "return value"
       end
     end
 

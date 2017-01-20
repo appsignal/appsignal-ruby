@@ -307,11 +307,10 @@ describe Appsignal do
         stub = double
         expect(stub).to receive(:method_call).and_return("return value")
 
-        expect do
-          expect(Appsignal.instrument "name" do
-            stub.method_call
-          end).to eq "return value"
-        end.to_not raise_error
+        return_value = Appsignal.instrument "name" do
+          stub.method_call
+        end
+        expect(return_value).to eq "return value"
       end
     end
   end
