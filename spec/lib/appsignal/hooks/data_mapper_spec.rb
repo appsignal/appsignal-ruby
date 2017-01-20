@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::DataMapperHook do
   context "with datamapper" do
-    before :all do
+    before :context do
       module DataMapper
       end
       module DataObjects
@@ -10,7 +10,7 @@ describe Appsignal::Hooks::DataMapperHook do
       Appsignal::Hooks::DataMapperHook.new.install
     end
 
-    after :all do
+    after :context do
       Object.send(:remove_const, :DataMapper)
       Object.send(:remove_const, :DataObjects)
     end

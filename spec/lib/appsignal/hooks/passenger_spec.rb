@@ -1,10 +1,10 @@
 describe Appsignal::Hooks::PassengerHook do
   context "with passenger" do
-    before(:all) do
+    before(:context) do
       module PhusionPassenger
       end
     end
-    after(:all) { Object.send(:remove_const, :PhusionPassenger) }
+    after(:context) { Object.send(:remove_const, :PhusionPassenger) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

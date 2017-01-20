@@ -5,7 +5,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
     before { allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber) }
 
-    before(:all) do
+    before(:context) do
       module Mongo
         module Monitoring
           COMMAND = "command"
@@ -17,7 +17,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
         end
       end
     end
-    after(:all) { Object.send(:remove_const, :Mongo) }
+    after(:context) { Object.send(:remove_const, :Mongo) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

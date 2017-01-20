@@ -138,7 +138,7 @@ describe Appsignal::Hooks::Helpers do
     end
 
     context "for a struct" do
-      before :all do
+      before :context do
         TestStruct = Struct.new(:key)
       end
       let(:struct) { TestStruct.new("value") }

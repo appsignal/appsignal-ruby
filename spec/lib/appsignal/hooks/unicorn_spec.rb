@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::UnicornHook do
   context "with unicorn" do
-    before :all do
+    before :context do
       module Unicorn
         class HttpServer
           def worker_loop(worker)
@@ -14,7 +14,7 @@ describe Appsignal::Hooks::UnicornHook do
       end
       Appsignal::Hooks::UnicornHook.new.install
     end
-    after(:all) { Object.send(:remove_const, :Unicorn) }
+    after(:context) { Object.send(:remove_const, :Unicorn) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

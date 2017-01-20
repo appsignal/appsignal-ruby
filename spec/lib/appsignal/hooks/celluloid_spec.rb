@@ -1,13 +1,13 @@
 describe Appsignal::Hooks::CelluloidHook do
   context "with celluloid" do
-    before :all do
+    before :context do
       module Celluloid
         def self.shutdown
         end
       end
       Appsignal::Hooks::CelluloidHook.new.install
     end
-    after :all do
+    after :context do
       Object.send(:remove_const, :Celluloid)
     end
 

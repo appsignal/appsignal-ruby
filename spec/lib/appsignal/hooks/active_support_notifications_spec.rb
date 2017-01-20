@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::ActiveSupportNotificationsHook do
   if active_support_present?
-    before :all do
+    before :context do
       start_agent
     end
     before do

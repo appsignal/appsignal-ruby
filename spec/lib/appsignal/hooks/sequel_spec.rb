@@ -2,7 +2,7 @@ describe Appsignal::Hooks::SequelHook do
   if DependencyHelper.sequel_present?
     let(:db) { Sequel.sqlite }
 
-    before :all do
+    before :context do
       start_agent
     end
 

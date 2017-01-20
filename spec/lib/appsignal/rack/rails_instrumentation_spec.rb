@@ -3,7 +3,7 @@ if DependencyHelper.rails_present?
   end
 
   describe Appsignal::Rack::RailsInstrumentation do
-    before :all do
+    before :context do
       start_agent
     end
 

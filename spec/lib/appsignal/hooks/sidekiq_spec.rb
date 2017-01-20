@@ -114,14 +114,14 @@ end
 
 describe Appsignal::Hooks::SidekiqHook do
   context "with sidekiq" do
-    before :all do
+    before :context do
       module Sidekiq
         def self.configure_server
         end
       end
       Appsignal::Hooks::SidekiqHook.new.install
     end
-    after(:all) { Object.send(:remove_const, :Sidekiq) }
+    after(:context) { Object.send(:remove_const, :Sidekiq) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

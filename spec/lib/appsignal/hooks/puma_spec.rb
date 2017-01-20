@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::PumaHook do
   context "with puma" do
-    before(:all) do
+    before(:context) do
       class Puma
         def self.cli_config
           @cli_config ||= CliConfig.new
@@ -20,7 +20,7 @@ describe Appsignal::Hooks::PumaHook do
         end
       end
     end
-    after(:all) { Object.send(:remove_const, :Puma) }
+    after(:context) { Object.send(:remove_const, :Puma) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

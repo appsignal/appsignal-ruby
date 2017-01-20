@@ -97,10 +97,10 @@ describe "extension loading and operation" do
   context "when the extension library cannot be loaded" do
     subject { Appsignal::Extension }
 
-    before :all do
+    before :context do
       Appsignal.extension_loaded = false
     end
-    after :all do
+    after :context do
       Appsignal.extension_loaded = true
     end
 

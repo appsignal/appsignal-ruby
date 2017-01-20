@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
-    before(:all) do
+    before(:context) do
       module Delayed
         class Plugin
           def self.callbacks
@@ -14,7 +14,7 @@ describe Appsignal::Hooks::DelayedJobHook do
         end
       end
     end
-    after(:all) { Object.send(:remove_const, :Delayed) }
+    after(:context) { Object.send(:remove_const, :Delayed) }
     before do
       start_agent
     end

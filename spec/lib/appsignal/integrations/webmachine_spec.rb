@@ -9,7 +9,7 @@ if DependencyHelper.webmachine_present?
     let(:response)    { double }
     let(:transaction) { double(:set_action => true) }
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
-    before(:all) { start_agent }
+    before(:context) { start_agent }
 
     # Make sure the request responds to the method we need to get query params.
     describe "request" do

@@ -31,7 +31,7 @@ if DependencyHelper.sinatra_present?
   end
 
   describe Appsignal::Rack::SinatraBaseInstrumentation do
-    before :all do
+    before :context do
       start_agent
     end
 

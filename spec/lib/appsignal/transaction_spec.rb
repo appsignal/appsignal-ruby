@@ -7,7 +7,7 @@ class Smash < Hash
 end
 
 describe Appsignal::Transaction do
-  before :all do
+  before :context do
     start_agent
   end
 
@@ -837,8 +837,8 @@ describe Appsignal::Transaction do
       context "when there is a session" do
         before do
           expect(transaction).to respond_to(:request)
-          transaction.stub_chain(:request, :session => { :foo => :bar })
-          transaction.stub_chain(:request, :fullpath => :bar)
+          allow(transaction).to receive_message_chain(:request, :session => { :foo => :bar })
+          allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
         end
 
         it "passes the session data into the params sanitizer" do
@@ -851,8 +851,8 @@ describe Appsignal::Transaction do
           context "with ActionDispatch::Request::Session" do
             before do
               expect(transaction).to respond_to(:request)
-              transaction.stub_chain(:request, :session => action_dispatch_session)
-              transaction.stub_chain(:request, :fullpath => :bar)
+              allow(transaction).to receive_message_chain(:request, :session => action_dispatch_session)
+              allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
             end
 
             it "should return an session hash" do

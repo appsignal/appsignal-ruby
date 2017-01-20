@@ -1,5 +1,5 @@
 describe Appsignal::Hooks::NetHttpHook do
-  before :all do
+  before :context do
     start_agent
   end
 

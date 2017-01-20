@@ -1,10 +1,10 @@
 describe Appsignal::Hooks::RedisHook do
-  before :all do
+  before :context do
     start_agent
   end
 
   context "with redis" do
-    before :all do
+    before :context do
       class Redis
         class Client
           def process(_commands)
@@ -16,11 +16,11 @@ describe Appsignal::Hooks::RedisHook do
     end
 
     context "with instrumentation enabled" do
-      before :all do
+      before :context do
         Appsignal.config.config_hash[:instrument_redis] = true
         Appsignal::Hooks::RedisHook.new.install
       end
-      after(:all) { Object.send(:remove_const, :Redis) }
+      after(:context) { Object.send(:remove_const, :Redis) }
 
       describe "#dependencies_present?" do
         subject { described_class.new.dependencies_present? }
@@ -43,7 +43,7 @@ describe Appsignal::Hooks::RedisHook do
     end
 
     context "with instrumentation disabled" do
-      before :all do
+      before :context do
         Appsignal.config.config_hash[:instrument_net_http] = false
       end
 

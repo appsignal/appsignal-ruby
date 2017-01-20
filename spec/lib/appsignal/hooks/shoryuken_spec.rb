@@ -68,7 +68,7 @@ end
 
 describe Appsignal::Hooks::ShoryukenHook do
   context "with shoryuken" do
-    before(:all) do
+    before(:context) do
       module Shoryuken
         def self.configure_server
         end
@@ -76,7 +76,7 @@ describe Appsignal::Hooks::ShoryukenHook do
       Appsignal::Hooks::ShoryukenHook.new.install
     end
 
-    after(:all) do
+    after(:context) do
       Object.send(:remove_const, :Shoryuken)
     end
 

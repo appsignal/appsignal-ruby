@@ -1,5 +1,5 @@
 describe Appsignal::Rack::GenericInstrumentation do
-  before :all do
+  before :context do
     start_agent
   end
 

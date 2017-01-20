@@ -6,7 +6,7 @@ describe Appsignal::CLI::Demo do
   let(:options) { {} }
   let(:out_stream) { std_stream }
   let(:output) { out_stream.read }
-  before(:all) { Appsignal.stop }
+  before(:context) { Appsignal.stop }
   before do
     ENV.delete("APPSIGNAL_APP_ENV")
     ENV.delete("RAILS_ENV")

@@ -71,7 +71,7 @@ if DependencyHelper.resque_present?
     end
 
     context "without resque" do
-      before(:all) { Object.send(:remove_const, :Resque) }
+      before(:context) { Object.send(:remove_const, :Resque) }
 
       specify { expect { ::Resque }.to raise_error(NameError) }
       specify { expect { load file }.to_not raise_error }
