@@ -94,18 +94,19 @@ if DependencyHelper.rails_present?
     describe "#request_id" do
       subject { middleware.request_id(env) }
 
-      context "with request id set" do
+      context "with request id present" do
         let(:env) { { "action_dispatch.request_id" => "id" } }
 
-        it { is_expected.to eq "id" }
+        it "returns the present id" do
+          is_expected.to eq "id"
+        end
       end
 
-      context "with request id not set" do
+      context "with request id not present" do
         let(:env) { {} }
 
-        describe '#length' do
-          subject { super().length }
-          it { is_expected.to eq 36 }
+        it "sets a new id" do
+          expect(subject.length).to eq 36
         end
       end
     end

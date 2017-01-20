@@ -4,8 +4,9 @@ describe Appsignal::Hooks::NetHttpHook do
   end
 
   context "with Net::HTTP instrumentation enabled" do
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -43,8 +44,9 @@ describe Appsignal::Hooks::NetHttpHook do
     before { Appsignal.config.config_hash[:instrument_net_http] = false }
     after { Appsignal.config.config_hash[:instrument_net_http] = true }
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

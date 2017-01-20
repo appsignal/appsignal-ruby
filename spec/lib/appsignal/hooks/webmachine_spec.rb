@@ -4,8 +4,9 @@ describe Appsignal::Hooks::WebmachineHook do
       let(:fsm) { Webmachine::Decision::FSM.new(double(:trace? => false), double, double) }
       before(:all) { start_agent }
 
-      describe '#dependencies_present?' do
-        subject { super().dependencies_present? }
+      describe "#dependencies_present?" do
+        subject { described_class.new.dependencies_present? }
+
         it { is_expected.to be_truthy }
       end
 
@@ -23,6 +24,12 @@ describe Appsignal::Hooks::WebmachineHook do
           fsm.respond_to?(:handle_exceptions_without_appsignal, true)
         ).to be_truthy
       end
+    end
+  else
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_falsy }
     end
   end
 end

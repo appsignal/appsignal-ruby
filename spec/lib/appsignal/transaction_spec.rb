@@ -195,52 +195,42 @@ describe Appsignal::Transaction do
 
   context "with transaction instance" do
     context "initialization" do
-      subject { transaction }
-
-      describe '#ext' do
-        subject { super().ext }
-        it { is_expected.to_not be_nil }
+      it "loads the AppSignal extension" do
+        expect(transaction.ext).to_not be_nil
       end
 
-      describe '#transaction_id' do
-        subject { super().transaction_id }
-        it { is_expected.to eq "1" }
+      it "sets the transaction id" do
+        expect(transaction.transaction_id).to eq "1"
       end
 
-      describe '#namespace' do
-        subject { super().namespace }
-        it { is_expected.to eq "http_request" }
+      it "sets the namespace to http_request" do
+        expect(transaction.namespace).to eq "http_request"
       end
 
-      describe '#request' do
-        subject { super().request }
-        it { is_expected.to_not be_nil }
+      it "sets the request" do
+        expect(transaction.request).to_not be_nil
       end
 
-      describe '#paused' do
-        subject { super().paused }
-        it { is_expected.to be_falsy }
+      it "sets the request not to paused" do
+        expect(transaction.paused).to be_falsy
       end
 
-      describe '#tags' do
-        subject { super().tags }
-        it { is_expected.to eq({}) }
+      it "sets no tags by default" do
+        expect(transaction.tags).to eq({})
       end
 
-      context "options" do
+      describe "#options" do
         subject { transaction.options }
 
-        describe '[:params_method]' do
-          subject { super()[:params_method] }
-          it { is_expected.to eq :params }
+        it "sets the default :params_method" do
+          expect(subject[:params_method]).to eq :params
         end
 
         context "with overridden options" do
           let(:options) { { :params_method => :filtered_params } }
 
-          describe '[:params_method]' do
-            subject { super()[:params_method] }
-            it { is_expected.to eq :filtered_params }
+          it "sets the overriden :params_method" do
+            expect(subject[:params_method]).to eq :filtered_params
           end
         end
       end
@@ -596,11 +586,11 @@ describe Appsignal::Transaction do
       let(:env) { {} }
       subject { Appsignal::Transaction::GenericRequest.new(env) }
 
-      it "should initialize with an empty env" do
+      it "initializes with an empty env" do
         expect(subject.env).to be_empty
       end
 
-      context "with a filled env" do
+      context "when given an env" do
         let(:env) do
           {
             :params => { :id => 1 },
@@ -608,14 +598,12 @@ describe Appsignal::Transaction do
           }
         end
 
-        describe '#env' do
-          subject { super().env }
-          it { is_expected.to eq env }
+        it "sets the given env" do
+          expect(subject.env).to eq env
         end
 
-        describe '#params' do
-          subject { super().params }
-          it { is_expected.to eq(:id => 1) }
+        it "sets the params present in the env" do
+          expect(subject.params).to eq(:id => 1)
         end
       end
     end
@@ -795,9 +783,7 @@ describe Appsignal::Transaction do
       context "when request is nil" do
         let(:request) { nil }
 
-        it "returns nil" do
-          expect(subject).to be_nil
-        end
+        it { is_expected.to be_nil }
       end
 
       context "when env is nil" do
@@ -815,9 +801,8 @@ describe Appsignal::Transaction do
           end
         end
 
-        describe '#keys' do
-          subject { super().keys }
-          it { is_expected.to match_array(whitelisted_keys[0, whitelisted_keys.length]) }
+        it "only sets whitelisted keys" do
+          expect(subject.keys).to match_array(whitelisted_keys)
         end
       end
     end
@@ -828,9 +813,7 @@ describe Appsignal::Transaction do
       context "when request is nil" do
         let(:request) { nil }
 
-        it "returns nil" do
-          expect(subject).to be_nil
-        end
+        it { is_expected.to be_nil }
       end
 
       context "when session is nil" do

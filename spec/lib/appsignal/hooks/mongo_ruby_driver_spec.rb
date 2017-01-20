@@ -19,8 +19,9 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     end
     after(:all) { Object.send(:remove_const, :Mongo) }
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -34,8 +35,9 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
   end
 
   context "without mongo ruby driver" do
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

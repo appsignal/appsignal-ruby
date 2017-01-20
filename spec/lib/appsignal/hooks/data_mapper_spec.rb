@@ -15,8 +15,9 @@ describe Appsignal::Hooks::DataMapperHook do
       Object.send(:remove_const, :DataObjects)
     end
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -29,8 +30,9 @@ describe Appsignal::Hooks::DataMapperHook do
   end
 
   context "without datamapper" do
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

@@ -866,7 +866,7 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       before do
-        allow(Appsignal).to receive(:config).and_return({ :ignore_errors => ["StandardError"] })
+        allow(Appsignal).to receive(:config).and_return(:ignore_errors => ["StandardError"])
       end
 
       subject do
@@ -898,7 +898,7 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       before do
-        allow(Appsignal).to receive(:config).and_return({ :ignore_actions => "TestController#isup" })
+        allow(Appsignal).to receive(:config).and_return(:ignore_actions => "TestController#isup")
       end
 
       subject do

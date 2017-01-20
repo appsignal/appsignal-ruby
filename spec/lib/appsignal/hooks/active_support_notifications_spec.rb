@@ -10,8 +10,9 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     let(:notifier) { ActiveSupport::Notifications::Fanout.new }
     let(:instrumenter) { ActiveSupport::Notifications::Instrumenter.new(notifier) }
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -40,8 +41,9 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
       expect(return_value).to eq "value"
     end
   else
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

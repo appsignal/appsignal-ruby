@@ -6,8 +6,9 @@ describe Appsignal::Hooks::SequelHook do
       start_agent
     end
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -30,8 +31,9 @@ describe Appsignal::Hooks::SequelHook do
       end
     end
   else
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

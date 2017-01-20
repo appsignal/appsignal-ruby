@@ -6,8 +6,9 @@ describe Appsignal::Hooks::PassengerHook do
     end
     after(:all) { Object.send(:remove_const, :PhusionPassenger) }
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -20,8 +21,9 @@ describe Appsignal::Hooks::PassengerHook do
   end
 
   context "without passenger" do
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

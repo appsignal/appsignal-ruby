@@ -12,9 +12,10 @@ if DependencyHelper.rails_present?
     end
 
     describe "#root_path" do
-      describe '#root_path' do
-        subject { super().root_path }
-        it { is_expected.to eq "/var/www/app/20130101/" }
+      subject { formatter.root_path }
+
+      it "returns Rails root path" do
+        is_expected.to eq "/var/www/app/20130101/"
       end
     end
 

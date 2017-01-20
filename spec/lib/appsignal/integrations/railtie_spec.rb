@@ -13,61 +13,56 @@ if DependencyHelper.rails_present?
       let(:app) { MyApp::Application }
       before { allow(app.middleware).to receive(:insert_before).and_return(true) }
 
-      context "logger" do
+      describe ".logger" do
         before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
         subject { Appsignal.logger }
 
         it { is_expected.to be_a Logger }
       end
 
-      context "config" do
-        subject { Appsignal.config }
-        context "basics" do
+      describe ".config" do
+        let(:config) { Appsignal.config }
+
+        describe "basic configuration" do
           before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
 
-          it { is_expected.to be_a(Appsignal::Config) }
+          it { expect(config).to be_a(Appsignal::Config) }
 
-          describe '#root_path' do
-            subject { super().root_path }
-            it { is_expected.to eq Pathname.new(project_fixture_path) }
+          it "sets the root_path" do
+            expect(config.root_path).to eq Pathname.new(project_fixture_path)
           end
 
-          describe '#env' do
-            subject { super().env }
-            it { is_expected.to eq "test" }
+          it "sets the detected environment" do
+            expect(config.env).to eq "test"
           end
 
-          describe '[:name]' do
-            subject { super()[:name] }
-            it { is_expected.to eq "TestApp" }
+          it "loads the app name" do
+            expect(config[:name]).to eq "TestApp"
           end
 
-          describe '[:log_path]' do
-            subject { super()[:log_path] }
-            it { is_expected.to eq Pathname.new(File.join(project_fixture_path, "log")) }
-          end
-        end
-
-        context "initial config" do
-          before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-          subject { Appsignal.config.initial_config }
-
-          describe '[:name]' do
-            subject { super()[:name] }
-            it { is_expected.to eq "MyApp" }
+          it "sets the log_path based on the root_path" do
+            expect(config[:log_path]).to eq Pathname.new(File.join(project_fixture_path, "log"))
           end
         end
 
         context "with APPSIGNAL_APP_ENV ENV var set" do
           before do
-            expect(ENV).to receive(:fetch).with("APPSIGNAL_APP_ENV", "test").and_return("env_test")
+            ENV["APPSIGNAL_APP_ENV"] = "env_test"
             Appsignal::Integrations::Railtie.initialize_appsignal(app)
           end
 
-          describe '#env' do
-            subject { super().env }
-            it { is_expected.to eq "env_test" }
+          it "uses the environment variable value as the environment" do
+            expect(config.env).to eq "env_test"
           end
+        end
+      end
+
+      describe ".initial_config" do
+        before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
+        let(:config) { Appsignal.config.initial_config }
+
+        it "returns the initial config" do
+          expect(config[:name]).to eq "MyApp"
         end
       end
 

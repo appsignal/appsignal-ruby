@@ -16,8 +16,9 @@ describe Appsignal::Hooks::UnicornHook do
     end
     after(:all) { Object.send(:remove_const, :Unicorn) }
 
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_truthy }
     end
 
@@ -42,8 +43,9 @@ describe Appsignal::Hooks::UnicornHook do
   end
 
   context "without unicorn" do
-    describe '#dependencies_present?' do
-      subject { super().dependencies_present? }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
       it { is_expected.to be_falsy }
     end
   end

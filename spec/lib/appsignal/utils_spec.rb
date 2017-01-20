@@ -22,9 +22,10 @@ describe Appsignal::Utils do
       it { is_expected.to_not eq Appsignal::Utils.data_generate({}) }
       it { is_expected.to_not eq "a string" }
 
-      describe '#to_s' do
-        subject { super().to_s }
-        it { is_expected.to eq %({"":"test","1":true,"bar":null,"baz":{"arr":[1,2],"foo":"bʊr"},"float":1.0,"foo":[1,2,"three",{"foo":"bar"}],"int":1,"the":"payload"}) }
+      describe "#to_s" do
+        it do
+          expect(subject.to_s).to eq %({"":"test","1":true,"bar":null,"baz":{"arr":[1,2],"foo":"bʊr"},"float":1.0,"foo":[1,2,"three",{"foo":"bar"}],"int":1,"the":"payload"})
+        end
       end
     end
 
@@ -33,10 +34,7 @@ describe Appsignal::Utils do
         [1, "string", 10, { "foo" => "bʊr" }]
       end
 
-      describe '#to_s' do
-        subject { super().to_s }
-        it { is_expected.to eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
-      end
+      it { expect(subject.to_s).to eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
     end
 
     context "with a body that contains strings with invalid utf-8 content" do
@@ -54,9 +52,8 @@ describe Appsignal::Utils do
         }
       end
 
-      describe '#to_s' do
-        subject { super().to_s }
-        it { is_expected.to eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"}) }
+      describe "#to_s" do
+        it { expect(subject.to_s).to eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"}) }
       end
     end
 

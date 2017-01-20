@@ -30,51 +30,17 @@ describe Appsignal::Utils::ParamsSanitizer do
     subject { sanitized_params }
 
     it { is_expected.to be_instance_of Hash }
-
-    describe '[:text]' do
-      subject { super()[:text] }
-      it { is_expected.to eq("string") }
+    it { expect(subject[:text]).to eq("string") }
+    it { expect(subject["string"]).to eq("string key value") }
+    it do
+      expect(subject[:file]).to be_instance_of String
+      expect(subject[:file]).to include "::UploadedFile"
     end
-
-    describe "[\"string\"]" do
-      subject { super()["string"] }
-      it { is_expected.to eq("string key value") }
-    end
-
-    describe '[:file]' do
-      subject { super()[:file] }
-      it { is_expected.to be_instance_of String }
-    end
-
-    describe '[:file]' do
-      subject { super()[:file] }
-      it { is_expected.to include "::UploadedFile" }
-    end
-
-    describe '[:float]' do
-      subject { super()[:float] }
-      it { is_expected.to eq(0.0) }
-    end
-
-    describe '[:bool_true]' do
-      subject { super()[:bool_true] }
-      it { is_expected.to be(true) }
-    end
-
-    describe '[:bool_false]' do
-      subject { super()[:bool_false] }
-      it { is_expected.to be(false) }
-    end
-
-    describe '[:nil]' do
-      subject { super()[:nil] }
-      it { is_expected.to be_nil }
-    end
-
-    describe '[:int]' do
-      subject { super()[:int] }
-      it { is_expected.to eq(1) }
-    end
+    it { expect(subject[:float]).to eq(0.0) }
+    it { expect(subject[:bool_true]).to be(true) }
+    it { expect(subject[:bool_false]).to be(false) }
+    it { expect(subject[:nil]).to be_nil }
+    it { expect(subject[:int]).to eq(1) }
 
     it "does not change the original params" do
       subject
@@ -86,55 +52,27 @@ describe Appsignal::Utils::ParamsSanitizer do
       subject { sanitized_params[:hash] }
 
       it { is_expected.to be_instance_of Hash }
-
-      describe '[:nested_text]' do
-        subject { super()[:nested_text] }
-        it { is_expected.to eq("string") }
-      end
+      it { expect(subject[:nested_text]).to eq("string") }
 
       describe ":nested_array" do
         subject { sanitized_params[:hash][:nested_array] }
 
         it { is_expected.to be_instance_of Array }
-
-        describe '[0]' do
-          subject { super()[0] }
-          it { is_expected.to eq("something") }
-        end
-
-        describe '[1]' do
-          subject { super()[1] }
-          it { is_expected.to eq("else") }
-        end
-
-        describe '[2]' do
-          subject { super()[2] }
-          it { is_expected.to be_instance_of String }
-        end
-
-        describe '[2]' do
-          subject { super()[2] }
-          it { is_expected.to include "::UploadedFile" }
+        it { expect(subject[0]).to eq("something") }
+        it { expect(subject[1]).to eq("else") }
+        it do
+          expect(subject[2]).to be_instance_of String
+          expect(subject[2]).to include "::UploadedFile"
         end
 
         describe ":nested_hash" do
           subject { sanitized_params[:hash][:nested_array][3] }
 
           it { is_expected.to be_instance_of Hash }
-
-          describe '[:key]' do
-            subject { super()[:key] }
-            it { is_expected.to eq("value") }
-          end
-
-          describe '[:file]' do
-            subject { super()[:file] }
-            it { is_expected.to be_instance_of String }
-          end
-
-          describe '[:file]' do
-            subject { super()[:file] }
-            it { is_expected.to include "::UploadedFile" }
+          it { expect(subject[:key]).to eq("value") }
+          it do
+            expect(subject[:file]).to be_instance_of String
+            expect(subject[:file]).to include "::UploadedFile"
           end
         end
       end
@@ -146,59 +84,25 @@ describe Appsignal::Utils::ParamsSanitizer do
       end
       subject { sanitized_params }
 
-      describe '[:text]' do
-        subject { super()[:text] }
-        it { is_expected.to eq(described_class::FILTERED) }
+      it { expect(subject[:text]).to eq(described_class::FILTERED) }
+      it { expect(subject[:hash]).to eq(described_class::FILTERED) }
+      it do
+        expect(subject[:file]).to be_instance_of String
+        expect(subject[:file]).to include "::UploadedFile"
       end
-
-      describe '[:hash]' do
-        subject { super()[:hash] }
-        it { is_expected.to eq(described_class::FILTERED) }
-      end
-
-      describe '[:file]' do
-        subject { super()[:file] }
-        it { is_expected.to be_instance_of String }
-      end
-
-      describe '[:file]' do
-        subject { super()[:file] }
-        it { is_expected.to include "::UploadedFile" }
-      end
-
-      describe '[:float]' do
-        subject { super()[:float] }
-        it { is_expected.to eq(0.0) }
-      end
-
-      describe '[:bool_true]' do
-        subject { super()[:bool_true] }
-        it { is_expected.to be(true) }
-      end
-
-      describe '[:bool_false]' do
-        subject { super()[:bool_false] }
-        it { is_expected.to be(false) }
-      end
-
-      describe '[:nil]' do
-        subject { super()[:nil] }
-        it { is_expected.to be_nil }
-      end
-
-      describe '[:int]' do
-        subject { super()[:int] }
-        it { is_expected.to eq(1) }
-      end
+      it { expect(subject[:float]).to eq(0.0) }
+      it { expect(subject[:bool_true]).to be(true) }
+      it { expect(subject[:bool_false]).to be(false) }
+      it { expect(subject[:nil]).to be_nil }
+      it { expect(subject[:int]).to eq(1) }
 
       context "with strings as key filter values" do
         let(:sanitized_params) do
           described_class.sanitize(params, :filter_parameters => %w(string))
         end
 
-        describe "[\"string\"]" do
-          subject { super()["string"] }
-          it { is_expected.to eq("[FILTERED]") }
+        it "sanitizes values" do
+          expect(subject["string"]).to eq("[FILTERED]")
         end
       end
 
@@ -208,9 +112,8 @@ describe Appsignal::Utils::ParamsSanitizer do
         end
         subject { sanitized_params[:hash] }
 
-        describe '[:nested_text]' do
-          subject { super()[:nested_text] }
-          it { is_expected.to eq("[FILTERED]") }
+        it "sanitizes values in nested hashes" do
+          expect(subject[:nested_text]).to eq("[FILTERED]")
         end
 
         describe ":nested_array" do
@@ -220,9 +123,8 @@ describe Appsignal::Utils::ParamsSanitizer do
             end
             subject { sanitized_params[:hash][:nested_array][3] }
 
-            describe '[:key]' do
-              subject { super()[:key] }
-              it { is_expected.to eq("[FILTERED]") }
+            it "sanitizes values in deeply nested hashes and arrays" do
+              expect(subject[:key]).to eq("[FILTERED]")
             end
           end
         end

@@ -86,17 +86,15 @@ describe Appsignal::Transmitter do
   describe "#http_post" do
     subject { instance.send(:http_post, "the" => "payload") }
 
-    describe '#body' do
-      subject { super().body }
-      it { is_expected.to eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}") }
+    it "gzips the body" do
+      expect(subject.body).to eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}")
     end
 
-    describe '#path' do
-      subject { super().path }
-      it { is_expected.to eq instance.uri.request_uri }
+    it "sets the path" do
+      expect(subject.path).to eq instance.uri.request_uri
     end
 
-    it "should have the correct headers" do
+    it "sets the correct headers" do
       expect(subject["Content-Type"]).to eq "application/json; charset=UTF-8"
       expect(subject["Content-Encoding"]).to eq "gzip"
     end
@@ -108,62 +106,28 @@ describe Appsignal::Transmitter do
     context "with a http uri" do
       let(:config) { project_fixture_config("test") }
 
-      it { is_expected.to be_instance_of(Net::HTTP) }
-
-      describe '#proxy?' do
-        subject { super().proxy? }
-        it { is_expected.to be_falsy }
-      end
-
-      describe '#use_ssl?' do
-        subject { super().use_ssl? }
-        it { is_expected.to be_falsy }
-      end
+      it { expect(subject).to be_instance_of(Net::HTTP) }
+      it { expect(subject.proxy?).to be_falsy }
+      it { expect(subject.use_ssl?).to be_falsy }
     end
 
     context "with a https uri" do
       let(:config) { project_fixture_config("production") }
 
-      it { is_expected.to be_instance_of(Net::HTTP) }
-
-      describe '#proxy?' do
-        subject { super().proxy? }
-        it { is_expected.to be_falsy }
-      end
-
-      describe '#use_ssl?' do
-        subject { super().use_ssl? }
-        it { is_expected.to be_truthy }
-      end
-
-      describe '#verify_mode' do
-        subject { super().verify_mode }
-        it { is_expected.to eq OpenSSL::SSL::VERIFY_PEER }
-      end
-
-      describe '#ca_file' do
-        subject { super().ca_file }
-        it { is_expected.to eq config[:ca_file_path] }
-      end
+      it { expect(subject).to be_instance_of(Net::HTTP) }
+      it { expect(subject.proxy?).to be_falsy }
+      it { expect(subject.use_ssl?).to be_truthy }
+      it { expect(subject.verify_mode).to eq OpenSSL::SSL::VERIFY_PEER }
+      it { expect(subject.ca_file).to eq config[:ca_file_path] }
     end
 
     context "with a proxy" do
       let(:config) { project_fixture_config("production", :http_proxy => "http://localhost:8080") }
 
-      describe '#proxy?' do
-        subject { super().proxy? }
-        it { is_expected.to be_truthy }
-      end
-
-      describe '#proxy_address' do
-        subject { super().proxy_address }
-        it { is_expected.to eq "localhost" }
-      end
-
-      describe '#proxy_port' do
-        subject { super().proxy_port }
-        it { is_expected.to eq 8080 }
-      end
+      it { expect(subject).to be_instance_of(Net::HTTP) }
+      it { expect(subject.proxy?).to be_truthy }
+      it { expect(subject.proxy_address).to eq "localhost" }
+      it { expect(subject.proxy_port).to eq 8080 }
     end
   end
 end
