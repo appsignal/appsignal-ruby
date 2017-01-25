@@ -140,6 +140,25 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    describe "garbage_collection_profiler" do
+
+      it "should add garbage collection time" do
+
+        created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
+
+        allow(created_transaction.class.garbage_collection_profiler)
+          .to receive(:internal_profiler)
+          .and_return(FakeGCProfiler.new(0.12345))
+
+        expect(created_transaction.class.garbage_collection_profiler.total_time).to eq(123)
+
+        # Trigger GCProfiler reset, so it doesn't affect other tests
+        created_transaction.class.garbage_collection_profiler.send(:internal_profiler).total_time = 2_147_483_647
+
+        expect(transaction.class.garbage_collection_profiler.total_time).to eq(0)
+      end
+    end
   end
 
   describe "#complete" do
@@ -518,14 +537,6 @@ describe Appsignal::Transaction do
           nil,
           nil
         )
-      end
-
-      it "should add garbage collection time" do
-        allow_any_instance_of(Appsignal::GarbageCollectionProfiler)
-          .to receive(:internal_profiler)
-          .and_return(FakeGCProfiler.new(0.12345))
-
-        transaction.finish_event('name', nil, nil, nil)
       end
     end
 
