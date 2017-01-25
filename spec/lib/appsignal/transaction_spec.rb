@@ -466,7 +466,11 @@ describe Appsignal::Transaction do
 
     describe "#start_event" do
       it "should start the event in the extension" do
-        transaction.ext.should_receive(:start_event)
+        expect {
+          transaction.start_event
+        }.to_not raise_error
+
+        transaction.ext.should_receive(:start_event).with(0);
 
         transaction.start_event
       end
@@ -474,6 +478,10 @@ describe Appsignal::Transaction do
 
     describe "#finish_event" do
       it "should finish the event in the extension" do
+        expect {
+          transaction.finish_event('name', 'title', 'body', 1)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:finish_event).with(
           'name',
           'title',
@@ -491,6 +499,11 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
+        expect {
+          transaction.finish_event('name', nil, nil, nil)
+        }.to_not raise_error
+
+
         transaction.ext.should_receive(:finish_event).with(
           'name',
           '',
@@ -518,12 +531,17 @@ describe Appsignal::Transaction do
 
     describe "#record_event" do
       it "should record the event in the extension" do
+        expect {
+          transaction.record_event('name', 'title', 'body', 1000, 1)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:record_event).with(
           'name',
           'title',
           'body',
           1000,
-          1
+          1,
+          0
         )
 
         transaction.record_event(
@@ -536,11 +554,16 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
+        expect {
+          transaction.record_event('name', nil, nil, 1000, nil)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:record_event).with(
           'name',
           '',
           '',
           1000,
+          0,
           0
         )
 
