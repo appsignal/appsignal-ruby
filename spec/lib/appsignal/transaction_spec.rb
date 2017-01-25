@@ -140,6 +140,25 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    describe "garbage_collection_profiler" do
+
+      it "should add garbage collection time" do
+
+        created_transaction = Appsignal::Transaction.create('1', namespace, request, options)
+
+        allow(created_transaction.class.garbage_collection_profiler)
+          .to receive(:internal_profiler)
+          .and_return(FakeGCProfiler.new(0.12345))
+
+        expect(created_transaction.class.garbage_collection_profiler.total_time).to eq(123)
+
+        # Trigger GCProfiler reset, so it doesn't affect other tests
+        created_transaction.class.garbage_collection_profiler.send(:internal_profiler).total_time = 2_147_483_647
+
+        expect(transaction.class.garbage_collection_profiler.total_time).to eq(0)
+      end
+    end
   end
 
   describe "#complete" do
@@ -466,7 +485,11 @@ describe Appsignal::Transaction do
 
     describe "#start_event" do
       it "should start the event in the extension" do
-        transaction.ext.should_receive(:start_event)
+        expect {
+          transaction.start_event
+        }.to_not raise_error
+
+        transaction.ext.should_receive(:start_event).with(0);
 
         transaction.start_event
       end
@@ -474,6 +497,10 @@ describe Appsignal::Transaction do
 
     describe "#finish_event" do
       it "should finish the event in the extension" do
+        expect {
+          transaction.finish_event('name', 'title', 'body', 1)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:finish_event).with(
           'name',
           'title',
@@ -491,6 +518,11 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
+        expect {
+          transaction.finish_event('name', nil, nil, nil)
+        }.to_not raise_error
+
+
         transaction.ext.should_receive(:finish_event).with(
           'name',
           '',
@@ -506,24 +538,21 @@ describe Appsignal::Transaction do
           nil
         )
       end
-
-      it "should add garbage collection time" do
-        allow_any_instance_of(Appsignal::GarbageCollectionProfiler)
-          .to receive(:internal_profiler)
-          .and_return(FakeGCProfiler.new(0.12345))
-
-        transaction.finish_event('name', nil, nil, nil)
-      end
     end
 
     describe "#record_event" do
       it "should record the event in the extension" do
+        expect {
+          transaction.record_event('name', 'title', 'body', 1000, 1)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:record_event).with(
           'name',
           'title',
           'body',
           1000,
-          1
+          1,
+          0
         )
 
         transaction.record_event(
@@ -536,11 +565,16 @@ describe Appsignal::Transaction do
       end
 
       it "should finish the event in the extension with nil arguments" do
+        expect {
+          transaction.record_event('name', nil, nil, 1000, nil)
+        }.to_not raise_error
+
         transaction.ext.should_receive(:record_event).with(
           'name',
           '',
           '',
           1000,
+          0,
           0
         )
 
