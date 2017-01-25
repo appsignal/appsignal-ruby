@@ -113,8 +113,8 @@ appsignal install [push api key]
 ```
 
 Depending on what framework or gems you use some manual integration is
-required. Follow the steps in the wizard or consult our [Supported systems and
-frameworks] page for help.
+required. Follow the steps in the wizard or consult our [integrations] page for
+help.
 
 If you're stuck feel free to [contact us][contact]!
 
@@ -139,8 +139,8 @@ AppSignal instrumentation doesn't depend on automatic integrations. It's easy
 to set up [custom instrumentation][custom-instrumentation] to add keep track of
 anything.
 
-For more detailed information and examples please visit our [Supported
-frameworks][supported-frameworks] page.
+For more detailed information and examples please visit our
+[integrations] page.
 
 ### Front-end monitoring (Beta)
 
@@ -150,8 +150,7 @@ currently. Be sure to check it out!
 ## Supported systems
 
 Currently the AppSignal agent works on most Unix-like operating systems, such
-as most Linux distributions and macOS, excluding Alpine Linux, FreeBSD and
-Windows.
+as most Linux distributions and macOS, excluding FreeBSD and Windows.
 
 For more detailed information please visit our [Supported
 systems][supported-systems] page.
@@ -229,15 +228,15 @@ the most out of using AppSignal.
 [contact]: mailto:support@appsignal.com
 [waffles-page]: https://appsignal.com/waffles
 [docs]: http://docs.appsignal.com
-[contributing-guide]: http://docs.appsignal.com/contributing
-[supported-systems]: http://docs.appsignal.com/getting-started/supported-frameworks.html
-[supported-frameworks]: http://docs.appsignal.com/getting-started/supported-frameworks.html
-[custom-instrumentation]: http://docs.appsignal.com/tweaks-in-your-code/custom-instrumentation.html
-[front-end-monitoring]: http://docs.appsignal.com/tweaks-in-your-code/frontend-error-catching.html
-[exception-handling]: http://docs.appsignal.com/tweaks-in-your-code/handle-exceptions.html
-[tagging]: http://docs.appsignal.com/tweaks-in-your-code/handle-exceptions.html#tagging-requests
-[host-metrics]: http://docs.appsignal.com/getting-started/host-metrics.html
-[custom-metrics]: http://docs.appsignal.com/getting-started/custom-metrics.html
+[contributing-guide]: http://docs.appsignal.com/appsignal/contributing.html
+[supported-systems]: http://docs.appsignal.com/support/operating-systems.html
+[integrations]: http://docs.appsignal.com/ruby/integrations/index.html
+[custom-instrumentation]: http://docs.appsignal.com/ruby/instrumentation/
+[front-end-monitoring]: http://docs.appsignal.com/front-end/error-handling.html
+[exception-handling]: http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+[tagging]: http://docs.appsignal.com/ruby/instrumentation/tagging.html
+[host-metrics]: http://docs.appsignal.com/metrics/host.html
+[custom-metrics]: http://docs.appsignal.com/metrics/custom.html
 
 [semver]: http://semver.org/
 [rvm]: http://rvm.io/
