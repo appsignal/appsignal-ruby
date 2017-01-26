@@ -1,5 +1,5 @@
 describe Appsignal::Rack::GenericInstrumentation do
-  before :all do
+  before :context do
     start_agent
   end
 
@@ -10,11 +10,11 @@ describe Appsignal::Rack::GenericInstrumentation do
 
   describe "#call" do
     before do
-      middleware.stub(:raw_payload => {})
+      allow(middleware).to receive(:raw_payload).and_return({})
     end
 
     context "when appsignal is active" do
-      before { Appsignal.stub(:active? => true) }
+      before { allow(Appsignal).to receive(:active?).and_return(true) }
 
       it "should call with monitoring" do
         expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
@@ -22,7 +22,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     context "when appsignal is not active" do
-      before { Appsignal.stub(:active? => false) }
+      before { allow(Appsignal).to receive(:active?).and_return(false) }
 
       it "should not call with monitoring" do
         expect(middleware).to_not receive(:call_with_appsignal_monitoring)
@@ -38,7 +38,7 @@ describe Appsignal::Rack::GenericInstrumentation do
 
   describe "#call_with_appsignal_monitoring" do
     it "should create a transaction" do
-      Appsignal::Transaction.should_receive(:create).with(
+      expect(Appsignal::Transaction).to receive(:create).with(
         kind_of(String),
         Appsignal::Transaction::HTTP_REQUEST,
         kind_of(Rack::Request)
@@ -46,24 +46,24 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     it "should call the app" do
-      app.should_receive(:call).with(env)
+      expect(app).to receive(:call).with(env)
     end
 
     context "with an error" do
       let(:error) { VerySpecificError.new }
       let(:app) do
         double.tap do |d|
-          d.stub(:call).and_raise(error)
+          allow(d).to receive(:call).and_raise(error)
         end
       end
 
       it "should set the error" do
-        Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
       end
     end
 
     it "should set the action to unknown" do
-      Appsignal::Transaction.any_instance.should_receive(:set_action).with("unknown")
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("unknown")
     end
 
     context "with a route specified in the env" do
@@ -72,16 +72,16 @@ describe Appsignal::Rack::GenericInstrumentation do
       end
 
       it "should set the action" do
-        Appsignal::Transaction.any_instance.should_receive(:set_action).with("GET /")
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("GET /")
       end
     end
 
     it "should set metadata" do
-      Appsignal::Transaction.any_instance.should_receive(:set_metadata).twice
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
     end
 
     it "should set the queue start" do
-      Appsignal::Transaction.any_instance.should_receive(:set_http_or_background_queue_start)
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
     end
 
     after { middleware.call(env) rescue VerySpecificError }

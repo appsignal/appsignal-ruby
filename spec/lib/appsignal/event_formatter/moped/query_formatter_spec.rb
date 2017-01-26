@@ -3,7 +3,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
   let(:formatter) { klass.new }
 
   it "should register query.moped" do
-    Appsignal::EventFormatter.registered?("query.moped", klass).should be_true
+    expect(Appsignal::EventFormatter.registered?("query.moped", klass)).to be_truthy
   end
 
   describe "#format" do
@@ -13,7 +13,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
     context "without ops in the payload" do
       let(:payload) { {} }
 
-      it { should be_nil }
+      it { is_expected.to be_nil }
     end
 
     context "Moped::Protocol::Command" do
@@ -25,7 +25,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Command", '{:database=>"database.collection", :selector=>{"query"=>"?"}}'] }
+      it { is_expected.to eq ["Command", '{:database=>"database.collection", :selector=>{"query"=>"?"}}'] }
     end
 
     context "Moped::Protocol::Query" do
@@ -41,7 +41,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Query", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[], :limit=>0, :skip=>0, :fields=>nil}'] }
+      it { is_expected.to eq ["Query", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[], :limit=>0, :skip=>0, :fields=>nil}'] }
     end
 
     context "Moped::Protocol::Delete" do
@@ -54,7 +54,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Delete", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[]}'] }
+      it { is_expected.to eq ["Delete", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Insert" do
@@ -70,7 +70,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Insert", '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
+      it { is_expected.to eq ["Insert", '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Update" do
@@ -84,7 +84,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Update", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"user.?"=>"?"}, :flags=>[]}'] }
+      it { is_expected.to eq ["Update", '{:database=>"database.collection", :selector=>{"_id"=>"?"}, :update=>{"user.?"=>"?"}, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::KillCursors" do
@@ -95,7 +95,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["KillCursors", "{:number_of_cursor_ids=>2}"] }
+      it { is_expected.to eq ["KillCursors", "{:number_of_cursor_ids=>2}"] }
     end
 
     context "Moped::Protocol::Other" do
@@ -106,7 +106,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { should eq ["Other", '{:database=>"database.collection"}'] }
+      it { is_expected.to eq ["Other", '{:database=>"database.collection"}'] }
     end
   end
 end

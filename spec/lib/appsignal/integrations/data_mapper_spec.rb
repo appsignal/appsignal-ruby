@@ -25,7 +25,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
     end
 
-    before { Appsignal::Transaction.stub(:current) { transaction } }
+    before { allow(Appsignal::Transaction).to receive(:current) { transaction } }
 
     it "should record the log entry in an event" do
       expect(transaction).to receive(:record_event).with(

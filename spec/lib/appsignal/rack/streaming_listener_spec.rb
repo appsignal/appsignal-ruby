@@ -15,7 +15,7 @@ describe Appsignal::Rack::StreamingListener do
 
   describe "#call" do
     context "when Appsignal is active" do
-      before { Appsignal.stub(:active? => true) }
+      before { allow(Appsignal).to receive(:active?).and_return(true) }
 
       it "should call `call_with_appsignal_monitoring`" do
         expect(listener).to receive(:call_with_appsignal_monitoring)
@@ -23,7 +23,7 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     context "when Appsignal is not active" do
-      before { Appsignal.stub(:active? => false) }
+      before { allow(Appsignal).to receive(:active?).and_return(false) }
 
       it "should not call `call_with_appsignal_monitoring`" do
         expect(listener).to_not receive(:call_with_appsignal_monitoring)
@@ -45,9 +45,9 @@ describe Appsignal::Rack::StreamingListener do
     let(:raw_payload) { { :foo => :bar } }
 
     before do
-      SecureRandom.stub(:uuid => "123")
-      listener.stub(:raw_payload => raw_payload)
-      Appsignal::Transaction.stub(:create => transaction)
+      allow(SecureRandom).to receive(:uuid).and_return("123")
+      allow(listener).to receive(:raw_payload).and_return(raw_payload)
+      allow(Appsignal::Transaction).to receive(:create).and_return(transaction)
     end
 
     it "should create a transaction" do

@@ -2,11 +2,15 @@ describe Appsignal::Hooks::SequelHook do
   if DependencyHelper.sequel_present?
     let(:db) { Sequel.sqlite }
 
-    before :all do
+    before :context do
       start_agent
     end
 
-    its(:dependencies_present?) { should be_true }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_truthy }
+    end
 
     context "with a transaction" do
       let(:transaction) { Appsignal::Transaction.current }
@@ -27,6 +31,10 @@ describe Appsignal::Hooks::SequelHook do
       end
     end
   else
-    its(:dependencies_present?) { should be_false }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_falsy }
+    end
   end
 end

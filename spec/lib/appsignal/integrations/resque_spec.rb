@@ -27,18 +27,18 @@ if DependencyHelper.resque_present?
         let(:transaction) { Appsignal::Transaction.new("1", "background", {}, {}) }
         let(:job) { ::Resque::Job.new("default", "class" => "TestJob") }
         before do
-          transaction.stub(:complete => true)
-          Appsignal::Transaction.stub(:current => transaction)
-          Appsignal.should_receive(:stop)
+          allow(transaction).to receive(:complete).and_return(true)
+          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+          expect(Appsignal).to receive(:stop)
         end
 
         context "without exception" do
           it "should create a new transaction" do
-            Appsignal::Transaction.should_receive(:create).and_return(transaction)
+            expect(Appsignal::Transaction).to receive(:create).and_return(transaction)
           end
 
           it "should wrap in a transaction with the correct params" do
-            Appsignal.should_receive(:monitor_transaction).with(
+            expect(Appsignal).to receive(:monitor_transaction).with(
               "perform_job.resque",
               :class => "TestJob",
               :method => "perform"
@@ -46,7 +46,7 @@ if DependencyHelper.resque_present?
           end
 
           it "should close the transaction" do
-            transaction.should_receive(:complete)
+            expect(transaction).to receive(:complete)
           end
 
           after { job.perform }
@@ -56,7 +56,7 @@ if DependencyHelper.resque_present?
           let(:job) { ::Resque::Job.new("default", "class" => "BrokenTestJob") }
 
           it "should set the exception" do
-            Appsignal::Transaction.any_instance.should_receive(:set_error)
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_error)
           end
 
           after do
@@ -71,7 +71,7 @@ if DependencyHelper.resque_present?
     end
 
     context "without resque" do
-      before(:all) { Object.send(:remove_const, :Resque) }
+      before(:context) { Object.send(:remove_const, :Resque) }
 
       specify { expect { ::Resque }.to raise_error(NameError) }
       specify { expect { load file }.to_not raise_error }

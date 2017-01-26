@@ -12,7 +12,7 @@ describe Appsignal::Minutely do
       probe = double
       expect(probe).to receive(:call).at_least(:twice)
       Appsignal::Minutely.probes << probe
-      Appsignal::Minutely.stub(:wait_time => 0.1)
+      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.1)
 
       Appsignal::Minutely.start
 
@@ -22,7 +22,7 @@ describe Appsignal::Minutely do
 
   describe ".wait_time" do
     it "should get the time to the next minute" do
-      Time.any_instance.stub(:sec => 30)
+      allow_any_instance_of(Time).to receive(:sec).and_return(30)
       expect(Appsignal::Minutely.wait_time).to eq 30
     end
   end
@@ -33,7 +33,7 @@ describe Appsignal::Minutely do
 
       Appsignal::Minutely.add_gc_probe
 
-      expect(Appsignal::Minutely.probes).to have(1).item
+      expect(Appsignal::Minutely.probes.size).to eq(1)
       expect(Appsignal::Minutely.probes[0]).to be_instance_of(Appsignal::Minutely::GCProbe)
     end
   end

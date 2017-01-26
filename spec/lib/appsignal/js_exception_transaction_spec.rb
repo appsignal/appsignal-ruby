@@ -1,5 +1,5 @@
 describe Appsignal::JSExceptionTransaction do
-  before { SecureRandom.stub(:uuid => "123abc") }
+  before { allow(SecureRandom).to receive(:uuid).and_return("123abc") }
 
   let!(:transaction) { Appsignal::JSExceptionTransaction.new(data) }
   let(:data) do

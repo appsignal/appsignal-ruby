@@ -1,17 +1,21 @@
 describe Appsignal::Hooks::CelluloidHook do
   context "with celluloid" do
-    before :all do
+    before :context do
       module Celluloid
         def self.shutdown
         end
       end
       Appsignal::Hooks::CelluloidHook.new.install
     end
-    after :all do
+    after :context do
       Object.send(:remove_const, :Celluloid)
     end
 
-    its(:dependencies_present?) { should be_true }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_truthy }
+    end
 
     specify { expect(Appsignal).to receive(:stop) }
     specify { expect(Celluloid).to receive(:shutdown_without_appsignal) }
@@ -22,6 +26,10 @@ describe Appsignal::Hooks::CelluloidHook do
   end
 
   context "without celluloid" do
-    its(:dependencies_present?) { should be_false }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_falsy }
+    end
   end
 end

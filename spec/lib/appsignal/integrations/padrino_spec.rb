@@ -7,11 +7,9 @@ if DependencyHelper.padrino_present?
     end
 
     before do
-      Appsignal.stub(
-        :active?      => true,
-        :start        => true,
-        :start_logger => true
-      )
+      allow(Appsignal).to receive(:active?).and_return(true)
+      allow(Appsignal).to receive(:start).and_return(true)
+      allow(Appsignal).to receive(:start_logger).and_return(true)
     end
 
     describe "Appsignal::Integrations::PadrinoPlugin" do
@@ -24,7 +22,7 @@ if DependencyHelper.padrino_present?
       end
 
       context "when not active" do
-        before { Appsignal.stub(:active? => false) }
+        before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "should not add the Listener middleware to the stack" do
           expect(Padrino).to_not receive(:use)
@@ -76,13 +74,11 @@ if DependencyHelper.padrino_present?
         end
 
         before do
-          router.stub(
-            :route_without_appsignal => true,
-            :request                 => request,
-            :env                     => env,
-            :settings                => settings,
-            :get_payload_action      => "controller#action"
-          )
+          allow(router).to receive(:route_without_appsignal).and_return(true)
+          allow(router).to receive(:request).and_return(request)
+          allow(router).to receive(:env).and_return(env)
+          allow(router).to receive(:settings).and_return(settings)
+          allow(router).to receive(:get_payload_action).and_return("controller#action")
         end
 
         context "when Sinatra tells us it's a static file" do
@@ -100,7 +96,7 @@ if DependencyHelper.padrino_present?
         end
 
         context "when appsignal is not active" do
-          before { Appsignal.stub(:active? => false) }
+          before { allow(Appsignal).to receive(:active?).and_return(false) }
 
           it "should call the original method" do
             expect(router).to receive(:route_without_appsignal)
@@ -123,7 +119,7 @@ if DependencyHelper.padrino_present?
               :set_error => nil
             )
           end
-          before { Appsignal::Transaction.stub(:create => transaction) }
+          before { allow(Appsignal::Transaction).to receive(:create).and_return(transaction) }
 
           context "without an error" do
             it "should create a transaction" do
@@ -155,7 +151,7 @@ if DependencyHelper.padrino_present?
 
           context "with an error" do
             let(:error) { VerySpecificError.new }
-            before { router.stub(:route_without_appsignal).and_raise(error) }
+            before { allow(router).to receive(:route_without_appsignal).and_raise(error) }
 
             it "should add the exception to the current transaction" do
               expect(transaction).to receive(:set_error).with(error)
@@ -167,7 +163,7 @@ if DependencyHelper.padrino_present?
       end
 
       describe "#get_payload_action" do
-        before { router.stub(:settings => settings) }
+        before { allow(router).to receive(:settings).and_return(settings) }
 
         context "when request is nil" do
           it "should return the site" do
@@ -194,7 +190,7 @@ if DependencyHelper.padrino_present?
         context "when request has a route object" do
           let(:request)      { double }
           let(:route_object) { double(:original_path => "/accounts/edit/:id") }
-          before             { request.stub(:route_obj => route_object) }
+          before             { allow(request).to receive(:route_obj).and_return(route_object) }
 
           it "should return the original path" do
             expect(router.get_payload_action(request)).to eql("TestApp:/accounts/edit/:id")

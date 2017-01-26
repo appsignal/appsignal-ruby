@@ -35,43 +35,43 @@ describe Appsignal::Hooks do
   it "should register and install a hook once" do
     Appsignal::Hooks::Hook.register(:mock_present_hook, MockPresentHook)
 
-    Appsignal::Hooks.hooks[:mock_present_hook].should be_instance_of(MockPresentHook)
-    Appsignal::Hooks.hooks[:mock_present_hook].installed?.should be_false
+    expect(Appsignal::Hooks.hooks[:mock_present_hook]).to be_instance_of(MockPresentHook)
+    expect(Appsignal::Hooks.hooks[:mock_present_hook].installed?).to be_falsy
 
-    MockPresentHook.should_receive(:call_something).once
+    expect(MockPresentHook).to receive(:call_something).once
 
     Appsignal::Hooks.load_hooks
     Appsignal::Hooks.load_hooks
     Appsignal::Hooks.load_hooks
-    Appsignal::Hooks.hooks[:mock_present_hook].installed?.should be_true
+    expect(Appsignal::Hooks.hooks[:mock_present_hook].installed?).to be_truthy
     Appsignal::Hooks.hooks.delete(:mock_present_hook)
   end
 
   it "should not install if depencies are not present" do
     Appsignal::Hooks::Hook.register(:mock_not_present_hook, MockNotPresentHook)
 
-    Appsignal::Hooks.hooks[:mock_not_present_hook].should be_instance_of(MockNotPresentHook)
-    Appsignal::Hooks.hooks[:mock_not_present_hook].installed?.should be_false
+    expect(Appsignal::Hooks.hooks[:mock_not_present_hook]).to be_instance_of(MockNotPresentHook)
+    expect(Appsignal::Hooks.hooks[:mock_not_present_hook].installed?).to be_falsy
 
-    MockPresentHook.should_not_receive(:call_something)
+    expect(MockPresentHook).to_not receive(:call_something)
 
     Appsignal::Hooks.load_hooks
 
-    Appsignal::Hooks.hooks[:mock_not_present_hook].installed?.should be_false
+    expect(Appsignal::Hooks.hooks[:mock_not_present_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_not_present_hook)
   end
 
   it "should not install if there is an error while installing" do
     Appsignal::Hooks::Hook.register(:mock_error_hook, MockErrorHook)
 
-    Appsignal::Hooks.hooks[:mock_error_hook].should be_instance_of(MockErrorHook)
-    Appsignal::Hooks.hooks[:mock_error_hook].installed?.should be_false
+    expect(Appsignal::Hooks.hooks[:mock_error_hook]).to be_instance_of(MockErrorHook)
+    expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
-    Appsignal.logger.should_receive(:error).with("Error while installing mock_error_hook hook: error").once
+    expect(Appsignal.logger).to receive(:error).with("Error while installing mock_error_hook hook: error").once
 
     Appsignal::Hooks.load_hooks
 
-    Appsignal::Hooks.hooks[:mock_error_hook].installed?.should be_false
+    expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_error_hook)
   end
 end
@@ -88,20 +88,20 @@ describe Appsignal::Hooks::Helpers do
     end
 
     it "should truncate the text to 200 chars max" do
-      with_helpers.truncate(very_long_text).should eq "#{"a" * 197}..."
+      expect(with_helpers.truncate(very_long_text)).to eq "#{"a" * 197}..."
     end
   end
 
   describe "#string_or_inspect" do
     context "when string" do
       it "should return the string" do
-        with_helpers.string_or_inspect("foo").should eq "foo"
+        expect(with_helpers.string_or_inspect("foo")).to eq "foo"
       end
     end
 
     context "when integer" do
       it "should return the string" do
-        with_helpers.string_or_inspect(1).should eq "1"
+        expect(with_helpers.string_or_inspect(1)).to eq "1"
       end
     end
 
@@ -109,7 +109,7 @@ describe Appsignal::Hooks::Helpers do
       let(:object) { Object.new }
 
       it "should return the string" do
-        with_helpers.string_or_inspect(object).should eq object.inspect
+        expect(with_helpers.string_or_inspect(object)).to eq object.inspect
       end
     end
   end
@@ -121,24 +121,24 @@ describe Appsignal::Hooks::Helpers do
       context "when the key exists" do
         subject { with_helpers.extract_value(hash, :key) }
 
-        it { should eq "value" }
+        it { is_expected.to eq "value" }
       end
 
       context "when the key does not exist" do
         subject { with_helpers.extract_value(hash, :nonexistent_key) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
 
         context "with a default value" do
           subject { with_helpers.extract_value(hash, :nonexistent_key, 1) }
 
-          it { should eq 1 }
+          it { is_expected.to eq 1 }
         end
       end
     end
 
     context "for a struct" do
-      before :all do
+      before :context do
         TestStruct = Struct.new(:key)
       end
       let(:struct) { TestStruct.new("value") }
@@ -146,18 +146,18 @@ describe Appsignal::Hooks::Helpers do
       context "when the key exists" do
         subject { with_helpers.extract_value(struct, :key) }
 
-        it { should eq "value" }
+        it { is_expected.to eq "value" }
       end
 
       context "when the key does not exist" do
         subject { with_helpers.extract_value(struct, :nonexistent_key) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
 
         context "with a default value" do
           subject { with_helpers.extract_value(struct, :nonexistent_key, 1) }
 
-          it { should eq 1 }
+          it { is_expected.to eq 1 }
         end
       end
     end
@@ -168,18 +168,18 @@ describe Appsignal::Hooks::Helpers do
       context "when the method exists" do
         subject { with_helpers.extract_value(object, :existing_method) }
 
-        it { should eq "value" }
+        it { is_expected.to eq "value" }
       end
 
       context "when the method does not exist" do
         subject { with_helpers.extract_value(object, :nonexistent_method) }
 
-        it { should be_nil }
+        it { is_expected.to be_nil }
 
         context "and there is a default value" do
           subject { with_helpers.extract_value(object, :nonexistent_method, 1) }
 
-          it { should eq 1 }
+          it { is_expected.to eq 1 }
         end
       end
     end
@@ -189,7 +189,7 @@ describe Appsignal::Hooks::Helpers do
 
       subject { with_helpers.extract_value(object, :existing_method, nil, true) }
 
-      it { should eq "1" }
+      it { is_expected.to eq "1" }
     end
   end
 
@@ -205,7 +205,7 @@ describe Appsignal::Hooks::Helpers do
     end
 
     it "should format the arguments" do
-      with_helpers.format_args(args).should eq([
+      expect(with_helpers.format_args(args)).to eq([
         "Model",
         "1",
         object.inspect,

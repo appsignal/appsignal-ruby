@@ -39,13 +39,13 @@ describe Appsignal::Config do
         before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
 
         it "becomes active" do
-          expect(subject).to be_true
+          expect(subject).to be_truthy
         end
       end
 
       context "without APPSIGNAL_PUSH_API_KEY env variable" do
         it "remains inactive" do
-          expect(subject).to be_false
+          expect(subject).to be_falsy
         end
       end
     end
@@ -57,7 +57,7 @@ describe Appsignal::Config do
         around { |example| recognize_as_heroku { example.run } }
 
         it "is set to true" do
-          expect(subject).to be_true
+          expect(subject).to be_truthy
         end
       end
 
@@ -65,7 +65,7 @@ describe Appsignal::Config do
         around { |example| recognize_as_container(:docker) { example.run } }
 
         it "is set to true" do
-          expect(subject).to be_true
+          expect(subject).to be_truthy
         end
       end
 
@@ -73,7 +73,7 @@ describe Appsignal::Config do
         around { |example| recognize_as_container(:none) { example.run } }
 
         it "is set to false" do
-          expect(subject).to be_false
+          expect(subject).to be_falsy
         end
       end
     end
@@ -151,7 +151,7 @@ describe Appsignal::Config do
         subject { config[:running_in_container] }
 
         it "overrides system detected config" do
-          expect(subject).to be_true
+          expect(subject).to be_truthy
         end
       end
 
@@ -169,7 +169,7 @@ describe Appsignal::Config do
           before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
 
           it "sets given config rather than env variable" do
-            expect(subject).to be_false
+            expect(subject).to be_falsy
           end
         end
       end
@@ -180,8 +180,8 @@ describe Appsignal::Config do
     let(:config) { described_class.new(nil, "production") }
 
     it "is not valid or active" do
-      expect(config.valid?).to be_false
-      expect(config.active?).to be_false
+      expect(config.valid?).to be_falsy
+      expect(config.active?).to be_falsy
     end
   end
 
@@ -189,8 +189,8 @@ describe Appsignal::Config do
     let(:config) { described_class.new(tmp_dir, "production") }
 
     it "is not valid or active" do
-      expect(config.valid?).to be_false
-      expect(config.active?).to be_false
+      expect(config.valid?).to be_falsy
+      expect(config.active?).to be_falsy
     end
   end
 
@@ -198,8 +198,8 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config("production") }
 
     it "is not valid or active" do
-      expect(config.valid?).to be_true
-      expect(config.active?).to be_true
+      expect(config.valid?).to be_truthy
+      expect(config.active?).to be_truthy
     end
 
     it "does not log an error" do
@@ -219,8 +219,8 @@ describe Appsignal::Config do
       around { |example| recognize_as_container(:none) { example.run } }
 
       it "overrides system detected and defaults config" do
-        expect(config[:running_in_container]).to be_true
-        expect(config[:debug]).to be_true
+        expect(config[:running_in_container]).to be_truthy
+        expect(config[:debug]).to be_truthy
       end
     end
 
@@ -228,8 +228,8 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config(:production) }
 
       it "loads the config" do
-        expect(config.valid?).to be_true
-        expect(config.active?).to be_true
+        expect(config.valid?).to be_truthy
+        expect(config.active?).to be_truthy
 
         expect(config[:push_api_key]).to eq("abc")
       end
@@ -239,8 +239,8 @@ describe Appsignal::Config do
       let(:config) { project_fixture_config("nonsense") }
 
       it "is not valid or active" do
-        expect(config.valid?).to be_false
-        expect(config.active?).to be_false
+        expect(config.valid?).to be_falsy
+        expect(config.active?).to be_falsy
       end
 
       it "logs an error" do
@@ -315,14 +315,14 @@ describe Appsignal::Config do
     around { |example| recognize_as_container(:none) { example.run } }
 
     it "overrides config with environment values" do
-      expect(config.valid?).to be_true
-      expect(config.active?).to be_true
+      expect(config.valid?).to be_truthy
+      expect(config.active?).to be_truthy
 
-      expect(config[:running_in_container]).to be_true
+      expect(config[:running_in_container]).to be_truthy
       expect(config[:push_api_key]).to eq "aaa-bbb-ccc"
-      expect(config[:active]).to be_true
+      expect(config[:active]).to be_truthy
       expect(config[:name]).to eq "App name"
-      expect(config[:debug]).to be_true
+      expect(config[:debug]).to be_truthy
       expect(config[:ignore_actions]).to eq ["action1", "action2"]
     end
   end

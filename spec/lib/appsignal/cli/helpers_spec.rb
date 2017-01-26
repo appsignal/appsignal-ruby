@@ -70,7 +70,7 @@ describe Appsignal::CLI::Helpers do
       set_input "y"
       prepare_input
 
-      expect(yes_or_no).to be_true
+      expect(yes_or_no).to be_truthy
     end
 
     it "takes no for an answer" do
@@ -79,7 +79,7 @@ describe Appsignal::CLI::Helpers do
       set_input "n"
       prepare_input
 
-      expect(yes_or_no).to be_false
+      expect(yes_or_no).to be_falsy
     end
   end
 

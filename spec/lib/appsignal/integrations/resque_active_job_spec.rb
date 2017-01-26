@@ -16,11 +16,11 @@ if DependencyHelper.resque_present? && DependencyHelper.active_job_present?
       end
 
       describe :around_perform_plugin do
-        before    { SecureRandom.stub(:uuid => 123) }
+        before    { allow(SecureRandom).to receive(:uuid).and_return(123) }
         let(:job) { TestActiveJob.new("moo") }
 
         it "should wrap in a transaction with the correct params" do
-          Appsignal.should_receive(:monitor_single_transaction).with(
+          expect(Appsignal).to receive(:monitor_single_transaction).with(
             "perform_job.resque",
             :class  => "TestActiveJob",
             :method => "perform",

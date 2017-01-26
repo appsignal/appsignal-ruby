@@ -7,7 +7,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
     let(:config) { project_fixture_config }
     let(:cli) { described_class }
     let(:options) { { :environment => config.env } }
-    before(:all) { Appsignal.stop }
+    before(:context) { Appsignal.stop }
     before do
       if DependencyHelper.rails_present?
         allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))

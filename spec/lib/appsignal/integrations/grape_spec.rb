@@ -27,7 +27,7 @@ if DependencyHelper.grape_present?
 
     describe "#call" do
       context "when AppSignal is not active" do
-        before(:all) do
+        before(:context) do
           Appsignal.config = nil
           Appsignal::Hooks.load_hooks
         end
@@ -45,9 +45,9 @@ if DependencyHelper.grape_present?
 
       context "when AppSignal is active" do
         let(:transaction) { http_request_transaction }
-        before :all do
+        before :context do
           Appsignal.config = project_fixture_config
-          expect(Appsignal.active?).to be_true
+          expect(Appsignal.active?).to be_truthy
         end
         before do
           expect(Appsignal::Transaction).to receive(:create).with(

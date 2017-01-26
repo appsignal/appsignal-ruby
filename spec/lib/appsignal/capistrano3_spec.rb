@@ -30,7 +30,7 @@ if DependencyHelper.capistrano3_present?
     end
 
     it "should have a deploy task" do
-      Rake::Task.task_defined?("appsignal:deploy").should be_true
+      expect(Rake::Task.task_defined?("appsignal:deploy")).to be_truthy
     end
 
     describe "appsignal:deploy task" do
@@ -41,7 +41,7 @@ if DependencyHelper.capistrano3_present?
 
       context "config" do
         it "should be instantiated with the right params" do
-          Appsignal::Config.should_receive(:new).with(
+          expect(Appsignal::Config).to receive(:new).with(
             project_fixture_path,
             "production",
             {},
@@ -55,7 +55,7 @@ if DependencyHelper.capistrano3_present?
           end
 
           it "should be instantiated with the right params" do
-            Appsignal::Config.should_receive(:new).with(
+            expect(Appsignal::Config).to receive(:new).with(
               project_fixture_path,
               "production",
               { :name => "AppName" },
@@ -70,7 +70,7 @@ if DependencyHelper.capistrano3_present?
             end
 
             it "should be instantiated with the rack env" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "rack_production",
                 { :name => "AppName" },
@@ -86,7 +86,7 @@ if DependencyHelper.capistrano3_present?
             end
 
             it "should prefer the stage rather than rails_env and rack_env" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "stage_production",
                 { :name => "AppName" },
@@ -103,7 +103,7 @@ if DependencyHelper.capistrano3_present?
             end
 
             it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "appsignal_production",
                 { :name => "AppName" },

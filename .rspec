@@ -1,3 +1,4 @@
---order default
+--order defined
+--color
 --warnings
 --require spec_helper

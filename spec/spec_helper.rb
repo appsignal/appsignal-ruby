@@ -47,7 +47,7 @@ RSpec.configure do |config|
   config.include SystemHelpers
   config.extend DependencyHelper
 
-  config.before :all do
+  config.before :context do
     # Use modified SYSTEM_TMP_DIR
     Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
     Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
@@ -72,7 +72,7 @@ RSpec.configure do |config|
     Thread.current[:appsignal_transaction] = nil
   end
 
-  config.after :all do
+  config.after :context do
     FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
     Appsignal.config = nil
     Appsignal.logger = nil

@@ -4,21 +4,21 @@ describe "extension loading and operation" do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
 
-    it { should have_key("version") }
-    it { should have_key("triples") }
+    it { is_expected.to have_key("version") }
+    it { is_expected.to have_key("triples") }
   end
 
   describe ".agent_version" do
     subject { Appsignal::Extension.agent_version }
 
-    it { should_not be_nil }
+    it { is_expected.to_not be_nil }
   end
 
   context "when the extension library can be loaded" do
     subject { Appsignal::Extension }
 
     it "should indicate that the extension is loaded" do
-      Appsignal.extension_loaded?.should be_true
+      expect(Appsignal.extension_loaded?).to be_truthy
     end
 
     it "should have a start and stop method" do
@@ -97,15 +97,15 @@ describe "extension loading and operation" do
   context "when the extension library cannot be loaded" do
     subject { Appsignal::Extension }
 
-    before :all do
+    before :context do
       Appsignal.extension_loaded = false
     end
-    after :all do
+    after :context do
       Appsignal.extension_loaded = true
     end
 
     it "should indicate that the extension is not loaded" do
-      Appsignal.extension_loaded?.should be_false
+      expect(Appsignal.extension_loaded?).to be_falsy
     end
 
     it "should not raise errors when methods are called" do

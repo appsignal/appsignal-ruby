@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
-    before(:all) do
+    before(:context) do
       module Delayed
         class Plugin
           def self.callbacks
@@ -14,12 +14,16 @@ describe Appsignal::Hooks::DelayedJobHook do
         end
       end
     end
-    after(:all) { Object.send(:remove_const, :Delayed) }
+    after(:context) { Object.send(:remove_const, :Delayed) }
     before do
       start_agent
     end
 
-    its(:dependencies_present?) { should be_true }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_truthy }
+    end
 
     # We haven't found a way to test the hooks, we'll have to do that manually
 
@@ -43,7 +47,7 @@ describe Appsignal::Hooks::DelayedJobHook do
 
       context "with a normal call" do
         it "should wrap in a transaction with the correct params" do
-          Appsignal.should_receive(:monitor_transaction).with(
+          expect(Appsignal).to receive(:monitor_transaction).with(
             "perform_job.delayed_job",
             :class    => "TestClass",
             :method   => "perform",
@@ -78,7 +82,7 @@ describe Appsignal::Hooks::DelayedJobHook do
             }
           end
           it "should wrap in a transaction with the correct params" do
-            Appsignal.should_receive(:monitor_transaction).with(
+            expect(Appsignal).to receive(:monitor_transaction).with(
               "perform_job.delayed_job",
               :class => "CustomClass",
               :method => "perform",
@@ -108,7 +112,7 @@ describe Appsignal::Hooks::DelayedJobHook do
             let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
 
             it "should wrap in a transaction with the correct params" do
-              Appsignal.should_receive(:monitor_transaction).with(
+              expect(Appsignal).to receive(:monitor_transaction).with(
                 "perform_job.delayed_job",
                 :class    => "TestClass",
                 :method   => "perform",
@@ -132,24 +136,28 @@ describe Appsignal::Hooks::DelayedJobHook do
 
       context "with an erroring call" do
         it "should add the error to the transaction" do
-          Appsignal::Transaction.any_instance.should_receive(:set_error).with(error)
-          Appsignal::Transaction.should_receive(:complete_current!)
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+          expect(Appsignal::Transaction).to receive(:complete_current!)
 
-          invoked_block.stub(:call).and_raise(error)
+          allow(invoked_block).to receive(:call).and_raise(error)
 
-          lambda do
+          expect do
             plugin.invoke_with_instrumentation(job, invoked_block)
-          end.should raise_error(StandardError)
+          end.to raise_error(StandardError)
         end
       end
     end
 
     it "should add the plugin" do
-      ::Delayed::Worker.plugins.should include Appsignal::Hooks::DelayedJobPlugin
+      expect(::Delayed::Worker.plugins).to include Appsignal::Hooks::DelayedJobPlugin
     end
   end
 
   context "without delayed job" do
-    its(:dependencies_present?) { should be_false }
+    describe "#dependencies_present?" do
+      subject { described_class.new.dependencies_present? }
+
+      it { is_expected.to be_falsy }
+    end
   end
 end

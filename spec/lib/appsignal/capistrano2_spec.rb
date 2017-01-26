@@ -26,7 +26,7 @@ if DependencyHelper.capistrano2_present?
     end
 
     it "should have a deploy task" do
-      capistrano_config.find_task("appsignal:deploy").should_not be_nil
+      expect(capistrano_config.find_task("appsignal:deploy")).to_not be_nil
     end
 
     describe "appsignal:deploy task" do
@@ -41,7 +41,7 @@ if DependencyHelper.capistrano2_present?
         end
 
         it "should be instantiated with the right params" do
-          Appsignal::Config.should_receive(:new).with(
+          expect(Appsignal::Config).to receive(:new).with(
             project_fixture_path,
             "production",
             {},
@@ -55,7 +55,7 @@ if DependencyHelper.capistrano2_present?
           end
 
           it "should be instantiated with the right params" do
-            Appsignal::Config.should_receive(:new).with(
+            expect(Appsignal::Config).to receive(:new).with(
               project_fixture_path,
               "production",
               { :name => "AppName" },
@@ -70,7 +70,7 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "should be instantiated with the right params" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "rack_production",
                 { :name => "AppName" },
@@ -86,7 +86,7 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "should be instantiated with the right params" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "stage_production",
                 { :name => "AppName" },
@@ -103,7 +103,7 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
-              Appsignal::Config.should_receive(:new).with(
+              expect(Appsignal::Config).to receive(:new).with(
                 project_fixture_path,
                 "appsignal_production",
                 { :name => "AppName" },
