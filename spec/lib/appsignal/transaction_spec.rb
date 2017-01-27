@@ -466,21 +466,29 @@ describe Appsignal::Transaction do
 
     describe "#start_event" do
       it "should start the event in the extension" do
-        transaction.ext.should_receive(:start_event)
+        expect(transaction.ext).to receive(:start_event).with(0).and_call_original
 
         transaction.start_event
       end
     end
 
     describe "#finish_event" do
+      let(:fake_gc_time) { 123 }
+      before do
+        described_class.garbage_collection_profiler
+          .should_receive(:total_time)
+          .at_least(:once)
+          .and_return(fake_gc_time)
+      end
+
       it "should finish the event in the extension" do
         transaction.ext.should_receive(:finish_event).with(
           'name',
           'title',
           'body',
           1,
-          0
-        )
+          fake_gc_time
+        ).and_call_original
 
         transaction.finish_event(
           'name',
@@ -496,8 +504,8 @@ describe Appsignal::Transaction do
           '',
           '',
           0,
-          0
-        )
+          fake_gc_time
+        ).and_call_original
 
         transaction.finish_event(
           'name',
@@ -506,25 +514,26 @@ describe Appsignal::Transaction do
           nil
         )
       end
-
-      it "should add garbage collection time" do
-        allow_any_instance_of(Appsignal::GarbageCollectionProfiler)
-          .to receive(:internal_profiler)
-          .and_return(FakeGCProfiler.new(0.12345))
-
-        transaction.finish_event('name', nil, nil, nil)
-      end
     end
 
     describe "#record_event" do
+      let(:fake_gc_time) { 123 }
+      before do
+        described_class.garbage_collection_profiler
+          .should_receive(:total_time)
+          .at_least(:once)
+          .and_return(fake_gc_time)
+      end
+
       it "should record the event in the extension" do
         transaction.ext.should_receive(:record_event).with(
           'name',
           'title',
           'body',
           1000,
-          1
-        )
+          1,
+          fake_gc_time
+        ).and_call_original
 
         transaction.record_event(
           'name',
@@ -541,8 +550,9 @@ describe Appsignal::Transaction do
           '',
           '',
           1000,
-          0
-        )
+          0,
+          fake_gc_time
+        ).and_call_original
 
         transaction.record_event(
           'name',
