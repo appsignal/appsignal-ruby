@@ -1,6 +1,10 @@
+# 2.0.6
+* Fix `Appsignal::Transaction#record_event` method call. PR #240
+
 # 2.0.5
-* Improved logging for agent connection issues
-* Handle nil request/environments in transactions
+* Improved logging for agent connection issues. Commit
+  cdf9d3286d704e22473eb901c839cab4fab45a6f
+* Handle nil request/environments in transactions. PR #231
 
 # 2.0.4
 * Use consistent log format for both file and STDOUT logs. PR #203
