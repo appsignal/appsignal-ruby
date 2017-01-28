@@ -1,9 +1,3 @@
-class Smash < Hash
-  def []=(_key, _val)
-    raise "the roof"
-  end
-end
-
 describe Appsignal::Transaction do
   before :context do
     start_agent
