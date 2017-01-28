@@ -204,7 +204,7 @@ module Appsignal
             puts "  Sending example data to AppSignal..."
             if Appsignal::Demo.transmit
               puts "  Example data sent!"
-              puts "  It may take about a minute for the data to appear on AppSignal.com/accounts"
+              puts "  It may take about a minute for the data to appear on https://appsignal.com/accounts"
               puts
               puts "  Please return to your browser and follow the instructions."
             else

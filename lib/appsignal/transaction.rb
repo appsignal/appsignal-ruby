@@ -215,7 +215,8 @@ module Appsignal
         title || BLANK,
         body || BLANK,
         duration,
-        body_format || Appsignal::EventFormatter::DEFAULT
+        body_format || Appsignal::EventFormatter::DEFAULT,
+        self.class.garbage_collection_profiler.total_time
       )
     end
 

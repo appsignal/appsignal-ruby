@@ -10,7 +10,7 @@ module Appsignal
           puts "Sending demonstration sample data..."
           if Appsignal::Demo.transmit
             puts "Demonstration sample data sent!"
-            puts "It may take about a minute for the data to appear on AppSignal.com/accounts"
+            puts "It may take about a minute for the data to appear on https://appsignal.com/accounts"
           else
             puts "Error: Unable to start the AppSignal agent and send data to AppSignal.com"
             puts "Please use `appsignal diagnose` to debug your configuration."
