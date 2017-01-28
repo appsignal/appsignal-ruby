@@ -1,5 +1,3 @@
-require_relative "../../support/mocks/fake_gc_profiler"
-
 class Smash < Hash
   def []=(_key, _val)
     raise "the roof"
