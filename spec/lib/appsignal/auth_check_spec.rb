@@ -1,37 +1,80 @@
 describe Appsignal::AuthCheck do
   let(:config) { project_fixture_config }
   let(:auth_check) { Appsignal::AuthCheck.new(config) }
+  let(:auth_url) do
+    query = {
+      :api_key => config[:push_api_key],
+      :environment => config.env,
+      :gem_version => Appsignal::VERSION,
+      :hostname => config[:hostname],
+      :name => config[:name]
+    }.map { |k, v| "#{k}=#{v}" }.join("&")
 
-  describe "#perform_with_result" do
-    it "should give success message" do
-      expect(auth_check).to receive(:perform).and_return("200")
-      expect(auth_check.perform_with_result).to eq ["200", "AppSignal has confirmed authorization!"]
+    URI(config[:endpoint]).tap do |uri|
+      uri.path = "/1/auth"
+      uri.query = query
+    end.to_s
+  end
+  let(:stubbed_request) do
+    WebMock.stub_request(:post, auth_url)
+      .with(:body => Appsignal::Utils::Gzip.compress("{}"))
+  end
+
+  describe "#perform" do
+    subject { auth_check.perform }
+
+    context "when performing a request against the push api" do
+      before { stubbed_request.to_return(:status => 200) }
+
+      it "returns status code" do
+        is_expected.to eq("200")
+      end
     end
 
-    it "should give 401 message" do
-      expect(auth_check).to receive(:perform).and_return("401")
-      expect(auth_check.perform_with_result).to eq ["401", "API key not valid with AppSignal..."]
-    end
+    context "when encountering an exception" do
+      before { stubbed_request.to_timeout }
 
-    it "should give an error message" do
-      expect(auth_check).to receive(:perform).and_return("402")
-      expect(auth_check.perform_with_result).to eq ["402", "Could not confirm authorization: 402"]
+      it "raises an error" do
+        expect { subject }.to raise_error(Net::OpenTimeout)
+      end
     end
   end
 
-  context "transmitting" do
-    before do
-      @transmitter = double
-      expect(Appsignal::Transmitter).to receive(:new).with(
-        "auth",
-        kind_of(Appsignal::Config)
-      ).and_return(@transmitter)
+  describe "#perform_with_result" do
+    subject { auth_check.perform_with_result }
+
+    context "when successful response" do
+      before { stubbed_request.to_return(:status => 200) }
+
+      it "returns success tuple" do
+        is_expected.to eq ["200", "AppSignal has confirmed authorization!"]
+      end
     end
 
-    describe "#perform" do
-      it "should not transmit any extra data" do
-        expect(@transmitter).to receive(:transmit).with({}).and_return({})
-        auth_check.perform
+    context "when unauthorized response" do
+      before { stubbed_request.to_return(:status => 401) }
+
+      it "returns unauthorirzed tuple" do
+        is_expected.to eq ["401", "API key not valid with AppSignal..."]
+      end
+    end
+
+    context "when unrecognized response" do
+      before { stubbed_request.to_return(:status => 500) }
+
+      it "returns an error tuple" do
+        is_expected.to eq ["500", "Could not confirm authorization: 500"]
+      end
+    end
+
+    context "when encountering an exception" do
+      before { stubbed_request.to_timeout }
+
+      it "returns an error tuple" do
+        is_expected.to eq [
+          nil,
+          "Something went wrong while trying to authenticate with AppSignal: execution expired"
+        ]
       end
     end
   end
