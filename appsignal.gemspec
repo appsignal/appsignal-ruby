@@ -32,4 +32,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'timecop'
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'rubocop', '0.46.0'
+  gem.add_development_dependency 'yard'
 end
