@@ -1,5 +1,3 @@
-require "./spec/support/mocks/mock_extension"
-
 describe Appsignal do
   before do
     # Make sure we have a clean state because we want to test

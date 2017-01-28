@@ -15,6 +15,9 @@ require "webmock/rspec"
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support/helpers", "*.rb")].each do |f|
   require f
 end
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/mocks", "*.rb")].each do |f|
+  require f
+end
 if DependencyHelper.rails_present?
   Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].each do |f|
     require f
