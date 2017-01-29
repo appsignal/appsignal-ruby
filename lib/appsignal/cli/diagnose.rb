@@ -5,8 +5,44 @@ require "etc"
 
 module Appsignal
   class CLI
+    # Command line tool to run diagnostics on your project.
+    #
+    # This command line tool is useful when testing AppSignal on a system and
+    # validating the local configuration. It outputs useful information to
+    # debug issues and it checks if AppSignal agent is able to run on the
+    # machine's architecture and communicate with the AppSignal servers.
+    #
+    # This diagnostic tool outputs the following:
+    # - if AppSignal can run on the host system.
+    # - if the configuration is valid and active.
+    # - if the Push API key is present and valid (internet connection required).
+    # - if the required system paths exist and are writable.
+    # - outputs AppSignal version information.
+    # - outputs information about the host system and Ruby.
+    # - outputs last lines from the available log files.
+    #
+    # ## Exit codes
+    #
+    # - Exits with status code `0` if the diagnose command has finished.
+    # - Exits with status code `1` if the diagnose command failed to finished.
+    #
+    # @example On the command line in your project
+    #   appsignal diagnose
+    #
+    # @example With a specific environment
+    #   appsignal diagnose --environment=production
+    #
+    # @see http://docs.appsignal.com/support/debugging.html Debugging AppSignal
+    # @see http://docs.appsignal.com/ruby/command-line/diagnose.html
+    #   AppSignal diagnose documentation
+    # @since 1.1.0
     class Diagnose
       class << self
+        # @param options [Hash]
+        # @option options :environment [String] environment to load
+        #   configuration for.
+        # @return [void]
+        # @api private
         def run(options = {})
           header
           empty_line
