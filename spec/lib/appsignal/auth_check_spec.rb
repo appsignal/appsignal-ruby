@@ -1,7 +1,6 @@
 describe Appsignal::AuthCheck do
   let(:config) { project_fixture_config }
-  let(:logger) { Logger.new(StringIO.new) }
-  let(:auth_check) { Appsignal::AuthCheck.new(config, logger) }
+  let(:auth_check) { Appsignal::AuthCheck.new(config) }
 
   describe "#perform_with_result" do
     it "should give success message" do
