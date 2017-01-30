@@ -4,9 +4,12 @@ module Appsignal
 
     attr_reader :config, :logger
 
-    def initialize(config, logger = Appsignal.logger)
+    def initialize(config, logger = nil)
       @config = config
-      @logger = logger
+      if logger # rubocop:disable Style/GuardClause
+        warn "Deprecated: `logger` argument will be removed in the next " \
+          "major version."
+      end
     end
 
     def perform

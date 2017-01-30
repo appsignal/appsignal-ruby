@@ -159,7 +159,7 @@ module Appsignal
         end
 
         def check_api_key
-          auth_check = ::Appsignal::AuthCheck.new(Appsignal.config, Appsignal.logger)
+          auth_check = ::Appsignal::AuthCheck.new(Appsignal.config)
           print "Validating API key: "
           status, error = auth_check.perform_with_result
           case status
