@@ -5,6 +5,8 @@
 * Deprecate `Appsignal.is_ignored_error?`. PR #224
 * Deprecate `Appsignal.is_ignored_action?`. PR #224
 * Enforce a coding styleguide with RuboCop. PR #226
+* Remove unused `Appsignal.agent` attribute. PR #244
+* Deprecate unused `Appsignal::AuthCheck` logger argument. PR #245
 
 # 2.0.6
 * Fix `Appsignal::Transaction#record_event` method call. PR #240
