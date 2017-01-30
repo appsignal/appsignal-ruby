@@ -6,7 +6,7 @@ module Appsignal
   class << self
     extend Gem::Deprecate
 
-    attr_accessor :config, :agent, :extension_loaded
+    attr_accessor :config, :extension_loaded
     attr_writer :logger, :in_memory_log
 
     def extensions

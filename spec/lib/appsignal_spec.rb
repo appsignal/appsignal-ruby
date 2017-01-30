@@ -66,15 +66,6 @@ describe Appsignal do
         Appsignal.start
       end
 
-      context "when not active for this environment" do
-        before { Appsignal.config = project_fixture_config("staging") }
-
-        it "should do nothing" do
-          Appsignal.start
-          expect(Appsignal.agent).to be_nil
-        end
-      end
-
       context "with an extension" do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
