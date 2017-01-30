@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class DataMapperHook < Appsignal::Hooks::Hook
       register :data_mapper
 

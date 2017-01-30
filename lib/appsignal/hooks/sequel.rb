@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     module SequelLogExtension
       # Add query instrumentation
       def log_yield(sql, args = nil)

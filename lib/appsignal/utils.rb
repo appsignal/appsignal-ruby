@@ -2,6 +2,7 @@ require "appsignal/utils/params_sanitizer"
 require "appsignal/utils/query_params_sanitizer"
 
 module Appsignal
+  # @api private
   module Utils
     def self.data_generate(body)
       Data.generate(body)

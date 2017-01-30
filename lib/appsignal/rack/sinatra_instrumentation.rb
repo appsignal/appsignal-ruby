@@ -7,6 +7,8 @@ module Appsignal
     # `use Appsignal::Rack::SinatraInstrumentation` in their modular Sinatra
     # applications. This is no longer needed. Instead Appsignal now includes
     # `use Appsignal::Rack::SinatraBaseInstrumentation` automatically.
+    #
+    # @api private
     class SinatraInstrumentation
       def initialize(app, options = {})
         @app = app

@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class SidekiqPlugin
       include Appsignal::Hooks::Helpers
 

@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class PassengerHook < Appsignal::Hooks::Hook
       register :passenger
 

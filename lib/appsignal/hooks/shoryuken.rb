@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class ShoryukenMiddleware
       def call(_worker_instance, queue, sqs_msg, body)
         metadata = {

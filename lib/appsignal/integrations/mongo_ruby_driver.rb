@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class MongoMonitorSubscriber
       # Called by Mongo::Monitor when query starts
       def started(event)

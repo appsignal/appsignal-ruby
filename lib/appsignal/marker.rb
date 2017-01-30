@@ -1,4 +1,5 @@
 module Appsignal
+  # @api private
   class Marker
     attr_reader :marker_data, :config
     ACTION = "markers"

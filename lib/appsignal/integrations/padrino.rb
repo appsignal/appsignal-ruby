@@ -1,19 +1,22 @@
 require "appsignal"
 
-module Appsignal::Integrations
-  module PadrinoPlugin
-    def self.init
-      Appsignal.logger.info("Loading Padrino (#{Padrino::VERSION}) integration")
+module Appsignal
+  module Integrations
+    # @api private
+    module PadrinoPlugin
+      def self.init
+        Appsignal.logger.info("Loading Padrino (#{Padrino::VERSION}) integration")
 
-      root             = Padrino.mounted_root
-      Appsignal.config = Appsignal::Config.new(
-        root,
-        Padrino.env,
-        :log_path => File.join(root, "log")
-      )
+        root             = Padrino.mounted_root
+        Appsignal.config = Appsignal::Config.new(
+          root,
+          Padrino.env,
+          :log_path => File.join(root, "log")
+        )
 
-      Appsignal.start_logger
-      Appsignal.start
+        Appsignal.start_logger
+        Appsignal.start
+      end
     end
   end
 end

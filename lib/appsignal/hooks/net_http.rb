@@ -2,6 +2,7 @@ require "net/http"
 
 module Appsignal
   class Hooks
+    # @api private
     class NetHttpHook < Appsignal::Hooks::Hook
       register :net_http
 

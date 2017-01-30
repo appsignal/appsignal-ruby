@@ -5,6 +5,7 @@ require "rack/utils"
 require "json"
 
 module Appsignal
+  # @api private
   class Transmitter
     CONTENT_TYPE = "application/json; charset=UTF-8".freeze
     CONTENT_ENCODING = "gzip".freeze

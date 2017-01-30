@@ -1,4 +1,5 @@
 module Appsignal
+  # @api private
   class Minutely
     class << self
       # List of probes. Probes can be lamdba's or objects that

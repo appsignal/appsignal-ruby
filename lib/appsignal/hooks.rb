@@ -1,4 +1,5 @@
 module Appsignal
+  # @api private
   class Hooks
     class << self
       def register(name, hook)

@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class UnicornHook < Appsignal::Hooks::Hook
       register :unicorn
 

@@ -4,6 +4,7 @@ require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
   module Integrations
+    # @api private
     class Railtie < ::Rails::Railtie
       initializer "appsignal.configure_rails_initialization" do |app|
         Appsignal::Integrations::Railtie.initialize_appsignal(app)

@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class DelayedJobPlugin < ::Delayed::Plugin
       extend Appsignal::Hooks::Helpers
 
