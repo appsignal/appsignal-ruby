@@ -5,6 +5,9 @@ describe Appsignal::Hooks::UnicornHook do
         class HttpServer
           def worker_loop(worker)
           end
+
+          def kill_worker(signal, wpid)
+          end
         end
 
         class Worker
@@ -23,14 +26,25 @@ describe Appsignal::Hooks::UnicornHook do
       worker = double
 
       Appsignal.should_receive(:forked)
+      Appsignal.should_receive(:increment_counter).with('unicorn_worker_started')
       server.should_receive(:worker_loop_without_appsignal).with(worker)
 
       server.worker_loop(worker)
     end
 
+    it "adds behavior to Unicorn::HttpServer#kill_worker" do
+      server = Unicorn::HttpServer.new
+
+      Appsignal.should_receive(:increment_counter).with('unicorn_worker_killed_1')
+      server.should_receive(:kill_worker_without_appsignal).with(1, 2)
+
+      server.kill_worker(1, 2)
+    end
+
     it "adds behavior to Unicorn::Worker#close" do
       worker = Unicorn::Worker.new
 
+      Appsignal.should_receive(:increment_counter).with('unicorn_worker_closed')
       Appsignal.should_receive(:stop)
       worker.should_receive(:close_without_appsignal)
 
