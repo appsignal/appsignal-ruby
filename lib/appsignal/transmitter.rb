@@ -43,7 +43,7 @@ module Appsignal
       http_client.request(http_post(payload)).code
     end
 
-    protected
+    private
 
     def http_post(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|

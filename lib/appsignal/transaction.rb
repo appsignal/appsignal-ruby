@@ -239,7 +239,7 @@ module Appsignal
       end
     end
 
-    protected
+    private
 
     # Returns calculated background queue start time in milliseconds, based on
     # environment values.

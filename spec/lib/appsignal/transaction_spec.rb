@@ -606,7 +606,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    # protected
+    # private
 
     describe "#background_queue_start" do
       subject { transaction.send(:background_queue_start) }

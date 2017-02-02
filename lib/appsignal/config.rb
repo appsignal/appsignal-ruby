@@ -141,7 +141,7 @@ module Appsignal
       ENV["APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
     end
 
-    protected
+    private
 
     def config_file
       @config_file ||=
