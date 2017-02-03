@@ -1,5 +1,6 @@
 module Appsignal
   module Integrations
+    # @api private
     module ResquePlugin
       # Do not use this file as a template for your own background processor
       # Resque is an exception to the rule and the code below causes the

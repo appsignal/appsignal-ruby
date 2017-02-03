@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class CelluloidHook < Appsignal::Hooks::Hook
       register :celluloid
 

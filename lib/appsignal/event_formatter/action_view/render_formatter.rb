@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module ActionView
       class RenderFormatter < Appsignal::EventFormatter
         register "render_partial.action_view"

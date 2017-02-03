@@ -1,10 +1,30 @@
 require "rack/mock"
 
 module Appsignal
+  # {Appsignal::Demo} is a way to send demonstration / test samples for a
+  # exception and a performance issue.
+  #
+  # @example Loading config automatically
+  #   Appsignal::Demo.transmit
+  #
+  # @example With custom config
+  #   # If another configuration should be used, set it beforehand.
+  #   Appsignal.config = Appsignal::Config.new(Dir.pwd, "production")
+  #   Appsignal::Demo.transmit
+  #
+  # @since 2.0.0
+  # @see Appsignal::CLI::Demo
+  # @api private
   class Demo
+    # Error type used to create demonstration exception.
     class TestError < StandardError; end
 
     class << self
+      # Starts AppSignal and transmits the demonstration samples to AppSignal
+      # using the loaded configuration.
+      #
+      # @return [Boolean]
+      #   - returns `false` if Appsignal is not active.
       def transmit
         Appsignal.start
         Appsignal.start_logger

@@ -1,4 +1,5 @@
 module Appsignal
+  # @api private
   module Rack
     class JSExceptionCatcher
       def initialize(app, options = {})

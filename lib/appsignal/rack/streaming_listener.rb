@@ -1,6 +1,8 @@
-# Appsignal module that tracks exceptions in Streaming rack responses.
 module Appsignal
   module Rack
+    # Appsignal module that tracks exceptions in Streaming rack responses.
+    #
+    # @api private
     class StreamingListener
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::StreamingListener"

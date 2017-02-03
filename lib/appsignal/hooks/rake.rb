@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class RakeHook < Appsignal::Hooks::Hook
       register :rake
 

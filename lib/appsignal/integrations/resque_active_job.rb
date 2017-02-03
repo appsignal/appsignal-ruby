@@ -1,5 +1,6 @@
 module Appsignal
   module Integrations
+    # @api private
     module ResqueActiveJobPlugin
       include Appsignal::Hooks::Helpers
 

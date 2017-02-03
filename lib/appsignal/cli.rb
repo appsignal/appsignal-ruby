@@ -9,6 +9,7 @@ require "appsignal/cli/install"
 require "appsignal/cli/notify_of_deploy"
 
 module Appsignal
+  # @api private
   class CLI
     AVAILABLE_COMMANDS = %w(demo diagnose install notify_of_deploy).freeze
 

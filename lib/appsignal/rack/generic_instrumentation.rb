@@ -1,6 +1,7 @@
 require "rack"
 
 module Appsignal
+  # @api private
   module Rack
     class GenericInstrumentation
       def initialize(app, options = {})

@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module MongoRubyDriver
       class QueryFormatter
         ALLOWED = {

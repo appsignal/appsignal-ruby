@@ -1,5 +1,6 @@
 module Appsignal
   module Utils
+    # @api private
     class ParamsSanitizer
       FILTERED = "[FILTERED]".freeze
 

@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class PumaHook < Appsignal::Hooks::Hook
       register :puma
 

@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module ActiveRecord
       class InstantiationFormatter < Appsignal::EventFormatter
         register "instantiation.active_record"

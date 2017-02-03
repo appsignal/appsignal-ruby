@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module Moped
       class QueryFormatter < Appsignal::EventFormatter
         register "query.moped"

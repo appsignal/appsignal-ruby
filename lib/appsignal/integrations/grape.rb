@@ -1,4 +1,6 @@
 module Appsignal
+  # @todo Move to sub-namespace
+  # @api private
   module Grape
     class Middleware < ::Grape::Middleware::Base
       def call(env)

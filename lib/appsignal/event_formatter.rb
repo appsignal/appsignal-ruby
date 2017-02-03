@@ -8,6 +8,8 @@ module Appsignal
   # event, the same object will be called intermittently in a threaded environment.
   # So only keep global configuration as state and pass the payload around as an
   # argument if you need to use helper methods.
+  #
+  # @api private
   class EventFormatter
     class << self
       def formatters

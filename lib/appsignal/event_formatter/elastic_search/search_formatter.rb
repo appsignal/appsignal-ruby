@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module ElasticSearch
       class SearchFormatter < Appsignal::EventFormatter
         register "search.elasticsearch"

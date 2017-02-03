@@ -2,6 +2,11 @@ require "json"
 require "logger"
 require "securerandom"
 
+# AppSignal gem's main module.
+#
+# Provides method to control the AppSignal instrumentation and the system agent.
+#
+# Also provides instrumentation helpers for ease of use.
 module Appsignal
   class << self
     extend Gem::Deprecate

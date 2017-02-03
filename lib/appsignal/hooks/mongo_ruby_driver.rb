@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class MongoRubyDriverHook < Appsignal::Hooks::Hook
       register :mongo_ruby_driver
 

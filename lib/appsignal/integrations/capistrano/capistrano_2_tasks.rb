@@ -1,4 +1,6 @@
 module Appsignal
+  # @todo Move to sub-namespace
+  # @api private
   class Capistrano
     def self.tasks(config)
       config.load do
