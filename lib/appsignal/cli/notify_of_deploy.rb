@@ -9,13 +9,17 @@ module Appsignal
     # Incidents for exceptions and performance issues will be closed and
     # reopened if they occur again in the new deploy.
     #
-    # ## Required options
+    # @note The same logic is used in the Capistrano integration. A deploy
+    #   marker is created on each deploy.
     #
-    # - `--environment` required
-    # - `--user` required
-    # - `--revision` required
-    # - `--name` If no name config can be found in a `config/appsignal.yml`
-    #   file or based on the `APPSIGNAL_APP_NAME` environment variable this
+    # ## Options
+    #
+    # - `--environment` required. The environment of the application being
+    #   deployed.
+    # - `--user` required. User that triggered the deploy.
+    # - `--revision` required. Git commit SHA or other identifiable revision id.
+    # - `--name` If no "name" config can be found in a `config/appsignal.yml`
+    #   file or based on the `APPSIGNAL_APP_NAME` environment variable, this
     #   option is required.
     #
     # ## Exit codes
@@ -24,13 +28,13 @@ module Appsignal
     # - Exits with status code `1` if the configuration is not valid and active.
     # - Exits with status code `1` if the required options aren't present.
     #
-    # @example command line
+    # @example basic example
     #   appsignal notify_of_deploy \
     #     --user=tom \
     #     --environment=production \
     #     --revision=abc1234
     #
-    # @example command line with a custom name
+    # @example using a custom app name
     #   appsignal notify_of_deploy \
     #     --user=tom \
     #     --environment=production \
@@ -40,7 +44,10 @@ module Appsignal
     # @example help command
     #   appsignal notify_of_deploy --help
     #
+    # @since 0.2.5
     # @see Appsignal::Marker Appsignal::Marker
+    # @see http://docs.appsignal.com/ruby/command-line/notify_of_deploy.html
+    #   AppSignal notify_of_deploy documentation
     # @see http://docs.appsignal.com/appsignal/terminology.html#markers
     #   Terminology: Deploy marker
     class NotifyOfDeploy
