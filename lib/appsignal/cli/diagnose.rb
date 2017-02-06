@@ -116,7 +116,7 @@ module Appsignal
           print "  root user: "
           puts Process.uid == 0 ? "yes (not recommended)" : "no"
           print "  Running in container: "
-          puts Appsignal::Extension.running_in_container == 1 ? "yes" : "no"
+          puts Appsignal::Extension.running_in_container? ? "yes" : "no"
         end
 
         def config

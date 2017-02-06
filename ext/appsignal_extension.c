@@ -645,7 +645,7 @@ void Init_appsignal_extension(void) {
 
   // Event hook installation
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
-  rb_define_singleton_method(Extension, "running_in_container", running_in_container, 0);
+  rb_define_singleton_method(Extension, "running_in_container?", running_in_container, 0);
 
   // Metrics
   rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);
