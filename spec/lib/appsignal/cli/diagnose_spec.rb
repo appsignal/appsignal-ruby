@@ -112,8 +112,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
       describe "Heroku detection" do
         context "when not on Heroku" do
-          before { recognize_as_container(:none) { run } }
-
           it "does not output Heroku detection" do
             expect(output).to_not include("Heroku:")
           end
@@ -127,25 +125,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           end
         end
       end
-
-      describe "container detection" do
-        context "when not in container" do
-          before { recognize_as_container(:none) { run } }
-
-          it "does not output container detection" do
-            expect(output).to_not include("Container id:")
-          end
-        end
-
-        context "when in container" do
-          before { recognize_as_container(:docker) { run } }
-
-          it "outputs container information" do
-            expect(output).to include \
-              "Container id: 0c703b75cdeaad7c933aa68b4678cc5c37a12d5ef5d7cb52c9cefe684d98e575"
-          end
-        end
-      end
     end
 
     describe "configuration" do
@@ -155,7 +134,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         before do
           ENV.delete("RAILS_ENV") # From spec_helper
           ENV.delete("RACK_ENV")
-          recognize_as_container(:none) { run_within_dir tmp_dir }
+          run_within_dir tmp_dir
         end
 
         it "outputs a warning that no config is loaded" do
@@ -191,7 +170,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
       context "with unconfigured environment" do
         let(:config) { project_fixture_config("foobar") }
-        before { recognize_as_container(:none) { run_within_dir tmp_dir } }
+        before { run_within_dir tmp_dir }
 
         it "outputs environment" do
           expect(output).to include("Environment: foobar")

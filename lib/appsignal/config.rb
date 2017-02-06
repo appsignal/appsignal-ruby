@@ -149,7 +149,6 @@ module Appsignal
     end
 
     def detect_from_system
-      config_hash[:running_in_container] = true if Appsignal::System.container?
       config_hash[:log] = "stdout" if Appsignal::System.heroku?
 
       # Make active by default if APPSIGNAL_PUSH_API_KEY is present

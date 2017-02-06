@@ -554,7 +554,6 @@ describe Appsignal do
           :log_path => log_path
         )
       end
-      around { |example| recognize_as_container(:none) { example.run } }
       after { FileUtils.rm_rf(log_path) }
 
       context "when the log path is writable" do
