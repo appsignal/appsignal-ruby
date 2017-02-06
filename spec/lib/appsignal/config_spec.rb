@@ -100,7 +100,6 @@ describe Appsignal::Config do
         :frontend_error_catching_path   => "/appsignal_error_catcher",
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
-        :running_in_container           => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname,
