@@ -94,7 +94,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/sinatra'"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
+          puts "  http://docs.appsignal.com/ruby/integrations/sinatra.html"
           press_any_key
           done_notice
         end
@@ -112,7 +112,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/padrino"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#padrino"
+          puts "  http://docs.appsignal.com/ruby/integrations/padrino.html"
           press_any_key
           done_notice
         end
@@ -127,7 +127,7 @@ module Appsignal
 
           puts "Manual Grape configuration needed"
           puts "  See the installation instructions at:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#grape"
+          puts "  http://docs.appsignal.com/ruby/integrations/grape.html"
           press_any_key
           done_notice
         end
