@@ -51,6 +51,10 @@ matrix:
 env:
   global: "RAILS_ENV=test"
 
-before_script: "bundle exec rake extension:install"
+before_install:
+  - "gem update --system"
+  - "gem update bundler"
+before_script:
+  - "bundle exec rake extension:install"
 
 script: "bundle exec rake test"
