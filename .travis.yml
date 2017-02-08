@@ -47,6 +47,14 @@ matrix:
       gemfile: "gemfiles/rails-5.0.gemfile"
   allow_failures:
     - rvm: "jruby-19mode"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.0.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.1.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.2.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/resque.gemfile"
 
 env:
   global: "RAILS_ENV=test"
