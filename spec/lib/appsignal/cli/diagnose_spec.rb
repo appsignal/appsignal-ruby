@@ -125,6 +125,30 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           end
         end
       end
+
+      describe "container detection" do
+        context "when not in container" do
+          before do
+            allow(Appsignal::Extension).to receive(:running_in_container?).and_return(false)
+            run
+          end
+
+          it "outputs: no" do
+            expect(output).to include("Running in container: no")
+          end
+        end
+
+        context "when in container" do
+          before do
+            allow(Appsignal::Extension).to receive(:running_in_container?).and_return(true)
+            run
+          end
+
+          it "outputs: yes" do
+            expect(output).to include("Running in container: yes")
+          end
+        end
+      end
     end
 
     describe "configuration" do
