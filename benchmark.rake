@@ -6,8 +6,7 @@ GC.disable
 task :default => :'benchmark:all'
 
 namespace :benchmark do
-  task :all => [:run_inactive, :run_active] do
-  end
+  task :all => [:run_inactive, :run_active]
 
   task :run_inactive do
     puts 'Running with appsignal off'
@@ -23,8 +22,8 @@ namespace :benchmark do
 end
 
 def run_benchmark
-  no_transactions = (ENV['NO_TRANSACTIONS'] || '100000').to_i
-  no_threads = (ENV['NO_THREADS'] || '1').to_i
+  no_transactions = (ENV['NO_TRANSACTIONS'] || 100_000).to_i
+  no_threads = (ENV['NO_THREADS'] || 1).to_i
 
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
@@ -47,9 +46,9 @@ def run_benchmark
           Appsignal::Transaction.create("transaction_#{i}", Appsignal::Transaction::HTTP_REQUEST, request)
 
           Appsignal.instrument('process_action.action_controller') do
-            Appsignal.instrument('sql.active_record', nil, 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?', Appsignal::EventFormatter::SQL_BODY_FORMAT)
+            Appsignal.instrument_sql('sql.active_record', nil, 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
             10.times do
-              Appsignal.instrument('sql.active_record', nil, 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?', Appsignal::EventFormatter::SQL_BODY_FORMAT)
+              Appsignal.instrument_sql('sql.active_record', nil, 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
             end
 
             Appsignal.instrument('render_template.action_view', 'app/views/home/show.html.erb') do
