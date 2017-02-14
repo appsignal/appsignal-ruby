@@ -8,7 +8,11 @@ describe Appsignal::Utils do
       let(:body) do
         {
           "the" => "payload",
-          "int" => 1,
+          "int" => 1, # Fixnum
+          "int61" => 1 << 61, # Fixnum
+          "int62" => 1 << 62, # Bignum, this one still works
+          "int63" => 1 << 63, # Bignum, turnover point for C, too big for long
+          "int64" => 1 << 64, # Bignum
           "float" => 1.0,
           1 => true,
           nil => "test",
@@ -20,21 +24,60 @@ describe Appsignal::Utils do
 
       it { is_expected.to eq Appsignal::Utils.data_generate(body) }
       it { is_expected.to_not eq Appsignal::Utils.data_generate({}) }
-      it { is_expected.to_not eq "a string" }
 
       describe "#to_s" do
-        it do
-          expect(subject.to_s).to eq %({"":"test","1":true,"bar":null,"baz":{"arr":[1,2],"foo":"bʊr"},"float":1.0,"foo":[1,2,"three",{"foo":"bar"}],"int":1,"the":"payload"})
+        it "returns a serialized hash" do
+          expect(subject.to_s).to eq %({"":"test",) +
+            %("1":true,) +
+            %("bar":null,) +
+            %("baz":{"arr":[1,2],"foo":"bʊr"},) +
+            %("float":1.0,) +
+            %("foo":[1,2,"three",{"foo":"bar"}],) +
+            %("int":1,) +
+            %("int61":#{1 << 61},) +
+            %("int62":#{1 << 62},) +
+            %("int63":"bigint:#{1 << 63}",) +
+            %("int64":"bigint:#{1 << 64}",) +
+            %("the":"payload"})
         end
       end
     end
 
     context "with a valid array body" do
       let(:body) do
-        [1, "string", 10, { "foo" => "bʊr" }]
+        [
+          nil,
+          true,
+          false,
+          "string",
+          1, # Fixnum
+          1.0, # Float
+          1 << 61, # Fixnum
+          1 << 62, # Bignum, this one still works
+          1 << 63, # Bignum, turnover point for C, too big for long
+          1 << 64, # Bignum
+          { "arr" => [1, 2, "three"], "foo" => "bʊr" }
+        ]
       end
 
-      it { expect(subject.to_s).to eq %([1,\"string\",10,{\"foo\":\"bʊr\"}]) }
+      it { is_expected.to eq Appsignal::Utils.data_generate(body) }
+      it { is_expected.to_not eq Appsignal::Utils.data_generate({}) }
+
+      describe "#to_s" do
+        it "returns a serialized array" do
+          expect(subject.to_s).to eq %([null,) +
+            %(true,) +
+            %(false,) +
+            %(\"string\",) +
+            %(1,) +
+            %(1.0,) +
+            %(#{1 << 61},) +
+            %(#{1 << 62},) +
+            %("bigint:#{1 << 63}",) +
+            %("bigint:#{1 << 64}",) +
+            %({\"arr\":[1,2,\"three\"],\"foo\":\"bʊr\"}])
+        end
+      end
     end
 
     context "with a body that contains strings with invalid utf-8 content" do

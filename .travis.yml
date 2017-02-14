@@ -13,6 +13,7 @@ rvm:
   - "2.1.8"
   - "2.2.4"
   - "2.3.0"
+  - "2.4.0"
   - "jruby-19mode"
 
 gemfile:
@@ -46,10 +47,22 @@ matrix:
       gemfile: "gemfiles/rails-5.0.gemfile"
   allow_failures:
     - rvm: "jruby-19mode"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.0.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.1.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/rails-4.2.gemfile"
+    - rvm: "2.4.0"
+      gemfile: "gemfiles/resque.gemfile"
 
 env:
   global: "RAILS_ENV=test"
 
-before_script: "bundle exec rake extension:install"
+before_install:
+  - "gem update --system"
+  - "gem update bundler"
+before_script:
+  - "bundle exec rake extension:install"
 
 script: "bundle exec rake test"

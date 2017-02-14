@@ -24,6 +24,7 @@ RUBY_VERSIONS = %w(
   2.1.8
   2.2.4
   2.3.0
+  2.4.0
 )
 
 EXCLUSIONS = {

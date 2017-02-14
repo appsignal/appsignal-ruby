@@ -27,8 +27,14 @@ module Appsignal
             case value
             when String
               map.set_string(key, value)
-            when Fixnum
-              map.set_fixnum(key, value)
+            when Integer
+              # An Integer too big for C-lang longs to fit
+              bigint = 1 << 63
+              if value >= bigint
+                map.set_string(key, "bigint:#{value}")
+              else
+                map.set_integer(key, value)
+              end
             when Float
               map.set_float(key, value)
             when TrueClass, FalseClass
@@ -52,8 +58,14 @@ module Appsignal
             case value
             when String
               array.append_string(value)
-            when Fixnum
-              array.append_fixnum(value)
+            when Integer
+              # An Integer too big for C-lang longs to fit
+              bigint = 1 << 63
+              if value >= bigint
+                array.append_string("bigint:#{value}")
+              else
+                array.append_integer(value)
+              end
             when Float
               array.append_float(value)
             when TrueClass, FalseClass
