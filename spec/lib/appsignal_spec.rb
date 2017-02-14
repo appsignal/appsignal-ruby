@@ -807,6 +807,15 @@ describe Appsignal do
         end
         expect(result).to eq "return value"
       end
+
+      it "should instrument without a block given" do
+        expect(transaction).to receive(:start_event)
+        expect(transaction).to receive(:finish_event)
+          .with("name", "title", "body", Appsignal::EventFormatter::DEFAULT)
+
+        result = Appsignal.instrument "name", "title", "body"
+        expect(result).to be_nil
+      end
     end
 
     describe ".instrument_sql" do
