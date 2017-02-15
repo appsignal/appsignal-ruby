@@ -259,7 +259,25 @@ describe Appsignal::Transaction do
       end
 
       it "should not set the action in extension when value is nil" do
-        expect(Appsignal::Extension).to_not receive(:set_transaction_action)
+        expect(Appsignal::Extension).to_not receive(:set_action)
+
+        transaction.set_action(nil)
+      end
+    end
+
+    describe "set_namespace" do
+      it "should set the action in extension" do
+        expect(transaction.ext).to receive(:set_namespace).with(
+          "custom"
+        ).once
+
+        transaction.set_namespace("custom")
+
+        expect(transaction.namespace).to eq "custom"
+      end
+
+      it "should not set the action in extension when value is nil" do
+        expect(Appsignal::Extension).to_not receive(:set_namespace)
 
         transaction.set_action(nil)
       end

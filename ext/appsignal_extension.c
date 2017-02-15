@@ -211,6 +211,19 @@ static VALUE set_transaction_action(VALUE self, VALUE action) {
   return Qnil;
 }
 
+static VALUE set_transaction_namespace(VALUE self, VALUE namespace) {
+  appsignal_transaction_t* transaction;
+
+  Check_Type(namespace, T_STRING);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  appsignal_set_transaction_namespace(
+      transaction,
+      make_appsignal_string(namespace)
+  );
+  return Qnil;
+}
+
 static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
   appsignal_transaction_t* transaction;
   int queue_start_type;
@@ -608,6 +621,7 @@ void Init_appsignal_extension(void) {
   rb_define_method(Transaction, "set_error",       set_transaction_error,       3);
   rb_define_method(Transaction, "set_sample_data", set_transaction_sample_data, 2);
   rb_define_method(Transaction, "set_action",      set_transaction_action,      1);
+  rb_define_method(Transaction, "set_namespace",   set_transaction_namespace,   1);
   rb_define_method(Transaction, "set_queue_start", set_transaction_queue_start, 1);
   rb_define_method(Transaction, "set_metadata",    set_transaction_metadata,    2);
   rb_define_method(Transaction, "finish",          finish_transaction,          1);

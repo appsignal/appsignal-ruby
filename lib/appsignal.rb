@@ -181,6 +181,13 @@ module Appsignal
     alias :set_exception :set_error
     alias :add_exception :set_error
 
+    def set_namespace(namespace)
+      return if !active? ||
+          Appsignal::Transaction.current.nil? ||
+          namespace.nil?
+      Appsignal::Transaction.current.set_namespace(namespace)
+    end
+
     def tag_request(params = {})
       return unless active?
       transaction = Appsignal::Transaction.current

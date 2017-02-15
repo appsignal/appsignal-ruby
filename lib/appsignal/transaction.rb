@@ -131,6 +131,12 @@ module Appsignal
       @ext.set_action(action)
     end
 
+    def set_namespace(namespace)
+      return unless namespace
+      @namespace = namespace
+      @ext.set_namespace(namespace)
+    end
+
     def set_http_or_background_action(from = request.params)
       return unless from
       group_and_action = [
