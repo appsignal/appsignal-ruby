@@ -191,7 +191,7 @@ module Appsignal
 
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       Appsignal::Transaction.current.start_event
-      return_value = yield
+      return_value = yield if block_given?
       Appsignal::Transaction.current.finish_event(name, title, body, body_format)
       return_value
     end
