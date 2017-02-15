@@ -43,7 +43,7 @@ module Padrino::Routing::InstanceMethods
       transaction.set_error(error)
       raise error
     ensure
-      transaction.set_action(get_payload_action(request))
+      transaction.set_action_if_nil(get_payload_action(request))
       transaction.set_metadata("path", request.path)
       transaction.set_metadata("method", request.request_method)
       transaction.set_http_or_background_queue_start

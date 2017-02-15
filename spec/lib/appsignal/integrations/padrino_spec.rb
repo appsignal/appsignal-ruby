@@ -143,7 +143,7 @@ if DependencyHelper.padrino_present?
             end
 
             it "should set the action on the transaction" do
-              expect(transaction).to receive(:set_action).with("controller#action")
+              expect(transaction).to receive(:set_action_if_nil).with("controller#action")
             end
 
             after { router.route!(base) }

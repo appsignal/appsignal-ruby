@@ -35,7 +35,7 @@ module Appsignal
               transaction.set_error(e)
               raise e
             ensure
-              transaction.set_action(env["appsignal.action"])
+              transaction.set_action_if_nil(env["appsignal.action"])
               transaction.set_metadata("path", request.path)
               transaction.set_metadata("method", request.request_method)
               transaction.set_http_or_background_queue_start

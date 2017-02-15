@@ -59,10 +59,11 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
 
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
+      @action = nil
       @namespace = namespace
       @request = request
       @paused = false
@@ -127,12 +128,18 @@ module Appsignal
     end
 
     def set_action(action)
-      return unless action
+      return if action.nil?
+      @action = action
       @ext.set_action(action)
     end
 
+    def set_action_if_nil(action)
+      return unless @action.nil?
+      set_action(action)
+    end
+
     def set_namespace(namespace)
-      return unless namespace
+      return if namespace.nil?
       @namespace = namespace
       @ext.set_namespace(namespace)
     end

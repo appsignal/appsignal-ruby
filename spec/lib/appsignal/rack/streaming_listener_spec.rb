@@ -71,7 +71,7 @@ describe Appsignal::Rack::StreamingListener do
 
       env["appsignal.action"] = "Action"
 
-      expect(transaction).to receive(:set_action).with("Action")
+      expect(transaction).to receive(:set_action_if_nil).with("Action")
 
       listener.call_with_appsignal_monitoring(env)
     end

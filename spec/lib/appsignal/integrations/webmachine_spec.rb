@@ -7,7 +7,7 @@ if DependencyHelper.webmachine_present?
     end
     let(:resource)    { double(:trace? => false, :handle_exception => true) }
     let(:response)    { double }
-    let(:transaction) { double(:set_action => true) }
+    let(:transaction) { double(:set_action_if_nil => true) }
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
     before(:context) { start_agent }
 
@@ -36,7 +36,7 @@ if DependencyHelper.webmachine_present?
       end
 
       it "should set the action" do
-        expect(transaction).to receive(:set_action).with("RSpec::Mocks::Mock#GET")
+        expect(transaction).to receive(:set_action_if_nil).with("RSpec::Mocks::Mock#GET")
       end
 
       it "should call the original method" do

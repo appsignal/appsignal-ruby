@@ -181,6 +181,13 @@ module Appsignal
     alias :set_exception :set_error
     alias :add_exception :set_error
 
+    def set_action(action)
+      return if !active? ||
+          Appsignal::Transaction.current.nil? ||
+          action.nil?
+      Appsignal::Transaction.current.set_action(action)
+    end
+
     def set_namespace(namespace)
       return if !active? ||
           Appsignal::Transaction.current.nil? ||

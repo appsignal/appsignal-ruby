@@ -84,7 +84,7 @@ if DependencyHelper.rails_present?
       end
 
       it "should set the action and queue start" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("MockController#index")
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("MockController#index")
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
       end
 
