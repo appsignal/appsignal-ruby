@@ -286,7 +286,7 @@ describe Appsignal do
     describe ".set_namespace" do
       it "should do nothing" do
         expect do
-          Appsignal.set_namespace('custom')
+          Appsignal.set_namespace("custom")
         end.to_not raise_error
       end
     end
@@ -804,9 +804,9 @@ describe Appsignal do
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       it "should set the namespace to the current transaction" do
-        expect(transaction).to receive(:set_action).with('custom')
+        expect(transaction).to receive(:set_action).with("custom")
 
-        Appsignal.set_action('custom')
+        Appsignal.set_action("custom")
       end
 
       it "should do nothing if there is no current transaction" do
@@ -814,7 +814,7 @@ describe Appsignal do
 
         expect(transaction).to_not receive(:set_action)
 
-        Appsignal.set_action('custom')
+        Appsignal.set_action("custom")
       end
 
       it "should do nothing if the error is nil" do
@@ -828,9 +828,9 @@ describe Appsignal do
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       it "should set the namespace to the current transaction" do
-        expect(transaction).to receive(:set_namespace).with('custom')
+        expect(transaction).to receive(:set_namespace).with("custom")
 
-        Appsignal.set_namespace('custom')
+        Appsignal.set_namespace("custom")
       end
 
       it "should do nothing if there is no current transaction" do
@@ -838,7 +838,7 @@ describe Appsignal do
 
         expect(transaction).to_not receive(:set_namespace)
 
-        Appsignal.set_namespace('custom')
+        Appsignal.set_namespace("custom")
       end
 
       it "should do nothing if the error is nil" do
