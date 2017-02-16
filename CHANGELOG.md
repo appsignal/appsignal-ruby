@@ -1,3 +1,10 @@
+# 2.1.1
+* Fix DNS issue related to the musl build.
+  Commit 732c877de8faceabe8a977bf80a82a6a89065c4d and
+  84e521d20d4438f7b1dda82d5e9f1f533ae27c4b
+* Support Ruby 2.4 better. PR #234
+* Initial setup for documenting the Ruby gem's code. PR #243
+
 # 2.1.0
 * Add support for musl based libc (Alpine Linux). PR #229
 * Implement `Appsignal.is_ignored_error?` and `Appsignal.is_ignored_action?`
