@@ -54,8 +54,10 @@ if DependencyHelper.rails_present?
           kind_of(ActionDispatch::Request),
           :params_method => :filtered_parameters
         ).and_return(
-          double(
+          instance_double(
+            "Appsignal::Transaction",
             :set_action => nil,
+            :set_action_if_nil => nil,
             :set_http_or_background_queue_start => nil,
             :set_metadata => nil
           )
