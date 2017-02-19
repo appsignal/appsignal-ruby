@@ -144,12 +144,6 @@ Style/IfUnlessModifier:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/garbage_collection_profiler.rb'
 
-# Offense count: 2
-Style/MethodMissing:
-  Exclude:
-    - 'lib/appsignal/extension.rb'
-    - 'lib/appsignal/transaction.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 Style/MultilineIfModifier:
