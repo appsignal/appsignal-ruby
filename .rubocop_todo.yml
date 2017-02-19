@@ -235,12 +235,6 @@ Style/SpecialGlobalVars:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/config.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Style/UnlessElse:
-  Exclude:
-    - 'lib/appsignal.rb'
-
 # Offense count: 17
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles, MinSize, WordRegex.

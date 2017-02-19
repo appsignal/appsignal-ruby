@@ -30,9 +30,9 @@ module Appsignal
       unless extension_loaded?
         logger.info("Not starting appsignal, extension is not loaded")
         return
-      else
-        logger.debug("Starting appsignal")
       end
+
+      logger.debug("Starting appsignal")
 
       unless @config
         @config = Config.new(
