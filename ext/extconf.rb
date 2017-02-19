@@ -66,10 +66,10 @@ def install
 
     Gem::Package::TarReader.new(Zlib::GzipReader.open(archive)) do |tar|
       tar.each do |entry|
-        if entry.file?
-          File.open(ext_path(entry.full_name), "wb") do |f|
-            f.write(entry.read)
-          end
+        next unless entry.file?
+
+        File.open(ext_path(entry.full_name), "wb") do |f|
+          f.write(entry.read)
         end
       end
     end
