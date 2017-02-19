@@ -115,7 +115,8 @@ module Appsignal
         namespace = Appsignal::Transaction::HTTP_REQUEST
         request   = ::Rack::Request.new(env)
       else
-        logger.error("Unrecognized name '#{name}'") and return
+        logger.error("Unrecognized name '#{name}'")
+        return
       end
       transaction = Appsignal::Transaction.create(
         SecureRandom.uuid,
