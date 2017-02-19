@@ -8,7 +8,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     before(:context) do
       module Mongo
         module Monitoring
-          COMMAND = "command"
+          COMMAND = "command".freeze
 
           class Global
             def subscribe

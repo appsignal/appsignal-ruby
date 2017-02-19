@@ -20,7 +20,7 @@ module Appsignal
       Net::ProtocolError,
       Timeout::Error,
       OpenSSL::SSL::SSLError
-    ]
+    ].freeze
 
     attr_reader :config, :action
 

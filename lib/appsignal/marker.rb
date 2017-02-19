@@ -22,7 +22,7 @@ module Appsignal
   class Marker
     # Path used on the AppSignal Push API
     # https://push.appsignal.com/1/markers
-    ACTION = "markers"
+    ACTION = "markers".freeze
 
     attr_reader :marker_data, :config
 
