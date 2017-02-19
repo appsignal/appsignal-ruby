@@ -216,15 +216,6 @@ Style/PredicateName:
     - 'spec/**/*'
     - 'lib/appsignal.rb'
 
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: compact, exploded
-Style/RaiseArgs:
-  Exclude:
-    - 'lib/appsignal/utils.rb'
-    - 'spec/lib/appsignal/integrations/resque_spec.rb'
-
 # Offense count: 7
 # Cop supports --auto-correct.
 Style/RescueModifier:

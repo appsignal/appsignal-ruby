@@ -18,7 +18,7 @@ if DependencyHelper.resque_present?
           extend Appsignal::Integrations::ResquePlugin
 
           def self.perform
-            raise VerySpecificError.new
+            raise VerySpecificError
           end
         end
       end
