@@ -753,7 +753,6 @@ describe Appsignal::Transaction do
           end
 
           it "should call the params sanitizer" do
-            puts Appsignal.config.config_hash[:filter_parameters].inspect
             expect(subject).to eq(:foo => :bar)
           end
         end
