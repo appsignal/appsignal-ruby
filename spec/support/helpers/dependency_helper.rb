@@ -17,6 +17,10 @@ module DependencyHelper
     dependency_present? "resque"
   end
 
+  def redis_present?
+    dependency_present? "redis"
+  end
+
   def active_job_present?
     dependency_present? "activejob"
   end
