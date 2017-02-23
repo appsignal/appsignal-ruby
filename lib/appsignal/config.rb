@@ -122,6 +122,7 @@ module Appsignal
       ENV["_APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
       ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
       ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
+      ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
       ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
       ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
       ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]

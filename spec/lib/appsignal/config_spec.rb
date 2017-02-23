@@ -359,6 +359,7 @@ describe Appsignal::Config do
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = ["action1", "action2"]
       config[:ignore_errors] = ["VerySpecificError", "AnotherError"]
+      config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
       config[:filter_parameters] = %w(password confirm_password)
@@ -371,6 +372,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
       expect(ENV["_APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
       expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
+      expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
       expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
       expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
       expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
