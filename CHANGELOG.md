@@ -1,3 +1,9 @@
+# 2.1.1 (beta)
+* Fix DNS issue related to musl build.
+  Commit 732c877de8faceabe8a977bf80a82a6a89065c4d
+* Update benchmark and add load test. PR #248
+* Fix configuring instrument redis and sequel from env. PR #257
+
 # 2.1.0
 * Add support for musl based libc (Alpine Linux). PR #229
 * Implement `Appsignal.is_ignored_error?` and `Appsignal.is_ignored_action?`
