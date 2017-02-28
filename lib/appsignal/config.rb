@@ -189,9 +189,9 @@ module Appsignal
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY
          APPSIGNAL_LOG APPSIGNAL_LOG_PATH APPSIGNAL_WORKING_DIR_PATH
          APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var
       end
 
       # Configuration with boolean type
@@ -200,17 +200,17 @@ module Appsignal
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
          APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var == "true"
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var == "true"
       end
 
       # Configuration with array of strings type
       %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS
          APPSIGNAL_FILTER_PARAMETERS).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
       end
 
       merge(@config_hash, config)

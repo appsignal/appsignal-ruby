@@ -8,12 +8,12 @@ class MockFormatter < Appsignal::EventFormatter
   end
 
   def format(_payload)
-    ["title", @body]
+    ["title", body]
   end
 end
 
 class MissingFormatMockFormatter < Appsignal::EventFormatter
-  def transform(payload)
+  def transform(_payload)
   end
 end
 

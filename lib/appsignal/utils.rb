@@ -16,7 +16,7 @@ module Appsignal
           elsif body.is_a?(Array)
             map_array(body)
           else
-            raise TypeError.new("Body of type #{body.class} should be a Hash or Array")
+            raise TypeError, "Body of type #{body.class} should be a Hash or Array"
           end
         end
 

@@ -39,5 +39,10 @@ Style/AlignHash:
 Style/IndentArray:
   EnforcedStyle: consistent
 
+Style/MethodMissing:
+  Exclude:
+    - "lib/appsignal/extension.rb"
+    - "lib/appsignal/transaction.rb"
+
 # Metrics/LineLength:
 #   Max: 80

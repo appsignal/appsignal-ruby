@@ -20,7 +20,7 @@ module Appsignal
       HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM
       HTTP_NEGOTIATE HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR
       HTTP_CLIENT_IP HTTP_RANGE HTTP_X_AUTH_TOKEN
-    )
+    ).freeze
 
     class << self
       def create(id, namespace, request, options = {})

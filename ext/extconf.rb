@@ -7,10 +7,10 @@ require "rubygems/package"
 require "yaml"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
 
-EXT_PATH     = File.expand_path("..", __FILE__)
-AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml")))
-ARCH         = "#{Gem::Platform.local.cpu}-#{Gem::Platform.local.os}"
-CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem")
+EXT_PATH     = File.expand_path("..", __FILE__).freeze
+AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
+ARCH         = "#{Gem::Platform.local.cpu}-#{Gem::Platform.local.os}".freeze
+CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
   File.join(EXT_PATH, path)
@@ -66,10 +66,10 @@ def install
 
     Gem::Package::TarReader.new(Zlib::GzipReader.open(archive)) do |tar|
       tar.each do |entry|
-        if entry.file?
-          File.open(ext_path(entry.full_name), "wb") do |f|
-            f.write(entry.read)
-          end
+        next unless entry.file?
+
+        File.open(ext_path(entry.full_name), "wb") do |f|
+          f.write(entry.read)
         end
       end
     end

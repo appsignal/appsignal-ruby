@@ -45,7 +45,7 @@ module Appsignal
             "multi"  => :allow,
             "upsert" => :allow
           }
-        }
+        }.freeze
 
         # Format command based on given strategy
         def self.format(strategy, command)
