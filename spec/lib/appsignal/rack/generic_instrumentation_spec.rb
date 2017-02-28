@@ -42,7 +42,7 @@ describe Appsignal::Rack::GenericInstrumentation do
         kind_of(String),
         Appsignal::Transaction::HTTP_REQUEST,
         kind_of(Rack::Request)
-      ).and_return(double(:set_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+      ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
     end
 
     it "should call the app" do
@@ -63,7 +63,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     it "should set the action to unknown" do
-      expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("unknown")
+      expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("unknown")
     end
 
     context "with a route specified in the env" do
@@ -72,7 +72,7 @@ describe Appsignal::Rack::GenericInstrumentation do
       end
 
       it "should set the action" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("GET /")
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /")
       end
     end
 

@@ -256,10 +256,52 @@ describe Appsignal::Transaction do
         ).once
 
         transaction.set_action("PagesController#show")
+
+        expect(transaction.action).to eq "PagesController#show"
       end
 
       it "should not set the action in extension when value is nil" do
-        expect(Appsignal::Extension).to_not receive(:set_transaction_action)
+        expect(Appsignal::Extension).to_not receive(:set_action)
+
+        transaction.set_action(nil)
+      end
+    end
+
+    describe "set_action_if_nil" do
+      context "if action is currently nil" do
+        it "should set the action" do
+          expect(transaction.ext).to receive(:set_action).with(
+            "PagesController#show"
+          ).once
+
+          transaction.set_action_if_nil("PagesController#show")
+        end
+      end
+
+      context "if action is currently set" do
+        it "should not set the action" do
+          transaction.set_action("something")
+
+          expect(transaction.ext).not_to receive(:set_action)
+
+          transaction.set_action_if_nil("PagesController#show")
+        end
+      end
+    end
+
+    describe "set_namespace" do
+      it "should set the action in extension" do
+        expect(transaction.ext).to receive(:set_namespace).with(
+          "custom"
+        ).once
+
+        transaction.set_namespace("custom")
+
+        expect(transaction.namespace).to eq "custom"
+      end
+
+      it "should not set the action in extension when value is nil" do
+        expect(Appsignal::Extension).to_not receive(:set_namespace)
 
         transaction.set_action(nil)
       end

@@ -283,6 +283,14 @@ describe Appsignal do
       end
     end
 
+    describe ".set_namespace" do
+      it "should do nothing" do
+        expect do
+          Appsignal.set_namespace("custom")
+        end.to_not raise_error
+      end
+    end
+
     describe ".tag_request" do
       it "should do nothing" do
         expect do
@@ -789,6 +797,54 @@ describe Appsignal do
         expect(transaction).to_not receive(:set_error)
 
         Appsignal.set_error(nil)
+      end
+    end
+
+    describe ".set_action" do
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+      it "should set the namespace to the current transaction" do
+        expect(transaction).to receive(:set_action).with("custom")
+
+        Appsignal.set_action("custom")
+      end
+
+      it "should do nothing if there is no current transaction" do
+        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+
+        expect(transaction).to_not receive(:set_action)
+
+        Appsignal.set_action("custom")
+      end
+
+      it "should do nothing if the error is nil" do
+        expect(transaction).to_not receive(:set_action)
+
+        Appsignal.set_action(nil)
+      end
+    end
+
+    describe ".set_namespace" do
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+      it "should set the namespace to the current transaction" do
+        expect(transaction).to receive(:set_namespace).with("custom")
+
+        Appsignal.set_namespace("custom")
+      end
+
+      it "should do nothing if there is no current transaction" do
+        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+
+        expect(transaction).to_not receive(:set_namespace)
+
+        Appsignal.set_namespace("custom")
+      end
+
+      it "should do nothing if the error is nil" do
+        expect(transaction).to_not receive(:set_namespace)
+
+        Appsignal.set_namespace(nil)
       end
     end
 

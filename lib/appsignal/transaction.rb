@@ -59,10 +59,11 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
 
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
+      @action = nil
       @namespace = namespace
       @request = request
       @paused = false
@@ -126,9 +127,84 @@ module Appsignal
       @tags.merge!(given_tags)
     end
 
+    # Set a custom action name for this transaction.
+    #
+    # When using an integration such as the Rails or Sinatra AppSignal will try
+    # to find the action name from the controller or endpoint for you.
+    #
+    # If you want to customize the action name as it appears on AppSignal.com
+    # you can use this method. This overrides the action name AppSignal
+    # generates in an integration.
+    #
+    # @example in a Rails controller
+    #   class SomeController < ApplicationController
+    #     before_action :set_appsignal_action
+    #
+    #     def set_appsignal_action
+    #       Appsignal.set_action("DynamicController#dynamic_method")
+    #     end
+    #   end
+    #
+    # @param action [String] the action name to set.
+    # @return [void]
     def set_action(action)
       return unless action
+      @action = action
       @ext.set_action(action)
+    end
+
+    # Set an action name only if there is no current action set.
+    #
+    # Commonly used by AppSignal integrations so that they don't override
+    # custom action names.
+    #
+    # @example
+    #   Appsignal.set_action("foo")
+    #   Appsignal.set_action_if_nil("bar")
+    #   # Transaction action will be "foo"
+    #
+    # @param action [String]
+    # @return [void]
+    # @see #set_action
+    def set_action_if_nil(action)
+      return if @action
+      set_action(action)
+    end
+
+    # Set a custom namespace for this transaction.
+    #
+    # When using an integration such as Rails or Sidekiq AppSignal will try to
+    # find a appropriate namespace for the transaction.
+    #
+    # A Rails controller will be automatically put in the "http_request"
+    # namespace, while a Sidekiq background job is put in the "background_job"
+    # namespace.
+    #
+    # Note: The "http_request" namespace gets transformed on AppSignal.com to
+    # "Web" and "background_job" gets transformed to "Background".
+    #
+    # If you want to customize the namespace in which transactions appear you
+    # can use this method. This overrides the namespace AppSignal uses by
+    # default.
+    #
+    # A common request we've seen is to split the administration panel from the
+    # main application.
+    #
+    # @example create a custom admin namespace
+    #   class AdminController < ApplicationController
+    #     before_action :set_appsignal_namespace
+    #
+    #     def set_appsignal_namespace
+    #       Appsignal.set_namespace("admin")
+    #     end
+    #   end
+    #
+    # @param namespace [String] namespace name to use for this transaction.
+    # @return [void]
+    def set_namespace(namespace)
+      return unless namespace
+      @namespace = namespace
+      @ext.set_namespace(namespace)
     end
 
     def set_http_or_background_action(from = request.params)

@@ -11,7 +11,7 @@ module Appsignal
             :params_method => :query
           )
 
-          transaction.set_action("#{resource.class.name}##{request.method}")
+          transaction.set_action_if_nil("#{resource.class.name}##{request.method}")
 
           Appsignal.instrument("process_action.webmachine") do
             run_without_appsignal

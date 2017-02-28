@@ -111,13 +111,13 @@ if DependencyHelper.padrino_present?
 
         context "with a dynamic request" do
           let(:transaction) do
-            double(
+            instance_double "Appsignal::Transaction",
               :set_http_or_background_action => nil,
               :set_http_or_background_queue_start => nil,
               :set_metadata => nil,
               :set_action => nil,
+              :set_action_if_nil => nil,
               :set_error => nil
-            )
           end
           before { allow(Appsignal::Transaction).to receive(:create).and_return(transaction) }
 
@@ -143,7 +143,7 @@ if DependencyHelper.padrino_present?
             end
 
             it "should set the action on the transaction" do
-              expect(transaction).to receive(:set_action).with("controller#action")
+              expect(transaction).to receive(:set_action_if_nil).with("controller#action")
             end
 
             after { router.route!(base) }

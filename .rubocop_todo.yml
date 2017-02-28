@@ -37,7 +37,11 @@ Metrics/BlockLength:
 # Offense count: 4
 # Configuration parameters: CountComments.
 Metrics/ClassLength:
-  Max: 263
+  Exclude:
+    - "lib/appsignal/cli/diagnose.rb"
+    - "lib/appsignal/cli/install.rb"
+    - "lib/appsignal/config.rb"
+    - "lib/appsignal/transaction.rb"
 
 # Offense count: 14
 Metrics/CyclomaticComplexity:

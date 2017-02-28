@@ -63,6 +63,10 @@ describe "extension loading and operation" do
           subject.set_action("value")
         end
 
+        it "should have a set_namespace method" do
+          subject.set_namespace("value")
+        end
+
         it "should have a set_queue_start method" do
           subject.set_queue_start(10)
         end
