@@ -4,6 +4,7 @@ AllCops:
   TargetRubyVersion: 1.9
   Include:
     - "Gemfile"
+    - "**/*.cap"
   Exclude:
     - "tmp/**/*"
     - "gemfiles/vendor/**/*"
