@@ -55,7 +55,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         it "starts the agent in diagnose mode and outputs a log" do
           run
           expect(output).to include \
-            "Agent diagnostics:",
+            "Agent diagnostics",
             "Running agent in diagnose mode",
             "Valid config present",
             "Logger initialized successfully",
