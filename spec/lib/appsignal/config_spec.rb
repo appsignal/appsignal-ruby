@@ -50,34 +50,6 @@ describe Appsignal::Config do
       end
     end
 
-    describe ":running_in_container" do
-      subject { config[:running_in_container] }
-
-      context "when running on Heroku" do
-        around { |example| recognize_as_heroku { example.run } }
-
-        it "is set to true" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      context "when running in container" do
-        around { |example| recognize_as_container(:docker) { example.run } }
-
-        it "is set to true" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      context "when not running in container" do
-        around { |example| recognize_as_container(:none) { example.run } }
-
-        it "is set to false" do
-          expect(subject).to be_falsy
-        end
-      end
-    end
-
     describe ":log" do
       subject { config[:log] }
 
@@ -90,8 +62,6 @@ describe Appsignal::Config do
       end
 
       context "when not running on Heroku" do
-        around { |example| recognize_as_container(:none) { example.run } }
-
         it "is set to file" do
           expect(subject).to eq("file")
         end
@@ -109,7 +79,6 @@ describe Appsignal::Config do
         :active => true
       )
     end
-    around { |example| recognize_as_container(:none) { example.run } }
 
     it "merges with the default config" do
       expect(config.config_hash).to eq(
@@ -131,7 +100,6 @@ describe Appsignal::Config do
         :frontend_error_catching_path   => "/appsignal_error_catcher",
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
-        :running_in_container           => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname,
@@ -216,7 +184,6 @@ describe Appsignal::Config do
           :debug => true
         )
       end
-      around { |example| recognize_as_container(:none) { example.run } }
 
       it "overrides system detected and defaults config" do
         expect(config[:running_in_container]).to be_truthy
@@ -312,7 +279,6 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_DEBUG"]                = "true"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]       = "action1,action2"
     end
-    around { |example| recognize_as_container(:none) { example.run } }
 
     it "overrides config with environment values" do
       expect(config.valid?).to be_truthy
@@ -443,11 +409,6 @@ describe Appsignal::Config do
     let(:output) { out_stream.read }
     let(:config) { project_fixture_config("production", :log_path => log_path) }
     subject { capture_stdout(out_stream) { config.log_file_path } }
-    around do |example|
-      recognize_as_container(:none) do
-        example.run
-      end
-    end
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, "writable-path") }

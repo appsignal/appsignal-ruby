@@ -22,7 +22,6 @@ module Appsignal
       :frontend_error_catching_path   => "/appsignal_error_catcher",
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
-      :running_in_container           => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => false,
       :hostname                       => ::Socket.gethostname,
@@ -149,7 +148,6 @@ module Appsignal
     end
 
     def detect_from_system
-      config_hash[:running_in_container] = true if Appsignal::System.container?
       config_hash[:log] = "stdout" if Appsignal::System.heroku?
 
       # Make active by default if APPSIGNAL_PUSH_API_KEY is present

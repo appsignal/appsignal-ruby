@@ -115,9 +115,8 @@ module Appsignal
           puts "  Heroku: true" if Appsignal::System.heroku?
           print "  root user: "
           puts Process.uid == 0 ? "yes (not recommended)" : "no"
-
-          return unless Appsignal::System.container?
-          puts "  Container id: #{Appsignal::System::Container.id}"
+          print "  Running in container: "
+          puts Appsignal::Extension.running_in_container? ? "yes" : "no"
         end
 
         def config
