@@ -22,7 +22,7 @@ Lint/RescueException:
 
 # Offense count: 37
 Metrics/AbcSize:
-  Max: 59
+  Max: 61
 
 # Offense count: 2
 # Configuration parameters: CountComments.

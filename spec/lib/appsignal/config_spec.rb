@@ -391,7 +391,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
       expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
-      expect(ENV).to_not                                       have_key("APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV).to_not                                        have_key("APPSIGNAL_WORKING_DIR_PATH")
     end
 
     context "with :working_dir_path" do
