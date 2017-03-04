@@ -136,7 +136,7 @@ module Appsignal
       ENV["APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
       ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
       ENV["APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
-      ENV["APPSIGNAL_PROCESS_NAME"]                 = $0
+      ENV["APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
     end
 

@@ -204,15 +204,6 @@ Style/RescueModifier:
     - 'spec/lib/appsignal/rack/sinatra_instrumentation_spec.rb'
     - 'spec/lib/appsignal/rack/streaming_listener_spec.rb'
 
-# Offense count: 2
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: use_perl_names, use_english_names
-Style/SpecialGlobalVars:
-  Exclude:
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/config.rb'
-
 # Offense count: 17
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles, MinSize, WordRegex.

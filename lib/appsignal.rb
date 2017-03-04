@@ -49,7 +49,8 @@ module Appsignal
             Logger::INFO
           end
         if config.active?
-          logger.info("Starting AppSignal #{Appsignal::VERSION} (#{$0}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})")
+          logger.info "Starting AppSignal #{Appsignal::VERSION} "\
+            "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
