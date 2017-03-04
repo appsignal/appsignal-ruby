@@ -276,8 +276,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         let(:root_path) { File.join(tmp_dir, "writable_path") }
         let(:config) { Appsignal::Config.new(root_path, "production", :log_file => nil) }
         before do
-          FileUtils.mkdir_p(File.join(root_path, "log"), :mode => 0555)
-          FileUtils.chmod(0555, system_tmp_dir)
+          FileUtils.mkdir_p(File.join(root_path, "log"), :mode => 0o555)
+          FileUtils.chmod(0o555, system_tmp_dir)
           run_within_dir root_path
         end
 
@@ -350,7 +350,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           let(:root_path) { File.join(tmp_dir, "not_writable_path") }
           let(:config) { Appsignal::Config.new(root_path, "production") }
           before do
-            FileUtils.chmod(0555, root_path)
+            FileUtils.chmod(0o555, root_path)
             run_within_dir root_path
           end
 
@@ -371,7 +371,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
           context "without log dir" do
             before do
-              FileUtils.chmod(0777, root_path)
+              FileUtils.chmod(0o777, root_path)
               run_within_dir root_path
             end
 
@@ -393,7 +393,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
             context "when not writable" do
               before do
-                FileUtils.chmod(0444, log_dir)
+                FileUtils.chmod(0o444, log_dir)
                 run_within_dir root_path
               end
 
@@ -431,7 +431,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
                 context "when not writable" do
                   before do
                     FileUtils.touch(log_file)
-                    FileUtils.chmod(0444, log_file)
+                    FileUtils.chmod(0o444, log_file)
                     run_within_dir root_path
                   end
 

@@ -412,7 +412,7 @@ describe Appsignal::Config do
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, "writable-path") }
-      before { FileUtils.mkdir_p(log_path, :mode => 0755) }
+      before { FileUtils.mkdir_p(log_path, :mode => 0o755) }
       after { FileUtils.rm_rf(log_path) }
 
       it "returns log file path" do
@@ -431,7 +431,7 @@ describe Appsignal::Config do
       after { FileUtils.rm_rf(system_tmp_dir) }
 
       context "when the /tmp fallback path is writable" do
-        before { FileUtils.chmod(0777, system_tmp_dir) }
+        before { FileUtils.chmod(0o777, system_tmp_dir) }
 
         it "returns returns the tmp location" do
           expect(subject).to eq(File.join(system_tmp_dir, "appsignal.log"))
@@ -445,7 +445,7 @@ describe Appsignal::Config do
       end
 
       context "when the /tmp fallback path is not writable" do
-        before { FileUtils.chmod(0555, system_tmp_dir) }
+        before { FileUtils.chmod(0o555, system_tmp_dir) }
 
         it "returns nil" do
           expect(subject).to be_nil
@@ -488,7 +488,7 @@ describe Appsignal::Config do
 
     context "when path is not writable" do
       let(:log_path) { File.join(tmp_dir, "not-writable-path") }
-      before { FileUtils.mkdir_p(log_path, :mode => 0555) }
+      before { FileUtils.mkdir_p(log_path, :mode => 0o555) }
       after { FileUtils.rm_rf(log_path) }
 
       include_examples "#log_file_path: tmp path"
@@ -510,7 +510,7 @@ describe Appsignal::Config do
           let(:log_path) { File.join(tmp_dir, "symlink-path") }
           before do
             FileUtils.mkdir_p(real_path)
-            FileUtils.chmod(0444, real_path)
+            FileUtils.chmod(0o444, real_path)
             File.symlink(real_path, log_path)
           end
           after do

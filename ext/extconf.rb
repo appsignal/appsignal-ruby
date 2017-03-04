@@ -73,7 +73,7 @@ def install
         end
       end
     end
-    FileUtils.chmod(0755, ext_path("appsignal-agent"))
+    FileUtils.chmod(0o755, ext_path("appsignal-agent"))
   end
 
   logger.info "Creating makefile"

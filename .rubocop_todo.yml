@@ -129,19 +129,6 @@ Style/NonNilCheck:
   Exclude:
     - 'lib/appsignal/transaction.rb'
 
-# Offense count: 18
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedOctalStyle, SupportedOctalStyles.
-# SupportedOctalStyles: zero_with_o, zero_only
-Style/NumericLiteralPrefix:
-  Exclude:
-    - 'ext/extconf.rb'
-    - 'spec/lib/appsignal/cli/diagnose_spec.rb'
-    - 'spec/lib/appsignal/config_spec.rb'
-    - 'spec/lib/appsignal/transmitter_spec.rb'
-    - 'spec/lib/appsignal_spec.rb'
-    - 'spec/support/helpers/time_helpers.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 # Configuration parameters: AutoCorrect, EnforcedStyle, SupportedStyles.

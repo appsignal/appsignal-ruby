@@ -69,7 +69,7 @@ describe Appsignal::Transmitter do
         let(:file) { File.join(tmp_dir, "ca_file") }
         before do
           config.config_hash[:ca_file_path] = file
-          File.open(file, "w") { |f| f.chmod 0000 }
+          File.open(file, "w") { |f| f.chmod 0o000 }
         end
 
         it "ignores the config and logs a warning" do
