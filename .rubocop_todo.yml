@@ -115,7 +115,7 @@ Style/GuardClause:
     - 'lib/appsignal/hooks.rb'
     - 'lib/appsignal/marker.rb'
 
-# Offense count: 3
+# Offense count: 2
 # Cop supports --auto-correct.
 # Configuration parameters: MaxLineLength.
 Style/IfUnlessModifier:
