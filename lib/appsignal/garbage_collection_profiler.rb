@@ -6,6 +6,10 @@ module Appsignal
   #
   # @api private
   class GarbageCollectionProfiler
+    def self.lock
+      @lock ||= Mutex.new
+    end
+
     def initialize
       @total_time = 0
     end
@@ -32,10 +36,6 @@ module Appsignal
     end
 
     private
-
-    def self.lock
-      @lock ||= Mutex.new
-    end
 
     def internal_profiler
       GC::Profiler

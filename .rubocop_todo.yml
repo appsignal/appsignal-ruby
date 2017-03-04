@@ -14,11 +14,6 @@ Lint/HandleExceptions:
     - 'spec/lib/appsignal/hooks/sidekiq_spec.rb'
     - 'spec/lib/appsignal/integrations/resque_spec.rb'
 
-# Offense count: 1
-Lint/IneffectiveAccessModifier:
-  Exclude:
-    - 'lib/appsignal/garbage_collection_profiler.rb'
-
 # Offense count: 4
 Lint/RescueException:
   Exclude:
