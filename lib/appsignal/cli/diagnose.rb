@@ -84,7 +84,14 @@ module Appsignal
             options[:environment],
             initial_config
           )
+          # Force agent to run in diagnostics mode regardless if the user's
+          # config has AppSignal.active? => true
+          # But reset it later so it doesn't interfere with the user's config
+          # that's printed.
+          previous_active_state = Appsignal.config[:active]
+          Appsignal.config[:active] = true
           Appsignal.start
+          Appsignal.config[:active] = previous_active_state
         end
 
         def header

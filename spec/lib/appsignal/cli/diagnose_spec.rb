@@ -62,6 +62,25 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
             "Lock path is writable",
             "Agent diagnose finished"
         end
+
+        context "when user config has active: false" do
+          before do
+            # ENV is leading so easiest to set in test to force user config with active: false
+            ENV["APPSIGNAL_ACTIVE"] = "false"
+          end
+
+          it "force starts the agent in diagnose mode and outputs a log" do
+            run
+            expect(output).to include("active: false")
+            expect(output).to include \
+              "Agent diagnostics",
+              "Running agent in diagnose mode",
+              "Valid config present",
+              "Logger initialized successfully",
+              "Lock path is writable",
+              "Agent diagnose finished"
+          end
+        end
       end
 
       context "without extension" do
