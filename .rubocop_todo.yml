@@ -126,7 +126,6 @@ Style/GuardClause:
 Style/IfUnlessModifier:
   Exclude:
     - 'lib/appsignal.rb'
-    - 'lib/appsignal/garbage_collection_profiler.rb'
 
 # Offense count: 1
 # Cop supports --auto-correct.

@@ -26,9 +26,7 @@ module Appsignal
         internal_profiler.clear
       end
 
-      if @total_time > 2_000_000_000
-        @total_time = 0
-      end
+      @total_time = 0 if @total_time > 2_000_000_000
 
       @total_time
     end
