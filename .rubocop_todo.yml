@@ -130,12 +130,6 @@ Style/IfUnlessModifier:
 
 # Offense count: 1
 # Cop supports --auto-correct.
-Style/MultilineIfModifier:
-  Exclude:
-    - 'lib/appsignal/js_exception_transaction.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
 # Configuration parameters: IncludeSemanticChanges.
 Style/NonNilCheck:
   Exclude:

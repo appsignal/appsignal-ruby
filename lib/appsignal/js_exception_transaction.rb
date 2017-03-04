@@ -14,13 +14,13 @@ module Appsignal
     end
 
     def set_action
-      @ext.set_action(@data["action"]) if @data["action"]
+      return unless @data["action"]
+      @ext.set_action(@data["action"])
     end
 
     def set_metadata
-      @ext.set_metadata(
-        "path", @data["path"]
-      ) if @data["path"]
+      return unless @data["path"]
+      @ext.set_metadata("path", @data["path"])
     end
 
     def set_error
