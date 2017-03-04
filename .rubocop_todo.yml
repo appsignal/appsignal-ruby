@@ -110,20 +110,6 @@ Style/DoubleNegation:
   Exclude:
     - 'lib/appsignal.rb'
 
-# Offense count: 9
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: compact, expanded
-Style/EmptyMethod:
-  Exclude:
-    - 'lib/appsignal/transaction.rb'
-    - 'spec/lib/appsignal/event_formatter_spec.rb'
-    - 'spec/lib/appsignal/hooks/mongo_ruby_driver_spec.rb'
-    - 'spec/lib/appsignal/hooks/puma_spec.rb'
-    - 'spec/lib/appsignal/hooks/unicorn_spec.rb'
-    - 'spec/lib/appsignal/integrations/data_mapper_spec.rb'
-    - 'spec/lib/appsignal/integrations/resque_active_job_spec.rb'
-
 # Offense count: 5
 # Configuration parameters: MinBodyLength.
 Style/GuardClause:
