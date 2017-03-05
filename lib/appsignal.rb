@@ -49,7 +49,8 @@ module Appsignal
             Logger::INFO
           end
         if config.active?
-          logger.info("Starting AppSignal #{Appsignal::VERSION} (#{$0}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})")
+          logger.info "Starting AppSignal #{Appsignal::VERSION} "\
+            "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
@@ -298,13 +299,13 @@ module Appsignal
       config && config.active? && extension_loaded?
     end
 
-    def is_ignored_error?(error)
+    def is_ignored_error?(error) # rubocop:disable Style/PredicateName
       Appsignal.config[:ignore_errors].include?(error.class.name)
     end
     alias :is_ignored_exception? :is_ignored_error?
     deprecate :is_ignored_error?, :none, 2017, 3
 
-    def is_ignored_action?(action)
+    def is_ignored_action?(action) # rubocop:disable Style/PredicateName
       Appsignal.config[:ignore_actions].include?(action)
     end
     deprecate :is_ignored_action?, :none, 2017, 3

@@ -121,7 +121,7 @@ module Appsignal
           puts "  Ruby version: #{rbconfig["RUBY_VERSION_NAME"]}"
           puts "  Heroku: true" if Appsignal::System.heroku?
           print "  root user: "
-          puts Process.uid == 0 ? "yes (not recommended)" : "no"
+          puts Process.uid.zero? ? "yes (not recommended)" : "no"
           print "  Running in container: "
           puts Appsignal::Extension.running_in_container? ? "yes" : "no"
         end

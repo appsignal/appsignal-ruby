@@ -40,6 +40,9 @@ Style/AlignHash:
 Style/IndentArray:
   EnforcedStyle: consistent
 
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+
 Style/MethodMissing:
   Exclude:
     - "lib/appsignal/extension.rb"
