@@ -78,7 +78,7 @@ module Appsignal
             initial_config[:log_path] = Rails.root.join("log")
           end
 
-          ENV["APPSIGNAL_DIAGNOSE"] = "true"
+          ENV["_APPSIGNAL_DIAGNOSE"] = "true"
           Appsignal.config = Appsignal::Config.new(
             current_path,
             options[:environment],

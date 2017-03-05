@@ -359,6 +359,7 @@ describe Appsignal::Config do
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = ["action1", "action2"]
       config[:ignore_errors] = ["VerySpecificError", "AnotherError"]
+      config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
       config[:filter_parameters] = %w(password confirm_password)
@@ -367,29 +368,30 @@ describe Appsignal::Config do
     end
 
     it "writes the current config to environment variables" do
-      expect(ENV["APPSIGNAL_ACTIVE"]).to                       eq "true"
-      expect(ENV["APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
-      expect(ENV["APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
-      expect(ENV["APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
-      expect(ENV["APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
-      expect(ENV["APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
-      expect(ENV["APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
-      expect(ENV["APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
-      expect(ENV["APPSIGNAL_ENVIRONMENT"]).to                  eq "production"
-      expect(ENV["APPSIGNAL_AGENT_VERSION"]).to                eq Appsignal::Extension.agent_version
-      expect(ENV["APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
-      expect(ENV["APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
-      expect(ENV["APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
-      expect(ENV["APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
-      expect(ENV["APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
-      expect(ENV["APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
-      expect(ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
-      expect(ENV["APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
-      expect(ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
-      expect(ENV["APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
-      expect(ENV["APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
-      expect(ENV["APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
-      expect(ENV).to_not                                       have_key("APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV["_APPSIGNAL_ACTIVE"]).to                       eq "true"
+      expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
+      expect(ENV["_APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
+      expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
+      expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
+      expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
+      expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
+      expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
+      expect(ENV["_APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
+      expect(ENV["_APPSIGNAL_ENVIRONMENT"]).to                  eq "production"
+      expect(ENV["_APPSIGNAL_AGENT_VERSION"]).to                eq Appsignal::Extension.agent_version
+      expect(ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
+      expect(ENV["_APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
+      expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
+      expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
+      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
+      expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
+      expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
+      expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
+      expect(ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
+      expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
+      expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
+      expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
+      expect(ENV).to_not                                        have_key("APPSIGNAL_WORKING_DIR_PATH")
     end
 
     context "with :working_dir_path" do
@@ -399,7 +401,7 @@ describe Appsignal::Config do
       end
 
       it "sets the modified :working_dir_path" do
-        expect(ENV["APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
+        expect(ENV["_APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
       end
     end
   end

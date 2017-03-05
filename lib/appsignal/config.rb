@@ -115,29 +115,30 @@ module Appsignal
     end
 
     def write_to_environment
-      ENV["APPSIGNAL_ACTIVE"]                       = active?.to_s
-      ENV["APPSIGNAL_APP_PATH"]                     = root_path.to_s
-      ENV["APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
-      ENV["APPSIGNAL_ENVIRONMENT"]                  = env
-      ENV["APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
-      ENV["APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
-      ENV["APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
-      ENV["APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
-      ENV["APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
-      ENV["APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
-      ENV["APPSIGNAL_APP_NAME"]                     = config_hash[:name]
-      ENV["APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
-      ENV["APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
-      ENV["APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
-      ENV["APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
-      ENV["APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
-      ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
-      ENV["APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
-      ENV["APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
-      ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
-      ENV["APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
-      ENV["APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
-      ENV["APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+      ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
+      ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
+      ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
+      ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
+      ENV["_APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
+      ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
+      ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
+      ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
+      ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
+      ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
+      ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
+      ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
+      ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
+      ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
+      ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
+      ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
+      ENV["_APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
+      ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
+      ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
+      ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
+      ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
+      ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
+      ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
+      ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
     end
 
     private
