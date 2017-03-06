@@ -1,3 +1,12 @@
+# 2.2.0
+* Move `running_in_container` auto detection to extension for easy reuse.
+  PR #249
+* Allow overriding of action and namespace for a transaction. PR #254
+* Prefix all agent configuration environment variables with an underscore to
+  separate the two usages. PR #258
+* Force agent to run in diagnostic mode even when the user config is set to
+  `active: false`. PR #260
+
 # 2.1.1
 * Fix DNS issue related to the musl build.
   Commit 732c877de8faceabe8a977bf80a82a6a89065c4d and
