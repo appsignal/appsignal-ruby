@@ -62,7 +62,9 @@ module Appsignal
       end
     end
 
+    # @api public
     DEFAULT = 0
+    # @api public
     SQL_BODY_FORMAT = 1
   end
 end

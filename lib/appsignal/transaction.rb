@@ -123,30 +123,32 @@ module Appsignal
       @store[key]
     end
 
+    # Set tags on the transaction.
+    #
+    # @param given_tags [Hash] Collection of tags.
+    # @option given_tags [String, Symbol, Integer] :any
+    #   The name of the tag as a Symbol.
+    # @option given_tags [String, Symbol, Integer] "any"
+    #   The name of the tag as a String.
+    # @return [void]
+    #
+    # @see Appsignal.tag_request
+    # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+    #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
 
-    # Set a custom action name for this transaction.
+    # Set an action name for the transaction.
     #
-    # When using an integration such as the Rails or Sinatra AppSignal will try
-    # to find the action name from the controller or endpoint for you.
-    #
-    # If you want to customize the action name as it appears on AppSignal.com
-    # you can use this method. This overrides the action name AppSignal
-    # generates in an integration.
-    #
-    # @example in a Rails controller
-    #   class SomeController < ApplicationController
-    #     before_action :set_appsignal_action
-    #
-    #     def set_appsignal_action
-    #       Appsignal.set_action("DynamicController#dynamic_method")
-    #     end
-    #   end
+    # An action name is used to identify the location of a certain sample;
+    # error and performance issues.
     #
     # @param action [String] the action name to set.
     # @return [void]
+    # @see Appsignal.set_action
+    # @see #set_action_if_nil
+    # @since 2.2.0
     def set_action(action)
       return unless action
       @action = action
@@ -166,41 +168,27 @@ module Appsignal
     # @param action [String]
     # @return [void]
     # @see #set_action
+    # @since 2.2.0
     def set_action_if_nil(action)
       return if @action
       set_action(action)
     end
 
-    # Set a custom namespace for this transaction.
+    # Set the namespace for this transaction.
     #
-    # When using an integration such as Rails or Sidekiq AppSignal will try to
-    # find a appropriate namespace for the transaction.
-    #
-    # A Rails controller will be automatically put in the "http_request"
-    # namespace, while a Sidekiq background job is put in the "background_job"
-    # namespace.
+    # Useful to split up parts of an application into certain namespaces. For
+    # example: http requests, background jobs and administration panel
+    # controllers.
     #
     # Note: The "http_request" namespace gets transformed on AppSignal.com to
     # "Web" and "background_job" gets transformed to "Background".
     #
-    # If you want to customize the namespace in which transactions appear you
-    # can use this method. This overrides the namespace AppSignal uses by
-    # default.
-    #
-    # A common request we've seen is to split the administration panel from the
-    # main application.
-    #
-    # @example create a custom admin namespace
-    #   class AdminController < ApplicationController
-    #     before_action :set_appsignal_namespace
-    #
-    #     def set_appsignal_namespace
-    #       Appsignal.set_namespace("admin")
-    #     end
-    #   end
+    # @example
+    #   transaction.set_action("admin")
     #
     # @param namespace [String] namespace name to use for this transaction.
     # @return [void]
+    # @since 2.2.0
     def set_namespace(namespace)
       return unless namespace
       @namespace = namespace
@@ -384,7 +372,7 @@ module Appsignal
     # The environment of a transaction can contain a lot of information, not
     # all of it useful for debugging.
     #
-    # Only the values from the keys specified in `ENV_METHODS` are returned.
+    # Only the values from the keys specified in {ENV_METHODS} are returned.
     #
     # @return [nil] if no environment is present.
     # @return [Hash<String, Object>]
@@ -456,8 +444,9 @@ module Appsignal
       end
     end
 
-    # Stub that is returned by `Transaction.current` if there is no current transaction, so
-    # that it's still safe to call methods on it if there is none.
+    # Stub that is returned by {Transaction.current} if there is no current
+    # transaction, so that it's still safe to call methods on it if there is no
+    # current transaction.
     class NilTransaction
       def method_missing(m, *args, &block)
       end
