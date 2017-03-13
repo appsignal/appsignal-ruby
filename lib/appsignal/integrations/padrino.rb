@@ -7,12 +7,8 @@ module Appsignal
       def self.init
         Appsignal.logger.info("Loading Padrino (#{Padrino::VERSION}) integration")
 
-        root             = Padrino.mounted_root
-        Appsignal.config = Appsignal::Config.new(
-          root,
-          Padrino.env,
-          :log_path => File.join(root, "log")
-        )
+        root = Padrino.mounted_root
+        Appsignal.config = Appsignal::Config.new(root, Padrino.env)
 
         Appsignal.start_logger
         Appsignal.start
