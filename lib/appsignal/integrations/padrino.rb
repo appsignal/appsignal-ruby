@@ -22,8 +22,7 @@ module Padrino::Routing::InstanceMethods
 
   def route!(base = settings, pass_block = nil)
     if !Appsignal.active? || env["sinatra.static_file"]
-      route_without_appsignal(base, pass_block)
-      return
+      return route_without_appsignal(base, pass_block)
     end
 
     transaction = Appsignal::Transaction.create(
