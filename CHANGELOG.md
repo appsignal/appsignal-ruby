@@ -1,3 +1,6 @@
+# 2.1.2
+* Fix error with Grape request methods defined with symbols. PR #259
+
 # 2.1.1
 * Fix DNS issue related to musl build.
   Commit 732c877de8faceabe8a977bf80a82a6a89065c4d
