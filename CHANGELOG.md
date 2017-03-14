@@ -1,4 +1,6 @@
 # 2.2.0
+* Support Ruby 2.4 better. PR #234
+* Initial setup for documenting the Ruby gem's code. PR #243
 * Move `running_in_container` auto detection to extension for easy reuse.
   PR #249
 * Allow overriding of action and namespace for a transaction. PR #254
@@ -7,12 +9,15 @@
 * Force agent to run in diagnostic mode even when the user config is set to
   `active: false`. PR #260
 
+# 2.1.2
+* Fix error with Grape request methods defined with symbols. PR #259
+
 # 2.1.1
 * Fix DNS issue related to the musl build.
   Commit 732c877de8faceabe8a977bf80a82a6a89065c4d and
   84e521d20d4438f7b1dda82d5e9f1f533ae27c4b
-* Support Ruby 2.4 better. PR #234
-* Initial setup for documenting the Ruby gem's code. PR #243
+* Update benchmark and add load test. PR #248
+* Fix configuring instrument Redis and Sequel from env. PR #257
 
 # 2.1.0
 * Add support for musl based libc (Alpine Linux). PR #229

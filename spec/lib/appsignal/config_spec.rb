@@ -278,6 +278,9 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_APP_NAME"]             = "App name"
       ENV["APPSIGNAL_DEBUG"]                = "true"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]       = "action1,action2"
+      ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]  = "false"
+      ENV["APPSIGNAL_INSTRUMENT_REDIS"]     = "false"
+      ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]    = "false"
     end
 
     it "overrides config with environment values" do
@@ -290,6 +293,9 @@ describe Appsignal::Config do
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to be_truthy
       expect(config[:ignore_actions]).to eq ["action1", "action2"]
+      expect(config[:instrument_net_http]).to be_falsey
+      expect(config[:instrument_redis]).to be_falsey
+      expect(config[:instrument_sequel]).to be_falsey
     end
   end
 

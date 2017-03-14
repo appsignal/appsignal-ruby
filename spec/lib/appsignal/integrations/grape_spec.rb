@@ -98,6 +98,30 @@ if DependencyHelper.grape_present?
           end
         end
 
+        context "with route" do
+          let(:app) do
+            Class.new(::Grape::API) do
+              route [:get, :post], "hello" do
+                "Hello!"
+              end
+            end
+          end
+          let(:env) do
+            http_request_env_with_data \
+              "api.endpoint" => api_endpoint,
+              "REQUEST_METHOD" => "GET",
+              :path => ""
+          end
+
+          it "sets non-unique route path" do
+            expect(transaction).to receive(:set_action).with("GET::GrapeExample::Api#/hello")
+            expect(transaction).to receive(:set_metadata).with("path", "/hello")
+            expect(transaction).to receive(:set_metadata).with("method", "GET")
+          end
+
+          after { middleware.call(env) }
+        end
+
         context "with route_param" do
           let(:app) do
             Class.new(::Grape::API) do
