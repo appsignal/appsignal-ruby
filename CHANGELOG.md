@@ -8,6 +8,7 @@
   separate the two usages. PR #258
 * Force agent to run in diagnostic mode even when the user config is set to
   `active: false`. PR #260
+* Stub JS error catching endpoint when not active. PR #263
 
 # 2.1.2
 * Fix error with Grape request methods defined with symbols. PR #259
