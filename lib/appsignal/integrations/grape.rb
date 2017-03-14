@@ -22,13 +22,13 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          request_method = request.request_method
+          request_method = request.request_method.to_s.upcase
           path = request.path # Path without namespaces
           endpoint = env["api.endpoint"]
 
           if endpoint && endpoint.options
             options = endpoint.options
-            request_method = options[:method].first
+            request_method = options[:method].first.to_s.upcase
             klass = options[:for]
             namespace = endpoint.namespace
             namespace = "" if namespace == "/"
