@@ -6,8 +6,14 @@ module Appsignal
         metadata = {
           :queue => queue
         }
-        exclude_keys = [:job_class, :queue_name, :arguments]
-        metadata.merge!(body.reject { |key| exclude_keys.member?(key.to_sym) })
+
+        if body.is_a?(String)
+          metadata['body_string'] = body
+        else
+          exclude_keys = [:job_class, :queue_name, :arguments]
+          metadata.merge!(body.reject { |key| exclude_keys.member?(key.to_sym) })
+        end
+
         metadata.merge!(sqs_msg.attributes)
 
         options = {
