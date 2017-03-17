@@ -19,7 +19,10 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     let(:body) do
       {
         "job_class" => "TestClass",
-        "arguments" => ["Model", "1"]
+        "queue_name" => "TestQueue",
+        "arguments" => ["Model", "1"],
+        "movie" => "silent",
+        "job" => "hit"
       }
     end
 
@@ -30,14 +33,48 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         :method => "perform",
         :metadata => {
           :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000
+          "SentTimestamp" => 217_123_200_000,
+          "movie" => "silent",
+          "job" => "hit"
         },
         :params => ["Model", "1"],
         :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
       )
+      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+        Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
+          # nothing
+        end
+      end
     end
-
-    after do
+    it "should handle string bodies" do
+      expect(Appsignal).to receive(:monitor_transaction).with(
+        "perform_job.shoryuken",
+        :method => "perform",
+        :metadata => {
+          :queue => "some-funky-queue-name",
+          "SentTimestamp" => 217_123_200_000,
+          :body => body.to_json
+        },
+        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+      )
+      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+        Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body.to_json) do
+          # nothing
+        end
+      end
+    end
+    it "should handle any type of body" do
+      body = 1
+      expect(Appsignal).to receive(:monitor_transaction).with(
+        "perform_job.shoryuken",
+        :method => "perform",
+        :metadata => {
+          :queue => "some-funky-queue-name",
+          "SentTimestamp" => 217_123_200_000,
+          :body => body
+        },
+        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+      )
       Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
         Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
           # nothing
