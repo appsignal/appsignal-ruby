@@ -160,10 +160,28 @@ systems][supported-systems] page.
 Make sure you have Bundler installed and then use the Rake install task to
 install all possible dependencies.
 
-```
+```bash
+# Install Bundler
 gem install bundler
-rake install
+# Install the AppSignal extension and _all_ gems we support.
+bundle exec rake install
+# Only install the AppSignal extension.
+bundle exec rake extension:install
 ```
+
+### Testing
+
+```bash
+bundle exec rspec
+# Or with one file
+bundle exec rspec spec/lib/appsignal_spec.rb
+```
+
+Note that some specs depend on certain other gems to run and if they are not
+loaded RSpec will not run them. See also [Testing with other
+gems](#testing-with-other-gems).
+
+#### Testing with other gems
 
 AppSignal runs in many different configurations. To replicate these
 configurations you need to run the spec suite with a specific Gemfile.
