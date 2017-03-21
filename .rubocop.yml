@@ -48,5 +48,8 @@ Style/MethodMissing:
     - "lib/appsignal/extension.rb"
     - "lib/appsignal/transaction.rb"
 
+Style/TrailingUnderscoreVariable:
+  Enabled: false
+
 # Metrics/LineLength:
 #   Max: 80

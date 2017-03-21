@@ -51,36 +51,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
           run
           expect(output).to include "Extension loaded: yes"
         end
-
-        it "starts the agent in diagnose mode and outputs a log" do
-          run
-          expect(output).to include \
-            "Agent diagnostics",
-            "Running agent in diagnose mode",
-            "Valid config present",
-            "Logger initialized successfully",
-            "Lock path is writable",
-            "Agent diagnose finished"
-        end
-
-        context "when user config has active: false" do
-          before do
-            # ENV is leading so easiest to set in test to force user config with active: false
-            ENV["APPSIGNAL_ACTIVE"] = "false"
-          end
-
-          it "force starts the agent in diagnose mode and outputs a log" do
-            run
-            expect(output).to include("active: false")
-            expect(output).to include \
-              "Agent diagnostics",
-              "Running agent in diagnose mode",
-              "Valid config present",
-              "Logger initialized successfully",
-              "Lock path is writable",
-              "Agent diagnose finished"
-          end
-        end
       end
 
       context "without extension" do
@@ -95,6 +65,123 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
         it "outputs extension is not loaded" do
           expect(output).to include "Extension loaded: no"
+        end
+      end
+    end
+
+    describe "agent diagnostics" do
+      it "starts the agent in diagnose mode and outputs the report" do
+        run
+        expect(output).to include \
+          "Agent diagnostics",
+          "  Extension config: valid",
+          "  Agent config: valid",
+          "  Agent logger: started",
+          "  Agent lock path: writable"
+      end
+
+      context "when user config has active: false" do
+        before do
+          # ENV is leading so easiest to set in test to force user config with active: false
+          ENV["APPSIGNAL_ACTIVE"] = "false"
+        end
+
+        it "force starts the agent in diagnose mode and outputs a log" do
+          run
+          expect(output).to include("active: false")
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension config: valid",
+            "  Agent config: valid",
+            "  Agent logger: started",
+            "  Agent lock path: writable"
+        end
+      end
+
+      context "when the extention returns invalid JSON" do
+        it "prints a JSON parse error and prints the returned value" do
+          expect(Appsignal::Extension).to receive(:diagnose).and_return("invalid agent json")
+          run
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Error while parsing agent diagnostics report:",
+            "    Output: invalid agent json"
+          expect(output).to match(/Error: \d+: unexpected token at 'invalid agent json'/)
+        end
+      end
+
+      context "when the report is incomplete (agent failed to start)" do
+        let(:agent_report) do
+          {
+            :extension => {
+              :config => { :valid => { :result => true } }
+            }
+            # missing agent section
+          }
+        end
+
+        it "prints the tests, but shows a dash `-` as a missed result" do
+          expect(Appsignal::Extension).to receive(:diagnose).and_return(JSON.generate(agent_report))
+          run
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension config: valid",
+            "  Agent config: -",
+            "  Agent logger: -",
+            "  Agent lock path: -"
+        end
+      end
+
+      context "when a test contains an error and output" do
+        let(:agent_report) do
+          {
+            :extension => {
+              :config => { :valid => { :result => true } }
+            },
+            :agent => {
+              :boot => {
+                :started => {
+                  :result => false,
+                  :error => "some-error",
+                  :output => "some-output"
+                }
+              }
+            }
+          }
+        end
+
+        it "prints the error and output" do
+          expect(Appsignal::Extension).to receive(:diagnose).and_return(JSON.generate(agent_report))
+          run
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension config: valid",
+            "  Agent started: not started",
+            "    Error: some-error",
+            "    Output: some-output"
+        end
+      end
+
+      context "when a test contains an error" do
+        let(:agent_report) do
+          {
+            :extension => {
+              :config => { :valid => { :result => true } }
+            },
+            :agent => {
+              :config => { :valid => { :result => false, :error => "some-error" } }
+            }
+          }
+        end
+
+        it "prints the error" do
+          expect(Appsignal::Extension).to receive(:diagnose).and_return(JSON.generate(agent_report))
+          run
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension config: valid",
+            "  Agent config: invalid",
+            "    Error: some-error"
         end
       end
     end
@@ -181,7 +268,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         end
 
         it "outputs a warning that no config is loaded" do
-          expect(output).to_not include "Error"
           expect(output).to include \
             "Environment: \n    Warning: No environment set, no config loaded!",
             "  appsignal diagnose --environment=production"
@@ -204,7 +290,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
         it "outputs configuration" do
           expect(output).to include("Configuration")
-          expect(output).to_not include "Error"
           Appsignal.config.config_hash.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end
@@ -221,7 +306,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          expect(output).to_not include "Error"
           Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end
@@ -451,13 +535,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         let(:ext_path) { File.join(gem_path, "ext") }
         let(:log_path) { File.join(ext_path, log_file) }
         before do
+          FileUtils.mkdir_p ext_path
           allow(cli).to receive(:gem_path).and_return(gem_path)
         end
+        after { FileUtils.rm_rf ext_path }
 
         context "when file exists" do
           let(:gem_path) { File.join(tmp_dir, "gem") }
           before do
-            FileUtils.mkdir_p ext_path
             File.open log_path, "a" do |f|
               f.write "log line 1"
               f.write "log line 2"
@@ -476,7 +561,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true do
         end
 
         context "when file does not exist" do
-          let(:gem_path) { File.join(tmp_dir, "non_existent_path") }
+          let(:gem_path) { File.join(tmp_dir, "gem_without_log_files") }
           before { run }
 
           it "outputs install.log" do
