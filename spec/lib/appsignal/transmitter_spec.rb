@@ -21,30 +21,36 @@ describe Appsignal::Transmitter do
 
   describe "#transmit" do
     before do
-      stub_request(
-        :post,
-        "https://push.appsignal.com/1/action?api_key=abc"\
-          "&environment=production&gem_version=#{Appsignal::VERSION}"\
-          "&hostname=#{config.config_hash[:hostname]}&name=TestApp"
-      ).with(
+      stub_request(:post, "https://push.appsignal.com/1/action").with(
+        :query => {
+          :api_key => "abc",
+          :environment => "production",
+          :gem_version => Appsignal::VERSION,
+          :hostname => config[:hostname],
+          :name => "TestApp"
+        },
         :body => "{\"the\":\"payload\"}",
         :headers => {
           "Content-Type" => "application/json; charset=UTF-8"
         }
       ).to_return(:status => 200)
     end
-    subject { instance.transmit(:the => :payload) }
+    let(:response) { instance.transmit(:the => :payload) }
 
-    it { is_expected.to eq "200" }
+    it "returns Net::HTTP response" do
+      expect(response).to be_kind_of(Net::HTTPResponse)
+      expect(response.code).to eq "200"
+    end
 
     context "with ca_file_path config option set" do
-      context "when not existing file" do
+      context "when file does not exist" do
         before do
           config.config_hash[:ca_file_path] = File.join(resources_dir, "cacert.pem")
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to_not include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -56,7 +62,8 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -70,7 +77,8 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
