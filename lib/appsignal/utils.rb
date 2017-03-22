@@ -121,11 +121,5 @@ module Appsignal
         end
       end
     end
-
-    class Gzip
-      def self.compress(body)
-        Zlib::Deflate.deflate(body, Zlib::BEST_SPEED)
-      end
-    end
   end
 end

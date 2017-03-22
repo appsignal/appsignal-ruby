@@ -9,13 +9,10 @@ module ApiRequestHelper
         :gem_version => Appsignal::VERSION
       },
       :headers => {
-        "Content-Encoding" => "gzip",
         "Content-Type" => "application/json; charset=UTF-8"
       }
     }
-    if body.is_a? Hash
-      body = Appsignal::Utils::Gzip.compress(Appsignal::Utils::JSON.generate(body))
-    end
+    body = Appsignal::Utils::JSON.generate(body) if body.is_a? Hash
     options[:body] = body if body
     stub_request(:post, "#{config[:endpoint]}/1/#{path}").with(options)
   end
