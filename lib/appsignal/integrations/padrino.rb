@@ -7,12 +7,8 @@ module Appsignal
       def self.init
         Appsignal.logger.info("Loading Padrino (#{Padrino::VERSION}) integration")
 
-        root             = Padrino.mounted_root
-        Appsignal.config = Appsignal::Config.new(
-          root,
-          Padrino.env,
-          :log_path => File.join(root, "log")
-        )
+        root = Padrino.mounted_root
+        Appsignal.config = Appsignal::Config.new(root, Padrino.env)
 
         Appsignal.start_logger
         Appsignal.start
@@ -26,8 +22,7 @@ module Padrino::Routing::InstanceMethods
 
   def route!(base = settings, pass_block = nil)
     if !Appsignal.active? || env["sinatra.static_file"]
-      route_without_appsignal(base, pass_block)
-      return
+      return route_without_appsignal(base, pass_block)
     end
 
     transaction = Appsignal::Transaction.create(
@@ -51,19 +46,36 @@ module Padrino::Routing::InstanceMethods
     end
   end
 
+  private
+
   def get_payload_action(request)
     # Short-circut is there's no request object to obtain information from
-    return settings.name.to_s if request.nil?
+    return settings.name.to_s unless request
+
+    # Newer versions expose the action / controller on the request class.
+    # Newer versions also still expose a route_obj so we must prioritize the
+    # action/fullpath methods.
+    # The `request.action` and `request.controller` values are `nil` when a
+    # endpoint is not found, `""` if not specified by the user.
+    controller_name = request.controller if request.respond_to?(:controller)
+    action_name = request.action if request.respond_to?(:action)
+    action_name ||= ""
+    if action_name.empty? && request.respond_to?(:fullpath)
+      action_name = request.fullpath
+    end
+
+    unless action_name.empty?
+      return "#{settings.name}:#{controller_name}##{action_name}"
+    end
 
     # Older versions of Padrino work with a route object
-    route_obj = defined?(request.route_obj) && request.route_obj
-    if route_obj && route_obj.respond_to?(:original_path)
+    if request.respond_to?(:route_obj) && request.route_obj
       return "#{settings.name}:#{request.route_obj.original_path}"
     end
 
-    # Newer versions expose the action / controller on the request class
-    request_data = request.respond_to?(:action) ? request.action : request.fullpath
-    "#{settings.name}:#{request.controller}##{request_data}"
+    # Fall back to the application name if we haven't found an action name in
+    # any previous methods.
+    settings.name.to_s
   end
 end
 
