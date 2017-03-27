@@ -37,6 +37,31 @@ module Appsignal
     #   AppSignal diagnose documentation
     # @since 1.1.0
     class Diagnose
+      extend CLI::Helpers
+
+      DIAGNOSE_ENDPOINT = "https://appsignal.com/diag".freeze
+
+      module Data
+        def data
+          @data ||= Hash.new { |hash, key| hash[key] = {} }
+        end
+
+        def data_section(key)
+          @section = key
+          yield
+          @section = nil
+        end
+
+        def current_section
+          @section
+        end
+
+        def save(key, value)
+          data[current_section][key] = value
+        end
+      end
+      extend Data
+
       class << self
         # @param options [Hash]
         # @option options :environment [String] environment to load
@@ -47,7 +72,7 @@ module Appsignal
           header
           empty_line
 
-          agent_version
+          library_information
           empty_line
 
           host_information
@@ -63,21 +88,77 @@ module Appsignal
           check_api_key
           empty_line
 
-          paths_writable
+          paths_section
           empty_line
 
           log_files
+
+          transmit_report_to_appsignal if send_report_to_appsignal?
         end
 
         private
+
+        def send_report_to_appsignal?
+          puts "\nDiagnostics report"
+          puts "  Do you want to send this diagnostics report to AppSignal?"
+          puts "  If you share this diagnostics report you will be given\n" \
+            "  a support token you can use to refer to your diagnotics \n" \
+            "  report when you contact us at support@appsignal.com\n\n"
+          send_diagnostics = yes_or_no(
+            "  Send diagnostics report to AppSignal? (Y/n): ",
+            :default => "y"
+          )
+          unless send_diagnostics
+            puts "  Not sending diagnostics information to AppSignal."
+            return false
+          end
+          true
+        end
+
+        def transmit_report_to_appsignal
+          puts "\n  Transmitting diagnostics report"
+          transmitter = Transmitter.new(
+            DIAGNOSE_ENDPOINT,
+            Appsignal.config
+          )
+          response = transmitter.transmit(:diagnose => data)
+
+          unless response.code == "200"
+            puts "  Error: Something went wrong while submitting the report "\
+              "to AppSignal."
+            puts "  Response code: #{response.code}"
+            puts "  Response body:\n#{response.body}"
+            return
+          end
+
+          puts "  Your diagnostics report has been sent to AppSignal."
+          begin
+            response_data = JSON.parse(response.body)
+            puts "  Your support token: #{response_data["token"]}"
+          rescue JSON::ParserError
+            puts "  Error: Couldn't decode server response."
+            puts "  #{response.body}"
+          end
+        end
+
+        def puts_and_save(key, label, value)
+          save key, value
+          puts_value label, value
+        end
+
+        def puts_value(label, value, options = {})
+          options[:level] ||= 1
+          puts "#{"  " * options[:level]}#{label}: #{value}"
+        end
 
         def configure_appsignal(options)
           current_path = Dir.pwd
           initial_config = {}
           if rails_app?
+            data[:app][:rails] = true
             current_path = Rails.root
             initial_config[:name] = Rails.application.class.parent_name
-            initial_config[:log_path] = Rails.root.join("log")
+            initial_config[:log_path] = current_path.join("log")
           end
 
           Appsignal.config = Appsignal::Config.new(
@@ -95,15 +176,26 @@ module Appsignal
           ENV.delete("_APPSIGNAL_DIAGNOSE")
 
           begin
-            print_agent_report(JSON.parse(diagnostics_report_string))
-          rescue JSON::ParserError => e
+            report = JSON.parse(diagnostics_report_string)
+            data[:agent] = report
+            print_agent_report(report)
+          rescue JSON::ParserError => error
             puts "  Error while parsing agent diagnostics report:"
-            puts "    Error: #{e}"
+            puts "    Error: #{error}"
             puts "    Output: #{diagnostics_report_string}"
+            data[:agent] = {
+              :error => error,
+              :output => diagnostics_report_string.split("\n")
+            }
           end
         end
 
         def print_agent_report(report)
+          if report["error"]
+            puts "  Error: #{report["error"]}"
+            return
+          end
+
           agent_diagnostic_test_definition.each do |part, categories|
             categories.each do |category, tests|
               tests.each do |test_name, test_definition|
@@ -135,21 +227,36 @@ module Appsignal
           {
             "extension" => {
               "config" => {
-                "valid" => { :label => "Extension config", :values => { true => "valid", false => "invalid" } }
+                "valid" => {
+                  :label => "Extension config",
+                  :values => { true => "valid", false => "invalid" }
+                }
               }
             },
             "agent" => {
               "boot" => {
-                "started" => { :label => "Agent started", :values => { true => "started", false => "not started" } }
+                "started" => {
+                  :label => "Agent started",
+                  :values => { true => "started", false => "not started" }
+                }
               },
               "config" => {
-                "valid" => { :label => "Agent config", :values => { true => "valid", false => "invalid" } }
+                "valid" => {
+                  :label => "Agent config",
+                  :values => { true => "valid", false => "invalid" }
+                }
               },
               "logger" => {
-                "started" => { :label => "Agent logger", :values => { true => "started", false => "not started" } }
+                "started" => {
+                  :label => "Agent logger",
+                  :values => { true => "started", false => "not started" }
+                }
               },
               "lock_path" => {
-                "created" => { :label => "Agent lock path", :values => { true => "writable", false => "not writable" } }
+                "created" => {
+                  :label => "Agent lock path",
+                  :values => { true => "writable", false => "not writable" }
+                }
               }
             }
           }
@@ -165,40 +272,51 @@ module Appsignal
           puts "=" * 80
         end
 
-        def agent_version
-          puts "AppSignal agent"
-          puts "  Gem version: #{Appsignal::VERSION}"
-          puts "  Agent version: #{Appsignal::Extension.agent_version}"
-          puts "  Gem install path: #{gem_path}"
-          print "  Extension loaded: "
-          puts Appsignal.extension_loaded ? "yes" : "no"
+        def library_information
+          puts "AppSignal library"
+          data_section :library do
+            save :language, "ruby"
+            puts_and_save :package_version, "Gem version", Appsignal::VERSION
+            puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
+            puts_and_save :package_install_path, "Gem install path", gem_path
+            puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
+          end
         end
 
         def host_information
           rbconfig = RbConfig::CONFIG
           puts "Host information"
-          puts "  Architecture: #{rbconfig["host_cpu"]}"
-          puts "  Operating System: #{rbconfig["host_os"]}"
-          puts "  Ruby version: #{rbconfig["RUBY_VERSION_NAME"]}"
-          puts "  Heroku: true" if Appsignal::System.heroku?
-          print "  root user: "
-          puts Process.uid.zero? ? "yes (not recommended)" : "no"
-          print "  Running in container: "
-          puts Appsignal::Extension.running_in_container? ? "yes" : "no"
+          data_section :host do
+            puts_and_save :architecture, "Architecture", rbconfig["host_cpu"]
+            puts_and_save :os, "Operating System", rbconfig["host_os"]
+            puts_and_save :language_version, "Ruby version",
+              "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+
+            puts_value "Heroku", "true" if Appsignal::System.heroku?
+            save :heroku, Appsignal::System.heroku?
+
+            save :root, Process.uid.zero?
+            puts_value "root user",
+              Process.uid.zero? ? "true (not recommended)" : "false"
+            puts_and_save :running_in_container, "Running in container",
+              Appsignal::Extension.running_in_container?
+          end
         end
 
         def config
           puts "Configuration"
-          environment
+          data_section :config do
+            puts_environment
 
-          Appsignal.config.config_hash.each do |key, value|
-            puts "  #{key}: #{value}"
+            Appsignal.config.config_hash.each do |key, value|
+              puts_and_save key, key, value
+            end
           end
         end
 
-        def environment
+        def puts_environment
           env = Appsignal.config.env
-          puts "  Environment: #{env}"
+          puts_and_save :env, "Environment", env
 
           return unless env == ""
           puts "    Warning: No environment set, no config loaded!"
@@ -207,46 +325,62 @@ module Appsignal
           puts "      appsignal diagnose --environment=production"
         end
 
-        def paths_writable
-          puts "Required paths"
+        def paths_section
+          puts "Paths"
+          data[:process] = process_user
+          data_section :paths do
+            appsignal_paths.each do |name, path|
+              path_info = {
+                :path => path,
+                :configured => !path.nil?,
+                :exists => false,
+                :writable => false
+              }
+              save name, path_info
 
-          appsignal_paths.each do |name, path|
-            puts "  #{name}: #{path.to_s.inspect}"
-            unless path
-              puts "    - Configured?: no"
-              next
+              puts_value name, path.to_s.inspect
+
+              unless path_info[:configured]
+                puts_value "Configured?", "false", :level => 2
+                next
+              end
+              unless File.exist?(path)
+                puts_value "Exists?", "false", :level => 2
+                next
+              end
+
+              path_info[:exists] = true
+              path_info[:writable] = File.writable?(path)
+              puts_value "Writable?", path_info[:writable], :level => 2
+
+              file_owner = path_ownership(path)
+              path_info[:ownership] = file_owner
+              save name, path_info
+
+              owned = process_user[:uid] == file_owner[:uid]
+              owner = "#{owned} " \
+                "(file: #{file_owner[:user]}:#{file_owner[:uid]}, " \
+                "process: #{process_user[:user]}:#{process_user[:uid]})"
+              puts_value "Ownership?", owner, :level => 2
             end
-            unless File.exist? path
-              puts "    - Exists?: no"
-              next
-            end
-
-            print "    - Writable?: "
-            puts File.writable?(path) ? "yes" : "no"
-
-            ownership = path_ownership(path)
-            process_owner = ownership[:process]
-            file_owner = ownership[:file]
-            print "    - Ownership?: "
-            owned = process_owner[:uid] == file_owner[:uid]
-            print owned ? "yes" : "no"
-            print " (file: #{file_owner[:name]}:#{file_owner[:uid]}, "
-            puts "process: #{process_owner[:name]}:#{process_owner[:uid]})"
           end
         end
 
         def path_ownership(path)
-          process_uid = Process.uid
           file_uid = File.stat(path).uid
           {
-            :process => {
-              :uid => process_uid,
-              :name => Etc.getpwuid(process_uid).name
-            },
-            :file => {
-              :uid => file_uid,
-              :name => Etc.getpwuid(file_uid).name
-            }
+            :uid => file_uid,
+            :user => Etc.getpwuid(file_uid).name
+          }
+        end
+
+        def process_user
+          return @process_user if defined?(@process_user)
+
+          process_uid = Process.uid
+          @process_user = {
+            :uid => process_uid,
+            :user => Etc.getpwuid(process_uid).name
           }
         end
 
@@ -262,46 +396,65 @@ module Appsignal
         end
 
         def check_api_key
-          auth_check = ::Appsignal::AuthCheck.new(Appsignal.config)
-          print "Validating API key: "
-          status, error = auth_check.perform_with_result
-          case status
-          when "200"
-            print "Valid"
-          when "401"
-            print "Invalid"
-          else
-            print "Failed with status #{status}\n"
-            puts error if error
+          puts "Validation"
+          data_section :validation do
+            auth_check = ::Appsignal::AuthCheck.new(Appsignal.config)
+            status, error = auth_check.perform_with_result
+            result =
+              case status
+              when "200"
+                "valid"
+              when "401"
+                "invalid"
+              else
+                "Failed with status #{status}\n#{error.inspect}"
+              end
+            puts_and_save :push_api_key, "Validating Push API key", result
           end
-          empty_line
         end
 
         def log_files
-          install_log
-          empty_line
-          mkmf_log
+          puts "Log files"
+          data_section :logs do
+            install_log
+            empty_line
+            mkmf_log
+          end
         end
 
         def install_log
-          install_log_path = File.join(gem_path, "ext", "install.log")
-          puts "Extension install log"
-          output_log_file install_log_path
+          puts "  Extension install log"
+          filename = File.join("ext", "install.log")
+          log_info = log_file_info(File.join(gem_path, filename))
+          save filename, log_info
+          puts_log_file log_info
         end
 
         def mkmf_log
-          mkmf_log_path = File.join(gem_path, "ext", "mkmf.log")
-          puts "Makefile install log"
-          output_log_file mkmf_log_path
+          puts "  Makefile install log"
+          filename = File.join("ext", "mkmf.log")
+          log_info = log_file_info(File.join(gem_path, filename))
+          save filename, log_info
+          puts_log_file log_info
         end
 
-        def output_log_file(log_file)
-          puts "  Path: #{log_file.to_s.inspect}"
-          if File.exist? log_file
-            puts "  Contents:"
-            puts File.read(log_file)
+        def log_file_info(log_file)
+          {
+            :path => log_file,
+            :exists => File.exist?(log_file)
+          }.tap do |info|
+            next unless info[:exists]
+            info[:content] = File.read(log_file).split("\n")
+          end
+        end
+
+        def puts_log_file(log_info)
+          puts_value "Path", log_info[:path].to_s.inspect, :level => 2
+          if log_info[:exists]
+            puts "    Contents:"
+            puts log_info[:content].join("\n")
           else
-            puts "  File not found."
+            puts "    File not found."
           end
         end
 
