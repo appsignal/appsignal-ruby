@@ -6,6 +6,7 @@ APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
 Bundler.require :default
+require "cgi"
 require "rack"
 require "rspec"
 require "pry"

@@ -1,22 +1,41 @@
 describe Appsignal::Transmitter do
   let(:config) { project_fixture_config }
-  let(:action) { "action" }
+  let(:base_uri) { "action" }
   let(:log) { StringIO.new }
-  let(:instance) { Appsignal::Transmitter.new(action, config) }
+  let(:instance) { Appsignal::Transmitter.new(base_uri, config) }
   before do
     config.config_hash[:hostname] = "app1.local"
     config.logger = Logger.new(log)
   end
 
   describe "#uri" do
-    subject { instance.uri.to_s }
+    let(:uri) { instance.uri }
 
-    it { is_expected.to include "https://push.appsignal.com/1/action?" }
-    it { is_expected.to include "api_key=abc" }
-    it { is_expected.to include "hostname=app1.local" }
-    it { is_expected.to include "name=TestApp" }
-    it { is_expected.to include "environment=production" }
-    it { is_expected.to include "gem_version=#{Appsignal::VERSION}" }
+    it "returns a URI object with configuration data" do
+      expect(uri.to_s).to start_with(config[:endpoint])
+      expect(uri.path).to eq("/1/action")
+      expect(CGI.parse(uri.query)).to eq(
+        "api_key" => ["abc"],
+        "hostname" => ["app1.local"],
+        "name" => ["TestApp"],
+        "environment" => ["production"],
+        "gem_version" => [Appsignal::VERSION]
+      )
+    end
+
+    context "when base_uri argument is a full URI" do
+      let(:base_uri) { "http://foo.bar/path" }
+
+      it "uses the full URI" do
+        expect(uri.to_s).to start_with("#{base_uri}?")
+      end
+    end
+
+    context "when base_uri argument is only a path" do
+      it "uses the config[:endpoint] base" do
+        expect(uri.to_s).to start_with("#{config[:endpoint]}/1/#{base_uri}?")
+      end
+    end
   end
 
   describe "#transmit" do
