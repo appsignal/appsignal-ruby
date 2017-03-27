@@ -50,13 +50,15 @@ module Appsignal
         end
       end
 
-      def yes_or_no(prompt)
+      def yes_or_no(prompt, options = {})
         loop do
           print prompt
-          case ask_for_input
-          when "y"
+          input = ask_for_input.strip
+          input = options[:default] if input.empty? && options[:default]
+          case input
+          when "y", "Y", "yes"
             return true
-          when "n"
+          when "n", "N", "no"
             return false
           end
         end

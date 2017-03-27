@@ -93,7 +93,7 @@ describe Appsignal::CLI::Helpers do
       capture_stdout(out_stream) { cli.send(:yes_or_no, "yes or no?: ") }
     end
 
-    it "takes yes for an answer" do
+    it "takes 'y' for an answer" do
       set_input ""
       set_input "nonsense"
       set_input "y"
@@ -102,13 +102,56 @@ describe Appsignal::CLI::Helpers do
       expect(yes_or_no).to be_truthy
     end
 
-    it "takes no for an answer" do
+    it "takes 'Y' for an answer" do
+      set_input "Y"
+      prepare_input
+
+      expect(yes_or_no).to be_truthy
+    end
+
+    it "takes 'yes' for an answer" do
+      set_input "yes"
+      prepare_input
+
+      expect(yes_or_no).to be_truthy
+    end
+
+    it "takes 'n' for an answer" do
       set_input ""
       set_input "nonsense"
       set_input "n"
       prepare_input
 
       expect(yes_or_no).to be_falsy
+    end
+
+    it "takes 'N' for an answer" do
+      set_input "N"
+      prepare_input
+
+      expect(yes_or_no).to be_falsy
+    end
+
+    it "takes 'no' for an answer" do
+      set_input "no"
+      prepare_input
+
+      expect(yes_or_no).to be_falsy
+    end
+
+    context "with a default" do
+      def yes_or_no
+        capture_stdout(out_stream) do
+          cli.send(:yes_or_no, "yes or no?: ", :default => "y")
+        end
+      end
+
+      it "returns the default if no input is received from the user" do
+        set_input ""
+        prepare_input
+
+        expect(yes_or_no).to be_truthy
+      end
     end
   end
 
