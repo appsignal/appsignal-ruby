@@ -16,8 +16,7 @@ describe Appsignal::AuthCheck do
     end.to_s
   end
   let(:stubbed_request) do
-    WebMock.stub_request(:post, auth_url)
-      .with(:body => Appsignal::Utils::Gzip.compress("{}"))
+    WebMock.stub_request(:post, auth_url).with(:body => "{}")
   end
 
   describe "#perform" do

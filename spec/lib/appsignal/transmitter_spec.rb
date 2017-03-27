@@ -27,14 +27,11 @@ describe Appsignal::Transmitter do
           "&environment=production&gem_version=#{Appsignal::VERSION}"\
           "&hostname=#{config.config_hash[:hostname]}&name=TestApp"
       ).with(
-        :body => Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}"),
+        :body => "{\"the\":\"payload\"}",
         :headers => {
-          "Content-Encoding" => "gzip",
           "Content-Type" => "application/json; charset=UTF-8"
         }
-      ).to_return(
-        :status => 200
-      )
+      ).to_return(:status => 200)
     end
     subject { instance.transmit(:the => :payload) }
 
@@ -86,17 +83,12 @@ describe Appsignal::Transmitter do
   describe "#http_post" do
     subject { instance.send(:http_post, "the" => "payload") }
 
-    it "gzips the body" do
-      expect(subject.body).to eq Appsignal::Utils::Gzip.compress("{\"the\":\"payload\"}")
-    end
-
     it "sets the path" do
       expect(subject.path).to eq instance.uri.request_uri
     end
 
     it "sets the correct headers" do
       expect(subject["Content-Type"]).to eq "application/json; charset=UTF-8"
-      expect(subject["Content-Encoding"]).to eq "gzip"
     end
   end
 

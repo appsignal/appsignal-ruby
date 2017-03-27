@@ -8,7 +8,6 @@ module Appsignal
   # @api private
   class Transmitter
     CONTENT_TYPE = "application/json; charset=UTF-8".freeze
-    CONTENT_ENCODING = "gzip".freeze
 
     HTTP_ERRORS = [
       EOFError,
@@ -49,9 +48,7 @@ module Appsignal
     def http_post(payload)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
         request["Content-Type"] = CONTENT_TYPE
-        request["Content-Encoding"] = CONTENT_ENCODING
-        request.body = Appsignal::Utils::Gzip.compress \
-          Appsignal::Utils::JSON.generate(payload)
+        request.body = Appsignal::Utils::JSON.generate(payload)
       end
     end
 
