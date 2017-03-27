@@ -37,6 +37,9 @@ module Appsignal
       def ask_for_input
         value = stdin.gets
         value ? value.chomp : ""
+      rescue Interrupt
+        puts "\nExiting..."
+        exit 1
       end
 
       def required_input(prompt)

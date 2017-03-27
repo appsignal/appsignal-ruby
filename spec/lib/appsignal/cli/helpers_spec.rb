@@ -51,11 +51,40 @@ describe Appsignal::CLI::Helpers do
   describe ".press_any_key" do
     before do
       set_input "a" # a as in any
+      prepare_input
     end
 
     it "continues after press" do
       capture_stdout(out_stream) { cli.send :press_any_key }
       expect(output).to include("Press any key")
+    end
+  end
+
+  describe ".ask_for_input" do
+    it "returns the input" do
+      set_input "foo"
+      prepare_input
+      expect(cli.send(:ask_for_input)).to eq("foo")
+    end
+
+    context "with input ending with a line break" do
+      it "returns only the input" do
+        set_input "foo\n"
+        prepare_input
+        expect(cli.send(:ask_for_input)).to eq("foo")
+      end
+    end
+
+    context "when user interrupts the program" do
+      before do
+        expect(cli).to receive(:stdin).and_raise(Interrupt)
+        expect(cli).to receive(:exit).with(1)
+        capture_stdout(out_stream) { cli.send :ask_for_input }
+      end
+
+      it "exits the process" do
+        expect(output).to include("Exiting...")
+      end
     end
   end
 
