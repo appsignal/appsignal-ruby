@@ -41,7 +41,12 @@ module Appsignal
           ]
         end
 
-        body = JSON.parse(env["rack.input"].read)
+        begin
+          body = JSON.parse(env["rack.input"].read)
+        rescue JSON::ParserError
+          return [400, {}, ["Request payload is not valid JSON."]]
+        end
+
         if body["name"].is_a?(String) && !body["name"].empty?
           transaction = JSExceptionTransaction.new(body)
           transaction.complete!

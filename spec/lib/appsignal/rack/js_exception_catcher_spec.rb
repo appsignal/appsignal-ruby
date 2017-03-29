@@ -79,6 +79,23 @@ describe Appsignal::Rack::JSExceptionCatcher do
           expect(catcher.call(env)).to eq([200, {}, []])
         end
 
+        context "when request payload is empty" do
+          let(:env) do
+            {
+              "PATH_INFO"  => "/appsignal_error_catcher",
+              "rack.input" => double(:read => "")
+            }
+          end
+
+          it "does not create a transaction" do
+            expect(Appsignal::JSExceptionTransaction).to_not receive(:new)
+          end
+
+          it "returns 400" do
+            expect(catcher.call(env)).to eq([400, {}, ["Request payload is not valid JSON."]])
+          end
+        end
+
         context "when `frontend_error_catching_path` is different" do
           let(:config_options) { { :frontend_error_catching_path => "/foo" } }
 
