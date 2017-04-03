@@ -699,17 +699,17 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         end
       end
 
-      describe "current_path" do
+      describe "working_dir" do
         let(:root_path) { tmp_dir }
         let(:config) { Appsignal::Config.new(root_path, "production") }
         before { run_within_dir root_path }
 
         it "outputs current path" do
-          expect(output).to include %(current_path: "#{tmp_dir}"\n    Writable?: true)
+          expect(output).to include %(working_dir: "#{tmp_dir}"\n    Writable?: true)
         end
 
         it "transmits path data in report" do
-          expect(received_report["paths"]["current_path"]).to eq(
+          expect(received_report["paths"]["working_dir"]).to eq(
             "path" => tmp_dir,
             "configured" => true,
             "exists" => true,
