@@ -46,6 +46,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         end
       end
     end
+
     it "should handle string bodies" do
       expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.shoryuken",
@@ -63,6 +64,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         end
       end
     end
+
     it "should handle any type of body" do
       body = 1
       expect(Appsignal).to receive(:monitor_transaction).with(
