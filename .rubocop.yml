@@ -3,8 +3,10 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   TargetRubyVersion: 1.9
   Include:
-    - "Gemfile"
     - "**/*.cap"
+    - "Gemfile"
+    - "Rakefile"
+    - "appsignal.gemspec"
   Exclude:
     - "tmp/**/*"
     - "gemfiles/vendor/**/*"
