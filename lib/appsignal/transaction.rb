@@ -4,6 +4,7 @@ module Appsignal
   class Transaction
     HTTP_REQUEST   = "http_request".freeze
     BACKGROUND_JOB = "background_job".freeze
+    ACTION_CABLE   = "action_cable".freeze
     FRONTEND       = "frontend".freeze
     BLANK          = "".freeze
 
