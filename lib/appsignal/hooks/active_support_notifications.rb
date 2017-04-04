@@ -24,28 +24,29 @@ module Appsignal
         ::ActiveSupport::Notifications::Instrumenter.class_eval do
           alias instrument_without_appsignal instrument
 
-          def instrument(name, payload = {}, &block)
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
+          def instrument(name, payload = {})
+            instrument_without_appsignal(name, payload) do
+              # Events that start with a bang are internal to Rails
+              instrument_this = name[0] != BANG
+              if instrument_this
+                transaction = Appsignal::Transaction.current
+                transaction.start_event
+              end
 
-            if instrument_this
-              transaction = Appsignal::Transaction.current
-              transaction.start_event
+              begin
+                yield
+              ensure
+                if instrument_this
+                  title, body, body_format = Appsignal::EventFormatter.format(name, payload)
+                  transaction.finish_event(
+                    name,
+                    title,
+                    body,
+                    body_format
+                  )
+                end
+              end
             end
-
-            return_value = instrument_without_appsignal(name, payload, &block)
-
-            if instrument_this
-              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              transaction.finish_event(
-                name,
-                title,
-                body,
-                body_format
-              )
-            end
-
-            return_value
           end
         end
       end
