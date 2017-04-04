@@ -92,6 +92,7 @@ module Appsignal
   end
 end
 
+require "appsignal/hooks/action_cable"
 require "appsignal/hooks/active_support_notifications"
 require "appsignal/hooks/celluloid"
 require "appsignal/hooks/delayed_job"
