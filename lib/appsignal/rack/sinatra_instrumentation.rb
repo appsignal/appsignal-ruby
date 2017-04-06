@@ -65,7 +65,7 @@ module Appsignal
         ensure
           # If raise_error is off versions of Sinatra don't raise errors, but store
           # them in the sinatra.error env var.
-          if !@raise_errors_on && env["sinatra.error"] && !env["sinatra.skip_appsignal_error"]
+          if !raise_errors_on && env["sinatra.error"] && !env["sinatra.skip_appsignal_error"]
             transaction.set_error(env["sinatra.error"])
           end
           transaction.set_action_if_nil(action_name(env))

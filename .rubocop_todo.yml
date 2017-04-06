@@ -129,16 +129,6 @@ Style/NonNilCheck:
   Exclude:
     - 'lib/appsignal/transaction.rb'
 
-# Offense count: 7
-# Cop supports --auto-correct.
-Style/RescueModifier:
-  Exclude:
-    - 'spec/lib/appsignal/integrations/padrino_spec.rb'
-    - 'spec/lib/appsignal/rack/generic_instrumentation_spec.rb'
-    - 'spec/lib/appsignal/rack/rails_instrumentation_spec.rb'
-    - 'spec/lib/appsignal/rack/sinatra_instrumentation_spec.rb'
-    - 'spec/lib/appsignal/rack/streaming_listener_spec.rb'
-
 Style/WordArray:
   Exclude:
     - 'spec/lib/appsignal/hooks/shoryuken_spec.rb'
