@@ -1,7 +1,10 @@
 describe Appsignal::Hooks::ShoryukenMiddleware do
   let(:current_transaction) { background_job_transaction }
 
-  let(:worker_instance) { double }
+  class DemoShoryukenWorker
+  end
+
+  let(:worker_instance) { DemoShoryukenWorker.new }
   let(:queue) { double }
   let(:sqs_msg) { double(:attributes => {}) }
   let(:body) { {} }
@@ -17,29 +20,22 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       double(:attributes => { "SentTimestamp" => Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 })
     end
     let(:body) do
-      {
-        "job_class" => "TestClass",
-        "queue_name" => "TestQueue",
-        "arguments" => ["Model", "1"],
-        "movie" => "silent",
-        "job" => "hit"
-      }
+      { "foo" => "bar" }
     end
 
     it "should wrap in a transaction with the correct params" do
       expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.shoryuken",
-        :class => "TestClass",
+        :class => "DemoShoryukenWorker",
         :method => "perform",
         :metadata => {
           :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000,
-          "movie" => "silent",
-          "job" => "hit"
+          "SentTimestamp" => 217_123_200_000
         },
-        :params => ["Model", "1"],
+        :params => body,
         :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
       )
+
       Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
         Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
           # nothing
@@ -50,14 +46,16 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     it "should handle string bodies" do
       expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.shoryuken",
+        :class => "DemoShoryukenWorker",
         :method => "perform",
         :metadata => {
           :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000,
-          :body => body.to_json
+          "SentTimestamp" => 217_123_200_000
         },
+        :params => { :params => body.to_json },
         :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
       )
+
       Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
         Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body.to_json) do
           # nothing
@@ -69,14 +67,16 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       body = 1
       expect(Appsignal).to receive(:monitor_transaction).with(
         "perform_job.shoryuken",
+        :class => "DemoShoryukenWorker",
         :method => "perform",
         :metadata => {
           :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000,
-          :body => body
+          "SentTimestamp" => 217_123_200_000
         },
+        :params => { :params => body },
         :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
       )
+
       Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
         Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
           # nothing
@@ -93,14 +93,13 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     end
 
     after do
-      begin
+      expect do
         Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
           Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
             raise error
           end
         end
-      rescue VerySpecificError
-      end
+      end.to raise_error(VerySpecificError)
     end
   end
 end
