@@ -774,16 +774,16 @@ describe Appsignal::Transaction do
 
       context "with an array" do
         let(:request) do
-          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ["arg1", "arg2"]))
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w(arg1 arg2)))
         end
 
-        it { is_expected.to eq ["arg1", "arg2"] }
+        it { is_expected.to eq %w(arg1 arg2) }
 
         context "with AppSignal filtering" do
           before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { is_expected.to eq ["arg1", "arg2"] }
+          it { is_expected.to eq %w(arg1 arg2) }
         end
       end
 
@@ -958,7 +958,7 @@ describe Appsignal::Transaction do
           :both_symbols => :valid_value,
           :integer_value => 1,
           :hash_value => { "invalid" => "hash" },
-          :array_value => ["invalid", "array"],
+          :array_value => %w(invalid array),
           :to_long_value => SecureRandom.urlsafe_base64(101),
           :object => Object.new,
           SecureRandom.urlsafe_base64(101) => "to_long_key"
