@@ -292,7 +292,7 @@ describe Appsignal::Config do
       expect(config[:active]).to be_truthy
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to be_truthy
-      expect(config[:ignore_actions]).to eq ["action1", "action2"]
+      expect(config[:ignore_actions]).to eq %w(action1 action2)
       expect(config[:instrument_net_http]).to be_falsey
       expect(config[:instrument_redis]).to be_falsey
       expect(config[:instrument_sequel]).to be_falsey
@@ -363,8 +363,8 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config(:production) }
     before do
       config[:http_proxy] = "http://localhost"
-      config[:ignore_actions] = ["action1", "action2"]
-      config[:ignore_errors] = ["VerySpecificError", "AnotherError"]
+      config[:ignore_actions] = %w(action1 action2)
+      config[:ignore_errors] = %w(VerySpecificError AnotherError)
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
