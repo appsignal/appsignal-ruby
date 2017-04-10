@@ -32,6 +32,10 @@ static VALUE stop(VALUE self) {
   return Qnil;
 }
 
+static VALUE diagnose(VALUE self) {
+  return make_ruby_string(appsignal_diagnose());
+}
+
 static VALUE get_server_state(VALUE self, VALUE key) {
   appsignal_string_t string;
 
@@ -609,8 +613,10 @@ void Init_appsignal_extension(void) {
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
 
   // Starting and stopping
-  rb_define_singleton_method(Extension, "start", start, 0);
-  rb_define_singleton_method(Extension, "stop",  stop,  0);
+  rb_define_singleton_method(Extension, "start",    start,    0);
+  rb_define_singleton_method(Extension, "stop",     stop,     0);
+  // Diagnostics
+  rb_define_singleton_method(Extension, "diagnose", diagnose, 0);
 
   // Server state
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);

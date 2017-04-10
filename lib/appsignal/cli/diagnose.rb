@@ -53,7 +53,9 @@ module Appsignal
           host_information
           empty_line
 
-          start_appsignal(options)
+          configure_appsignal(options)
+          run_agent_diagnose_mode
+          empty_line
 
           config
           empty_line
@@ -69,7 +71,7 @@ module Appsignal
 
         private
 
-        def start_appsignal(options)
+        def configure_appsignal(options)
           current_path = Dir.pwd
           initial_config = {}
           if rails_app?
@@ -78,20 +80,79 @@ module Appsignal
             initial_config[:log_path] = Rails.root.join("log")
           end
 
-          ENV["_APPSIGNAL_DIAGNOSE"] = "true"
           Appsignal.config = Appsignal::Config.new(
             current_path,
             options[:environment],
             initial_config
           )
-          # Force agent to run in diagnostics mode regardless if the user's
-          # config has AppSignal.active? => true
-          # But reset it later so it doesn't interfere with the user's config
-          # that's printed.
-          previous_active_state = Appsignal.config[:active]
-          Appsignal.config[:active] = true
-          Appsignal.start
-          Appsignal.config[:active] = previous_active_state
+          Appsignal.config.write_to_environment
+        end
+
+        def run_agent_diagnose_mode
+          puts "Agent diagnostics"
+          ENV["_APPSIGNAL_DIAGNOSE"] = "true"
+          diagnostics_report_string = Appsignal::Extension.diagnose
+          ENV.delete("_APPSIGNAL_DIAGNOSE")
+
+          begin
+            print_agent_report(JSON.parse(diagnostics_report_string))
+          rescue JSON::ParserError => e
+            puts "  Error while parsing agent diagnostics report:"
+            puts "    Error: #{e}"
+            puts "    Output: #{diagnostics_report_string}"
+          end
+        end
+
+        def print_agent_report(report)
+          agent_diagnostic_test_definition.each do |part, categories|
+            categories.each do |category, tests|
+              tests.each do |test_name, test_definition|
+                test_report = report
+                  .fetch(part, {})
+                  .fetch(category, {})
+                  .fetch(test_name, {})
+
+                print_agent_test(test_definition, test_report)
+              end
+            end
+          end
+        end
+
+        def print_agent_test(definition, test)
+          value = test["result"]
+          error = test["error"]
+          output = test["output"]
+
+          print "  #{definition[:label]}: "
+          display_value = definition[:values][value]
+          print display_value.nil? ? "-" : display_value
+          print "\n    Error: #{error}" if error
+          print "\n    Output: #{output}" if output
+          print "\n"
+        end
+
+        def agent_diagnostic_test_definition
+          {
+            "extension" => {
+              "config" => {
+                "valid" => { :label => "Extension config", :values => { true => "valid", false => "invalid" } }
+              }
+            },
+            "agent" => {
+              "boot" => {
+                "started" => { :label => "Agent started", :values => { true => "started", false => "not started" } }
+              },
+              "config" => {
+                "valid" => { :label => "Agent config", :values => { true => "valid", false => "invalid" } }
+              },
+              "logger" => {
+                "started" => { :label => "Agent logger", :values => { true => "started", false => "not started" } }
+              },
+              "lock_path" => {
+                "created" => { :label => "Agent lock path", :values => { true => "writable", false => "not writable" } }
+              }
+            }
+          }
         end
 
         def header
