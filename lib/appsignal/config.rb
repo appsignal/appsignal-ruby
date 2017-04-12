@@ -25,7 +25,8 @@ module Appsignal
       :enable_host_metrics            => true,
       :enable_minutely_probes         => false,
       :hostname                       => ::Socket.gethostname,
-      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__)
+      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
+      :dns_servers                    => []
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -54,7 +55,8 @@ module Appsignal
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_HOSTNAME"                       => :hostname,
-      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path
+      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
+      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -114,7 +116,7 @@ module Appsignal
       @valid && config_hash[:active]
     end
 
-    def write_to_environment
+    def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
       ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
@@ -139,6 +141,7 @@ module Appsignal
       ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+      ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
     end
 
     private
