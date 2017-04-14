@@ -82,12 +82,6 @@ module Appsignal
           value
         end
       end
-
-      def format_args(args)
-        args.map do |arg|
-          truncate(string_or_inspect(arg))
-        end
-      end
     end
   end
 end
