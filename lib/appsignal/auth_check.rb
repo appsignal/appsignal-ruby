@@ -33,7 +33,7 @@ module Appsignal
     # @return [String] response status code.
     # @raise [StandardError] see {Appsignal::Transmitter#transmit}.
     def perform
-      Appsignal::Transmitter.new(ACTION, config).transmit({})
+      Appsignal::Transmitter.new(ACTION, config).transmit({}).code
     end
 
     # Perform push api validation request and return a descriptive response

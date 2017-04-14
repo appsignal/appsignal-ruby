@@ -1,50 +1,75 @@
 describe Appsignal::Transmitter do
   let(:config) { project_fixture_config }
-  let(:action) { "action" }
+  let(:base_uri) { "action" }
   let(:log) { StringIO.new }
-  let(:instance) { Appsignal::Transmitter.new(action, config) }
+  let(:instance) { Appsignal::Transmitter.new(base_uri, config) }
   before do
     config.config_hash[:hostname] = "app1.local"
     config.logger = Logger.new(log)
   end
 
   describe "#uri" do
-    subject { instance.uri.to_s }
+    let(:uri) { instance.uri }
 
-    it { is_expected.to include "https://push.appsignal.com/1/action?" }
-    it { is_expected.to include "api_key=abc" }
-    it { is_expected.to include "hostname=app1.local" }
-    it { is_expected.to include "name=TestApp" }
-    it { is_expected.to include "environment=production" }
-    it { is_expected.to include "gem_version=#{Appsignal::VERSION}" }
+    it "returns a URI object with configuration data" do
+      expect(uri.to_s).to start_with(config[:endpoint])
+      expect(uri.path).to eq("/1/action")
+      expect(CGI.parse(uri.query)).to eq(
+        "api_key" => ["abc"],
+        "hostname" => ["app1.local"],
+        "name" => ["TestApp"],
+        "environment" => ["production"],
+        "gem_version" => [Appsignal::VERSION]
+      )
+    end
+
+    context "when base_uri argument is a full URI" do
+      let(:base_uri) { "http://foo.bar/path" }
+
+      it "uses the full URI" do
+        expect(uri.to_s).to start_with("#{base_uri}?")
+      end
+    end
+
+    context "when base_uri argument is only a path" do
+      it "uses the config[:endpoint] base" do
+        expect(uri.to_s).to start_with("#{config[:endpoint]}/1/#{base_uri}?")
+      end
+    end
   end
 
   describe "#transmit" do
     before do
-      stub_request(
-        :post,
-        "https://push.appsignal.com/1/action?api_key=abc"\
-          "&environment=production&gem_version=#{Appsignal::VERSION}"\
-          "&hostname=#{config.config_hash[:hostname]}&name=TestApp"
-      ).with(
+      stub_request(:post, "https://push.appsignal.com/1/action").with(
+        :query => {
+          :api_key => "abc",
+          :environment => "production",
+          :gem_version => Appsignal::VERSION,
+          :hostname => config[:hostname],
+          :name => "TestApp"
+        },
         :body => "{\"the\":\"payload\"}",
         :headers => {
           "Content-Type" => "application/json; charset=UTF-8"
         }
       ).to_return(:status => 200)
     end
-    subject { instance.transmit(:the => :payload) }
+    let(:response) { instance.transmit(:the => :payload) }
 
-    it { is_expected.to eq "200" }
+    it "returns Net::HTTP response" do
+      expect(response).to be_kind_of(Net::HTTPResponse)
+      expect(response.code).to eq "200"
+    end
 
     context "with ca_file_path config option set" do
-      context "when not existing file" do
+      context "when file does not exist" do
         before do
           config.config_hash[:ca_file_path] = File.join(resources_dir, "cacert.pem")
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to_not include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -56,7 +81,8 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
@@ -70,7 +96,8 @@ describe Appsignal::Transmitter do
         end
 
         it "ignores the config and logs a warning" do
-          expect(subject).to eq "200"
+          expect(response).to be_kind_of(Net::HTTPResponse)
+          expect(response.code).to eq "200"
           expect(log.string).to include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
