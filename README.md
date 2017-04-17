@@ -155,7 +155,7 @@ as most Linux distributions and macOS, excluding FreeBSD and Windows.
 For more detailed information please visit our [Supported
 systems][supported-systems] page.
 
-## Development
+## Development & Testing
 
 Make sure you have Bundler installed and then use the Rake install task to
 install all possible dependencies.
