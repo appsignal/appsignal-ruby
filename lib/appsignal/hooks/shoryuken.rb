@@ -10,7 +10,9 @@ module Appsignal
           :metadata => metadata
         }
 
-        options[:params] = body.is_a?(Hash) ? body : { :params => body }
+        params = body.is_a?(Hash) ? body : { :params => body }
+        truncated_params = format_args(params)
+        options[:param] = truncated_params
 
         if sqs_msg.attributes.key?("SentTimestamp")
           options[:queue_start] = Time.at(sqs_msg.attributes["SentTimestamp"].to_i / 1000)
