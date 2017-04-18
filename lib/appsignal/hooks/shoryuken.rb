@@ -11,8 +11,9 @@ module Appsignal
         }
 
         params = body.is_a?(Hash) ? body : { :params => body }
-        truncated_params = format_args(params)
-        options[:param] = truncated_params
+        config = { filter_parameters: Appsignal.config[:filter_parameters] }
+        truncated_params = Appsignal::Utils::ParamsSanitizer.sanitize(params, config)
+        options[:params] = truncated_params
 
         if sqs_msg.attributes.key?("SentTimestamp")
           options[:queue_start] = Time.at(sqs_msg.attributes["SentTimestamp"].to_i / 1000)
