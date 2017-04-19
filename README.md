@@ -157,6 +157,8 @@ systems][supported-systems] page.
 
 ## Development
 
+### Installation
+
 Make sure you have Bundler installed and then use the Rake install task to
 install all possible dependencies.
 
@@ -164,6 +166,8 @@ install all possible dependencies.
 gem install bundler
 rake install
 ```
+
+### Testing
 
 AppSignal runs in many different configurations. To replicate these
 configurations you need to run the spec suite with a specific Gemfile.
