@@ -19,74 +19,118 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     let(:sqs_msg) do
       double(:attributes => { "SentTimestamp" => Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 })
     end
-    let(:body) do
-      { "foo" => "bar" }
-    end
 
-    it "should wrap in a transaction with the correct params" do
-      expect(Appsignal).to receive(:monitor_transaction).with(
-        "perform_job.shoryuken",
-        :class => "DemoShoryukenWorker",
-        :method => "perform",
-        :metadata => {
-          :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000
-        },
-        :params => body,
-        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
-      )
+    context "with complex argument" do
+      let(:body) do
+        {
+          :foo => "Foo",
+          :bar => "Bar",
+          :baz => "s" * 300
+        }
+      end
+      after do
+        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
+            # nothing
+          end
+        end
+      end
 
-      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-        Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-          # nothing
+      it "wraps the job in a transaction with the correct params" do
+        expect(Appsignal).to receive(:monitor_transaction).with(
+          "perform_job.shoryuken",
+          :class => "DemoShoryukenWorker",
+          :method => "perform",
+          :metadata => {
+            :queue => "some-funky-queue-name",
+            "SentTimestamp" => 217_123_200_000
+          },
+          :params => {
+            :foo => "Foo",
+            :bar => "Bar",
+            :baz => "s" * 197 + "..."
+          },
+          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+        )
+      end
+
+      context "with parameter filtering" do
+        before do
+          Appsignal.config = project_fixture_config("production")
+          Appsignal.config[:filter_parameters] = ["foo"]
+        end
+
+        it "filters selected arguments" do
+          expect(Appsignal).to receive(:monitor_transaction).with(
+            "perform_job.shoryuken",
+            :class => "DemoShoryukenWorker",
+            :method => "perform",
+            :metadata => {
+              :queue => "some-funky-queue-name",
+              "SentTimestamp" => 217_123_200_000
+            },
+            :params => {
+              :foo => "[FILTERED]",
+              :bar => "Bar",
+              :baz => "s" * 197 + "..."
+            },
+            :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+          )
         end
       end
     end
 
-    it "should handle string bodies" do
-      expect(Appsignal).to receive(:monitor_transaction).with(
-        "perform_job.shoryuken",
-        :class => "DemoShoryukenWorker",
-        :method => "perform",
-        :metadata => {
-          :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000
-        },
-        :params => { :params => body.to_json },
-        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
-      )
+    context "with a string as an argument" do
+      let(:body) { "foo bar" }
 
-      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-        Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body.to_json) do
-          # nothing
+      it "handles string arguments" do
+        expect(Appsignal).to receive(:monitor_transaction).with(
+          "perform_job.shoryuken",
+          :class => "DemoShoryukenWorker",
+          :method => "perform",
+          :metadata => {
+            :queue => "some-funky-queue-name",
+            "SentTimestamp" => 217_123_200_000
+          },
+          :params => { :params => body },
+          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+        )
+
+        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
+            # nothing
+          end
         end
       end
     end
 
-    it "should handle any type of body" do
-      body = 1
-      expect(Appsignal).to receive(:monitor_transaction).with(
-        "perform_job.shoryuken",
-        :class => "DemoShoryukenWorker",
-        :method => "perform",
-        :metadata => {
-          :queue => "some-funky-queue-name",
-          "SentTimestamp" => 217_123_200_000
-        },
-        :params => { :params => body },
-        :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
-      )
+    context "with primitive type as argument" do
+      let(:body) { 1 }
 
-      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-        Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-          # nothing
+      it "handles primitive types as arguments" do
+        expect(Appsignal).to receive(:monitor_transaction).with(
+          "perform_job.shoryuken",
+          :class => "DemoShoryukenWorker",
+          :method => "perform",
+          :metadata => {
+            :queue => "some-funky-queue-name",
+            "SentTimestamp" => 217_123_200_000
+          },
+          :params => { :params => body },
+          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+        )
+
+        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
+            # nothing
+          end
         end
       end
     end
   end
 
   context "with an erroring call" do
-    let(:error) { VerySpecificError.new }
+    let(:error) { VerySpecificError }
 
     it "should add the exception to appsignal" do
       expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
@@ -99,7 +143,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
             raise error
           end
         end
-      end.to raise_error(VerySpecificError)
+      end.to raise_error(error)
     end
   end
 end
