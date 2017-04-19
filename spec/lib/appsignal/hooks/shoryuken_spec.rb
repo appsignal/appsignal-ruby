@@ -129,21 +129,37 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     end
   end
 
-  context "with an erroring call" do
-    let(:error) { VerySpecificError }
+  context "with exception" do
+    let(:transaction) do
+      Appsignal::Transaction.new(
+        SecureRandom.uuid,
+        Appsignal::Transaction::BACKGROUND_JOB,
+        Appsignal::Transaction::GenericRequest.new({})
+      )
+    end
 
-    it "should add the exception to appsignal" do
-      expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+    before do
+      allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+      expect(Appsignal::Transaction).to receive(:create)
+        .with(
+          kind_of(String),
+          Appsignal::Transaction::BACKGROUND_JOB,
+          kind_of(Appsignal::Transaction::GenericRequest)
+        ).and_return(transaction)
+    end
+
+    it "sets the exception on the transaction" do
+      expect(transaction).to receive(:set_error).with(VerySpecificError)
     end
 
     after do
       expect do
         Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
           Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            raise error
+            raise VerySpecificError
           end
         end
-      end.to raise_error(error)
+      end.to raise_error(VerySpecificError)
     end
   end
 end
