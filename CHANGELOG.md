@@ -9,6 +9,11 @@
 * Force agent to run in diagnostic mode even when the user config is set to
   `active: false`. PR #260
 * Stub JS error catching endpoint when not active. PR #263
+* Use better event names for Padrino integration. PR #265
+* No longer gzip payloads send by the Ruby gem transmitter. PR #269
+* Send diagnostics data report to AppSignal on request. PR #270
+* When JS exception endpoint payload is empty return 400 code. PR #271
+* Remove hardcoded DNS servers from agent and add config option. PR #278
 
 # 2.1.2
 * Fix error with Grape request methods defined with symbols. PR #259
