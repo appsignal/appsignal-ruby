@@ -103,7 +103,8 @@ describe Appsignal::Config do
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname,
-        :ca_file_path                   => File.join(resources_dir, "cacert.pem")
+        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :dns_servers                    => []
       )
     end
 
@@ -370,6 +371,7 @@ describe Appsignal::Config do
       config[:hostname] = "app1.local"
       config[:filter_parameters] = %w(password confirm_password)
       config[:running_in_container] = false
+      config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config.write_to_environment
     end
 
@@ -397,7 +399,8 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
       expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
-      expect(ENV).to_not                                        have_key("APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
+      expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
     end
 
     context "with :working_dir_path" do
