@@ -6,7 +6,7 @@ module Appsignal
         "DataObjects::Sqlite3::Connection",
         "DataObjects::Mysql::Connection",
         "DataObjects::Postgres::Connection"
-      ]
+      ].freeze
 
       def log(message)
         # If scheme is SQL-like, try to sanitize it, otherwise clear the body

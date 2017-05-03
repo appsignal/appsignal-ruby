@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class RedisHook < Appsignal::Hooks::Hook
       register :redis
 

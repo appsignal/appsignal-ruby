@@ -1,6 +1,8 @@
-# Appsignal module that tracks exceptions in Streaming rack responses.
 module Appsignal
   module Rack
+    # Appsignal module that tracks exceptions in Streaming rack responses.
+    #
+    # @api private
     class StreamingListener
       def initialize(app, options = {})
         Appsignal.logger.debug "Initializing Appsignal::Rack::StreamingListener"
@@ -33,7 +35,7 @@ module Appsignal
               transaction.set_error(e)
               raise e
             ensure
-              transaction.set_action(env["appsignal.action"])
+              transaction.set_action_if_nil(env["appsignal.action"])
               transaction.set_metadata("path", request.path)
               transaction.set_metadata("method", request.request_method)
               transaction.set_http_or_background_queue_start

@@ -283,6 +283,14 @@ describe Appsignal do
       end
     end
 
+    describe ".set_namespace" do
+      it "should do nothing" do
+        expect do
+          Appsignal.set_namespace("custom")
+        end.to_not raise_error
+      end
+    end
+
     describe ".tag_request" do
       it "should do nothing" do
         expect do
@@ -554,7 +562,6 @@ describe Appsignal do
           :log_path => log_path
         )
       end
-      around { |example| recognize_as_container(:none) { example.run } }
       after { FileUtils.rm_rf(log_path) }
 
       context "when the log path is writable" do
@@ -582,7 +589,7 @@ describe Appsignal do
         context "when the log file is not writable" do
           before do
             FileUtils.touch log_file
-            FileUtils.chmod 0444, log_file
+            FileUtils.chmod 0o444, log_file
 
             capture_stdout(out_stream) do
               Appsignal.start_logger
@@ -609,8 +616,8 @@ describe Appsignal do
 
       context "when the log path and fallback path are not writable" do
         before do
-          FileUtils.chmod 0444, log_path
-          FileUtils.chmod 0444, Appsignal::Config::SYSTEM_TMP_DIR
+          FileUtils.chmod 0o444, log_path
+          FileUtils.chmod 0o444, Appsignal::Config::SYSTEM_TMP_DIR
 
           capture_stdout(out_stream) do
             Appsignal.start_logger
@@ -618,7 +625,7 @@ describe Appsignal do
           end
         end
         after do
-          FileUtils.chmod 0755, Appsignal::Config::SYSTEM_TMP_DIR
+          FileUtils.chmod 0o755, Appsignal::Config::SYSTEM_TMP_DIR
         end
 
         it "logs to stdout" do
@@ -789,6 +796,54 @@ describe Appsignal do
         expect(transaction).to_not receive(:set_error)
 
         Appsignal.set_error(nil)
+      end
+    end
+
+    describe ".set_action" do
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+      it "should set the namespace to the current transaction" do
+        expect(transaction).to receive(:set_action).with("custom")
+
+        Appsignal.set_action("custom")
+      end
+
+      it "should do nothing if there is no current transaction" do
+        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+
+        expect(transaction).to_not receive(:set_action)
+
+        Appsignal.set_action("custom")
+      end
+
+      it "should do nothing if the error is nil" do
+        expect(transaction).to_not receive(:set_action)
+
+        Appsignal.set_action(nil)
+      end
+    end
+
+    describe ".set_namespace" do
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+      it "should set the namespace to the current transaction" do
+        expect(transaction).to receive(:set_namespace).with("custom")
+
+        Appsignal.set_namespace("custom")
+      end
+
+      it "should do nothing if there is no current transaction" do
+        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+
+        expect(transaction).to_not receive(:set_namespace)
+
+        Appsignal.set_namespace("custom")
+      end
+
+      it "should do nothing if the error is nil" do
+        expect(transaction).to_not receive(:set_namespace)
+
+        Appsignal.set_namespace(nil)
       end
     end
 

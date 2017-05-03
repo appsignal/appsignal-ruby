@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
       register :active_support_notifications
 

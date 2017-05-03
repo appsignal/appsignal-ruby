@@ -22,11 +22,11 @@ module Appsignal
       :frontend_error_catching_path   => "/appsignal_error_catcher",
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
-      :running_in_container           => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => false,
       :hostname                       => ::Socket.gethostname,
-      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__)
+      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
+      :dns_servers                    => []
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -55,7 +55,8 @@ module Appsignal
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_HOSTNAME"                       => :hostname,
-      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path
+      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
+      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -115,33 +116,35 @@ module Appsignal
       @valid && config_hash[:active]
     end
 
-    def write_to_environment
-      ENV["APPSIGNAL_ACTIVE"]                       = active?.to_s
-      ENV["APPSIGNAL_APP_PATH"]                     = root_path.to_s
-      ENV["APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
-      ENV["APPSIGNAL_ENVIRONMENT"]                  = env
-      ENV["APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
-      ENV["APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
-      ENV["APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
-      ENV["APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
-      ENV["APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
-      ENV["APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
-      ENV["APPSIGNAL_APP_NAME"]                     = config_hash[:name]
-      ENV["APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
-      ENV["APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
-      ENV["APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
-      ENV["APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
-      ENV["APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
-      ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
-      ENV["APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
-      ENV["APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
-      ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
-      ENV["APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
-      ENV["APPSIGNAL_PROCESS_NAME"]                 = $0
-      ENV["APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+    def write_to_environment # rubocop:disable Metrics/AbcSize
+      ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
+      ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
+      ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
+      ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
+      ENV["_APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
+      ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
+      ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
+      ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
+      ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
+      ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
+      ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
+      ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
+      ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
+      ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
+      ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
+      ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
+      ENV["_APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
+      ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
+      ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
+      ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
+      ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
+      ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
+      ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
+      ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+      ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
     end
 
-    protected
+    private
 
     def config_file
       @config_file ||=
@@ -149,7 +152,6 @@ module Appsignal
     end
 
     def detect_from_system
-      config_hash[:running_in_container] = true if Appsignal::System.container?
       config_hash[:log] = "stdout" if Appsignal::System.heroku?
 
       # Make active by default if APPSIGNAL_PUSH_API_KEY is present
@@ -189,9 +191,9 @@ module Appsignal
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY
          APPSIGNAL_LOG APPSIGNAL_LOG_PATH APPSIGNAL_WORKING_DIR_PATH
          APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var
       end
 
       # Configuration with boolean type
@@ -201,17 +203,17 @@ module Appsignal
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
          APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var == "true"
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var == "true"
       end
 
       # Configuration with array of strings type
       %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS
          APPSIGNAL_FILTER_PARAMETERS).each do |var|
-        if env_var = ENV[var]
-          config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
-        end
+        env_var = ENV[var]
+        next unless env_var
+        config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
       end
 
       merge(@config_hash, config)

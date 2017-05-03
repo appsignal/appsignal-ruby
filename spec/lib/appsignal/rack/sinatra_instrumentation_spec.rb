@@ -103,22 +103,22 @@ if DependencyHelper.sinatra_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring" do
+    describe "#call_with_appsignal_monitoring", :error => false do
       it "should create a transaction" do
         expect(Appsignal::Transaction).to receive(:create).with(
           kind_of(String),
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(Sinatra::Request),
           kind_of(Hash)
-        ).and_return(double(:set_action => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+        ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
       end
 
       it "should call the app" do
         expect(app).to receive(:call).with(env)
       end
 
-      context "with an error" do
-        let(:error) { VerySpecificError.new }
+      context "with an error", :error => true do
+        let(:error) { VerySpecificError }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -132,7 +132,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with an error in sinatra.error" do
-        let(:error) { VerySpecificError.new }
+        let(:error) { VerySpecificError }
         let(:env) { { "sinatra.error" => error } }
 
         it "should set the error" do
@@ -158,14 +158,14 @@ if DependencyHelper.sinatra_present?
 
       describe "action name" do
         it "should set the action" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("GET /")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /")
         end
 
         context "without 'sinatra.route' env" do
           let(:env) { { :path => "/", :method => "GET" } }
 
           it "returns nil" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with(nil)
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
           end
         end
 
@@ -173,14 +173,14 @@ if DependencyHelper.sinatra_present?
           before { env["SCRIPT_NAME"] = "/api" }
 
           it "should call set_action with an application prefix path" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("GET /api/")
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /api/")
           end
 
           context "without 'sinatra.route' env" do
             let(:env) { { :path => "/", :method => "GET" } }
 
             it "returns nil" do
-              expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with(nil)
+              expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
             end
           end
         end
@@ -206,7 +206,8 @@ if DependencyHelper.sinatra_present?
         end
       end
 
-      after { middleware.call(env) rescue VerySpecificError }
+      after(:error => false) { middleware.call(env) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
     end
   end
 end

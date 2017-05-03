@@ -256,10 +256,52 @@ describe Appsignal::Transaction do
         ).once
 
         transaction.set_action("PagesController#show")
+
+        expect(transaction.action).to eq "PagesController#show"
       end
 
       it "should not set the action in extension when value is nil" do
-        expect(Appsignal::Extension).to_not receive(:set_transaction_action)
+        expect(Appsignal::Extension).to_not receive(:set_action)
+
+        transaction.set_action(nil)
+      end
+    end
+
+    describe "set_action_if_nil" do
+      context "if action is currently nil" do
+        it "should set the action" do
+          expect(transaction.ext).to receive(:set_action).with(
+            "PagesController#show"
+          ).once
+
+          transaction.set_action_if_nil("PagesController#show")
+        end
+      end
+
+      context "if action is currently set" do
+        it "should not set the action" do
+          transaction.set_action("something")
+
+          expect(transaction.ext).not_to receive(:set_action)
+
+          transaction.set_action_if_nil("PagesController#show")
+        end
+      end
+    end
+
+    describe "set_namespace" do
+      it "should set the action in extension" do
+        expect(transaction.ext).to receive(:set_namespace).with(
+          "custom"
+        ).once
+
+        transaction.set_namespace("custom")
+
+        expect(transaction.namespace).to eq "custom"
+      end
+
+      it "should not set the action in extension when value is nil" do
+        expect(Appsignal::Extension).to_not receive(:set_namespace)
 
         transaction.set_action(nil)
       end
@@ -606,7 +648,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    # protected
+    # private
 
     describe "#background_queue_start" do
       subject { transaction.send(:background_queue_start) }
@@ -732,16 +774,16 @@ describe Appsignal::Transaction do
 
       context "with an array" do
         let(:request) do
-          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ["arg1", "arg2"]))
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w(arg1 arg2)))
         end
 
-        it { is_expected.to eq ["arg1", "arg2"] }
+        it { is_expected.to eq %w(arg1 arg2) }
 
         context "with AppSignal filtering" do
           before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { is_expected.to eq ["arg1", "arg2"] }
+          it { is_expected.to eq %w(arg1 arg2) }
         end
       end
 
@@ -753,7 +795,6 @@ describe Appsignal::Transaction do
           end
 
           it "should call the params sanitizer" do
-            puts Appsignal.config.config_hash[:filter_parameters].inspect
             expect(subject).to eq(:foo => :bar)
           end
         end
@@ -917,7 +958,7 @@ describe Appsignal::Transaction do
           :both_symbols => :valid_value,
           :integer_value => 1,
           :hash_value => { "invalid" => "hash" },
-          :array_value => ["invalid", "array"],
+          :array_value => %w(invalid array),
           :to_long_value => SecureRandom.urlsafe_base64(101),
           :object => Object.new,
           SecureRandom.urlsafe_base64(101) => "to_long_key"

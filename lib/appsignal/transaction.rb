@@ -20,7 +20,7 @@ module Appsignal
       HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM
       HTTP_NEGOTIATE HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR
       HTTP_CLIENT_IP HTTP_RANGE HTTP_X_AUTH_TOKEN
-    )
+    ).freeze
 
     class << self
       def create(id, namespace, request, options = {})
@@ -59,10 +59,11 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :namespace, :request, :paused, :tags, :options, :discarded
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
 
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
+      @action = nil
       @namespace = namespace
       @request = request
       @paused = false
@@ -122,13 +123,76 @@ module Appsignal
       @store[key]
     end
 
+    # Set tags on the transaction.
+    #
+    # @param given_tags [Hash] Collection of tags.
+    # @option given_tags [String, Symbol, Integer] :any
+    #   The name of the tag as a Symbol.
+    # @option given_tags [String, Symbol, Integer] "any"
+    #   The name of the tag as a String.
+    # @return [void]
+    #
+    # @see Appsignal.tag_request
+    # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+    #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
 
+    # Set an action name for the transaction.
+    #
+    # An action name is used to identify the location of a certain sample;
+    # error and performance issues.
+    #
+    # @param action [String] the action name to set.
+    # @return [void]
+    # @see Appsignal.set_action
+    # @see #set_action_if_nil
+    # @since 2.2.0
     def set_action(action)
       return unless action
+      @action = action
       @ext.set_action(action)
+    end
+
+    # Set an action name only if there is no current action set.
+    #
+    # Commonly used by AppSignal integrations so that they don't override
+    # custom action names.
+    #
+    # @example
+    #   Appsignal.set_action("foo")
+    #   Appsignal.set_action_if_nil("bar")
+    #   # Transaction action will be "foo"
+    #
+    # @param action [String]
+    # @return [void]
+    # @see #set_action
+    # @since 2.2.0
+    def set_action_if_nil(action)
+      return if @action
+      set_action(action)
+    end
+
+    # Set the namespace for this transaction.
+    #
+    # Useful to split up parts of an application into certain namespaces. For
+    # example: http requests, background jobs and administration panel
+    # controllers.
+    #
+    # Note: The "http_request" namespace gets transformed on AppSignal.com to
+    # "Web" and "background_job" gets transformed to "Background".
+    #
+    # @example
+    #   transaction.set_action("admin")
+    #
+    # @param namespace [String] namespace name to use for this transaction.
+    # @return [void]
+    # @since 2.2.0
+    def set_namespace(namespace)
+      return unless namespace
+      @namespace = namespace
+      @ext.set_namespace(namespace)
     end
 
     def set_http_or_background_action(from = request.params)
@@ -239,7 +303,7 @@ module Appsignal
       end
     end
 
-    protected
+    private
 
     # Returns calculated background queue start time in milliseconds, based on
     # environment values.
@@ -308,7 +372,7 @@ module Appsignal
     # The environment of a transaction can contain a lot of information, not
     # all of it useful for debugging.
     #
-    # Only the values from the keys specified in `ENV_METHODS` are returned.
+    # Only the values from the keys specified in {ENV_METHODS} are returned.
     #
     # @return [nil] if no environment is present.
     # @return [Hash<String, Object>]
@@ -380,8 +444,9 @@ module Appsignal
       end
     end
 
-    # Stub that is returned by `Transaction.current` if there is no current transaction, so
-    # that it's still safe to call methods on it if there is none.
+    # Stub that is returned by {Transaction.current} if there is no current
+    # transaction, so that it's still safe to call methods on it if there is no
+    # current transaction.
     class NilTransaction
       def method_missing(m, *args, &block)
       end

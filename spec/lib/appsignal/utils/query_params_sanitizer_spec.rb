@@ -43,7 +43,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is an array" do
-        let(:value) { ["foo", "bar"] }
+        let(:value) { %w(foo bar) }
 
         it "should only return the first level of the object" do
           expect(subject).to eq("?")
@@ -51,7 +51,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
 
         it "should not modify source value" do
           subject
-          expect(value).to eq(["foo", "bar"])
+          expect(value).to eq(%w(foo bar))
         end
       end
 
@@ -115,7 +115,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is an array" do
-        let(:value) { ["foo", "bar"] }
+        let(:value) { %w(foo bar) }
 
         it "should sanitize all hash values with a single questionmark" do
           expect(subject).to eq(["?"])

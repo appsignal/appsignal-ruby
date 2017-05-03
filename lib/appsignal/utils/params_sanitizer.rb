@@ -1,5 +1,6 @@
 module Appsignal
   module Utils
+    # @api private
     class ParamsSanitizer
       FILTERED = "[FILTERED]".freeze
 
@@ -16,7 +17,7 @@ module Appsignal
             sanitize_hash(value, options)
           when Array
             sanitize_array(value, options)
-          when TrueClass, FalseClass, NilClass, Fixnum, String, Symbol, Float
+          when TrueClass, FalseClass, NilClass, Integer, String, Symbol, Float
             unmodified(value)
           else
             inspected(value)

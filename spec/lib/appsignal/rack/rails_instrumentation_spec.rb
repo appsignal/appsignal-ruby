@@ -46,7 +46,7 @@ if DependencyHelper.rails_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring" do
+    describe "#call_with_appsignal_monitoring", :error => false do
       it "should create a transaction" do
         expect(Appsignal::Transaction).to receive(:create).with(
           "1",
@@ -54,8 +54,10 @@ if DependencyHelper.rails_present?
           kind_of(ActionDispatch::Request),
           :params_method => :filtered_parameters
         ).and_return(
-          double(
+          instance_double(
+            "Appsignal::Transaction",
             :set_action => nil,
+            :set_action_if_nil => nil,
             :set_http_or_background_queue_start => nil,
             :set_metadata => nil
           )
@@ -66,8 +68,8 @@ if DependencyHelper.rails_present?
         expect(app).to receive(:call).with(env)
       end
 
-      context "with an error" do
-        let(:error) { VerySpecificError.new }
+      context "with an error", :error => true do
+        let(:error) { VerySpecificError }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -84,11 +86,12 @@ if DependencyHelper.rails_present?
       end
 
       it "should set the action and queue start" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action).with("MockController#index")
+        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("MockController#index")
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
       end
 
-      after { middleware.call(env) rescue VerySpecificError }
+      after(:error => false) { middleware.call(env) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
     end
 
     describe "#request_id" do

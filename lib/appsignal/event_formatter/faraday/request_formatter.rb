@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module Faraday
       class RequestFormatter < Appsignal::EventFormatter
         register "request.faraday"

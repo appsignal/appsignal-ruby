@@ -30,7 +30,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
           "queue"       => "default",
           "extra"       => "data"
         },
-        :params      => ["Model", "1"],
+        :params      => %w(Model 1),
         :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
         :queue_time  => 60_000.to_f
       )
@@ -63,7 +63,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
           :metadata => {
             "queue" => "default"
           },
-          :params      => ["Model", "1"],
+          :params      => %w(Model 1),
           :queue_start => Time.parse("01-01-2001 10:00:00UTC").to_f,
           :queue_time  => 60_000.to_f
         )

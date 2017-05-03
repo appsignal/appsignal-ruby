@@ -50,34 +50,6 @@ describe Appsignal::Config do
       end
     end
 
-    describe ":running_in_container" do
-      subject { config[:running_in_container] }
-
-      context "when running on Heroku" do
-        around { |example| recognize_as_heroku { example.run } }
-
-        it "is set to true" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      context "when running in container" do
-        around { |example| recognize_as_container(:docker) { example.run } }
-
-        it "is set to true" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      context "when not running in container" do
-        around { |example| recognize_as_container(:none) { example.run } }
-
-        it "is set to false" do
-          expect(subject).to be_falsy
-        end
-      end
-    end
-
     describe ":log" do
       subject { config[:log] }
 
@@ -90,8 +62,6 @@ describe Appsignal::Config do
       end
 
       context "when not running on Heroku" do
-        around { |example| recognize_as_container(:none) { example.run } }
-
         it "is set to file" do
           expect(subject).to eq("file")
         end
@@ -109,7 +79,6 @@ describe Appsignal::Config do
         :active => true
       )
     end
-    around { |example| recognize_as_container(:none) { example.run } }
 
     it "merges with the default config" do
       expect(config.config_hash).to eq(
@@ -131,11 +100,11 @@ describe Appsignal::Config do
         :frontend_error_catching_path   => "/appsignal_error_catcher",
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
-        :running_in_container           => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname,
-        :ca_file_path                   => File.join(resources_dir, "cacert.pem")
+        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :dns_servers                    => []
       )
     end
 
@@ -216,7 +185,6 @@ describe Appsignal::Config do
           :debug => true
         )
       end
-      around { |example| recognize_as_container(:none) { example.run } }
 
       it "overrides system detected and defaults config" do
         expect(config[:running_in_container]).to be_truthy
@@ -315,7 +283,6 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]     = "false"
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]    = "false"
     end
-    around { |example| recognize_as_container(:none) { example.run } }
 
     it "overrides config with environment values" do
       expect(config.valid?).to be_truthy
@@ -326,7 +293,7 @@ describe Appsignal::Config do
       expect(config[:active]).to be_truthy
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to be_truthy
-      expect(config[:ignore_actions]).to eq ["action1", "action2"]
+      expect(config[:ignore_actions]).to eq %w(action1 action2)
       expect(config[:instrument_net_http]).to be_falsey
       expect(config[:instrument_redis]).to be_falsey
       expect(config[:instrument_sequel]).to be_falsey
@@ -397,39 +364,43 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config(:production) }
     before do
       config[:http_proxy] = "http://localhost"
-      config[:ignore_actions] = ["action1", "action2"]
-      config[:ignore_errors] = ["VerySpecificError", "AnotherError"]
+      config[:ignore_actions] = %w(action1 action2)
+      config[:ignore_errors] = %w(VerySpecificError AnotherError)
+      config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
       config[:filter_parameters] = %w(password confirm_password)
       config[:running_in_container] = false
+      config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config.write_to_environment
     end
 
     it "writes the current config to environment variables" do
-      expect(ENV["APPSIGNAL_ACTIVE"]).to                       eq "true"
-      expect(ENV["APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
-      expect(ENV["APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
-      expect(ENV["APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
-      expect(ENV["APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
-      expect(ENV["APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
-      expect(ENV["APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
-      expect(ENV["APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
-      expect(ENV["APPSIGNAL_ENVIRONMENT"]).to                  eq "production"
-      expect(ENV["APPSIGNAL_AGENT_VERSION"]).to                eq Appsignal::Extension.agent_version
-      expect(ENV["APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
-      expect(ENV["APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
-      expect(ENV["APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
-      expect(ENV["APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
-      expect(ENV["APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
-      expect(ENV["APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
-      expect(ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
-      expect(ENV["APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
-      expect(ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
-      expect(ENV["APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
-      expect(ENV["APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
-      expect(ENV["APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
-      expect(ENV).to_not                                       have_key("APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV["_APPSIGNAL_ACTIVE"]).to                       eq "true"
+      expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
+      expect(ENV["_APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
+      expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
+      expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
+      expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
+      expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
+      expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
+      expect(ENV["_APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
+      expect(ENV["_APPSIGNAL_ENVIRONMENT"]).to                  eq "production"
+      expect(ENV["_APPSIGNAL_AGENT_VERSION"]).to                eq Appsignal::Extension.agent_version
+      expect(ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
+      expect(ENV["_APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
+      expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
+      expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
+      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
+      expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
+      expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
+      expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
+      expect(ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
+      expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
+      expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
+      expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
+      expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
+      expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
     end
 
     context "with :working_dir_path" do
@@ -439,7 +410,7 @@ describe Appsignal::Config do
       end
 
       it "sets the modified :working_dir_path" do
-        expect(ENV["APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
+        expect(ENV["_APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
       end
     end
   end
@@ -449,15 +420,10 @@ describe Appsignal::Config do
     let(:output) { out_stream.read }
     let(:config) { project_fixture_config("production", :log_path => log_path) }
     subject { capture_stdout(out_stream) { config.log_file_path } }
-    around do |example|
-      recognize_as_container(:none) do
-        example.run
-      end
-    end
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, "writable-path") }
-      before { FileUtils.mkdir_p(log_path, :mode => 0755) }
+      before { FileUtils.mkdir_p(log_path, :mode => 0o755) }
       after { FileUtils.rm_rf(log_path) }
 
       it "returns log file path" do
@@ -476,7 +442,7 @@ describe Appsignal::Config do
       after { FileUtils.rm_rf(system_tmp_dir) }
 
       context "when the /tmp fallback path is writable" do
-        before { FileUtils.chmod(0777, system_tmp_dir) }
+        before { FileUtils.chmod(0o777, system_tmp_dir) }
 
         it "returns returns the tmp location" do
           expect(subject).to eq(File.join(system_tmp_dir, "appsignal.log"))
@@ -490,7 +456,7 @@ describe Appsignal::Config do
       end
 
       context "when the /tmp fallback path is not writable" do
-        before { FileUtils.chmod(0555, system_tmp_dir) }
+        before { FileUtils.chmod(0o555, system_tmp_dir) }
 
         it "returns nil" do
           expect(subject).to be_nil
@@ -533,7 +499,7 @@ describe Appsignal::Config do
 
     context "when path is not writable" do
       let(:log_path) { File.join(tmp_dir, "not-writable-path") }
-      before { FileUtils.mkdir_p(log_path, :mode => 0555) }
+      before { FileUtils.mkdir_p(log_path, :mode => 0o555) }
       after { FileUtils.rm_rf(log_path) }
 
       include_examples "#log_file_path: tmp path"
@@ -555,7 +521,7 @@ describe Appsignal::Config do
           let(:log_path) { File.join(tmp_dir, "symlink-path") }
           before do
             FileUtils.mkdir_p(real_path)
-            FileUtils.chmod(0444, real_path)
+            FileUtils.chmod(0o444, real_path)
             File.symlink(real_path, log_path)
           end
           after do

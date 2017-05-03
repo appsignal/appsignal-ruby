@@ -7,6 +7,8 @@ module Appsignal
     # `use Appsignal::Rack::SinatraInstrumentation` in their modular Sinatra
     # applications. This is no longer needed. Instead Appsignal now includes
     # `use Appsignal::Rack::SinatraBaseInstrumentation` automatically.
+    #
+    # @api private
     class SinatraInstrumentation
       def initialize(app, options = {})
         @app = app
@@ -63,10 +65,10 @@ module Appsignal
         ensure
           # If raise_error is off versions of Sinatra don't raise errors, but store
           # them in the sinatra.error env var.
-          if !@raise_errors_on && env["sinatra.error"] && !env["sinatra.skip_appsignal_error"]
+          if !raise_errors_on && env["sinatra.error"] && !env["sinatra.skip_appsignal_error"]
             transaction.set_error(env["sinatra.error"])
           end
-          transaction.set_action(action_name(env))
+          transaction.set_action_if_nil(action_name(env))
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start

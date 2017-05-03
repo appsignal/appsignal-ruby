@@ -1,5 +1,6 @@
 module Appsignal
   class Hooks
+    # @api private
     class WebmachineHook < Appsignal::Hooks::Hook
       register :webmachine
 

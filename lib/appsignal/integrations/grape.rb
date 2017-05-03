@@ -1,4 +1,6 @@
 module Appsignal
+  # @todo Move to sub-namespace
+  # @api private
   module Grape
     class Middleware < ::Grape::Middleware::Base
       def call(env)
@@ -37,7 +39,7 @@ module Appsignal
             path = "/#{path}" if path[0] != "/"
             path = "#{namespace}#{path}"
 
-            transaction.set_action("#{request_method}::#{klass}##{path}")
+            transaction.set_action_if_nil("#{request_method}::#{klass}##{path}")
           end
 
           transaction.set_http_or_background_queue_start

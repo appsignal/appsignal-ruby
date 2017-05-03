@@ -85,7 +85,7 @@ module Appsignal
           puts "Installing for Sinatra"
           config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, ["development", "production", "staging"], true)
+          configure(config, %w(development production staging), true)
 
           puts "Finish Sinatra configuration"
           puts "  Sinatra requires some manual configuration."
@@ -94,7 +94,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/sinatra'"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#sinatra"
+          puts "  http://docs.appsignal.com/ruby/integrations/sinatra.html"
           press_any_key
           done_notice
         end
@@ -103,7 +103,7 @@ module Appsignal
           puts "Installing for Padrino"
           config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, ["development", "production", "staging"], true)
+          configure(config, %w(development production staging), true)
 
           puts "Finish Padrino installation"
           puts "  Padrino requires some manual configuration."
@@ -112,7 +112,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/padrino"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#padrino"
+          puts "  http://docs.appsignal.com/ruby/integrations/padrino.html"
           press_any_key
           done_notice
         end
@@ -123,11 +123,11 @@ module Appsignal
           config[:name] = required_input("  Enter application name: ")
           puts
 
-          configure(config, ["development", "production", "staging"], true)
+          configure(config, %w(development production staging), true)
 
           puts "Manual Grape configuration needed"
           puts "  See the installation instructions at:"
-          puts "  http://docs.appsignal.com/getting-started/supported-frameworks.html#grape"
+          puts "  http://docs.appsignal.com/ruby/integrations/grape.html"
           press_any_key
           done_notice
         end

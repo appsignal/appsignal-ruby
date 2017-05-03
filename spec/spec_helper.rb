@@ -6,6 +6,7 @@ APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
 Bundler.require :default
+require "cgi"
 require "rack"
 require "rspec"
 require "pry"
@@ -66,9 +67,9 @@ RSpec.configure do |config|
     ENV["PADRINO_ENV"] ||= "test"
 
     # Clean environment
-    ENV.keys.select { |key| key.start_with?("APPSIGNAL_") }.each do |key|
-      ENV.delete(key)
-    end
+    appsignal_key_prefixes = %w(APPSIGNAL_ _APPSIGNAL_)
+    env_keys = ENV.keys.select { |key| key.start_with?(*appsignal_key_prefixes) }
+    env_keys.each { |key| ENV.delete(key) }
   end
 
   config.after do

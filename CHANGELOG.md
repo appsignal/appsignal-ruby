@@ -1,11 +1,29 @@
+# 2.2.0
+* Support Ruby 2.4 better. PR #234
+* Initial setup for documenting the Ruby gem's code. PR #243
+* Move `running_in_container` auto detection to extension for easy reuse.
+  PR #249
+* Allow overriding of action and namespace for a transaction. PR #254
+* Prefix all agent configuration environment variables with an underscore to
+  separate the two usages. PR #258
+* Force agent to run in diagnostic mode even when the user config is set to
+  `active: false`. PR #260
+* Stub JS error catching endpoint when not active. PR #263
+* Use better event names for Padrino integration. PR #265
+* No longer gzip payloads send by the Ruby gem transmitter. PR #269
+* Send diagnostics data report to AppSignal on request. PR #270
+* When JS exception endpoint payload is empty return 400 code. PR #271
+* Remove hardcoded DNS servers from agent and add config option. PR #278
+
 # 2.1.2
 * Fix error with Grape request methods defined with symbols. PR #259
 
 # 2.1.1
-* Fix DNS issue related to musl build.
-  Commit 732c877de8faceabe8a977bf80a82a6a89065c4d
+* Fix DNS issue related to the musl build.
+  Commit 732c877de8faceabe8a977bf80a82a6a89065c4d and
+  84e521d20d4438f7b1dda82d5e9f1f533ae27c4b
 * Update benchmark and add load test. PR #248
-* Fix configuring instrument redis and sequel from env. PR #257
+* Fix configuring instrument Redis and Sequel from env. PR #257
 
 # 2.1.0
 * Add support for musl based libc (Alpine Linux). PR #229

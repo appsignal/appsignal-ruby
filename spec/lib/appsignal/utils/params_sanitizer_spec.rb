@@ -9,7 +9,8 @@ describe Appsignal::Utils::ParamsSanitizer do
       :bool_true  => true,
       :bool_false => false,
       :nil        => nil,
-      :int        => 1,
+      :int        => 1, # Fixnum
+      :int64      => 1 << 64, # Bignum
       :hash       => {
         :nested_text  => "string",
         :nested_array => [
@@ -41,6 +42,7 @@ describe Appsignal::Utils::ParamsSanitizer do
     it { expect(subject[:bool_false]).to be(false) }
     it { expect(subject[:nil]).to be_nil }
     it { expect(subject[:int]).to eq(1) }
+    it { expect(subject[:int64]).to eq(1 << 64) }
 
     it "does not change the original params" do
       subject

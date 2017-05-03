@@ -2,6 +2,7 @@ require "appsignal/utils/params_sanitizer"
 require "appsignal/utils/query_params_sanitizer"
 
 module Appsignal
+  # @api private
   module Utils
     def self.data_generate(body)
       Data.generate(body)
@@ -15,7 +16,7 @@ module Appsignal
           elsif body.is_a?(Array)
             map_array(body)
           else
-            raise TypeError.new("Body of type #{body.class} should be a Hash or Array")
+            raise TypeError, "Body of type #{body.class} should be a Hash or Array"
           end
         end
 
@@ -26,8 +27,14 @@ module Appsignal
             case value
             when String
               map.set_string(key, value)
-            when Fixnum
-              map.set_fixnum(key, value)
+            when Integer
+              # An Integer too big for C-lang longs to fit
+              bigint = 1 << 63
+              if value >= bigint
+                map.set_string(key, "bigint:#{value}")
+              else
+                map.set_integer(key, value)
+              end
             when Float
               map.set_float(key, value)
             when TrueClass, FalseClass
@@ -51,8 +58,14 @@ module Appsignal
             case value
             when String
               array.append_string(value)
-            when Fixnum
-              array.append_fixnum(value)
+            when Integer
+              # An Integer too big for C-lang longs to fit
+              bigint = 1 << 63
+              if value >= bigint
+                array.append_string("bigint:#{value}")
+              else
+                array.append_integer(value)
+              end
             when Float
               array.append_float(value)
             when TrueClass, FalseClass
@@ -106,12 +119,6 @@ module Appsignal
             :undef   => :replace
           )
         end
-      end
-    end
-
-    class Gzip
-      def self.compress(body)
-        Zlib::Deflate.deflate(body, Zlib::BEST_SPEED)
       end
     end
   end

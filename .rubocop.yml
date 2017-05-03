@@ -3,7 +3,10 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   TargetRubyVersion: 1.9
   Include:
+    - "**/*.cap"
     - "Gemfile"
+    - "Rakefile"
+    - "appsignal.gemspec"
   Exclude:
     - "tmp/**/*"
     - "gemfiles/vendor/**/*"
@@ -38,6 +41,17 @@ Style/AlignHash:
 
 Style/IndentArray:
   EnforcedStyle: consistent
+
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+
+Style/MethodMissing:
+  Exclude:
+    - "lib/appsignal/extension.rb"
+    - "lib/appsignal/transaction.rb"
+
+Style/TrailingUnderscoreVariable:
+  Enabled: false
 
 # Metrics/LineLength:
 #   Max: 80

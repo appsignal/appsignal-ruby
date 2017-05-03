@@ -1,6 +1,7 @@
 require "rack"
 
 module Appsignal
+  # @api private
   module Rack
     class GenericInstrumentation
       def initialize(app, options = {})
@@ -33,9 +34,9 @@ module Appsignal
           raise error
         ensure
           if env["appsignal.route"]
-            transaction.set_action(env["appsignal.route"])
+            transaction.set_action_if_nil(env["appsignal.route"])
           else
-            transaction.set_action("unknown")
+            transaction.set_action_if_nil("unknown")
           end
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)

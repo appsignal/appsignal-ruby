@@ -32,6 +32,10 @@ static VALUE stop(VALUE self) {
   return Qnil;
 }
 
+static VALUE diagnose(VALUE self) {
+  return make_ruby_string(appsignal_diagnose());
+}
+
 static VALUE get_server_state(VALUE self, VALUE key) {
   appsignal_string_t string;
 
@@ -125,7 +129,7 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   Check_Type(title, T_STRING);
   duration_type = TYPE(duration);
   if (duration_type != T_FIXNUM && duration_type != T_BIGNUM) {
-      rb_raise(rb_eTypeError, "duration should be a Fixnum or Bignum");
+      rb_raise(rb_eTypeError, "duration should be an Integer");
   }
   Check_Type(body_format, T_FIXNUM);
 
@@ -211,13 +215,26 @@ static VALUE set_transaction_action(VALUE self, VALUE action) {
   return Qnil;
 }
 
+static VALUE set_transaction_namespace(VALUE self, VALUE namespace) {
+  appsignal_transaction_t* transaction;
+
+  Check_Type(namespace, T_STRING);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  appsignal_set_transaction_namespace(
+      transaction,
+      make_appsignal_string(namespace)
+  );
+  return Qnil;
+}
+
 static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
   appsignal_transaction_t* transaction;
   int queue_start_type;
 
   queue_start_type = TYPE(queue_start);
   if (queue_start_type != T_FIXNUM && queue_start_type != T_BIGNUM) {
-      rb_raise(rb_eTypeError, "queue_start should be a Fixnum or Bignum");
+      rb_raise(rb_eTypeError, "queue_start should be an Integer");
   }
 
   Data_Get_Struct(self, appsignal_transaction_t, transaction);
@@ -305,18 +322,21 @@ static VALUE data_set_string(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-static VALUE data_set_fixnum(VALUE self, VALUE key, VALUE value) {
+static VALUE data_set_integer(VALUE self, VALUE key, VALUE value) {
   appsignal_data_t* data;
+  VALUE value_type = TYPE(value);
 
   Check_Type(key, T_STRING);
-  Check_Type(value, T_FIXNUM);
+  if (value_type != T_FIXNUM && value_type != T_BIGNUM) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
+  }
 
   Data_Get_Struct(self, appsignal_data_t, data);
 
   appsignal_data_map_set_integer(
     data,
     make_appsignal_string(key),
-    FIX2LONG(value)
+    NUM2LONG(value)
   );
 
   return Qnil;
@@ -404,16 +424,19 @@ static VALUE data_append_string(VALUE self, VALUE value) {
   return Qnil;
 }
 
-static VALUE data_append_fixnum(VALUE self, VALUE value) {
+static VALUE data_append_integer(VALUE self, VALUE value) {
   appsignal_data_t* data;
+  VALUE value_type = TYPE(value);
 
-  Check_Type(value, T_FIXNUM);
+  if (value_type != T_FIXNUM && value_type != T_BIGNUM) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
+  }
 
   Data_Get_Struct(self, appsignal_data_t, data);
 
   appsignal_data_array_append_integer(
     data,
-    FIX2LONG(value)
+    NUM2LONG(value)
  );
 
   return Qnil;
@@ -579,6 +602,10 @@ static VALUE install_allocation_event_hook() {
   return Qnil;
 }
 
+static VALUE running_in_container() {
+  return appsignal_running_in_container() == 1 ? Qtrue : Qfalse;
+}
+
 void Init_appsignal_extension(void) {
   Appsignal = rb_define_module("Appsignal");
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
@@ -586,8 +613,10 @@ void Init_appsignal_extension(void) {
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
 
   // Starting and stopping
-  rb_define_singleton_method(Extension, "start", start, 0);
-  rb_define_singleton_method(Extension, "stop",  stop,  0);
+  rb_define_singleton_method(Extension, "start",    start,    0);
+  rb_define_singleton_method(Extension, "stop",     stop,     0);
+  // Diagnostics
+  rb_define_singleton_method(Extension, "diagnose", diagnose, 0);
 
   // Server state
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);
@@ -602,6 +631,7 @@ void Init_appsignal_extension(void) {
   rb_define_method(Transaction, "set_error",       set_transaction_error,       3);
   rb_define_method(Transaction, "set_sample_data", set_transaction_sample_data, 2);
   rb_define_method(Transaction, "set_action",      set_transaction_action,      1);
+  rb_define_method(Transaction, "set_namespace",   set_transaction_namespace,   1);
   rb_define_method(Transaction, "set_queue_start", set_transaction_queue_start, 1);
   rb_define_method(Transaction, "set_metadata",    set_transaction_metadata,    2);
   rb_define_method(Transaction, "finish",          finish_transaction,          1);
@@ -613,7 +643,7 @@ void Init_appsignal_extension(void) {
 
   // Add content to a data map
   rb_define_method(Data, "set_string",  data_set_string,  2);
-  rb_define_method(Data, "set_fixnum",  data_set_fixnum,  2);
+  rb_define_method(Data, "set_integer", data_set_integer, 2);
   rb_define_method(Data, "set_float",   data_set_float,   2);
   rb_define_method(Data, "set_boolean", data_set_boolean, 2);
   rb_define_method(Data, "set_nil",     data_set_nil,     1);
@@ -621,7 +651,7 @@ void Init_appsignal_extension(void) {
 
   // Add content to a data array
   rb_define_method(Data, "append_string",  data_append_string,  1);
-  rb_define_method(Data, "append_fixnum",  data_append_fixnum,  1);
+  rb_define_method(Data, "append_integer", data_append_integer, 1);
   rb_define_method(Data, "append_float",   data_append_float,   1);
   rb_define_method(Data, "append_boolean", data_append_boolean, 1);
   rb_define_method(Data, "append_nil",     data_append_nil,     0);
@@ -635,6 +665,7 @@ void Init_appsignal_extension(void) {
 
   // Event hook installation
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
+  rb_define_singleton_method(Extension, "running_in_container?", running_in_container, 0);
 
   // Metrics
   rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);

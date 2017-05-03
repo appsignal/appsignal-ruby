@@ -1,5 +1,6 @@
 module Appsignal
   class EventFormatter
+    # @api private
     module MongoRubyDriver
       class QueryFormatter
         ALLOWED = {
@@ -44,7 +45,7 @@ module Appsignal
             "multi"  => :allow,
             "upsert" => :allow
           }
-        }
+        }.freeze
 
         # Format command based on given strategy
         def self.format(strategy, command)

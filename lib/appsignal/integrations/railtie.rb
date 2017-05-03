@@ -4,6 +4,7 @@ require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
   module Integrations
+    # @api private
     class Railtie < ::Rails::Railtie
       initializer "appsignal.configure_rails_initialization" do |app|
         Appsignal::Integrations::Railtie.initialize_appsignal(app)
@@ -26,8 +27,7 @@ module Appsignal
           Appsignal::Rack::RailsInstrumentation
         )
 
-        if Appsignal.config.active? &&
-            Appsignal.config[:enable_frontend_error_catching] == true
+        if Appsignal.config[:enable_frontend_error_catching]
           app.middleware.insert_before(
             Appsignal::Rack::RailsInstrumentation,
             Appsignal::Rack::JSExceptionCatcher
