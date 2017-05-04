@@ -11,6 +11,16 @@ module Appsignal
       end
 
       def install
+        ::ActiveSupport::Notifications.class_eval do
+          def self.instrument(name, payload = {})
+            # Don't check the notifier if any subscriber is listening:
+            # AppSignal is listening
+            instrumenter.instrument(name, payload) do
+              yield payload if block_given?
+            end
+          end
+        end
+
         ::ActiveSupport::Notifications::Instrumenter.class_eval do
           alias instrument_without_appsignal instrument
 
