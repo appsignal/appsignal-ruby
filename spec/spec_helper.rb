@@ -51,6 +51,8 @@ RSpec.configure do |config|
   config.include SystemHelpers
   config.extend DependencyHelper
 
+  config.fail_if_no_examples = true
+
   config.before :context do
     # Use modified SYSTEM_TMP_DIR
     Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
