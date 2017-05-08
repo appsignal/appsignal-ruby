@@ -24,8 +24,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       let(:body) do
         {
           :foo => "Foo",
-          :bar => "Bar",
-          :baz => "s" * 300
+          :bar => "Bar"
         }
       end
       after do
@@ -47,8 +46,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
           },
           :params => {
             :foo => "Foo",
-            :bar => "Bar",
-            :baz => "s" * 197 + "..."
+            :bar => "Bar"
           },
           :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
         )
@@ -71,8 +69,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
             },
             :params => {
               :foo => "[FILTERED]",
-              :bar => "Bar",
-              :baz => "s" * 197 + "..."
+              :bar => "Bar"
             },
             :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
           )
