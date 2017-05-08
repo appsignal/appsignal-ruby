@@ -22,8 +22,8 @@ module Appsignal
         # Start logger
         Appsignal.start_logger
 
-        app.middleware.insert_before(
-          ActionDispatch::RemoteIp,
+        app.middleware.insert_after(
+          ActionDispatch::DebugExceptions,
           Appsignal::Rack::RailsInstrumentation
         )
 
