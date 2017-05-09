@@ -433,50 +433,51 @@ module Appsignal
     end
     alias :tag_job :tag_request
 
-    # Instrument helper for AppSignal.
+    # @overload instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
+    #   Instrument helper for AppSignal.
     #
-    # For more help, read our custom instrumentation guide, listed under "See
-    # also".
+    #   Helper method for {Appsignal::Transaction#instrument}. Takes the current
+    #   transaction and records the instrumentation event on it.
     #
-    # @example Simple instrumentation
-    #   Appsignal.instrument("fetch.issue_fetcher") do
-    #     # To be instrumented code
-    #   end
+    #   For more help, read our custom instrumentation guide, listed under "See
+    #   also".
     #
-    # @example Instrumentation with title and body
-    #   Appsignal.instrument(
-    #     "fetch.issue_fetcher",
-    #     "Fetching issue",
-    #     "GitHub API"
-    #   ) do
-    #     # To be instrumented code
-    #   end
+    #   @example Simple instrumentation
+    #     Appsignal.instrument("fetch.issue_fetcher") do
+    #       # To be instrumented code
+    #     end
     #
-    # @param name [String] Name of the instrumented event. Read our event
-    #   naming guide listed under "See also".
-    # @param title [String, nil] Human readable name of the event.
-    # @param body [String, nil] Value of importance for the event, such as the
-    #   server against an API call is made.
-    # @param body_format [Integer] Enum for the type of event that is
-    #   instrumented. Accepted values are {EventFormatter::DEFAULT} and
-    #   {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
-    #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
-    # @yield yields the given block of code instrumented in an AppSignal
-    #   event.
-    # @return [Object] Returns the blocks return value.
+    #   @example Instrumentation with title and body
+    #     Appsignal.instrument(
+    #       "fetch.issue_fetcher",
+    #       "Fetching issue",
+    #       "GitHub API"
+    #     ) do
+    #       # To be instrumented code
+    #     end
     #
-    # @see Appsignal::Transaction#instrument
-    # @see .instrument_sql
-    # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
-    #   AppSignal custom instrumentation guide
-    # @see http://docs.appsignal.com/api/event-names.html
-    #   AppSignal event naming guide
-    # @since 1.3.0
-    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
-      Appsignal::Transaction.current.start_event
-      yield if block_given?
-    ensure
-      Appsignal::Transaction.current.finish_event(name, title, body, body_format)
+    #   @param name [String] Name of the instrumented event. Read our event
+    #     naming guide listed under "See also".
+    #   @param title [String, nil] Human readable name of the event.
+    #   @param body [String, nil] Value of importance for the event, such as the
+    #     server against an API call is made.
+    #   @param body_format [Integer] Enum for the type of event that is
+    #     instrumented. Accepted values are {EventFormatter::DEFAULT} and
+    #     {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
+    #     {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
+    #   @yield yields the given block of code instrumented in an AppSignal
+    #     event.
+    #   @return [Object] Returns the blocks return value.
+    #
+    #   @see Appsignal::Transaction#instrument
+    #   @see .instrument_sql
+    #   @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
+    #     AppSignal custom instrumentation guide
+    #   @see http://docs.appsignal.com/api/event-names.html
+    #     AppSignal event naming guide
+    #   @since 1.3.0
+    def instrument(*args, &block)
+      Appsignal::Transaction.current.instrument(*args, &block)
     end
 
     # Instrumentation helper for SQL queries.
