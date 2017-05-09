@@ -57,6 +57,7 @@ if DependencyHelper.padrino_present?
       let(:base)     { double }
       let(:router)   { PadrinoClassWithRouter.new }
       let(:env)      { {} }
+      # TODO: use an instance double
       let(:settings) { double(:name => "TestApp") }
 
       describe "routes" do
@@ -107,6 +108,7 @@ if DependencyHelper.padrino_present?
             Appsignal::Transaction::HTTP_REQUEST,
             request_kind
           ).and_return(transaction)
+
           expect(Appsignal).to receive(:instrument)
             .at_least(:once)
             .with("process_action.padrino")

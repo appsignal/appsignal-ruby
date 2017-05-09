@@ -19,6 +19,9 @@ end
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support/mocks", "*.rb")].each do |f|
   require f
 end
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].each do |f|
+  require f
+end
 if DependencyHelper.rails_present?
   Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].each do |f|
     require f
