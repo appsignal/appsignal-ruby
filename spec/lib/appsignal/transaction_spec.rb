@@ -568,8 +568,8 @@ describe Appsignal::Transaction do
           "name",
           "title",
           "body",
-          1000,
           1,
+          1000,
           fake_gc_time
         ).and_call_original
 
@@ -587,8 +587,8 @@ describe Appsignal::Transaction do
           "name",
           "",
           "",
-          1000,
           0,
+          1000,
           fake_gc_time
         ).and_call_original
 
