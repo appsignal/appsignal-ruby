@@ -291,6 +291,10 @@ module Appsignal
       r
     end
 
+    def to_json
+      @ext.to_json
+    end
+
     class GenericRequest
       attr_reader :env
 
