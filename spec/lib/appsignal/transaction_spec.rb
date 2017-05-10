@@ -603,22 +603,8 @@ describe Appsignal::Transaction do
     end
 
     describe "#instrument" do
-      it "should start and finish an event around the given block" do
-        stub = double
-        expect(stub).to receive(:method_call).and_return("return value")
-
-        expect(transaction).to receive(:start_event)
-        expect(transaction).to receive(:finish_event).with(
-          "name",
-          "title",
-          "body",
-          0
-        )
-
-        return_value = transaction.instrument "name", "title", "body" do
-          stub.method_call
-        end
-        expect(return_value).to eq "return value"
+      it_behaves_like "instrument helper" do
+        let(:instrumenter) { transaction }
       end
     end
 

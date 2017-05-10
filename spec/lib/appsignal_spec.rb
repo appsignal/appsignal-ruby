@@ -298,18 +298,6 @@ describe Appsignal do
         end.to_not raise_error
       end
     end
-
-    describe ".instrument" do
-      it "should not instrument, but still call the block" do
-        stub = double
-        expect(stub).to receive(:method_call).and_return("return value")
-
-        return_value = Appsignal.instrument "name" do
-          stub.method_call
-        end
-        expect(return_value).to eq "return value"
-      end
-    end
   end
 
   context "with config and started" do
@@ -848,28 +836,11 @@ describe Appsignal do
     end
 
     describe ".instrument" do
-      before do
-        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
-      end
-
-      it "should instrument through the transaction" do
-        expect(transaction).to receive(:start_event)
-        expect(transaction).to receive(:finish_event)
-          .with("name", "title", "body", Appsignal::EventFormatter::DEFAULT)
-
-        result = Appsignal.instrument "name", "title", "body" do
-          "return value"
+      it_behaves_like "instrument helper" do
+        let(:instrumenter) { Appsignal }
+        before do
+          expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
         end
-        expect(result).to eq "return value"
-      end
-
-      it "should instrument without a block given" do
-        expect(transaction).to receive(:start_event)
-        expect(transaction).to receive(:finish_event)
-          .with("name", "title", "body", Appsignal::EventFormatter::DEFAULT)
-
-        result = Appsignal.instrument "name", "title", "body"
-        expect(result).to be_nil
       end
     end
 
@@ -878,7 +849,7 @@ describe Appsignal do
         expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
       end
 
-      it "should instrument sql through the transaction" do
+      it "creates an SQL event on the transaction" do
         expect(transaction).to receive(:start_event)
         expect(transaction).to receive(:finish_event)
           .with("name", "title", "body", Appsignal::EventFormatter::SQL_BODY_FORMAT)

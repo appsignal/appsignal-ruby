@@ -461,10 +461,12 @@ module Appsignal
     #   instrumented. Accepted values are {EventFormatter::DEFAULT} and
     #   {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
     #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
-    # @yield yields the given block of code instrumented in an AppSignal event.
+    # @yield yields the given block of code instrumented in an AppSignal
+    #   event.
     # @return [Object] Returns the blocks return value.
     #
-    # @see .instrument_sql Specific helper for SQL queries.
+    # @see Appsignal::Transaction#instrument
+    # @see .instrument_sql
     # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
     #   AppSignal custom instrumentation guide
     # @see http://docs.appsignal.com/api/event-names.html
@@ -472,9 +474,9 @@ module Appsignal
     # @since 1.3.0
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       Appsignal::Transaction.current.start_event
-      return_value = yield if block_given?
+      yield if block_given?
+    ensure
       Appsignal::Transaction.current.finish_event(name, title, body, body_format)
-      return_value
     end
 
     # Instrumentation helper for SQL queries.

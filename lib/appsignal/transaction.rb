@@ -286,9 +286,9 @@ module Appsignal
 
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
-      r = yield
+      yield if block_given?
+    ensure
       finish_event(name, title, body, body_format)
-      r
     end
 
     class GenericRequest
