@@ -33,11 +33,11 @@ if DependencyHelper.resque_present?
         end
 
         context "without exception" do
-          it "should create a new transaction" do
+          it "creates a new transaction" do
             expect(Appsignal::Transaction).to receive(:create).and_return(transaction)
           end
 
-          it "should wrap in a transaction with the correct params" do
+          it "wraps it in a transaction with the correct params" do
             expect(Appsignal).to receive(:monitor_transaction).with(
               "perform_job.resque",
               :class => "TestJob",
@@ -45,7 +45,7 @@ if DependencyHelper.resque_present?
             )
           end
 
-          it "should close the transaction" do
+          it "closes the transaction" do
             expect(transaction).to receive(:complete)
           end
 
@@ -54,17 +54,29 @@ if DependencyHelper.resque_present?
 
         context "with exception" do
           let(:job) { ::Resque::Job.new("default", "class" => "BrokenTestJob") }
+          let(:transaction) do
+            Appsignal::Transaction.new(
+              SecureRandom.uuid,
+              Appsignal::Transaction::BACKGROUND_JOB,
+              Appsignal::Transaction::GenericRequest.new({})
+            )
+          end
+          before do
+            allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+            expect(Appsignal::Transaction).to receive(:create)
+              .with(
+                kind_of(String),
+                Appsignal::Transaction::BACKGROUND_JOB,
+                kind_of(Appsignal::Transaction::GenericRequest)
+              ).and_return(transaction)
+          end
 
-          it "should set the exception" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_error)
+          it "sets the exception on the transaction" do
+            expect(transaction).to receive(:set_error).with(VerySpecificError)
           end
 
           after do
-            begin
-              job.perform
-            rescue VerySpecificError
-              # Do nothing
-            end
+            expect { job.perform }.to raise_error(VerySpecificError)
           end
         end
       end
@@ -73,8 +85,8 @@ if DependencyHelper.resque_present?
     context "without resque" do
       before(:context) { Object.send(:remove_const, :Resque) }
 
-      specify { expect { ::Resque }.to raise_error(NameError) }
-      specify { expect { load file }.to_not raise_error }
+      it { expect { ::Resque }.to raise_error(NameError) }
+      it { expect { load file }.to_not raise_error }
     end
   end
 end

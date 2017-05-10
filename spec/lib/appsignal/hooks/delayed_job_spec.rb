@@ -25,6 +25,10 @@ describe Appsignal::Hooks::DelayedJobHook do
       it { is_expected.to be_truthy }
     end
 
+    it "adds the plugin" do
+      expect(::Delayed::Worker.plugins).to include Appsignal::Hooks::DelayedJobPlugin
+    end
+
     # We haven't found a way to test the hooks, we'll have to do that manually
 
     describe ".invoke_with_instrumentation" do
@@ -38,17 +42,16 @@ describe Appsignal::Hooks::DelayedJobHook do
           :attempts       => 1,
           :queue          => "default",
           :created_at     => time - 60_000,
-          :payload_object => double(:args => ["argument"])
+          :payload_object => double(:args => args)
         }
       end
+      let(:args) { ["argument"] }
       let(:job) { double(job_data) }
       let(:invoked_block) { proc {} }
-      let(:error) { StandardError.new }
 
       context "with a normal call" do
-        it "should wrap in a transaction with the correct params" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.delayed_job",
+        let(:default_params) do
+          {
             :class    => "TestClass",
             :method   => "perform",
             :metadata => {
@@ -57,12 +60,59 @@ describe Appsignal::Hooks::DelayedJobHook do
               :queue    => "default",
               :id       => "123"
             },
-            :params      => ["argument"],
             :queue_start => time - 60_000
-          )
-
+          }
+        end
+        after do
           Timecop.freeze(time) do
             plugin.invoke_with_instrumentation(job, invoked_block)
+          end
+        end
+
+        it "wraps it in a transaction with the correct params" do
+          expect(Appsignal).to receive(:monitor_transaction).with(
+            "perform_job.delayed_job",
+            default_params.merge(:params => ["argument"])
+          )
+        end
+
+        context "with more complex params" do
+          let(:args) do
+            {
+              :foo => "Foo",
+              :bar => "Bar"
+            }
+          end
+
+          it "adds the more complex arguments" do
+            expect(Appsignal).to receive(:monitor_transaction).with(
+              "perform_job.delayed_job",
+              default_params.merge(
+                :params => {
+                  :foo => "Foo",
+                  :bar => "Bar"
+                }
+              )
+            )
+          end
+
+          context "with parameter filtering" do
+            before do
+              Appsignal.config = project_fixture_config("production")
+              Appsignal.config[:filter_parameters] = ["foo"]
+            end
+
+            it "filters selected arguments" do
+              expect(Appsignal).to receive(:monitor_transaction).with(
+                "perform_job.delayed_job",
+                default_params.merge(
+                  :params => {
+                    :foo => "[FILTERED]",
+                    :bar => "Bar"
+                  }
+                )
+              )
+            end
           end
         end
 
@@ -71,7 +121,7 @@ describe Appsignal::Hooks::DelayedJobHook do
             {
               :payload_object => double(
                 :appsignal_name => "CustomClass#perform",
-                :args           => ["argument"]
+                :args           => args
               ),
               :id         => "123",
               :name       => "TestClass#perform",
@@ -81,9 +131,8 @@ describe Appsignal::Hooks::DelayedJobHook do
               :created_at => time - 60_000
             }
           end
-          it "should wrap in a transaction with the correct params" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.delayed_job",
+          let(:default_params) do
+            {
               :class => "CustomClass",
               :method => "perform",
               :metadata => {
@@ -92,12 +141,56 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :queue    => "default",
                 :id       => "123"
               },
-              :params      => ["argument"],
               :queue_start => time - 60_000
-            )
+            }
+          end
 
-            Timecop.freeze(time) do
-              plugin.invoke_with_instrumentation(job, invoked_block)
+          it "wraps it in a transaction with the correct params" do
+            expect(Appsignal).to receive(:monitor_transaction).with(
+              "perform_job.delayed_job",
+              default_params.merge(
+                :params => ["argument"]
+              )
+            )
+          end
+
+          context "with more complex params" do
+            let(:args) do
+              {
+                :foo => "Foo",
+                :bar => "Bar"
+              }
+            end
+
+            it "adds the more complex arguments" do
+              expect(Appsignal).to receive(:monitor_transaction).with(
+                "perform_job.delayed_job",
+                default_params.merge(
+                  :params => {
+                    :foo => "Foo",
+                    :bar => "Bar"
+                  }
+                )
+              )
+            end
+
+            context "with parameter filtering" do
+              before do
+                Appsignal.config = project_fixture_config("production")
+                Appsignal.config[:filter_parameters] = ["foo"]
+              end
+
+              it "filters selected arguments" do
+                expect(Appsignal).to receive(:monitor_transaction).with(
+                  "perform_job.delayed_job",
+                  default_params.merge(
+                    :params => {
+                      :foo => "[FILTERED]",
+                      :bar => "Bar"
+                    }
+                  )
+                )
+              end
             end
           end
         end
@@ -106,14 +199,9 @@ describe Appsignal::Hooks::DelayedJobHook do
           require "active_job"
 
           context "when wrapped by ActiveJob" do
-            before do
-              job_data[:args] = ["argument"]
-            end
             let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
-
-            it "should wrap in a transaction with the correct params" do
-              expect(Appsignal).to receive(:monitor_transaction).with(
-                "perform_job.delayed_job",
+            let(:default_params) do
+              {
                 :class    => "TestClass",
                 :method   => "perform",
                 :metadata => {
@@ -122,12 +210,55 @@ describe Appsignal::Hooks::DelayedJobHook do
                   :queue    => "default",
                   :id       => "123"
                 },
-                :params      => ["argument"],
                 :queue_start => time - 60_000
-              )
+              }
+            end
+            before { job_data[:args] = args }
 
-              Timecop.freeze(time) do
-                plugin.invoke_with_instrumentation(job, invoked_block)
+            it "wraps it in a transaction with the correct params" do
+              expect(Appsignal).to receive(:monitor_transaction).with(
+                "perform_job.delayed_job",
+                default_params.merge(:params => ["argument"])
+              )
+            end
+
+            context "with more complex params" do
+              let(:args) do
+                {
+                  :foo => "Foo",
+                  :bar => "Bar"
+                }
+              end
+
+              it "adds the more complex arguments" do
+                expect(Appsignal).to receive(:monitor_transaction).with(
+                  "perform_job.delayed_job",
+                  default_params.merge(
+                    :params => {
+                      :foo => "Foo",
+                      :bar => "Bar"
+                    }
+                  )
+                )
+              end
+
+              context "with parameter filtering" do
+                before do
+                  Appsignal.config = project_fixture_config("production")
+                  Appsignal.config[:filter_parameters] = ["foo"]
+                end
+
+                it "filters selected arguments" do
+                  expect(Appsignal).to receive(:monitor_transaction).with(
+                    "perform_job.delayed_job",
+                    default_params.merge(
+                      :params => {
+                        :foo => "[FILTERED]",
+                        :bar => "Bar"
+                      }
+                    )
+                  )
+                end
               end
             end
           end
@@ -135,21 +266,35 @@ describe Appsignal::Hooks::DelayedJobHook do
       end
 
       context "with an erroring call" do
-        it "should add the error to the transaction" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
-          expect(Appsignal::Transaction).to receive(:complete_current!)
+        let(:error) { VerySpecificError }
+        let(:transaction) do
+          Appsignal::Transaction.new(
+            SecureRandom.uuid,
+            Appsignal::Transaction::BACKGROUND_JOB,
+            Appsignal::Transaction::GenericRequest.new({})
+          )
+        end
+        before do
+          expect(invoked_block).to receive(:call).and_raise(error)
 
-          allow(invoked_block).to receive(:call).and_raise(error)
+          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+          expect(Appsignal::Transaction).to receive(:create)
+            .with(
+              kind_of(String),
+              Appsignal::Transaction::BACKGROUND_JOB,
+              kind_of(Appsignal::Transaction::GenericRequest)
+            ).and_return(transaction)
+        end
+
+        it "adds the error to the transaction" do
+          expect(transaction).to receive(:set_error).with(error)
+          expect(transaction).to receive(:complete)
 
           expect do
             plugin.invoke_with_instrumentation(job, invoked_block)
-          end.to raise_error(StandardError)
+          end.to raise_error(error)
         end
       end
-    end
-
-    it "should add the plugin" do
-      expect(::Delayed::Worker.plugins).to include Appsignal::Hooks::DelayedJobPlugin
     end
   end
 
