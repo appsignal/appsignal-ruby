@@ -278,8 +278,8 @@ module Appsignal
         name,
         title || BLANK,
         body || BLANK,
-        duration,
         body_format || Appsignal::EventFormatter::DEFAULT,
+        duration,
         self.class.garbage_collection_profiler.total_time
       )
     end
