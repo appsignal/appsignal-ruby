@@ -28,14 +28,7 @@ module Appsignal
               transaction.set_error(exception)
               raise exception
             ensure
-              # Cannot do this because it gets overwritten with the
-              # request.params from the original websocket request. We cannot
-              # set the params here right now, unless we make it possible to
-              # customize the params in the transaction.
-              # transaction.set_params(args.first)
-              # and use that when it is set, otherwise fall back on the
-              # request.params
-              # transaction.set_sample_data(:params, args.first)
+              transaction.set_params(args.first)
 
               transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
               transaction.set_metadata("path", request.path)

@@ -385,6 +385,18 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#set_params" do
+      it "uses the params when setting sample data" do
+        transaction.set_params(:foo => "bar")
+
+        expect(transaction.ext).to receive(:set_sample_data).with(
+          "params", Appsignal::Utils.data_generate(:foo => "bar")
+        ).once
+
+        transaction.sample_data
+      end
+    end
+
     describe "#set_metadata" do
       it "should set the metdata in extension" do
         expect(transaction.ext).to receive(:set_metadata).with(
