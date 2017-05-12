@@ -241,6 +241,37 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#params" do
+      subject { transaction.params }
+
+      context "with custom params set on transaction" do
+        before do
+          transaction.params = { :foo => "bar" }
+        end
+
+        it "returns custom parameters" do
+          expect(subject).to eq(:foo => "bar")
+        end
+      end
+
+      context "without custom params set on transaction" do
+        it "returns parameters from request" do
+          expect(subject).to eq(
+            "action" => "show",
+            "controller" => "blog_posts",
+            "id" => "1"
+          )
+        end
+      end
+    end
+
+    describe "#params=" do
+      it "sets params on the transaction" do
+        transaction.params = { :foo => "bar" }
+        expect(transaction.params).to eq(:foo => "bar")
+      end
+    end
+
     describe "#set_tags" do
       it "should add tags to transaction" do
         expect do
@@ -747,19 +778,38 @@ describe Appsignal::Transaction do
     describe "#sanitized_params" do
       subject { transaction.send(:sanitized_params) }
 
-      context "without params" do
+      context "with custom params" do
+        before do
+          transaction.params = { :foo => "bar", :baz => :bat }
+        end
+
+        it "returns custom params" do
+          is_expected.to eq(:foo => "bar", :baz => :bat)
+        end
+
+        context "with AppSignal filtering" do
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "returns sanitized custom params" do
+            expect(subject).to eq(:foo => "[FILTERED]", :baz => :bat)
+          end
+        end
+      end
+
+      context "without request params" do
         before { allow(transaction.request).to receive(:params).and_return(nil) }
 
         it { is_expected.to be_nil }
       end
 
-      context "when params crashes" do
+      context "when request params crashes" do
         before { allow(transaction.request).to receive(:params).and_raise(NoMethodError) }
 
         it { is_expected.to be_nil }
       end
 
-      context "when params method does not exist" do
+      context "when request params method does not exist" do
         let(:options) { { :params_method => :nonsense } }
 
         it { is_expected.to be_nil }

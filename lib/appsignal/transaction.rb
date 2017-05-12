@@ -61,6 +61,18 @@ module Appsignal
 
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
 
+    # @!attribute params
+    #   Attribute for parameters of the transaction.
+    #
+    #   When no parameters are set with {#params=} the parameters it will look
+    #   for parameters on the {#request} environment.
+    #
+    #   The parameters set using {#params=} are leading over those extracted
+    #   from a request's environment.
+    #
+    #   @return [Hash]
+    attr_writer :params
+
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
       @action = nil
@@ -121,6 +133,11 @@ module Appsignal
 
     def store(key)
       @store[key]
+    end
+
+    def params
+      return @params if defined?(@params)
+      request_params
     end
 
     # Set tags on the transaction.
@@ -352,23 +369,24 @@ module Appsignal
 
     def sanitized_params
       return unless Appsignal.config[:send_params]
-      return unless request.respond_to?(options[:params_method])
-
-      params =
-        begin
-          request.send options[:params_method]
-        rescue => e
-          # Getting params from the request has been know to fail.
-          Appsignal.logger.debug "Exception while getting params: #{e}"
-          nil
-        end
-      return unless params
 
       options = {}
       if Appsignal.config[:filter_parameters]
         options[:filter_parameters] = Appsignal.config[:filter_parameters]
       end
       Appsignal::Utils::ParamsSanitizer.sanitize params, options
+    end
+
+    def request_params
+      return unless request.respond_to?(options[:params_method])
+
+      begin
+        request.send options[:params_method]
+      rescue => e
+        # Getting params from the request has been know to fail.
+        Appsignal.logger.debug "Exception while getting params: #{e}"
+        nil
+      end
     end
 
     # Returns sanitized environment for a transaction.
