@@ -982,6 +982,34 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe ".to_hash / .to_h" do
+    subject { transaction.to_hash }
+
+    context "when extension returns serialized JSON" do
+      it "parses the result and returns a Hash" do
+        expect(subject).to include(
+          "action" => nil,
+          "error" => nil,
+          "events" => [],
+          "id" => transaction_id,
+          "metadata" => {},
+          "namespace" => namespace,
+          "sample_data" => {}
+        )
+      end
+    end
+
+    context "when the extension returns invalid serialized JSON" do
+      before do
+        expect(transaction.ext).to receive(:to_json).and_return("foo")
+      end
+
+      it "raises a JSON parse error" do
+        expect { subject }.to raise_error(JSON::ParserError)
+      end
+    end
+  end
+
   describe Appsignal::Transaction::NilTransaction do
     subject { Appsignal::Transaction::NilTransaction.new }
 

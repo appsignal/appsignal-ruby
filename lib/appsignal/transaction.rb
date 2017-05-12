@@ -291,9 +291,10 @@ module Appsignal
       finish_event(name, title, body, body_format)
     end
 
-    def to_json
-      @ext.to_json
+    def to_h
+      JSON.parse(@ext.to_json)
     end
+    alias_method :to_hash, :to_h
 
     class GenericRequest
       attr_reader :env
