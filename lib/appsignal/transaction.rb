@@ -278,17 +278,17 @@ module Appsignal
         name,
         title || BLANK,
         body || BLANK,
-        duration,
         body_format || Appsignal::EventFormatter::DEFAULT,
+        duration,
         self.class.garbage_collection_profiler.total_time
       )
     end
 
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
-      r = yield
+      yield if block_given?
+    ensure
       finish_event(name, title, body, body_format)
-      r
     end
 
     def to_json

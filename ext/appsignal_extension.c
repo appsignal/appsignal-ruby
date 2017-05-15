@@ -119,7 +119,7 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   return Qnil;
 }
 
-static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE duration, VALUE body_format, VALUE gc_duration_ms) {
+static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format, VALUE duration, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
   appsignal_data_t* body_data;
   int body_type;

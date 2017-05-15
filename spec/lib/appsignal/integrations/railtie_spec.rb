@@ -11,7 +11,10 @@ if DependencyHelper.rails_present?
 
     describe "#initialize_appsignal" do
       let(:app) { MyApp::Application }
-      before { allow(app.middleware).to receive(:insert_before).and_return(true) }
+      before do
+        allow(app.middleware).to receive(:insert_before)
+        allow(app.middleware).to receive(:insert_after)
+      end
 
       describe ".logger" do
         before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
@@ -68,8 +71,8 @@ if DependencyHelper.rails_present?
 
       describe "Rails listener middleware" do
         it "adds the Rails listener middleware" do
-          expect(app.middleware).to receive(:insert_before).with(
-            ActionDispatch::RemoteIp,
+          expect(app.middleware).to receive(:insert_after).with(
+            ActionDispatch::DebugExceptions,
             Appsignal::Rack::RailsInstrumentation
           )
         end
@@ -93,8 +96,8 @@ if DependencyHelper.rails_present?
           let(:enable_frontend_error_catching) { true }
 
           it "adds the Rails and JSExceptionCatcher middleware" do
-            expect(app.middleware).to receive(:insert_before).with(
-              ActionDispatch::RemoteIp,
+            expect(app.middleware).to receive(:insert_after).with(
+              ActionDispatch::DebugExceptions,
               Appsignal::Rack::RailsInstrumentation
             )
 
@@ -109,8 +112,8 @@ if DependencyHelper.rails_present?
           let(:enable_frontend_error_catching) { false }
 
           it "adds the Rails middleware, but not the JSExceptionCatcher middleware" do
-            expect(app.middleware).to receive(:insert_before).with(
-              ActionDispatch::RemoteIp,
+            expect(app.middleware).to receive(:insert_after).with(
+              ActionDispatch::DebugExceptions,
               Appsignal::Rack::RailsInstrumentation
             )
 

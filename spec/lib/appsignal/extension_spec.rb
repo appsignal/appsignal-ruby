@@ -48,7 +48,7 @@ describe "extension loading and operation" do
         end
 
         it "should have a record_event method" do
-          subject.record_event("name", "title", "body", 1000, 0, 1000)
+          subject.record_event("name", "title", "body", 0, 1000, 1000)
         end
 
         it "should have a set_error method" do

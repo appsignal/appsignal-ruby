@@ -1,3 +1,10 @@
+# 2.2.1
+* Fix support for Rails 5.1. PR #286
+* Fix instrumentation that would report a duration of `0ms` for all DataMapper
+  queries. PR #290
+* Finish events when `Appsignal.instrument` encounters a `raise` or a `throw`.
+  PR #292
+
 # 2.2.0
 * Support Ruby 2.4 better. PR #234
 * Initial setup for documenting the Ruby gem's code. PR #243
