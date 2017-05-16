@@ -32,7 +32,9 @@ module Appsignal
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction] != nil
           # Log the issue and return the current transaction
-          Appsignal.logger.debug("Trying to start new transaction #{id} but #{current.transaction_id} is already running. Using #{current.transaction_id}")
+          Appsignal.logger.debug "Trying to start new transaction with id " \
+            "'#{id}', but a transaction with id '#{current.transaction_id}' " \
+            "is already running. Using transaction '#{current.transaction_id}'."
 
           # Return the current (running) transaction
           current
@@ -86,7 +88,8 @@ module Appsignal
 
     def complete
       if discarded?
-        Appsignal.logger.debug("Skipping transaction because it was manually discarded.".freeze)
+        Appsignal.logger.debug "Skipping transaction '#{transaction_id}' " \
+          "because it was manually discarded."
         return
       end
       if @ext.finish(self.class.garbage_collection_profiler.total_time)
