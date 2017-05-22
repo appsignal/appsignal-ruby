@@ -13,10 +13,13 @@ require "pry"
 require "timecop"
 require "webmock/rspec"
 
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support/helpers", "*.rb")].each do |f|
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].each do |f|
   require f
 end
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support/mocks", "*.rb")].each do |f|
+Dir[File.join(DirectoryHelper.support_dir, "mocks", "*.rb")].each do |f|
+  require f
+end
+Dir[File.join(DirectoryHelper.support_dir, "matchers", "*.rb")].each do |f|
   require f
 end
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].each do |f|
@@ -52,6 +55,7 @@ RSpec.configure do |config|
   config.include TransactionHelpers
   config.include ApiRequestHelper
   config.include SystemHelpers
+  config.include LogHelpers
   config.extend DependencyHelper
 
   config.fail_if_no_examples = true
