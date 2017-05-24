@@ -24,7 +24,6 @@ Gem::Specification.new do |gem|
   gem.extensions = %w(ext/extconf.rb)
 
   gem.add_dependency "rack"
-  gem.add_dependency "thread_safe"
 
   gem.add_development_dependency "rake", "~> 11"
   gem.add_development_dependency "rspec", "~> 3.6"
