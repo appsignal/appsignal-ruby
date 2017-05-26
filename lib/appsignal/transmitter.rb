@@ -21,26 +21,39 @@ module Appsignal
       OpenSSL::SSL::SSLError
     ].freeze
 
-    attr_reader :config, :action
+    attr_reader :config, :base_uri
 
-    def initialize(action, config = Appsignal.config)
-      @action = action
+    # @param base_uri [String] Base URI for the transmitter to use. If a full
+    #   URI is given (including the HTTP protocol) it is used as the full base.
+    #   If only a path is given the `config[:endpoint]` is prefixed along with
+    #   `/1/` (API v1 endpoint).
+    # @param config [Appsignal::Config] AppSignal configuration to use for this
+    #   transmission.
+    def initialize(base_uri, config = Appsignal.config)
+      @base_uri =
+        if base_uri.start_with? "http"
+          base_uri
+        else
+          "#{config[:endpoint]}/1/#{base_uri}"
+        end
       @config = config
     end
 
     def uri
-      @uri ||= URI("#{config[:endpoint]}/1/#{action}").tap do |uri|
-        uri.query = ::Rack::Utils.build_query(:api_key => config[:push_api_key],
+      @uri ||= URI(base_uri).tap do |uri|
+        uri.query = ::Rack::Utils.build_query(
+          :api_key => config[:push_api_key],
           :name => config[:name],
           :environment => config.env,
           :hostname => config[:hostname],
-          :gem_version => Appsignal::VERSION)
+          :gem_version => Appsignal::VERSION
+        )
       end
     end
 
     def transmit(payload)
       config.logger.debug "Transmitting payload to #{uri}"
-      http_client.request(http_post(payload)).code
+      http_client.request(http_post(payload))
     end
 
     private

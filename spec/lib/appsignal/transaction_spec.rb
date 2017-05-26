@@ -3,151 +3,212 @@ describe Appsignal::Transaction do
     start_agent
   end
 
-  let(:time)        { Time.at(fixed_time) }
-  let(:namespace)   { Appsignal::Transaction::HTTP_REQUEST }
-  let(:env)         { {} }
-  let(:merged_env)  { http_request_env_with_data(env) }
-  let(:options)     { {} }
-  let(:request)     { Rack::Request.new(merged_env) }
-  let(:transaction) { Appsignal::Transaction.new("1", namespace, request, options) }
+  let(:transaction_id) { "1" }
+  let(:time)           { Time.at(fixed_time) }
+  let(:namespace)      { Appsignal::Transaction::HTTP_REQUEST }
+  let(:env)            { {} }
+  let(:merged_env)     { http_request_env_with_data(env) }
+  let(:options)        { {} }
+  let(:request)        { Rack::Request.new(merged_env) }
+  let(:transaction)    { Appsignal::Transaction.new(transaction_id, namespace, request, options) }
+  let(:log)            { StringIO.new }
 
   before { Timecop.freeze(time) }
-  after  { Timecop.return }
+  after { Timecop.return }
+  around do |example|
+    use_logger_with log do
+      example.run
+    end
+  end
 
   describe "class methods" do
+    def current_transaction
+      Appsignal::Transaction.current
+    end
+
     describe ".create" do
-      it "should add the transaction to thread local" do
-        expect(Appsignal::Extension).to receive(:start_transaction).with("1", "http_request", 0)
-
-        created_transaction = Appsignal::Transaction.create("1", namespace, request, options)
-
-        expect(Thread.current[:appsignal_transaction]).to eq created_transaction
+      def create_transaction(id = transaction_id)
+        Appsignal::Transaction.create(id, namespace, request, options)
       end
 
-      it "should create a transaction" do
-        created_transaction = Appsignal::Transaction.create("1", namespace, request, options)
+      context "when no transaction is running" do
+        let!(:transaction) { create_transaction }
 
-        expect(created_transaction).to be_a Appsignal::Transaction
-        expect(created_transaction.transaction_id).to eq "1"
-        expect(created_transaction.namespace).to eq "http_request"
+        it "returns the created transaction" do
+          expect(transaction).to be_a Appsignal::Transaction
+          expect(transaction.transaction_id).to eq transaction_id
+          expect(transaction.namespace).to eq namespace
+          expect(transaction.request).to eq request
+
+          expect(transaction.to_h).to include(
+            "id" => transaction_id,
+            "namespace" => namespace
+          )
+        end
+
+        it "assigns the transaction to current" do
+          expect(transaction).to eq current_transaction
+        end
       end
 
       context "when a transaction is already running" do
-        let(:running_transaction) { double(:transaction_id => 2) }
-        before { Thread.current[:appsignal_transaction] = running_transaction }
+        before { create_transaction }
 
-        it "should not create a new transaction" do
-          expect(
-            Appsignal::Transaction.create("1", namespace, request, options)
-          ).to eq(running_transaction)
+        it "does not create a new transaction, but returns the current transaction" do
+          expect do
+            new_transaction = create_transaction("2")
+            expect(new_transaction).to eq(current_transaction)
+            expect(new_transaction.transaction_id).to eq(transaction_id)
+          end.to_not change { current_transaction }
         end
 
-        it "should output a debug message" do
-          expect(Appsignal.logger).to receive(:debug)
-            .with("Trying to start new transaction 1 but 2 is already running. Using 2")
-
-          Appsignal::Transaction.create("1", namespace, request, options)
+        it "logs a debug message" do
+          create_transaction("2")
+          expect(log_contents(log)).to contains_log :debug,
+            "Trying to start new transaction with id '2', but a " \
+            "transaction with id '#{transaction_id}' is already " \
+            "running. Using transaction '#{transaction_id}'."
         end
 
-        context "with option to force a new transaction" do
-          let(:options) { { :force => true } }
-          it "should not create a new transaction" do
-            expect(
-              Appsignal::Transaction.create("1", namespace, request, options)
-            ).to_not eq(running_transaction)
+        context "with option :force => true" do
+          it "returns the newly created (and current) transaction" do
+            original_transaction = current_transaction
+            expect(original_transaction).to_not be_nil
+            expect(current_transaction.transaction_id).to eq transaction_id
+
+            options[:force] = true
+            expect(create_transaction("2")).to_not eq original_transaction
+            expect(current_transaction.transaction_id).to eq "2"
           end
         end
       end
     end
 
     describe ".current" do
-      before { Thread.current[:appsignal_transaction] = transaction }
-
       subject { Appsignal::Transaction.current }
 
-      context "if there is a transaction" do
-        before { Appsignal::Transaction.create("1", namespace, request, options) }
-
-        it "should return the correct transaction" do
-          is_expected.to eq transaction
+      context "when there is a current transaction" do
+        let!(:transaction) do
+          Appsignal::Transaction.create(transaction_id, namespace, request, options)
         end
 
-        it "should indicate it's not a nil transaction" do
-          expect(subject.nil_transaction?).to be_falsy
+        it "reads :appsignal_transaction from the current Thread" do
+          expect(subject).to eq Thread.current[:appsignal_transaction]
+          expect(subject).to eq transaction
+        end
+
+        it "is not a NilTransaction" do
+          expect(subject.nil_transaction?).to eq false
+          expect(subject).to be_a Appsignal::Transaction
         end
       end
 
-      context "if there is no transaction" do
-        before do
-          Thread.current[:appsignal_transaction] = nil
+      context "when there is no current transaction" do
+        it "has no :appsignal_transaction registered on the current Thread" do
+          expect(Thread.current[:appsignal_transaction]).to be_nil
         end
 
-        it "should return a nil transaction stub" do
-          is_expected.to be_a Appsignal::Transaction::NilTransaction
-        end
-
-        it "should indicate it's a nil transaction" do
-          expect(subject.nil_transaction?).to be_truthy
+        it "returns a NilTransaction stub" do
+          expect(subject.nil_transaction?).to eq true
+          expect(subject).to be_a Appsignal::Transaction::NilTransaction
         end
       end
     end
 
-    describe "complete_current!" do
-      before { Appsignal::Transaction.create("2", Appsignal::Transaction::HTTP_REQUEST, {}) }
+    describe ".complete_current!" do
+      let!(:transaction) { Appsignal::Transaction.create(transaction_id, namespace, options) }
 
-      it "should complete the current transaction and set the thread appsignal_transaction to nil" do
-        expect(Appsignal::Transaction.current).to receive(:complete)
-
-        Appsignal::Transaction.complete_current!
-
-        expect(Thread.current[:appsignal_transaction]).to be_nil
-      end
-
-      it "should still clear the transaction if there is an error" do
-        expect(Appsignal::Transaction.current).to receive(:complete).and_raise "Error"
+      it "completes the current transaction" do
+        expect(transaction).to eq current_transaction
+        expect(transaction).to receive(:complete).and_call_original
 
         Appsignal::Transaction.complete_current!
-
-        expect(Thread.current[:appsignal_transaction]).to be_nil
       end
 
-      context "if a transaction is discarded" do
-        it "should not complete the transaction" do
-          expect(Appsignal::Transaction.current.ext).to_not receive(:complete)
-
-          Appsignal::Transaction.current.discard!
-          expect(Appsignal::Transaction.current.discarded?).to be_truthy
-
+      it "unsets the current transaction on the current Thread" do
+        expect do
           Appsignal::Transaction.complete_current!
+        end.to change { Thread.current[:appsignal_transaction] }.from(transaction).to(nil)
+      end
 
-          expect(Thread.current[:appsignal_transaction]).to be_nil
+      context "when encountering an error while completing" do
+        before do
+          expect(transaction).to receive(:complete).and_raise VerySpecificError
         end
 
-        it "should not be discarded when restore! is called" do
-          Appsignal::Transaction.current.discard!
-          expect(Appsignal::Transaction.current.discarded?).to be_truthy
-          Appsignal::Transaction.current.restore!
-          expect(Appsignal::Transaction.current.discarded?).to be_falsy
+        it "logs an error message" do
+          Appsignal::Transaction.complete_current!
+          expect(log_contents(log)).to contains_log :error,
+            "Failed to complete transaction ##{transaction.transaction_id}. VerySpecificError"
+        end
+
+        it "clears the current transaction" do
+          expect do
+            Appsignal::Transaction.complete_current!
+          end.to change { Thread.current[:appsignal_transaction] }.from(transaction).to(nil)
         end
       end
     end
   end
 
   describe "#complete" do
-    it "should sample data if it needs to be sampled" do
-      expect(transaction.ext).to receive(:finish).and_return(true)
-      expect(transaction).to receive(:sample_data)
-      expect(transaction.ext).to receive(:complete)
+    context "when transaction is being sampled" do
+      it "samples data" do
+        expect(transaction.ext).to receive(:finish).and_return(true)
+        # Stub call to extension, because that would remove the transaction
+        # from the extension.
+        expect(transaction.ext).to receive(:complete)
 
-      transaction.complete
+        transaction.set_tags(:foo => "bar")
+        transaction.complete
+        expect(transaction.to_h["sample_data"]).to include(
+          "tags" => { "foo" => "bar" }
+        )
+      end
     end
 
-    it "should not sample data if it does not need to be sampled" do
-      expect(transaction.ext).to receive(:finish).and_return(false)
-      expect(transaction).to_not receive(:sample_data)
-      expect(transaction.ext).to receive(:complete)
+    context "when transaction is not being sampled" do
+      it "does not sample data" do
+        expect(transaction).to_not receive(:sample_data)
+        expect(transaction.ext).to receive(:finish).and_return(false)
+        expect(transaction.ext).to receive(:complete).and_call_original
 
-      transaction.complete
+        transaction.complete
+      end
+    end
+
+    context "when a transaction is marked as discarded" do
+      it "does not complete the transaction" do
+        expect(transaction.ext).to_not receive(:complete)
+
+        expect do
+          transaction.discard!
+        end.to change { transaction.discarded? }.from(false).to(true)
+
+        transaction.complete
+      end
+
+      it "logs a debug message" do
+        transaction.discard!
+        transaction.complete
+
+        expect(log_contents(log)).to contains_log :debug,
+          "Skipping transaction '#{transaction_id}' because it was manually discarded."
+      end
+
+      context "when a discarded transaction is restored" do
+        before { transaction.discard! }
+
+        it "completes the transaction" do
+          expect(transaction.ext).to receive(:complete).and_call_original
+
+          expect do
+            transaction.restore!
+          end.to change { transaction.discarded? }.from(true).to(false)
+
+          transaction.complete
+        end
+      end
     end
   end
 
@@ -238,6 +299,37 @@ describe Appsignal::Transaction do
         transaction_store["transaction"] = "value"
 
         expect(transaction.store("test")).to eql("transaction" => "value")
+      end
+    end
+
+    describe "#params" do
+      subject { transaction.params }
+
+      context "with custom params set on transaction" do
+        before do
+          transaction.params = { :foo => "bar" }
+        end
+
+        it "returns custom parameters" do
+          expect(subject).to eq(:foo => "bar")
+        end
+      end
+
+      context "without custom params set on transaction" do
+        it "returns parameters from request" do
+          expect(subject).to eq(
+            "action" => "show",
+            "controller" => "blog_posts",
+            "id" => "1"
+          )
+        end
+      end
+    end
+
+    describe "#params=" do
+      it "sets params on the transaction" do
+        transaction.params = { :foo => "bar" }
+        expect(transaction.params).to eq(:foo => "bar")
       end
     end
 
@@ -382,18 +474,6 @@ describe Appsignal::Transaction do
 
           transaction.set_http_or_background_queue_start
         end
-      end
-    end
-
-    describe "#set_params" do
-      it "uses the params when setting sample data" do
-        transaction.set_params(:foo => "bar")
-
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "params", Appsignal::Utils.data_generate(:foo => "bar")
-        ).once
-
-        transaction.sample_data
       end
     end
 
@@ -580,8 +660,8 @@ describe Appsignal::Transaction do
           "name",
           "title",
           "body",
-          1000,
           1,
+          1000,
           fake_gc_time
         ).and_call_original
 
@@ -599,8 +679,8 @@ describe Appsignal::Transaction do
           "name",
           "",
           "",
-          1000,
           0,
+          1000,
           fake_gc_time
         ).and_call_original
 
@@ -615,22 +695,8 @@ describe Appsignal::Transaction do
     end
 
     describe "#instrument" do
-      it "should start and finish an event around the given block" do
-        stub = double
-        expect(stub).to receive(:method_call).and_return("return value")
-
-        expect(transaction).to receive(:start_event)
-        expect(transaction).to receive(:finish_event).with(
-          "name",
-          "title",
-          "body",
-          0
-        )
-
-        return_value = transaction.instrument "name", "title", "body" do
-          stub.method_call
-        end
-        expect(return_value).to eq "return value"
+      it_behaves_like "instrument helper" do
+        let(:instrumenter) { transaction }
       end
     end
 
@@ -759,19 +825,38 @@ describe Appsignal::Transaction do
     describe "#sanitized_params" do
       subject { transaction.send(:sanitized_params) }
 
-      context "without params" do
+      context "with custom params" do
+        before do
+          transaction.params = { :foo => "bar", :baz => :bat }
+        end
+
+        it "returns custom params" do
+          is_expected.to eq(:foo => "bar", :baz => :bat)
+        end
+
+        context "with AppSignal filtering" do
+          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "returns sanitized custom params" do
+            expect(subject).to eq(:foo => "[FILTERED]", :baz => :bat)
+          end
+        end
+      end
+
+      context "without request params" do
         before { allow(transaction.request).to receive(:params).and_return(nil) }
 
         it { is_expected.to be_nil }
       end
 
-      context "when params crashes" do
+      context "when request params crashes" do
         before { allow(transaction.request).to receive(:params).and_raise(NoMethodError) }
 
         it { is_expected.to be_nil }
       end
 
-      context "when params method does not exist" do
+      context "when request params method does not exist" do
         let(:options) { { :params_method => :nonsense } }
 
         it { is_expected.to be_nil }
@@ -786,16 +871,16 @@ describe Appsignal::Transaction do
 
       context "with an array" do
         let(:request) do
-          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => ["arg1", "arg2"]))
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w(arg1 arg2)))
         end
 
-        it { is_expected.to eq ["arg1", "arg2"] }
+        it { is_expected.to eq %w(arg1 arg2) }
 
         context "with AppSignal filtering" do
           before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { is_expected.to eq ["arg1", "arg2"] }
+          it { is_expected.to eq %w(arg1 arg2) }
         end
       end
 
@@ -970,7 +1055,7 @@ describe Appsignal::Transaction do
           :both_symbols => :valid_value,
           :integer_value => 1,
           :hash_value => { "invalid" => "hash" },
-          :array_value => ["invalid", "array"],
+          :array_value => %w(invalid array),
           :to_long_value => SecureRandom.urlsafe_base64(101),
           :object => Object.new,
           SecureRandom.urlsafe_base64(101) => "to_long_key"
@@ -1004,6 +1089,34 @@ describe Appsignal::Transaction do
             expect(subject).to eq ["line 1", "line ?"]
           end
         end
+      end
+    end
+  end
+
+  describe ".to_hash / .to_h" do
+    subject { transaction.to_hash }
+
+    context "when extension returns serialized JSON" do
+      it "parses the result and returns a Hash" do
+        expect(subject).to include(
+          "action" => nil,
+          "error" => nil,
+          "events" => [],
+          "id" => transaction_id,
+          "metadata" => {},
+          "namespace" => namespace,
+          "sample_data" => {}
+        )
+      end
+    end
+
+    context "when the extension returns invalid serialized JSON" do
+      before do
+        expect(transaction.ext).to receive(:to_json).and_return("foo")
+      end
+
+      it "raises a JSON parse error" do
+        expect { subject }.to raise_error(JSON::ParserError)
       end
     end
   end

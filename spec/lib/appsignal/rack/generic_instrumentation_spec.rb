@@ -36,7 +36,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     after { middleware.call(env) }
   end
 
-  describe "#call_with_appsignal_monitoring" do
+  describe "#call_with_appsignal_monitoring", :error => false do
     it "should create a transaction" do
       expect(Appsignal::Transaction).to receive(:create).with(
         kind_of(String),
@@ -49,7 +49,7 @@ describe Appsignal::Rack::GenericInstrumentation do
       expect(app).to receive(:call).with(env)
     end
 
-    context "with an error" do
+    context "with an error", :error => true do
       let(:error) { VerySpecificError.new }
       let(:app) do
         double.tap do |d|
@@ -84,6 +84,7 @@ describe Appsignal::Rack::GenericInstrumentation do
       expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
     end
 
-    after { middleware.call(env) rescue VerySpecificError }
+    after(:error => false) { middleware.call(env) }
+    after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
   end
 end

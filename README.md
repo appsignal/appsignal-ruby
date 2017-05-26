@@ -157,6 +157,8 @@ systems][supported-systems] page.
 
 ## Development
 
+### Installation
+
 Make sure you have Bundler installed and then use the Rake install task to
 install all possible dependencies.
 

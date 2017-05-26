@@ -1,3 +1,15 @@
+# 2.3.0 (unreleased)
+* Improve log messages for transactions. PR #293
+* Remove thread_safe dependency. PR #294
+* Add `Transaction#params` attribute for custom parameters. PR #295
+
+# 2.2.1
+* Fix support for Rails 5.1. PR #286
+* Fix instrumentation that would report a duration of `0ms` for all DataMapper
+  queries. PR #290
+* Finish events when `Appsignal.instrument` encounters a `raise` or a `throw`.
+  PR #292
+
 # 2.2.0
 * Support Ruby 2.4 better. PR #234
 * Initial setup for documenting the Ruby gem's code. PR #243
@@ -9,6 +21,11 @@
 * Force agent to run in diagnostic mode even when the user config is set to
   `active: false`. PR #260
 * Stub JS error catching endpoint when not active. PR #263
+* Use better event names for Padrino integration. PR #265
+* No longer gzip payloads send by the Ruby gem transmitter. PR #269
+* Send diagnostics data report to AppSignal on request. PR #270
+* When JS exception endpoint payload is empty return 400 code. PR #271
+* Remove hardcoded DNS servers from agent and add config option. PR #278
 
 # 2.1.2
 * Fix error with Grape request methods defined with symbols. PR #259

@@ -2,21 +2,21 @@ module Appsignal
   class Hooks
     # @api private
     class ShoryukenMiddleware
-      def call(_worker_instance, queue, sqs_msg, body)
-        metadata = {
-          :queue => queue
-        }
-        exclude_keys = [:job_class, :queue_name, :arguments]
-        metadata.merge!(body.reject { |key| exclude_keys.member?(key.to_sym) })
-        metadata.merge!(sqs_msg.attributes)
-
+      def call(worker_instance, queue, sqs_msg, body)
+        metadata = { :queue => queue }.merge(sqs_msg.attributes)
         options = {
-          :class => body["job_class"],
+          :class => worker_instance.class.name,
           :method => "perform",
           :metadata => metadata
         }
-        options[:params] = body["arguments"] if body.key?("arguments")
-        options[:queue_start] = Time.at(sqs_msg.attributes["SentTimestamp"].to_i / 1000) if sqs_msg.attributes.key?("SentTimestamp")
+
+        args = body.is_a?(Hash) ? body : { :params => body }
+        options[:params] = Appsignal::Utils::ParamsSanitizer.sanitize args,
+          :filter_parameters => Appsignal.config[:filter_parameters]
+
+        if sqs_msg.attributes.key?("SentTimestamp")
+          options[:queue_start] = Time.at(sqs_msg.attributes["SentTimestamp"].to_i / 1000)
+        end
 
         Appsignal.monitor_transaction("perform_job.shoryuken", options) do
           yield

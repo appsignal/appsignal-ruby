@@ -26,7 +26,11 @@ module Appsignal
           class_name, method_name = job.job_data[:name].split("#")
           args = job.job_data[:args] || {}
           job_data = job.job_data
+        else
+          args = {}
         end
+        params = Appsignal::Utils::ParamsSanitizer.sanitize args,
+          :filter_parameters => Appsignal.config[:filter_parameters]
 
         Appsignal.monitor_transaction(
           "perform_job.delayed_job",
@@ -38,7 +42,7 @@ module Appsignal
             :priority => extract_value(job_data, :priority, 0),
             :attempts => extract_value(job_data, :attempts, 0)
           },
-          :params      => format_args(args),
+          :params      => params,
           :queue_start => extract_value(job_data, :created_at)
         ) do
           block.call(job)

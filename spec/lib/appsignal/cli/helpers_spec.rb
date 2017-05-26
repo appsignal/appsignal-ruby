@@ -51,6 +51,7 @@ describe Appsignal::CLI::Helpers do
   describe ".press_any_key" do
     before do
       set_input "a" # a as in any
+      prepare_input
     end
 
     it "continues after press" do
@@ -59,12 +60,40 @@ describe Appsignal::CLI::Helpers do
     end
   end
 
+  describe ".ask_for_input" do
+    it "returns the input" do
+      set_input "foo"
+      prepare_input
+      expect(cli.send(:ask_for_input)).to eq("foo")
+    end
+
+    context "with input ending with a line break" do
+      it "returns only the input" do
+        set_input "foo\n"
+        prepare_input
+        expect(cli.send(:ask_for_input)).to eq("foo")
+      end
+    end
+
+    context "when user interrupts the program" do
+      before do
+        expect(cli).to receive(:stdin).and_raise(Interrupt)
+        expect(cli).to receive(:exit).with(1)
+        capture_stdout(out_stream) { cli.send :ask_for_input }
+      end
+
+      it "exits the process" do
+        expect(output).to include("Exiting...")
+      end
+    end
+  end
+
   describe ".yes_or_no" do
     def yes_or_no
       capture_stdout(out_stream) { cli.send(:yes_or_no, "yes or no?: ") }
     end
 
-    it "takes yes for an answer" do
+    it "takes 'y' for an answer" do
       set_input ""
       set_input "nonsense"
       set_input "y"
@@ -73,13 +102,56 @@ describe Appsignal::CLI::Helpers do
       expect(yes_or_no).to be_truthy
     end
 
-    it "takes no for an answer" do
+    it "takes 'Y' for an answer" do
+      set_input "Y"
+      prepare_input
+
+      expect(yes_or_no).to be_truthy
+    end
+
+    it "takes 'yes' for an answer" do
+      set_input "yes"
+      prepare_input
+
+      expect(yes_or_no).to be_truthy
+    end
+
+    it "takes 'n' for an answer" do
       set_input ""
       set_input "nonsense"
       set_input "n"
       prepare_input
 
       expect(yes_or_no).to be_falsy
+    end
+
+    it "takes 'N' for an answer" do
+      set_input "N"
+      prepare_input
+
+      expect(yes_or_no).to be_falsy
+    end
+
+    it "takes 'no' for an answer" do
+      set_input "no"
+      prepare_input
+
+      expect(yes_or_no).to be_falsy
+    end
+
+    context "with a default" do
+      def yes_or_no
+        capture_stdout(out_stream) do
+          cli.send(:yes_or_no, "yes or no?: ", :default => "y")
+        end
+      end
+
+      it "returns the default if no input is received from the user" do
+        set_input ""
+        prepare_input
+
+        expect(yes_or_no).to be_truthy
+      end
     end
   end
 

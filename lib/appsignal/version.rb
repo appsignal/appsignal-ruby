@@ -1,5 +1,5 @@
 require "yaml"
 
 module Appsignal
-  VERSION = "2.1.2".freeze
+  VERSION = "2.2.1".freeze
 end

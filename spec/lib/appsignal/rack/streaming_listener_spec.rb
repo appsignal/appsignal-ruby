@@ -87,12 +87,16 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     context "with an exception in the instrumentation call" do
+      let(:error) { VerySpecificError }
+
       it "should add the exception to the transaction" do
-        allow(app).to receive(:call).and_raise(VerySpecificError.new)
+        allow(app).to receive(:call).and_raise(error)
 
-        expect(transaction).to receive(:set_error)
+        expect(transaction).to receive(:set_error).with(error)
 
-        listener.call_with_appsignal_monitoring(env) rescue VerySpecificError
+        expect do
+          listener.call_with_appsignal_monitoring(env)
+        end.to raise_error(error)
       end
     end
 
@@ -121,13 +125,15 @@ describe Appsignal::StreamWrapper do
     end
 
     context "when each raises an error" do
+      let(:error) { VerySpecificError }
+
       it "should add the exception to the transaction" do
         allow(stream).to receive(:each)
-          .and_raise(VerySpecificError.new)
+          .and_raise(error)
 
-        expect(transaction).to receive(:set_error)
+        expect(transaction).to receive(:set_error).with(error)
 
-        wrapper.send(:each) rescue VerySpecificError
+        expect { wrapper.send(:each) }.to raise_error(error)
       end
     end
   end
@@ -141,14 +147,15 @@ describe Appsignal::StreamWrapper do
     end
 
     context "when each raises an error" do
-      it "should add the exception to the transaction and close it" do
-        allow(stream).to receive(:close)
-          .and_raise(VerySpecificError.new)
+      let(:error) { VerySpecificError }
 
-        expect(transaction).to receive(:set_error)
-        expect(Appsignal::Transaction).to receive(:complete_current!)
+      it "adds the exception to the transaction and close it" do
+        allow(stream).to receive(:close).and_raise(error)
 
-        wrapper.send(:close) rescue VerySpecificError
+        expect(transaction).to receive(:set_error).with(error)
+        expect(transaction).to receive(:complete)
+
+        expect { wrapper.send(:close) }.to raise_error(error)
       end
     end
   end

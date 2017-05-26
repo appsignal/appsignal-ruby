@@ -32,6 +32,10 @@ static VALUE stop(VALUE self) {
   return Qnil;
 }
 
+static VALUE diagnose(VALUE self) {
+  return make_ruby_string(appsignal_diagnose());
+}
+
 static VALUE get_server_state(VALUE self, VALUE key) {
   appsignal_string_t string;
 
@@ -115,7 +119,7 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   return Qnil;
 }
 
-static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE duration, VALUE body_format, VALUE gc_duration_ms) {
+static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE body_format, VALUE duration, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
   appsignal_data_t* body_data;
   int body_type;
@@ -275,6 +279,21 @@ static VALUE complete_transaction(VALUE self) {
 
   appsignal_complete_transaction(transaction);
   return Qnil;
+}
+
+static VALUE transaction_to_json(VALUE self) {
+  appsignal_transaction_t* transaction;
+  appsignal_string_t json;
+
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  json = appsignal_transaction_to_json(transaction);
+
+  if (json.len == 0) {
+    return Qnil;
+  } else {
+    return make_ruby_string(json);
+  }
 }
 
 static VALUE data_map_new(VALUE self) {
@@ -609,8 +628,10 @@ void Init_appsignal_extension(void) {
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
 
   // Starting and stopping
-  rb_define_singleton_method(Extension, "start", start, 0);
-  rb_define_singleton_method(Extension, "stop",  stop,  0);
+  rb_define_singleton_method(Extension, "start",    start,    0);
+  rb_define_singleton_method(Extension, "stop",     stop,     0);
+  // Diagnostics
+  rb_define_singleton_method(Extension, "diagnose", diagnose, 0);
 
   // Server state
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);
@@ -630,6 +651,7 @@ void Init_appsignal_extension(void) {
   rb_define_method(Transaction, "set_metadata",    set_transaction_metadata,    2);
   rb_define_method(Transaction, "finish",          finish_transaction,          1);
   rb_define_method(Transaction, "complete",        complete_transaction,        0);
+  rb_define_method(Transaction, "to_json",         transaction_to_json,         0);
 
   // Create a data map or array
   rb_define_singleton_method(Extension, "data_map_new", data_map_new, 0);
@@ -654,7 +676,7 @@ void Init_appsignal_extension(void) {
   // Data equality
   rb_define_method(Data, "==", data_equal, 1);
 
-  // Get Json content of a data
+  // Get JSON content of a data
   rb_define_method(Data, "to_s", data_to_s, 0);
 
   // Event hook installation

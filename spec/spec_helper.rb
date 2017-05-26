@@ -6,16 +6,23 @@ APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
 Bundler.require :default
+require "cgi"
 require "rack"
 require "rspec"
 require "pry"
 require "timecop"
 require "webmock/rspec"
 
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support/helpers", "*.rb")].each do |f|
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].each do |f|
   require f
 end
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support/mocks", "*.rb")].each do |f|
+Dir[File.join(DirectoryHelper.support_dir, "mocks", "*.rb")].each do |f|
+  require f
+end
+Dir[File.join(DirectoryHelper.support_dir, "matchers", "*.rb")].each do |f|
+  require f
+end
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].each do |f|
   require f
 end
 if DependencyHelper.rails_present?
@@ -48,7 +55,10 @@ RSpec.configure do |config|
   config.include TransactionHelpers
   config.include ApiRequestHelper
   config.include SystemHelpers
+  config.include LogHelpers
   config.extend DependencyHelper
+
+  config.fail_if_no_examples = true
 
   config.before :context do
     # Use modified SYSTEM_TMP_DIR

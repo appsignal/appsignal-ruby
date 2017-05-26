@@ -103,7 +103,7 @@ if DependencyHelper.sinatra_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring" do
+    describe "#call_with_appsignal_monitoring", :error => false do
       it "should create a transaction" do
         expect(Appsignal::Transaction).to receive(:create).with(
           kind_of(String),
@@ -117,8 +117,8 @@ if DependencyHelper.sinatra_present?
         expect(app).to receive(:call).with(env)
       end
 
-      context "with an error" do
-        let(:error) { VerySpecificError.new }
+      context "with an error", :error => true do
+        let(:error) { VerySpecificError }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -132,7 +132,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with an error in sinatra.error" do
-        let(:error) { VerySpecificError.new }
+        let(:error) { VerySpecificError }
         let(:env) { { "sinatra.error" => error } }
 
         it "should set the error" do
@@ -206,7 +206,8 @@ if DependencyHelper.sinatra_present?
         end
       end
 
-      after { middleware.call(env) rescue VerySpecificError }
+      after(:error => false) { middleware.call(env) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
     end
   end
 end

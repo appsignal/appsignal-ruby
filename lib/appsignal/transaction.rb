@@ -33,7 +33,9 @@ module Appsignal
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction] != nil
           # Log the issue and return the current transaction
-          Appsignal.logger.debug("Trying to start new transaction #{id} but #{current.transaction_id} is already running. Using #{current.transaction_id}")
+          Appsignal.logger.debug "Trying to start new transaction with id " \
+            "'#{id}', but a transaction with id '#{current.transaction_id}' " \
+            "is already running. Using transaction '#{current.transaction_id}'."
 
           # Return the current (running) transaction
           current
@@ -62,6 +64,18 @@ module Appsignal
 
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
 
+    # @!attribute params
+    #   Attribute for parameters of the transaction.
+    #
+    #   When no parameters are set with {#params=} the parameters it will look
+    #   for parameters on the {#request} environment.
+    #
+    #   The parameters set using {#params=} are leading over those extracted
+    #   from a request's environment.
+    #
+    #   @return [Hash]
+    attr_writer :params
+
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
       @action = nil
@@ -87,7 +101,8 @@ module Appsignal
 
     def complete
       if discarded?
-        Appsignal.logger.debug("Skipping transaction because it was manually discarded.".freeze)
+        Appsignal.logger.debug "Skipping transaction '#{transaction_id}' " \
+          "because it was manually discarded."
         return
       end
       if @ext.finish(self.class.garbage_collection_profiler.total_time)
@@ -122,6 +137,11 @@ module Appsignal
 
     def store(key)
       @store[key]
+    end
+
+    def params
+      return @params if defined?(@params)
+      request_params
     end
 
     # Set tags on the transaction.
@@ -283,18 +303,23 @@ module Appsignal
         name,
         title || BLANK,
         body || BLANK,
-        duration,
         body_format || Appsignal::EventFormatter::DEFAULT,
+        duration,
         self.class.garbage_collection_profiler.total_time
       )
     end
 
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
-      r = yield
+      yield if block_given?
+    ensure
       finish_event(name, title, body, body_format)
-      r
     end
+
+    def to_h
+      JSON.parse(@ext.to_json)
+    end
+    alias_method :to_hash, :to_h
 
     class GenericRequest
       attr_reader :env
@@ -354,14 +379,6 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
 
-      params =
-        if @params
-          # Using manually set parameters, using `#set_params`.
-          @params
-        else
-          fetch_params_from_request
-        end
-
       Appsignal::Utils::ParamsSanitizer.sanitize params, sanitize_parameters_options
     end
 
@@ -382,6 +399,18 @@ module Appsignal
         if Appsignal.config[:filter_parameters]
           options[:filter_parameters] = Appsignal.config[:filter_parameters]
         end
+      end
+    end
+
+    def request_params
+      return unless request.respond_to?(options[:params_method])
+
+      begin
+        request.send options[:params_method]
+      rescue => e
+        # Getting params from the request has been know to fail.
+        Appsignal.logger.debug "Exception while getting params: #{e}"
+        nil
       end
     end
 
