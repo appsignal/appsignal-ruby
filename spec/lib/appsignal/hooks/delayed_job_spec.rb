@@ -30,6 +30,8 @@ describe Appsignal::Hooks::DelayedJobHook do
     describe ".invoke_with_instrumentation" do
       let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
       let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
+      let(:created_at) { time - 3600 }
+      let(:run_at) { time - 3600 }
       let(:job_data) do
         {
           :id             => 123,
@@ -37,7 +39,8 @@ describe Appsignal::Hooks::DelayedJobHook do
           :priority       => 1,
           :attempts       => 1,
           :queue          => "default",
-          :created_at     => time - 60_000,
+          :created_at     => created_at,
+          :run_at         => run_at,
           :payload_object => double(:args => ["argument"])
         }
       end
@@ -58,11 +61,35 @@ describe Appsignal::Hooks::DelayedJobHook do
               :id       => "123"
             },
             :params      => ["argument"],
-            :queue_start => time - 60_000
+            :queue_start => run_at
           )
 
           Timecop.freeze(time) do
             plugin.invoke_with_instrumentation(job, invoked_block)
+          end
+        end
+
+        context "with run_at in the future" do
+          let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
+
+          it "reports queue_start with run_at time" do
+            expect(Appsignal).to receive(:monitor_transaction).with(
+              "perform_job.delayed_job",
+              :class    => "TestClass",
+              :method   => "perform",
+              :metadata => {
+                :priority => 1,
+                :attempts => 1,
+                :queue    => "default",
+                :id       => "123"
+              },
+              :params      => ["argument"],
+              :queue_start => run_at
+            )
+
+            Timecop.freeze(time) do
+              plugin.invoke_with_instrumentation(job, invoked_block)
+            end
           end
         end
 
@@ -78,9 +105,11 @@ describe Appsignal::Hooks::DelayedJobHook do
               :priority   => 1,
               :attempts   => 1,
               :queue      => "default",
-              :created_at => time - 60_000
+              :created_at => created_at,
+              :run_at     => run_at
             }
           end
+
           it "should wrap in a transaction with the correct params" do
             expect(Appsignal).to receive(:monitor_transaction).with(
               "perform_job.delayed_job",
@@ -93,7 +122,7 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :id       => "123"
               },
               :params      => ["argument"],
-              :queue_start => time - 60_000
+              :queue_start => run_at
             )
 
             Timecop.freeze(time) do
@@ -106,9 +135,7 @@ describe Appsignal::Hooks::DelayedJobHook do
           require "active_job"
 
           context "when wrapped by ActiveJob" do
-            before do
-              job_data[:args] = ["argument"]
-            end
+            before { job_data[:args] = ["activejob_argument"] }
             let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
 
             it "should wrap in a transaction with the correct params" do
@@ -122,12 +149,36 @@ describe Appsignal::Hooks::DelayedJobHook do
                   :queue    => "default",
                   :id       => "123"
                 },
-                :params      => ["argument"],
-                :queue_start => time - 60_000
+                :params      => ["activejob_argument"],
+                :queue_start => run_at
               )
 
               Timecop.freeze(time) do
                 plugin.invoke_with_instrumentation(job, invoked_block)
+              end
+            end
+
+            context "with run_at in the future" do
+              let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
+
+              it "reports queue_start with run_at time" do
+                expect(Appsignal).to receive(:monitor_transaction).with(
+                  "perform_job.delayed_job",
+                  :class    => "TestClass",
+                  :method   => "perform",
+                  :metadata => {
+                    :priority => 1,
+                    :attempts => 1,
+                    :queue    => "default",
+                    :id       => "123"
+                  },
+                  :params      => ["activejob_argument"],
+                  :queue_start => run_at
+                )
+
+                Timecop.freeze(time) do
+                  plugin.invoke_with_instrumentation(job, invoked_block)
+                end
               end
             end
           end
