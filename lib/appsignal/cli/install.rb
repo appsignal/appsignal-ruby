@@ -24,7 +24,7 @@ module Appsignal
             puts colorize "Problem encountered:", :red
             puts "  No push API key entered."
             puts "  - Sign up for AppSignal and follow the instructions"
-            puts "  - Already signed up? Click 'New app' on the account overview page"
+            puts "  - Already signed up? Click 'Add app' on the account overview page"
             puts
             puts colorize "Exiting installer...", :red
             return
