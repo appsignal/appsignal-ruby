@@ -1,3 +1,8 @@
+# 2.3.0 (unreleased)
+* Improve log messages for transactions. PR #293
+* Remove thread_safe dependency. PR #294
+* Add `Transaction#params` attribute for custom parameters. PR #295
+
 # 2.2.1
 * Fix support for Rails 5.1. PR #286
 * Fix instrumentation that would report a duration of `0ms` for all DataMapper
