@@ -155,7 +155,7 @@ as most Linux distributions and macOS, excluding FreeBSD and Windows.
 For more detailed information please visit our [Supported
 systems][supported-systems] page.
 
-## Development
+## Development & Testing
 
 ### Installation
 
