@@ -73,6 +73,20 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               }
             )
+            expect(subject["events"].first).to include(
+              "allocation_count" => kind_of(Integer),
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT,
+              "child_allocation_count" => kind_of(Integer),
+              "child_duration" => kind_of(Float),
+              "child_gc_duration" => kind_of(Float),
+              "count" => 1,
+              "gc_duration" => kind_of(Float),
+              "start" => kind_of(Float),
+              "duration" => kind_of(Float),
+              "name" => "perform_action.action_cable",
+              "title" => ""
+            )
             expect(subject["sample_data"]).to include(
               "params" => {
                 "action" => "speak",
@@ -139,6 +153,20 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               }
             )
+            expect(subject["events"].first).to include(
+              "allocation_count" => kind_of(Integer),
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT,
+              "child_allocation_count" => kind_of(Integer),
+              "child_duration" => kind_of(Float),
+              "child_gc_duration" => kind_of(Float),
+              "count" => 1,
+              "gc_duration" => kind_of(Float),
+              "start" => kind_of(Float),
+              "duration" => kind_of(Float),
+              "name" => "subscribed.action_cable",
+              "title" => ""
+            )
             expect(subject["sample_data"]).to include(
               "params" => { "internal" => "true" }
             )
@@ -198,6 +226,20 @@ describe Appsignal::Hooks::ActionCableHook do
                 "method" => "websocket",
                 "path" => "/blog"
               }
+            )
+            expect(subject["events"].first).to include(
+              "allocation_count" => kind_of(Integer),
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT,
+              "child_allocation_count" => kind_of(Integer),
+              "child_duration" => kind_of(Float),
+              "child_gc_duration" => kind_of(Float),
+              "count" => 1,
+              "gc_duration" => kind_of(Float),
+              "start" => kind_of(Float),
+              "duration" => kind_of(Float),
+              "name" => "unsubscribed.action_cable",
+              "title" => ""
             )
             expect(subject["sample_data"]).to include(
               "params" => { "internal" => "true" }

@@ -56,7 +56,9 @@ module Appsignal
           )
 
           begin
-            inner.call
+            Appsignal.instrument "subscribed.action_cable" do
+              inner.call
+            end
           rescue => exception
             transaction.set_error(exception)
             raise exception
@@ -78,7 +80,9 @@ module Appsignal
           )
 
           begin
-            inner.call
+            Appsignal.instrument "unsubscribed.action_cable" do
+              inner.call
+            end
           rescue => exception
             transaction.set_error(exception)
             raise exception
