@@ -10,11 +10,18 @@ module Appsignal
       end
 
       def install
+        patch_perform_action
+        install_callbacks
+      end
+
+      private
+
+      def patch_perform_action
         ActionCable::Channel::Base.class_eval do
           alias_method :original_perform_action, :perform_action
 
           def perform_action(*args, &block)
-            # Request is only the original websocket request
+            # The request is only the original websocket request
             request = ActionDispatch::Request.new(connection.env)
             transaction = Appsignal::Transaction.create(
               request.request_id,
@@ -29,7 +36,6 @@ module Appsignal
               raise exception
             ensure
               transaction.set_params(args.first)
-
               transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
               transaction.set_metadata("path", request.path)
               transaction.set_metadata("method", "websocket")
@@ -37,9 +43,11 @@ module Appsignal
             end
           end
         end
+      end
 
+      def install_callbacks
         ActionCable::Channel::Base.set_callback :subscribe, :around, :prepend => true do |channel, inner|
-          # Request is only the original websocket request
+          # The request is only the original websocket request
           request = ActionDispatch::Request.new(channel.connection.env)
           transaction = Appsignal::Transaction.create(
             request.request_id,
@@ -49,9 +57,10 @@ module Appsignal
 
           begin
             inner.call
+          rescue => exception
+            transaction.set_error(exception)
+            raise exception
           ensure
-            # Cannot do this, only ask for the params from the orignal websocket request
-            # transaction.set_sample_data(:params, channel.params)
             transaction.set_action_if_nil("#{channel.class}#subscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")
@@ -60,7 +69,7 @@ module Appsignal
         end
 
         ActionCable::Channel::Base.set_callback :unsubscribe, :around, :prepend => true do |channel, inner|
-          # Request is only the original websocket request
+          # The request is only the original websocket request
           request = ActionDispatch::Request.new(channel.connection.env)
           transaction = Appsignal::Transaction.create(
             request.request_id,
@@ -70,9 +79,10 @@ module Appsignal
 
           begin
             inner.call
+          rescue => exception
+            transaction.set_error(exception)
+            raise exception
           ensure
-            # Cannot do this, only ask for the params from the orignal websocket request
-            # transaction.set_sample_data(:params, channel.params)
             transaction.set_action_if_nil("#{channel.class}#unsubscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")

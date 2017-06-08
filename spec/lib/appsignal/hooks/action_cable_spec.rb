@@ -3,12 +3,6 @@ describe Appsignal::Hooks::ActionCableHook do
     context "with ActionCable" do
       require "action_cable/engine"
 
-      before do
-        Appsignal.config = project_fixture_config
-        expect(Appsignal.active?).to be_truthy
-        Appsignal::Hooks.load_hooks
-      end
-
       describe ".dependencies_present?" do
         subject { described_class.new.dependencies_present? }
 
@@ -17,76 +11,234 @@ describe Appsignal::Hooks::ActionCableHook do
         end
       end
 
-      describe ".install" do
-        it "installs the ActionCable subscriber" do
-          listeners =
-            ActiveSupport::Notifications.notifier.listeners_for("perform_action.action_cable")
-          expect(listeners).to_not be_empty
+      describe ActionCable::Channel::Base do
+        let(:transaction) do
+          Appsignal::Transaction.new(
+            request_id,
+            Appsignal::Transaction::ACTION_CABLE,
+            ActionDispatch::Request.new(env)
+          )
         end
-      end
+        let(:channel) do
+          Class.new(ActionCable::Channel::Base) do
+            def speak(_data)
+            end
 
-      describe Appsignal::Hooks::ActionCableHook::Subscriber do
-        context "without action_cable events" do
-          it "does not register the event" do
-            expect(Appsignal::Transaction).to_not receive(:create)
+            def self.to_s
+              "MyChannel"
+            end
+          end
+        end
+        let(:log) { StringIO.new }
+        let(:server) do
+          ActionCable::Server::Base.new.tap do |s|
+            s.config.logger = Logger.new(log)
+          end
+        end
+        let(:connection) { ActionCable::Connection::Base.new(server, env) }
+        let(:identifier) { { :channel => "MyChannel" }.to_json }
+        let(:params) { {} }
+        let(:request_id) { SecureRandom.uuid }
+        let(:env) do
+          http_request_env_with_data("action_dispatch.request_id" => request_id, :params => params)
+        end
+        let(:instance) { channel.new(connection, identifier, params) }
+        subject { transaction.to_h }
+        before do
+          start_agent
+          expect(Appsignal.active?).to be_truthy
+          transaction
 
-            ActiveSupport::Notifications.instrument("perform_action.foo") do
-              # nothing
+          expect(Appsignal::Transaction).to receive(:create)
+            .with(request_id, Appsignal::Transaction::ACTION_CABLE, kind_of(ActionDispatch::Request))
+            .and_return(transaction)
+          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+          expect(transaction.ext).to receive(:complete) # and do nothing
+
+          # TODO: Nicer way to stub this without a websocket?
+          allow(connection).to receive(:websocket).and_return(double(:transmit => nil))
+        end
+
+        describe "#perform_action" do
+          it "creates a transaction for an action" do
+            instance.perform_action("message" => "foo", "action" => "speak")
+
+            expect(subject).to include(
+              "action" => "MyChannel#speak",
+              "error" => nil,
+              "id" => request_id,
+              "namespace" => Appsignal::Transaction::ACTION_CABLE,
+              "metadata" => {
+                "method" => "websocket",
+                "path" => "/blog"
+              }
+            )
+            expect(subject["sample_data"]).to include(
+              "params" => {
+                "action" => "speak",
+                "message" => "foo"
+              }
+            )
+          end
+
+          context "with an error in the action" do
+            let(:channel) do
+              Class.new(ActionCable::Channel::Base) do
+                def speak(_data)
+                  raise VerySpecificError, "oh no!"
+                end
+
+                def self.to_s
+                  "MyChannel"
+                end
+              end
+            end
+
+            it "registers an error on the transaction" do
+              expect do
+                instance.perform_action("message" => "foo", "action" => "speak")
+              end.to raise_error(VerySpecificError)
+
+              expect(subject).to include(
+                "action" => "MyChannel#speak",
+                "id" => request_id,
+                "namespace" => Appsignal::Transaction::ACTION_CABLE,
+                "metadata" => {
+                  "method" => "websocket",
+                  "path" => "/blog"
+                }
+              )
+              expect(subject["error"]).to include(
+                "backtrace" => kind_of(String),
+                "name" => "VerySpecificError",
+                "message" => "oh no!"
+              )
+              expect(subject["sample_data"]).to include(
+                "params" => {
+                  "action" => "speak",
+                  "message" => "foo"
+                }
+              )
             end
           end
         end
 
-        context "with action_cable events" do
-          let(:transaction) do
-            instance_double "Appsignal::Transaction",
-              :set_http_or_background_action => nil,
-              :set_http_or_background_queue_start => nil,
-              :set_metadata => nil,
-              :set_action => nil,
-              :set_action_if_nil => nil,
-              :set_error => nil,
-              :start_event => nil,
-              :finish_event => nil,
-              :complete => nil
+        describe "subscribe callback" do
+          let(:params) { { "internal" => true } }
+
+          it "creates a transaction for a subscription" do
+            instance.subscribe_to_channel
+
+            expect(subject).to include(
+              "action" => "MyChannel#subscribed",
+              "error" => nil,
+              "id" => request_id,
+              "namespace" => Appsignal::Transaction::ACTION_CABLE,
+              "metadata" => {
+                "method" => "websocket",
+                "path" => "/blog"
+              }
+            )
+            expect(subject["sample_data"]).to include(
+              "params" => { "internal" => "true" }
+            )
           end
-          let(:payload) do
-            {
-              :channel_class => "ChannelClass",
-              :action => "channel_action",
-              :data => { :foo => :bar }
-            }.tap do |hash|
-              hash[:exception_object] = exception if defined?(exception)
+
+          context "with an error in the callback" do
+            let(:channel) do
+              Class.new(ActionCable::Channel::Base) do
+                def subscribed
+                  raise VerySpecificError, "oh no!"
+                end
+
+                def self.to_s
+                  "MyChannel"
+                end
+              end
+            end
+
+            it "registers an error on the transaction" do
+              expect do
+                instance.subscribe_to_channel
+              end.to raise_error(VerySpecificError)
+
+              expect(subject).to include(
+                "action" => "MyChannel#subscribed",
+                "id" => request_id,
+                "namespace" => Appsignal::Transaction::ACTION_CABLE,
+                "metadata" => {
+                  "method" => "websocket",
+                  "path" => "/blog"
+                }
+              )
+              expect(subject["error"]).to include(
+                "backtrace" => kind_of(String),
+                "name" => "VerySpecificError",
+                "message" => "oh no!"
+              )
+              expect(subject["sample_data"]).to include(
+                "params" => { "internal" => "true" }
+              )
             end
           end
-          before do
-            expect(Appsignal::Transaction).to receive(:create)
-              .with(kind_of(String), Appsignal::Transaction::ACTION_CABLE, kind_of(Hash))
-              .and_return(transaction)
-            allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
+        end
+
+        describe "unsubscribe callback" do
+          let(:params) { { "internal" => true } }
+
+          it "creates a transaction for a subscription" do
+            instance.unsubscribe_from_channel
+
+            expect(subject).to include(
+              "action" => "MyChannel#unsubscribed",
+              "error" => nil,
+              "id" => request_id,
+              "namespace" => Appsignal::Transaction::ACTION_CABLE,
+              "metadata" => {
+                "method" => "websocket",
+                "path" => "/blog"
+              }
+            )
+            expect(subject["sample_data"]).to include(
+              "params" => { "internal" => "true" }
+            )
           end
-          after do
-            ActiveSupport::Notifications.instrument("perform_action.action_cable", payload) do
-              # nothing
+
+          context "with an error in the callback" do
+            let(:channel) do
+              Class.new(ActionCable::Channel::Base) do
+                def unsubscribed
+                  raise VerySpecificError, "oh no!"
+                end
+
+                def self.to_s
+                  "MyChannel"
+                end
+              end
             end
-          end
 
-          shared_examples "a ActionCable transaction" do
-            it "starts and completes a transaction for perform_action.action_cable events" do
-              expect(transaction).to receive(:set_action_if_nil).with("ChannelClass#channel_action")
-              expect(transaction).to receive(:set_metadata).with("method", "websocket")
-              expect(transaction).to receive(:complete)
-            end
-          end
+            it "registers an error on the transaction" do
+              expect do
+                instance.unsubscribe_from_channel
+              end.to raise_error(VerySpecificError)
 
-          it_behaves_like "a ActionCable transaction"
-
-          context "with an exception" do
-            let(:exception) { VerySpecificError }
-
-            it_behaves_like "a ActionCable transaction"
-
-            it "registers the exception" do
-              expect(transaction).to receive(:set_error).with(exception)
+              expect(subject).to include(
+                "action" => "MyChannel#unsubscribed",
+                "id" => request_id,
+                "namespace" => Appsignal::Transaction::ACTION_CABLE,
+                "metadata" => {
+                  "method" => "websocket",
+                  "path" => "/blog"
+                }
+              )
+              expect(subject["error"]).to include(
+                "backtrace" => kind_of(String),
+                "name" => "VerySpecificError",
+                "message" => "oh no!"
+              )
+              expect(subject["sample_data"]).to include(
+                "params" => { "internal" => "true" }
+              )
             end
           end
         end

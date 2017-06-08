@@ -44,11 +44,11 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     context "when a subscriber listens for an event" do
       let(:subscriber) do
         Class.new do
-          def start(name, id, payload)
+          def start(_name, _id, _payload)
             Appsignal.set_action("foo")
           end
 
-          def finish(name, id, payload)
+          def finish(_name, _id, _payload)
             # noop
           end
         end.new
