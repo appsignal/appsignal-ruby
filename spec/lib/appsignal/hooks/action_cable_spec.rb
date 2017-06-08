@@ -56,7 +56,8 @@ describe Appsignal::Hooks::ActionCableHook do
           expect(transaction.ext).to receive(:complete) # and do nothing
 
           # Stub transmit call for subscribe/unsubscribe tests
-          allow(connection).to receive(:websocket).and_return(double(:transmit => nil))
+          allow(connection).to receive(:websocket)
+            .and_return(instance_double("ActionCable::Connection::WebSocket", :transmit => nil))
         end
 
         describe "#perform_action" do
