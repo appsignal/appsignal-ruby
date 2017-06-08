@@ -32,7 +32,7 @@ describe Appsignal::Hooks::ActionCableHook do
         let(:log) { StringIO.new }
         let(:server) do
           ActionCable::Server::Base.new.tap do |s|
-            s.config.logger = Logger.new(log)
+            s.config.logger = ActiveSupport::Logger.new(log)
           end
         end
         let(:connection) { ActionCable::Connection::Base.new(server, env) }
@@ -55,7 +55,7 @@ describe Appsignal::Hooks::ActionCableHook do
           allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
           expect(transaction.ext).to receive(:complete) # and do nothing
 
-          # TODO: Nicer way to stub this without a websocket?
+          # Stub transmit call for subscribe/unsubscribe tests
           allow(connection).to receive(:websocket).and_return(double(:transmit => nil))
         end
 
