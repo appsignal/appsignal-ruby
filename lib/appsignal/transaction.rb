@@ -4,6 +4,7 @@ module Appsignal
   class Transaction
     HTTP_REQUEST   = "http_request".freeze
     BACKGROUND_JOB = "background_job".freeze
+    ACTION_CABLE   = "action_cable".freeze
     FRONTEND       = "frontend".freeze
     BLANK          = "".freeze
 
@@ -239,6 +240,10 @@ module Appsignal
       end
     end
 
+    def set_params(params)
+      @params = params
+    end
+
     def set_metadata(key, value)
       return unless key && value
       @ext.set_metadata(key, value)
@@ -374,11 +379,27 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
 
-      options = {}
-      if Appsignal.config[:filter_parameters]
-        options[:filter_parameters] = Appsignal.config[:filter_parameters]
+      Appsignal::Utils::ParamsSanitizer.sanitize params, sanitize_parameters_options
+    end
+
+    def fetch_params_from_request
+      return unless request.respond_to?(options[:params_method])
+
+      begin
+        request.send options[:params_method]
+      rescue => e
+        # Getting params from the request has been know to fail.
+        Appsignal.logger.debug "Exception while getting params: #{e}"
+        nil
       end
-      Appsignal::Utils::ParamsSanitizer.sanitize params, options
+    end
+
+    def sanitize_parameters_options
+      {}.tap do |options|
+        if Appsignal.config[:filter_parameters]
+          options[:filter_parameters] = Appsignal.config[:filter_parameters]
+        end
+      end
     end
 
     def request_params

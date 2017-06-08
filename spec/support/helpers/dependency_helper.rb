@@ -21,6 +21,10 @@ module DependencyHelper
     dependency_present? "redis"
   end
 
+  def action_cable_present?
+    dependency_present? "actioncable"
+  end
+
   def active_job_present?
     dependency_present? "activejob"
   end
