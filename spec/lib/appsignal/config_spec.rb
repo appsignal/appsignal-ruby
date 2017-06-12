@@ -84,8 +84,9 @@ describe Appsignal::Config do
       expect(config.config_hash).to eq(
         :debug                          => false,
         :log                            => "file",
-        :ignore_errors                  => [],
         :ignore_actions                 => [],
+        :ignore_errors                  => [],
+        :ignore_namespaces              => [],
         :filter_parameters              => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
@@ -279,6 +280,8 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_APP_NAME"]             = "App name"
       ENV["APPSIGNAL_DEBUG"]                = "true"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]       = "action1,action2"
+      ENV["APPSIGNAL_IGNORE_ERRORS"]        = "VerySpecificError,AnotherError"
+      ENV["APPSIGNAL_IGNORE_NAMESPACES"]    = "admin,private_namespace"
       ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]  = "false"
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]     = "false"
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]    = "false"
@@ -294,6 +297,8 @@ describe Appsignal::Config do
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to be_truthy
       expect(config[:ignore_actions]).to eq %w(action1 action2)
+      expect(config[:ignore_errors]).to eq %w(VerySpecificError AnotherError)
+      expect(config[:ignore_namespaces]).to eq %w(admin private_namespace)
       expect(config[:instrument_net_http]).to be_falsey
       expect(config[:instrument_redis]).to be_falsey
       expect(config[:instrument_sequel]).to be_falsey
@@ -366,6 +371,7 @@ describe Appsignal::Config do
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w(action1 action2)
       config[:ignore_errors] = %w(VerySpecificError AnotherError)
+      config[:ignore_namespaces] = %w(admin private_namespace)
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
@@ -391,6 +397,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
       expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
       expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
+      expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
       expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
       expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
       expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
