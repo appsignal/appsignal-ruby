@@ -4,6 +4,8 @@ module Appsignal
     class ActionCableHook < Appsignal::Hooks::Hook
       register :action_cable
 
+      REQUEST_ID = "_appsignal_action_cable.request_id".freeze
+
       def dependencies_present?
         defined?(::ActiveSupport::Notifications::Instrumenter) &&
           defined?(::ActionCable)
@@ -22,9 +24,13 @@ module Appsignal
 
           def perform_action(*args, &block)
             # The request is only the original websocket request
-            request = ActionDispatch::Request.new(connection.env)
+            env = connection.env
+            request = ActionDispatch::Request.new(env)
+            env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
+              request.request_id || SecureRandom.uuid
+
             transaction = Appsignal::Transaction.create(
-              request.request_id,
+              env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
               Appsignal::Transaction::ACTION_CABLE,
               request
             )
@@ -48,9 +54,13 @@ module Appsignal
       def install_callbacks
         ActionCable::Channel::Base.set_callback :subscribe, :around, :prepend => true do |channel, inner|
           # The request is only the original websocket request
-          request = ActionDispatch::Request.new(channel.connection.env)
+          env = channel.connection.env
+          request = ActionDispatch::Request.new(env)
+          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
+            request.request_id || SecureRandom.uuid
+
           transaction = Appsignal::Transaction.create(
-            request.request_id,
+            env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
             request
           )
@@ -72,9 +82,13 @@ module Appsignal
 
         ActionCable::Channel::Base.set_callback :unsubscribe, :around, :prepend => true do |channel, inner|
           # The request is only the original websocket request
-          request = ActionDispatch::Request.new(channel.connection.env)
+          env = channel.connection.env
+          request = ActionDispatch::Request.new(env)
+          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
+            request.request_id || SecureRandom.uuid
+
           transaction = Appsignal::Transaction.create(
-            request.request_id,
+            env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
             request
           )
