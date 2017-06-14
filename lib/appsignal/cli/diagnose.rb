@@ -171,6 +171,11 @@ module Appsignal
 
         def run_agent_diagnose_mode
           puts "Agent diagnostics"
+          unless Appsignal.extension_loaded?
+            puts "  Extension is not loaded. No agent report created."
+            return
+          end
+
           ENV["_APPSIGNAL_DIAGNOSE"] = "true"
           diagnostics_report_string = Appsignal::Extension.diagnose
           ENV.delete("_APPSIGNAL_DIAGNOSE")

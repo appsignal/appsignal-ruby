@@ -29,7 +29,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     let(:process_user) { Etc.getpwuid(Process.uid).name }
     before(:context) { Appsignal.stop }
     before do
+      # Clear previous reports
       DiagnosticsReportEndpoint.clear_report!
+      if cli.instance_variable_defined? :@data
+        # Because this is saved on the class rather than an instance of the
+        # class we need to clear it like this in case a certain test doesn't
+        # generate a report.
+        cli.remove_instance_variable :@data
+      end
+
       if DependencyHelper.rails_present?
         allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))
       end
@@ -257,6 +265,24 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
           expect(received_report["agent"]["error"])
             .to match(/\d+: unexpected token at 'invalid agent\njson'/)
           expect(received_report["agent"]["output"]).to eq(["invalid agent", "json"])
+        end
+      end
+
+      context "when the extension is not loaded" do
+        before do
+          DiagnosticsReportEndpoint.clear_report!
+          expect(Appsignal).to receive(:extension_loaded?).and_return(false)
+          run
+        end
+
+        it "prints a warning" do
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension is not loaded. No agent report created."
+        end
+
+        it "adds the output to the report" do
+          expect(received_report["agent"]).to be_nil
         end
       end
 
