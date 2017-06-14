@@ -54,14 +54,13 @@ RSpec.configure do |config|
   config.include SystemHelpers
   config.extend DependencyHelper
 
-  config.before :context do
-    # Use modified SYSTEM_TMP_DIR
-    Appsignal::Config.send :remove_const, :SYSTEM_TMP_DIR
-    Appsignal::Config.send :const_set, :SYSTEM_TMP_DIR,
-      File.join(tmp_dir, "system-tmp")
+  def spec_system_tmp_dir
+    File.join(tmp_dir, "system-tmp")
+  end
 
+  config.before :context do
     FileUtils.rm_rf(tmp_dir)
-    FileUtils.mkdir_p(Appsignal::Config::SYSTEM_TMP_DIR)
+    FileUtils.mkdir_p(spec_system_tmp_dir)
   end
 
   config.before do
@@ -73,6 +72,9 @@ RSpec.configure do |config|
     appsignal_key_prefixes = %w(APPSIGNAL_ _APPSIGNAL_)
     env_keys = ENV.keys.select { |key| key.start_with?(*appsignal_key_prefixes) }
     env_keys.each { |key| ENV.delete(key) }
+
+    # Stub system_tmp_dir to something in the project dir for specs
+    allow(Appsignal::Config).to receive(:system_tmp_dir).and_return(spec_system_tmp_dir)
   end
 
   config.after do

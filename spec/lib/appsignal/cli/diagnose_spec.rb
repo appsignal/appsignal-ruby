@@ -594,7 +594,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     describe "paths" do
-      let(:system_tmp_dir) { Appsignal::Config::SYSTEM_TMP_DIR }
+      let(:system_tmp_dir) { Appsignal::Config.system_tmp_dir }
       before do
         FileUtils.mkdir_p(root_path)
         FileUtils.mkdir_p(system_tmp_dir)
