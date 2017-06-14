@@ -293,7 +293,12 @@ module Appsignal
           puts "Host information"
           data_section :host do
             puts_and_save :architecture, "Architecture", rbconfig["host_cpu"]
-            puts_and_save :os, "Operating System", rbconfig["host_os"]
+
+            os_label = os = rbconfig["host_os"]
+            os_label = "#{os_label} (Microsoft Windows is not supported.)" if Gem.win_platform?
+            save :os, os
+            puts_value "Operating System", os_label
+
             puts_and_save :language_version, "Ruby version",
               "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
 

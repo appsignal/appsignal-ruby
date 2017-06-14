@@ -399,6 +399,23 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
           "Ruby version: #{language_version}"
       end
 
+      context "when on Microsoft Windows" do
+        before do
+          expect(RbConfig::CONFIG).to receive(:[]).with("host_os").and_return("mingw32")
+          expect(RbConfig::CONFIG).to receive(:[]).at_least(:once).and_call_original
+          expect(Gem).to receive(:win_platform?).and_return(true)
+          run
+        end
+
+        it "adds the arch to the report" do
+          expect(received_report["host"]["os"]).to eq("mingw32")
+        end
+
+        it "prints warning that Microsoft Windows is not supported" do
+          expect(output).to match(/Operating System: .+ \(Microsoft Windows is not supported\.\)/)
+        end
+      end
+
       it "transmits host information in report" do
         run
         host_report = received_report["host"]
