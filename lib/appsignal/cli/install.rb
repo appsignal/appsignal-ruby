@@ -59,7 +59,12 @@ module Appsignal
           elsif installed_frameworks.include?(:sinatra)
             install_for_sinatra(config)
           else
-            puts "We could not detect which framework you are using. We'd be very grateful if you email us on support@appsignal.com with information about your setup."
+            print colorize "Warning:", :red
+            puts " We could not detect which framework you are using. "\
+              "We'd be very grateful if you email us on support@appsignal.com "\
+              "with information about your setup."
+            puts
+            done_notice
           end
         end
 
@@ -199,7 +204,10 @@ module Appsignal
           sleep 0.3
           puts
           if Gem.win_platform?
-            puts "The AppSignal agent currently does not work on Windows, please push these changes to your test/staging/production environment"
+            puts "The AppSignal agent currently does not work on Microsoft " \
+              "Windows. Please push these changes to your staging/production " \
+              "environment and make sure some actions are performed. " \
+              "AppSignal should pick up your app after a few minutes."
           else
             puts "  Sending example data to AppSignal..."
             if Appsignal::Demo.transmit
