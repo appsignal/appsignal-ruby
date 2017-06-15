@@ -3,7 +3,7 @@ module EnvHelpers
     path = args.delete(:path) || "/blog"
     Rack::MockRequest.env_for(
       path,
-      :params => {
+      :params => args[:params] || {
         "controller" => "blog_posts",
         "action" => "show",
         "id" => "1"
