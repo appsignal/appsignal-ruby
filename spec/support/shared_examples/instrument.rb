@@ -24,9 +24,9 @@ RSpec.shared_examples "instrument helper" do
       expect do
         instrumenter.instrument "name", "title", "body" do
           stub.method_call
-          raise "foo"
+          raise VerySpecificError, "foo"
         end
-      end.to raise_error(StandardError, "foo")
+      end.to raise_error(VerySpecificError, "foo")
     end
   end
 

@@ -33,8 +33,8 @@ module Appsignal
               transaction.start_event
             end
 
-            return_value = instrument_without_appsignal(name, payload, &block)
-
+            instrument_without_appsignal(name, payload, &block)
+          ensure
             if instrument_this
               title, body, body_format = Appsignal::EventFormatter.format(name, payload)
               transaction.finish_event(
@@ -44,8 +44,6 @@ module Appsignal
                 body_format
               )
             end
-
-            return_value
           end
         end
       end
