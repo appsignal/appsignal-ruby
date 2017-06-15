@@ -9,8 +9,9 @@ module Appsignal
     DEFAULT_CONFIG = {
       :debug                          => false,
       :log                            => "file",
-      :ignore_errors                  => [],
       :ignore_actions                 => [],
+      :ignore_errors                  => [],
+      :ignore_namespaces              => [],
       :filter_parameters              => [],
       :send_params                    => true,
       :endpoint                       => "https://push.appsignal.com",
@@ -43,8 +44,9 @@ module Appsignal
       "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
       "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
       "APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING" => :enable_frontend_error_catching,
-      "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
       "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
+      "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
+      "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
       "APPSIGNAL_SEND_PARAMS"                    => :send_params,
       "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
@@ -132,6 +134,7 @@ module Appsignal
       ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
       ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
       ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
+      ENV["_APPSIGNAL_IGNORE_NAMESPACES"]            = config_hash[:ignore_namespaces].join(",")
       ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
       ENV["_APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
@@ -209,8 +212,8 @@ module Appsignal
       end
 
       # Configuration with array of strings type
-      %w(APPSIGNAL_IGNORE_ERRORS APPSIGNAL_IGNORE_ACTIONS
-         APPSIGNAL_FILTER_PARAMETERS).each do |var|
+      %w(APPSIGNAL_IGNORE_ACTIONS APPSIGNAL_IGNORE_ERRORS
+         APPSIGNAL_IGNORE_NAMESPACES APPSIGNAL_FILTER_PARAMETERS).each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
