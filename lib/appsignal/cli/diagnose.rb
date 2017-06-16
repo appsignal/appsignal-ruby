@@ -69,6 +69,7 @@ module Appsignal
         # @return [void]
         # @api private
         def run(options = {})
+          $stdout.sync = true
           header
           empty_line
 

@@ -12,6 +12,8 @@ module Appsignal
 
       class << self
         def run(push_api_key)
+          $stdout.sync = true
+
           puts
           puts colorize "#######################################", :green
           puts colorize "## Starting AppSignal Installer      ##", :green
