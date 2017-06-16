@@ -380,7 +380,7 @@ module Appsignal
           file_uid = File.stat(path).uid
           {
             :uid => file_uid,
-            :user => Etc.getpwuid(file_uid).name
+            :user => username_for_uid(file_uid)
           }
         end
 
@@ -390,7 +390,7 @@ module Appsignal
           process_uid = Process.uid
           @process_user = {
             :uid => process_uid,
-            :user => Etc.getpwuid(process_uid).name
+            :user => username_for_uid(process_uid)
           }
         end
 
@@ -466,6 +466,12 @@ module Appsignal
           else
             puts "    File not found."
           end
+        end
+
+        def username_for_uid(uid)
+          passwd_struct = Etc.getpwuid(uid)
+          return unless passwd_struct
+          passwd_struct.name
         end
 
         def empty_line
