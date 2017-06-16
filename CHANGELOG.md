@@ -10,6 +10,8 @@
 * Finish ActiveSupport notifications events when they would encounter a `raise`
   or a `throw`. PR #310
 * Add `ignore_namespaces` option. PR #312
+* Truncate lengthy parameter values to 2000 characters.
+  Commit 65de1382f5f453b624781cde6e0544c89fdf89ef
 
 # 2.2.1
 * Fix support for Rails 5.1. PR #286
