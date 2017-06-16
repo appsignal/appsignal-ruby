@@ -1,7 +1,15 @@
 # 2.3.0 (unreleased)
+* Fix Shoryuken instrumentation when body is a string. PR #266
+* Enable ActiveSupport instrumentation at all times. PR #274
+* Add parameter filtering for background jobs. Automatically uses the AppSignal
+  parameter filtering. PR #280
 * Improve log messages for transactions. PR #293
 * Remove thread_safe dependency. PR #294
 * Add `Transaction#params` attribute for custom parameters. PR #295
+* Add ActionCable support. PR #309
+* Finish ActiveSupport notifications events when they would encounter a `raise`
+  or a `throw`. PR #310
+* Add `ignore_namespaces` option. PR #312
 
 # 2.2.1
 * Fix support for Rails 5.1. PR #286
