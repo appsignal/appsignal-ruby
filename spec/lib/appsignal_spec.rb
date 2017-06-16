@@ -811,6 +811,30 @@ describe Appsignal do
             Appsignal.set_error(nil)
           end
         end
+
+        context "with tags" do
+          let(:tags) { { "foo" => "bar" } }
+
+          it "sets the tags on the transaction" do
+            expect(transaction).to receive(:set_error).with(error)
+            expect(transaction).to receive(:set_tags).with(tags)
+            expect(transaction).to_not receive(:set_namespace)
+
+            Appsignal.set_error(error, tags)
+          end
+        end
+
+        context "with namespace" do
+          let(:namespace) { "admin" }
+
+          it "sets the namespace on the transaction" do
+            expect(transaction).to receive(:set_error).with(error)
+            expect(transaction).to_not receive(:set_tags)
+            expect(transaction).to receive(:set_namespace).with(namespace)
+
+            Appsignal.set_error(error, nil, namespace)
+          end
+        end
       end
 
       context "when there is no active transaction" do

@@ -315,11 +315,14 @@ module Appsignal
     # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
     #   Exception handling guide
     # @since 0.6.6
-    def set_error(exception)
+    def set_error(exception, tags = nil, namespace = nil)
       return if !active? ||
           Appsignal::Transaction.current.nil? ||
           exception.nil?
-      Appsignal::Transaction.current.set_error(exception)
+      transaction = Appsignal::Transaction.current
+      transaction.set_error(exception)
+      transaction.set_tags(tags) if tags
+      transaction.set_namespace(namespace) if namespace
     end
     alias :set_exception :set_error
     alias :add_exception :set_error
