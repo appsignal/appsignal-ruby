@@ -6,12 +6,15 @@
 * Improve log messages for transactions. PR #293
 * Remove thread_safe dependency. PR #294
 * Add `Transaction#params` attribute for custom parameters. PR #295
+* Fix queue time on DelayedJob integration. PR #297
 * Add ActionCable support. PR #309
 * Finish ActiveSupport notifications events when they would encounter a `raise`
   or a `throw`. PR #310
 * Add `ignore_namespaces` option. PR #312
 * Truncate lengthy parameter values to 2000 characters.
   Commit 65de1382f5f453b624781cde6e0544c89fdf89ef
+* Disable gracefully on Microsoft Windows. PR #313
+* Add tags and namespace arguments to `Appsignal.set_error`. PR #317
 
 # 2.2.1
 * Fix support for Rails 5.1. PR #286
