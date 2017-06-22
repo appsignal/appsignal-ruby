@@ -29,7 +29,7 @@ module Appsignal
       def press_any_key
         puts
         print "  Ready? Press any key:"
-        stdin.getch
+        stdin.getc
         puts
         puts
       end

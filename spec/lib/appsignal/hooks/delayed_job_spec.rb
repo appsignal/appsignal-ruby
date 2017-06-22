@@ -34,6 +34,8 @@ describe Appsignal::Hooks::DelayedJobHook do
     describe ".invoke_with_instrumentation" do
       let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
       let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
+      let(:created_at) { time - 3600 }
+      let(:run_at) { time - 3600 }
       let(:job_data) do
         {
           :id             => 123,
@@ -41,7 +43,8 @@ describe Appsignal::Hooks::DelayedJobHook do
           :priority       => 1,
           :attempts       => 1,
           :queue          => "default",
-          :created_at     => time - 60_000,
+          :created_at     => created_at,
+          :run_at         => run_at,
           :payload_object => double(:args => args)
         }
       end
@@ -60,7 +63,8 @@ describe Appsignal::Hooks::DelayedJobHook do
               :queue    => "default",
               :id       => "123"
             },
-            :queue_start => time - 60_000
+            :params      => args,
+            :queue_start => run_at
           }
         end
         after do
@@ -116,6 +120,17 @@ describe Appsignal::Hooks::DelayedJobHook do
           end
         end
 
+        context "with run_at in the future" do
+          let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
+
+          it "reports queue_start with run_at time" do
+            expect(Appsignal).to receive(:monitor_transaction).with(
+              "perform_job.delayed_job",
+              default_params.merge(:queue_start => run_at)
+            )
+          end
+        end
+
         context "with custom name call" do
           let(:job_data) do
             {
@@ -128,7 +143,8 @@ describe Appsignal::Hooks::DelayedJobHook do
               :priority   => 1,
               :attempts   => 1,
               :queue      => "default",
-              :created_at => time - 60_000
+              :created_at => created_at,
+              :run_at     => run_at
             }
           end
           let(:default_params) do
@@ -141,7 +157,7 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :queue    => "default",
                 :id       => "123"
               },
-              :queue_start => time - 60_000
+              :queue_start => run_at
             }
           end
 
@@ -210,16 +226,20 @@ describe Appsignal::Hooks::DelayedJobHook do
                   :queue    => "default",
                   :id       => "123"
                 },
-                :queue_start => time - 60_000
+                :queue_start => run_at,
+                :params      => args
               }
             end
+            let(:args) { ["activejob_argument"] }
             before { job_data[:args] = args }
 
-            it "wraps it in a transaction with the correct params" do
-              expect(Appsignal).to receive(:monitor_transaction).with(
-                "perform_job.delayed_job",
-                default_params.merge(:params => ["argument"])
-              )
+            context "with simple params" do
+              it "wraps it in a transaction with the correct params" do
+                expect(Appsignal).to receive(:monitor_transaction).with(
+                  "perform_job.delayed_job",
+                  default_params.merge(:params => ["activejob_argument"])
+                )
+              end
             end
 
             context "with more complex params" do
@@ -259,6 +279,17 @@ describe Appsignal::Hooks::DelayedJobHook do
                     )
                   )
                 end
+              end
+            end
+
+            context "with run_at in the future" do
+              let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
+
+              it "reports queue_start with run_at time" do
+                expect(Appsignal).to receive(:monitor_transaction).with(
+                  "perform_job.delayed_job",
+                  default_params.merge(:queue_start => run_at)
+                )
               end
             end
           end

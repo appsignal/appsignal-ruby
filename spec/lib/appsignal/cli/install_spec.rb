@@ -210,8 +210,8 @@ describe Appsignal::CLI::Install do
     end
 
     it "prints a warning for windows" do
-      expect(output).to include("The AppSignal agent currently does not work on Windows")
-      expect(output).to include("test/staging/production environment")
+      expect(output).to include("The AppSignal agent currently does not work on Microsoft Windows")
+      expect(output).to include("staging/production environment")
     end
   end
 
@@ -614,12 +614,15 @@ describe Appsignal::CLI::Install do
     context "with unknown framework" do
       let(:push_api_key) { "my_key" }
 
+      it_behaves_like "windows installation"
       it_behaves_like "push_api_key validation"
+      it_behaves_like "demo data"
 
       it "prints a message about unknown framework" do
         run
 
-        expect(output).to include "We could not detect which framework you are using."
+        expect(output).to include \
+          "\e[31mWarning:\e[0m We could not detect which framework you are using."
         expect(output).to_not include_env_push_api_key
         expect(output).to_not include_env_app_name
         expect(File.exist?(config_file_path)).to be_falsy

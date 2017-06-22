@@ -69,6 +69,7 @@ module Appsignal
         # @return [void]
         # @api private
         def run(options = {})
+          $stdout.sync = true
           header
           empty_line
 
@@ -171,6 +172,11 @@ module Appsignal
 
         def run_agent_diagnose_mode
           puts "Agent diagnostics"
+          unless Appsignal.extension_loaded?
+            puts "  Extension is not loaded. No agent report created."
+            return
+          end
+
           ENV["_APPSIGNAL_DIAGNOSE"] = "true"
           diagnostics_report_string = Appsignal::Extension.diagnose
           ENV.delete("_APPSIGNAL_DIAGNOSE")
@@ -288,7 +294,12 @@ module Appsignal
           puts "Host information"
           data_section :host do
             puts_and_save :architecture, "Architecture", rbconfig["host_cpu"]
-            puts_and_save :os, "Operating System", rbconfig["host_os"]
+
+            os_label = os = rbconfig["host_os"]
+            os_label = "#{os_label} (Microsoft Windows is not supported.)" if Gem.win_platform?
+            save :os, os
+            puts_value "Operating System", os_label
+
             puts_and_save :language_version, "Ruby version",
               "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
 
@@ -370,7 +381,7 @@ module Appsignal
           file_uid = File.stat(path).uid
           {
             :uid => file_uid,
-            :user => Etc.getpwuid(file_uid).name
+            :user => username_for_uid(file_uid)
           }
         end
 
@@ -380,7 +391,7 @@ module Appsignal
           process_uid = Process.uid
           @process_user = {
             :uid => process_uid,
-            :user => Etc.getpwuid(process_uid).name
+            :user => username_for_uid(process_uid)
           }
         end
 
@@ -456,6 +467,12 @@ module Appsignal
           else
             puts "    File not found."
           end
+        end
+
+        def username_for_uid(uid)
+          passwd_struct = Etc.getpwuid(uid)
+          return unless passwd_struct
+          passwd_struct.name
         end
 
         def empty_line

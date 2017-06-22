@@ -2,10 +2,10 @@ require "erb"
 require "yaml"
 require "uri"
 require "socket"
+require "tmpdir"
 
 module Appsignal
   class Config
-    SYSTEM_TMP_DIR = File.realpath("/tmp")
     DEFAULT_CONFIG = {
       :debug                          => false,
       :log                            => "file",
@@ -84,6 +84,16 @@ module Appsignal
       validate
     end
 
+    # @api private
+    # @return [String] System's tmp directory.
+    def self.system_tmp_dir
+      if Gem.win_platform?
+        Dir.tmpdir
+      else
+        File.realpath("/tmp")
+      end
+    end
+
     def [](key)
       config_hash[key]
     end
@@ -98,14 +108,15 @@ module Appsignal
         return File.join(File.realpath(path), "appsignal.log")
       end
 
-      if File.writable? SYSTEM_TMP_DIR
+      system_tmp_dir = self.class.system_tmp_dir
+      if File.writable? system_tmp_dir
         $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
-          "'#{SYSTEM_TMP_DIR}' instead. Please check the "\
+          "'#{system_tmp_dir}' instead. Please check the "\
           "permissions for the application's (log) directory."
-        File.join(SYSTEM_TMP_DIR, "appsignal.log")
+        File.join(system_tmp_dir, "appsignal.log")
       else
         $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
-          "'#{SYSTEM_TMP_DIR}' fallback. Please check the permissions "\
+          "'#{system_tmp_dir}' fallback. Please check the permissions "\
           "for the application's (log) directory."
       end
     end

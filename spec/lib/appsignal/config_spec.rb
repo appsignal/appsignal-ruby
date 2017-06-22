@@ -444,7 +444,7 @@ describe Appsignal::Config do
     end
 
     shared_examples "#log_file_path: tmp path" do
-      let(:system_tmp_dir) { described_class::SYSTEM_TMP_DIR }
+      let(:system_tmp_dir) { described_class.system_tmp_dir }
       before { FileUtils.mkdir_p(system_tmp_dir) }
       after { FileUtils.rm_rf(system_tmp_dir) }
 
@@ -555,6 +555,33 @@ describe Appsignal::Config do
             expect(subject).to eq(File.join(real_path, "appsignal.log"))
           end
         end
+      end
+    end
+  end
+
+  describe ".system_tmp_dir" do
+    before do
+      # To counteract the stub in spec_helper
+      expect(Appsignal::Config).to receive(:system_tmp_dir).and_call_original
+    end
+
+    context "when on a *NIX OS" do
+      before do
+        expect(Gem).to receive(:win_platform?).and_return(false)
+      end
+
+      it "returns the system's tmp dir" do
+        expect(described_class.system_tmp_dir).to eq(File.realpath("/tmp"))
+      end
+    end
+
+    context "when on Microsoft Windows" do
+      before do
+        expect(Gem).to receive(:win_platform?).and_return(true)
+      end
+
+      it "returns the system's tmp dir" do
+        expect(described_class.system_tmp_dir).to eq(Dir.tmpdir)
       end
     end
   end

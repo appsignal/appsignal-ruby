@@ -43,7 +43,7 @@ module Appsignal
             :attempts => extract_value(job_data, :attempts, 0)
           },
           :params      => params,
-          :queue_start => extract_value(job_data, :created_at)
+          :queue_start => extract_value(job_data, :run_at)
         ) do
           block.call(job)
         end

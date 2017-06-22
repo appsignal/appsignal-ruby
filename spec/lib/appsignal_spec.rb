@@ -605,7 +605,7 @@ describe Appsignal do
       context "when the log path and fallback path are not writable" do
         before do
           FileUtils.chmod 0o444, log_path
-          FileUtils.chmod 0o444, Appsignal::Config::SYSTEM_TMP_DIR
+          FileUtils.chmod 0o444, Appsignal::Config.system_tmp_dir
 
           capture_stdout(out_stream) do
             Appsignal.start_logger
@@ -613,7 +613,7 @@ describe Appsignal do
           end
         end
         after do
-          FileUtils.chmod 0o755, Appsignal::Config::SYSTEM_TMP_DIR
+          FileUtils.chmod 0o755, Appsignal::Config.system_tmp_dir
         end
 
         it "logs to stdout" do
@@ -628,7 +628,7 @@ describe Appsignal do
         it "outputs a warning" do
           expect(output).to include \
             "appsignal: Unable to log to '#{log_path}' "\
-            "or the '#{Appsignal::Config::SYSTEM_TMP_DIR}' fallback."
+            "or the '#{Appsignal::Config.system_tmp_dir}' fallback."
         end
       end
 
