@@ -29,7 +29,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     let(:process_user) { Etc.getpwuid(Process.uid).name }
     before(:context) { Appsignal.stop }
     before do
+      # Clear previous reports
       DiagnosticsReportEndpoint.clear_report!
+      if cli.instance_variable_defined? :@data
+        # Because this is saved on the class rather than an instance of the
+        # class we need to clear it like this in case a certain test doesn't
+        # generate a report.
+        cli.remove_instance_variable :@data
+      end
+
       if DependencyHelper.rails_present?
         allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))
       end
@@ -260,6 +268,24 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         end
       end
 
+      context "when the extension is not loaded" do
+        before do
+          DiagnosticsReportEndpoint.clear_report!
+          expect(Appsignal).to receive(:extension_loaded?).and_return(false)
+          run
+        end
+
+        it "prints a warning" do
+          expect(output).to include \
+            "Agent diagnostics",
+            "  Extension is not loaded. No agent report created."
+        end
+
+        it "adds the output to the report" do
+          expect(received_report["agent"]).to be_nil
+        end
+      end
+
       context "when the report contains an error" do
         let(:agent_report) do
           { "error" => "fatal error" }
@@ -371,6 +397,23 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
           "Architecture: #{rbconfig["host_cpu"]}",
           "Operating System: #{rbconfig["host_os"]}",
           "Ruby version: #{language_version}"
+      end
+
+      context "when on Microsoft Windows" do
+        before do
+          expect(RbConfig::CONFIG).to receive(:[]).with("host_os").and_return("mingw32")
+          expect(RbConfig::CONFIG).to receive(:[]).at_least(:once).and_call_original
+          expect(Gem).to receive(:win_platform?).and_return(true)
+          run
+        end
+
+        it "adds the arch to the report" do
+          expect(received_report["host"]["os"]).to eq("mingw32")
+        end
+
+        it "prints warning that Microsoft Windows is not supported" do
+          expect(output).to match(/Operating System: .+ \(Microsoft Windows is not supported\.\)/)
+        end
       end
 
       it "transmits host information in report" do
@@ -594,7 +637,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     describe "paths" do
-      let(:system_tmp_dir) { Appsignal::Config::SYSTEM_TMP_DIR }
+      let(:system_tmp_dir) { Appsignal::Config.system_tmp_dir }
       before do
         FileUtils.mkdir_p(root_path)
         FileUtils.mkdir_p(system_tmp_dir)
