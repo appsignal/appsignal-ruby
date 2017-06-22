@@ -712,42 +712,69 @@ describe Appsignal do
     end
 
     describe ".send_error" do
-      let(:tags) { nil }
+      let(:transaction) do
+        Appsignal::Transaction.new(
+          SecureRandom.uuid,
+          Appsignal::Transaction::HTTP_REQUEST,
+          Appsignal::Transaction::GenericRequest.new({})
+        )
+      end
       let(:error) { VerySpecificError.new }
 
-      it "should send the error to AppSignal" do
-        expect(Appsignal::Transaction).to receive(:new).and_call_original
+      it "sends the error to AppSignal" do
+        expect(Appsignal::Transaction).to receive(:new).with(
+          kind_of(String),
+          Appsignal::Transaction::HTTP_REQUEST,
+          kind_of(Appsignal::Transaction::GenericRequest)
+        ).and_return(transaction)
+        expect(transaction).to receive(:set_error).with(error)
+        expect(transaction).to_not receive(:set_tags)
+        expect(transaction).to receive(:complete)
+
+        Appsignal.send_error(error)
+      end
+
+      context "when given error is not an Exception" do
+        let(:error) { double }
+
+        it "logs an error message" do
+          expect(Appsignal.logger).to receive(:error)
+            .with("Can't send error, given value is not an exception")
+        end
+
+        it "does not send the error" do
+          expect(Appsignal::Transaction).to_not receive(:create)
+        end
+
+        after { Appsignal.send_error(error) }
       end
 
       context "with tags" do
         let(:tags) { { :a => "a", :b => "b" } }
-
-        it "should tag the request before sending" do
-          transaction = Appsignal::Transaction.new(
-            SecureRandom.uuid,
-            Appsignal::Transaction::HTTP_REQUEST,
-            Appsignal::Transaction::GenericRequest.new({})
-          )
+        before do
           allow(Appsignal::Transaction).to receive(:new).and_return(transaction)
-          expect(transaction).to receive(:set_tags).with(tags)
+        end
+
+        it "tags the request before sending it" do
+          expect(transaction).to receive(:set_tags).with(tags).and_call_original
           expect(transaction).to receive(:complete)
+
+          Appsignal.send_error(error, tags)
         end
       end
 
-      context "when given class is not an error" do
-        let(:error) { double }
+      context "with namespace" do
+        let(:namespace) { "admin" }
 
-        it "should log a message" do
-          expect(Appsignal.logger).to receive(:error).with('Can\'t send error, given value is not an exception')
+        it "sets the namespace on the transaction" do
+          expect(Appsignal::Transaction).to receive(:new).with(
+            kind_of(String),
+            "admin",
+            kind_of(Appsignal::Transaction::GenericRequest)
+          ).and_call_original
         end
 
-        it "should not send the error" do
-          expect(Appsignal::Transaction).to_not receive(:create)
-        end
-      end
-
-      after do
-        Appsignal.send_error(error, tags)
+        after { Appsignal.send_error(error, nil, namespace) }
       end
     end
 
@@ -766,24 +793,58 @@ describe Appsignal do
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
       let(:error) { RuntimeError.new("I am an exception") }
 
-      it "should add the error to the current transaction" do
-        expect(transaction).to receive(:set_error).with(error)
+      context "when there is an active transaction" do
+        it "adds the error to the active transaction" do
+          expect(transaction).to receive(:set_error).with(error)
+          expect(transaction).to_not receive(:set_tags)
+          expect(transaction).to_not receive(:set_namespace)
 
-        Appsignal.set_error(error)
+          Appsignal.set_error(error)
+        end
+
+        context "when the error is nil" do
+          it "does nothing" do
+            expect(transaction).to_not receive(:set_error)
+            expect(transaction).to_not receive(:set_tags)
+            expect(transaction).to_not receive(:set_namespace)
+
+            Appsignal.set_error(nil)
+          end
+        end
+
+        context "with tags" do
+          let(:tags) { { "foo" => "bar" } }
+
+          it "sets the tags on the transaction" do
+            expect(transaction).to receive(:set_error).with(error)
+            expect(transaction).to receive(:set_tags).with(tags)
+            expect(transaction).to_not receive(:set_namespace)
+
+            Appsignal.set_error(error, tags)
+          end
+        end
+
+        context "with namespace" do
+          let(:namespace) { "admin" }
+
+          it "sets the namespace on the transaction" do
+            expect(transaction).to receive(:set_error).with(error)
+            expect(transaction).to_not receive(:set_tags)
+            expect(transaction).to receive(:set_namespace).with(namespace)
+
+            Appsignal.set_error(error, nil, namespace)
+          end
+        end
       end
 
-      it "should do nothing if there is no current transaction" do
-        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+      context "when there is no active transaction" do
+        it "does nothing" do
+          allow(Appsignal::Transaction).to receive(:current).and_return(nil)
 
-        expect(transaction).to_not receive(:set_error)
+          expect(transaction).to_not receive(:set_error)
 
-        Appsignal.set_error(error)
-      end
-
-      it "should do nothing if the error is nil" do
-        expect(transaction).to_not receive(:set_error)
-
-        Appsignal.set_error(nil)
+          Appsignal.set_error(error)
+        end
       end
     end
 
