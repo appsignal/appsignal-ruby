@@ -12,7 +12,8 @@
   or a `throw`. PR #310
 * Add `ignore_namespaces` option. PR #312
 * Truncate lengthy parameter values to 2000 characters.
-  Commit 65de1382f5f453b624781cde6e0544c89fdf89ef
+  Commit 65de1382f5f453b624781cde6e0544c89fdf89ef and
+  d3ca2a545fb22949f3369692dd57d49b4936c739.
 * Disable gracefully on Microsoft Windows. PR #313
 * Add tags and namespace arguments to `Appsignal.set_error`. PR #317
 
