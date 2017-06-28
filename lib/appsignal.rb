@@ -254,8 +254,8 @@ module Appsignal
     #
     # @param error [Exception] The error to send to AppSignal.
     # @param tags [Hash{String, Symbol => String, Symbol, Integer}] Additional
-    # tags to add to the error. See also {.tag_request}.
-    # @param namespace [Exception] The namespace in which the error occurred.
+    #   tags to add to the error. See also {.tag_request}.
+    # @param namespace [String] The namespace in which the error occurred.
     #   See also {.set_namespace}.
     # @return [void]
     #
@@ -309,6 +309,10 @@ module Appsignal
     #   end
     #
     # @param exception [Exception] The error to add to the current transaction.
+    # @param tags [Hash{String, Symbol => String, Symbol, Integer}] Additional
+    #   tags to add to the error. See also {.tag_request}.
+    # @param namespace [String] The namespace in which the error occurred.
+    #   See also {.set_namespace}.
     # @return [void]
     #
     # @see Transaction#set_error
