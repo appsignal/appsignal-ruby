@@ -1,4 +1,4 @@
-# 2.3.0 (unreleased)
+# 2.3.0
 * Fix Shoryuken instrumentation when body is a string. PR #266
 * Enable ActiveSupport instrumentation at all times. PR #274
 * Add parameter filtering for background jobs. Automatically uses the AppSignal
