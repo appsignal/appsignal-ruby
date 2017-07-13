@@ -1,4 +1,4 @@
-# AppSignal Ruby agent
+# AppSignal for Ruby
 
 AppSignal solves all your Ruby monitoring needs in a single tool. You and your
 team can focus on writing code and we'll provide the alerts if your app has any
