@@ -134,6 +134,7 @@ including but not limited to:
 - Delayed Job
 - Resque
 - Rake
+- Hanami
 
 AppSignal instrumentation doesn't depend on automatic integrations. It's easy
 to set up [custom instrumentation][custom-instrumentation] to add keep track of
