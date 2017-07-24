@@ -38,7 +38,7 @@ module Appsignal
             if instrument_this
               title, body, body_format = Appsignal::EventFormatter.format(name, payload)
               transaction.finish_event(
-                name,
+                name.to_s,
                 title,
                 body,
                 body_format
