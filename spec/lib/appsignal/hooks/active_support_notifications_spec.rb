@@ -30,6 +30,16 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
       expect(return_value).to eq "value"
     end
 
+    it "should convert non-string names to strings" do
+      expect(Appsignal::Transaction.current).to receive(:start_event)
+        .at_least(:once)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
+        .at_least(:once)
+        .with("not_a_string", nil, nil, nil)
+
+      as.instrument(:not_a_string) {}
+    end
+
     it "does not instrument events whose name starts with a bang" do
       expect(Appsignal::Transaction.current).not_to receive(:start_event)
       expect(Appsignal::Transaction.current).not_to receive(:finish_event)
