@@ -37,7 +37,7 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
         .at_least(:once)
         .with("not_a_string", nil, nil, nil)
 
-      as.instrument(:not_a_string) { }
+      as.instrument(:not_a_string) {}
     end
 
     it "does not instrument events whose name starts with a bang" do
