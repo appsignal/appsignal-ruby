@@ -1,3 +1,7 @@
+# 2.3.1
+* Fix ActiveSupport::Notifications hook not supporting non-string names for
+  events. PR #324
+
 # 2.3.0
 * Fix Shoryuken instrumentation when body is a string. PR #266
 * Enable ActiveSupport instrumentation at all times. PR #274
