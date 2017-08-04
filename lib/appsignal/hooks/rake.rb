@@ -15,11 +15,15 @@ module Appsignal
           def execute(*args)
             execute_without_appsignal(*args)
           rescue => error
+            # Format given arguments and cast to hash if possible
+            params, _ = args
+            params = params.to_hash if params.respond_to?(:to_hash)
+
             transaction = Appsignal::Transaction.create(
               SecureRandom.uuid,
               Appsignal::Transaction::BACKGROUND_JOB,
               Appsignal::Transaction::GenericRequest.new(
-                :params => args
+                :params => params
               )
             )
             transaction.set_action(name)
