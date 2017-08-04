@@ -132,7 +132,8 @@ module Appsignal
             return
           end
 
-          puts "  Your diagnostics report has been sent to AppSignal."
+          puts "  Please email us at support@appsignal.com with the following"
+          puts "  support token."
           begin
             response_data = JSON.parse(response.body)
             puts "  Your support token: #{response_data["token"]}"
