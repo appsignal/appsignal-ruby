@@ -51,7 +51,7 @@ describe Appsignal::Hooks::RakeHook do
 
       it "adds the task arguments to the request" do
         expect(Appsignal::Transaction::GenericRequest).to receive(:new)
-          .with(:params => {:foo => "bar"})
+          .with(:params => { :foo => "bar" })
           .and_return(genric_request)
       end
 
