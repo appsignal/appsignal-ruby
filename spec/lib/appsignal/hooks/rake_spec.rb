@@ -3,7 +3,7 @@ require "rake"
 describe Appsignal::Hooks::RakeHook do
   let(:task) { Rake::Task.new("task:name", Rake::Application.new) }
   let(:arguments) { Rake::TaskArguments.new(["foo"], ["bar"]) }
-  let(:genric_request) { Appsignal::Transaction::GenericRequest.new({}) }
+  let(:generic_request) { Appsignal::Transaction::GenericRequest.new({}) }
   before(:context) do
     Appsignal.config = project_fixture_config
     expect(Appsignal.active?).to be_truthy
@@ -52,7 +52,7 @@ describe Appsignal::Hooks::RakeHook do
       it "adds the task arguments to the request" do
         expect(Appsignal::Transaction::GenericRequest).to receive(:new)
           .with(:params => { :foo => "bar" })
-          .and_return(genric_request)
+          .and_return(generic_request)
       end
 
       context "when first argument is not a `Rake::TaskArguments`" do
@@ -61,7 +61,7 @@ describe Appsignal::Hooks::RakeHook do
         it "adds the first argument regardless" do
           expect(Appsignal::Transaction::GenericRequest).to receive(:new)
             .with(:params => nil)
-            .and_return(genric_request)
+            .and_return(generic_request)
         end
       end
 
