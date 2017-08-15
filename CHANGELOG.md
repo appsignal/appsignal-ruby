@@ -1,3 +1,7 @@
+# Unreleased version
+* Accept mixed case env variable values for the `true` value. PR #333
+* Don't record sensitive HTTP_X_AUTH_TOKEN header. PR #334
+
 # 2.3.2
 * Improve Rake argument handling. Allow for more detailed view of which
   arguments a tasks receives. PR #328
