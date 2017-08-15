@@ -293,15 +293,27 @@ describe Appsignal::Config do
 
       expect(config[:running_in_container]).to be_truthy
       expect(config[:push_api_key]).to eq "aaa-bbb-ccc"
-      expect(config[:active]).to be_truthy
+      expect(config[:active]).to eq(true)
       expect(config[:name]).to eq "App name"
-      expect(config[:debug]).to be_truthy
+      expect(config[:debug]).to eq(true)
       expect(config[:ignore_actions]).to eq %w(action1 action2)
       expect(config[:ignore_errors]).to eq %w(VerySpecificError AnotherError)
       expect(config[:ignore_namespaces]).to eq %w(admin private_namespace)
-      expect(config[:instrument_net_http]).to be_falsey
-      expect(config[:instrument_redis]).to be_falsey
-      expect(config[:instrument_sequel]).to be_falsey
+      expect(config[:instrument_net_http]).to eq(false)
+      expect(config[:instrument_redis]).to eq(false)
+      expect(config[:instrument_sequel]).to eq(false)
+    end
+
+    context "with mixed case `true` env variables values" do
+      before do
+        ENV["APPSIGNAL_DEBUG"] = "TRUE"
+        ENV["APPSIGNAL_INSTRUMENT_SEQUEL"] = "True"
+      end
+
+      it "accepts mixed case `true` values" do
+        expect(config[:debug]).to eq(true)
+        expect(config[:instrument_sequel]).to eq(true)
+      end
     end
   end
 

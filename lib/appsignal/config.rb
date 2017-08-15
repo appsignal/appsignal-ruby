@@ -219,7 +219,7 @@ module Appsignal
          APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
         env_var = ENV[var]
         next unless env_var
-        config[ENV_TO_KEY_MAPPING[var]] = env_var == "true"
+        config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?
       end
 
       # Configuration with array of strings type
