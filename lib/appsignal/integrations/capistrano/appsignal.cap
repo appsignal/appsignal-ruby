@@ -7,9 +7,14 @@ namespace :appsignal do
     appsignal_config = Appsignal::Config.new(
       ENV["PWD"],
       appsignal_env,
-      fetch(:appsignal_config, {}),
+      {},
       Logger.new(StringIO.new)
-    )
+    ).tap do |c|
+      fetch(:appsignal_config, {}).each do |key, value|
+        c[key] = value
+      end
+      c.validate
+    end
 
     if appsignal_config && appsignal_config.active?
       marker_data = {

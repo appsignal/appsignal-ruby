@@ -3,7 +3,7 @@ module Appsignal
   # @api private
   class Capistrano
     def self.tasks(config)
-      config.load do
+      config.load do # rubocop:disable Metrics/BlockLength
         after "deploy", "appsignal:deploy"
         after "deploy:migrations", "appsignal:deploy"
 
@@ -16,9 +16,14 @@ module Appsignal
             appsignal_config = Appsignal::Config.new(
               ENV["PWD"],
               env,
-              fetch(:appsignal_config, {}),
+              {},
               Logger.new(StringIO.new)
-            )
+            ).tap do |c|
+              fetch(:appsignal_config, {}).each do |key, value|
+                c[key] = value
+              end
+              c.validate
+            end
 
             if appsignal_config && appsignal_config.active?
               marker_data = {
