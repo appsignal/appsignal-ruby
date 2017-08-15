@@ -1,3 +1,6 @@
+# Unreleased version
+* Deprecate `Transaction#store` method. PR #332
+
 # 2.3.2
 * Improve Rake argument handling. Allow for more detailed view of which
   arguments a tasks receives. PR #328
