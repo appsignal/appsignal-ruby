@@ -27,7 +27,8 @@ module Appsignal
       :enable_minutely_probes         => false,
       :hostname                       => ::Socket.gethostname,
       :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
-      :dns_servers                    => []
+      :dns_servers                    => [],
+      :files_world_accessible         => true
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -58,7 +59,8 @@ module Appsignal
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_HOSTNAME"                       => :hostname,
       "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
-      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers
+      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
+      "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible
     }.freeze
 
     attr_reader :root_path, :env, :initial_config, :config_hash
@@ -156,6 +158,7 @@ module Appsignal
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
+      ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
     end
 
     private
@@ -216,7 +219,8 @@ module Appsignal
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
-         APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES).each do |var|
+         APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES
+         APPSIGNAL_FILES_WORLD_ACCESSIBLE).each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?

@@ -105,7 +105,8 @@ describe Appsignal::Config do
         :enable_minutely_probes         => false,
         :hostname                       => Socket.gethostname,
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
-        :dns_servers                    => []
+        :dns_servers                    => [],
+        :files_world_accessible         => true
       )
     end
 
@@ -274,17 +275,18 @@ describe Appsignal::Config do
       )
     end
     before do
-      ENV["APPSIGNAL_RUNNING_IN_CONTAINER"] = "true"
-      ENV["APPSIGNAL_PUSH_API_KEY"]         = "aaa-bbb-ccc"
-      ENV["APPSIGNAL_ACTIVE"]               = "true"
-      ENV["APPSIGNAL_APP_NAME"]             = "App name"
-      ENV["APPSIGNAL_DEBUG"]                = "true"
-      ENV["APPSIGNAL_IGNORE_ACTIONS"]       = "action1,action2"
-      ENV["APPSIGNAL_IGNORE_ERRORS"]        = "VerySpecificError,AnotherError"
-      ENV["APPSIGNAL_IGNORE_NAMESPACES"]    = "admin,private_namespace"
-      ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]  = "false"
-      ENV["APPSIGNAL_INSTRUMENT_REDIS"]     = "false"
-      ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]    = "false"
+      ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]    = "true"
+      ENV["APPSIGNAL_PUSH_API_KEY"]            = "aaa-bbb-ccc"
+      ENV["APPSIGNAL_ACTIVE"]                  = "true"
+      ENV["APPSIGNAL_APP_NAME"]                = "App name"
+      ENV["APPSIGNAL_DEBUG"]                   = "true"
+      ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
+      ENV["APPSIGNAL_IGNORE_ERRORS"]           = "VerySpecificError,AnotherError"
+      ENV["APPSIGNAL_IGNORE_NAMESPACES"]       = "admin,private_namespace"
+      ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]     = "false"
+      ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
+      ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
+      ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
     end
 
     it "overrides config with environment values" do
@@ -302,6 +304,7 @@ describe Appsignal::Config do
       expect(config[:instrument_net_http]).to eq(false)
       expect(config[:instrument_redis]).to eq(false)
       expect(config[:instrument_sequel]).to eq(false)
+      expect(config[:files_world_accessible]).to eq(false)
     end
 
     context "with mixed case `true` env variables values" do
@@ -419,6 +422,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
       expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
+      expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
     end
 
