@@ -16,7 +16,7 @@ module Appsignal
               probes.each(&:call)
               sleep(wait_time)
             end
-          rescue Exception => ex
+          rescue => ex
             Appsignal.logger.error("Error in minutely thread: #{ex}")
           end
         end
