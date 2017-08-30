@@ -27,7 +27,7 @@ module Appsignal
               }
 
               marker = Marker.new(marker_data, appsignal_config)
-              if config.dry_run
+              if config.dry_run?
                 puts "Dry run: AppSignal deploy marker not actually sent."
               else
                 marker.transmit
