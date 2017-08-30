@@ -14,7 +14,6 @@ if DependencyHelper.capistrano2_present?
         c.set(:deploy_to, "/home/username/app")
         c.set(:current_release, "")
         c.set(:current_revision, "503ce0923ed177a3ce000005")
-        c.dry_run = false
       end
     end
     before { Appsignal::Capistrano.tasks(capistrano_config) }
@@ -37,7 +36,7 @@ if DependencyHelper.capistrano2_present?
 
       context "config" do
         before do
-          capistrano_config.dry_run = true
+          allow(capistrano_config).to receive(:dry_run?).and_return(true)
         end
 
         it "should be instantiated with the right params" do
@@ -168,7 +167,7 @@ if DependencyHelper.capistrano2_present?
 
           context "when dry run" do
             before do
-              capistrano_config.dry_run = true
+              allow(capistrano_config).to receive(:dry_run?).and_return(true)
               run
             end
 
