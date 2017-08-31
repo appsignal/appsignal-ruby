@@ -1,12 +1,12 @@
 namespace :appsignal do
   task :deploy do
-    env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
+    appsignal_env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
     user = ENV["USER"] || ENV["USERNAME"]
     revision = fetch(:appsignal_revision, fetch(:current_revision))
 
     appsignal_config = Appsignal::Config.new(
       ENV["PWD"],
-      env,
+      appsignal_env,
       fetch(:appsignal_config, {}),
       Logger.new(StringIO.new)
     )
@@ -18,9 +18,15 @@ namespace :appsignal do
       }
 
       marker = Appsignal::Marker.new(marker_data, appsignal_config)
-      marker.transmit
+      # {#dry_run?} helper was added in Capistrano 3.5.0
+      # https://github.com/capistrano/capistrano/commit/38d8d6d2c8485f1b5643857465b16ff01da57aff
+      if respond_to?(:dry_run?) && dry_run?
+        puts "Dry run: AppSignal deploy marker not actually sent."
+      else
+        marker.transmit
+      end
     else
-      puts "Not notifying of deploy, config is not active for environment: #{env}"
+      puts "Not notifying of deploy, config is not active for environment: #{appsignal_env}"
     end
   end
 end
