@@ -2,8 +2,6 @@ require "json"
 
 module Appsignal
   class Transaction
-    extend Gem::Deprecate
-
     HTTP_REQUEST   = "http_request".freeze
     BACKGROUND_JOB = "background_job".freeze
     ACTION_CABLE   = "action_cable".freeze
@@ -137,11 +135,9 @@ module Appsignal
       @discarded == true
     end
 
-    # @deprecated No replacement
     def store(key)
       @store[key]
     end
-    deprecate :store, :none, 2017, 9
 
     def params
       return @params if defined?(@params)

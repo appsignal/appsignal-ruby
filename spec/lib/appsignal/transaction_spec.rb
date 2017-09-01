@@ -290,28 +290,15 @@ describe Appsignal::Transaction do
     end
 
     describe "#store" do
-      let(:err_stream) { std_stream }
-      let(:stderr) { err_stream.read }
-
-      def store_call(*args)
-        capture_std_streams(std_stream, err_stream) do
-          transaction.store(*args)
-        end
-      end
-
       it "should return an empty store when it's not already present" do
-        expect(store_call("test")).to eql({})
+        expect(transaction.store("test")).to eql({})
       end
 
       it "should store changes to the store" do
-        transaction_store = store_call("test")
+        transaction_store = transaction.store("test")
         transaction_store["transaction"] = "value"
 
-        expect(store_call("test")).to eql("transaction" => "value")
-      end
-
-      after do
-        expect(stderr).to include("Appsignal::Transaction#store is deprecated with no replacement.")
+        expect(transaction.store("test")).to eql("transaction" => "value")
       end
     end
 
