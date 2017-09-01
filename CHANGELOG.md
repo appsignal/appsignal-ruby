@@ -1,8 +1,11 @@
 # Unreleased version
+
+# 2.3.3
 * Accept mixed case env variable values for the `true` value. PR #333
 * Don't record sensitive HTTP_X_AUTH_TOKEN header. PR #334
 * Support dry run option for Capistrano 3.5.0 and higher. PR #339
-* Agent and extension update. Commit e75d2f9b520d46f6cd0266b484b2c26c3bdc8882
+* Agent and extension update. Improve agent connection handling. Commit
+  e75d2f9b520d46f6cd0266b484b2c26c3bdc8882
 
 # 2.3.2
 * Improve Rake argument handling. Allow for more detailed view of which
