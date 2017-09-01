@@ -152,6 +152,19 @@ if DependencyHelper.capistrano3_present?
             end
           end
 
+          if Gem::Version.new(Capistrano::VERSION) >= Gem::Version.new("3.5.0")
+            context "when dry run" do
+              before do
+                expect(capistrano_config).to receive(:dry_run?).and_return(true)
+                run
+              end
+
+              it "does not transmit the marker" do
+                expect(output).to include "Dry run: AppSignal deploy marker not actually sent."
+              end
+            end
+          end
+
           context "with failed request" do
             before do
               stub_marker_request.to_return(:status => 500)
