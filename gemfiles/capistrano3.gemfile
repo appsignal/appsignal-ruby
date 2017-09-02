@@ -3,6 +3,6 @@ source 'https://rubygems.org'
 gem 'capistrano', '~> 3.0'
 gem 'net-ssh', '2.9.2'
 gem 'rack', '~> 1.6'
-gem "parallel_tests", :git => "git@github.com:tombruijn/parallel_tests.git", :ref => "fix-bundler-context"
+gem "parallel_tests", :git => "https://github.com/tombruijn/parallel_tests.git", :branch => "fix-bundler-context"
 
 gemspec :path => '../'
