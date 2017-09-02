@@ -84,6 +84,7 @@ describe Appsignal::CLI::Install do
   end
 
   def run
+    FileUtils.mkdir_p(tmp_dir)
     Dir.chdir tmp_dir do
       prepare_input
       capture_stdout(out_stream) do

@@ -14,7 +14,7 @@ module DirectoryHelper
   end
 
   def tmp_dir
-    @tmp_dir ||= File.join(spec_dir, "tmp")
+    @tmp_dir ||= File.join(spec_dir, "tmp", TEST_NUMBER)
   end
 
   def fixtures_dir

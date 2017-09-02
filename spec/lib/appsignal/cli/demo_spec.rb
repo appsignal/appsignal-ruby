@@ -20,6 +20,7 @@ describe Appsignal::CLI::Demo do
   end
 
   def run_within_dir(chdir)
+    FileUtils.mkdir_p(chdir)
     Dir.chdir chdir do
       capture_stdout(out_stream) { run_cli("demo", options) }
     end

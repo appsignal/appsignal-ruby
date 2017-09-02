@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
 gem 'rails', '~> 5.0.0'
+gem "parallel_tests", :git => "git@github.com:tombruijn/parallel_tests.git", :ref => "fix-bundler-context"
 
 gemspec :path => '../'

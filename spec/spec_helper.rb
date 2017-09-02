@@ -46,6 +46,8 @@ module ActiveSupport
   end
 end
 
+TEST_NUMBER = ENV["TEST_ENV_NUMBER"].length > 0 ? ENV["TEST_ENV_NUMBER"] : "0"
+
 RSpec.configure do |config|
   config.include DirectoryHelper
   config.include StdStreamsHelper
@@ -61,7 +63,7 @@ RSpec.configure do |config|
   config.fail_if_no_examples = true
 
   def spec_system_tmp_dir
-    File.join(tmp_dir, "system-tmp")
+    File.join(tmp_dir, "system-tmp", TEST_NUMBER)
   end
 
   config.before :context do

@@ -63,6 +63,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     def run_within_dir(chdir)
+      FileUtils.mkdir_p(chdir)
       prepare_input
       Dir.chdir chdir do
         capture_stdout(out_stream) { cli.run(options) }
