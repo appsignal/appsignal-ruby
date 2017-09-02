@@ -60,8 +60,12 @@ RSpec.configure do |config|
 
   config.fail_if_no_examples = true
 
+  def test_number
+    ENV["TEST_ENV_NUMBER"] || "0"
+  end
+
   def spec_system_tmp_dir
-    File.join(tmp_dir, "system-tmp")
+    File.join(tmp_dir, "system-tmp", test_number)
   end
 
   config.before :context do
