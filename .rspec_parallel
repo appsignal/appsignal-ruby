@@ -1,0 +1,4 @@
+--order defined
+--require spec_helper
+--format progress
+--format ParallelTests::RSpec::SummaryLogger --out tmp/spec_summary.log

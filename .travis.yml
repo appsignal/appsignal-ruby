@@ -69,8 +69,7 @@ env:
 before_install:
   - "gem update --system"
   - "gem update bundler"
-  - "gem install parallel_tests"
 before_script:
   - "bundle exec rake extension:install"
 
-script: "parallel_rspec spec"
+script: "bundle exec parallel_rspec spec"
