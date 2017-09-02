@@ -5,8 +5,10 @@ ENV["PADRINO_ENV"] ||= "test"
 APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
-Bundler.require :default
 require "knapsack"
+Knapsack::Adapters::RSpecAdapter.bind
+
+Bundler.require :default
 require "cgi"
 require "rack"
 require "rspec"
@@ -94,5 +96,3 @@ RSpec.configure do |config|
     Appsignal.logger = nil
   end
 end
-
-Knapsack::Adapters::RSpecAdapter.bind

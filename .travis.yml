@@ -77,4 +77,4 @@ before_install:
 before_script:
   - "bundle exec rake extension:install"
 
-script: "bundle exec rake knapsack:rspec"
+script: "knapsack rspec"

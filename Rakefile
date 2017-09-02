@@ -194,10 +194,3 @@ rescue LoadError # rubocop:disable Lint/HandleExceptions
 end
 
 task :default => [:generate_bundle_and_spec_all, :spec_all_gemfiles]
-
-begin
-  require "knapsack"
-  Knapsack.load_tasks
-rescue LoadError # rubocop:disable Lint/HandleExceptions
-  # When running rake install, there is no Knapsack.
-end
