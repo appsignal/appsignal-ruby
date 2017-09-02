@@ -194,3 +194,5 @@ rescue LoadError # rubocop:disable Lint/HandleExceptions
 end
 
 task :default => [:generate_bundle_and_spec_all, :spec_all_gemfiles]
+
+Knapsack.load_tasks if defined?(Knapsack)
