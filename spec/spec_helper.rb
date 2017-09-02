@@ -5,6 +5,9 @@ ENV["PADRINO_ENV"] ||= "test"
 APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
+require "knapsack"
+Knapsack::Adapters::RSpecAdapter.bind
+
 Bundler.require :default
 require "cgi"
 require "rack"

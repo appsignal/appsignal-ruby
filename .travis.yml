@@ -64,7 +64,12 @@ matrix:
       gemfile: "gemfiles/resque.gemfile"
 
 env:
-  global: "RAILS_ENV=test"
+  global:
+    - RAILS_ENV=test
+    - CI_NODE_TOTAL=2
+  matrix:
+    - CI_NODE_INDEX=0
+    - CI_NODE_INDEX=1
 
 before_install:
   - "gem update --system"
@@ -72,4 +77,4 @@ before_install:
 before_script:
   - "bundle exec rake extension:install"
 
-script: "bundle exec rake test"
+script: "knapsack rspec"
