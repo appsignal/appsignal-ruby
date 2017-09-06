@@ -40,28 +40,24 @@ matrix:
       gemfile: "gemfiles/no_dependencies.gemfile"
       script: "bundle exec rubocop"
   exclude:
+    # We don't currently support jRuby
+    - rvm: "jruby-19mode"
+
+    # Rails 5 doesn't support Ruby < 2.2
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.0.gemfile"
     - rvm: "2.1.8"
       gemfile: "gemfiles/rails-5.0.gemfile"
-    - rvm: "jruby-19mode"
-      gemfile: "gemfiles/rails-5.0.gemfile"
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.1.gemfile"
     - rvm: "2.1.8"
       gemfile: "gemfiles/rails-5.1.gemfile"
-    - rvm: "jruby-19mode"
-      gemfile: "gemfiles/rails-5.1.gemfile"
+
   allow_failures:
-    - rvm: "jruby-19mode"
     - rvm: "2.4.0"
       gemfile: "gemfiles/rails-4.0.gemfile"
     - rvm: "2.4.0"
       gemfile: "gemfiles/rails-4.1.gemfile"
-    - rvm: "2.4.0"
-      gemfile: "gemfiles/rails-4.2.gemfile"
-    - rvm: "2.4.0"
-      gemfile: "gemfiles/resque.gemfile"
 
 env:
   global: "RAILS_ENV=test"
