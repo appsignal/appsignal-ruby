@@ -118,7 +118,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with an error", :error => true do
-        let(:error) { VerySpecificError }
+        let(:error) { ExampleStandardError }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -132,7 +132,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with an error in sinatra.error" do
-        let(:error) { VerySpecificError }
+        let(:error) { ExampleStandardError }
         let(:env) { { "sinatra.error" => error } }
 
         it "should set the error" do
@@ -207,7 +207,7 @@ if DependencyHelper.sinatra_present?
       end
 
       after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(ExampleStandardError) }
     end
   end
 end
