@@ -118,7 +118,7 @@ if DependencyHelper.sinatra_present?
       end
 
       context "with an error", :error => true do
-        let(:error) { ExampleStandardError }
+        let(:error) { ExampleException }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -126,23 +126,23 @@ if DependencyHelper.sinatra_present?
           end
         end
 
-        it "should set the error" do
+        it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
         end
       end
 
       context "with an error in sinatra.error" do
-        let(:error) { ExampleStandardError }
+        let(:error) { ExampleException }
         let(:env) { { "sinatra.error" => error } }
 
-        it "should set the error" do
+        it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
         end
 
-        context "if raise_errors is on" do
+        context "when raise_errors is on" do
           let(:settings) { double(:raise_errors => true) }
 
-          it "should not set the error" do
+          it "does not record the error" do
             expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
           end
         end
@@ -150,7 +150,7 @@ if DependencyHelper.sinatra_present?
         context "if sinatra.skip_appsignal_error is set" do
           let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
 
-          it "should not set the error" do
+          it "does not record the error" do
             expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
           end
         end
@@ -207,7 +207,7 @@ if DependencyHelper.sinatra_present?
       end
 
       after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(ExampleStandardError) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
     end
   end
 end

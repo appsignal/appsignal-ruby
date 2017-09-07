@@ -87,7 +87,7 @@ describe Appsignal::Rack::StreamingListener do
     end
 
     context "with an exception in the instrumentation call" do
-      let(:error) { ExampleStandardError }
+      let(:error) { ExampleException }
 
       it "should add the exception to the transaction" do
         allow(app).to receive(:call).and_raise(error)
@@ -118,18 +118,17 @@ describe Appsignal::StreamWrapper do
   let(:wrapper)     { Appsignal::StreamWrapper.new(stream, transaction) }
 
   describe "#each" do
-    it "should call the original stream" do
+    it "calls the original stream" do
       expect(stream).to receive(:each)
 
       wrapper.each
     end
 
-    context "when each raises an error" do
-      let(:error) { ExampleStandardError }
+    context "when #each raises an error" do
+      let(:error) { ExampleException }
 
-      it "should add the exception to the transaction" do
-        allow(stream).to receive(:each)
-          .and_raise(error)
+      it "records the exception" do
+        allow(stream).to receive(:each).and_raise(error)
 
         expect(transaction).to receive(:set_error).with(error)
 
@@ -139,17 +138,17 @@ describe Appsignal::StreamWrapper do
   end
 
   describe "#close" do
-    it "should call the original stream and close the transaction" do
+    it "closes the original stream and completes the transaction" do
       expect(stream).to receive(:close)
       expect(Appsignal::Transaction).to receive(:complete_current!)
 
       wrapper.close
     end
 
-    context "when each raises an error" do
-      let(:error) { ExampleStandardError }
+    context "when #close raises an error" do
+      let(:error) { ExampleException }
 
-      it "adds the exception to the transaction and close it" do
+      it "records the exception and completes the transaction" do
         allow(stream).to receive(:close).and_raise(error)
 
         expect(transaction).to receive(:set_error).with(error)

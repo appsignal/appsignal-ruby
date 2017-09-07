@@ -77,7 +77,7 @@ if DependencyHelper.grape_present?
             Class.new(::Grape::API) do
               format :json
               post :ping do
-                raise ExampleStandardError
+                raise ExampleException
               end
             end
           end
@@ -90,11 +90,11 @@ if DependencyHelper.grape_present?
           end
 
           it "sets the error" do
-            expect(transaction).to receive(:set_error).with(kind_of(ExampleStandardError))
+            expect(transaction).to receive(:set_error).with(kind_of(ExampleException))
           end
 
           after do
-            expect { middleware.call(env) }.to raise_error ExampleStandardError
+            expect { middleware.call(env) }.to raise_error ExampleException
           end
         end
 

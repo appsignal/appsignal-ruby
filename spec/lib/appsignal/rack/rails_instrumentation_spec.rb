@@ -69,7 +69,7 @@ if DependencyHelper.rails_present?
       end
 
       context "with an exception", :error => true do
-        let(:error) { ExampleStandardError }
+        let(:error) { ExampleException }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
