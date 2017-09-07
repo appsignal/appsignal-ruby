@@ -9,5 +9,5 @@
 # StandardError-level Ruby exceptions.
 #
 # @see ExampleStandardError
-class ExampleException < Exception
+class ExampleException < Exception # rubocop:disable Lint/InheritException
 end
