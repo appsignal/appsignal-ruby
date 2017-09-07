@@ -50,7 +50,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     context "with an error", :error => true do
-      let(:error) { VerySpecificError.new }
+      let(:error) { ExampleStandardError.new }
       let(:app) do
         double.tap do |d|
           allow(d).to receive(:call).and_raise(error)
@@ -85,6 +85,6 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
 
     after(:error => false) { middleware.call(env) }
-    after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
+    after(:error => true) { expect { middleware.call(env) }.to raise_error(ExampleStandardError) }
   end
 end

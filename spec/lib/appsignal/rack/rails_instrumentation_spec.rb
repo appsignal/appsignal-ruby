@@ -68,15 +68,15 @@ if DependencyHelper.rails_present?
         expect(app).to receive(:call).with(env)
       end
 
-      context "with an error", :error => true do
-        let(:error) { VerySpecificError }
+      context "with an exception", :error => true do
+        let(:error) { ExampleStandardError }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
           end
         end
 
-        it "should set the error" do
+        it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
         end
       end
@@ -91,7 +91,7 @@ if DependencyHelper.rails_present?
       end
 
       after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(VerySpecificError) }
+      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
     end
 
     describe "#request_id" do
