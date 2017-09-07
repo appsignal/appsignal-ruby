@@ -143,7 +143,7 @@ describe Appsignal::Hooks::ActionCableHook do
             let(:channel) do
               Class.new(ActionCable::Channel::Base) do
                 def speak(_data)
-                  raise ExampleStandardError, "oh no!"
+                  raise ExampleException, "oh no!"
                 end
 
                 def self.to_s
@@ -155,7 +155,7 @@ describe Appsignal::Hooks::ActionCableHook do
             it "registers an error on the transaction" do
               expect do
                 instance.perform_action("message" => "foo", "action" => "speak")
-              end.to raise_error(ExampleStandardError)
+              end.to raise_error(ExampleException)
 
               expect(subject).to include(
                 "action" => "MyChannel#speak",
@@ -168,7 +168,7 @@ describe Appsignal::Hooks::ActionCableHook do
               )
               expect(subject["error"]).to include(
                 "backtrace" => kind_of(String),
-                "name" => "ExampleStandardError",
+                "name" => "ExampleException",
                 "message" => "oh no!"
               )
               expect(subject["sample_data"]).to include(
@@ -233,7 +233,7 @@ describe Appsignal::Hooks::ActionCableHook do
             let(:channel) do
               Class.new(ActionCable::Channel::Base) do
                 def subscribed
-                  raise ExampleStandardError, "oh no!"
+                  raise ExampleException, "oh no!"
                 end
 
                 def self.to_s
@@ -245,7 +245,7 @@ describe Appsignal::Hooks::ActionCableHook do
             it "registers an error on the transaction" do
               expect do
                 instance.subscribe_to_channel
-              end.to raise_error(ExampleStandardError)
+              end.to raise_error(ExampleException)
 
               expect(subject).to include(
                 "action" => "MyChannel#subscribed",
@@ -258,7 +258,7 @@ describe Appsignal::Hooks::ActionCableHook do
               )
               expect(subject["error"]).to include(
                 "backtrace" => kind_of(String),
-                "name" => "ExampleStandardError",
+                "name" => "ExampleException",
                 "message" => "oh no!"
               )
               expect(subject["sample_data"]).to include(
@@ -320,7 +320,7 @@ describe Appsignal::Hooks::ActionCableHook do
             let(:channel) do
               Class.new(ActionCable::Channel::Base) do
                 def unsubscribed
-                  raise ExampleStandardError, "oh no!"
+                  raise ExampleException, "oh no!"
                 end
 
                 def self.to_s
@@ -332,7 +332,7 @@ describe Appsignal::Hooks::ActionCableHook do
             it "registers an error on the transaction" do
               expect do
                 instance.unsubscribe_from_channel
-              end.to raise_error(ExampleStandardError)
+              end.to raise_error(ExampleException)
 
               expect(subject).to include(
                 "action" => "MyChannel#unsubscribed",
@@ -345,7 +345,7 @@ describe Appsignal::Hooks::ActionCableHook do
               )
               expect(subject["error"]).to include(
                 "backtrace" => kind_of(String),
-                "name" => "ExampleStandardError",
+                "name" => "ExampleException",
                 "message" => "oh no!"
               )
               expect(subject["sample_data"]).to include(

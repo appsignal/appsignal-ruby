@@ -14,7 +14,7 @@ module Appsignal
 
           def execute(*args)
             execute_without_appsignal(*args)
-          rescue => error
+          rescue Exception => error # rubocop:disable Lint/RescueException
             # Format given arguments and cast to hash if possible
             params, _ = args
             params = params.to_hash if params.respond_to?(:to_hash)
