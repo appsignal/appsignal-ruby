@@ -36,7 +36,7 @@ if DependencyHelper.webmachine_present?
       end
 
       it "should set the action" do
-        expect(transaction).to receive(:set_action_if_nil).with("RSpec::Mocks::Mock#GET")
+        expect(transaction).to receive(:set_action_if_nil).with("RSpec::Mocks::Double#GET")
       end
 
       it "should call the original method" do
