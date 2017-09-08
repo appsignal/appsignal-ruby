@@ -32,6 +32,7 @@ gemfile:
   - "gemfiles/sequel-435.gemfile"
   - "gemfiles/sinatra.gemfile"
   - "gemfiles/grape.gemfile"
+  - "gemfiles/webmachine.gemfile"
 
 matrix:
   fast_finish: true
