@@ -14,23 +14,16 @@ module Appsignal
       end
 
       def call(_worker, item, _queue)
-        args =
-          if item["class"] == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-            item["args"].first["arguments"]
-          else
-            item["args"]
-          end
-        params = Appsignal::Utils::ParamsSanitizer.sanitize args,
-          :filter_parameters => Appsignal.config[:filter_parameters]
+        job = ::Sidekiq::Job.new(item)
 
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
-          :class       => item["wrapped"] || item["class"],
-          :method      => "perform",
+          :class       => job.display_class.split('.', 2)[0],
+          :method      => job.display_class.split('.', 2)[1],
           :metadata    => formatted_metadata(item),
-          :params      => params,
-          :queue_start => item["enqueued_at"],
-          :queue_time  => (Time.now.to_f - item["enqueued_at"].to_f) * 1000
+          :params      => job.display_args,
+          :queue_start => job.enqueued_at,
+          :queue_time  => job.latency * 1000
         ) do
           yield
         end
