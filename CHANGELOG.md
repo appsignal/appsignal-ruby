@@ -1,4 +1,5 @@
 # Unreleased version
+* Fix naming for ActiveJob integration with DelayedJob. PR #345
 
 # 2.3.3
 * Accept mixed case env variable values for the `true` value. PR #333
