@@ -1,4 +1,4 @@
-# Unreleased version
+# 2.3.4
 * Fix naming for ActiveJob integration with DelayedJob. PR #345
 
 # 2.3.3
