@@ -17,6 +17,7 @@ GEMFILES = %w(
   sinatra
   grape
   webmachine
+  sidekiq
 ).freeze
 
 RUBY_VERSIONS = %w(

@@ -16,14 +16,19 @@ module Appsignal
       def call(_worker, item, _queue)
         job = ::Sidekiq::Job.new(item)
 
+        params = Appsignal::Utils::ParamsSanitizer.sanitize(
+          job.display_args,
+          :filter_parameters => Appsignal.config[:filter_parameters]
+        )
+
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
           :class       => job.display_class.split('.', 2)[0],
-          :method      => job.display_class.split('.', 2)[1],
+          :method      => job.display_class.split('.', 2)[1] || "perform",
           :metadata    => formatted_metadata(item),
-          :params      => job.display_args,
+          :params      => params,
           :queue_start => job.enqueued_at,
-          :queue_time  => job.latency * 1000
+          :queue_time  => job.latency.to_f * 1000
         ) do
           yield
         end
@@ -46,6 +51,7 @@ module Appsignal
       end
 
       def install
+        require 'sidekiq/api'
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
             chain.add Appsignal::Hooks::SidekiqPlugin
