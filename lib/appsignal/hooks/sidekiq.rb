@@ -23,8 +23,8 @@ module Appsignal
 
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
-          :class       => job.display_class.split('.', 2)[0],
-          :method      => job.display_class.split('.', 2)[1] || "perform",
+          :class       => job.display_class.split(".", 2)[0],
+          :method      => job.display_class.split(".", 2)[1] || "perform",
           :metadata    => formatted_metadata(item),
           :params      => params,
           :queue_start => job.enqueued_at,
@@ -51,7 +51,7 @@ module Appsignal
       end
 
       def install
-        require 'sidekiq/api'
+        require "sidekiq/api"
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
             chain.add Appsignal::Hooks::SidekiqPlugin
