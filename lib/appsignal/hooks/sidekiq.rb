@@ -21,10 +21,11 @@ module Appsignal
           :filter_parameters => Appsignal.config[:filter_parameters]
         )
 
+        display_class, display_method = job.display_class.split(".", 2)
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
-          :class       => job.display_class.split(".", 2)[0],
-          :method      => job.display_class.split(".", 2)[1] || "perform",
+          :class       => display_class,
+          :method      => display_method || "perform",
           :metadata    => formatted_metadata(item),
           :params      => params,
           :queue_start => job.enqueued_at,
