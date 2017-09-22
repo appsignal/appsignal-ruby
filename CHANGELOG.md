@@ -1,3 +1,10 @@
+# 2.3.5 (Beta)
+* Allow configuration of permissions of working directory. PR #336
+* Fix locking bug that delayed extension shutdown.
+  Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
+* Log extension start with app revision if present
+  Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
+
 # 2.3.4
 * Fix naming for ActiveJob integration with DelayedJob. PR #345
 
