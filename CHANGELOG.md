@@ -1,4 +1,4 @@
-# 2.3.5 (Beta)
+# 2.3.6 (Beta)
 * Allow configuration of permissions of working directory. PR #336
 * Fix locking bug that delayed extension shutdown.
   Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
