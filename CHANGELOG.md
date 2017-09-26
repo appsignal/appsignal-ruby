@@ -5,6 +5,10 @@
 * Log extension start with app revision if present
   Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
 
+# 2.3.5
+
+Yanked
+
 # 2.3.4
 * Fix naming for ActiveJob integration with DelayedJob. PR #345
 
