@@ -56,10 +56,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
               "queue"       => "default",
               "extra"       => "data"
             },
-            :params => {
-              :foo => "Foo",
-              :bar => "Bar"
-            },
+            :params => args,
             :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
             :queue_time  => 60_000.to_f
           }
@@ -98,6 +95,40 @@ describe Appsignal::Hooks::SidekiqPlugin do
                   :bar => "Bar"
                 }
               )
+            )
+          end
+
+          it "does not modify the given arguments" do
+          end
+        end
+
+        context "when receiving class.method instead of class#method" do
+          let(:item) do
+            {
+              "class"       => "ActionMailer.deliver_message",
+              "retry_count" => 0,
+              "queue"       => "default",
+              "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f,
+              "args"        => args,
+              "extra"       => "data"
+            }
+          end
+          it "wraps it in a transaction with the correct params" do
+            expect(Appsignal).to receive(:monitor_transaction).with(
+              "perform_job.sidekiq",
+              :class    => "ActionMailer",
+              :method   => "deliver_message",
+              :metadata => {
+                "retry_count" => "0",
+                "queue"       => "default",
+                "extra"       => "data"
+              },
+              :params      => {
+                :foo => "Foo",
+                :bar => "Bar"
+              },
+              :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
+              :queue_time  => 60_000.to_f
             )
           end
         end

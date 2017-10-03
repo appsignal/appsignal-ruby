@@ -16,12 +16,14 @@ module Appsignal
       def call(_worker, item, _queue)
         job = ::Sidekiq::Job.new(item)
 
+        # job.display_class needs to be called before job.display_args,
+        # see https://github.com/appsignal/appsignal-ruby/pull/348#issuecomment-333629065
+        display_class, display_method = job.display_class.split(/\.|#/, 2)
         params = Appsignal::Utils::ParamsSanitizer.sanitize(
           job.display_args,
           :filter_parameters => Appsignal.config[:filter_parameters]
         )
 
-        display_class, display_method = job.display_class.split(".", 2)
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
           :class       => display_class,
