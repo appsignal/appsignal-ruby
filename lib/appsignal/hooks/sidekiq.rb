@@ -16,12 +16,12 @@ module Appsignal
       def call(_worker, item, _queue)
         job = ::Sidekiq::Job.new(item)
 
+        display_class, display_method = job.display_class.split(/\.|#/, 2)
         params = Appsignal::Utils::ParamsSanitizer.sanitize(
           job.display_args,
           :filter_parameters => Appsignal.config[:filter_parameters]
         )
-
-        display_class, display_method = job.display_class.split(".", 2)
+        
         Appsignal.monitor_transaction(
           "perform_job.sidekiq",
           :class       => display_class,
