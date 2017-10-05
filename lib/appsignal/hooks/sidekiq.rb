@@ -18,29 +18,53 @@ module Appsignal
 
         # job.display_class needs to be called before job.display_args,
         # see https://github.com/appsignal/appsignal-ruby/pull/348#issuecomment-333629065
-        display_class, display_method = job.display_class.split(/\.|#/, 2)
+        job_action_name = job.display_class
+        unless job_action_name =~ /[\.#]+/
+          # Add #perform as default method name for job names without a method
+          # name
+          job_action_name = "#{job_action_name}#perform"
+        end
         params = Appsignal::Utils::ParamsSanitizer.sanitize(
           job.display_args,
           :filter_parameters => Appsignal.config[:filter_parameters]
         )
 
-        Appsignal.monitor_transaction(
-          "perform_job.sidekiq",
-          :class       => display_class,
-          :method      => display_method || "perform",
-          :metadata    => formatted_metadata(item),
-          :params      => params,
-          :queue_start => job.enqueued_at,
-          :queue_time  => job.latency.to_f * 1000
-        ) do
-          yield
+        transaction = Appsignal::Transaction.create(
+          SecureRandom.uuid,
+          Appsignal::Transaction::BACKGROUND_JOB,
+          Appsignal::Transaction::GenericRequest.new(
+            :queue_start => job.enqueued_at,
+            :queue_time  => job.latency.to_f * 1000
+          )
+        )
+
+        Appsignal.instrument "perform_job.sidekiq" do
+          begin
+            yield
+          rescue Exception => exception # rubocop:disable Lint/RescueException
+            transaction.set_error(exception)
+            raise exception
+          end
+        end
+      ensure
+        if transaction
+          transaction.set_action_if_nil(job_action_name)
+          transaction.params = params
+          formatted_metadata(item).each do |key, value|
+            transaction.set_metadata key, value
+          end
+          transaction.set_http_or_background_queue_start
+          Appsignal::Transaction.complete_current!
         end
       end
 
+      private
+
       def formatted_metadata(item)
-        {}.tap do |hsh|
-          item.each do |key, val|
-            hsh[key] = truncate(string_or_inspect(val)) unless job_keys.include?(key)
+        {}.tap do |hash|
+          item.each do |key, value|
+            next if job_keys.include?(key)
+            hash[key] = truncate(string_or_inspect(value))
           end
         end
       end

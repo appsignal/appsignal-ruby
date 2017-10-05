@@ -1,12 +1,13 @@
 describe Appsignal::Hooks::SidekiqPlugin do
   if DependencyHelper.sidekiq_present?
-    let(:worker) { double }
-    let(:queue) { double }
-    let(:current_transaction) { background_job_transaction }
+    let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
+    let(:worker) { anything }
+    let(:queue) { anything }
     let(:args) { ["Model", 1] }
+    let(:job_class) { "TestClass" }
     let(:item) do
       {
-        "class"       => "TestClass",
+        "class"       => job_class,
         "retry_count" => 0,
         "queue"       => "default",
         "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f,
@@ -15,52 +16,67 @@ describe Appsignal::Hooks::SidekiqPlugin do
       }
     end
     let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
+    let(:test_store) { {} }
 
     before do
-      allow(Appsignal::Transaction).to receive(:current).and_return(current_transaction)
+      # Stub calls to extension, because that would remove the transaction
+      # from the extension.
+      allow_any_instance_of(Appsignal::Extension::Transaction).to receive(:finish).and_return(true)
+      allow_any_instance_of(Appsignal::Extension::Transaction).to receive(:complete)
+
+      # Stub removal of current transaction from current thread so we can fetch
+      # it later.
+      expect(Appsignal::Transaction).to receive(:clear_current_transaction!).at_least(:once) do
+        transaction = Thread.current[:appsignal_transaction]
+        test_store[:transaction] = transaction if transaction
+      end
+
       start_agent
     end
+    after { clear_current_transaction! }
 
     context "with a performance call" do
-      after do
-        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-          Appsignal::Hooks::SidekiqPlugin.new.call(worker, item, queue) do
-            # nothing
-          end
-        end
-      end
+      it "creates a transaction with performance events" do
+        perform_job
 
-      it "wraps it in a transaction with the correct params" do
-        expect(Appsignal).to receive(:monitor_transaction).with(
-          "perform_job.sidekiq",
-          :class    => "TestClass",
-          :method   => "perform",
-          :metadata => {
-            "retry_count" => "0",
-            "queue"       => "default",
-            "extra"       => "data"
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "id" => kind_of(String),
+          "action" => "TestClass#perform",
+          "error" => nil,
+          "namespace" => namespace,
+          "metadata" => {
+            "extra" => "data",
+            "queue" => "default",
+            "retry_count" => "0"
           },
-          :params      => ["Model", 1],
-          :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
-          :queue_time  => 60_000.to_f
+          "sample_data" => {
+            "environment" => {},
+            "params" => args,
+            "tags" => {}
+          }
         )
+        # TODO: Not available in transaction.to_h yet.
+        # https://github.com/appsignal/appsignal-agent/issues/293
+        expect(transaction.request.env).to eq(
+          :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
+          :queue_time  => 60_000.0
+        )
+        expect_transaction_to_have_sidekiq_event(transaction_hash)
       end
 
-      context "with more complex arguments" do
-        let(:default_params) do
-          {
-            :class    => "TestClass",
-            :method   => "perform",
-            :metadata => {
-              "retry_count" => "0",
-              "queue"       => "default",
-              "extra"       => "data"
-            },
-            :params => args,
-            :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
-            :queue_time  => 60_000.to_f
-          }
+      context "when receiving class.method instead of class#method" do
+        let(:job_class) { "ActionMailer.deliver_message" }
+
+        it "uses the class method action name for the action" do
+          perform_job
+
+          transaction_hash = transaction.to_h
+          expect(transaction_hash["action"]).to eq("ActionMailer.deliver_message")
         end
+      end
+
+      context "with more complex job arguments" do
         let(:args) do
           {
             :foo => "Foo",
@@ -69,14 +85,14 @@ describe Appsignal::Hooks::SidekiqPlugin do
         end
 
         it "adds the more complex arguments" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.sidekiq",
-            default_params.merge(
-              :params => {
-                :foo => "Foo",
-                :bar => "Bar"
-              }
-            )
+          perform_job
+
+          transaction_hash = transaction.to_h
+          expect(transaction_hash["sample_data"]).to include(
+            "params" => {
+              "foo" => "Foo",
+              "bar" => "Bar"
+            }
           )
         end
 
@@ -87,54 +103,20 @@ describe Appsignal::Hooks::SidekiqPlugin do
           end
 
           it "filters selected arguments" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.sidekiq",
-              default_params.merge(
-                :params => {
-                  :foo => "[FILTERED]",
-                  :bar => "Bar"
-                }
-              )
-            )
-          end
+            perform_job
 
-          it "does not modify the given arguments" do
-          end
-        end
-
-        context "when receiving class.method instead of class#method" do
-          let(:item) do
-            {
-              "class"       => "ActionMailer.deliver_message",
-              "retry_count" => 0,
-              "queue"       => "default",
-              "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f,
-              "args"        => args,
-              "extra"       => "data"
-            }
-          end
-          it "wraps it in a transaction with the correct params" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.sidekiq",
-              :class    => "ActionMailer",
-              :method   => "deliver_message",
-              :metadata => {
-                "retry_count" => "0",
-                "queue"       => "default",
-                "extra"       => "data"
-              },
-              :params      => {
-                :foo => "Foo",
-                :bar => "Bar"
-              },
-              :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
-              :queue_time  => 60_000.to_f
+            transaction_hash = transaction.to_h
+            expect(transaction_hash["sample_data"]).to include(
+              "params" => {
+                "foo" => "[FILTERED]",
+                "bar" => "Bar"
+              }
             )
           end
         end
       end
 
-      context "when wrapped by ActiveJob" do
+      context "when job is wrapped by ActiveJob" do
         let(:item) do
           {
             "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
@@ -152,23 +134,32 @@ describe Appsignal::Hooks::SidekiqPlugin do
             "enqueued_at" => Time.parse("01-01-2001 10:00:00UTC").to_f
           }
         end
-        let(:default_params) do
-          {
-            :class    => "TestClass",
-            :method   => "perform",
-            :metadata => {
+
+        it "creates a transaction with performance events" do
+          perform_job
+
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "id" => kind_of(String),
+            "action" => "TestClass#perform",
+            "error" => nil,
+            "namespace" => namespace,
+            "metadata" => {
               "queue" => "default"
             },
-            :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
-            :queue_time  => 60_000.to_f
-          }
-        end
-
-        it "wraps it in a transaction with the correct params" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.sidekiq",
-            default_params.merge(:params => ["Model", 1])
+            "sample_data" => {
+              "environment" => {},
+              "params" => args,
+              "tags" => {}
+            }
           )
+          # TODO: Not available in transaction.to_h yet.
+          # https://github.com/appsignal/appsignal-agent/issues/293
+          expect(transaction.request.env).to eq(
+            :queue_start => Time.parse("01-01-2001 10:00:00UTC"),
+            :queue_time  => 60_000.0
+          )
+          expect_transaction_to_have_sidekiq_event(transaction_hash)
         end
 
         context "with more complex arguments" do
@@ -180,14 +171,14 @@ describe Appsignal::Hooks::SidekiqPlugin do
           end
 
           it "adds the more complex arguments" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.sidekiq",
-              default_params.merge(
-                :params => {
-                  :foo => "Foo",
-                  :bar => "Bar"
-                }
-              )
+            perform_job
+
+            transaction_hash = transaction.to_h
+            expect(transaction_hash["sample_data"]).to include(
+              "params" => {
+                "foo" => "Foo",
+                "bar" => "Bar"
+              }
             )
           end
 
@@ -198,14 +189,14 @@ describe Appsignal::Hooks::SidekiqPlugin do
             end
 
             it "filters selected arguments" do
-              expect(Appsignal).to receive(:monitor_transaction).with(
-                "perform_job.sidekiq",
-                default_params.merge(
-                  :params => {
-                    :foo => "[FILTERED]",
-                    :bar => "Bar"
-                  }
-                )
+              perform_job
+
+              transaction_hash = transaction.to_h
+              expect(transaction_hash["sample_data"]).to include(
+                "params" => {
+                  "foo" => "[FILTERED]",
+                  "bar" => "Bar"
+                }
               )
             end
           end
@@ -213,54 +204,54 @@ describe Appsignal::Hooks::SidekiqPlugin do
       end
     end
 
-    context "with an erroring call" do
+    context "with an erroring job" do
       let(:error) { VerySpecificError }
-      let(:transaction) do
-        Appsignal::Transaction.new(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
-      end
       before do
-        allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-        expect(Appsignal::Transaction).to receive(:create)
-          .with(
-            kind_of(String),
-            Appsignal::Transaction::BACKGROUND_JOB,
-            kind_of(Appsignal::Transaction::GenericRequest)
-          ).and_return(transaction)
-      end
-
-      it "adds the error to the transaction" do
-        expect(transaction).to receive(:set_error).with(error)
-        expect(transaction).to receive(:complete)
-      end
-
-      after do
         expect do
           Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-            Appsignal::Hooks::SidekiqPlugin.new.call(worker, item, queue) do
-              raise error
+            plugin.call(worker, item, queue) do
+              raise error, "uh oh"
             end
           end
         end.to raise_error(error)
       end
-    end
 
-    # TODO: Don't test (what are basically) private methods
-    describe "#formatted_data" do
-      let(:item) do
-        {
-          "foo"   => "bar",
-          "class" => "TestClass"
-        }
-      end
-
-      it "only adds items to the hash that do not appear in JOB_KEYS" do
-        expect(plugin.formatted_metadata(item)).to eq("foo" => "bar")
+      it "adds the error to the transaction" do
+        transaction_hash = transaction.to_h
+        # TODO: backtrace should be an Array of Strings
+        # https://github.com/appsignal/appsignal-agent/issues/294
+        expect(transaction_hash["error"]).to include(
+          "name" => "VerySpecificError",
+          "message" => "uh oh",
+          "backtrace" => kind_of(String)
+        )
+        expect_transaction_to_have_sidekiq_event(transaction_hash)
       end
     end
+  end
+
+  def perform_job
+    Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+      plugin.call(worker, item, queue) do
+        # nothing
+      end
+    end
+  end
+
+  def transaction
+    test_store[:transaction]
+  end
+
+  def expect_transaction_to_have_sidekiq_event(transaction_hash)
+    events = transaction_hash["events"]
+    expect(events.count).to eq(1)
+    expect(events.first).to include(
+      "name"        => "perform_job.sidekiq",
+      "title"       => "",
+      "count"       => 1,
+      "body"        => "",
+      "body_format" => Appsignal::EventFormatter::DEFAULT
+    )
   end
 end
 
