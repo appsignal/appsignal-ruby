@@ -14,18 +14,12 @@ module Appsignal
       end
 
       def call(_worker, item, _queue)
-        job = ::Sidekiq::Job.new(item)
+        job = fetch_sidekiq_job { ::Sidekiq::Job.new(item) }
+        job_metadata = call_and_log_on_error(job, &:item)
 
-        # job.display_class needs to be called before job.display_args,
-        # see https://github.com/appsignal/appsignal-ruby/pull/348#issuecomment-333629065
-        job_action_name = job.display_class
-        unless job_action_name =~ /[\.#]+/
-          # Add #perform as default method name for job names without a method
-          # name
-          job_action_name = "#{job_action_name}#perform"
-        end
+        job_action_name = parse_action_name(job)
         params = Appsignal::Utils::ParamsSanitizer.sanitize(
-          job.display_args,
+          call_and_log_on_error(job, &:display_args),
           :filter_parameters => Appsignal.config[:filter_parameters]
         )
 
@@ -33,8 +27,8 @@ module Appsignal
           SecureRandom.uuid,
           Appsignal::Transaction::BACKGROUND_JOB,
           Appsignal::Transaction::GenericRequest.new(
-            :queue_start => job.enqueued_at,
-            :queue_time  => job.latency.to_f * 1000
+            :queue_start => call_and_log_on_error(job, &:enqueued_at),
+            :queue_time  => call_and_log_on_error(job) { job.latency.to_f * 1000 }
           )
         )
 
@@ -50,7 +44,7 @@ module Appsignal
         if transaction
           transaction.set_action_if_nil(job_action_name)
           transaction.params = params
-          formatted_metadata(item).each do |key, value|
+          formatted_metadata(job_metadata).each do |key, value|
             transaction.set_metadata key, value
           end
           transaction.set_http_or_background_queue_start
@@ -60,9 +54,36 @@ module Appsignal
 
       private
 
+      def fetch_sidekiq_job
+        yield
+      rescue NameError => e
+        Appsignal.logger.error("Problem parsing the Sidekiq job data: #{e.inspect}")
+        nil
+      end
+
+      def call_and_log_on_error(job)
+        yield job if job
+      rescue NameError => e
+        Appsignal.logger.error("Problem parsing the Sidekiq job data: #{e.inspect}")
+        nil
+      end
+
+      def parse_action_name(job)
+        # `job.display_class` needs to be called before `job.display_args`,
+        # see https://github.com/appsignal/appsignal-ruby/pull/348#issuecomment-333629065
+        action_name = call_and_log_on_error(job, &:display_class)
+        if action_name =~ /[\.#]+/
+          action_name
+        else
+          # Add `#perform` as default method name for job names without a
+          # method name
+          "#{action_name}#perform"
+        end
+      end
+
       def formatted_metadata(item)
         {}.tap do |hash|
-          item.each do |key, value|
+          (item || {}).each do |key, value|
             next if job_keys.include?(key)
             hash[key] = truncate(string_or_inspect(value))
           end

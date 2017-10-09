@@ -1,5 +1,5 @@
-describe Appsignal::Hooks::SidekiqPlugin do
-  if DependencyHelper.sidekiq_present?
+if DependencyHelper.sidekiq_present?
+  describe Appsignal::Hooks::SidekiqPlugin, :with_sidekiq_error => false do
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:worker) { anything }
     let(:queue) { anything }
@@ -18,7 +18,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
     let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
     let(:test_store) { {} }
 
-    before do
+    before :with_sidekiq_error => false do
       # Stub calls to extension, because that would remove the transaction
       # from the extension.
       allow_any_instance_of(Appsignal::Extension::Transaction).to receive(:finish).and_return(true)
@@ -30,10 +30,29 @@ describe Appsignal::Hooks::SidekiqPlugin do
         transaction = Thread.current[:appsignal_transaction]
         test_store[:transaction] = transaction if transaction
       end
-
+    end
+    before do
       start_agent
     end
     after { clear_current_transaction! }
+
+    context "when there's a problem with calling the Sidekiq::Job class", :with_sidekiq_error => true do
+      let(:log) { StringIO.new }
+      before do
+        Appsignal.logger = Logger.new(log)
+        expect(::Sidekiq::Job).to receive(:new).and_raise(NameError, "woops")
+        perform_job
+      end
+
+      it "does not record a transaction and logs an error" do
+        expect(transaction).to be_nil
+        log.rewind
+        expect(log.read).to include(
+          "ERROR",
+          "Problem parsing the Sidekiq job data: #<NameError: woops>"
+        )
+      end
+    end
 
     context "with a performance call" do
       it "creates a transaction with performance events" do
@@ -228,30 +247,30 @@ describe Appsignal::Hooks::SidekiqPlugin do
         expect_transaction_to_have_sidekiq_event(transaction_hash)
       end
     end
-  end
 
-  def perform_job
-    Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-      plugin.call(worker, item, queue) do
-        # nothing
+    def perform_job
+      Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
+        plugin.call(worker, item, queue) do
+          # nothing
+        end
       end
     end
-  end
 
-  def transaction
-    test_store[:transaction]
-  end
+    def transaction
+      test_store[:transaction]
+    end
 
-  def expect_transaction_to_have_sidekiq_event(transaction_hash)
-    events = transaction_hash["events"]
-    expect(events.count).to eq(1)
-    expect(events.first).to include(
-      "name"        => "perform_job.sidekiq",
-      "title"       => "",
-      "count"       => 1,
-      "body"        => "",
-      "body_format" => Appsignal::EventFormatter::DEFAULT
-    )
+    def expect_transaction_to_have_sidekiq_event(transaction_hash)
+      events = transaction_hash["events"]
+      expect(events.count).to eq(1)
+      expect(events.first).to include(
+        "name"        => "perform_job.sidekiq",
+        "title"       => "",
+        "count"       => 1,
+        "body"        => "",
+        "body_format" => Appsignal::EventFormatter::DEFAULT
+      )
+    end
   end
 end
 
