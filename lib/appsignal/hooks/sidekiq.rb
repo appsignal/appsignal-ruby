@@ -28,7 +28,7 @@ module Appsignal
           Appsignal::Transaction::BACKGROUND_JOB,
           Appsignal::Transaction::GenericRequest.new(
             :queue_start => call_and_log_on_error(job, &:enqueued_at),
-            :queue_time  => call_and_log_on_error(job) { job.latency.to_f * 1000 }
+            :queue_time  => call_and_log_on_error(job) { |j| j.latency.to_f * 1000 }
           )
         )
 
