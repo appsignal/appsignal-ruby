@@ -69,7 +69,7 @@ module Appsignal
             Appsignal.instrument "subscribed.action_cable" do
               inner.call
             end
-          rescue => exception
+          rescue Exception => exception # rubocop:disable Lint/RescueException
             transaction.set_error(exception)
             raise exception
           ensure
@@ -97,7 +97,7 @@ module Appsignal
             Appsignal.instrument "unsubscribed.action_cable" do
               inner.call
             end
-          rescue => exception
+          rescue Exception => exception # rubocop:disable Lint/RescueException
             transaction.set_error(exception)
             raise exception
           ensure
