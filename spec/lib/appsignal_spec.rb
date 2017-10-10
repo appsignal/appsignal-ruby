@@ -348,7 +348,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { ExampleStandardError.new }
+        let(:error) { ExampleException.new }
 
         it "should add the error to the current transaction and complete" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
@@ -379,7 +379,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { ExampleStandardError.new }
+        let(:error) { ExampleException.new }
 
         it "should call monitor_transaction and stop and then raise the error" do
           expect(Appsignal).to receive(:monitor_transaction).with(
@@ -719,7 +719,7 @@ describe Appsignal do
           Appsignal::Transaction::GenericRequest.new({})
         )
       end
-      let(:error) { ExampleStandardError.new }
+      let(:error) { ExampleException.new }
 
       it "sends the error to AppSignal" do
         expect(Appsignal::Transaction).to receive(:new).with(

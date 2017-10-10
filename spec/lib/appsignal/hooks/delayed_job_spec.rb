@@ -297,7 +297,7 @@ describe Appsignal::Hooks::DelayedJobHook do
       end
 
       context "with an erroring call" do
-        let(:error) { ExampleStandardError }
+        let(:error) { ExampleException }
         let(:transaction) do
           Appsignal::Transaction.new(
             SecureRandom.uuid,

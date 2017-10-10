@@ -146,17 +146,17 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     end
 
     it "sets the exception on the transaction" do
-      expect(transaction).to receive(:set_error).with(ExampleStandardError)
+      expect(transaction).to receive(:set_error).with(ExampleException)
     end
 
     after do
       expect do
         Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
           Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            raise ExampleStandardError
+            raise ExampleException
           end
         end
-      end.to raise_error(ExampleStandardError)
+      end.to raise_error(ExampleException)
     end
   end
 end
