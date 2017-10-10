@@ -28,4 +28,10 @@ module TransactionHelpers
       }.merge(args))
     )
   end
+
+  # Use when {Appsignal::Transaction.clear_current_transaction!} is stubbed to
+  # clear the current transaction on the current thread.
+  def clear_current_transaction!
+    Thread.current[:appsignal_transaction] = nil
+  end
 end

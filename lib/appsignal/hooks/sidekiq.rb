@@ -14,32 +14,78 @@ module Appsignal
       end
 
       def call(_worker, item, _queue)
-        args =
-          if item["class"] == "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-            item["args"].first["arguments"]
-          else
-            item["args"]
-          end
-        params = Appsignal::Utils::ParamsSanitizer.sanitize args,
-          :filter_parameters => Appsignal.config[:filter_parameters]
+        job = fetch_sidekiq_job { ::Sidekiq::Job.new(item) }
+        job_metadata = call_and_log_on_error(job, &:item)
 
-        Appsignal.monitor_transaction(
-          "perform_job.sidekiq",
-          :class       => item["wrapped"] || item["class"],
-          :method      => "perform",
-          :metadata    => formatted_metadata(item),
-          :params      => params,
-          :queue_start => item["enqueued_at"],
-          :queue_time  => (Time.now.to_f - item["enqueued_at"].to_f) * 1000
-        ) do
-          yield
+        job_action_name = parse_action_name(job)
+        params = Appsignal::Utils::ParamsSanitizer.sanitize(
+          call_and_log_on_error(job, &:display_args),
+          :filter_parameters => Appsignal.config[:filter_parameters]
+        )
+
+        transaction = Appsignal::Transaction.create(
+          SecureRandom.uuid,
+          Appsignal::Transaction::BACKGROUND_JOB,
+          Appsignal::Transaction::GenericRequest.new(
+            :queue_start => call_and_log_on_error(job, &:enqueued_at),
+            :queue_time  => call_and_log_on_error(job) { |j| j.latency.to_f * 1000 }
+          )
+        )
+
+        Appsignal.instrument "perform_job.sidekiq" do
+          begin
+            yield
+          rescue Exception => exception # rubocop:disable Lint/RescueException
+            transaction.set_error(exception)
+            raise exception
+          end
+        end
+      ensure
+        if transaction
+          transaction.set_action_if_nil(job_action_name)
+          transaction.params = params
+          formatted_metadata(job_metadata).each do |key, value|
+            transaction.set_metadata key, value
+          end
+          transaction.set_http_or_background_queue_start
+          Appsignal::Transaction.complete_current!
+        end
+      end
+
+      private
+
+      def fetch_sidekiq_job
+        yield
+      rescue NameError => e
+        Appsignal.logger.error("Problem parsing the Sidekiq job data: #{e.inspect}")
+        nil
+      end
+
+      def call_and_log_on_error(job)
+        yield job if job
+      rescue NameError => e
+        Appsignal.logger.error("Problem parsing the Sidekiq job data: #{e.inspect}")
+        nil
+      end
+
+      def parse_action_name(job)
+        # `job.display_class` needs to be called before `job.display_args`,
+        # see https://github.com/appsignal/appsignal-ruby/pull/348#issuecomment-333629065
+        action_name = call_and_log_on_error(job, &:display_class)
+        if action_name =~ /[\.#]+/
+          action_name
+        else
+          # Add `#perform` as default method name for job names without a
+          # method name
+          "#{action_name}#perform"
         end
       end
 
       def formatted_metadata(item)
-        {}.tap do |hsh|
-          item.each do |key, val|
-            hsh[key] = truncate(string_or_inspect(val)) unless job_keys.include?(key)
+        {}.tap do |hash|
+          (item || {}).each do |key, value|
+            next if job_keys.include?(key)
+            hash[key] = truncate(string_or_inspect(value))
           end
         end
       end
@@ -53,6 +99,7 @@ module Appsignal
       end
 
       def install
+        require "sidekiq/api"
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
             chain.add Appsignal::Hooks::SidekiqPlugin
