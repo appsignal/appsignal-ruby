@@ -1,3 +1,9 @@
+# 2.3.7
+* Support Sidekiq delayed extension job action names better. Now action names
+  are reported as their class and class method name (`MyClass.method`), rather
+  than `Sidekiq::Extensions::DelayedClass#perform` for all jobs through that
+  extension. PR #348
+
 # 2.3.6
 * Allow configuration of permissions of working directory. PR #336
 * Fix locking bug that delayed extension shutdown.
