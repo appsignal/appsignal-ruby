@@ -10,7 +10,7 @@ module Appsignal
         namespace :appsignal do
           task :deploy do
             env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
-            user = ENV["USER"] || ENV["USERNAME"]
+            user = ENV["APPSIGNAL_USER"] || ENV["USER"] || ENV["USERNAME"]
             revision = fetch(:appsignal_revision, fetch(:current_revision))
 
             appsignal_config = Appsignal::Config.new(
