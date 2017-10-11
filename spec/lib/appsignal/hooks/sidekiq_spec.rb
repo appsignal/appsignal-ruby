@@ -182,7 +182,7 @@ describe Appsignal::Hooks::SidekiqPlugin do
   end
 
   context "with an erroring call" do
-    let(:error) { VerySpecificError }
+    let(:error) { ExampleException }
     let(:transaction) do
       Appsignal::Transaction.new(
         SecureRandom.uuid,

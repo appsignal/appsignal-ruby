@@ -196,7 +196,7 @@ module Appsignal
         Appsignal.instrument(name) do
           yield
         end
-      rescue => error
+      rescue Exception => error # rubocop:disable Lint/RescueException
         transaction.set_error(error)
         raise error
       ensure
@@ -219,7 +219,7 @@ module Appsignal
 
     def listen_for_error
       yield
-    rescue => error
+    rescue Exception => error # rubocop:disable Lint/RescueException
       send_error(error)
       raise error
     end

@@ -55,7 +55,7 @@ if DependencyHelper.webmachine_present?
     end
 
     describe "#handle_exceptions_with_appsignal" do
-      let(:error) { VerySpecificError.new }
+      let(:error) { ExampleException.new }
 
       it "should catch the error and send it to AppSignal" do
         expect(Appsignal).to receive(:set_error).with(error)

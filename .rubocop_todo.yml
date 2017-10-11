@@ -11,11 +11,6 @@ Lint/HandleExceptions:
   Exclude:
     - 'lib/appsignal/cli/install.rb'
 
-# Offense count: 3
-Lint/RescueException:
-  Exclude:
-    - 'lib/appsignal/rack/streaming_listener.rb'
-
 # Offense count: 41
 Metrics/AbcSize:
   Max: 59
