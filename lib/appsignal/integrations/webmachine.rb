@@ -26,7 +26,7 @@ module Appsignal
           handle_exceptions_without_appsignal do
             begin
               yield
-            rescue => e
+            rescue Exception => e # rubocop:disable Lint/RescueException
               Appsignal.set_error(e)
               raise e
             end
