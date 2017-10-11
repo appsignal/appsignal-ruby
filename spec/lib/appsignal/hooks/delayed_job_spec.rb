@@ -215,7 +215,27 @@ describe Appsignal::Hooks::DelayedJobHook do
           require "active_job"
 
           context "when wrapped by ActiveJob" do
-            let(:job) { ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(job_data) }
+            let(:wrapped_job) do
+              ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(
+                "arguments"  => args,
+                "job_class"  => "TestClass",
+                "job_id"     => 123,
+                "locale"     => :en,
+                "queue_name" => "default"
+              )
+            end
+            let(:job) do
+              double(
+                :id             => 123,
+                :name           => "ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper",
+                :priority       => 1,
+                :attempts       => 1,
+                :queue          => "default",
+                :created_at     => created_at,
+                :run_at         => run_at,
+                :payload_object => wrapped_job
+              )
+            end
             let(:default_params) do
               {
                 :class    => "TestClass",
@@ -231,7 +251,6 @@ describe Appsignal::Hooks::DelayedJobHook do
               }
             end
             let(:args) { ["activejob_argument"] }
-            before { job_data[:args] = args }
 
             context "with simple params" do
               it "wraps it in a transaction with the correct params" do

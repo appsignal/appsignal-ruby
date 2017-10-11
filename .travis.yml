@@ -30,8 +30,10 @@ gemfile:
   - "gemfiles/resque.gemfile"
   - "gemfiles/sequel.gemfile"
   - "gemfiles/sequel-435.gemfile"
+  - "gemfiles/sidekiq.gemfile"
   - "gemfiles/sinatra.gemfile"
   - "gemfiles/grape.gemfile"
+  - "gemfiles/webmachine.gemfile"
 
 matrix:
   fast_finish: true
@@ -44,6 +46,12 @@ matrix:
     - rvm: "jruby-19mode"
 
     # Rails 5 doesn't support Ruby < 2.2
+    - rvm: "2.0.0"
+      gemfile: "gemfiles/sidekiq.gemfile"
+    - rvm: "2.1.8"
+      gemfile: "gemfiles/sidekiq.gemfile"
+    - rvm: "jruby-19mode"
+      gemfile: "gemfiles/sidekiq.gemfile"
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.0.gemfile"
     - rvm: "2.1.8"

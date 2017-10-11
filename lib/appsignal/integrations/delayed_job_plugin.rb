@@ -15,20 +15,21 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
-        if job.respond_to?(:payload_object)
-          # Direct Delayed Job
+        payload = job.payload_object
+
+        if payload.respond_to? :job_data
+          # ActiveJob
+          job_data = payload.job_data
+          args = job_data.fetch("arguments", {})
+          class_name = job_data["job_class"]
+          method_name = "perform"
+        else
+          # Delayed Job
+          args = extract_value(job.payload_object, :args, {})
           class_and_method_name = extract_value(job.payload_object, :appsignal_name, job.name)
           class_name, method_name = class_and_method_name.split("#")
-          args = extract_value(job.payload_object, :args, {})
-          job_data = job
-        elsif job.respond_to?(:job_data)
-          # Via ActiveJob
-          class_name, method_name = job.job_data[:name].split("#")
-          args = job.job_data[:args] || {}
-          job_data = job.job_data
-        else
-          args = {}
         end
+
         params = Appsignal::Utils::ParamsSanitizer.sanitize args,
           :filter_parameters => Appsignal.config[:filter_parameters]
 
@@ -37,13 +38,13 @@ module Appsignal
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => extract_value(job_data, :id, nil, true),
-            :queue    => extract_value(job_data, :queue),
-            :priority => extract_value(job_data, :priority, 0),
-            :attempts => extract_value(job_data, :attempts, 0)
+            :id       => extract_value(job, :id, nil, true),
+            :queue    => extract_value(job, :queue),
+            :priority => extract_value(job, :priority, 0),
+            :attempts => extract_value(job, :attempts, 0)
           },
           :params      => params,
-          :queue_start => extract_value(job_data, :run_at)
+          :queue_start => extract_value(job, :run_at)
         ) do
           block.call(job)
         end

@@ -1,4 +1,22 @@
-# Unreleased version
+# 2.3.7
+* Support Sidekiq delayed extension job action names better. Now action names
+  are reported as their class and class method name (`MyClass.method`), rather
+  than `Sidekiq::Extensions::DelayedClass#perform` for all jobs through that
+  extension. PR #348
+
+# 2.3.6
+* Allow configuration of permissions of working directory. PR #336
+* Fix locking bug that delayed extension shutdown.
+  Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
+* Log extension start with app revision if present
+  Commit 51d90bb1207affc2c88f7cff5035a2c36acf9784
+
+# 2.3.5
+
+Yanked
+
+# 2.3.4
+* Fix naming for ActiveJob integration with DelayedJob. PR #345
 
 # 2.3.3
 * Accept mixed case env variable values for the `true` value. PR #333
