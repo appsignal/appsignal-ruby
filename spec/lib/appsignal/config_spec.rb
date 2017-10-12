@@ -281,7 +281,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_APP_NAME"]                = "App name"
       ENV["APPSIGNAL_DEBUG"]                   = "true"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
-      ENV["APPSIGNAL_IGNORE_ERRORS"]           = "VerySpecificError,AnotherError"
+      ENV["APPSIGNAL_IGNORE_ERRORS"]           = "ExampleStandardError,AnotherError"
       ENV["APPSIGNAL_IGNORE_NAMESPACES"]       = "admin,private_namespace"
       ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]     = "false"
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
@@ -299,7 +299,7 @@ describe Appsignal::Config do
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to eq(true)
       expect(config[:ignore_actions]).to eq %w(action1 action2)
-      expect(config[:ignore_errors]).to eq %w(VerySpecificError AnotherError)
+      expect(config[:ignore_errors]).to eq %w(ExampleStandardError AnotherError)
       expect(config[:ignore_namespaces]).to eq %w(admin private_namespace)
       expect(config[:instrument_net_http]).to eq(false)
       expect(config[:instrument_redis]).to eq(false)
@@ -385,7 +385,7 @@ describe Appsignal::Config do
     before do
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w(action1 action2)
-      config[:ignore_errors] = %w(VerySpecificError AnotherError)
+      config[:ignore_errors] = %w(ExampleStandardError AnotherError)
       config[:ignore_namespaces] = %w(admin private_namespace)
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
@@ -411,7 +411,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
       expect(ENV["_APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
       expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
-      expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "VerySpecificError,AnotherError"
+      expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "ExampleStandardError,AnotherError"
       expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
       expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
       expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"

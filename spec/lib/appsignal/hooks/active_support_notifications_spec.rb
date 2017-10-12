@@ -61,9 +61,9 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
 
         expect do
           as.instrument("sql.active_record", :sql => "SQL") do
-            raise VerySpecificError, "foo"
+            raise ExampleException, "foo"
           end
-        end.to raise_error(VerySpecificError, "foo")
+        end.to raise_error(ExampleException, "foo")
       end
     end
 

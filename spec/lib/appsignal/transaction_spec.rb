@@ -133,13 +133,13 @@ describe Appsignal::Transaction do
 
       context "when encountering an error while completing" do
         before do
-          expect(transaction).to receive(:complete).and_raise VerySpecificError
+          expect(transaction).to receive(:complete).and_raise ExampleStandardError
         end
 
         it "logs an error message" do
           Appsignal::Transaction.complete_current!
           expect(log_contents(log)).to contains_log :error,
-            "Failed to complete transaction ##{transaction.transaction_id}. VerySpecificError"
+            "Failed to complete transaction ##{transaction.transaction_id}. ExampleStandardError"
         end
 
         it "clears the current transaction" do

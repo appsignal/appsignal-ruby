@@ -34,7 +34,7 @@ module Padrino::Routing::InstanceMethods
       Appsignal.instrument("process_action.padrino") do
         route_without_appsignal(base, pass_block)
       end
-    rescue => error
+    rescue Exception => error # rubocop:disable Lint/RescueException
       transaction.set_error(error)
       raise error
     ensure

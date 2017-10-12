@@ -18,7 +18,7 @@ if DependencyHelper.resque_present?
           extend Appsignal::Integrations::ResquePlugin
 
           def self.perform
-            raise VerySpecificError
+            raise ExampleException
           end
         end
       end
@@ -72,11 +72,11 @@ if DependencyHelper.resque_present?
           end
 
           it "sets the exception on the transaction" do
-            expect(transaction).to receive(:set_error).with(VerySpecificError)
+            expect(transaction).to receive(:set_error).with(ExampleException)
           end
 
           after do
-            expect { job.perform }.to raise_error(VerySpecificError)
+            expect { job.perform }.to raise_error(ExampleException)
           end
         end
       end

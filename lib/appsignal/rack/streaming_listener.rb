@@ -31,7 +31,7 @@ module Appsignal
           Appsignal.instrument("process_action.rack") do
             begin
               @app.call(env)
-            rescue Exception => e
+            rescue Exception => e # rubocop:disable Lint/RescueException
               transaction.set_error(e)
               raise e
             ensure
@@ -56,14 +56,14 @@ module Appsignal
 
     def each
       @stream.each { |c| yield(c) }
-    rescue Exception => e
+    rescue Exception => e # rubocop:disable Lint/RescueException
       @transaction.set_error(e)
       raise e
     end
 
     def close
       @stream.close if @stream.respond_to?(:close)
-    rescue Exception => e
+    rescue Exception => e # rubocop:disable Lint/RescueException
       @transaction.set_error(e)
       raise e
     ensure
