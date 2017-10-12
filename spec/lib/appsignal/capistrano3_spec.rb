@@ -152,6 +152,20 @@ if DependencyHelper.capistrano3_present?
             end
           end
 
+          context "with overridden deploy user" do
+            before do
+              capistrano_config.set(:appsignal_user, "robin")
+              stub_marker_request(:user => "robin").to_return(:status => 200)
+              run
+            end
+
+            it "transmits the overriden deploy user" do
+              expect(output).to include \
+                "Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005, user: robin",
+                "AppSignal has been notified of this deploy!"
+            end
+          end
+
           if Gem::Version.new(Capistrano::VERSION) >= Gem::Version.new("3.5.0")
             context "when dry run" do
               before do
