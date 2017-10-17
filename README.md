@@ -150,7 +150,7 @@ currently. Be sure to check it out!
 ## Supported systems
 
 Currently the AppSignal agent works on most Unix-like operating systems, such
-as most Linux distributions and macOS, excluding FreeBSD and Windows.
+as most Linux distributions, FreeBSD, macOS, excluding Microsoft Windows.
 
 For more detailed information please visit our [Supported
 systems][supported-systems] page.
