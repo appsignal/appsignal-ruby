@@ -222,43 +222,54 @@ describe Appsignal::Config do
       end
     end
 
-    describe "old-style config keys" do
-      describe ":api_key" do
-        subject { config[:push_api_key] }
+    describe "support for old config keys" do
+      let(:config) { project_fixture_config(env, {}, test_logger(log)) }
+      let(:log) { StringIO.new }
 
+      describe ":api_key" do
         context "without :push_api_key" do
-          let(:config) { project_fixture_config("old_config") }
+          let(:env) { "old_config" }
 
           it "sets the :push_api_key with the old :api_key value" do
-            expect(subject).to eq "def"
+            expect(config[:push_api_key]).to eq "def"
+            expect(config.config_hash).to_not have_key :api_key
+            expect(log_contents(log)).to contains_log :warn,
+              "Old configuration key found. Please update the 'api_key' to 'push_api_key'"
           end
         end
 
         context "with :push_api_key" do
-          let(:config) { project_fixture_config("old_config_mixed_with_new_config") }
+          let(:env) { "old_config_mixed_with_new_config" }
 
-          it "ignores the :api_key config" do
-            expect(subject).to eq "ghi"
+          it "ignores the :api_key config and deletes it" do
+            expect(config[:push_api_key]).to eq "ghi"
+            expect(config.config_hash).to_not have_key :api_key
+            expect(log_contents(log)).to contains_log :warn,
+              "Old configuration key found. Please update the 'api_key' to 'push_api_key'"
           end
         end
       end
 
       describe ":ignore_exceptions" do
-        subject { config[:ignore_errors] }
-
         context "without :ignore_errors" do
-          let(:config) { project_fixture_config("old_config") }
+          let(:env) { "old_config" }
 
           it "sets :ignore_errors with the old :ignore_exceptions value" do
-            expect(subject).to eq ["StandardError"]
+            expect(config[:ignore_errors]).to eq ["StandardError"]
+            expect(config.config_hash).to_not have_key :ignore_exceptions
+            expect(log_contents(log)).to contains_log :warn,
+              "Old configuration key found. Please update the 'ignore_exceptions' to 'ignore_errors'"
           end
         end
 
         context "with :ignore_errors" do
-          let(:config) { project_fixture_config("old_config_mixed_with_new_config") }
+          let(:env) { "old_config_mixed_with_new_config" }
 
           it "ignores the :ignore_exceptions config" do
-            expect(subject).to eq ["NoMethodError"]
+            expect(config[:ignore_errors]).to eq ["NoMethodError"]
+            expect(config.config_hash).to_not have_key :ignore_exceptions
+            expect(log_contents(log)).to contains_log :warn,
+              "Old configuration key found. Please update the 'ignore_exceptions' to 'ignore_errors'"
           end
         end
       end

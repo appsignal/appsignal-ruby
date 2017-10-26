@@ -5,11 +5,12 @@ module ConfigHelpers
     )
   end
 
-  def project_fixture_config(env = "production", initial_config = {})
+  def project_fixture_config(env = "production", initial_config = {}, logger = Appsignal.logger)
     Appsignal::Config.new(
       project_fixture_path,
       env,
-      initial_config
+      initial_config,
+      logger
     )
   end
 
