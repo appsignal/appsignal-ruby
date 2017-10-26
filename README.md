@@ -72,7 +72,8 @@ instrumentation anywhere in your code.
 ```ruby
 # Simple instrumentation
 Appsignal.instrument("array_to_hash.expensive_logic", "Complex calculations") do
-  Hash[["a", 1], ["b", 2], ["c", 3]]
+  array = [["a", 1], ["b", 2], ["c", 3]]
+  Hash[array]
 end
 
 # Add the query that you're monitoring
