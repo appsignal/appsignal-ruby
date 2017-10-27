@@ -29,7 +29,7 @@ module Appsignal
           Appsignal.instrument("process_action.generic") do
             @app.call(env)
           end
-        rescue => error
+        rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
           raise error
         ensure

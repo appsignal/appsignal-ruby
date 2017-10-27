@@ -72,7 +72,8 @@ instrumentation anywhere in your code.
 ```ruby
 # Simple instrumentation
 Appsignal.instrument("array_to_hash.expensive_logic", "Complex calculations") do
-  Hash[["a", 1], ["b", 2], ["c", 3]]
+  array = [["a", 1], ["b", 2], ["c", 3]]
+  Hash[array]
 end
 
 # Add the query that you're monitoring
@@ -150,7 +151,7 @@ currently. Be sure to check it out!
 ## Supported systems
 
 Currently the AppSignal agent works on most Unix-like operating systems, such
-as most Linux distributions and macOS, excluding FreeBSD and Windows.
+as most Linux distributions, FreeBSD, macOS, excluding Microsoft Windows.
 
 For more detailed information please visit our [Supported
 systems][supported-systems] page.

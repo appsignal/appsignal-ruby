@@ -1,3 +1,15 @@
+# 2.4.0 (alpha)
+- Add separate GNU linux build. PR #351 and
+  Commit d1763f4dcb685608468a73f3192226f60f66b217
+- Add separate FreeBSD build
+  Commit d1763f4dcb685608468a73f3192226f60f66b217
+- Fix crashes when using a transaction from multiple processes in an
+  unsupported way.
+  Commit d1763f4dcb685608468a73f3192226f60f66b217
+- Auto restart agent when none is running
+  Commit d1763f4dcb685608468a73f3192226f60f66b217
+- Track Exception-level exceptions. PR #356
+
 # 2.3.7
 * Support Sidekiq delayed extension job action names better. Now action names
   are reported as their class and class method name (`MyClass.method`), rather

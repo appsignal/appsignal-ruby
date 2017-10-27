@@ -178,8 +178,10 @@ namespace :extension do
           appsignal-agent \
           appsignal.h \
           appsignal_extension.o \
+          appsignal_extension.bundle \
           install.log \
           libappsignal.a \
+          appsignal.version \
           Makefile \
           mkmf.log
       COMMAND

@@ -24,7 +24,7 @@ describe Appsignal::Hooks::RakeHook do
     end
 
     context "with error" do
-      let(:error) { VerySpecificError.new }
+      let(:error) { ExampleException }
       let(:transaction) { background_job_transaction }
       before do
         task.enhance { raise error }
@@ -66,7 +66,7 @@ describe Appsignal::Hooks::RakeHook do
       end
 
       after do
-        expect { task.execute(arguments) }.to raise_error VerySpecificError
+        expect { task.execute(arguments) }.to raise_error ExampleException
       end
     end
   end

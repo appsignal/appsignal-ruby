@@ -215,11 +215,11 @@ if DependencyHelper.padrino_present?
             context "with an exception in the controller" do
               let(:path) { "/exception" }
               before do
-                app.controllers { get(:exception) { raise VerySpecificError } }
+                app.controllers { get(:exception) { raise ExampleException } }
                 expect_a_transaction_to_be_created
               end
               after do
-                expect { response }.to raise_error(VerySpecificError)
+                expect { response }.to raise_error(ExampleException)
               end
 
               it "sets the action name based on the app name and action name" do
@@ -227,7 +227,7 @@ if DependencyHelper.padrino_present?
               end
 
               it "sets the error on the transaction" do
-                expect(transaction).to receive(:set_error).with(VerySpecificError)
+                expect(transaction).to receive(:set_error).with(ExampleException)
               end
             end
 

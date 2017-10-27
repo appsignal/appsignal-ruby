@@ -196,7 +196,7 @@ module Appsignal
         Appsignal.instrument(name) do
           yield
         end
-      rescue => error
+      rescue Exception => error # rubocop:disable Lint/RescueException
         transaction.set_error(error)
         raise error
       ensure
@@ -217,10 +217,37 @@ module Appsignal
       stop("monitor_single_transaction")
     end
 
-    def listen_for_error
+    # Listen for an error to occur and send it to AppSignal.
+    #
+    # Uses {.send_error} to directly send the error in a separate transaction.
+    # Does not add the error to the current transaction.
+    #
+    # Make sure that AppSignal is integrated in your application beforehand.
+    # AppSignal won't record errors unless {Config#active?} is `true`.
+    #
+    # @example
+    #   # my_app.rb
+    #   # setup AppSignal beforehand
+    #
+    #   Appsignal.listen_for_error do
+    #     # my code
+    #     raise "foo"
+    #   end
+    #
+    # @see Transaction.set_tags
+    # @see Transaction.set_namespace
+    # @see .send_error
+    # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
+    #   AppSignal integration guide
+    #
+    # @param tags [Hash, nil]
+    # @param namespace [String] the namespace for this error.
+    # @yield yields the given block.
+    # @return [Object] returns the return value of the given block.
+    def listen_for_error(tags = nil, namespace = Appsignal::Transaction::HTTP_REQUEST)
       yield
-    rescue => error
-      send_error(error)
+    rescue Exception => error # rubocop:disable Lint/RescueException
+      send_error(error, tags, namespace)
       raise error
     end
     alias :listen_for_exception :listen_for_error

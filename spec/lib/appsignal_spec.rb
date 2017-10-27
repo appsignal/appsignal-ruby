@@ -257,7 +257,7 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
-      it "should do nothing" do
+      it "does not record anyhing" do
         error = RuntimeError.new("specific error")
         expect do
           Appsignal.listen_for_error do
@@ -348,7 +348,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { VerySpecificError.new }
+        let(:error) { ExampleException.new }
 
         it "should add the error to the current transaction and complete" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
@@ -379,7 +379,7 @@ describe Appsignal do
       end
 
       context "with an erroring call" do
-        let(:error) { VerySpecificError.new }
+        let(:error) { ExampleException.new }
 
         it "should call monitor_transaction and stop and then raise the error" do
           expect(Appsignal).to receive(:monitor_transaction).with(
@@ -719,7 +719,7 @@ describe Appsignal do
           Appsignal::Transaction::GenericRequest.new({})
         )
       end
-      let(:error) { VerySpecificError.new }
+      let(:error) { ExampleException.new }
 
       it "sends the error to AppSignal" do
         expect(Appsignal::Transaction).to receive(:new).with(
@@ -779,13 +779,47 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
-      it "should call send_error and re-raise" do
-        expect(Appsignal).to receive(:send_error).with(kind_of(Exception))
+      it "records the error and re-raise it" do
+        expect(Appsignal).to receive(:send_error).with(
+          kind_of(ExampleException),
+          nil,
+          Appsignal::Transaction::HTTP_REQUEST
+        )
         expect do
           Appsignal.listen_for_error do
-            raise "I am an exception"
+            raise ExampleException, "I am an exception"
           end
-        end.to raise_error(RuntimeError, "I am an exception")
+        end.to raise_error(ExampleException, "I am an exception")
+      end
+
+      context "with tags" do
+        it "adds tags to the transaction" do
+          expect(Appsignal).to receive(:send_error).with(
+            kind_of(ExampleException),
+            { "foo" => "bar" },
+            Appsignal::Transaction::HTTP_REQUEST
+          )
+          expect do
+            Appsignal.listen_for_error("foo" => "bar") do
+              raise ExampleException, "I am an exception"
+            end
+          end.to raise_error(ExampleException, "I am an exception")
+        end
+      end
+
+      context "with a custom namespace" do
+        it "adds the namespace to the transaction" do
+          expect(Appsignal).to receive(:send_error).with(
+            kind_of(ExampleException),
+            nil,
+            "custom_namespace"
+          )
+          expect do
+            Appsignal.listen_for_error(nil, "custom_namespace") do
+              raise ExampleException, "I am an exception"
+            end
+          end.to raise_error(ExampleException, "I am an exception")
+        end
       end
     end
 

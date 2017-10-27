@@ -224,7 +224,7 @@ if DependencyHelper.sidekiq_present?
     end
 
     context "with an erroring job" do
-      let(:error) { VerySpecificError }
+      let(:error) { ExampleException }
       before do
         expect do
           Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
@@ -240,7 +240,7 @@ if DependencyHelper.sidekiq_present?
         # TODO: backtrace should be an Array of Strings
         # https://github.com/appsignal/appsignal-agent/issues/294
         expect(transaction_hash["error"]).to include(
-          "name" => "VerySpecificError",
+          "name" => "ExampleException",
           "message" => "uh oh",
           "backtrace" => kind_of(String)
         )
