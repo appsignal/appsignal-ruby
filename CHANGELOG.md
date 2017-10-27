@@ -1,4 +1,4 @@
-# 2.4.0 (alpha)
+# 2.4.0
 - Add separate GNU linux build. PR #351 and
   Commit d1763f4dcb685608468a73f3192226f60f66b217
 - Add separate FreeBSD build
@@ -8,7 +8,9 @@
   Commit d1763f4dcb685608468a73f3192226f60f66b217
 - Auto restart agent when none is running
   Commit d1763f4dcb685608468a73f3192226f60f66b217
+- Add `appsignal_user` Capistrano config option. PR #355
 - Track Exception-level exceptions. PR #356
+- Add tags and namespace arguments to `Appsignal.listen_for_error`. PR #357
 
 # 2.3.7
 * Support Sidekiq delayed extension job action names better. Now action names
