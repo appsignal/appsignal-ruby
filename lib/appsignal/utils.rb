@@ -104,7 +104,9 @@ module Appsignal
           when Numeric, NilClass, TrueClass, FalseClass
             value
           when Hash
-            Hash[value.map { |k, v| [jsonify(k), jsonify(v)] }]
+            value.each_with_object({}) do |(k, v), hash|
+              hash[jsonify(k)] = jsonify(v)
+            end
           when Array
             value.map { |v| jsonify(v) }
           else
