@@ -54,12 +54,6 @@ module Appsignal
       rescue => e
         Appsignal.logger.error("Failed to complete transaction ##{current.transaction_id}. #{e.message}")
       ensure
-        clear_current_transaction!
-      end
-
-      # Remove current transaction from current Thread.
-      # @api private
-      def clear_current_transaction!
         Thread.current[:appsignal_transaction] = nil
       end
 
@@ -318,7 +312,6 @@ module Appsignal
       finish_event(name, title, body, body_format)
     end
 
-    # @api private
     def to_h
       JSON.parse(@ext.to_json)
     end
