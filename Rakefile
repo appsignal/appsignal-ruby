@@ -14,7 +14,6 @@ GEMFILES = %w(
   resque
   sequel
   sequel-435
-  sidekiq
   sinatra
   grape
   webmachine

@@ -11,6 +11,8 @@
 - Add `appsignal_user` Capistrano config option. PR #355
 - Track Exception-level exceptions. PR #356
 - Add tags and namespace arguments to `Appsignal.listen_for_error`. PR #357
+- Revert Sidekiq delayed extension job action names fix.
+  Commit 9b84a098604de5ef5e52645ba7fcb09d84f66eaa
 
 # 2.3.7
 * Support Sidekiq delayed extension job action names better. Now action names
