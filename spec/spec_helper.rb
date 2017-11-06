@@ -35,12 +35,14 @@ require "appsignal"
 puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
 # Add way to clear subscribers between specs
-module ActiveSupport
-  module Notifications
-    class Fanout
-      def clear_subscribers
-        @subscribers.clear
-        @listeners_for.clear
+if defined?(ActiveSupport)
+  module ActiveSupport
+    module Notifications
+      class Fanout
+        def clear_subscribers
+          @subscribers.clear
+          @listeners_for.clear
+        end
       end
     end
   end
