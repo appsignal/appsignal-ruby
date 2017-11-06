@@ -1,6 +1,5 @@
 require "optparse"
 require "logger"
-require "yaml"
 require "appsignal"
 require "appsignal/cli/helpers"
 require "appsignal/cli/demo"
