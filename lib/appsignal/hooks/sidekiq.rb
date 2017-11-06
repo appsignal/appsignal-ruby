@@ -22,15 +22,10 @@ module Appsignal
     class SidekiqPlugin
       include Appsignal::Hooks::Helpers
 
-      # TODO: Make constant
-      def job_keys
-        @job_keys ||= Set.new(%w(
-          class args retried_at failed_at
-          error_message error_class backtrace
-          error_backtrace enqueued_at retry
-          jid retry created_at wrapped
-        ))
-      end
+      JOB_KEYS = Set.new(%w(
+        args backtrace class created_at enqueued_at error_backtrace error_class
+        error_message failed_at jid retried_at retry wrapped
+      )).freeze
 
       def call(_worker, item, _queue)
         transaction = Appsignal::Transaction.create(
@@ -79,7 +74,7 @@ module Appsignal
       def formatted_metadata(item)
         {}.tap do |hash|
           (item || {}).each do |key, value|
-            next if job_keys.include?(key)
+            next if JOB_KEYS.include?(key)
             hash[key] = truncate(string_or_inspect(value))
           end
         end
