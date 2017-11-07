@@ -119,6 +119,12 @@ module Appsignal
             job_args
           end
         else
+          # Sidekiq Enterprise argument encryption.
+          # More information: https://github.com/mperham/sidekiq/wiki/Ent-Encryption
+          if job["encrypt".freeze]
+            # No point in showing 150+ bytes of random garbage
+            args[-1] = "[encrypted data]".freeze
+          end
           args
         end
       end

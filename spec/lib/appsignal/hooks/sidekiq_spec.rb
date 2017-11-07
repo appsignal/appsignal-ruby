@@ -95,6 +95,22 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
       end
     end
 
+    context "with encrypted arguments" do
+      before do
+        item["encrypt"] = true
+        item["args"] << "super secret value" # Last argument will be replaced
+      end
+
+      it "replaces the last argument (the secret bag) with an [encrypted data] string" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => expected_args << "[encrypted data]"
+        )
+      end
+    end
+
     context "when using the Sidekiq delayed extension" do
       let(:item) do
         {
