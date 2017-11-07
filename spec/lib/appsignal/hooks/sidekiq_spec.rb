@@ -51,7 +51,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
 
     # Stub removal of current transaction from current thread so we can fetch
     # it later.
-    expect(Appsignal::Transaction).to receive(:clear_current_transaction!).at_least(:once) do
+    expect(Appsignal::Transaction).to receive(:clear_current_transaction!) do
       transaction = Thread.current[:appsignal_transaction]
       test_store[:transaction] = transaction if transaction
     end
