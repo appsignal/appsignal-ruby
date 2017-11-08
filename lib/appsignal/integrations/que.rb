@@ -2,7 +2,7 @@ module Appsignal
   module Integrations
     module QuePlugin
       def self.included(base)
-        base.class_eval do # rubocop:disable Metrics/BlockLength
+        base.class_eval do
           def _run_with_appsignal
             cls = attrs[:job_class]
             cls = attrs[:args].last["job_class"] if cls == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
