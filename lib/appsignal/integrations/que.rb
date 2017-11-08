@@ -8,8 +8,6 @@ module Appsignal
             cls = attrs[:args].last["job_class"] if cls == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
 
             env = {
-              :class       => cls,
-              :method      => "run",
               :metadata    => {
                 :id        => attrs[:job_id],
                 :queue     => attrs[:queue],
@@ -34,7 +32,7 @@ module Appsignal
               transaction.set_error(error)
               raise error
             ensure
-              transaction.set_http_or_background_action(request.env)
+              transaction.set_action "#{cls}#run"
               Appsignal::Transaction.complete_current!
             end
           end
