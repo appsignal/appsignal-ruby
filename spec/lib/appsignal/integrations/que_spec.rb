@@ -1,5 +1,7 @@
 if DependencyHelper.que_present?
-  describe "Que integration" do
+  require "appsignal/integrations/que"
+
+  describe Appsignal::Integrations::QuePlugin do
     describe "#_run" do
       let(:job_attrs) do
         {
