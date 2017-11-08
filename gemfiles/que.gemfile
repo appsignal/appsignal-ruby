@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
 gem 'que'
+gem 'activejob'
 
 gemspec :path => '../'

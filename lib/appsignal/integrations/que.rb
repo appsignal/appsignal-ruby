@@ -4,8 +4,15 @@ module Appsignal
       def self.included(base)
         base.class_eval do # rubocop:disable Metrics/BlockLength
           def _run_with_appsignal
-            cls = attrs[:job_class]
-            cls = attrs[:args].last["job_class"] if cls == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
+            job_class = attrs[:job_class]
+            if job_class == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
+              unwrapped_job = attrs[:args].first
+              action_name = "#{unwrapped_job[:job_class]}#perform"
+              arguments = unwrapped_job[:arguments]
+            else
+              action_name = "#{attrs[:job_class]}#run"
+              arguments = attrs[:args]
+            end
 
             env = {
               :metadata    => {
@@ -15,7 +22,7 @@ module Appsignal
                 :priority  => attrs[:priority],
                 :attempts  => attrs[:error_count].to_i
               },
-              :params => attrs[:args]
+              :params => arguments
             }
 
             request = Appsignal::Transaction::GenericRequest.new(env)
@@ -32,7 +39,7 @@ module Appsignal
               transaction.set_error(error)
               raise error
             ensure
-              transaction.set_action "#{cls}#run"
+              transaction.set_action action_name
               Appsignal::Transaction.complete_current!
             end
           end

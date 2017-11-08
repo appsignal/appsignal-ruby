@@ -1,4 +1,5 @@
 if DependencyHelper.que_present?
+  require "active_job"
   require "appsignal/integrations/que"
 
   describe Appsignal::Integrations::QuePlugin do
@@ -168,6 +169,56 @@ if DependencyHelper.que_present?
             }
           )
         end
+      end
+    end
+
+    context "with an ActiveJob job" do
+      class ActiveJobQueJob < ActiveJob::Base
+        def perform(*_args)
+          puts "perform!!!!!!"
+        end
+      end
+      let(:job) { ActiveJobQueJob }
+      before do
+        ActiveJob::Base.queue_adapter = :que
+        Que.mode = :sync
+      end
+
+      it "creates a transaction for a job" do
+        expect do
+          instance.perform_now
+        end.to_not raise_exception
+
+        expect(subject).to include(
+          "action" => "MyQueJob#run",
+          "id" => instance_of(String),
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB
+        )
+        expect(subject["error"]).to be_nil
+        expect(subject["events"].first).to include(
+          "allocation_count" => kind_of(Integer),
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "child_allocation_count" => kind_of(Integer),
+          "child_duration" => kind_of(Float),
+          "child_gc_duration" => kind_of(Float),
+          "count" => 1,
+          "gc_duration" => kind_of(Float),
+          "start" => kind_of(Float),
+          "duration" => kind_of(Float),
+          "name" => "perform_job.que",
+          "title" => ""
+        )
+        expect(subject["sample_data"]).to include(
+          "params" => %w(1 birds),
+          "metadata" => {
+            "attempts" => 0,
+            "id" => 123,
+            "priority" => 100,
+            "queue" => "dfl",
+            "run_at" => fixed_time.to_s
+          }
+        )
       end
     end
   end
