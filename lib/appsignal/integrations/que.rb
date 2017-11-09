@@ -4,9 +4,6 @@ module Appsignal
       def self.included(base)
         base.class_eval do
           def _run_with_appsignal
-            cls = attrs[:job_class]
-            cls = attrs[:args].last["job_class"] if cls == "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
-
             env = {
               :metadata    => {
                 :id        => attrs[:job_id],
@@ -32,7 +29,7 @@ module Appsignal
               transaction.set_error(error)
               raise error
             ensure
-              transaction.set_action "#{cls}#run"
+              transaction.set_action "#{attrs[:job_class]}#run"
               Appsignal::Transaction.complete_current!
             end
           end
