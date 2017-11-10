@@ -29,10 +29,17 @@ module Appsignal
         ldd_output = ldd_version_output
         return MUSL_TARGET if ldd_output.include? "musl"
         ldd_version = ldd_output.match(/\d+\.\d+/)
-        return MUSL_TARGET if ldd_version && ldd_version[0] < "2.15"
+        if ldd_version && versionify(ldd_version[0]) < versionify("2.15")
+          return MUSL_TARGET
+        end
       end
 
       local_os
+    end
+
+    # @api private
+    def self.versionify(version)
+      Gem::Version.new(version)
     end
 
     # @api private

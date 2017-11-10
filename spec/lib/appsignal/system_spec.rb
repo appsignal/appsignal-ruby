@@ -64,6 +64,14 @@ describe Appsignal::System do
           is_expected.to eq("linux-musl")
         end
       end
+
+      context "when on a very old libc system" do
+        let(:ldd_output) { "ldd (Debian GLIBC 2.5-18+deb8u7) 2.5" }
+
+        it "returns the musl build" do
+          is_expected.to eq("linux-musl")
+        end
+      end
     end
 
     context "when on macOS" do
