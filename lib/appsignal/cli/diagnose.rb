@@ -285,6 +285,7 @@ module Appsignal
             save :language, "ruby"
             puts_and_save :package_version, "Gem version", Appsignal::VERSION
             puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
+            puts_and_save :agent_platform, "Agent platform", Appsignal::System.agent_platform
             puts_and_save :package_install_path, "Gem install path", gem_path
             puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
           end
@@ -297,7 +298,7 @@ module Appsignal
             puts_and_save :architecture, "Architecture", rbconfig["host_cpu"]
 
             os_label = os = rbconfig["host_os"]
-            os_label = "#{os_label} (Microsoft Windows is not supported.)" if Gem.win_platform?
+            os_label = "#{os} (Microsoft Windows is not supported.)" if Gem.win_platform?
             save :os, os
             puts_value "Operating System", os_label
 
