@@ -6,19 +6,12 @@ require "zlib"
 require "rubygems/package"
 require "yaml"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
+require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
 
 EXT_PATH     = File.expand_path("..", __FILE__).freeze
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
-local_os = Gem::Platform.local.os
-chosen_os =
-  # Detect musl platforms
-  # Use `export APPSIGNAL_BUILD_FOR_MUSL=1` if the detection doesn't work.
-  if ENV["APPSIGNAL_BUILD_FOR_MUSL"] || (local_os =~ /linux/ && `ldd --version 2>&1` =~ /musl/)
-    "linux-musl"
-  end
-OS           = chosen_os || local_os
-ARCH         = "#{Gem::Platform.local.cpu}-#{OS}".freeze
+ARCH         = "#{Gem::Platform.local.cpu}-#{Appsignal::System.agent_platform}".freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
