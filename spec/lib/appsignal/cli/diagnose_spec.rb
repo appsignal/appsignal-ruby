@@ -155,7 +155,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         expect(output).to include \
           "Gem version: #{Appsignal::VERSION}",
           "Agent version: #{Appsignal::Extension.agent_version}",
-          "Agent platform: #{Appsignal::System.agent_platform}",
+          "Agent platform: #{Appsignal::System.installed_agent_platform}",
           "Gem install path: #{gem_path}"
       end
 
@@ -165,7 +165,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
             "language" => "ruby",
             "package_version" => Appsignal::VERSION,
             "agent_version" => Appsignal::Extension.agent_version,
-            "agent_platform" => Appsignal::System.agent_platform,
+            "agent_platform" => Appsignal::System.installed_agent_platform,
             "package_install_path" => gem_path,
             "extension_loaded" => true
           }

@@ -11,7 +11,8 @@ require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
 EXT_PATH     = File.expand_path("..", __FILE__).freeze
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
-ARCH         = "#{Gem::Platform.local.cpu}-#{Appsignal::System.agent_platform}".freeze
+PLATFORM     = Appsignal::System.agent_platform
+ARCH         = "#{Gem::Platform.local.cpu}-#{PLATFORM}".freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -29,8 +30,15 @@ def installation_failed(reason)
   end
 end
 
+def write_agent_platform
+  File.open(File.join(EXT_PATH, "appsignal.platform"), "w") do |file|
+    file.write PLATFORM
+  end
+end
+
 def install
   logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+  write_agent_platform
 
   if RUBY_PLATFORM =~ /java/
     installation_failed(
