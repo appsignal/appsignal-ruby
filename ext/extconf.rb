@@ -6,19 +6,13 @@ require "zlib"
 require "rubygems/package"
 require "yaml"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
+require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
 
 EXT_PATH     = File.expand_path("..", __FILE__).freeze
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
-local_os = Gem::Platform.local.os
-chosen_os =
-  # Detect musl platforms
-  # Use `export APPSIGNAL_BUILD_FOR_MUSL=1` if the detection doesn't work.
-  if ENV["APPSIGNAL_BUILD_FOR_MUSL"] || (local_os =~ /linux/ && `ldd --version 2>&1` =~ /musl/)
-    "linux-musl"
-  end
-OS           = chosen_os || local_os
-ARCH         = "#{Gem::Platform.local.cpu}-#{OS}".freeze
+PLATFORM     = Appsignal::System.agent_platform
+ARCH         = "#{Gem::Platform.local.cpu}-#{PLATFORM}".freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -36,8 +30,15 @@ def installation_failed(reason)
   end
 end
 
+def write_agent_platform
+  File.open(File.join(EXT_PATH, "appsignal.platform"), "w") do |file|
+    file.write PLATFORM
+  end
+end
+
 def install
   logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
+  write_agent_platform
 
   if RUBY_PLATFORM =~ /java/
     installation_failed(
