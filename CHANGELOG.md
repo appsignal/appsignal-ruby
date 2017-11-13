@@ -5,6 +5,7 @@
   than `Sidekiq::Extensions::DelayedClass#perform` for all jobs through that
   extension. PR #362
 * Support Sidekiq Enterprise encrypted values. PR #365
+* Use musl build for older libc systems. PR #366
 
 # 2.4.0
 - Add separate GNU linux build. PR #351 and
