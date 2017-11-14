@@ -30,15 +30,15 @@ def installation_failed(reason)
   end
 end
 
-def write_agent_platform
-  File.open(File.join(EXT_PATH, "appsignal.platform"), "w") do |file|
-    file.write PLATFORM
+def write_agent_architecture
+  File.open(File.join(EXT_PATH, "appsignal.architecture"), "w") do |file|
+    file.write ARCH
   end
 end
 
 def install
   logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
-  write_agent_platform
+  write_agent_architecture
 
   if RUBY_PLATFORM =~ /java/
     installation_failed(

@@ -285,8 +285,8 @@ module Appsignal
             save :language, "ruby"
             puts_and_save :package_version, "Gem version", Appsignal::VERSION
             puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
-            puts_and_save :agent_platform, "Agent platform",
-              Appsignal::System.installed_agent_platform
+            puts_and_save :agent_architecture, "Agent architecture",
+              Appsignal::System.installed_agent_architecture
             puts_and_save :package_install_path, "Gem install path", gem_path
             puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
           end

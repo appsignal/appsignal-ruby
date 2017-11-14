@@ -12,19 +12,19 @@ module Appsignal
       ENV.key? "DYNO".freeze
     end
 
-    # Returns the platform for which the agent was installed.
+    # Returns the architecture for which the agent was installed.
     #
     # This value is saved when the gem is installed in `ext/extconf.rb`.
     # We use this value to build the diagnose report with the installed
-    # platform, rather than the detected platform in {.agent_platform} during
-    # the diagnose run.
+    # CPU type and platform, rather than the detected architecture in
+    # {.agent_platform} during the diagnose run.
     #
     # @api private
     # @return [String]
-    def self.installed_agent_platform
-      platform_file = File.join(GEM_EXT_PATH, "appsignal.platform")
-      return unless File.exist?(platform_file)
-      File.read(platform_file)
+    def self.installed_agent_architecture
+      architecture_file = File.join(GEM_EXT_PATH, "appsignal.architecture")
+      return unless File.exist?(architecture_file)
+      File.read(architecture_file)
     end
 
     # Detect agent and extension platform build
