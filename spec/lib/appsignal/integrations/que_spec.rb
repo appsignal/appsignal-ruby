@@ -9,7 +9,7 @@ if DependencyHelper.que_present?
           :queue => "dfl",
           :job_class => "MyQueJob",
           :priority => 100,
-          :args => %w(1 birds),
+          :args => %w[1 birds],
           :run_at => fixed_time,
           :error_count => 0
         }
@@ -26,7 +26,7 @@ if DependencyHelper.que_present?
             :run_at => fixed_time.to_s,
             :attempts => 0
           },
-          :params => %w(1 birds)
+          :params => %w[1 birds]
         }
       end
 
@@ -92,7 +92,7 @@ if DependencyHelper.que_present?
             "title" => ""
           )
           expect(subject["sample_data"]).to include(
-            "params" => %w(1 birds),
+            "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,
               "id" => 123,
@@ -125,7 +125,7 @@ if DependencyHelper.que_present?
             "message" => error.message
           )
           expect(subject["sample_data"]).to include(
-            "params" => %w(1 birds),
+            "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,
               "id" => 123,
@@ -158,7 +158,7 @@ if DependencyHelper.que_present?
             "message" => error.message
           )
           expect(subject["sample_data"]).to include(
-            "params" => %w(1 birds),
+            "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,
               "id" => 123,

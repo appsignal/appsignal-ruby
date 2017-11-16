@@ -9,7 +9,7 @@ module Appsignal
     BLANK          = "".freeze
 
     # Based on what Rails uses + some variables we'd like to show
-    ENV_METHODS = %w(
+    ENV_METHODS = %w[
       CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
       PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
       REQUEST_METHOD SERVER_NAME SERVER_PORT SERVER_PROTOCOL REQUEST_URI
@@ -21,7 +21,7 @@ module Appsignal
       HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM
       HTTP_NEGOTIATE HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR
       HTTP_CLIENT_IP HTTP_RANGE
-    ).freeze
+    ].freeze
 
     class << self
       def create(id, namespace, request, options = {})

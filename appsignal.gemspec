@@ -17,11 +17,11 @@ Gem::Specification.new do |gem|
   gem.executables           = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files            = gem.files.grep(%r{^(test|spec|features)/})
   gem.name                  = "appsignal"
-  gem.require_paths         = %w(lib ext)
+  gem.require_paths         = %w[lib ext]
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
 
-  gem.extensions = %w(ext/extconf.rb)
+  gem.extensions = %w[ext/extconf.rb]
 
   gem.add_dependency "rack"
 

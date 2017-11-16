@@ -92,7 +92,7 @@ module Appsignal
           puts "Installing for Sinatra"
           config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, %w(development production staging), true)
+          configure(config, %w[development production staging], true)
 
           puts "Finish Sinatra configuration"
           puts "  Sinatra requires some manual configuration."
@@ -110,7 +110,7 @@ module Appsignal
           puts "Installing for Padrino"
           config[:name] = required_input("  Enter application name: ")
           puts
-          configure(config, %w(development production staging), true)
+          configure(config, %w[development production staging], true)
 
           puts "Finish Padrino installation"
           puts "  Padrino requires some manual configuration."
@@ -130,7 +130,7 @@ module Appsignal
           config[:name] = required_input("  Enter application name: ")
           puts
 
-          configure(config, %w(development production staging), true)
+          configure(config, %w[development production staging], true)
 
           puts "Manual Grape configuration needed"
           puts "  See the installation instructions at:"

@@ -82,7 +82,7 @@ describe Appsignal::Utils::ParamsSanitizer do
 
     context "with :filter_parameters option" do
       let(:sanitized_params) do
-        described_class.sanitize(params, :filter_parameters => %w(text hash))
+        described_class.sanitize(params, :filter_parameters => %w[text hash])
       end
       subject { sanitized_params }
 
@@ -100,7 +100,7 @@ describe Appsignal::Utils::ParamsSanitizer do
 
       context "with strings as key filter values" do
         let(:sanitized_params) do
-          described_class.sanitize(params, :filter_parameters => %w(string))
+          described_class.sanitize(params, :filter_parameters => %w[string])
         end
 
         it "sanitizes values" do
@@ -110,7 +110,7 @@ describe Appsignal::Utils::ParamsSanitizer do
 
       describe ":hash" do
         let(:sanitized_params) do
-          described_class.sanitize(params, :filter_parameters => %w(nested_text))
+          described_class.sanitize(params, :filter_parameters => %w[nested_text])
         end
         subject { sanitized_params[:hash] }
 
@@ -121,7 +121,7 @@ describe Appsignal::Utils::ParamsSanitizer do
         describe ":nested_array" do
           describe ":nested_hash" do
             let(:sanitized_params) do
-              described_class.sanitize(params, :filter_parameters => %w(key))
+              described_class.sanitize(params, :filter_parameters => %w[key])
             end
             subject { sanitized_params[:hash][:nested_array][3] }
 

@@ -75,7 +75,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
 
       it "requires environment option" do
         expect { run }.to raise_error(SystemExit)
-        expect(output).to include_missing_options(%w(environment))
+        expect(output).to include_missing_options(%w[environment])
         expect(output).to_not include_deploy_notification
       end
     end
@@ -98,7 +98,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
         it "prints a missing required options error" do
           expect { run }.to raise_error(SystemExit)
           expect(output).to_not include_config_error
-          expect(output).to include_missing_options(%w(revision user))
+          expect(output).to include_missing_options(%w[revision user])
           expect(output).to_not include_deploy_notification
         end
 
@@ -108,7 +108,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
           it "prints a missing required option error" do
             expect { run }.to raise_error(SystemExit)
             expect(output).to_not include_config_error
-            expect(output).to include_missing_options(%w(user))
+            expect(output).to include_missing_options(%w[user])
             expect(output).to_not include_deploy_notification
           end
         end
@@ -133,7 +133,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
             it "requires name option" do
               expect { run }.to raise_error(SystemExit)
               expect(output).to_not include_config_error
-              expect(output).to include_missing_options(%w(name))
+              expect(output).to include_missing_options(%w[name])
               expect(output).to_not include_deploy_notification
             end
           end
