@@ -11,6 +11,7 @@ AllCops:
     - "tmp/**/*"
     - "gemfiles/vendor/**/*"
     - "vendor/**/*"
+    - "benchmark.rake"
   DisplayCopNames: true
   UseCache: true
   CacheRootDirectory: ./tmp
@@ -24,22 +25,22 @@ Style/StringLiterals:
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
-Style/AlignParameters:
+Layout/AlignParameters:
   EnforcedStyle: with_fixed_indentation
 
-Style/MultilineMethodCallIndentation:
+Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 
-Style/MultilineOperationIndentation:
+Layout/MultilineOperationIndentation:
   EnforcedStyle: indented
 
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
 
-Style/AlignHash:
+Layout/AlignHash:
   EnforcedLastArgumentHashStyle: ignore_implicit
 
-Style/IndentArray:
+Layout/IndentArray:
   EnforcedStyle: consistent
 
 Style/EmptyMethod:
@@ -52,6 +53,10 @@ Style/MethodMissing:
 
 Style/TrailingUnderscoreVariable:
   Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "Rakefile"
 
 # Metrics/LineLength:
 #   Max: 80
