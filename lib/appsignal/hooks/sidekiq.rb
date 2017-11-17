@@ -90,7 +90,7 @@ module Appsignal
           end
         when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
           job_class = job["wrapped"] || args[0]
-          if "ActionMailer::DeliveryJob" == job_class
+          if job_class == "ActionMailer::DeliveryJob"
             # MailerClass#mailer_method
             args[0]["arguments"][0..1].join("#")
           else
@@ -112,7 +112,7 @@ module Appsignal
         when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
           is_wrapped = job["wrapped"]
           job_args = is_wrapped ? args[0]["arguments"] : []
-          if "ActionMailer::DeliveryJob" == (is_wrapped || args[0])
+          if (is_wrapped || args[0]) == "ActionMailer::DeliveryJob"
             # Remove MailerClass, mailer_method and "deliver_now"
             job_args.drop(3)
           else
