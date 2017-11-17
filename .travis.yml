@@ -33,6 +33,7 @@ gemfile:
   - "gemfiles/sinatra.gemfile"
   - "gemfiles/grape.gemfile"
   - "gemfiles/webmachine.gemfile"
+  - "gemfiles/que.gemfile"
 
 matrix:
   fast_finish: true

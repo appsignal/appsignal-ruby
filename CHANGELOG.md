@@ -1,3 +1,12 @@
+# 2.4.1
+* Add Que integration. PR #361
+* Support Sidekiq delayed extension job action names better. Now action names
+  are reported as their class and class method name (`MyClass.method`), rather
+  than `Sidekiq::Extensions::DelayedClass#perform` for all jobs through that
+  extension. PR #362
+* Support Sidekiq Enterprise encrypted values. PR #365
+* Use musl build for older libc systems. PR #366
+
 # 2.4.0
 - Add separate GNU linux build. PR #351 and
   Commit d1763f4dcb685608468a73f3192226f60f66b217
