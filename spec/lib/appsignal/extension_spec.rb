@@ -21,9 +21,29 @@ describe Appsignal::Extension do
       expect(Appsignal.extension_loaded?).to be_truthy
     end
 
-    it "should have a start and stop method" do
-      subject.start
-      subject.stop
+    context "without valid config" do
+      let(:out_stream) { std_stream }
+      let(:output) { out_stream.read }
+
+      describe ".start" do
+        it "outputs a warning about not starting the extension" do
+          capture_std_streams(out_stream, out_stream) do
+            subject.start
+          end
+
+          expect(output).to include \
+            "WARNING: Error when reading appsignal config, appsignal not starting"
+        end
+      end
+
+      describe ".stop" do
+        it "does nothing" do
+          capture_std_streams(out_stream, out_stream) do
+            subject.stop
+          end
+          expect(output).to be_empty
+        end
+      end
     end
 
     context "with a valid config" do
