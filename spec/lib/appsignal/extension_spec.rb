@@ -1,6 +1,6 @@
 require "fileutils"
 
-describe "extension loading and operation" do
+describe Appsignal::Extension do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
 
@@ -11,7 +11,7 @@ describe "extension loading and operation" do
   describe ".agent_version" do
     subject { Appsignal::Extension.agent_version }
 
-    it { is_expected.to_not be_nil }
+    it { is_expected.to be_kind_of(String) }
   end
 
   context "when the extension library can be loaded" do
