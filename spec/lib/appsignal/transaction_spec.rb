@@ -59,7 +59,7 @@ describe Appsignal::Transaction do
             new_transaction = create_transaction("2")
             expect(new_transaction).to eq(current_transaction)
             expect(new_transaction.transaction_id).to eq(transaction_id)
-          end.to_not change { current_transaction }
+          end.to_not(change { current_transaction })
         end
 
         it "logs a debug message" do
