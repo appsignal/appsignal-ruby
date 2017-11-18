@@ -1,5 +1,3 @@
-require "fileutils"
-
 describe Appsignal::Extension do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
