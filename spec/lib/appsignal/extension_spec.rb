@@ -1,6 +1,6 @@
 require "fileutils"
 
-describe "extension loading and operation" do
+describe Appsignal::Extension do
   describe ".agent_config" do
     subject { Appsignal::Extension.agent_config }
 
@@ -11,7 +11,7 @@ describe "extension loading and operation" do
   describe ".agent_version" do
     subject { Appsignal::Extension.agent_version }
 
-    it { is_expected.to_not be_nil }
+    it { is_expected.to be_kind_of(String) }
   end
 
   context "when the extension library can be loaded" do
@@ -21,9 +21,29 @@ describe "extension loading and operation" do
       expect(Appsignal.extension_loaded?).to be_truthy
     end
 
-    it "should have a start and stop method" do
-      subject.start
-      subject.stop
+    context "without valid config" do
+      let(:out_stream) { std_stream }
+      let(:output) { out_stream.read }
+
+      describe ".start" do
+        it "outputs a warning about not starting the extension" do
+          capture_std_streams(out_stream, out_stream) do
+            subject.start
+          end
+
+          expect(output).to include \
+            "WARNING: Error when reading appsignal config, appsignal not starting"
+        end
+      end
+
+      describe ".stop" do
+        it "does nothing" do
+          capture_std_streams(out_stream, out_stream) do
+            subject.stop
+          end
+          expect(output).to be_empty
+        end
+      end
     end
 
     context "with a valid config" do
