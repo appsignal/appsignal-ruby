@@ -184,7 +184,7 @@ module Appsignal
     def load_from_disk
       return if !config_file || !File.exist?(config_file)
 
-      configurations = YAML.load(ERB.new(IO.read(config_file)).result)
+      configurations = YAML.safe_load(ERB.new(IO.read(config_file)).result, [], [], true)
       config_for_this_env = configurations[env]
       if config_for_this_env
         config_for_this_env =
