@@ -652,7 +652,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         it "adds paths to the report" do
           run
           expect(received_report["paths"].keys)
-            .to match_array(%w(root_path working_dir log_dir_path log_file_path))
+            .to match_array(%w[root_path working_dir log_dir_path log_file_path])
         end
       end
 

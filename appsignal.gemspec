@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
 Gem::Specification.new do |gem|
@@ -17,11 +18,11 @@ Gem::Specification.new do |gem|
   gem.executables           = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files            = gem.files.grep(%r{^(test|spec|features)/})
   gem.name                  = "appsignal"
-  gem.require_paths         = %w(lib ext)
+  gem.require_paths         = %w[lib ext]
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
 
-  gem.extensions = %w(ext/extconf.rb)
+  gem.extensions = %w[ext/extconf.rb]
 
   gem.add_dependency "rack"
 
@@ -30,6 +31,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "pry"
   gem.add_development_dependency "timecop"
   gem.add_development_dependency "webmock"
-  gem.add_development_dependency "rubocop", "0.46.0"
+  gem.add_development_dependency "rubocop", "0.49.0"
   gem.add_development_dependency "yard"
 end

@@ -59,7 +59,7 @@ describe Appsignal::Transaction do
             new_transaction = create_transaction("2")
             expect(new_transaction).to eq(current_transaction)
             expect(new_transaction.transaction_id).to eq(transaction_id)
-          end.to_not change { current_transaction }
+          end.to_not(change { current_transaction })
         end
 
         it "logs a debug message" do
@@ -835,7 +835,7 @@ describe Appsignal::Transaction do
         end
 
         context "with AppSignal filtering" do
-          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
           it "returns sanitized custom params" do
@@ -871,16 +871,16 @@ describe Appsignal::Transaction do
 
       context "with an array" do
         let(:request) do
-          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w(arg1 arg2)))
+          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w[arg1 arg2]))
         end
 
-        it { is_expected.to eq %w(arg1 arg2) }
+        it { is_expected.to eq %w[arg1 arg2] }
 
         context "with AppSignal filtering" do
-          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
-          it { is_expected.to eq %w(arg1 arg2) }
+          it { is_expected.to eq %w[arg1 arg2] }
         end
       end
 
@@ -901,7 +901,7 @@ describe Appsignal::Transaction do
             Appsignal::Transaction::GenericRequest.new \
               http_request_env_with_data(:params => { :foo => :bar, :baz => :bat })
           end
-          before { Appsignal.config.config_hash[:filter_parameters] = %w(foo) }
+          before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
 
           it "should call the params sanitizer with filtering" do
@@ -1055,7 +1055,7 @@ describe Appsignal::Transaction do
           :both_symbols => :valid_value,
           :integer_value => 1,
           :hash_value => { "invalid" => "hash" },
-          :array_value => %w(invalid array),
+          :array_value => %w[invalid array],
           :to_long_value => SecureRandom.urlsafe_base64(101),
           :object => Object.new,
           SecureRandom.urlsafe_base64(101) => "to_long_key"

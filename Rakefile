@@ -1,6 +1,6 @@
 require "bundler"
 
-GEMFILES = %w(
+GEMFILES = %w[
   capistrano2
   capistrano3
   grape
@@ -18,18 +18,18 @@ GEMFILES = %w(
   grape
   webmachine
   que
-).freeze
+].freeze
 
-RUBY_VERSIONS = %w(
+RUBY_VERSIONS = %w[
   2.0.0-p648
   2.1.8
   2.2.4
   2.3.0
   2.4.0
-).freeze
+].freeze
 
 EXCLUSIONS = {
-  "rails-5.0" => %w(2.0.0 2.1.8)
+  "rails-5.0" => %w[2.0.0 2.1.8]
 }.freeze
 
 VERSION_MANAGERS = {

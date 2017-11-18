@@ -309,9 +309,9 @@ describe Appsignal::Config do
       expect(config[:active]).to eq(true)
       expect(config[:name]).to eq "App name"
       expect(config[:debug]).to eq(true)
-      expect(config[:ignore_actions]).to eq %w(action1 action2)
-      expect(config[:ignore_errors]).to eq %w(ExampleStandardError AnotherError)
-      expect(config[:ignore_namespaces]).to eq %w(admin private_namespace)
+      expect(config[:ignore_actions]).to eq %w[action1 action2]
+      expect(config[:ignore_errors]).to eq %w[ExampleStandardError AnotherError]
+      expect(config[:ignore_namespaces]).to eq %w[admin private_namespace]
       expect(config[:instrument_net_http]).to eq(false)
       expect(config[:instrument_redis]).to eq(false)
       expect(config[:instrument_sequel]).to eq(false)
@@ -395,13 +395,13 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config(:production) }
     before do
       config[:http_proxy] = "http://localhost"
-      config[:ignore_actions] = %w(action1 action2)
-      config[:ignore_errors] = %w(ExampleStandardError AnotherError)
-      config[:ignore_namespaces] = %w(admin private_namespace)
+      config[:ignore_actions] = %w[action1 action2]
+      config[:ignore_errors] = %w[ExampleStandardError AnotherError]
+      config[:ignore_namespaces] = %w[admin private_namespace]
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
-      config[:filter_parameters] = %w(password confirm_password)
+      config[:filter_parameters] = %w[password confirm_password]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config.write_to_environment

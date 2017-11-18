@@ -22,10 +22,10 @@ module Appsignal
     class SidekiqPlugin
       include Appsignal::Hooks::Helpers
 
-      JOB_KEYS = Set.new(%w(
+      JOB_KEYS = Set.new(%w[
         args backtrace class created_at enqueued_at error_backtrace error_class
         error_message failed_at jid retried_at retry wrapped
-      )).freeze
+      ]).freeze
 
       def call(_worker, item, _queue)
         transaction = Appsignal::Transaction.create(
@@ -90,7 +90,7 @@ module Appsignal
           end
         when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
           job_class = job["wrapped"] || args[0]
-          if "ActionMailer::DeliveryJob" == job_class
+          if job_class == "ActionMailer::DeliveryJob"
             # MailerClass#mailer_method
             args[0]["arguments"][0..1].join("#")
           else
@@ -112,7 +112,7 @@ module Appsignal
         when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
           is_wrapped = job["wrapped"]
           job_args = is_wrapped ? args[0]["arguments"] : []
-          if "ActionMailer::DeliveryJob" == (is_wrapped || args[0])
+          if (is_wrapped || args[0]) == "ActionMailer::DeliveryJob"
             # Remove MailerClass, mailer_method and "deliver_now"
             job_args.drop(3)
           else

@@ -77,7 +77,7 @@ RSpec.configure do |config|
     ENV["PADRINO_ENV"] ||= "test"
 
     # Clean environment
-    appsignal_key_prefixes = %w(APPSIGNAL_ _APPSIGNAL_)
+    appsignal_key_prefixes = %w[APPSIGNAL_ _APPSIGNAL_]
     env_keys = ENV.keys.select { |key| key.start_with?(*appsignal_key_prefixes) }
     env_keys.each { |key| ENV.delete(key) }
 

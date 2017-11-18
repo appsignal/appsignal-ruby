@@ -119,3 +119,6 @@ Style/IfUnlessModifier:
 Style/NonNilCheck:
   Exclude:
     - 'lib/appsignal/transaction.rb'
+
+Security/YAMLLoad:
+  Enabled: false
