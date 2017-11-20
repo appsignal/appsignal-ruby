@@ -171,7 +171,61 @@ module Appsignal
       Appsignal::Extension.get_server_state(key)
     end
 
-    # Wrap a transaction with AppSignal monitoring.
+    # Creates an AppSignal transaction for the given block.
+    #
+    # If AppSignal is not {.active?} it will still execute the block, but not
+    # create a transaction for it.
+    #
+    # A event is created for this transaction with the name given in the `name`
+    # argument. The event name must start with either `perform_job` or
+    # `process_action` to differentiate between the "web" and "background"
+    # namespace. Custom namespaces are not supported by this helper method.
+    #
+    # This helper method also captures any exception that occurs in the given
+    # block.
+    #
+    # The other (request) `env` argument hash keys, not listed here, can be
+    # found on the {Appsignal::Transaction::ENV_METHODS} array.
+    # Each of these keys are available as keys in the `env` hash argument.
+    #
+    # @example
+    #   Appsignal.monitor_transaction("perform_job.nightly_update") do
+    #     # your code
+    #   end
+    #
+    # @example with an environment
+    #   Appsignal.monitor_transaction(
+    #     "perform_job.nightly_update",
+    #     :metadata => { "user_id" => 1 }
+    #   ) do
+    #     # your code
+    #   end
+    #
+    # @param name [String] main event name.
+    # @param env [Hash<Symbol, Object>]
+    # @option env [Hash<Symbol/String, Object>] :params Params for the
+    #   monitored request/job, see {Appsignal::Transaction#params=} for more
+    #   information.
+    # @option env [String] :controller name of the controller in which the
+    #   transaction was recorded.
+    # @option env [String] :class name of the Ruby class in which the
+    #   transaction was recorded. If `:controller` is also given, `:controller`
+    #   is used instead.
+    # @option env [String] :action name of the controller action in which the
+    #   transaction was recorded.
+    # @option env [String] :method name of the Ruby method in which the
+    #   transaction was recorded. If `:action` is also given, `:action`
+    #   is used instead.
+    # @option env [Integer] :queue_start the moment the request/job was queued.
+    #   Used to track how long requests/jobs were queued before being executed.
+    # @option env [Hash<Symbol/String, String/Fixnum>] :metadata Additional
+    #   metadata for the transaction, see {Appsignal::Transaction#set_metadata}
+    #   for more information.
+    # @yield the block to monitor.
+    # @raise [Exception] any exception that occurs within the given block is re-raised by
+    #   this method.
+    # @return [Object] the value of the given block is returned.
+    # @since 0.10.0
     def monitor_transaction(name, env = {})
       unless active?
         return yield
@@ -211,6 +265,8 @@ module Appsignal
     #
     # Useful for cases such as Rake tasks and Resque-like systems where a
     # process is forked and immediately exits after the transaction finishes.
+    #
+    # @see monitor_transaction
     def monitor_single_transaction(name, env = {}, &block)
       monitor_transaction(name, env, &block)
     ensure
