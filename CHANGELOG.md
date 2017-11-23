@@ -1,3 +1,14 @@
+# 2.4.2
+* Store agent architecture rather than platform. PR #367
+* Improve documentation for `Appsignal.monitor_transaction` better.
+  Commit e53987ba36a79fc8883f2e59322946297ddee773
+* Change log level from info to debug for value comparing failures.
+  Commit ecef28b28edaff46b95f53a916c93021dc763160
+* Collect free memory host metric.
+  Commit ecef28b28edaff46b95f53a916c93021dc763160
+* Fix crashes when Set wasn't required before AppSignal, such as in the CLI.
+  PR #373
+
 # 2.4.1
 * Add Que integration. PR #361
 * Support Sidekiq delayed extension job action names better. Now action names
