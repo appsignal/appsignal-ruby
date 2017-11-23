@@ -22,10 +22,10 @@ module Appsignal
     class SidekiqPlugin
       include Appsignal::Hooks::Helpers
 
-      JOB_KEYS = Set.new(%w(
+      JOB_KEYS = %w(
         args backtrace class created_at enqueued_at error_backtrace error_class
         error_message failed_at jid retried_at retry wrapped
-      )).freeze
+      ).freeze
 
       def call(_worker, item, _queue)
         transaction = Appsignal::Transaction.create(
