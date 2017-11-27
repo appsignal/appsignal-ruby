@@ -27,7 +27,7 @@ describe Appsignal::Hooks::RedisHook do
             .with("query.redis", "redis://127.0.0.1:6379/0", "get ?", 0)
 
           client = Redis::Client.new
-          expect(client.process([[:get, 'key']])).to eq 1
+          expect(client.process([[:get, "key"]])).to eq 1
         end
       end
 

@@ -16,7 +16,7 @@ module Appsignal
 
           def process(commands, &block)
             sanitized_commands = commands.map do |command, *args|
-              "#{command}#{' ?' * args.size}"
+              "#{command}#{" ?" * args.size}"
             end.join("\n")
 
             Appsignal.instrument "query.redis", id, sanitized_commands do
