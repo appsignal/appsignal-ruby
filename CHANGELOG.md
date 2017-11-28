@@ -1,3 +1,6 @@
+# 2.4.3
+* Store more details for Redis events. PR 374
+
 # 2.4.2
 * Store agent architecture rather than platform. PR #367
 * Improve documentation for `Appsignal.monitor_transaction` better.
