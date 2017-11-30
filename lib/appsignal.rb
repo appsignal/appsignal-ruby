@@ -553,7 +553,7 @@ module Appsignal
     #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
     # @yield yields the given block of code instrumented in an AppSignal
     #   event.
-    # @return [Object] Returns the blocks return value.
+    # @return [Object] Returns the block's return value.
     #
     # @see Appsignal::Transaction#instrument
     # @see .instrument_sql
