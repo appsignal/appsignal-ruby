@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.description           = "The official appsignal.com gem"
   gem.summary               = "Logs performance and exception data from your app to "\
                               "appsignal.com"
-  gem.homepage              = "https://github.com/appsignal/appsignal"
+  gem.homepage              = "https://github.com/appsignal/appsignal-ruby"
   gem.license               = "MIT"
 
   gem.files                 = `git ls-files`.split($\) # rubocop:disable Style/SpecialGlobalVars
