@@ -32,6 +32,16 @@ if DependencyHelper.rails_present?
 end
 require "appsignal"
 
+module Appsignal
+  class << self
+    remove_method :testing?
+
+    def testing?
+      true
+    end
+  end
+end
+
 puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
 # Add way to clear subscribers between specs
@@ -79,7 +89,16 @@ RSpec.configure do |config|
     # Clean environment
     appsignal_key_prefixes = %w[APPSIGNAL_ _APPSIGNAL_]
     env_keys = ENV.keys.select { |key| key.start_with?(*appsignal_key_prefixes) }
-    env_keys.each { |key| ENV.delete(key) }
+    env_keys.each do |key|
+      # First set the ENV var to an empty string and then delete the key from
+      # the env. We set the env var to an empty string first as jRuby doesn't
+      # sync `delete` calls to extensions, making our extension think the env
+      # var is still set after calling `ENV.delete`. Setting it to an empty
+      # string will sort of unset it, our extension ignores env vars with an
+      # empty string as a value.
+      ENV[key] = ""
+      ENV.delete(key)
+    end
 
     # Stub system_tmp_dir to something in the project dir for specs
     allow(Appsignal::Config).to receive(:system_tmp_dir).and_return(spec_system_tmp_dir)

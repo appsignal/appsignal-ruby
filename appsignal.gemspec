@@ -2,7 +2,7 @@
 
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
-Gem::Specification.new do |gem|
+Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.authors = [
     "Robert Beekman",
     "Thijs Cadier"

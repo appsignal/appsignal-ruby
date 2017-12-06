@@ -1,6 +1,12 @@
 describe Appsignal::Hooks::SequelHook do
   if DependencyHelper.sequel_present?
-    let(:db) { Sequel.sqlite }
+    let(:db) do
+      if Appsignal::System.jruby?
+        Sequel.connect("jdbc:sqlite::memory:")
+      else
+        Sequel.sqlite
+      end
+    end
 
     before :context do
       start_agent

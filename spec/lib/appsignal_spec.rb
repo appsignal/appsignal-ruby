@@ -87,9 +87,11 @@ describe Appsignal do
           Appsignal.start
         end
 
-        it "should install the allocation event hook" do
-          expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
-          Appsignal.start
+        unless Appsignal::System.jruby?
+          it "installs the allocation event hook" do
+            expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
+            Appsignal.start
+          end
         end
 
         it "should add the gc probe to minutely" do

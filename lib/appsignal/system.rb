@@ -40,7 +40,18 @@ module Appsignal
     def self.agent_platform
       return MUSL_TARGET if ENV["APPSIGNAL_BUILD_FOR_MUSL"]
 
-      local_os = RbConfig::CONFIG["host_os"]
+      host_os = RbConfig::CONFIG["host_os"].downcase
+      local_os =
+        case host_os
+        when /linux/
+          "linux"
+        when /darwin/
+          "darwin"
+        when /freebsd/
+          "freebsd"
+        else
+          host_os
+        end
       if local_os =~ /linux/
         ldd_output = ldd_version_output
         return MUSL_TARGET if ldd_output.include? "musl"
@@ -61,6 +72,10 @@ module Appsignal
     # @api private
     def self.ldd_version_output
       `ldd --version 2>&1`
+    end
+
+    def self.jruby?
+      RUBY_PLATFORM == "java"
     end
   end
 end
