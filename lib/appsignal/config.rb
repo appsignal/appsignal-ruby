@@ -161,6 +161,26 @@ module Appsignal
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
     end
 
+    def validate
+      # Strip path from endpoint so we're backwards compatible with
+      # earlier versions of the gem.
+      # TODO: Move to its own method, maybe in `#[]=`?
+      endpoint_uri = URI(config_hash[:endpoint])
+      config_hash[:endpoint] =
+        if endpoint_uri.port == 443
+          "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
+        else
+          "#{endpoint_uri.scheme}://#{endpoint_uri.host}:#{endpoint_uri.port}"
+        end
+
+      if config_hash[:push_api_key]
+        @valid = true
+      else
+        @valid = false
+        @logger.error "Push api key not set after loading config"
+      end
+    end
+
     private
 
     def config_file
@@ -243,25 +263,6 @@ module Appsignal
           @logger.debug("Config key '#{key}' is being overwritten")
         end
         original_config[key] = value
-      end
-    end
-
-    def validate
-      # Strip path from endpoint so we're backwards compatible with
-      # earlier versions of the gem.
-      endpoint_uri = URI(config_hash[:endpoint])
-      config_hash[:endpoint] =
-        if endpoint_uri.port == 443
-          "#{endpoint_uri.scheme}://#{endpoint_uri.host}"
-        else
-          "#{endpoint_uri.scheme}://#{endpoint_uri.host}:#{endpoint_uri.port}"
-        end
-
-      if config_hash[:push_api_key]
-        @valid = true
-      else
-        @valid = false
-        @logger.error "Push api key not set after loading config"
       end
     end
   end

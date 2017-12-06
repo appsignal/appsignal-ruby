@@ -25,7 +25,7 @@ if DependencyHelper.capistrano2_present?
       end
     end
 
-    it "should have a deploy task" do
+    it "has a deploy task" do
       expect(capistrano_config.find_task("appsignal:deploy")).to_not be_nil
     end
 
@@ -40,27 +40,25 @@ if DependencyHelper.capistrano2_present?
           capistrano_config.dry_run = true
         end
 
-        it "should be instantiated with the right params" do
-          expect(Appsignal::Config).to receive(:new).with(
-            project_fixture_path,
-            "production",
-            {},
-            kind_of(Logger)
-          )
-        end
-
         context "when appsignal_config is available" do
           before do
-            capistrano_config.set(:appsignal_config, :name => "AppName")
+            capistrano_config.set(
+              :appsignal_config,
+              :name => "AppName",
+              :active => true,
+              :push_api_key => "abc"
+            )
           end
 
-          it "should be instantiated with the right params" do
-            expect(Appsignal::Config).to receive(:new).with(
-              project_fixture_path,
-              "production",
-              { :name => "AppName" },
-              kind_of(Logger)
-            )
+          it "overrides the default config with the custom appsignal_config" do
+            original_new = Appsignal::Marker.method(:new)
+
+            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+              expect(given_config[:name]).to eq("AppName")
+              original_new.call(data, given_config)
+            end
+
+            run
           end
 
           context "when rack_env is used instead of rails_env" do
@@ -69,13 +67,15 @@ if DependencyHelper.capistrano2_present?
               capistrano_config.set(:rack_env, "rack_production")
             end
 
-            it "should be instantiated with the right params" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "rack_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
+            it "uses the rack_env as the env" do
+              original_new = Appsignal::Marker.method(:new)
+
+              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+                expect(given_config.env).to eq("rack_production")
+                original_new.call(data, given_config)
+              end
+
+              run
             end
           end
 
@@ -85,13 +85,15 @@ if DependencyHelper.capistrano2_present?
               capistrano_config.set(:stage, "stage_production")
             end
 
-            it "should be instantiated with the right params" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "stage_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
+            it "uses the stage as the env" do
+              original_new = Appsignal::Marker.method(:new)
+
+              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+                expect(given_config.env).to eq("stage_production")
+                original_new.call(data, given_config)
+              end
+
+              run
             end
           end
 
@@ -102,18 +104,30 @@ if DependencyHelper.capistrano2_present?
               capistrano_config.set(:appsignal_env, "appsignal_production")
             end
 
-            it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "appsignal_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
+            it "uses the appsignal_env as the env" do
+              original_new = Appsignal::Marker.method(:new)
+
+              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+                expect(given_config.env).to eq("appsignal_production")
+                original_new.call(data, given_config)
+              end
+
+              run
+            end
+          end
+
+          context "with invalid config" do
+            before do
+              capistrano_config.set(:appsignal_config, :push_api_key => nil)
+            end
+
+            it "does not continue with invalid config" do
+              run
+              expect(output).to include \
+                "Not notifying of deploy, config is not active for environment: production"
             end
           end
         end
-
-        after { run }
       end
 
       describe "markers" do
