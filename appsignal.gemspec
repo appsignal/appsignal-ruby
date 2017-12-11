@@ -22,7 +22,13 @@ Gem::Specification.new do |gem|
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
 
-  gem.extensions = %w[ext/extconf.rb]
+  if RUBY_PLATFORM == "java" || ENV["APPSIGNAL_PUSH_JAVA_GEM"]
+    gem.platform = "java"
+    gem.extensions = %w[ext/Rakefile]
+    gem.add_dependency "ffi"
+  else
+    gem.extensions = %w[ext/extconf.rb]
+  end
 
   gem.add_dependency "rack"
 

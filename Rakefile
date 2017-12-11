@@ -1,4 +1,5 @@
 require "bundler"
+require "fileutils"
 
 GEMFILES = %w[
   capistrano2
@@ -48,6 +49,7 @@ task :publish do
 
   def build_and_push_gem
     puts "# Building gem"
+    FileUtils.rm_f("#{NAME}-#{gem_version}.gem")
     puts `gem build #{NAME}.gemspec`
     puts "# Publishing Gem"
     puts `gem push #{NAME}-#{gem_version}.gem`
@@ -93,7 +95,16 @@ task :publish do
   Appsignal.send(:remove_const, :VERSION)
   load File.expand_path(VERSION_FILE)
   system("$EDITOR #{CHANGELOG_FILE}")
+
+  # Build and push for MRI
+  ENV.delete("APPSIGNAL_PUSH_JAVA_GEM")
   build_and_push_gem
+
+  # Build and push for jRuby
+  ENV["APPSIGNAL_PUSH_JAVA_GEM"] = "true"
+  build_and_push_gem
+
+  # Create tag
   create_and_push_tag
 end
 
@@ -167,7 +178,11 @@ end
 namespace :extension do
   desc "Install the AppSignal gem extension"
   task :install => :clean do
-    system "cd ext && ruby extconf.rb && make clean && make"
+    if RUBY_PLATFORM == "java"
+      system "cd ext && rake"
+    else
+      system "cd ext && ruby extconf.rb && make clean && make"
+    end
   end
 
   desc "Clean the AppSignal gem extension directory of installation artifacts"

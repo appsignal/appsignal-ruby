@@ -40,7 +40,7 @@ module Appsignal
     def self.agent_platform
       return MUSL_TARGET if ENV["APPSIGNAL_BUILD_FOR_MUSL"]
 
-      local_os = Gem::Platform.local.os
+      local_os = RbConfig::CONFIG["host_os"]
       if local_os =~ /linux/
         ldd_output = ldd_version_output
         return MUSL_TARGET if ldd_output.include? "musl"
