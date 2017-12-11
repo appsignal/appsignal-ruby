@@ -612,4 +612,26 @@ describe Appsignal::Config do
       end
     end
   end
+
+  describe "#validate" do
+    before { config.validate }
+    subject { config.valid? }
+    let(:config) { described_class.new(Dir.pwd, "production", :push_api_key => push_api_key) }
+
+    context "with missing push_api_key" do
+      let(:push_api_key) { nil }
+
+      it "sets valid to false" do
+        is_expected.to eq(false)
+      end
+    end
+
+    context "with push_api_key present" do
+      let(:push_api_key) { "abc" }
+
+      it "sets valid to true" do
+        is_expected.to eq(true)
+      end
+    end
+  end
 end

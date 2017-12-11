@@ -553,7 +553,7 @@ module Appsignal
     #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
     # @yield yields the given block of code instrumented in an AppSignal
     #   event.
-    # @return [Object] Returns the blocks return value.
+    # @return [Object] Returns the block's return value.
     #
     # @see Appsignal::Transaction#instrument
     # @see .instrument_sql
@@ -588,7 +588,7 @@ module Appsignal
     # @param title [String, nil] Human readable name of the event.
     # @param body [String, nil] SQL query that's being executed.
     # @yield yields the given block of code instrumented in an AppSignal event.
-    # @return [Object] Returns the blocks return value.
+    # @return [Object] Returns the block's return value.
     #
     # @see .instrument
     # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html

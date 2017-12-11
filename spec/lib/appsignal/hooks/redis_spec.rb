@@ -24,10 +24,10 @@ describe Appsignal::Hooks::RedisHook do
             .at_least(:once)
           expect(Appsignal::Transaction.current).to receive(:finish_event)
             .at_least(:once)
-            .with("query.redis", nil, nil, 0)
+            .with("query.redis", "redis://127.0.0.1:6379/0", "get ?", 0)
 
           client = Redis::Client.new
-          expect(client.process([])).to eq 1
+          expect(client.process([[:get, "key"]])).to eq 1
         end
       end
 

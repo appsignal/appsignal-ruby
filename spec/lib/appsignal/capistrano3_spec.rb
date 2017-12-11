@@ -21,6 +21,12 @@ if DependencyHelper.capistrano3_present?
         c.set(:current_revision, "503ce0923ed177a3ce000005")
       end
     end
+    let(:marker_data) do
+      {
+        :revision => "503ce0923ed177a3ce000005",
+        :user => "batman"
+      }
+    end
     before { Rake::Task["appsignal:deploy"].reenable }
 
     def run
@@ -40,94 +46,110 @@ if DependencyHelper.capistrano3_present?
       end
 
       context "config" do
-        it "should be instantiated with the right params" do
-          expect(Appsignal::Config).to receive(:new).with(
-            project_fixture_path,
-            "production",
-            {},
-            kind_of(Logger)
+        let(:env) { "production" }
+        before do
+          capistrano_config.set(
+            :appsignal_config,
+            :name => "AppName",
+            :active => true,
+            :push_api_key => "abc"
           )
+          config[:name] = "AppName"
+          config.instance_variable_set(:@env, env)
+          stub_marker_request.to_return(:status => 200)
         end
 
-        context "when appsignal_config is available" do
+        context "when rack_env is the only env set" do
+          let(:env) { "rack_production" }
           before do
+            capistrano_config.delete(:rails_env)
+            capistrano_config.set(:rack_env, env)
+          end
+
+          it "uses the rack_env as the env" do
+            original_new = Appsignal::Marker.method(:new)
+
+            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+              expect(given_config.env).to eq("rack_production")
+              original_new.call(data, given_config)
+            end
+
+            run
+          end
+        end
+
+        context "when stage is set" do
+          let(:env) { "stage_production" }
+          before do
+            capistrano_config.set(:rack_env, "rack_production")
+            capistrano_config.set(:stage, env)
+          end
+
+          it "prefers the Capistrano stage rather than rails_env and rack_env" do
+            original_new = Appsignal::Marker.method(:new)
+
+            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+              expect(given_config.env).to eq("stage_production")
+              original_new.call(data, given_config)
+            end
+
+            run
+          end
+        end
+
+        context "when `appsignal_config` is set" do
+          before do
+            ENV["APPSIGNAL_APP_NAME"] = "EnvName"
             capistrano_config.set(:appsignal_config, :name => "AppName")
+            config[:name] = "AppName"
           end
 
-          it "should be instantiated with the right params" do
-            expect(Appsignal::Config).to receive(:new).with(
-              project_fixture_path,
-              "production",
-              { :name => "AppName" },
-              kind_of(Logger)
-            )
+          it "overrides the default config with the custom appsignal_config" do
+            original_new = Appsignal::Marker.method(:new)
+
+            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+              expect(given_config[:name]).to eq("AppName")
+              original_new.call(data, given_config)
+            end
+
+            run
           end
 
-          context "when rack_env is the only env set" do
+          context "with invalid config" do
             before do
-              capistrano_config.delete(:rails_env)
-              capistrano_config.set(:rack_env, "rack_production")
+              capistrano_config.set(:appsignal_config, :push_api_key => nil)
             end
 
-            it "should be instantiated with the rack env" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "rack_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
-            end
-          end
-
-          context "when stage is set" do
-            before do
-              capistrano_config.set(:rack_env, "rack_production")
-              capistrano_config.set(:stage, "stage_production")
-            end
-
-            it "should prefer the stage rather than rails_env and rack_env" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "stage_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
-            end
-          end
-
-          context "when appsignal_env is set" do
-            before do
-              capistrano_config.set(:rack_env, "rack_production")
-              capistrano_config.set(:stage, "stage_production")
-              capistrano_config.set(:appsignal_env, "appsignal_production")
-            end
-
-            it "should prefer the appsignal_env rather than stage, rails_env and rack_env" do
-              expect(Appsignal::Config).to receive(:new).with(
-                project_fixture_path,
-                "appsignal_production",
-                { :name => "AppName" },
-                kind_of(Logger)
-              )
+            it "does not continue with invalid config" do
+              run
+              expect(output).to include \
+                "Not notifying of deploy, config is not active for environment: production"
             end
           end
         end
 
-        after { run }
+        context "when `appsignal_env` is set" do
+          let(:env) { "appsignal_production" }
+          before do
+            capistrano_config.set(:rack_env, "rack_production")
+            capistrano_config.set(:stage, "stage_production")
+            capistrano_config.set(:appsignal_env, env)
+          end
+
+          it "prefers the appsignal_env rather than stage, rails_env and rack_env" do
+            original_new = Appsignal::Marker.method(:new)
+
+            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
+              expect(given_config.env).to eq("appsignal_production")
+              original_new.call(data, given_config)
+            end
+
+            run
+          end
+        end
       end
 
       describe "markers" do
-        def stub_marker_request(data = {})
-          stub_api_request config, "markers", marker_data.merge(data)
-        end
-
-        let(:marker_data) do
-          {
-            :revision => "503ce0923ed177a3ce000005",
-            :user => "batman"
-          }
-        end
-
         context "when active for this environment" do
           it "transmits marker" do
             stub_marker_request.to_return(:status => 200)
@@ -207,5 +229,9 @@ if DependencyHelper.capistrano3_present?
         end
       end
     end
+  end
+
+  def stub_marker_request(data = {})
+    stub_api_request config, "markers", marker_data.merge(data)
   end
 end
