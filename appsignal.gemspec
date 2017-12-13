@@ -2,7 +2,7 @@
 
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
-Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
+Gem::Specification.new do |gem|
   gem.authors = [
     "Robert Beekman",
     "Thijs Cadier"
@@ -21,14 +21,6 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.require_paths         = %w[lib ext]
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
-
-  if RUBY_PLATFORM == "java" || ENV["APPSIGNAL_PUSH_JAVA_GEM"]
-    gem.platform = "java"
-    gem.extensions = %w[ext/Rakefile]
-    gem.add_dependency "ffi"
-  else
-    gem.extensions = %w[ext/extconf.rb]
-  end
 
   gem.add_dependency "rack"
 
