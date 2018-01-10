@@ -1082,11 +1082,18 @@ describe Appsignal::Transaction do
 
       if rails_present?
         context "with rails" do
-          it "cleans the backtrace with the Rails backtrace cleaner" do
+          it "filters the backtrace with the Rails backtrace cleaner" do
             ::Rails.backtrace_cleaner.add_filter do |line|
               line.tr("2", "?")
             end
             expect(subject).to eq ["line 1", "line ?"]
+          end
+
+          it "silences lines from the backtrace with the Rails backtrace cleaner" do
+            ::Rails.backtrace_cleaner.add_silencer do |line|
+              line =~ /2/
+            end
+            expect(subject).to eq ["line 1"]
           end
         end
       end
