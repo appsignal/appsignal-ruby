@@ -1,3 +1,6 @@
+# 2.5.0 (Alpha)
+* Add jRuby support. PR #376
+
 # 2.4.3
 * Store more details for Redis events. PR #374
 

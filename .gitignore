@@ -31,3 +31,4 @@ ext/Makefile
 ext/*.bundle
 ext/*.o
 ext/*.so
+pkg/

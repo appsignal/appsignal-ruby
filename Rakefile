@@ -1,4 +1,6 @@
 require "bundler"
+require "rubygems/package_task"
+require "fileutils"
 
 GEMFILES = %w[
   capistrano2
@@ -37,65 +39,116 @@ VERSION_MANAGERS = {
   :rvm => ->(version) { "rvm use --default #{version.split("-").first}" }
 }.freeze
 
-task :publish do
-  require "appsignal/version"
+namespace :build do
+  def modify_base_gemspec
+    eval(File.read("appsignal.gemspec")).tap do |s| # rubocop:disable Security/Eval
+      yield s
+    end
+  end
 
-  NAME = "appsignal".freeze
+  namespace :ruby do
+    spec = modify_base_gemspec do |s|
+      s.extensions = %w[ext/extconf.rb]
+    end
+
+    Gem::PackageTask.new(spec) { |_pkg| }
+  end
+
+  namespace :jruby do
+    spec = modify_base_gemspec do |s|
+      s.platform = "java"
+      s.extensions = %w[ext/Rakefile]
+      s.add_dependency "ffi"
+    end
+
+    Gem::PackageTask.new(spec) { |_pkg| }
+  end
+
+  desc "Build all gem versions"
+  task :all => ["ruby:gem", "jruby:gem"]
+
+  desc "Clean up all gem build artifacts"
+  task :clean do
+    FileUtils.rm_rf File.expand_path("../pkg", __FILE__)
+  end
+end
+
+namespace :publish do
   VERSION_FILE = "lib/appsignal/version.rb".freeze
   CHANGELOG_FILE = "CHANGELOG.md".freeze
 
-  raise "$EDITOR should be set" unless ENV["EDITOR"]
-
-  def build_and_push_gem
-    puts "# Building gem"
-    puts `gem build #{NAME}.gemspec`
-    puts "# Publishing Gem"
-    puts `gem push #{NAME}-#{gem_version}.gem`
-  end
-
-  def create_and_push_tag
-    puts `git commit -am 'Bump to #{version} [ci skip]'`
-    puts "# Creating tag #{version}"
-    puts `git tag #{version}`
-    puts `git push origin #{version}`
-    puts `git push origin #{current_branch}`
-  rescue
-    raise "Tag: '#{version}' already exists"
-  end
-
   def changes
     git_status_to_array(`git status -s -u`)
-  end
-
-  def gem_version
-    Appsignal::VERSION
-  end
-
-  def version
-    @version ||= "v#{gem_version}"
-  end
-
-  def current_branch
-    `git rev-parse --abbrev-ref HEAD`.chomp
   end
 
   def git_status_to_array(changes)
     changes.split("\n").each { |change| change.gsub!(/^.. /, "") }
   end
 
-  raise "Branch should hold no uncommitted file change)" unless changes.empty?
-
-  system("$EDITOR #{VERSION_FILE}")
-  unless changes.member?(VERSION_FILE)
-    raise "Actually change the version in: #{VERSION_FILE}"
+  def current_branch
+    `git rev-parse --abbrev-ref HEAD`.chomp
   end
 
-  Appsignal.send(:remove_const, :VERSION)
-  load File.expand_path(VERSION_FILE)
-  system("$EDITOR #{CHANGELOG_FILE}")
-  build_and_push_gem
-  create_and_push_tag
+  task :check_requirements do
+    unless changes.empty?
+      puts "ERROR: There should be no uncommitted file changes."
+      exit 1
+    end
+    unless ENV["EDITOR"]
+      puts "ERROR: $EDITOR environment variable should be set."
+      exit 1
+    end
+  end
+
+  task :configure_version do
+    puts "\n# Configuring new gem version"
+
+    puts `$EDITOR #{VERSION_FILE}`
+    unless changes.member?(VERSION_FILE)
+      puts "ERROR: Please actually change the gem version in: #{VERSION_FILE}"
+      exit 1
+    end
+
+    puts "\n# Updating the changelog"
+    puts `$EDITOR #{CHANGELOG_FILE}`
+  end
+
+  task :push_gem_packages do
+    puts "\n# Pushing gem packages"
+    Dir.chdir("#{File.dirname(__FILE__)}/pkg") do
+      Dir["*.gem"].each do |gem_package|
+        puts "## Publishing gem package: #{gem_package}"
+        puts `gem push #{gem_package}`
+      end
+    end
+  end
+
+  task :tag_and_push_version do
+    # Make sure to load the new version number
+    Appsignal.send(:remove_const, :VERSION)
+    load File.expand_path(VERSION_FILE)
+    version = "v#{Appsignal::VERSION}"
+
+    begin
+      puts `git commit -am 'Bump to #{version} [ci skip]'`
+      puts "# Creating tag #{version}"
+      puts `git tag #{version}`
+      puts `git push origin #{version}`
+      puts `git push origin #{current_branch}`
+    rescue
+      puts "ERROR: Tag '#{version}' already exists"
+      exit 1
+    end
+  end
 end
+task :publish => [
+  "publish:check_requirements",
+  "publish:configure_version",
+  "build:clean",
+  "build:all",
+  "publish:push_gem_packages",
+  "publish:tag_and_push_version"
+]
 
 desc "Install the AppSignal gem, extension and all possible dependencies."
 task :install => "extension:install" do
@@ -167,7 +220,11 @@ end
 namespace :extension do
   desc "Install the AppSignal gem extension"
   task :install => :clean do
-    system "cd ext && ruby extconf.rb && make clean && make"
+    if RUBY_PLATFORM == "java"
+      system "cd ext && rake"
+    else
+      system "cd ext && ruby extconf.rb && make clean && make"
+    end
   end
 
   desc "Clean the AppSignal gem extension directory of installation artifacts"

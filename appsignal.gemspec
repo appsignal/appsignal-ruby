@@ -22,8 +22,6 @@ Gem::Specification.new do |gem|
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
 
-  gem.extensions = %w[ext/extconf.rb]
-
   gem.add_dependency "rack"
 
   gem.add_development_dependency "rake", "~> 11"

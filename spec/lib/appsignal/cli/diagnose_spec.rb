@@ -260,12 +260,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
             "Agent diagnostics",
             "  Error while parsing agent diagnostics report:",
             "    Output: invalid agent\njson"
-          expect(output).to match(/Error: \d+: unexpected token at 'invalid agent\njson'/)
+          expect(output).to match(/Error:( \d+:)? unexpected token at 'invalid agent\njson'/)
         end
 
         it "adds the output to the report" do
           expect(received_report["agent"]["error"])
-            .to match(/\d+: unexpected token at 'invalid agent\njson'/)
+            .to match(/unexpected token at 'invalid agent\njson'/)
           expect(received_report["agent"]["output"]).to eq(["invalid agent", "json"])
         end
       end

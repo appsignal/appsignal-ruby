@@ -1,7 +1,11 @@
 source 'https://rubygems.org'
 
 gem 'sequel', '~> 4.35'
-gem 'sqlite3'
+if RUBY_PLATFORM == "java"
+  gem 'jdbc-sqlite3'
+else
+  gem 'sqlite3'
+end
 gem 'rack', '~> 1.6'
 
 gemspec :path => '../'
