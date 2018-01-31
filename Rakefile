@@ -140,12 +140,16 @@ namespace :publish do
       exit 1
     end
   end
+
+  task :build => "build:clean" do
+    # Shell out to build so the new version is loaded in the gemspec.
+    `rake build:all`
+  end
 end
 task :publish => [
   "publish:check_requirements",
   "publish:configure_version",
-  "build:clean",
-  "build:all",
+  "publish:build",
   "publish:push_gem_packages",
   "publish:tag_and_push_version"
 ]
