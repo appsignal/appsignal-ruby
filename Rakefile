@@ -103,14 +103,14 @@ namespace :publish do
   task :configure_version do
     puts "\n# Configuring new gem version"
 
-    puts `$EDITOR #{VERSION_FILE}`
+    system "$EDITOR #{VERSION_FILE}"
     unless changes.member?(VERSION_FILE)
       puts "ERROR: Please actually change the gem version in: #{VERSION_FILE}"
       exit 1
     end
 
     puts "\n# Updating the changelog"
-    puts `$EDITOR #{CHANGELOG_FILE}`
+    system "$EDITOR #{CHANGELOG_FILE}"
   end
 
   task :push_gem_packages do
