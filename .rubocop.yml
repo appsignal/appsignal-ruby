@@ -8,6 +8,7 @@ AllCops:
     - "Rakefile"
     - "appsignal.gemspec"
   Exclude:
+    - "pkg/**/*"
     - "tmp/**/*"
     - "gemfiles/vendor/**/*"
     - "vendor/**/*"
