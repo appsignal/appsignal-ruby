@@ -2,15 +2,15 @@ require "ffi"
 
 module Appsignal
   class Extension
-    # jRuby extension wrapper
+    # JRuby extension wrapper
     #
-    # Only loaded if the system is detected as jRuby.
+    # Only loaded if the system is detected as JRuby.
     #
     # @api private
     module Jruby # rubocop:disable Metrics/ModuleLength
       extend FFI::Library
 
-      # jRuby extension String helpers.
+      # JRuby extension String helpers.
       #
       # Based on the make_appsignal_string and make_ruby_string helpers from the
       # AppSignal C-extension in `ext/appsignal_extension.c`.

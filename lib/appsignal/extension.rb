@@ -3,7 +3,7 @@ require "yaml"
 begin
   if Appsignal::System.jruby?
     require "appsignal/extension/jruby"
-    # {Appsignal.extension_loaded} is set in the jRuby extension file
+    # {Appsignal.extension_loaded} is set in the JRuby extension file
   else
     require "appsignal_extension"
     Appsignal.extension_loaded = true
@@ -42,14 +42,14 @@ module Appsignal
     if Appsignal::System.jruby?
       extend Appsignal::Extension::Jruby
 
-      # Reassign Transaction class for jRuby extension usage.
+      # Reassign Transaction class for JRuby extension usage.
       #
-      # Makes sure the generated docs aren't always overwritten with the jRuby
+      # Makes sure the generated docs aren't always overwritten with the JRuby
       # version.
       Transaction = Jruby::Transaction
-      # Reassign Data class for jRuby extension usage.
+      # Reassign Data class for JRuby extension usage.
       #
-      # Makes sure the generated docs aren't always overwritten with the jRuby
+      # Makes sure the generated docs aren't always overwritten with the JRuby
       # version.
       Data = Jruby::Data
     end

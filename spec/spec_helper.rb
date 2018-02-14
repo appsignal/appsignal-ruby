@@ -90,7 +90,7 @@ RSpec.configure do |config|
     appsignal_key_prefixes = %w[APPSIGNAL_ _APPSIGNAL_]
     env_keys = ENV.keys.select { |key| key.start_with?(*appsignal_key_prefixes) }
     # Always unset the diagnose variable
-    # For normal Ruby this is unset in the diagnose task itself, but the jRuby
+    # For normal Ruby this is unset in the diagnose task itself, but the JRuby
     # bug requires us to unset it using the method below as well. It's not
     # present in the ENV keys list because it's already cleared in Ruby itself
     # in the diagnose task, so add it manually to the list of to-be cleaned up
@@ -98,7 +98,7 @@ RSpec.configure do |config|
     env_keys << "_APPSIGNAL_DIAGNOSE"
     env_keys.each do |key|
       # First set the ENV var to an empty string and then delete the key from
-      # the env. We set the env var to an empty string first as jRuby doesn't
+      # the env. We set the env var to an empty string first as JRuby doesn't
       # sync `delete` calls to extensions, making our extension think the env
       # var is still set after calling `ENV.delete`. Setting it to an empty
       # string will sort of unset it, our extension ignores env vars with an
