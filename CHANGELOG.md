@@ -1,3 +1,7 @@
+# 2.5.1 (Beta)
+- Improve internal sample storage in agent.
+  Commit 2c8eae26685c7a1517cf2e57b44edd1557a502f2
+
 # 2.5.0
 * Fix Capistrano config overrides. PR #375
 * Add JRuby beta support. PR #376
