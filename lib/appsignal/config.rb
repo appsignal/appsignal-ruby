@@ -142,7 +142,6 @@ module Appsignal
       ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
       ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
-      ENV["_APPSIGNAL_AGENT_VERSION"]                = Appsignal::Extension.agent_version
       ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
       ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
       ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
