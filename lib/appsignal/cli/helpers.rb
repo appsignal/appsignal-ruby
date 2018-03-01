@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   class CLI
     module Helpers

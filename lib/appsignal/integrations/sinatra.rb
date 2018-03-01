@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "appsignal"
 require "appsignal/rack/sinatra_instrumentation"
 

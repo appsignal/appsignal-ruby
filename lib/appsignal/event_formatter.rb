@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   # Keeps track of formatters for types event that we can use to get
   # the title and body of an event. Formatters should inherit from this class

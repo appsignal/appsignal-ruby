@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Object
   def self.appsignal_instrument_class_method(method_name, options = {})
     singleton_class.send \

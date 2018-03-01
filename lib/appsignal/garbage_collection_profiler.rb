@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   # {Appsignal::GarbageCollectionProfiler} wraps Ruby's `GC::Profiler` to be
   # able to track garbage collection time for multiple transactions, while

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rbconfig"
 require "bundler/cli"
 require "bundler/cli/common"
