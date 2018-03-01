@@ -1,6 +1,10 @@
 require 'appsignal'
 require 'benchmark'
 
+def process_rss
+  `ps -o rss= -p #{Process.pid}`.to_i
+end
+
 GC.disable
 
 task :default => :'benchmark:all'
@@ -27,6 +31,7 @@ def run_benchmark
 
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
+  puts "RSS: #{process_rss}"
 
   Appsignal.config = Appsignal::Config.new(Dir.pwd, 'production', :endpoint => 'http://localhost:8080')
   Appsignal.start
@@ -74,4 +79,5 @@ def run_benchmark
   end)
 
   puts "Done, currently #{ObjectSpace.count_objects[:TOTAL] - total_objects} objects created"
+  puts "RSS: #{process_rss}"
 end
