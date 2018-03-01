@@ -241,7 +241,7 @@ namespace :extension do
           appsignal_extension.o \
           appsignal_extension.bundle \
           install.log \
-          libappsignal.a \
+          libappsignal.* \
           appsignal.version \
           Makefile \
           mkmf.log
