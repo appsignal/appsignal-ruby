@@ -101,7 +101,7 @@ if DependencyHelper.grape_present?
         context "with route" do
           let(:app) do
             Class.new(::Grape::API) do
-              route [:get, :post], "hello" do
+              route([:get, :post], "hello") do
                 "Hello!"
               end
             end
