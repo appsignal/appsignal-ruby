@@ -1,6 +1,7 @@
-# 2.5.1 (Beta)
+# 2.5.1
 - Improve internal sample storage in agent.
   Commit 2c8eae26685c7a1517cf2e57b44edd1557a502f2
+- No longer set _APPSIGNAL_AGENT_VERSION environment variable. PR #385
 
 # 2.5.0
 * Fix Capistrano config overrides. PR #375
