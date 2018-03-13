@@ -8,6 +8,8 @@
 * Add JRuby beta support. PR #376
 * Fix locking issue on diagnose mode run.
   Commit e6c6de811f8115a73050fc865e89dd4945ddec57
+* Increase stored length of error messages.
+  Commit e6c6de811f8115a73050fc865e89dd4945ddec57
 
 # 2.4.3
 * Store more details for Redis events. PR #374
