@@ -151,6 +151,46 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
       end
     end
 
+    context "when using the Sidekiq ActiveRecord instance delayed extension" do
+      let(:item) do
+        {
+          "jid" => "efb140489485999d32b5504c",
+          "class" => "Sidekiq::Extensions::DelayedModel",
+          "queue" => "default",
+          "args" => [
+            "---\n- !ruby/object:DelayedTestClass {}\n- :foo_method\n- - :bar: :baz\n"
+          ],
+          "retry" => true,
+          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+          "extra" => "data"
+        }
+      end
+
+      it "uses the delayed class and method name for the action" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash["action"]).to eq("DelayedTestClass#foo_method")
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => ["bar" => "baz"]
+        )
+      end
+
+      context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
+        before { item["args"] = [] }
+
+        it "logs a warning and uses the default argument" do
+          perform_job
+
+          transaction_hash = transaction.to_h
+          expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedModel#perform")
+          expect(transaction_hash["sample_data"]).to include("params" => [])
+          expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
+        end
+      end
+    end
+
     context "when using ActiveJob" do
       let(:item) do
         {
