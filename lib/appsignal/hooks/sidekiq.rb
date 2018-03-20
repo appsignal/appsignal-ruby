@@ -19,7 +19,7 @@ module Appsignal
     end
 
     # @api private
-    class SidekiqPlugin
+    class SidekiqPlugin # rubocop:disable Metrics/ClassLength
       include Appsignal::Hooks::Helpers
 
       JOB_KEYS = %w[
@@ -84,6 +84,10 @@ module Appsignal
       def parse_action_name(job)
         args = job["args"]
         case job["class"]
+        when "Sidekiq::Extensions::DelayedModel"
+          safe_load(job["args"][0], job["class"]) do |target, method, _|
+            "#{target.class}##{method}"
+          end
         when /\ASidekiq::Extensions::Delayed/
           safe_load(job["args"][0], job["class"]) do |target, method, _|
             "#{target}.#{method}"
