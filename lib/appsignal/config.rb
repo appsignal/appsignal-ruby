@@ -60,7 +60,8 @@ module Appsignal
       "APPSIGNAL_HOSTNAME"                       => :hostname,
       "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
       "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
-      "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible
+      "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
+      "APP_REVISION"                             => :revision
     }.freeze
 
     # Mapping of old and deprecated AppSignal configuration keys
@@ -164,6 +165,7 @@ module Appsignal
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
+      ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end
 
     def validate
@@ -244,7 +246,7 @@ module Appsignal
       %w[APPSIGNAL_PUSH_API_KEY APPSIGNAL_APP_NAME APPSIGNAL_PUSH_API_ENDPOINT
          APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH APPSIGNAL_HTTP_PROXY
          APPSIGNAL_LOG APPSIGNAL_LOG_PATH APPSIGNAL_WORKING_DIR_PATH
-         APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH].each do |var|
+         APPSIGNAL_HOSTNAME APPSIGNAL_CA_FILE_PATH APP_REVISION].each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var
