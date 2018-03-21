@@ -76,7 +76,8 @@ describe Appsignal::Config do
         "production",
         :push_api_key => "abc",
         :name => "TestApp",
-        :active => true
+        :active => true,
+        :revision => "v2.5.1"
       )
     end
 
@@ -106,7 +107,8 @@ describe Appsignal::Config do
         :hostname                       => Socket.gethostname,
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
-        :files_world_accessible         => true
+        :files_world_accessible         => true,
+        :revision                       => "v2.5.1"
       )
     end
 
@@ -298,6 +300,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
       ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
+      ENV["APP_REVISION"] = "v2.5.1"
     end
 
     it "overrides config with environment values" do
@@ -316,6 +319,7 @@ describe Appsignal::Config do
       expect(config[:instrument_redis]).to eq(false)
       expect(config[:instrument_sequel]).to eq(false)
       expect(config[:files_world_accessible]).to eq(false)
+      expect(config[:revision]).to eq("v2.5.1")
     end
 
     context "with mixed case `true` env variables values" do
@@ -404,6 +408,7 @@ describe Appsignal::Config do
       config[:filter_parameters] = %w[password confirm_password]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
+      config[:revision] = "v2.5.1"
       config.write_to_environment
     end
 
@@ -433,6 +438,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
       expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
+      expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
     end
 
