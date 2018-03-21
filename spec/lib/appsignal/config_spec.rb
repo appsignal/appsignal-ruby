@@ -77,7 +77,7 @@ describe Appsignal::Config do
         :push_api_key => "abc",
         :name => "TestApp",
         :active => true,
-        :revision => 'v2.5.1'
+        :revision => "v2.5.1"
       )
     end
 
@@ -300,7 +300,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
       ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
-      ENV["APP_REVISION"]  = "v2.5.1"
+      ENV["APP_REVISION"] = "v2.5.1"
     end
 
     it "overrides config with environment values" do
