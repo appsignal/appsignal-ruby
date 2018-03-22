@@ -1,3 +1,6 @@
+# 2.6.0 (unreleased)
+* Add `revision` config option. PR  #388
+
 # 2.5.1
 - Improve internal sample storage in agent.
   Commit 2c8eae26685c7a1517cf2e57b44edd1557a502f2
