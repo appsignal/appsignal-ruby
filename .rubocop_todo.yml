@@ -55,7 +55,7 @@ Metrics/PerceivedComplexity:
   Max: 14
 
 # Offense count: 10
-Style/AccessorMethodName:
+Naming/AccessorMethodName:
   Exclude:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/transaction.rb'
