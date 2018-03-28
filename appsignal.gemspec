@@ -25,7 +25,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "rack"
 
   gem.add_development_dependency "rake", "~> 11"
-  gem.add_development_dependency "rspec", "~> 3.6"
+  gem.add_development_dependency "rspec", "~> 3.7"
   gem.add_development_dependency "pry"
   gem.add_development_dependency "timecop"
   gem.add_development_dependency "webmock"
