@@ -93,7 +93,7 @@ module Appsignal
     #
     # @return [void]
     # @since 0.7.0
-    def start # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def start
       unless extension_loaded?
         logger.info("Not starting appsignal, extension is not loaded")
         return
@@ -101,12 +101,10 @@ module Appsignal
 
       logger.debug("Starting appsignal")
 
-      unless @config
-        @config = Config.new(
-          Dir.pwd,
-          ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV["RACK_ENV"]
-        )
-      end
+      @config ||= Config.new(
+        Dir.pwd,
+        ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV["RACK_ENV"]
+      )
 
       if config.valid?
         logger.level =
@@ -736,14 +734,14 @@ module Appsignal
     end
 
     # @deprecated No replacement
-    def is_ignored_error?(error) # rubocop:disable Style/PredicateName
+    def is_ignored_error?(error) # rubocop:disable Naming/PredicateName
       Appsignal.config[:ignore_errors].include?(error.class.name)
     end
     alias :is_ignored_exception? :is_ignored_error?
     deprecate :is_ignored_error?, :none, 2017, 3
 
     # @deprecated No replacement
-    def is_ignored_action?(action) # rubocop:disable Style/PredicateName
+    def is_ignored_action?(action) # rubocop:disable Naming/PredicateName
       Appsignal.config[:ignore_actions].include?(action)
     end
     deprecate :is_ignored_action?, :none, 2017, 3

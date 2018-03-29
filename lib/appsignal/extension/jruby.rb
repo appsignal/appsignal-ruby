@@ -314,14 +314,14 @@ module Appsignal
           )
         end
 
-        def set_action(action_name) # rubocop:disable Style/AccessorMethodName
+        def set_action(action_name) # rubocop:disable Naming/AccessorMethodName
           Extension.appsignal_set_transaction_action(
             pointer,
             make_appsignal_string(action_name)
           )
         end
 
-        def set_namespace(namespace) # rubocop:disable Style/AccessorMethodName
+        def set_namespace(namespace) # rubocop:disable Naming/AccessorMethodName
           Extension.appsignal_set_transaction_namespace(
             pointer,
             make_appsignal_string(namespace)
@@ -336,7 +336,7 @@ module Appsignal
           )
         end
 
-        def set_queue_start(time) # rubocop:disable Style/AccessorMethodName
+        def set_queue_start(time) # rubocop:disable Naming/AccessorMethodName
           Extension.appsignal_set_transaction_queue_start(pointer, time)
         end
 
@@ -405,7 +405,7 @@ module Appsignal
           )
         end
 
-        def set_nil(key) # rubocop:disable Style/AccessorMethodName
+        def set_nil(key) # rubocop:disable Naming/AccessorMethodName
           Extension.appsignal_data_map_set_null(
             pointer,
             make_appsignal_string(key)
