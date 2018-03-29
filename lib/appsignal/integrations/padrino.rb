@@ -60,9 +60,6 @@ module Padrino::Routing::InstanceMethods
     controller_name = request.controller if request.respond_to?(:controller)
     action_name = request.action if request.respond_to?(:action)
     action_name ||= ""
-    if action_name.empty? && request.respond_to?(:fullpath)
-      action_name = request.fullpath
-    end
 
     unless action_name.empty?
       return "#{settings.name}:#{controller_name}##{action_name}"
@@ -75,7 +72,7 @@ module Padrino::Routing::InstanceMethods
 
     # Fall back to the application name if we haven't found an action name in
     # any previous methods.
-    settings.name.to_s
+    "#{settings.name}#unknown"
   end
 end
 
