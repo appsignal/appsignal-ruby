@@ -912,7 +912,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#sanitized_environment" do
-      let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
+      let(:whitelisted_keys) { Appsignal::Transaction::FALLBACK_REQUEST_HEADERS }
 
       subject { transaction.send(:sanitized_environment) }
 

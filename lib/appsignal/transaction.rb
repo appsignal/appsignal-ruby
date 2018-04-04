@@ -9,7 +9,7 @@ module Appsignal
     BLANK          = "".freeze
 
     # Based on what Rails uses + some variables we'd like to show
-    ENV_METHODS = %w[
+    FALLBACK_REQUEST_HEADERS = %w[
       CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
       PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
       REQUEST_METHOD SERVER_NAME SERVER_PORT SERVER_PROTOCOL REQUEST_URI
@@ -406,7 +406,8 @@ module Appsignal
     # The environment of a transaction can contain a lot of information, not
     # all of it useful for debugging.
     #
-    # Only the values from the keys specified in {ENV_METHODS} are returned.
+    # Only the values from the keys specified in {FALLBACK_REQUEST_HEADERS} are
+    # returned.
     #
     # @return [nil] if no environment is present.
     # @return [Hash<String, Object>]
@@ -415,7 +416,7 @@ module Appsignal
       return if env.empty?
 
       {}.tap do |out|
-        ENV_METHODS.each do |key|
+        FALLBACK_REQUEST_HEADERS.each do |key|
           out[key] = env[key] if env[key]
         end
       end
