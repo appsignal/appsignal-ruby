@@ -940,6 +940,16 @@ describe Appsignal::Transaction do
         it "only sets whitelisted keys" do
           expect(subject.keys).to match_array(whitelisted_keys)
         end
+
+        context "with configured request_heades" do
+          before do
+            Appsignal.config.config_hash[:request_headers] = %w[CONTENT_LENGTH]
+          end
+
+          it "only sets whitelisted keys" do
+            expect(subject.keys).to match_array(%w[CONTENT_LENGTH])
+          end
+        end
       end
     end
 

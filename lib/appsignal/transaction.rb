@@ -416,7 +416,8 @@ module Appsignal
       return if env.empty?
 
       {}.tap do |out|
-        FALLBACK_REQUEST_HEADERS.each do |key|
+        (Appsignal.config[:request_headers] ||
+          FALLBACK_REQUEST_HEADERS).each do |key|
           out[key] = env[key] if env[key]
         end
       end
