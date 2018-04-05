@@ -141,7 +141,7 @@ if DependencyHelper.padrino_present?
             it "instruments the request" do
               expect_a_transaction_to_be_created
               # Uses path for action name
-              expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp:#/404")
+              expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp#unknown")
               expect(response).to match_response(404, "<h1>Not Found</h1>")
             end
           end
@@ -162,52 +162,32 @@ if DependencyHelper.padrino_present?
 
           # Older Padrino versions don't support `action` (v11.0+)
           context "without #action on Sinatra::Request" do
-            let(:path) { "/my_original_path" }
-            let(:request_kind) do
-              double(
-                :params => {},
-                :path => path,
-                :path_info => path,
-                :request_method => "GET",
-                :head? => false,
-                :route_obj => double(:original_path => "original_path method"),
-                :route_obj= => nil # Make sure route_obj doesn't get overwritten
-              )
-            end
+            let(:path) { "/my_original_path/10" }
             before do
-              expect(Sinatra::Request).to receive(:new).and_return(request_kind)
-              app.controllers { get(:my_original_path) { "content" } }
+              allow_any_instance_of(Sinatra::Request).to receive(:action).and_return(nil)
+              app.controllers { get(:my_original_path, :with => :id) { "content" } }
             end
             after { expect(response).to match_response(200, "content") }
 
             it "falls back on Sinatra::Request#route_obj.original_path" do
               expect_a_transaction_to_be_created
               expect(transaction)
-                .to receive(:set_action_if_nil).with("PadrinoTestApp:original_path method")
+                .to receive(:set_action_if_nil).with("PadrinoTestApp:/my_original_path/:id")
             end
           end
 
           context "without Sinatra::Request#route_obj.original_path" do
             let(:path) { "/my_original_path" }
-            let(:request_kind) do
-              double(
-                :params => {},
-                :path => path,
-                :path_info => path,
-                :request_method => "GET",
-                :head? => false,
-                :route_obj= => nil # Make sure route_obj doesn't get overwritten
-              )
-            end
             before do
-              expect(Sinatra::Request).to receive(:new).and_return(request_kind)
+              allow_any_instance_of(Sinatra::Request).to receive(:action).and_return(nil)
+              allow_any_instance_of(Sinatra::Request).to receive(:route_obj).and_return(nil)
               app.controllers { get(:my_original_path) { "content" } }
             end
             after { expect(response).to match_response(200, "content") }
 
             it "falls back on app name" do
               expect_a_transaction_to_be_created
-              expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp")
+              expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp#unknown")
             end
           end
 
