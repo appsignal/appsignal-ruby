@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     # @api private
     module ActiveRecord
-      class InstantiationFormatter < Appsignal::EventFormatter
+      class InstantiationFormatter
         def format(payload)
           [payload[:class_name], nil]
         end

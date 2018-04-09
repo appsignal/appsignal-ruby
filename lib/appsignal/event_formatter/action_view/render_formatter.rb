@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     # @api private
     module ActionView
-      class RenderFormatter < Appsignal::EventFormatter
+      class RenderFormatter
         BLANK = "".freeze
 
         attr_reader :root_path

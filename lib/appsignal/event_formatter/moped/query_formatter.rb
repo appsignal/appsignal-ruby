@@ -2,7 +2,7 @@ module Appsignal
   class EventFormatter
     # @api private
     module Moped
-      class QueryFormatter < Appsignal::EventFormatter
+      class QueryFormatter
         def format(payload)
           if payload[:ops] && !payload[:ops].empty?
             op = payload[:ops].first
