@@ -6,7 +6,9 @@ branches:
     - "develop"
 
 language: ruby
-cache: bundler
+cache:
+  directories:
+    - vendor/bundle
 
 rvm:
   - "2.0.0"
