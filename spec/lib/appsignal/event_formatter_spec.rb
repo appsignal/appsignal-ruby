@@ -1,5 +1,4 @@
 class MockFormatter < Appsignal::EventFormatter
-
   attr_reader :body
 
   def initialize
@@ -38,7 +37,7 @@ describe Appsignal::EventFormatter do
   let(:klass) { Appsignal::EventFormatter }
 
   let(:deprecated_formatter) do
-    class DeprecatedMockFormatter < Appsignal::EventFormatter
+    Class.new(Appsignal::EventFormatter) do
       register "mock.deprecated"
 
       def format(_payload)
