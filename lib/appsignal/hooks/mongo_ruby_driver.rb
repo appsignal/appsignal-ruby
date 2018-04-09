@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class MongoRubyDriverHook < Appsignal::Hooks::Hook
-      register :mongo_ruby_driver
-
       def dependencies_present?
         defined?(::Mongo::Monitoring::Global)
       end
@@ -19,3 +17,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:mongo_ruby_driver, Appsignal::Hooks::MongoRubyDriverHook)

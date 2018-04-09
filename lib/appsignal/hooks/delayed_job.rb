@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class DelayedJobHook < Appsignal::Hooks::Hook
-      register :delayed_job
-
       def dependencies_present?
         defined?(::Delayed::Plugin)
       end
@@ -17,3 +15,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:delayed_job, Appsignal::Hooks::DelayedJobHook)

@@ -1,7 +1,6 @@
 describe Appsignal::Hooks::RedisHook do
   before do
     Appsignal.config = project_fixture_config
-    Appsignal::Hooks.load_hooks
   end
 
   if DependencyHelper.redis_present?

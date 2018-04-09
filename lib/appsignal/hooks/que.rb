@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class QueHook < Appsignal::Hooks::Hook
-      register :que
-
       def dependencies_present?
         defined?(::Que::Job)
       end
@@ -19,3 +17,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:que, Appsignal::Hooks::QueHook)

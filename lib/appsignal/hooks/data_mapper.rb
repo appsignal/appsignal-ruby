@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class DataMapperHook < Appsignal::Hooks::Hook
-      register :data_mapper
-
       def dependencies_present?
         defined?(::DataMapper) &&
           defined?(::DataObjects::Connection)
@@ -16,3 +14,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:data_mapper, Appsignal::Hooks::DataMapperHook)

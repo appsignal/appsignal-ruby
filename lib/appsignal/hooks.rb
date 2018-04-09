@@ -2,14 +2,10 @@ module Appsignal
   # @api private
   class Hooks
     class << self
-      def register(name, hook)
-        hooks[name] = hook
-      end
-
-      def load_hooks
-        hooks.each do |name, hook|
-          hook.try_to_install(name)
-        end
+      def register(name, hook = nil)
+        instance = hook.new
+        instance.try_to_install(name)
+        hooks[name] = instance
       end
 
       def hooks
@@ -18,8 +14,11 @@ module Appsignal
     end
 
     class Hook
-      def self.register(name, hook = self)
-        Appsignal::Hooks.register(name, hook.new)
+      def self.register(name, hook = nil)
+        Appsignal.logger.error("Hook for '#{name}' is using a deprecated registration method." \
+                              "This hook will not be loaded" \
+                              "please update the hook according to the documentation at: " \
+                              "https://docs.appsignal.com/ruby/instrumentation/hooks.html")
       end
 
       def initialize

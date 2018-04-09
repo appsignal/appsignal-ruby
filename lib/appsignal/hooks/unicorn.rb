@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class UnicornHook < Appsignal::Hooks::Hook
-      register :unicorn
-
       def dependencies_present?
         defined?(::Unicorn::HttpServer) &&
           defined?(::Unicorn::Worker)
@@ -38,3 +36,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:unicorn, Appsignal::Hooks::UnicornHook)

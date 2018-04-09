@@ -29,7 +29,6 @@ if DependencyHelper.grape_present?
       context "when AppSignal is not active" do
         before(:context) do
           Appsignal.config = nil
-          Appsignal::Hooks.load_hooks
         end
 
         it "creates no transaction" do

@@ -4,8 +4,6 @@ module Appsignal
   class Hooks
     # @api private
     class NetHttpHook < Appsignal::Hooks::Hook
-      register :net_http
-
       def dependencies_present?
         Appsignal.config && Appsignal.config[:instrument_net_http]
       end
@@ -27,3 +25,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:net_http, Appsignal::Hooks::NetHttpHook)

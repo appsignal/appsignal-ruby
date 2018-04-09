@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class RedisHook < Appsignal::Hooks::Hook
-      register :redis
-
       def dependencies_present?
         defined?(::Redis) &&
           Appsignal.config &&
@@ -28,3 +26,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:redis, Appsignal::Hooks::RedisHook)

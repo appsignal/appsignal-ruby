@@ -25,8 +25,6 @@ module Appsignal
     end
 
     class ShoryukenHook < Appsignal::Hooks::Hook
-      register :shoryuken
-
       def dependencies_present?
         defined?(::Shoryuken)
       end
@@ -41,3 +39,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:shoryuken, Appsignal::Hooks::ShoryukenHook)

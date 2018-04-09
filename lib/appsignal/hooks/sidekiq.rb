@@ -3,8 +3,6 @@ require "yaml"
 module Appsignal
   class Hooks
     class SidekiqHook < Appsignal::Hooks::Hook
-      register :sidekiq
-
       def dependencies_present?
         defined?(::Sidekiq)
       end
@@ -146,3 +144,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:sidekiq, Appsignal::Hooks::SidekiqHook)

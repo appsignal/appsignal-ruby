@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class ActionCableHook < Appsignal::Hooks::Hook
-      register :action_cable
-
       REQUEST_ID = "_appsignal_action_cable.request_id".freeze
 
       def dependencies_present?
@@ -111,3 +109,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:action_cable, Appsignal::Hooks::ActionCableHook)

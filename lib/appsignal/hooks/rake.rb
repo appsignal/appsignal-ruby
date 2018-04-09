@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class RakeHook < Appsignal::Hooks::Hook
-      register :rake
-
       def dependencies_present?
         defined?(::Rake::Task)
       end
@@ -37,3 +35,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:rake, Appsignal::Hooks::RakeHook)

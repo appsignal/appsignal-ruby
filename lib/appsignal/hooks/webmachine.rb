@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class WebmachineHook < Appsignal::Hooks::Hook
-      register :webmachine
-
       def dependencies_present?
         defined?(::Webmachine)
       end
@@ -21,3 +19,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:webmachine, Appsignal::Hooks::WebmachineHook)

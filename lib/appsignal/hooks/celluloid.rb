@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class CelluloidHook < Appsignal::Hooks::Hook
-      register :celluloid
-
       def dependencies_present?
         defined?(::Celluloid)
       end
@@ -28,3 +26,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:celluloid, Appsignal::Hooks::CelluloidHook)

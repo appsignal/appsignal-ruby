@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class PumaHook < Appsignal::Hooks::Hook
-      register :puma
-
       def dependencies_present?
         defined?(::Puma) &&
           ::Puma.respond_to?(:cli_config) &&
@@ -33,3 +31,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:puma, Appsignal::Hooks::PumaHook)

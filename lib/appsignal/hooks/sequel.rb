@@ -30,8 +30,6 @@ module Appsignal
     end
 
     class SequelHook < Appsignal::Hooks::Hook
-      register :sequel
-
       def dependencies_present?
         defined?(::Sequel::Database) &&
           Appsignal.config &&
@@ -58,3 +56,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:sequel, Appsignal::Hooks::SequelHook)

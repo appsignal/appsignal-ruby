@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
-      register :active_support_notifications
-
       BANG = "!".freeze
 
       def dependencies_present?
@@ -50,3 +48,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:active_support_notifications, Appsignal::Hooks::ActiveSupportNotificationsHook)

@@ -120,7 +120,6 @@ module Appsignal
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
-          Appsignal::Hooks.load_hooks
           Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
 

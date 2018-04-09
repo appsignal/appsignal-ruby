@@ -7,7 +7,6 @@ describe Appsignal::Hooks::RakeHook do
   before(:context) do
     Appsignal.config = project_fixture_config
     expect(Appsignal.active?).to be_truthy
-    Appsignal::Hooks.load_hooks
   end
 
   describe "#execute" do

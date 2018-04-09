@@ -33,46 +33,62 @@ end
 
 describe Appsignal::Hooks do
   it "should register and install a hook once" do
-    Appsignal::Hooks::Hook.register(:mock_present_hook, MockPresentHook)
-
-    expect(Appsignal::Hooks.hooks[:mock_present_hook]).to be_instance_of(MockPresentHook)
-    expect(Appsignal::Hooks.hooks[:mock_present_hook].installed?).to be_falsy
-
     expect(MockPresentHook).to receive(:call_something).once
 
-    Appsignal::Hooks.load_hooks
-    Appsignal::Hooks.load_hooks
-    Appsignal::Hooks.load_hooks
+    Appsignal::Hooks.register(:mock_present_hook, MockPresentHook)
+
+    expect(Appsignal::Hooks.hooks[:mock_present_hook]).to be_instance_of(MockPresentHook)
     expect(Appsignal::Hooks.hooks[:mock_present_hook].installed?).to be_truthy
+
     Appsignal::Hooks.hooks.delete(:mock_present_hook)
   end
 
   it "should not install if depencies are not present" do
-    Appsignal::Hooks::Hook.register(:mock_not_present_hook, MockNotPresentHook)
+    expect(MockPresentHook).to_not receive(:call_something)
+
+    Appsignal::Hooks.register(:mock_not_present_hook, MockNotPresentHook)
 
     expect(Appsignal::Hooks.hooks[:mock_not_present_hook]).to be_instance_of(MockNotPresentHook)
     expect(Appsignal::Hooks.hooks[:mock_not_present_hook].installed?).to be_falsy
 
-    expect(MockPresentHook).to_not receive(:call_something)
-
-    Appsignal::Hooks.load_hooks
-
-    expect(Appsignal::Hooks.hooks[:mock_not_present_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_not_present_hook)
   end
 
   it "should not install if there is an error while installing" do
-    Appsignal::Hooks::Hook.register(:mock_error_hook, MockErrorHook)
+    expect(Appsignal.logger).to receive(:error).with("Error while installing mock_error_hook hook: error").once
+
+    Appsignal::Hooks.register(:mock_error_hook, MockErrorHook)
 
     expect(Appsignal::Hooks.hooks[:mock_error_hook]).to be_instance_of(MockErrorHook)
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
-    expect(Appsignal.logger).to receive(:error).with("Error while installing mock_error_hook hook: error").once
-
-    Appsignal::Hooks.load_hooks
-
-    expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_error_hook)
+  end
+end
+
+describe Appsignal::Hooks::Hook do
+  let(:hook) do
+    class MockDeprecatedHook < Appsignal::Hooks::Hook
+      register :deprecated
+      def dependencies_present?
+        true
+      end
+
+      def install
+        raise "error"
+      end
+    end
+  end
+
+  it "should log a deprecation warning when registering the hook in the deprecated way" do
+    expect(Appsignal.logger).to receive(:error)
+      .with("Hook for 'deprecated' is using a deprecated registration method." \
+            "This hook will not be loaded" \
+            "please update the hook according to the documentation at: " \
+            "https://docs.appsignal.com/ruby/instrumentation/hooks.html"
+      ).once
+
+    hook
   end
 end
 

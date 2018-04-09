@@ -2,8 +2,6 @@ module Appsignal
   class Hooks
     # @api private
     class PassengerHook < Appsignal::Hooks::Hook
-      register :passenger
-
       def dependencies_present?
         defined?(::PhusionPassenger)
       end
@@ -20,3 +18,5 @@ module Appsignal
     end
   end
 end
+
+Appsignal::Hooks.register(:passenger, Appsignal::Hooks::PassengerHook)
