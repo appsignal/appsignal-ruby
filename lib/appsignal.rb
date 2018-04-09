@@ -121,7 +121,6 @@ module Appsignal
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
-          Appsignal::EventFormatter.initialize_formatters
           initialize_extensions
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?

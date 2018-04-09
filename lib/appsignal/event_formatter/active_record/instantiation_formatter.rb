@@ -3,8 +3,6 @@ module Appsignal
     # @api private
     module ActiveRecord
       class InstantiationFormatter < Appsignal::EventFormatter
-        register "instantiation.active_record"
-
         def format(payload)
           [payload[:class_name], nil]
         end
@@ -12,3 +10,8 @@ module Appsignal
     end
   end
 end
+
+Appsignal::EventFormatter.register(
+  "instantiation.active_record",
+  Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter
+)

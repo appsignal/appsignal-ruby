@@ -20,8 +20,33 @@ module Appsignal
         @@formatter_classes ||= {}
       end
 
-      def register(name, formatter = self)
-        formatter_classes[name] = formatter
+      def register(name, formatter = nil)
+        unless formatter
+          Appsignal.logger.warn("Formatter for '#{name}' is using a deprecated registration method." \
+                                "This event formatter will not be loaded" \
+                                "please update the formatter according to the documentation at: " \
+                                "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html")
+          return
+        end
+
+        if registered?(name, formatter)
+          Appsignal.logger.warn("Formatter for '#{name}' already initialized, not initializing '#{formatter.name}'")
+          return
+        end
+
+        begin
+          format_method = formatter.instance_method(:format)
+          if format_method && format_method.arity == 1
+            formatter_classes[name] = formatter
+            formatters[name] = formatter.new
+          else
+            raise "#{f} does not have a format(payload) method"
+          end
+        rescue => ex
+          formatter_classes.delete(name)
+          formatters.delete(name)
+          Appsignal.logger.warn("'#{ex.message}' when initializing #{name} event formatter")
+        end
       end
 
       def unregister(name, formatter = self)
@@ -36,23 +61,6 @@ module Appsignal
           formatter_classes[name] == klass
         else
           formatter_classes.include?(name)
-        end
-      end
-
-      def initialize_formatters
-        formatter_classes.each do |name, formatter|
-          begin
-            format_method = formatter.instance_method(:format)
-            if format_method && format_method.arity == 1
-              formatters[name] = formatter.new
-            else
-              raise "#{f} does not have a format(payload) method"
-            end
-          rescue => ex
-            formatter_classes.delete(name)
-            formatters.delete(name)
-            Appsignal.logger.debug("'#{ex.message}' when initializing #{name} event formatter")
-          end
         end
       end
 

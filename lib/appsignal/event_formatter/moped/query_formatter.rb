@@ -3,8 +3,6 @@ module Appsignal
     # @api private
     module Moped
       class QueryFormatter < Appsignal::EventFormatter
-        register "query.moped"
-
         def format(payload)
           if payload[:ops] && !payload[:ops].empty?
             op = payload[:ops].first
@@ -78,3 +76,8 @@ module Appsignal
     end
   end
 end
+
+Appsignal::EventFormatter.register(
+  "query.moped",
+  Appsignal::EventFormatter::Moped::QueryFormatter
+)

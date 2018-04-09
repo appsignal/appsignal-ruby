@@ -61,11 +61,6 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "should initialize formatters" do
-        expect(Appsignal::EventFormatter).to receive(:initialize_formatters)
-        Appsignal.start
-      end
-
       context "with an extension" do
         before { Appsignal.extensions << Appsignal::MockExtension }
 
