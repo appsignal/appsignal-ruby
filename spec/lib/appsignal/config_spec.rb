@@ -300,6 +300,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
       ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
+      ENV["APPSIGNAL_REQUEST_HEADERS"]         = "accept,accept-charset"
       ENV["APP_REVISION"] = "v2.5.1"
     end
 
@@ -319,6 +320,7 @@ describe Appsignal::Config do
       expect(config[:instrument_redis]).to eq(false)
       expect(config[:instrument_sequel]).to eq(false)
       expect(config[:files_world_accessible]).to eq(false)
+      expect(config[:request_headers]).to eq(%w[accept accept-charset])
       expect(config[:revision]).to eq("v2.5.1")
     end
 

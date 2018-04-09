@@ -61,6 +61,7 @@ module Appsignal
       "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
       "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
+      "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
       "APP_REVISION"                             => :revision
     }.freeze
 
@@ -267,7 +268,8 @@ module Appsignal
 
       # Configuration with array of strings type
       %w[APPSIGNAL_IGNORE_ACTIONS APPSIGNAL_IGNORE_ERRORS
-         APPSIGNAL_IGNORE_NAMESPACES APPSIGNAL_FILTER_PARAMETERS].each do |var|
+         APPSIGNAL_IGNORE_NAMESPACES APPSIGNAL_FILTER_PARAMETERS
+         APPSIGNAL_REQUEST_HEADERS].each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")

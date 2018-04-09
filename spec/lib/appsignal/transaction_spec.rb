@@ -912,7 +912,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#sanitized_environment" do
-      let(:whitelisted_keys) { Appsignal::Transaction::ENV_METHODS }
+      let(:whitelisted_keys) { Appsignal::Transaction::FALLBACK_REQUEST_HEADERS }
 
       subject { transaction.send(:sanitized_environment) }
 
@@ -939,6 +939,16 @@ describe Appsignal::Transaction do
 
         it "only sets whitelisted keys" do
           expect(subject.keys).to match_array(whitelisted_keys)
+        end
+
+        context "with configured request_heades" do
+          before do
+            Appsignal.config.config_hash[:request_headers] = %w[CONTENT_LENGTH]
+          end
+
+          it "only sets whitelisted keys" do
+            expect(subject.keys).to match_array(%w[CONTENT_LENGTH])
+          end
         end
       end
     end

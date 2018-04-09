@@ -187,10 +187,6 @@ module Appsignal
     # This helper method also captures any exception that occurs in the given
     # block.
     #
-    # The other (request) `env` argument hash keys, not listed here, can be
-    # found on the {Appsignal::Transaction::ENV_METHODS} array.
-    # Each of these keys are available as keys in the `env` hash argument.
-    #
     # @example
     #   Appsignal.monitor_transaction("perform_job.nightly_update") do
     #     # your code
