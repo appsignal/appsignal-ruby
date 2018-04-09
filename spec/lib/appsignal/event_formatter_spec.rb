@@ -86,16 +86,16 @@ describe Appsignal::EventFormatter do
 
     it "should not register two formatters for the same name" do
       expect(Appsignal.logger).to receive(:warn)
-        .with("Formatter for 'mock.twice' already initialized, not initializing 'MockFormatter'")
+        .with("Formatter for 'mock.twice' already registered, not registering 'MockFormatter'")
       klass.register("mock.twice", MockFormatter)
       klass.register("mock.twice", MockFormatter)
     end
 
     it "should not register deprecated formatter" do
       expect(Appsignal.logger).to receive(:warn)
-        .with("Formatter for 'mock.deprecated' is using a deprecated registration method." \
-              "This event formatter will not be loaded" \
-              "please update the formatter according to the documentation at: " \
+        .with("Formatter for 'mock.deprecated' is using a deprecated registration method. " \
+              "This event formatter will not be loaded. " \
+              "Please update the formatter according to the documentation at: " \
               "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html")
 
       deprecated_formatter

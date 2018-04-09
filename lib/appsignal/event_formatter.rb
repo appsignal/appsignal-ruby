@@ -31,7 +31,10 @@ module Appsignal
         end
 
         if registered?(name, formatter)
-          Appsignal.logger.warn("Formatter for '#{name}' already initialized, not initializing '#{formatter.name}'")
+          Appsignal.logger.warn(
+            "Formatter for '#{name}' already registered, not registering "\
+            "'#{formatter.name}'"
+          )
           return
         end
 
@@ -82,9 +85,9 @@ module Appsignal
 
       def register_deprecated_formatter(name)
         Appsignal.logger.warn(
-          "Formatter for '#{name}' is using a deprecated registration method." \
-          "This event formatter will not be loaded." \
-          "please update the formatter according to the documentation at: " \
+          "Formatter for '#{name}' is using a deprecated registration " \
+          "method. This event formatter will not be loaded. " \
+          "Please update the formatter according to the documentation at: " \
           "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html"
         )
 
