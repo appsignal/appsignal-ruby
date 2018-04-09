@@ -44,6 +44,12 @@ module Appsignal
     # @example help command
     #   appsignal notify_of_deploy --help
     #
+    # @deprecated This method of sending AppSignal deploy markers is
+    #   deprecated. Use the [`revision` config option]
+    #   (https://docs.appsignal.com/ruby/configuration/options.html#app_revision-revision)
+    #   instead. For more information, please read the [deploy markers]
+    #   (https://docs.appsignal.com/application/markers/deploy-markers.html)
+    #   documentation.
     # @since 0.2.5
     # @see Appsignal::Marker Appsignal::Marker
     # @see http://docs.appsignal.com/ruby/command-line/notify_of_deploy.html
