@@ -41,7 +41,7 @@ describe Appsignal::EventFormatter do
     class DeprecatedMockFormatter < Appsignal::EventFormatter
       register "mock.deprecated"
 
-      def transform(_payload)
+      def format(_payload)
       end
     end
   end
@@ -100,6 +100,15 @@ describe Appsignal::EventFormatter do
               "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html")
 
       deprecated_formatter
+
+      expect(Appsignal::EventFormatter.deprecated_formatter_classes.keys).to include("mock.deprecated")
+    end
+
+    it "should initialize deprecated formatters" do
+      deprecated_formatter
+      Appsignal::EventFormatter.initialize_deprecated_formatters
+
+      expect(klass.registered?("mock.deprecated")).to be_truthy
     end
   end
 

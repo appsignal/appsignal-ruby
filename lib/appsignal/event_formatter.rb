@@ -16,6 +16,10 @@ module Appsignal
         @@formatters ||= {}
       end
 
+      def deprecated_formatter_classes
+        @@deprecated_formatter_classes ||= {}
+      end
+
       def formatter_classes
         @@formatter_classes ||= {}
       end
@@ -26,6 +30,8 @@ module Appsignal
                                 "This event formatter will not be loaded" \
                                 "please update the formatter according to the documentation at: " \
                                 "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html")
+
+          deprecated_formatter_classes[name] = self
           return
         end
 
@@ -40,12 +46,18 @@ module Appsignal
             formatter_classes[name] = formatter
             formatters[name] = formatter.new
           else
-            raise "#{f} does not have a format(payload) method"
+            raise "#{formatter} does not have a format(payload) method"
           end
         rescue => ex
           formatter_classes.delete(name)
           formatters.delete(name)
           Appsignal.logger.warn("'#{ex.message}' when initializing #{name} event formatter")
+        end
+      end
+
+      def initialize_deprecated_formatters
+        deprecated_formatter_classes.each do |name, formatter|
+          register(name, formatter)
         end
       end
 
