@@ -54,6 +54,10 @@ matrix:
       gemfile: "gemfiles/rails-5.1.gemfile"
     - rvm: "2.1.8"
       gemfile: "gemfiles/rails-5.1.gemfile"
+    - rvm: "2.5.1"
+      gemfile: "gemfiles/rails-4.0.gemfile"
+    - rvm: "2.5.1"
+      gemfile: "gemfiles/rails-4.1.gemfile"
 
   allow_failures:
     - rvm: "2.4.0"
