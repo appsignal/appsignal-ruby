@@ -61,8 +61,8 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "should initialize formatters" do
-        expect(Appsignal::EventFormatter).to receive(:initialize_formatters)
+      it "should load deprecated event formatters" do
+        expect(Appsignal::EventFormatter).to receive(:initialize_deprecated_formatters)
         Appsignal.start
       end
 

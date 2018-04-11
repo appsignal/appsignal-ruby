@@ -16,12 +16,35 @@ module Appsignal
         @@formatters ||= {}
       end
 
+      def deprecated_formatter_classes
+        @@deprecated_formatter_classes ||= {}
+      end
+
       def formatter_classes
         @@formatter_classes ||= {}
       end
 
-      def register(name, formatter = self)
-        formatter_classes[name] = formatter
+      def register(name, formatter = nil)
+        unless formatter
+          register_deprecated_formatter(name)
+          return
+        end
+
+        if registered?(name, formatter)
+          Appsignal.logger.warn(
+            "Formatter for '#{name}' already registered, not registering "\
+            "'#{formatter.name}'"
+          )
+          return
+        end
+
+        initialize_formatter name, formatter
+      end
+
+      def initialize_deprecated_formatters
+        deprecated_formatter_classes.each do |name, formatter|
+          register(name, formatter)
+        end
       end
 
       def unregister(name, formatter = self)
@@ -39,26 +62,36 @@ module Appsignal
         end
       end
 
-      def initialize_formatters
-        formatter_classes.each do |name, formatter|
-          begin
-            format_method = formatter.instance_method(:format)
-            if format_method && format_method.arity == 1
-              formatters[name] = formatter.new
-            else
-              raise "#{f} does not have a format(payload) method"
-            end
-          rescue => ex
-            formatter_classes.delete(name)
-            formatters.delete(name)
-            Appsignal.logger.debug("'#{ex.message}' when initializing #{name} event formatter")
-          end
-        end
-      end
-
       def format(name, payload)
         formatter = formatters[name]
         formatter.format(payload) unless formatter.nil?
+      end
+
+      private
+
+      def initialize_formatter(name, formatter)
+        format_method = formatter.instance_method(:format)
+        if format_method && format_method.arity == 1
+          formatter_classes[name] = formatter
+          formatters[name] = formatter.new
+        else
+          raise "#{formatter} does not have a format(payload) method"
+        end
+      rescue => ex
+        formatter_classes.delete(name)
+        formatters.delete(name)
+        Appsignal.logger.warn("'#{ex.message}' when initializing #{name} event formatter")
+      end
+
+      def register_deprecated_formatter(name)
+        Appsignal.logger.warn(
+          "Formatter for '#{name}' is using a deprecated registration " \
+          "method. This event formatter will not be loaded. " \
+          "Please update the formatter according to the documentation at: " \
+          "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html"
+        )
+
+        deprecated_formatter_classes[name] = self
       end
     end
 

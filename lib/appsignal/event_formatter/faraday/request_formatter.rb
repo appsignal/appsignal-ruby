@@ -2,9 +2,7 @@ module Appsignal
   class EventFormatter
     # @api private
     module Faraday
-      class RequestFormatter < Appsignal::EventFormatter
-        register "request.faraday"
-
+      class RequestFormatter
         def format(payload)
           http_method = payload[:method].to_s.upcase
           uri = payload[:url]
@@ -17,3 +15,8 @@ module Appsignal
     end
   end
 end
+
+Appsignal::EventFormatter.register(
+  "request.faraday",
+  Appsignal::EventFormatter::Faraday::RequestFormatter
+)
