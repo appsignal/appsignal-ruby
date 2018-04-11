@@ -545,13 +545,19 @@ static VALUE data_to_s(VALUE self) {
   }
 }
 
-static VALUE set_gauge(VALUE self, VALUE key, VALUE value) {
+static VALUE set_gauge(VALUE self, VALUE key, VALUE value, VALUE tags) {
+  appsignal_data_t* tags_data;
+
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
+  Check_Type(tags, RUBY_T_DATA);
+
+  Data_Get_Struct(tags, appsignal_data_t, tags_data);
 
   appsignal_set_gauge(
       make_appsignal_string(key),
-      NUM2DBL(value)
+      NUM2DBL(value),
+      tags_data
   );
   return Qnil;
 }
@@ -578,24 +584,36 @@ static VALUE set_process_gauge(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
-static VALUE increment_counter(VALUE self, VALUE key, VALUE count) {
+static VALUE increment_counter(VALUE self, VALUE key, VALUE count, VALUE tags) {
+  appsignal_data_t* tags_data;
+
   Check_Type(key, T_STRING);
   Check_Type(count, T_FIXNUM);
+  Check_Type(tags, RUBY_T_DATA);
+
+  Data_Get_Struct(tags, appsignal_data_t, tags_data);
 
   appsignal_increment_counter(
       make_appsignal_string(key),
-      FIX2INT(count)
+      FIX2INT(count),
+      tags_data
   );
   return Qnil;
 }
 
-static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value) {
+static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value, VALUE tags) {
+  appsignal_data_t* tags_data;
+
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
+  Check_Type(tags, RUBY_T_DATA);
+
+  Data_Get_Struct(tags, appsignal_data_t, tags_data);
 
   appsignal_add_distribution_value(
       make_appsignal_string(key),
-      NUM2DBL(value)
+      NUM2DBL(value),
+      tags_data
   );
   return Qnil;
 }
@@ -684,9 +702,9 @@ void Init_appsignal_extension(void) {
   rb_define_singleton_method(Extension, "running_in_container?", running_in_container, 0);
 
   // Metrics
-  rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              2);
+  rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              3);
   rb_define_singleton_method(Extension, "set_host_gauge",         set_host_gauge,         2);
   rb_define_singleton_method(Extension, "set_process_gauge",      set_process_gauge,      2);
-  rb_define_singleton_method(Extension, "increment_counter",      increment_counter,      2);
-  rb_define_singleton_method(Extension, "add_distribution_value", add_distribution_value, 2);
+  rb_define_singleton_method(Extension, "increment_counter",      increment_counter,      3);
+  rb_define_singleton_method(Extension, "add_distribution_value", add_distribution_value, 3);
 }

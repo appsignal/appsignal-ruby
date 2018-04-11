@@ -427,17 +427,17 @@ describe Appsignal do
     describe "custom stats" do
       describe ".set_gauge" do
         it "should call set_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge("key", 0.1)
         end
 
         it "should call set_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10).and_raise(RangeError)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.logger).to receive(:warn).with("Gauge value 10 for key 'key' is too big")
           expect do
             Appsignal.set_gauge("key", 10)
@@ -487,22 +487,22 @@ describe Appsignal do
 
       describe ".increment_counter" do
         it "should call increment_counter on the extension with a string key" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key")
         end
 
         it "should call increment_counter on the extension with a symbol key" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter(:key)
         end
 
         it "should call increment_counter on the extension with a count" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 5)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 5, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key", 5)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 10).and_raise(RangeError)
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.logger).to receive(:warn).with("Counter value 10 for key 'key' is too big")
           expect do
             Appsignal.increment_counter("key", 10)
@@ -512,17 +512,17 @@ describe Appsignal do
 
       describe ".add_distribution_value" do
         it "should call add_distribution_value on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1)
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value("key", 0.1)
         end
 
         it "should call add_distribution_value on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 1.0)
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 10).and_raise(RangeError)
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.logger).to receive(:warn).with("Distribution value 10 for key 'key' is too big")
           expect do
             Appsignal.add_distribution_value("key", 10)
