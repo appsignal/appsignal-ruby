@@ -224,8 +224,8 @@ module Appsignal
         appsignal_running_in_container
       end
 
-      def set_gauge(key, value, tags = {})
-        appsignal_set_gauge(make_appsignal_string(key), value, Appsignal::Utils.data_generate(tags))
+      def set_gauge(key, value, tags)
+        appsignal_set_gauge(make_appsignal_string(key), value, tags.pointer)
       end
 
       def set_host_gauge(key, value)
@@ -236,12 +236,12 @@ module Appsignal
         appsignal_set_process_gauge(make_appsignal_string(key), value)
       end
 
-      def increment_counter(key, value, tags = {})
-        appsignal_increment_counter(make_appsignal_string(key), value, Appsignal::Utils.data_generate(tags))
+      def increment_counter(key, value, tags)
+        appsignal_increment_counter(make_appsignal_string(key), value, tags.pointer)
       end
 
-      def add_distribution_value(key, value, tags = {})
-        appsignal_add_distribution_value(make_appsignal_string(key), value, Appsignal::Utils.data_generate(tags))
+      def add_distribution_value(key, value, tags)
+        appsignal_add_distribution_value(make_appsignal_string(key), value, tags.pointer)
       end
 
       class Transaction # rubocop:disable Metrics/ClassLength
