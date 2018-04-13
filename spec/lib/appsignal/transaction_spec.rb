@@ -971,7 +971,7 @@ describe Appsignal::Transaction do
       end
 
       context "when there is a session" do
-        let(:foo_filter) { { filter_parameters: %w[foo] } }
+        let(:foo_filter) { { :filter_parameters => %w[foo] } }
 
         before do
           expect(transaction).to respond_to(:request)
