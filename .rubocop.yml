@@ -69,5 +69,8 @@ Metrics/BlockLength:
   Exclude:
     - "Rakefile"
 
+Style/FrozenStringLiteralComment:
+  Enabled: true
+
 # Metrics/LineLength:
 #   Max: 80

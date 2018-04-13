@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   # @todo Move to sub-namespace
   # @api private

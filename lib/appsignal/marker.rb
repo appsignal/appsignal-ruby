@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   # Deploy markers are used on AppSignal.com to indicate changes in an
   # application, "Deploy markers" indicate a deploy of an application.

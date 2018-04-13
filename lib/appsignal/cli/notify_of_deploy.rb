@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   class CLI
     # Command line tool to send a "Deploy Marker" for an application to

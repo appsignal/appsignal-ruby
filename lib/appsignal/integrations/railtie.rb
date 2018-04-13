@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
 require "appsignal/rack/rails_instrumentation"

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   # Class used to perform a Push API validation / authentication check against
   # the AppSignal Push API.
