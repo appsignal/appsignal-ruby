@@ -1,3 +1,10 @@
+# 2.5.2
+- Support Sidekiq delay extension for ActiveRecord instances. If using this
+  feature in your app, an update is strongly recommended! PR #387
+- Improve custom event formatter registration. An event formatter can now be
+  registered in a Rails initializer after AppSignal has been loaded/started.
+  PR #397
+
 # 2.5.1
 - Improve internal sample storage in agent.
   Commit 2c8eae26685c7a1517cf2e57b44edd1557a502f2
