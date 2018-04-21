@@ -971,15 +971,34 @@ describe Appsignal::Transaction do
       end
 
       context "when there is a session" do
+        let(:foo_filter) { { :filter_parameters => %w[foo] } }
+
         before do
           expect(transaction).to respond_to(:request)
           allow(transaction).to receive_message_chain(:request, :session => { :foo => :bar })
           allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
         end
 
+        context "with AppSignal filtering" do
+          before { Appsignal.config.config_hash.merge!(foo_filter) }
+          after { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "filters foo" do
+            expect(subject).to eq(:foo => "[FILTERED]")
+          end
+        end
+
+        context "without AppSignal filtering" do
+          before { Appsignal.config.config_hash[:filter_parameters] = [] }
+
+          it "passes foo" do
+            expect(subject).to eq(:foo => :bar)
+          end
+        end
+
         it "passes the session data into the params sanitizer" do
-          expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with(:foo => :bar)
-            .and_return(:sanitized_foo)
+          expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize)
+            .with({ :foo => :bar }, any_args).and_return(:sanitized_foo)
           expect(subject).to eq :sanitized_foo
         end
 
@@ -992,8 +1011,8 @@ describe Appsignal::Transaction do
             end
 
             it "should return an session hash" do
-              expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with("foo" => :bar)
-                .and_return(:sanitized_foo)
+              expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize)
+                .with({ "foo" => :bar }, any_args).and_return(:sanitized_foo)
               subject
             end
 
