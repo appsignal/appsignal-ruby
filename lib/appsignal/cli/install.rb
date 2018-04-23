@@ -176,6 +176,7 @@ module Appsignal
               write_config_file(
                 :push_api_key => config[:push_api_key],
                 :app_name => config[:name],
+                :request_headers => multiline_request_headers,
                 :environments => environments
               )
               puts
@@ -272,6 +273,18 @@ module Appsignal
 
         def new_config
           Appsignal::Config.new(Dir.pwd, "")
+        end
+
+        def multiline_request_headers
+          [
+            ["HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING"],
+            ["HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION"],
+            ["CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER"],
+            ["REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT"],
+            ["SERVER_PROTOCOL", "HTTP_USER_AGENT"]
+          ].map do |row|
+            row.map(&:inspect).join(', ')
+          end.join(",\n    ")
         end
       end
     end
