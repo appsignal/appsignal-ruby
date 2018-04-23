@@ -199,6 +199,7 @@ module Appsignal
               if name_overwritten
                 puts "  export APPSIGNAL_APP_NAME=#{config[:name]}"
               end
+              puts "  export APPSIGNAL_REQUEST_HEADERS=#{single_line_request_headers}"
               puts
               puts "  See the documentation for more configuration options:"
               puts "  http://docs.appsignal.com/gem-settings/configuration.html"
@@ -286,6 +287,10 @@ module Appsignal
           REQUEST_HEADERS.map do |row|
             row.map(&:inspect).join(', ')
           end.join(",\n    ")
+        end
+
+        def single_line_request_headers
+          REQUEST_HEADERS.flatten.join(',')
         end
       end
     end
