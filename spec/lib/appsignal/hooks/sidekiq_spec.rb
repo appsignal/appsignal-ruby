@@ -317,6 +317,54 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
           )
         end
       end
+
+      context "when Sidekiq job payload is missing the 'wrapped' value" do
+        let(:item) do
+          {
+            "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+            "queue" => "default",
+            "args" => [{
+              "job_class" => "ActiveMailerTestJob",
+              "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+              "queue_name" => "default",
+              "arguments" => [
+                "MailerClass", "mailer_method", "deliver_now",
+                "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
+              ]
+            }],
+            "retry" => true,
+            "jid" => "efb140489485999d32b5504c",
+            "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+            "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
+          }
+        end
+
+        it "sets the action name to unknown and without sample data" do
+          perform_job
+
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "id" => kind_of(String),
+            "action" => "unknown",
+            "error" => nil,
+            "namespace" => namespace,
+            "metadata" => {
+              "queue" => "default"
+            },
+            "sample_data" => {
+              "environment" => {},
+              "params" => [],
+              "tags" => {}
+            }
+          )
+          # TODO: Not available in transaction.to_h yet.
+          # https://github.com/appsignal/appsignal-agent/issues/293
+          expect(transaction.request.env).to eq(
+            :queue_start => Time.parse("2001-01-01 10:00:00UTC").to_f
+          )
+          expect_transaction_to_have_sidekiq_event(transaction_hash)
+        end
+      end
     end
   end
 

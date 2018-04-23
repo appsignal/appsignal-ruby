@@ -22,6 +22,7 @@ module Appsignal
     class SidekiqPlugin # rubocop:disable Metrics/ClassLength
       include Appsignal::Hooks::Helpers
 
+      UNKNOWN_ACTION_NAME = "unknown".freeze
       JOB_KEYS = %w[
         args backtrace class created_at enqueued_at error_backtrace error_class
         error_message failed_at jid retried_at retry wrapped
@@ -60,7 +61,10 @@ module Appsignal
 
       def formatted_action_name(job)
         sidekiq_action_name = parse_action_name(job)
-        return sidekiq_action_name if sidekiq_action_name =~ /\.|#/
+        complete_action = sidekiq_action_name =~ /\.|#/
+        if complete_action || sidekiq_action_name == UNKNOWN_ACTION_NAME
+          return sidekiq_action_name
+        end
         "#{sidekiq_action_name}#perform"
       end
 
@@ -94,11 +98,16 @@ module Appsignal
           end
         when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
           job_class = job["wrapped"] || args[0]
-          if job_class == "ActionMailer::DeliveryJob"
+          case job_class
+          when "ActionMailer::DeliveryJob"
             # MailerClass#mailer_method
             args[0]["arguments"][0..1].join("#")
-          else
+          when String
             job_class
+          else
+            Appsignal.logger.debug \
+              "Unable to determine an action name from Sidekiq payload: #{job}"
+            UNKNOWN_ACTION_NAME
           end
         else
           job["class"]
