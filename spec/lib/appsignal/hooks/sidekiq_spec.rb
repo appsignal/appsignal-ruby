@@ -364,6 +364,14 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
           )
           expect_transaction_to_have_sidekiq_event(transaction_hash)
         end
+
+        it "logs a debug message" do
+          perform_job
+
+          expect(log_contents(log)).to contains_log(
+            :debug, "Unable to determine an action name from Sidekiq payload: #{item}"
+          )
+        end
       end
     end
   end
