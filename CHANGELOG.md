@@ -1,3 +1,6 @@
+# 2.5.3
+- Fix Sidekiq action names containing arguments. PR #401
+
 # 2.5.2
 - Support Sidekiq delay extension for ActiveRecord instances. If using this
   feature in your app, an update is strongly recommended! PR #387
