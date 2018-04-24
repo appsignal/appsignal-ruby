@@ -436,8 +436,8 @@ module Appsignal
       return unless session
 
       options = {}
-      if Appsignal.config[:filter_parameters]
-        options[:filter_parameters] = Appsignal.config[:filter_parameters]
+      if Appsignal.config[:filter_session_data]
+        options[:filter_parameters] = Appsignal.config[:filter_session_data]
       end
       Appsignal::Utils::ParamsSanitizer.sanitize session.to_hash, options
     end
