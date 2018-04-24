@@ -8,17 +8,17 @@ module Appsignal
 
       class << self
         def sanitize(params, options = {})
-          sanitize_value(params, options)
+          sanitize_value(params, options.fetch(:filter_parameters, []))
         end
 
         private
 
-        def sanitize_value(value, options = {})
+        def sanitize_value(value, filter_parameter_keys)
           case value
           when Hash
-            sanitize_hash(value, options)
+            sanitize_hash(value, filter_parameter_keys)
           when Array
-            sanitize_array(value, options)
+            sanitize_array(value, filter_parameter_keys)
           when TrueClass, FalseClass, NilClass, Integer, String, Symbol, Float
             unmodified(value)
           else
@@ -26,24 +26,23 @@ module Appsignal
           end
         end
 
-        def sanitize_hash(source, options)
-          filter_keys = options.fetch(:filter_parameters, [])
+        def sanitize_hash(source, filter_parameter_keys)
           {}.tap do |hash|
             source.each_pair do |key, value|
               hash[key] =
-                if filter_keys.include?(key.to_s)
+                if filter_parameter_keys.include?(key.to_s)
                   FILTERED
                 else
-                  sanitize_value(value, options)
+                  sanitize_value(value, filter_parameter_keys)
                 end
             end
           end
         end
 
-        def sanitize_array(source, options)
+        def sanitize_array(source, filter_parameter_keys)
           [].tap do |array|
             source.each_with_index do |item, index|
-              array[index] = sanitize_value(item, options)
+              array[index] = sanitize_value(item, filter_parameter_keys)
             end
           end
         end
