@@ -439,11 +439,9 @@ module Appsignal
       session = request.session
       return unless session
 
-      options = {}
-      if Appsignal.config[:filter_session_data]
-        options[:filter_parameters] = Appsignal.config[:filter_session_data]
-      end
-      Appsignal::Utils::ParamsSanitizer.sanitize session.to_hash, options
+      Appsignal::Utils::ParamsSanitizer.sanitize_hash(
+        session.to_hash, Appsignal.config[:filter_session_data]
+      )
     end
 
     # Returns metadata from the environment.

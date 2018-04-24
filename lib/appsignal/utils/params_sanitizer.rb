@@ -11,6 +11,19 @@ module Appsignal
           sanitize_value(params, options.fetch(:filter_parameters, []))
         end
 
+        def sanitize_hash(source, filter_parameter_keys)
+          {}.tap do |hash|
+            source.each_pair do |key, value|
+              hash[key] =
+                if filter_parameter_keys.include?(key.to_s)
+                  FILTERED
+                else
+                  sanitize_value(value, filter_parameter_keys)
+                end
+            end
+          end
+        end
+
         private
 
         def sanitize_value(value, filter_parameter_keys)
@@ -23,19 +36,6 @@ module Appsignal
             unmodified(value)
           else
             inspected(value)
-          end
-        end
-
-        def sanitize_hash(source, filter_parameter_keys)
-          {}.tap do |hash|
-            source.each_pair do |key, value|
-              hash[key] =
-                if filter_parameter_keys.include?(key.to_s)
-                  FILTERED
-                else
-                  sanitize_value(value, filter_parameter_keys)
-                end
-            end
           end
         end
 
