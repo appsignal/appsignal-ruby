@@ -323,56 +323,107 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
           {
             "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
             "queue" => "default",
-            "args" => [{
-              "job_class" => "ActiveMailerTestJob",
-              "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
-              "queue_name" => "default",
-              "arguments" => [
-                "MailerClass", "mailer_method", "deliver_now",
-                "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
-              ]
-            }],
+            "args" => [first_argument],
             "retry" => true,
             "jid" => "efb140489485999d32b5504c",
             "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
             "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
           }
         end
+        before { perform_job }
 
-        it "sets the action name to unknown and without sample data" do
-          perform_job
+        context "when the first argument is not a Hash object" do
+          let(:first_argument) { "foo" }
 
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "id" => kind_of(String),
-            "action" => "unknown",
-            "error" => nil,
-            "namespace" => namespace,
-            "metadata" => {
-              "queue" => "default"
-            },
-            "sample_data" => {
-              "environment" => {},
-              "params" => [],
-              "tags" => {}
-            }
-          )
-          # TODO: Not available in transaction.to_h yet.
-          # https://github.com/appsignal/appsignal-agent/issues/293
-          expect(transaction.request.env).to eq(
-            :queue_start => Time.parse("2001-01-01 10:00:00UTC").to_f
-          )
-          expect_transaction_to_have_sidekiq_event(transaction_hash)
+          include_examples "unknown job action name"
         end
 
-        it "logs a debug message" do
-          perform_job
+        context "when the first argument is a Hash object not containing a job payload" do
+          let(:first_argument) { { "foo" => "bar" } }
 
-          expect(log_contents(log)).to contains_log(
-            :debug, "Unable to determine an action name from Sidekiq payload: #{item}"
-          )
+          include_examples "unknown job action name"
+
+          context "when the argument contains an invalid job_class value" do
+            let(:first_argument) { { "job_class" => :foo } }
+
+            include_examples "unknown job action name"
+          end
+        end
+
+        context "when the first argument is a Hash object containing a job payload" do
+          let(:first_argument) do
+            {
+              "job_class" => "ActiveMailerTestJob",
+              "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+              "queue_name" => "default",
+              "arguments" => [
+                "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
+              ]
+            }
+          end
+
+          it "sets the action name to the job class in the first argument" do
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "action" => "ActiveMailerTestJob#perform"
+            )
+          end
+
+          it "stores the job metadata on the transaction" do
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "id" => kind_of(String),
+              "error" => nil,
+              "namespace" => namespace,
+              "metadata" => {
+                "queue" => "default"
+              },
+              "sample_data" => {
+                "environment" => {},
+                "params" => [
+                  "foo",
+                  {
+                    "foo" => "Foo",
+                    "bar" => "Bar",
+                    "baz" => { "1" => "bar" }
+                  }
+                ],
+                "tags" => {}
+              }
+            )
+          end
+
+          it "does not log a debug message" do
+            expect(log_contents(log)).to_not contains_log(
+              :debug, "Unable to determine an action name from Sidekiq payload"
+            )
+          end
         end
       end
+    end
+  end
+
+  shared_examples "unknown job action name" do
+    it "sets the action name to unknown" do
+      transaction_hash = transaction.to_h
+      expect(transaction_hash).to include("action" => "unknown")
+    end
+
+    it "stores no sample data" do
+      transaction_hash = transaction.to_h
+      expect(transaction_hash).to include(
+        "sample_data" => {
+          "environment" => {},
+          "params" => [],
+          "tags" => {}
+        }
+      )
+    end
+
+    it "logs a debug message" do
+      expect(log_contents(log)).to contains_log(
+        :debug, "Unable to determine an action name from Sidekiq payload: #{item}"
+      )
     end
   end
 
