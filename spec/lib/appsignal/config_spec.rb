@@ -105,7 +105,6 @@ describe Appsignal::Config do
         :enable_gc_instrumentation      => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => false,
-        :hostname                       => Socket.gethostname,
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :files_world_accessible         => true,
@@ -407,7 +406,7 @@ describe Appsignal::Config do
       config[:ignore_namespaces] = %w[admin private_namespace]
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
-      config[:hostname] = "app1.local"
+      config[:filter_parameters] = %w[password confirm_password]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config[:revision] = "v2.5.1"
@@ -434,13 +433,24 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
       expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
       expect(ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
-      expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq "app1.local"
+      expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq ""
       expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
       expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
+    end
+
+    context "with :hostname" do
+      before do
+        config[:hostname] = "Alices-MBP.example.com"
+        config.write_to_environment
+      end
+
+      it "sets the modified :hostname" do
+        expect(ENV["_APPSIGNAL_HOSTNAME"]).to eq "Alices-MBP.example.com"
+      end
     end
 
     context "with :working_dir_path" do
