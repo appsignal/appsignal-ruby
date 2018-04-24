@@ -425,10 +425,17 @@ describe Appsignal do
     end
 
     describe "custom stats" do
+      let(:tags) { { :foo => "bar" } }
+
       describe ".set_gauge" do
         it "should call set_gauge on the extension with a string key and float" do
           expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge("key", 0.1)
+        end
+
+        it "should call set_gauge with tags" do
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1, Appsignal::Utils.data_generate(tags))
+          Appsignal.set_gauge("key", 0.1, tags)
         end
 
         it "should call set_gauge on the extension with a symbol key and int" do
@@ -491,6 +498,11 @@ describe Appsignal do
           Appsignal.increment_counter("key")
         end
 
+        it "should call increment_counter with tags" do
+          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Utils.data_generate(tags))
+          Appsignal.increment_counter("key", 1, tags)
+        end
+
         it "should call increment_counter on the extension with a symbol key" do
           expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter(:key)
@@ -514,6 +526,11 @@ describe Appsignal do
         it "should call add_distribution_value on the extension with a string key and float" do
           expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value("key", 0.1)
+        end
+
+        it "should call add_distribution_value with tags" do
+          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1, Appsignal::Utils.data_generate(tags))
+          Appsignal.add_distribution_value("key", 0.1, tags)
         end
 
         it "should call add_distribution_value on the extension with a symbol key and int" do
