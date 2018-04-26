@@ -13,6 +13,7 @@ module Appsignal
       :ignore_errors                  => [],
       :ignore_namespaces              => [],
       :filter_parameters              => [],
+      :filter_session_data            => [],
       :send_params                    => true,
       :endpoint                       => "https://push.appsignal.com",
       :instrument_net_http            => true,
