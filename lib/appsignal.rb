@@ -601,8 +601,8 @@ module Appsignal
       instrument(name, title, body, Appsignal::EventFormatter::SQL_BODY_FORMAT, &block)
     end
 
-    def set_gauge(key, value)
-      Appsignal::Extension.set_gauge(key.to_s, value.to_f)
+    def set_gauge(key, value, tags = {})
+      Appsignal::Extension.set_gauge(key.to_s, value.to_f, Appsignal::Utils.data_generate(tags))
     rescue RangeError
       Appsignal.logger.warn("Gauge value #{value} for key '#{key}' is too big")
     end
@@ -619,14 +619,14 @@ module Appsignal
       Appsignal.logger.warn("Process gauge value #{value} for key '#{key}' is too big")
     end
 
-    def increment_counter(key, value = 1)
-      Appsignal::Extension.increment_counter(key.to_s, value)
+    def increment_counter(key, value = 1, tags = {})
+      Appsignal::Extension.increment_counter(key.to_s, value, Appsignal::Utils.data_generate(tags))
     rescue RangeError
       Appsignal.logger.warn("Counter value #{value} for key '#{key}' is too big")
     end
 
-    def add_distribution_value(key, value)
-      Appsignal::Extension.add_distribution_value(key.to_s, value.to_f)
+    def add_distribution_value(key, value, tags = {})
+      Appsignal::Extension.add_distribution_value(key.to_s, value.to_f, Appsignal::Utils.data_generate(tags))
     rescue RangeError
       Appsignal.logger.warn("Distribution value #{value} for key '#{key}' is too big")
     end
