@@ -980,37 +980,42 @@ describe Appsignal::Transaction do
         it { is_expected.to be_nil }
       end
 
-      context "when there is a session" do
-        before do
-          expect(transaction).to respond_to(:request)
-          allow(transaction).to receive_message_chain(:request, :session => { :foo => :bar })
-          allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
-        end
+      context "with a session" do
+        let(:session_data_filter) { [] }
+        before { Appsignal.config[:filter_session_data] = session_data_filter }
+        after { Appsignal.config[:filter_session_data] = [] }
 
-        it "passes the session data into the params sanitizer" do
-          expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with(:foo => :bar)
-            .and_return(:sanitized_foo)
-          expect(subject).to eq :sanitized_foo
+        context "with generic session object" do
+          before do
+            expect(transaction).to respond_to(:request)
+            allow(transaction).to receive_message_chain(
+              :request,
+              :session => { :foo => :bar, :abc => :def }
+            )
+            allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
+          end
+
+          context "without session filtering" do
+            it "keeps the session data intact" do
+              expect(subject).to eq(:foo => :bar, :abc => :def)
+            end
+          end
+
+          context "with session filtering" do
+            let(:session_data_filter) { %w[foo] }
+
+            it "filters the session data" do
+              expect(subject).to eq(:foo => "[FILTERED]", :abc => :def)
+            end
+          end
         end
 
         if defined? ActionDispatch::Request::Session
           context "with ActionDispatch::Request::Session" do
-            before do
-              expect(transaction).to respond_to(:request)
-              allow(transaction).to receive_message_chain(:request, :session => action_dispatch_session)
-              allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
-            end
-
-            it "should return an session hash" do
-              expect(Appsignal::Utils::ParamsSanitizer).to receive(:sanitize).with("foo" => :bar)
-                .and_return(:sanitized_foo)
-              subject
-            end
-
-            def action_dispatch_session
+            let(:action_dispatch_session) do
               store = Class.new do
                 def load_session(_env)
-                  [1, { :foo => :bar }]
+                  [1, { :foo => :bar, :abc => :def }]
                 end
 
                 def session_exists?(_env)
@@ -1019,16 +1024,35 @@ describe Appsignal::Transaction do
               end.new
               ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new("rack.input" => StringIO.new), {})
             end
+            before do
+              expect(transaction).to respond_to(:request)
+              allow(transaction).to receive_message_chain(
+                :request,
+                :session => action_dispatch_session
+              )
+              allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
+            end
+
+            context "without session filtering" do
+              it "keeps the session data intact" do
+                expect(subject).to eq("foo" => :bar, "abc" => :def)
+              end
+            end
+
+            context "with session filtering" do
+              let(:session_data_filter) { %w[foo] }
+
+              it "filters the session data" do
+                expect(subject).to eq("foo" => "[FILTERED]", "abc" => :def)
+              end
+            end
           end
         end
 
         context "when skipping session data" do
-          before do
-            Appsignal.config = { :skip_session_data => true }
-          end
+          before { Appsignal.config[:skip_session_data] = true }
 
-          it "does not pass the session data into the params sanitizer" do
-            expect(Appsignal::Utils::ParamsSanitizer).to_not receive(:sanitize)
+          it "does not set any session data on the transaction" do
             expect(subject).to be_nil
           end
         end

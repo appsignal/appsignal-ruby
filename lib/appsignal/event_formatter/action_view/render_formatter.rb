@@ -4,10 +4,7 @@ module Appsignal
   class EventFormatter
     # @api private
     module ActionView
-      class RenderFormatter < Appsignal::EventFormatter
-        register "render_partial.action_view"
-        register "render_template.action_view"
-
+      class RenderFormatter
         BLANK = "".freeze
 
         attr_reader :root_path
@@ -24,3 +21,12 @@ module Appsignal
     end
   end
 end
+
+Appsignal::EventFormatter.register(
+  "render_partial.action_view",
+  Appsignal::EventFormatter::ActionView::RenderFormatter
+)
+Appsignal::EventFormatter.register(
+  "render_template.action_view",
+  Appsignal::EventFormatter::ActionView::RenderFormatter
+)

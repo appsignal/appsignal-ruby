@@ -1,5 +1,15 @@
 # 2.6.0 (unreleased)
-* Add `revision` config option. PR  #388
+- Add `revision` config option. PR  #388
+
+# 2.5.3
+- Fix Sidekiq action names containing arguments. PR #401
+
+# 2.5.2
+- Support Sidekiq delay extension for ActiveRecord instances. If using this
+  feature in your app, an update is strongly recommended! PR #387
+- Improve custom event formatter registration. An event formatter can now be
+  registered in a Rails initializer after AppSignal has been loaded/started.
+  PR #397
 
 # 2.5.1
 - Improve internal sample storage in agent.

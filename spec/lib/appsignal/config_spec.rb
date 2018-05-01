@@ -89,6 +89,7 @@ describe Appsignal::Config do
         :ignore_errors                  => [],
         :ignore_namespaces              => [],
         :filter_parameters              => [],
+        :filter_session_data            => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
@@ -407,7 +408,6 @@ describe Appsignal::Config do
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:hostname] = "app1.local"
-      config[:filter_parameters] = %w[password confirm_password]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config[:revision] = "v2.5.1"
@@ -430,7 +430,6 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
       expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "ExampleStandardError,AnotherError"
       expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
-      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
       expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
       expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
       expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"

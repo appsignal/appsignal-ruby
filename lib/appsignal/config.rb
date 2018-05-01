@@ -15,6 +15,7 @@ module Appsignal
       :ignore_errors                  => [],
       :ignore_namespaces              => [],
       :filter_parameters              => [],
+      :filter_session_data            => [],
       :send_params                    => true,
       :endpoint                       => "https://push.appsignal.com",
       :instrument_net_http            => true,
@@ -157,7 +158,6 @@ module Appsignal
       ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
       ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
       ENV["_APPSIGNAL_IGNORE_NAMESPACES"]            = config_hash[:ignore_namespaces].join(",")
-      ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
       ENV["_APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
