@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "appsignal/utils/params_sanitizer"
+require "appsignal/utils/hash_sanitizer"
 require "appsignal/utils/query_params_sanitizer"
 
 module Appsignal

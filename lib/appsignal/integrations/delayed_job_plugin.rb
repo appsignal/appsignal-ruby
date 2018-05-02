@@ -32,8 +32,10 @@ module Appsignal
           class_name, method_name = class_and_method_name.split("#")
         end
 
-        params = Appsignal::Utils::ParamsSanitizer.sanitize args,
-          :filter_parameters => Appsignal.config[:filter_parameters]
+        params = Appsignal::Utils::HashSanitizer.sanitize(
+          args,
+          Appsignal.config[:filter_parameters]
+        )
 
         Appsignal.monitor_transaction(
           "perform_job.delayed_job",
