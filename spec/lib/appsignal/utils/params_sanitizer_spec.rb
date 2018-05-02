@@ -133,4 +133,11 @@ describe Appsignal::Utils::ParamsSanitizer do
       end
     end
   end
+
+  describe ".sanitize_hash" do
+    subject { described_class.sanitize_hash(params, %w[text nested_text]) }
+
+    it { expect(subject[:text]).to eq(described_class::FILTERED) }
+    it { expect(subject[:hash][:nested_text]).to eq(described_class::FILTERED) }
+  end
 end
