@@ -2,13 +2,13 @@ describe Appsignal::AuthCheck do
   let(:config) { project_fixture_config }
   let(:auth_check) { Appsignal::AuthCheck.new(config) }
   let(:auth_url) do
-    query = {
+    query = build_uri_query_string(
       :api_key => config[:push_api_key],
       :environment => config.env,
       :gem_version => Appsignal::VERSION,
       :hostname => config[:hostname],
       :name => config[:name]
-    }.map { |k, v| "#{k}=#{v}" }.join("&")
+    )
 
     URI(config[:endpoint]).tap do |uri|
       uri.path = "/1/auth"
@@ -17,6 +17,15 @@ describe Appsignal::AuthCheck do
   end
   let(:stubbed_request) do
     WebMock.stub_request(:post, auth_url).with(:body => "{}")
+  end
+
+  def build_uri_query_string(hash)
+    hash.map do |k, v|
+      k.to_s.tap do |s|
+        next unless v
+        s << "=#{v}"
+      end
+    end.join("&")
   end
 
   describe "#perform" do
