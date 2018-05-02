@@ -1,5 +1,11 @@
 # 2.6.0 (unreleased)
-- Add `revision` config option. PR  #388
+- Enable frozen strings by default. PR #384
+- Add `revision` config option. PR #388
+- Improve padrino action names. Don't generate unique action names. PR #393
+- Add `request_headers` filter configuration. PR #395
+- Support tags for custom metrics. PR #398
+- Add filter_session_data config option. PR #402
+- Move default hostname behavior to extension. PR #404
 
 # 2.5.3
 - Fix Sidekiq action names containing arguments. PR #401
