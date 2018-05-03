@@ -44,9 +44,8 @@ describe Appsignal::CLI::Install do
       actual.include?(
         "export APPSIGNAL_REQUEST_HEADERS=HTTP_ACCEPT,HTTP_ACCEPT_CHARSET," \
         "HTTP_ACCEPT_ENCODING,HTTP_ACCEPT_LANGUAGE,HTTP_CACHE_CONTROL," \
-        "HTTP_CONNECTION,CONTENT_LENGTH,PATH_INFO,HTTP_RANGE,HTTP_REFERER," \
-        "REQUEST_METHOD,REQUEST_URI,SERVER_NAME,SERVER_PORT,SERVER_PROTOCOL," \
-        "HTTP_USER_AGENT"
+        "HTTP_CONNECTION,CONTENT_LENGTH,PATH_INFO,HTTP_RANGE," \
+        "REQUEST_METHOD,REQUEST_URI,SERVER_NAME,SERVER_PORT,SERVER_PROTOCOL"
       )
     end
   end
@@ -66,9 +65,9 @@ describe Appsignal::CLI::Install do
       file_contents =~ /^  request_headers: \[/ &&
         file_contents =~ /^    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",/ &&
         file_contents =~ /^    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",/ &&
-        file_contents =~ /^    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",/ &&
+        file_contents =~ /^    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE",/ &&
         file_contents =~ /^    "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",/ &&
-        file_contents =~ /^    "SERVER_PROTOCOL", "HTTP_USER_AGENT"/ &&
+        file_contents =~ /^    "SERVER_PROTOCOL"/ &&
         file_contents =~ /^  \]/
     end
   end
