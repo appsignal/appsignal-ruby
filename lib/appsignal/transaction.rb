@@ -384,10 +384,7 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
 
-      filter_keys = []
-      if Appsignal.config[:filter_parameters]
-        filter_keys = Appsignal.config[:filter_parameters]
-      end
+      filter_keys = Appsignal.config[:filter_parameters] || []
       Appsignal::Utils::HashSanitizer.sanitize params, filter_keys
     end
 
