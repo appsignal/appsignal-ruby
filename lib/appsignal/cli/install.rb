@@ -171,7 +171,7 @@ module Appsignal
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
           puts "  (2) environment variables"
-          loop do
+          loop do # rubocop:disable Metrics/BlockLength
             print "  Choose (1/2): "
             case ask_for_input
             when "1"
@@ -285,12 +285,12 @@ module Appsignal
 
         def multiline_request_headers
           REQUEST_HEADERS.map do |row|
-            row.map(&:inspect).join(', ')
+            row.map(&:inspect).join(", ")
           end.join(",\n    ")
         end
 
         def single_line_request_headers
-          REQUEST_HEADERS.flatten.join(',')
+          REQUEST_HEADERS.flatten.join(",")
         end
       end
     end
