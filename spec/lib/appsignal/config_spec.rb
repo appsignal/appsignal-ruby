@@ -621,23 +621,61 @@ describe Appsignal::Config do
   end
 
   describe "#validate" do
-    before { config.validate }
     subject { config.valid? }
     let(:config) { described_class.new(Dir.pwd, "production", :push_api_key => push_api_key) }
 
-    context "with missing push_api_key" do
-      let(:push_api_key) { nil }
+    describe "push_api_key" do
+      before { config.validate }
 
-      it "sets valid to false" do
-        is_expected.to eq(false)
+      context "with missing push_api_key" do
+        let(:push_api_key) { nil }
+
+        it "sets valid to false" do
+          is_expected.to eq(false)
+        end
+      end
+
+      context "with push_api_key present" do
+        let(:push_api_key) { "abc" }
+
+        it "sets valid to true" do
+          is_expected.to eq(true)
+        end
       end
     end
 
-    context "with push_api_key present" do
+    describe "request_headers option validation" do
+      let(:log) { StringIO.new }
       let(:push_api_key) { "abc" }
+      before do
+        Appsignal.logger = test_logger(log)
+        config.validate
+      end
 
-      it "sets valid to true" do
-        is_expected.to eq(true)
+      context "with missing request_headers config option" do
+        it "logs a warning" do
+          is_expected.to eq(true)
+          expect(log_contents(log)).to contains_log :warn,
+            "The `request_headers` config option was not set  in the AppSignal configuration"
+        end
+      end
+
+      context "with request_headers config option present" do
+        let(:push_api_key) { "abc" }
+        let(:config) do
+          described_class.new(
+            Dir.pwd,
+            "production",
+            :push_api_key => push_api_key,
+            :request_headers => ["foo"]
+          )
+        end
+
+        it "logs no warning" do
+          is_expected.to eq(true)
+          expect(log_contents(log)).to_not contains_log :warn,
+            "The `request_headers` config option was not set  in the AppSignal configuration"
+        end
       end
     end
   end
