@@ -66,6 +66,14 @@ module Appsignal
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
       "APP_REVISION"                             => :revision
     }.freeze
+    # Formatted in two-dimensional array for easy printing
+    SUGGESTED_REQUEST_HEADERS = [
+      %w[HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING],
+      %w[HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION],
+      %w[CONTENT_LENGTH PATH_INFO HTTP_RANGE HTTP_REFERER],
+      %w[REQUEST_METHOD REQUEST_URI SERVER_NAME SERVER_PORT],
+      %w[SERVER_PROTOCOL HTTP_USER_AGENT]
+    ].freeze
 
     # Mapping of old and deprecated AppSignal configuration keys
     DEPRECATED_CONFIG_KEY_MAPPING = {

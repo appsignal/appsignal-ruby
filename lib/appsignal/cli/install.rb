@@ -11,13 +11,6 @@ module Appsignal
       extend CLI::Helpers
 
       EXCLUDED_ENVIRONMENTS = ["test"].freeze
-      REQUEST_HEADERS = [
-        %w[HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING],
-        %w[HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION],
-        %w[CONTENT_LENGTH PATH_INFO HTTP_RANGE HTTP_REFERER],
-        %w[REQUEST_METHOD REQUEST_URI SERVER_NAME SERVER_PORT],
-        %w[SERVER_PROTOCOL HTTP_USER_AGENT]
-      ].freeze
 
       class << self
         def run(push_api_key)
@@ -284,13 +277,13 @@ module Appsignal
         end
 
         def multiline_request_headers
-          REQUEST_HEADERS.map do |row|
+          Appsignal::Config::SUGGESTED_REQUEST_HEADERS.map do |row|
             row.map(&:inspect).join(", ")
           end.join(",\n    ")
         end
 
         def single_line_request_headers
-          REQUEST_HEADERS.flatten.join(",")
+          Appsignal::Config::SUGGESTED_REQUEST_HEADERS.flatten.join(",")
         end
       end
     end
