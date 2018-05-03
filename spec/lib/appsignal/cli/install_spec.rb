@@ -658,7 +658,7 @@ describe Appsignal::CLI::Install do
           "\e[31mWarning:\e[0m We could not detect which framework you are using."
         expect(output).to_not include_env_push_api_key
         expect(output).to_not include_env_app_name
-        expect(output).to include_env_request_headers
+        expect(output).to_not include_env_request_headers
         expect(File.exist?(config_file_path)).to be_falsy
       end
     end
