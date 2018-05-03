@@ -51,6 +51,7 @@ module Appsignal
       "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
       "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
+      "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
       "APPSIGNAL_SEND_PARAMS"                    => :send_params,
       "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING"     => :enable_allocation_tracking,
@@ -270,7 +271,7 @@ module Appsignal
       # Configuration with array of strings type
       %w[APPSIGNAL_IGNORE_ACTIONS APPSIGNAL_IGNORE_ERRORS
          APPSIGNAL_IGNORE_NAMESPACES APPSIGNAL_FILTER_PARAMETERS
-         APPSIGNAL_REQUEST_HEADERS].each do |var|
+         APPSIGNAL_FILTER_SESSION_DATA APPSIGNAL_REQUEST_HEADERS].each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
