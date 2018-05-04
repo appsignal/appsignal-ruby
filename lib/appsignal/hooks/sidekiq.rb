@@ -71,9 +71,9 @@ module Appsignal
       end
 
       def filtered_arguments(job)
-        Appsignal::Utils::ParamsSanitizer.sanitize(
+        Appsignal::Utils::HashSanitizer.sanitize(
           parse_arguments(job),
-          :filter_parameters => Appsignal.config[:filter_parameters]
+          Appsignal.config[:filter_parameters]
         )
       end
 

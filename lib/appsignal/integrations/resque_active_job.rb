@@ -9,8 +9,10 @@ module Appsignal
       def self.included(base)
         base.class_eval do
           around_perform do |job, block|
-            params = Appsignal::Utils::ParamsSanitizer.sanitize job.arguments,
-              :filter_parameters => Appsignal.config[:filter_parameters]
+            params = Appsignal::Utils::HashSanitizer.sanitize(
+              job.arguments,
+              Appsignal.config[:filter_parameters]
+            )
 
             Appsignal.monitor_single_transaction(
               "perform_job.resque",

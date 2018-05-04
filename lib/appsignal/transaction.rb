@@ -384,11 +384,8 @@ module Appsignal
     def sanitized_params
       return unless Appsignal.config[:send_params]
 
-      options = {}
-      if Appsignal.config[:filter_parameters]
-        options[:filter_parameters] = Appsignal.config[:filter_parameters]
-      end
-      Appsignal::Utils::ParamsSanitizer.sanitize params, options
+      filter_keys = Appsignal.config[:filter_parameters] || []
+      Appsignal::Utils::HashSanitizer.sanitize params, filter_keys
     end
 
     def request_params
@@ -427,7 +424,7 @@ module Appsignal
 
     # Returns sanitized session data.
     #
-    # The session data is sanitized by the {Appsignal::Utils::ParamsSanitizer}.
+    # The session data is sanitized by the {Appsignal::Utils::HashSanitizer}.
     #
     # @return [nil] if `:skip_session_data` config is set to `true`.
     # @return [nil] if the {#request} object doesn't respond to `#session`.
@@ -439,11 +436,9 @@ module Appsignal
       session = request.session
       return unless session
 
-      options = {}
-      if Appsignal.config[:filter_session_data]
-        options[:filter_parameters] = Appsignal.config[:filter_session_data]
-      end
-      Appsignal::Utils::ParamsSanitizer.sanitize session.to_hash, options
+      Appsignal::Utils::HashSanitizer.sanitize(
+        session.to_hash, Appsignal.config[:filter_session_data]
+      )
     end
 
     # Returns metadata from the environment.
