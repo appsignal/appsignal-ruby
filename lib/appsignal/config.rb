@@ -212,7 +212,7 @@ module Appsignal
       end.join(",\n    ")
       single_line_request_headers = SUGGESTED_REQUEST_HEADERS.flatten.join(",")
 
-      logger.warn "The `request_headers` config option was not set " \
+      puts "Warning: The `request_headers` config option was not set " \
         " in the AppSignal configuration, falling back to the default list. " \
         "Please explicitly list response headers to send to AppSignal in " \
         "config/appsignal.yml:\n\n" \

@@ -49,18 +49,25 @@ module StdStreamsHelper
     stderr.unlink
   end
 
-  def silence
-    std_stream = Tempfile.new(SecureRandom.uuid)
-    original_stdout = $stdout.dup
-    original_stderr = $stderr.dup
-    $stdout.reopen std_stream
-    $stderr.reopen std_stream
-
-    yield
+  # Silence the STDOUT.
+  #
+  # Ignore the STDOUT and don't print it in the test suite's STDOUT.
+  #
+  # If an error is found the output the output is raised as an error, failing
+  # the spec. Warnings and other AppSignal messages are ignored.
+  #
+  # Usage
+  #
+  #     silence { do_something }
+  #
+  #     silence { puts "ERROR!" }
+  #     # => Error found in silenced output:
+  #     # ERROR!
+  def silence(&block)
+    stream = Tempfile.new(SecureRandom.uuid)
+    capture_std_streams(stream, stream, &block)
   ensure
-    $stdout.reopen original_stdout
-    $stderr.reopen original_stderr
-    std_stream.rewind
-    std_stream.unlink
+    output = stream.read
+    raise "Error found in silenced output:\n#{output}" if output =~ /(ERR|Error|error)/
   end
 end
