@@ -67,6 +67,14 @@ module Appsignal
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
       "APP_REVISION"                             => :revision
     }.freeze
+    # Formatted in two-dimensional array for easy printing
+    SUGGESTED_REQUEST_HEADERS = [
+      %w[HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING],
+      %w[HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION],
+      %w[CONTENT_LENGTH PATH_INFO HTTP_RANGE],
+      %w[REQUEST_METHOD REQUEST_URI SERVER_NAME SERVER_PORT],
+      %w[SERVER_PROTOCOL]
+    ].freeze
 
     # Mapping of old and deprecated AppSignal configuration keys
     DEPRECATED_CONFIG_KEY_MAPPING = {
@@ -189,9 +197,34 @@ module Appsignal
         @valid = false
         @logger.error "Push api key not set after loading config"
       end
+
+      check_if_request_headers_option_is_set
     end
 
     private
+
+    def check_if_request_headers_option_is_set
+      return unless valid?
+      return if config_hash.key?(:request_headers) || env == "test"
+
+      multi_line_request_headers = SUGGESTED_REQUEST_HEADERS.map do |row|
+        row.map(&:inspect).join(", ")
+      end.join(",\n    ")
+      single_line_request_headers = SUGGESTED_REQUEST_HEADERS.flatten.join(",")
+
+      puts "Warning: The `request_headers` config option was not set " \
+        " in the AppSignal configuration, falling back to the default list. " \
+        "Please explicitly list response headers to send to AppSignal in " \
+        "config/appsignal.yml:\n\n" \
+        "  request_headers: [\n" \
+        "    #{multi_line_request_headers}\n" \
+        "]\n\n" \
+        "Or set the APPSIGNAL_REQUEST_HEADERS environment variable:\n\n"\
+        "  $ export APPSIGNAL_REQUEST_HEADERS=" \
+        "\"#{single_line_request_headers}\"\n\n" \
+        "Please check https://github.com/appsignal/appsignal-ruby/pull/406 " \
+        "for more information on this change."
+    end
 
     def config_file
       @config_file ||=

@@ -30,7 +30,7 @@ describe Appsignal::Config do
   end
 
   describe "config based on the system" do
-    let(:config) { project_fixture_config(:none) }
+    let(:config) { silence { project_fixture_config(:none) } }
 
     describe ":active" do
       subject { config[:active] }
@@ -77,7 +77,8 @@ describe Appsignal::Config do
         :push_api_key => "abc",
         :name => "TestApp",
         :active => true,
-        :revision => "v2.5.1"
+        :revision => "v2.5.1",
+        :request_headers => []
       )
     end
 
@@ -108,7 +109,8 @@ describe Appsignal::Config do
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :files_world_accessible         => true,
-        :revision                       => "v2.5.1"
+        :revision                       => "v2.5.1",
+        :request_headers                => []
       )
     end
 
@@ -136,7 +138,8 @@ describe Appsignal::Config do
             described_class.new(
               "non-existing-path",
               "production",
-              :active => false
+              :active => false,
+              :request_headers => []
             )
           end
           before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
@@ -362,7 +365,7 @@ describe Appsignal::Config do
   end
 
   describe "#[]" do
-    let(:config) { project_fixture_config(:none, :push_api_key => "foo") }
+    let(:config) { project_fixture_config(:none, :push_api_key => "foo", :request_headers => []) }
 
     context "with existing key" do
       it "gets the value" do
@@ -630,23 +633,61 @@ describe Appsignal::Config do
   end
 
   describe "#validate" do
-    before { config.validate }
     subject { config.valid? }
-    let(:config) { described_class.new(Dir.pwd, "production", :push_api_key => push_api_key) }
+    let(:config) do
+      described_class.new(Dir.pwd, "production", config_options)
+    end
 
-    context "with missing push_api_key" do
-      let(:push_api_key) { nil }
+    describe "push_api_key" do
+      let(:config_options) { { :push_api_key => push_api_key, :request_headers => [] } }
+      before { config.validate }
 
-      it "sets valid to false" do
-        is_expected.to eq(false)
+      context "with missing push_api_key" do
+        let(:push_api_key) { nil }
+
+        it "sets valid to false" do
+          is_expected.to eq(false)
+        end
+      end
+
+      context "with push_api_key present" do
+        let(:push_api_key) { "abc" }
+
+        it "sets valid to true" do
+          is_expected.to eq(true)
+        end
       end
     end
 
-    context "with push_api_key present" do
+    describe "request_headers option validation" do
+      let(:out_stream) { std_stream }
+      let(:output) { out_stream.read }
       let(:push_api_key) { "abc" }
+      let(:config_options) { { :push_api_key => push_api_key } }
+      before do
+        capture_stdout(out_stream) do
+          config.validate
+        end
+      end
 
-      it "sets valid to true" do
-        is_expected.to eq(true)
+      context "with missing request_headers config option" do
+        let(:config_options) { { :push_api_key => "abc" } }
+
+        it "logs a warning" do
+          is_expected.to eq(true)
+          expect(output).to include "Warning: The `request_headers` config " \
+            "option was not set  in the AppSignal configuration"
+        end
+      end
+
+      context "with request_headers config option present" do
+        let(:config_options) { { :push_api_key => "abc", :request_headers => [] } }
+
+        it "logs no warning" do
+          is_expected.to eq(true)
+          expect(output).to_not include "Warning: The `request_headers` config " \
+            "option was not set  in the AppSignal configuration"
+        end
       end
     end
   end

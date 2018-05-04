@@ -164,7 +164,7 @@ module Appsignal
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
           puts "  (2) environment variables"
-          loop do
+          loop do # rubocop:disable Metrics/BlockLength
             print "  Choose (1/2): "
             case ask_for_input
             when "1"
@@ -176,6 +176,7 @@ module Appsignal
               write_config_file(
                 :push_api_key => config[:push_api_key],
                 :app_name => config[:name],
+                :request_headers => multiline_request_headers,
                 :environments => environments
               )
               puts
@@ -191,6 +192,7 @@ module Appsignal
               if name_overwritten
                 puts "  export APPSIGNAL_APP_NAME=#{config[:name]}"
               end
+              puts "  export APPSIGNAL_REQUEST_HEADERS=#{single_line_request_headers}"
               puts
               puts "  See the documentation for more configuration options:"
               puts "  http://docs.appsignal.com/gem-settings/configuration.html"
@@ -272,6 +274,16 @@ module Appsignal
 
         def new_config
           Appsignal::Config.new(Dir.pwd, "")
+        end
+
+        def multiline_request_headers
+          Appsignal::Config::SUGGESTED_REQUEST_HEADERS.map do |row|
+            row.map(&:inspect).join(", ")
+          end.join(",\n    ")
+        end
+
+        def single_line_request_headers
+          Appsignal::Config::SUGGESTED_REQUEST_HEADERS.flatten.join(",")
         end
       end
     end

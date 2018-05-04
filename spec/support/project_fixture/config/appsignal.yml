@@ -1,6 +1,13 @@
 default: &defaults
   push_api_key: "abc"
   name: "TestApp"
+  request_headers: [
+    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",
+    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",
+    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",
+    "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",
+    "SERVER_PROTOCOL", "HTTP_USER_AGENT"
+  ]
 
 production:
   <<: *defaults
@@ -21,6 +28,13 @@ old_config:
   active: true
   ignore_exceptions:
     - StandardError
+  request_headers: [
+    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",
+    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",
+    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",
+    "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",
+    "SERVER_PROTOCOL", "HTTP_USER_AGENT"
+  ]
 
 old_config_mixed_with_new_config:
   push_api_key: "ghi"
@@ -30,3 +44,10 @@ old_config_mixed_with_new_config:
     - NoMethodError
   ignore_exceptions:
     - StandardError
+  request_headers: [
+    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",
+    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",
+    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",
+    "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",
+    "SERVER_PROTOCOL", "HTTP_USER_AGENT"
+  ]

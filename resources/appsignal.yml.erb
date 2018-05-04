@@ -6,6 +6,11 @@ default: &defaults
   # Your app's name
   name: "<%= app_name %>"
 
+  # Request headers that should be recorded per sample
+  request_headers: [
+    <%= request_headers %>
+  ]
+
   # Actions that should not be monitored by AppSignal
   # ignore_actions:
   #   - ApplicationController#isup
