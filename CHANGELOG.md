@@ -1,11 +1,14 @@
-# 2.6.0 (unreleased)
+# 2.6.0
 - Enable frozen strings by default. PR #384
 - Add `revision` config option. PR #388
-- Improve padrino action names. Don't generate unique action names. PR #393
+- Avoid generating unique action names for Padrino. PR #393
 - Add `request_headers` filter configuration. PR #395
 - Support tags for custom metrics. PR #398
-- Add filter_session_data config option. PR #402
+- Add filter_session_data config option. PR #402 & #409
 - Move default hostname behavior to extension. PR #404
+- Add `request_headers` config to installation step. PR #406
+- Rename ParamsSanitizer to HashSanitizer. PR #408
+- Fix empty action name issue. Commit b292c2c93c8935ab54fc4d16598fa534c9cc9c90
 
 # 2.5.3
 - Fix Sidekiq action names containing arguments. PR #401
