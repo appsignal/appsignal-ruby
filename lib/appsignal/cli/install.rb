@@ -228,27 +228,18 @@ module Appsignal
 
         def installed_frameworks
           [].tap do |out|
-            begin
-              require "rails"
-              out << :rails
-            rescue LoadError
-            end
-            begin
-              require "sinatra"
-              out << :sinatra
-            rescue LoadError
-            end
-            begin
-              require "padrino"
-              out << :padrino
-            rescue LoadError
-            end
-            begin
-              require "grape"
-              out << :grape
-            rescue LoadError
-            end
+            out << :rails if framework_available? "rails"
+            out << :sinatra if framework_available? "sinatra"
+            out << :padrino if framework_available? "padrino"
+            out << :grape if framework_available? "grape"
           end
+        end
+
+        def framework_available?(framework_file)
+          require framework_file
+          true
+        rescue LoadError
+          false
         end
 
         def rails_environments
