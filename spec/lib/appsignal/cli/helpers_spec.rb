@@ -50,8 +50,8 @@ describe Appsignal::CLI::Helpers do
 
   describe ".press_any_key" do
     before do
-      set_input "a" # a as in any
-      prepare_input
+      add_cli_input "a" # a as in any
+      prepare_cli_input
     end
 
     it "continues after press" do
@@ -62,15 +62,15 @@ describe Appsignal::CLI::Helpers do
 
   describe ".ask_for_input" do
     it "returns the input" do
-      set_input "foo"
-      prepare_input
+      add_cli_input "foo"
+      prepare_cli_input
       expect(cli.send(:ask_for_input)).to eq("foo")
     end
 
     context "with input ending with a line break" do
       it "returns only the input" do
-        set_input "foo\n"
-        prepare_input
+        add_cli_input "foo\n"
+        prepare_cli_input
         expect(cli.send(:ask_for_input)).to eq("foo")
       end
     end
@@ -94,47 +94,47 @@ describe Appsignal::CLI::Helpers do
     end
 
     it "takes 'y' for an answer" do
-      set_input ""
-      set_input "nonsense"
-      set_input "y"
-      prepare_input
+      add_cli_input ""
+      add_cli_input "nonsense"
+      add_cli_input "y"
+      prepare_cli_input
 
       expect(yes_or_no).to be_truthy
     end
 
     it "takes 'Y' for an answer" do
-      set_input "Y"
-      prepare_input
+      add_cli_input "Y"
+      prepare_cli_input
 
       expect(yes_or_no).to be_truthy
     end
 
     it "takes 'yes' for an answer" do
-      set_input "yes"
-      prepare_input
+      add_cli_input "yes"
+      prepare_cli_input
 
       expect(yes_or_no).to be_truthy
     end
 
     it "takes 'n' for an answer" do
-      set_input ""
-      set_input "nonsense"
-      set_input "n"
-      prepare_input
+      add_cli_input ""
+      add_cli_input "nonsense"
+      add_cli_input "n"
+      prepare_cli_input
 
       expect(yes_or_no).to be_falsy
     end
 
     it "takes 'N' for an answer" do
-      set_input "N"
-      prepare_input
+      add_cli_input "N"
+      prepare_cli_input
 
       expect(yes_or_no).to be_falsy
     end
 
     it "takes 'no' for an answer" do
-      set_input "no"
-      prepare_input
+      add_cli_input "no"
+      prepare_cli_input
 
       expect(yes_or_no).to be_falsy
     end
@@ -147,8 +147,8 @@ describe Appsignal::CLI::Helpers do
       end
 
       it "returns the default if no input is received from the user" do
-        set_input ""
-        prepare_input
+        add_cli_input ""
+        prepare_cli_input
 
         expect(yes_or_no).to be_truthy
       end
@@ -161,9 +161,9 @@ describe Appsignal::CLI::Helpers do
     end
 
     it "collects required input" do
-      set_input ""
-      set_input "value"
-      prepare_input
+      add_cli_input ""
+      add_cli_input "value"
+      prepare_cli_input
 
       expect(required_input).to eq("value")
     end

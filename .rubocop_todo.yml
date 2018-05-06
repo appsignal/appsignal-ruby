@@ -49,12 +49,11 @@ Metrics/ModuleLength:
 Metrics/PerceivedComplexity:
   Max: 14
 
-# Offense count: 10
+# Offense count: 9
 Naming/AccessorMethodName:
   Exclude:
     - 'lib/appsignal.rb'
     - 'lib/appsignal/transaction.rb'
-    - 'spec/support/helpers/cli_helpers.rb'
 
 # Offense count: 4
 # Cop supports --auto-correct.
