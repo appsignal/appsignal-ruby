@@ -115,10 +115,3 @@ Style/GuardClause:
 Style/IfUnlessModifier:
   Exclude:
     - 'lib/appsignal.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: IncludeSemanticChanges.
-Style/NonNilCheck:
-  Exclude:
-    - 'lib/appsignal/transaction.rb'

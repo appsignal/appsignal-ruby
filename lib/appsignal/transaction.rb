@@ -18,17 +18,17 @@ module Appsignal
         end
 
         # Check if we already have a running transaction
-        if Thread.current[:appsignal_transaction] != nil
-          # Log the issue and return the current transaction
+        if Thread.current[:appsignal_transaction].nil?
+          # If not, start a new transaction
+          Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+        else
+          # Otherwise, log the issue about trying to start another transaction
           Appsignal.logger.debug "Trying to start new transaction with id " \
             "'#{id}', but a transaction with id '#{current.transaction_id}' " \
             "is already running. Using transaction '#{current.transaction_id}'."
 
-          # Return the current (running) transaction
+          # And return the current transaction instead
           current
-        else
-          # Otherwise, start a new transaction
-          Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
         end
       end
 
