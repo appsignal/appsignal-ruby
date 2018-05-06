@@ -46,11 +46,11 @@ describe Appsignal::EventFormatter do
   end
 
   context "registering and unregistering formatters" do
-    it "should register a formatter" do
+    it "registers a formatter" do
       expect(klass.formatters["mock"]).to be_instance_of(MockFormatter)
     end
 
-    it "should know wether a formatter is registered" do
+    it "knows whether a formatter is registered" do
       expect(klass.registered?("mock")).to be_truthy
       expect(klass.registered?("mock", MockFormatter)).to be_truthy
       expect(klass.registered?("mock", Hash)).to be_falsy
@@ -61,7 +61,7 @@ describe Appsignal::EventFormatter do
       expect(klass.registered?("mock.dependent")).to be_falsy
     end
 
-    it "should register a custom formatter" do
+    it "registers a custom formatter" do
       klass.register("mock.specific", MockFormatter)
 
       expect(klass.formatter_classes["mock.specific"]).to eq MockFormatter
@@ -70,11 +70,11 @@ describe Appsignal::EventFormatter do
       expect(klass.formatters["mock.specific"].body).to eq "some value"
     end
 
-    it "should not have a formatter that's not registered" do
+    it "does not know a formatter that's not registered" do
       expect(klass.formatters["nonsense"]).to be_nil
     end
 
-    it "should unregister a formatter if the registered one has the same class" do
+    it "unregistering a formatter if the registered one has the same class" do
       klass.register("mock.unregister", MockFormatter)
 
       klass.unregister("mock.unregister", Hash)
@@ -84,14 +84,14 @@ describe Appsignal::EventFormatter do
       expect(klass.registered?("mock.unregister")).to be_falsy
     end
 
-    it "should not register two formatters for the same name" do
+    it "does not register two formatters for the same name" do
       expect(Appsignal.logger).to receive(:warn)
         .with("Formatter for 'mock.twice' already registered, not registering 'MockFormatter'")
       klass.register("mock.twice", MockFormatter)
       klass.register("mock.twice", MockFormatter)
     end
 
-    it "should not register deprecated formatter" do
+    it "does not register deprecated formatters" do
       expect(Appsignal.logger).to receive(:warn)
         .with("Formatter for 'mock.deprecated' is using a deprecated registration method. " \
               "This event formatter will not be loaded. " \
@@ -103,7 +103,7 @@ describe Appsignal::EventFormatter do
       expect(Appsignal::EventFormatter.deprecated_formatter_classes.keys).to include("mock.deprecated")
     end
 
-    it "should initialize deprecated formatters" do
+    it "initializes deprecated formatters" do
       deprecated_formatter
       Appsignal::EventFormatter.initialize_deprecated_formatters
 
@@ -112,11 +112,11 @@ describe Appsignal::EventFormatter do
   end
 
   context "calling formatters" do
-    it "should return nil if there is no formatter registered" do
+    it "returns nil if there is no formatter registered" do
       expect(klass.format("nonsense", {})).to be_nil
     end
 
-    it "should call the formatter if it is registered and use a value set in the initializer" do
+    it "calls the formatter if it is registered and use a value set in the initializer" do
       expect(klass.format("mock", {})).to eq ["title", "some value"]
     end
   end
