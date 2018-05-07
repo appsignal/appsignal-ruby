@@ -10,21 +10,6 @@ module Appsignal
     FRONTEND       = "frontend".freeze
     BLANK          = "".freeze
 
-    # Based on what Rails uses + some variables we'd like to show
-    FALLBACK_REQUEST_HEADERS = %w[
-      CONTENT_LENGTH AUTH_TYPE GATEWAY_INTERFACE
-      PATH_TRANSLATED REMOTE_HOST REMOTE_IDENT REMOTE_USER REMOTE_ADDR
-      REQUEST_METHOD SERVER_NAME SERVER_PORT SERVER_PROTOCOL REQUEST_URI
-      PATH_INFO
-
-      HTTP_X_REQUEST_START HTTP_X_MIDDLEWARE_START HTTP_X_QUEUE_START
-      HTTP_X_QUEUE_TIME HTTP_X_HEROKU_QUEUE_WAIT_TIME HTTP_X_APPLICATION_START
-      HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING HTTP_ACCEPT_LANGUAGE
-      HTTP_CACHE_CONTROL HTTP_CONNECTION HTTP_USER_AGENT HTTP_FROM
-      HTTP_NEGOTIATE HTTP_PRAGMA HTTP_REFERER HTTP_X_FORWARDED_FOR
-      HTTP_CLIENT_IP HTTP_RANGE
-    ].freeze
-
     class << self
       def create(id, namespace, request, options = {})
         # Allow middleware to force a new transaction
@@ -405,9 +390,6 @@ module Appsignal
     # The environment of a transaction can contain a lot of information, not
     # all of it useful for debugging.
     #
-    # Only the values from the keys specified in {FALLBACK_REQUEST_HEADERS} are
-    # returned.
-    #
     # @return [nil] if no environment is present.
     # @return [Hash<String, Object>]
     def sanitized_environment
@@ -415,8 +397,7 @@ module Appsignal
       return if env.empty?
 
       {}.tap do |out|
-        (Appsignal.config[:request_headers] ||
-          FALLBACK_REQUEST_HEADERS).each do |key|
+        Appsignal.config[:request_headers].each do |key|
           out[key] = env[key] if env[key]
         end
       end

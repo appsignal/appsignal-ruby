@@ -39,16 +39,6 @@ describe Appsignal::CLI::Install do
       actual.include?("export APPSIGNAL_APP_NAME=#{name}")
     end
   end
-  define :include_env_request_headers do
-    match do |actual|
-      actual.include?(
-        "export APPSIGNAL_REQUEST_HEADERS=HTTP_ACCEPT,HTTP_ACCEPT_CHARSET," \
-        "HTTP_ACCEPT_ENCODING,HTTP_ACCEPT_LANGUAGE,HTTP_CACHE_CONTROL," \
-        "HTTP_CONNECTION,CONTENT_LENGTH,PATH_INFO,HTTP_RANGE," \
-        "REQUEST_METHOD,REQUEST_URI,SERVER_NAME,SERVER_PORT,SERVER_PROTOCOL"
-      )
-    end
-  end
 
   define :configure_app_name do |name|
     match do |file_contents|
@@ -58,17 +48,6 @@ describe Appsignal::CLI::Install do
   define :configure_push_api_key do |key|
     match do |file_contents|
       file_contents =~ /^  push_api_key: "#{key}"/
-    end
-  end
-  define :configure_request_headers do
-    match do |file_contents|
-      file_contents =~ /^  request_headers: \[/ &&
-        file_contents =~ /^    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",/ &&
-        file_contents =~ /^    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",/ &&
-        file_contents =~ /^    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE",/ &&
-        file_contents =~ /^    "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",/ &&
-        file_contents =~ /^    "SERVER_PROTOCOL"/ &&
-        file_contents =~ /^  \]/
     end
   end
   define :configure_environment do |env|
@@ -293,7 +272,6 @@ describe Appsignal::CLI::Install do
           expect(output).to include_file_config
           expect(config_file).to configure_app_name(app_name)
           expect(config_file).to configure_push_api_key(push_api_key)
-          expect(config_file).to configure_request_headers
           expect(config_file).to_not configure_environment("development")
           expect(config_file).to_not configure_environment("staging")
           expect(config_file).to configure_environment("production")
@@ -321,7 +299,6 @@ describe Appsignal::CLI::Install do
 
             expect(output).to include_env_push_api_key(push_api_key)
             expect(output).to_not include_env_app_name
-            expect(output).to include_env_request_headers
           end
 
           it "completes the installation" do
@@ -345,7 +322,6 @@ describe Appsignal::CLI::Install do
             expect(output).to include_file_config
             expect(config_file).to configure_app_name(app_name)
             expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_request_headers
             expect(config_file).to configure_environment("development")
             expect(config_file).to configure_environment("staging")
             expect(config_file).to configure_environment("production")
@@ -390,7 +366,6 @@ describe Appsignal::CLI::Install do
 
             expect(output).to include_env_push_api_key(push_api_key)
             expect(output).to include_env_app_name(app_name)
-            expect(output).to include_env_request_headers
           end
 
           it "completes the installation" do
@@ -417,7 +392,6 @@ describe Appsignal::CLI::Install do
             expect(output).to include_file_config
             expect(config_file).to configure_app_name(app_name)
             expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_request_headers
             expect(config_file).to configure_environment("development")
             expect(config_file).to configure_environment("staging")
             expect(config_file).to configure_environment("production")
@@ -463,7 +437,6 @@ describe Appsignal::CLI::Install do
 
             expect(output).to include_env_push_api_key(push_api_key)
             expect(output).to include_env_app_name(app_name)
-            expect(output).to include_env_request_headers
           end
 
           it "completes the installation" do
@@ -487,7 +460,6 @@ describe Appsignal::CLI::Install do
             expect(output).to include_file_config
             expect(config_file).to configure_app_name(app_name)
             expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_request_headers
             expect(config_file).to configure_environment("development")
             expect(config_file).to configure_environment("staging")
             expect(config_file).to configure_environment("production")
@@ -532,7 +504,6 @@ describe Appsignal::CLI::Install do
 
             expect(output).to include_env_push_api_key(push_api_key)
             expect(output).to include_env_app_name(app_name)
-            expect(output).to include_env_request_headers
           end
 
           it "completes the installation" do
@@ -556,7 +527,6 @@ describe Appsignal::CLI::Install do
             expect(output).to include_file_config
             expect(config_file).to configure_app_name(app_name)
             expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_request_headers
             expect(config_file).to configure_environment("development")
             expect(config_file).to configure_environment("staging")
             expect(config_file).to configure_environment("production")
@@ -601,7 +571,6 @@ describe Appsignal::CLI::Install do
 
             expect(output).to include_env_push_api_key(push_api_key)
             expect(output).to include_env_app_name(app_name)
-            expect(output).to include_env_request_headers
           end
 
           it "completes the installation" do
@@ -625,7 +594,6 @@ describe Appsignal::CLI::Install do
             expect(output).to include_file_config
             expect(config_file).to configure_app_name(app_name)
             expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_request_headers
             expect(config_file).to configure_environment("development")
             expect(config_file).to configure_environment("staging")
             expect(config_file).to configure_environment("production")
@@ -657,7 +625,6 @@ describe Appsignal::CLI::Install do
           "\e[31mWarning:\e[0m We could not detect which framework you are using."
         expect(output).to_not include_env_push_api_key
         expect(output).to_not include_env_app_name
-        expect(output).to_not include_env_request_headers
         expect(File.exist?(config_file_path)).to be_falsy
       end
     end
