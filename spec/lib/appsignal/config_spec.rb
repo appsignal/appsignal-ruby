@@ -658,37 +658,5 @@ describe Appsignal::Config do
         end
       end
     end
-
-    describe "request_headers option validation" do
-      let(:out_stream) { std_stream }
-      let(:output) { out_stream.read }
-      let(:push_api_key) { "abc" }
-      let(:config_options) { { :push_api_key => push_api_key } }
-      before do
-        capture_stdout(out_stream) do
-          config.validate
-        end
-      end
-
-      context "with missing request_headers config option" do
-        let(:config_options) { { :push_api_key => "abc" } }
-
-        it "logs a warning" do
-          is_expected.to eq(true)
-          expect(output).to include "Warning: The `request_headers` config " \
-            "option was not set  in the AppSignal configuration"
-        end
-      end
-
-      context "with request_headers config option present" do
-        let(:config_options) { { :push_api_key => "abc", :request_headers => [] } }
-
-        it "logs no warning" do
-          is_expected.to eq(true)
-          expect(output).to_not include "Warning: The `request_headers` config " \
-            "option was not set  in the AppSignal configuration"
-        end
-      end
-    end
   end
 end
