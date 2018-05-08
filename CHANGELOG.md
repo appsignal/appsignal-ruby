@@ -1,3 +1,7 @@
+# 2.6.1
+- Remove request_headers warning and use sane default. PR #410
+- Fix metrics format for internal agent metrics. PR #411
+
 # 2.6.0
 - Enable frozen strings by default. PR #384
 - Add `revision` config option. PR #388
