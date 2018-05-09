@@ -70,6 +70,7 @@ RSpec.configure do |config|
   config.include LogHelpers
   config.extend DependencyHelper
 
+  config.example_status_persistence_file_path = "spec/examples.txt"
   config.fail_if_no_examples = true
 
   def spec_system_tmp_dir

@@ -10,6 +10,7 @@ capybara-*.html
 /db/*.sqlite3
 /public/system/*
 /coverage/
+/spec/examples.txt
 /spec/tmp
 /spec/support/project_fixture/log/*.log
 **.orig
