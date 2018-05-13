@@ -228,9 +228,7 @@ module Appsignal
     # @return [Object] the value of the given block is returned.
     # @since 0.10.0
     def monitor_transaction(name, env = {})
-      unless active?
-        return yield
-      end
+      return yield unless active?
 
       if name.start_with?("perform_job".freeze)
         namespace = Appsignal::Transaction::BACKGROUND_JOB

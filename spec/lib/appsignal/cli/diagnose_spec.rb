@@ -63,7 +63,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     def run_within_dir(chdir)
-      prepare_input
+      prepare_cli_input
       Dir.chdir chdir do
         capture_stdout(out_stream) { cli.run(options) }
       end
@@ -83,11 +83,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     def send_diagnostics_report
-      set_input "y"
+      add_cli_input "y"
     end
 
     def dont_send_diagnostics_report
-      set_input "n"
+      add_cli_input "n"
     end
 
     it "outputs header and support text" do

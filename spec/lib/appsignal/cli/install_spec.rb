@@ -73,19 +73,19 @@ describe Appsignal::CLI::Install do
     stub_api_request config, "auth"
   end
 
-  alias_method :enter_app_name, :set_input
+  alias_method :enter_app_name, :add_cli_input
 
   def choose_config_file
-    set_input "1"
+    add_cli_input "1"
   end
 
   def choose_environment_config
-    set_input "2"
+    add_cli_input "2"
   end
 
   def run
     Dir.chdir tmp_dir do
-      prepare_input
+      prepare_cli_input
       capture_stdout(out_stream) do
         run_cli(["install", push_api_key])
       end
@@ -160,7 +160,7 @@ describe Appsignal::CLI::Install do
       FileUtils.mkdir_p(tmp_dir)
 
       enter_app_name "foo"
-      set_input "n"
+      add_cli_input "n"
       choose_environment_config
     end
     after do
@@ -262,7 +262,7 @@ describe Appsignal::CLI::Install do
         before do
           File.delete(File.join(environments_dir, "development.rb"))
           File.delete(File.join(environments_dir, "staging.rb"))
-          set_input "n"
+          add_cli_input "n"
           choose_config_file
         end
 
@@ -283,7 +283,7 @@ describe Appsignal::CLI::Install do
       end
 
       context "without custom name" do
-        before { set_input "n" }
+        before { add_cli_input "n" }
 
         it_behaves_like "push_api_key validation"
 
@@ -338,7 +338,7 @@ describe Appsignal::CLI::Install do
 
       context "with custom name" do
         let(:app_name) { "Custom name" }
-        before { set_input "y" }
+        before { add_cli_input "y" }
 
         it_behaves_like "push_api_key validation"
 
