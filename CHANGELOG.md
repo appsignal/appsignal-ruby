@@ -1,3 +1,6 @@
+# 2.7.0 Alpha 1
+- Fix reporting of memory host metrics for containerized hosts. PR #415
+
 # 2.6.1
 - Remove request_headers warning and use sane default. PR #410
 - Fix metrics format for internal agent metrics. PR #411
