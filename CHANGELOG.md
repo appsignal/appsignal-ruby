@@ -1,4 +1,4 @@
-# 2.7.0 Alpha 1
+# 2.7.0 Alpha 2
 - Fix reporting of memory host metrics for containerized hosts. PR #415
 
 # 2.6.1
