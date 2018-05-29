@@ -1,5 +1,9 @@
-# 2.7.0 Alpha 2
+# 2.7.0 Alpha 3
 - Fix reporting of memory host metrics for containerized hosts. PR #415
+- Detect Kubernetes containers as containers in probes-rs library.
+  Commit fafffc5544e2be6269b3978712d84ffb0382bbfd.
+- Detect Kubernetes containers as containers for `running_in_container`
+  config option. Commit fafffc5544e2be6269b3978712d84ffb0382bbfd.
 
 # 2.6.1
 - Remove request_headers warning and use sane default. PR #410
