@@ -682,9 +682,7 @@ module Appsignal
           Logger::INFO
         end
 
-      if in_memory_log
-        logger << in_memory_log.string
-      end
+      logger << @in_memory_log.string if @in_memory_log
 
       if path_arg
         logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
