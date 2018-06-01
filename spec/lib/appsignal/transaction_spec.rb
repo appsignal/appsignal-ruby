@@ -498,7 +498,11 @@ describe Appsignal::Transaction do
       it "should set the data" do
         expect(transaction.ext).to receive(:set_sample_data).with(
           "params",
-          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
+          Appsignal::Utils::Data.generate(
+            "controller" => "blog_posts",
+            "action" => "show",
+            "id" => "1"
+          )
         ).once
 
         transaction.set_sample_data(
@@ -523,7 +527,7 @@ describe Appsignal::Transaction do
       it "should sample data" do
         expect(transaction.ext).to receive(:set_sample_data).with(
           "environment",
-          Appsignal::Utils.data_generate(
+          Appsignal::Utils::Data.generate(
             "CONTENT_LENGTH" => "0",
             "REQUEST_METHOD" => "GET",
             "SERVER_NAME" => "example.org",
@@ -533,19 +537,23 @@ describe Appsignal::Transaction do
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "session_data",
-          Appsignal::Utils.data_generate({})
+          Appsignal::Utils::Data.generate({})
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "params",
-          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
+          Appsignal::Utils::Data.generate(
+            "controller" => "blog_posts",
+            "action" => "show",
+            "id" => "1"
+          )
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "metadata",
-          Appsignal::Utils.data_generate("key" => "value")
+          Appsignal::Utils::Data.generate("key" => "value")
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "tags",
-          Appsignal::Utils.data_generate({})
+          Appsignal::Utils::Data.generate({})
         ).once
 
         transaction.sample_data
@@ -572,7 +580,7 @@ describe Appsignal::Transaction do
           expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "test message",
-            Appsignal::Utils.data_generate(["line 1"])
+            Appsignal::Utils::Data.generate(["line 1"])
           )
 
           transaction.set_error(error)
@@ -590,7 +598,7 @@ describe Appsignal::Transaction do
           expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "",
-            Appsignal::Utils.data_generate(["line 1"])
+            Appsignal::Utils::Data.generate(["line 1"])
           )
 
           transaction.set_error(error)
