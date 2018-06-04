@@ -9,6 +9,8 @@ module Appsignal
     ACTION_CABLE   = "action_cable".freeze
     FRONTEND       = "frontend".freeze
     BLANK          = "".freeze
+    ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
+    ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
 
     class << self
       def create(id, namespace, request, options = {})
@@ -447,10 +449,12 @@ module Appsignal
     # * Key is a symbol or string with less then 100 chars
     # * Value is a symbol or string with less then 100 chars
     # * Value is an integer
+    #
+    # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
     def sanitized_tags
-      @tags.select do |k, v|
-        (k.is_a?(Symbol) || k.is_a?(String) && k.length <= 100) &&
-          (((v.is_a?(Symbol) || v.is_a?(String)) && v.length <= 100) || v.is_a?(Integer))
+      @tags.select do |key, value|
+        ALLOWED_TAG_KEY_TYPES.any? { |type| key.is_a? type } &&
+          ALLOWED_TAG_VALUE_TYPES.any? { |type| value.is_a? type }
       end
     end
 
