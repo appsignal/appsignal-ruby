@@ -242,7 +242,7 @@ module Appsignal
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
       @ext.set_sample_data(
         key.to_s,
-        Appsignal::Utils.data_generate(data)
+        Appsignal::Utils::Data.generate(data)
       )
     rescue RuntimeError => e
       Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{data.inspect}'")
@@ -268,7 +268,7 @@ module Appsignal
       @ext.set_error(
         error.class.name,
         error.message.to_s,
-        backtrace ? Appsignal::Utils.data_generate(backtrace) : Appsignal::Extension.data_array_new
+        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
     end
     alias_method :add_exception, :set_error

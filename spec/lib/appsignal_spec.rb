@@ -434,7 +434,8 @@ describe Appsignal do
         end
 
         it "should call set_gauge with tags" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1, Appsignal::Utils.data_generate(tags))
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
           Appsignal.set_gauge("key", 0.1, tags)
         end
 
@@ -499,7 +500,8 @@ describe Appsignal do
         end
 
         it "should call increment_counter with tags" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Utils.data_generate(tags))
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Utils::Data.generate(tags))
           Appsignal.increment_counter("key", 1, tags)
         end
 
@@ -529,7 +531,8 @@ describe Appsignal do
         end
 
         it "should call add_distribution_value with tags" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1, Appsignal::Utils.data_generate(tags))
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
           Appsignal.add_distribution_value("key", 0.1, tags)
         end
 

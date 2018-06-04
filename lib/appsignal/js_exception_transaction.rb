@@ -29,7 +29,7 @@ module Appsignal
       ext.set_error(
         @data["name"],
         @data["message"] || "",
-        Appsignal::Utils.data_generate(@data["backtrace"] || [])
+        Appsignal::Utils::Data.generate(@data["backtrace"] || [])
       )
     end
 
@@ -43,7 +43,7 @@ module Appsignal
         next unless data.is_a?(Array) || data.is_a?(Hash)
         ext.set_sample_data(
           key.to_s,
-          Appsignal::Utils.data_generate(data)
+          Appsignal::Utils::Data.generate(data)
         )
       end
     end
