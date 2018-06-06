@@ -1,3 +1,8 @@
+# 2.7.0 (unreleased)
+- Fix in memory logger initialization. PR #416
+- Organize classes in their own files. PR #417
+- Move tag value limit handling to extension. PR #418
+
 # 2.6.1
 - Remove request_headers warning and use sane default. PR #410
 - Fix metrics format for internal agent metrics. PR #411
