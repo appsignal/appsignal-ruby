@@ -334,10 +334,31 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_tags" do
-      it "should add tags to transaction" do
-        expect do
-          transaction.set_tags("a" => "b")
-        end.to change(transaction, :tags).to("a" => "b")
+      let(:long_string) { "a" * 2001 }
+      before do
+        transaction.set_tags(
+          :valid_key => "valid_value",
+          "valid_string_key" => "valid_value",
+          :both_symbols => :valid_value,
+          :integer_value => 1,
+          :hash_value => { "invalid" => "hash" },
+          :array_value => %w[invalid array],
+          :object => Object.new,
+          :too_long_value => long_string,
+          long_string => "too_long_key"
+        )
+        transaction.sample_data
+      end
+
+      it "stores tags on transaction" do
+        expect(transaction.to_h["sample_data"]["tags"]).to eq(
+          "valid_key" => "valid_value",
+          "valid_string_key" => "valid_value",
+          "both_symbols" => "valid_value",
+          "integer_value" => 1,
+          "too_long_value" => "#{"a" * 2000}...",
+          long_string => "too_long_key"
+        )
       end
     end
 
@@ -1085,32 +1106,6 @@ describe Appsignal::Transaction do
         let(:env) { { :metadata => { :key => "value" } } }
 
         it { is_expected.to eq env[:metadata] }
-      end
-    end
-
-    describe "#sanitized_tags" do
-      before do
-        transaction.set_tags(
-          :valid_key => "valid_value",
-          "valid_string_key" => "valid_value",
-          :both_symbols => :valid_value,
-          :integer_value => 1,
-          :hash_value => { "invalid" => "hash" },
-          :array_value => %w[invalid array],
-          :to_long_value => SecureRandom.urlsafe_base64(101),
-          :object => Object.new,
-          SecureRandom.urlsafe_base64(101) => "to_long_key"
-        )
-      end
-      subject { transaction.send(:sanitized_tags).keys }
-
-      it "should only return whitelisted data" do
-        is_expected.to match_array([
-          :valid_key,
-          "valid_string_key",
-          :both_symbols,
-          :integer_value
-        ])
       end
     end
 
