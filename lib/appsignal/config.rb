@@ -65,6 +65,7 @@ module Appsignal
       "APPSIGNAL_ENABLE_GC_INSTRUMENTATION"      => :enable_gc_instrumentation,
       "APPSIGNAL_RUNNING_IN_CONTAINER"           => :running_in_container,
       "APPSIGNAL_WORKING_DIR_PATH"               => :working_dir_path,
+      "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_HOSTNAME"                       => :hostname,
@@ -168,6 +169,7 @@ module Appsignal
       ENV["_APPSIGNAL_SEND_PARAMS"]                  = config_hash[:send_params].to_s
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
+      ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]       = config_hash[:working_directory_path] if config_hash[:working_directory_path]
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
       ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
       ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
@@ -245,6 +247,12 @@ module Appsignal
 
           next if config[new_key] # Skip if new key is already in use
           config[new_key] = old_config_value
+        end
+
+        if config.include?(:working_dir_path)
+          logger.warn "'working_dir_path' is deprecated, please use " \
+                      "'working_directory_path' instead and specify the " \
+                      "full path to the working directory"
         end
       end
     end
