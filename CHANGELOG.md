@@ -1,4 +1,9 @@
-# 2.7.0 (unreleased)
+# 2.7.0 Alpha 3
+- Fix reporting of memory host metrics for containerized hosts. PR #415
+- Detect Kubernetes containers as containers in probes-rs library.
+  Commit 60822aac24ccc394df073091c64f05096455942d.
+- Detect Kubernetes containers as containers for `running_in_container`
+  config option. Commit 60822aac24ccc394df073091c64f05096455942d.
 - Fix in memory logger initialization. PR #416
 - Organize classes in their own files. PR #417
 - Move tag value limit handling to extension. PR #418
