@@ -48,7 +48,7 @@ module Appsignal
         transaction.finish_event(
           "query.mongodb",
           "#{event.command_name} | #{event.database_name} | #{result}",
-          Appsignal::Utils.data_generate(command),
+          Appsignal::Utils::Data.generate(command),
           Appsignal::EventFormatter::DEFAULT
         )
       end

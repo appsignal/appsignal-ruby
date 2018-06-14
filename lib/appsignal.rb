@@ -600,7 +600,11 @@ module Appsignal
     end
 
     def set_gauge(key, value, tags = {})
-      Appsignal::Extension.set_gauge(key.to_s, value.to_f, Appsignal::Utils.data_generate(tags))
+      Appsignal::Extension.set_gauge(
+        key.to_s,
+        value.to_f,
+        Appsignal::Utils::Data.generate(tags)
+      )
     rescue RangeError
       Appsignal.logger.warn("Gauge value #{value} for key '#{key}' is too big")
     end
@@ -618,13 +622,21 @@ module Appsignal
     end
 
     def increment_counter(key, value = 1, tags = {})
-      Appsignal::Extension.increment_counter(key.to_s, value, Appsignal::Utils.data_generate(tags))
+      Appsignal::Extension.increment_counter(
+        key.to_s,
+        value,
+        Appsignal::Utils::Data.generate(tags)
+      )
     rescue RangeError
       Appsignal.logger.warn("Counter value #{value} for key '#{key}' is too big")
     end
 
     def add_distribution_value(key, value, tags = {})
-      Appsignal::Extension.add_distribution_value(key.to_s, value.to_f, Appsignal::Utils.data_generate(tags))
+      Appsignal::Extension.add_distribution_value(
+        key.to_s,
+        value.to_f,
+        Appsignal::Utils::Data.generate(tags)
+      )
     rescue RangeError
       Appsignal.logger.warn("Distribution value #{value} for key '#{key}' is too big")
     end
@@ -682,9 +694,7 @@ module Appsignal
           Logger::INFO
         end
 
-      if in_memory_log
-        logger << in_memory_log.string
-      end
+      logger << @in_memory_log.string if @in_memory_log
 
       if path_arg
         logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")

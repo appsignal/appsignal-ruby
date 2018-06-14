@@ -334,68 +334,114 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_tags" do
-      it "should add tags to transaction" do
-        expect do
-          transaction.set_tags("a" => "b")
-        end.to change(transaction, :tags).to("a" => "b")
+      let(:long_string) { "a" * 2001 }
+      before do
+        transaction.set_tags(
+          :valid_key => "valid_value",
+          "valid_string_key" => "valid_value",
+          :both_symbols => :valid_value,
+          :integer_value => 1,
+          :hash_value => { "invalid" => "hash" },
+          :array_value => %w[invalid array],
+          :object => Object.new,
+          :too_long_value => long_string,
+          long_string => "too_long_key"
+        )
+        transaction.sample_data
+      end
+
+      it "stores tags on the transaction" do
+        expect(transaction.to_h["sample_data"]["tags"]).to eq(
+          "valid_key" => "valid_value",
+          "valid_string_key" => "valid_value",
+          "both_symbols" => "valid_value",
+          "integer_value" => 1,
+          "too_long_value" => "#{"a" * 2000}...",
+          long_string => "too_long_key"
+        )
       end
     end
 
-    describe "set_action" do
-      it "should set the action in extension" do
-        expect(transaction.ext).to receive(:set_action).with(
-          "PagesController#show"
-        ).once
+    describe "#set_action" do
+      context "when the action is set" do
+        it "updates the action name on the transaction" do
+          action_name = "PagesController#show"
+          transaction.set_action(action_name)
 
-        transaction.set_action("PagesController#show")
-
-        expect(transaction.action).to eq "PagesController#show"
-      end
-
-      it "should not set the action in extension when value is nil" do
-        expect(Appsignal::Extension).to_not receive(:set_action)
-
-        transaction.set_action(nil)
-      end
-    end
-
-    describe "set_action_if_nil" do
-      context "if action is currently nil" do
-        it "should set the action" do
-          expect(transaction.ext).to receive(:set_action).with(
-            "PagesController#show"
-          ).once
-
-          transaction.set_action_if_nil("PagesController#show")
+          expect(transaction.action).to eq(action_name)
+          expect(transaction.to_h["action"]).to eq(action_name)
         end
       end
 
-      context "if action is currently set" do
-        it "should not set the action" do
+      context "when the action is nil" do
+        it "does not update the action name on the transaction" do
+          action_name = "PagesController#show"
+          transaction.set_action(action_name)
+          transaction.set_action(nil)
+
+          expect(transaction.action).to eq(action_name)
+          expect(transaction.to_h["action"]).to eq(action_name)
+        end
+      end
+    end
+
+    describe "#set_action_if_nil" do
+      context "when the action is not set" do
+        it "updates the action name on the transaction" do
+          expect(transaction.action).to eq(nil)
+          expect(transaction.to_h["action"]).to eq(nil)
+
+          action_name = "PagesController#show"
+          transaction.set_action_if_nil(action_name)
+
+          expect(transaction.action).to eq(action_name)
+          expect(transaction.to_h["action"]).to eq(action_name)
+        end
+
+        context "when the given action is nil" do
+          it "does not update the action name on the transaction" do
+            action_name = "something"
+            transaction.set_action("something")
+            transaction.set_action_if_nil(nil)
+
+            expect(transaction.action).to eq(action_name)
+            expect(transaction.to_h["action"]).to eq(action_name)
+          end
+        end
+      end
+
+      context "when the action is set" do
+        it "does not update the action name on the transaction" do
+          action_name = "something"
           transaction.set_action("something")
+          transaction.set_action_if_nil("something else")
 
-          expect(transaction.ext).not_to receive(:set_action)
-
-          transaction.set_action_if_nil("PagesController#show")
+          expect(transaction.action).to eq(action_name)
+          expect(transaction.to_h["action"]).to eq(action_name)
         end
       end
     end
 
-    describe "set_namespace" do
-      it "should set the action in extension" do
-        expect(transaction.ext).to receive(:set_namespace).with(
-          "custom"
-        ).once
+    describe "#set_namespace" do
+      context "when the namespace is not nil" do
+        it "updates the namespace on the transaction" do
+          namespace = "custom"
+          transaction.set_namespace(namespace)
 
-        transaction.set_namespace("custom")
-
-        expect(transaction.namespace).to eq "custom"
+          expect(transaction.namespace).to eq namespace
+          expect(transaction.to_h["namespace"]).to eq(namespace)
+        end
       end
 
-      it "should not set the action in extension when value is nil" do
-        expect(Appsignal::Extension).to_not receive(:set_namespace)
+      context "when the namespace is nil" do
+        it "does not update the namespace on the transaction" do
+          namespace = "custom"
+          transaction.set_namespace(namespace)
+          transaction.set_namespace(nil)
 
-        transaction.set_action(nil)
+          expect(transaction.namespace).to eq(namespace)
+          expect(transaction.to_h["namespace"]).to eq(namespace)
+        end
       end
     end
 
@@ -478,44 +524,68 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_metadata" do
-      it "should set the metdata in extension" do
-        expect(transaction.ext).to receive(:set_metadata).with(
-          "request_method",
-          "GET"
-        ).once
-
+      it "updates the metadata on the transaction" do
         transaction.set_metadata("request_method", "GET")
+
+        expect(transaction.to_h["metadata"]).to eq("request_method" => "GET")
       end
 
-      it "should not set the metdata in extension when value is nil" do
-        expect(transaction.ext).to_not receive(:set_metadata)
+      context "when the key is nil" do
+        it "does not update the metadata on the transaction" do
+          transaction.set_metadata(nil, "GET")
 
-        transaction.set_metadata("request_method", nil)
+          expect(transaction.to_h["metadata"]).to eq({})
+        end
+      end
+
+      context "when the value is nil" do
+        it "does not update the metadata on the transaction" do
+          transaction.set_metadata("request_method", nil)
+
+          expect(transaction.to_h["metadata"]).to eq({})
+        end
       end
     end
 
-    describe "set_sample_data" do
-      it "should set the data" do
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "params",
-          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
-        ).once
-
+    describe "#set_sample_data" do
+      it "updates the sample data on the transaction" do
         transaction.set_sample_data(
           "params",
           :controller => "blog_posts",
           :action     => "show",
           :id         => "1"
         )
+
+        expect(transaction.to_h["sample_data"]).to eq(
+          "params" => {
+            "action" => "show",
+            "controller" => "blog_posts",
+            "id" => "1"
+          }
+        )
       end
 
-      it "should do nothing if the data cannot be converted to json" do
-        expect(transaction.ext).to_not receive(:set_sample_data).with(
-          "params",
-          kind_of(String)
-        )
+      context "when the data is no Array or Hash" do
+        it "does not update the sample data on the transaction" do
+          transaction.set_sample_data("params", "string")
 
-        transaction.set_sample_data("params", "string")
+          expect(transaction.to_h["sample_data"]).to eq({})
+        end
+      end
+
+      context "when the data cannot be converted to JSON" do
+        it "does not update the sample data on the transaction" do
+          klass = Class.new do
+            def to_s
+              raise "foo" # Cause a deliberate error
+            end
+          end
+          transaction.set_sample_data("params", klass.new => 1)
+
+          expect(transaction.to_h["sample_data"]).to eq({})
+          expect(log_contents(log)).to contains_log :error,
+            "Error generating data (RuntimeError: foo) for"
+        end
       end
     end
 
@@ -523,7 +593,7 @@ describe Appsignal::Transaction do
       it "should sample data" do
         expect(transaction.ext).to receive(:set_sample_data).with(
           "environment",
-          Appsignal::Utils.data_generate(
+          Appsignal::Utils::Data.generate(
             "CONTENT_LENGTH" => "0",
             "REQUEST_METHOD" => "GET",
             "SERVER_NAME" => "example.org",
@@ -533,19 +603,23 @@ describe Appsignal::Transaction do
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "session_data",
-          Appsignal::Utils.data_generate({})
+          Appsignal::Utils::Data.generate({})
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "params",
-          Appsignal::Utils.data_generate("controller" => "blog_posts", "action" => "show", "id" => "1")
+          Appsignal::Utils::Data.generate(
+            "controller" => "blog_posts",
+            "action" => "show",
+            "id" => "1"
+          )
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "metadata",
-          Appsignal::Utils.data_generate("key" => "value")
+          Appsignal::Utils::Data.generate("key" => "value")
         ).once
         expect(transaction.ext).to receive(:set_sample_data).with(
           "tags",
-          Appsignal::Utils.data_generate({})
+          Appsignal::Utils::Data.generate({})
         ).once
 
         transaction.sample_data
@@ -572,7 +646,7 @@ describe Appsignal::Transaction do
           expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "test message",
-            Appsignal::Utils.data_generate(["line 1"])
+            Appsignal::Utils::Data.generate(["line 1"])
           )
 
           transaction.set_error(error)
@@ -590,7 +664,7 @@ describe Appsignal::Transaction do
           expect(transaction.ext).to receive(:set_error).with(
             "RSpec::Mocks::Double",
             "",
-            Appsignal::Utils.data_generate(["line 1"])
+            Appsignal::Utils::Data.generate(["line 1"])
           )
 
           transaction.set_error(error)
@@ -1077,32 +1151,6 @@ describe Appsignal::Transaction do
         let(:env) { { :metadata => { :key => "value" } } }
 
         it { is_expected.to eq env[:metadata] }
-      end
-    end
-
-    describe "#sanitized_tags" do
-      before do
-        transaction.set_tags(
-          :valid_key => "valid_value",
-          "valid_string_key" => "valid_value",
-          :both_symbols => :valid_value,
-          :integer_value => 1,
-          :hash_value => { "invalid" => "hash" },
-          :array_value => %w[invalid array],
-          :to_long_value => SecureRandom.urlsafe_base64(101),
-          :object => Object.new,
-          SecureRandom.urlsafe_base64(101) => "to_long_key"
-        )
-      end
-      subject { transaction.send(:sanitized_tags).keys }
-
-      it "should only return whitelisted data" do
-        is_expected.to match_array([
-          :valid_key,
-          "valid_string_key",
-          :both_symbols,
-          :integer_value
-        ])
       end
     end
 

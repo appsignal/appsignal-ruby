@@ -81,7 +81,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         expect(transaction).to receive(:finish_event).with(
           "query.mongodb",
           "find | test | SUCCEEDED",
-          Appsignal::Utils.data_generate("foo" => "?"),
+          Appsignal::Utils::Data.generate("foo" => "?"),
           0
         )
 

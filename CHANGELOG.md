@@ -4,6 +4,9 @@
   Commit 60822aac24ccc394df073091c64f05096455942d.
 - Detect Kubernetes containers as containers for `running_in_container`
   config option. Commit 60822aac24ccc394df073091c64f05096455942d.
+- Fix in memory logger initialization. PR #416
+- Organize classes in their own files. PR #417
+- Move tag value limit handling to extension. PR #418
 
 # 2.6.1
 - Remove request_headers warning and use sane default. PR #410
