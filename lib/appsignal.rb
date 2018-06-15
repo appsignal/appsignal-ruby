@@ -621,10 +621,10 @@ module Appsignal
       Appsignal.logger.warn("Process gauge value #{value} for key '#{key}' is too big")
     end
 
-    def increment_counter(key, value = 1, tags = {})
+    def increment_counter(key, value = 1.0, tags = {})
       Appsignal::Extension.increment_counter(
         key.to_s,
-        value,
+        value.to_f,
         Appsignal::Utils::Data.generate(tags)
       )
     rescue RangeError
