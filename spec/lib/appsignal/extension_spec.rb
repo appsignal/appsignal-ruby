@@ -107,7 +107,7 @@ describe Appsignal::Extension do
       end
 
       it "should have a increment_counter method" do
-        subject.increment_counter("key", 1, Appsignal::Extension.data_map_new)
+        subject.increment_counter("key", 1.0, Appsignal::Extension.data_map_new)
       end
 
       it "should have a add_distribution_value method" do

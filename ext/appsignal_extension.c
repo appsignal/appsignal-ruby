@@ -588,14 +588,14 @@ static VALUE increment_counter(VALUE self, VALUE key, VALUE count, VALUE tags) {
   appsignal_data_t* tags_data;
 
   Check_Type(key, T_STRING);
-  Check_Type(count, T_FIXNUM);
+  Check_Type(count, T_FLOAT);
   Check_Type(tags, RUBY_T_DATA);
 
   Data_Get_Struct(tags, appsignal_data_t, tags_data);
 
   appsignal_increment_counter(
       make_appsignal_string(key),
-      FIX2INT(count),
+      NUM2DBL(count),
       tags_data
   );
   return Qnil;

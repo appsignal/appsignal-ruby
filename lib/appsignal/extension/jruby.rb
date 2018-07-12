@@ -72,7 +72,7 @@ module Appsignal
           [:appsignal_string, :double],
           :void
         attach_function :appsignal_increment_counter,
-          [:appsignal_string, :int64, :pointer],
+          [:appsignal_string, :double, :pointer],
           :void
         attach_function :appsignal_add_distribution_value,
           [:appsignal_string, :double, :pointer],
