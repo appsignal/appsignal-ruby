@@ -443,6 +443,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
     end
 
     context "with :hostname" do
@@ -464,6 +465,17 @@ describe Appsignal::Config do
 
       it "sets the modified :working_dir_path" do
         expect(ENV["_APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
+      end
+    end
+
+    context "with :working_directory_path" do
+      before do
+        config[:working_directory_path] = "/tmp/appsignal2"
+        config.write_to_environment
+      end
+
+      it "sets the modified :working_directory_path" do
+        expect(ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]).to eq "/tmp/appsignal2"
       end
     end
   end
