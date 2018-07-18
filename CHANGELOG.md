@@ -6,6 +6,7 @@
 - Move tag value limit handling to extension. PR #418
 - Add working_directory_path config option. PR #421
 - Use doubles values in custom metrics functions. PR #422
+- Bump agent to e41c3c0. Commit 8056af037f82eda156c5946911012e5c742b5664
 
 # 2.6.1
 - Remove request_headers warning and use sane default. PR #410
