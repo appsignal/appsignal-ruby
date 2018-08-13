@@ -1,4 +1,4 @@
-# 2.7.0 Beta 1
+# 2.7.0
 - Detect Kubernetes containers as containers for `running_in_container`
   config option. Commit 60822aac24ccc394df073091c64f05096455942d.
 - Fix in memory logger initialization. PR #416
