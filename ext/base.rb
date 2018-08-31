@@ -48,8 +48,18 @@ def check_architecture
 end
 
 def download_archive(arch_config, type)
-  logger.info "Downloading agent release from #{arch_config[type]["download_url"]}"
-  open(arch_config[type]["download_url"], :ssl_ca_cert => CA_CERT_PATH)
+  if arch_config.keys.include?(type)
+    logger.info "Downloading agent release from #{arch_config[type]["download_url"]}"
+    open(arch_config[type]["download_url"], :ssl_ca_cert => CA_CERT_PATH)
+  else
+    installation_failed(
+      "AppSignal currently does not support your system. " \
+      "Expected config for architecture '#{ARCH}' and package type '#{type}', but none found. " \
+      "For a full list of supported systems visit: " \
+      "https://docs.appsignal.com/support/operating-systems.html"
+    )
+    false
+  end
 end
 
 def verify_archive(archive, arch_config, type)

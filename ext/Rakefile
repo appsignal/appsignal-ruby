@@ -15,6 +15,7 @@ task :default do
         ) &&
         File.exist?(ext_path("appsignal.h"))
       archive = download_archive(arch_config, "dynamic")
+      next unless archive
       next unless verify_archive(archive, arch_config, "dynamic")
       unarchive(archive)
     end
