@@ -11,6 +11,7 @@ def install
       File.exist?(ext_path("libappsignal.a")) &&
       File.exist?(ext_path("appsignal.h"))
     archive = download_archive(arch_config, "static")
+    return unless archive
     return unless verify_archive(archive, arch_config, "static")
     unarchive(archive)
   end
