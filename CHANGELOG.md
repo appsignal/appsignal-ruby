@@ -1,3 +1,7 @@
+# 2.7.1 (unreleased)
+- Improve error log on unsupported architecture and build combination on
+  install. PR #426
+
 # 2.7.0
 - Detect Kubernetes containers as containers for `running_in_container`
   config option. Commit 60822aac24ccc394df073091c64f05096455942d.
