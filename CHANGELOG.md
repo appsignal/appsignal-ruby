@@ -1,3 +1,6 @@
+# 2.8.0 (unreleased)
+- Support memory host metrics collection for containers. PR #428
+
 # 2.7.1 (unreleased)
 - Improve error log on unsupported architecture and build combination on
   install. PR #426
