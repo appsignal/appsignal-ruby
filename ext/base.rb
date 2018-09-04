@@ -36,7 +36,7 @@ def write_agent_architecture
 end
 
 def check_architecture
-  if AGENT_CONFIG["triples"].keys.include?(ARCH)
+  if AGENT_CONFIG["triples"].key?(ARCH)
     true
   else
     installation_failed(
@@ -48,7 +48,7 @@ def check_architecture
 end
 
 def download_archive(arch_config, type)
-  if arch_config.keys.include?(type)
+  if arch_config.key?(type)
     logger.info "Downloading agent release from #{arch_config[type]["download_url"]}"
     open(arch_config[type]["download_url"], :ssl_ca_cert => CA_CERT_PATH)
   else
