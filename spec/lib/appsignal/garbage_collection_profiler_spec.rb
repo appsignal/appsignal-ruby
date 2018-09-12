@@ -64,3 +64,13 @@ describe Appsignal::GarbageCollectionProfiler do
     end
   end
 end
+
+describe Appsignal::NilGarbageCollectionProfiler do
+  let(:profiler) { described_class.new }
+
+  describe "#total_time" do
+    it "has a total time of 0" do
+      expect(profiler.total_time).to eq(0)
+    end
+  end
+end

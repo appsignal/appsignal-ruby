@@ -47,4 +47,15 @@ module Appsignal
       self.class.lock
     end
   end
+
+  # {Appsignal::NilGarbageCollectionProfiler} is a dummy profiler
+  # that always returns 0 as the total time.
+  # Used when we don't want any profile information
+  #
+  # @api private
+  class NilGarbageCollectionProfiler
+    def total_time
+      0
+    end
+  end
 end

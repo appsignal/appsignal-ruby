@@ -672,6 +672,23 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#garbage_collection_profiler" do
+      before { Appsignal::Transaction.instance_variable_set(:@garbage_collection_profiler, nil) }
+
+      it "returns the NilGarbageCollectionProfiler" do
+        expect(Appsignal::Transaction.garbage_collection_profiler).to be_a(Appsignal::NilGarbageCollectionProfiler)
+      end
+
+      context "when gc profiling is enabled" do
+        before { Appsignal.config.config_hash[:enable_gc_instrumentation] = true }
+        after { Appsignal.config.config_hash[:enable_gc_instrumentation] = false }
+
+        it "returns the GarbageCollectionProfiler" do
+          expect(Appsignal::Transaction.garbage_collection_profiler).to be_a(Appsignal::GarbageCollectionProfiler)
+        end
+      end
+    end
+
     describe "#start_event" do
       it "should start the event in the extension" do
         expect(transaction.ext).to receive(:start_event).with(0).and_call_original
