@@ -53,7 +53,8 @@ module Appsignal
       end
 
       def garbage_collection_profiler
-        @garbage_collection_profiler ||= Appsignal::GarbageCollectionProfiler.new
+        @garbage_collection_profiler ||=
+          Appsignal.config[:enable_gc_instrumentation] ? Appsignal::GarbageCollectionProfiler.new : NilGarbageCollectionProfiler.new
       end
     end
 
