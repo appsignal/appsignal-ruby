@@ -1,6 +1,7 @@
-# 2.7.1 (unreleased)
+# 2.7.1
 - Improve error log on unsupported architecture and build combination on
   install. PR #426
+- Improve performance when garbage collection profiling is disabled. PR #429
 
 # 2.7.0
 - Detect Kubernetes containers as containers for `running_in_container`
