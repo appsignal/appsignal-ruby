@@ -73,9 +73,9 @@ module Appsignal
         end
 
         def install_for_rails(config)
-          require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
-
           puts "Installing for Ruby on Rails"
+
+          require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
 
           config[:name] = Rails.application.class.parent_name
 
