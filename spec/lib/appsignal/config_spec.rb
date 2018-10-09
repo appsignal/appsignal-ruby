@@ -432,7 +432,6 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
       expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "ExampleStandardError,AnotherError"
       expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
-      expect(ENV["_APPSIGNAL_SEND_PARAMS"]).to                  eq "true"
       expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
       expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
       expect(ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
