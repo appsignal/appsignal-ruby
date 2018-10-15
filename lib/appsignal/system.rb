@@ -7,7 +7,9 @@ module Appsignal
   #
   # @api private
   module System
+    LINUX_TARGET = "linux".freeze
     MUSL_TARGET = "linux-musl".freeze
+    FREEBSD_TARGET = "freebsd".freeze
     GEM_EXT_PATH = File.expand_path("../../../ext", __FILE__).freeze
 
     def self.heroku?
@@ -45,12 +47,12 @@ module Appsignal
       host_os = RbConfig::CONFIG["host_os"].downcase
       local_os =
         case host_os
-        when /linux/
-          "linux"
+        when /#{LINUX_TARGET}/
+          LINUX_TARGET
         when /darwin/
           "darwin"
-        when /freebsd/
-          "freebsd"
+        when /#{FREEBSD_TARGET}/
+          FREEBSD_TARGET
         else
           host_os
         end

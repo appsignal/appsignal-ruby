@@ -23,6 +23,18 @@ def install
   elsif !find_executable("appsignal-agent", EXT_PATH)
     installation_failed "Aborting installation, appsignal-agent not found"
   else
+    with_static_link = [
+      Appsignal::System::LINUX_TARGET,
+      Appsignal::System::MUSL_TARGET
+    ].include?(PLATFORM)
+    if with_static_link
+      # Statically link libgcc and libgcc_s libraries.
+      # Dependencies of the libappsignal extension library.
+      # If the gem is installed on a host with build tools installed, but is
+      # run on one that isn't the missing libraries will cause the extension
+      # to fail on start.
+      $LDFLAGS += " -static-libgcc" # rubocop:disable Style/GlobalVars
+    end
     create_makefile "appsignal_extension"
     logger.info "Successfully created Makefile for appsignal extension"
   end
