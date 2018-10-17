@@ -1,3 +1,7 @@
+# 2.7.2
+- Change the order of instructions in the install script for Rails. PR #433
+- Fix linking issues on multi-stage build setups. PR #434
+
 # 2.7.1
 - Improve error log on unsupported architecture and build combination on
   install. PR #426
