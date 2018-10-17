@@ -123,7 +123,7 @@ describe Appsignal::System do
       let(:os) { "freebsd11" }
       let(:ldd_output) { "ldd: illegal option -- -" }
 
-      it "returns the darwin build" do
+      it "returns the FreeBSD build" do
         is_expected.to eq("freebsd")
       end
     end
