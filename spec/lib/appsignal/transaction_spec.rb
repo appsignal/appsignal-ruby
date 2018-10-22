@@ -1003,7 +1003,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#sanitized_environment" do
-      let(:whitelisted_keys) { Appsignal.config[:request_headers] }
+      let(:allowlisted_keys) { Appsignal.config[:request_headers] }
       subject { transaction.send(:sanitized_environment) }
 
       context "when request is nil" do
@@ -1021,14 +1021,14 @@ describe Appsignal::Transaction do
       context "when env is present" do
         let(:env) do
           {}.tap do |hash|
-            whitelisted_keys.each { |o| hash[o] = 1 } # use all whitelisted keys
-            hash[whitelisted_keys] = nil # don't add if nil
-            hash[:not_whitelisted] = "I will be sanitized"
+            allowlisted_keys.each { |o| hash[o] = 1 } # use all allowlisted keys
+            hash[allowlisted_keys] = nil # don't add if nil
+            hash[:not_allowlisted] = "I will be sanitized"
           end
         end
 
-        it "only sets whitelisted keys" do
-          expect(subject.keys).to match_array(whitelisted_keys)
+        it "only sets allowlisted keys" do
+          expect(subject.keys).to match_array(allowlisted_keys)
         end
 
         context "with configured request_headers" do
@@ -1036,7 +1036,7 @@ describe Appsignal::Transaction do
             Appsignal.config.config_hash[:request_headers] = %w[CONTENT_LENGTH]
           end
 
-          it "only sets whitelisted keys" do
+          it "only sets allowlisted keys" do
             expect(subject.keys).to match_array(%w[CONTENT_LENGTH])
           end
         end

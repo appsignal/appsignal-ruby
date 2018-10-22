@@ -524,7 +524,7 @@ Yanked
 * Debug log about missing name in config
 
 # 0.10.4
-* Add REQUEST_URI and PATH_INFO to env params whitelist
+* Add REQUEST_URI and PATH_INFO to env params allowlist
 
 # 0.10.3
 * Shut down all operations when agent is not active

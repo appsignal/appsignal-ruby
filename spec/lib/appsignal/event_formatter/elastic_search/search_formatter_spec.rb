@@ -35,7 +35,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
       }
     end
 
-    it "should sanitize non-whitelisted params" do
+    it "should sanitize non-allowlisted params" do
       expect(
         formatter.sanitized_search(search)
       ).to eql(:index => "users", :type => "user", :q => "?", :other => "?")
