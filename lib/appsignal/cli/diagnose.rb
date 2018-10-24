@@ -225,7 +225,8 @@ module Appsignal
           output = test["output"]
 
           print "  #{definition[:label]}: "
-          display_value = definition[:values][value]
+          display_value =
+            definition[:values] ? definition[:values][value] : value
           print display_value.nil? ? "-" : display_value
           print "\n    Error: #{error}" if error
           print "\n    Output: #{output}" if output
@@ -249,6 +250,10 @@ module Appsignal
                   :values => { true => "started", false => "not started" }
                 }
               },
+              "host" => {
+                "uid" => { :label => "Agent user id" },
+                "gid" => { :label => "Agent user group id" }
+              },
               "config" => {
                 "valid" => {
                   :label => "Agent config",
@@ -260,6 +265,11 @@ module Appsignal
                   :label => "Agent logger",
                   :values => { true => "started", false => "not started" }
                 }
+              },
+              "working_directory_stat" => {
+                "uid" => { :label => "Agent working directory user id" },
+                "gid" => { :label => "Agent working directory user group id" },
+                "mode" => { :label => "Agent working directory permissions" }
               },
               "lock_path" => {
                 "created" => {

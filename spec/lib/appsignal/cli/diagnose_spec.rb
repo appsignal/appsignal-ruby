@@ -205,13 +205,22 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     end
 
     describe "agent diagnostics" do
+      let(:working_directory_stat) { File.stat("/tmp/appsignal") }
+
       it "starts the agent in diagnose mode and outputs the report" do
         run
+        working_directory_stat = File.stat("/tmp/appsignal")
         expect(output).to include \
           "Agent diagnostics",
           "  Extension config: valid",
+          "  Agent started: started",
+          "  Agent user id: #{Process.uid}",
+          "  Agent user group id: #{Process.gid}",
           "  Agent config: valid",
           "  Agent logger: started",
+          "  Agent working directory user id: #{working_directory_stat.uid}",
+          "  Agent working directory user group id: #{working_directory_stat.gid}",
+          "  Agent working directory permissions: #{working_directory_stat.mode}",
           "  Agent lock path: writable"
       end
 
@@ -223,8 +232,17 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
           },
           "agent" => {
             "boot" => { "started" => { "result" => true } },
+            "host" => {
+              "uid" => { "result" => Process.uid },
+              "gid" => { "result" => Process.gid }
+            },
             "config" => { "valid" => { "result" => true } },
             "logger" => { "started" => { "result" => true } },
+            "working_directory_stat" => {
+              "uid" => { "result" => working_directory_stat.uid },
+              "gid" => { "result" => working_directory_stat.gid },
+              "mode" => { "result" => working_directory_stat.mode }
+            },
             "lock_path" => { "created" => { "result" => true } }
           }
         )
