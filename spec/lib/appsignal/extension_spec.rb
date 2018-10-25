@@ -29,8 +29,11 @@ describe Appsignal::Extension do
             subject.start
           end
 
-          expect(output).to include \
-            "WARNING: Error when reading appsignal config, appsignal not starting"
+          expect(output).to match \
+            %r{
+              WARNING:\sError\swhen\sreading\sappsignal\sconfig,\s
+              appsignal\s\(as\s(\d{2,4})/(\d{2,4})\)\snot\sstarting
+            }x
         end
       end
 
