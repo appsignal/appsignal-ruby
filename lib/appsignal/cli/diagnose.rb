@@ -205,11 +205,12 @@ module Appsignal
             return
           end
 
-          agent_diagnostic_test_definition.each do |part, categories|
-            categories.each do |category, tests|
+          agent_diagnostic_test_definition.each do |component, component_definition|
+            puts "  #{component_definition[:label]}"
+            component_definition[:tests].each do |category, tests|
               tests.each do |test_name, test_definition|
                 test_report = report
-                  .fetch(part, {})
+                  .fetch(component, {})
                   .fetch(category, {})
                   .fetch(test_name, {})
 
@@ -224,57 +225,63 @@ module Appsignal
           error = test["error"]
           output = test["output"]
 
-          print "  #{definition[:label]}: "
+          print "    #{definition[:label]}: "
           display_value =
             definition[:values] ? definition[:values][value] : value
           print display_value.nil? ? "-" : display_value
-          print "\n    Error: #{error}" if error
-          print "\n    Output: #{output}" if output
+          print "\n      Error: #{error}" if error
+          print "\n      Output: #{output}" if output
           print "\n"
         end
 
         def agent_diagnostic_test_definition
           {
             "extension" => {
-              "config" => {
-                "valid" => {
-                  :label => "Extension config",
-                  :values => { true => "valid", false => "invalid" }
+              :label => "Extension tests",
+              :tests => {
+                "config" => {
+                  "valid" => {
+                    :label => "Configuration",
+                    :values => { true => "valid", false => "invalid" }
+                  }
                 }
               }
             },
             "agent" => {
-              "boot" => {
-                "started" => {
-                  :label => "Agent started",
-                  :values => { true => "started", false => "not started" }
-                }
-              },
-              "host" => {
-                "uid" => { :label => "Agent user id" },
-                "gid" => { :label => "Agent user group id" }
-              },
-              "config" => {
-                "valid" => {
-                  :label => "Agent config",
-                  :values => { true => "valid", false => "invalid" }
-                }
-              },
-              "logger" => {
-                "started" => {
-                  :label => "Agent logger",
-                  :values => { true => "started", false => "not started" }
-                }
-              },
-              "working_directory_stat" => {
-                "uid" => { :label => "Agent working directory user id" },
-                "gid" => { :label => "Agent working directory user group id" },
-                "mode" => { :label => "Agent working directory permissions" }
-              },
-              "lock_path" => {
-                "created" => {
-                  :label => "Agent lock path",
-                  :values => { true => "writable", false => "not writable" }
+              :label => "Agent tests",
+              :tests => {
+                "boot" => {
+                  "started" => {
+                    :label => "Started",
+                    :values => { true => "started", false => "not started" }
+                  }
+                },
+                "host" => {
+                  "uid" => { :label => "Process user id" },
+                  "gid" => { :label => "Process user group id" }
+                },
+                "config" => {
+                  "valid" => {
+                    :label => "Configuration",
+                    :values => { true => "valid", false => "invalid" }
+                  }
+                },
+                "logger" => {
+                  "started" => {
+                    :label => "Logger",
+                    :values => { true => "started", false => "not started" }
+                  }
+                },
+                "working_directory_stat" => {
+                  "uid" => { :label => "Working directory user id" },
+                  "gid" => { :label => "Working directory user group id" },
+                  "mode" => { :label => "Working directory permissions" }
+                },
+                "lock_path" => {
+                  "created" => {
+                    :label => "Lock path",
+                    :values => { true => "writable", false => "not writable" }
+                  }
                 }
               }
             }
