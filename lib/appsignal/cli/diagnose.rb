@@ -34,6 +34,12 @@ module Appsignal
     # @example With a specific environment
     #   appsignal diagnose --environment=production
     #
+    # @example Automatically send the diagnose report without prompting
+    #   appsignal diagnose --send-report
+    #
+    # @example Don't prompt about sending the report and don't sent it
+    #   appsignal diagnose --no-send-report
+    #
     # @see http://docs.appsignal.com/support/debugging.html Debugging AppSignal
     # @see http://docs.appsignal.com/ruby/command-line/diagnose.html
     #   AppSignal diagnose documentation
@@ -96,21 +102,32 @@ module Appsignal
 
           log_files
 
-          transmit_report_to_appsignal if send_report_to_appsignal?
+          transmit_report_to_appsignal if send_report_to_appsignal?(options)
         end
 
         private
 
-        def send_report_to_appsignal?
+        def send_report_to_appsignal?(options)
           puts "\nDiagnostics report"
           puts "  Do you want to send this diagnostics report to AppSignal?"
           puts "  If you share this diagnostics report you will be given\n" \
             "  a support token you can use to refer to your diagnotics \n" \
             "  report when you contact us at support@appsignal.com\n\n"
-          send_diagnostics = yes_or_no(
-            "  Send diagnostics report to AppSignal? (Y/n): ",
-            :default => "y"
-          )
+          send_diagnostics =
+            if options.key?(:send_report)
+              if options[:send_report]
+                puts "  Confirmed sending report using --send-report option."
+                true
+              else
+                puts "  Not sending report. (Specified with the --no-send-report option.)"
+                false
+              end
+            else
+              yes_or_no(
+                "  Send diagnostics report to AppSignal? (Y/n): ",
+                :default => "y"
+              )
+            end
           unless send_diagnostics
             puts "  Not sending diagnostics information to AppSignal."
             return false

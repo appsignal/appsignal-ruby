@@ -82,6 +82,9 @@ module Appsignal
             o.on "--environment=<app_env>", "The environment to diagnose" do |arg|
               options[:environment] = arg
             end
+            o.on "--[no-]send-report", "Confirm sending the report to AppSignal automatically" do |arg|
+              options[:send_report] = arg
+            end
           end,
           "install" => OptionParser.new,
           "notify_of_deploy" => OptionParser.new do |o|

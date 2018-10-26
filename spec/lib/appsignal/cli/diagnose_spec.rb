@@ -1,6 +1,6 @@
 require "appsignal/cli"
 
-describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
+describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input do
   include CLIHelpers
 
   class DiagnosticsReportEndpoint
@@ -51,12 +51,21 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
     before :api_stub => true do
       stub_api_request config, "auth"
     end
-    before :report => true do
-      send_diagnostics_report
+    before(:send_report => :yes_cli_input) do
+      accept_prompt_to_send_diagnostics_report
+      capture_diagnatics_report_request
+    end
+    before(:send_report => :no_cli_input) { dont_accept_prompt_to_send_diagnostics_report }
+    before(:send_report => :yes_cli_option) do
+      options[:send_report] = true
+      capture_diagnatics_report_request
+    end
+    before(:send_report => :no_cli_option) { options[:send_report] = false }
+    after { Appsignal.config = nil }
+
+    def capture_diagnatics_report_request
       stub_diagnostics_report_request.to_rack(DiagnosticsReportEndpoint)
     end
-    before(:report => false) { dont_send_diagnostics_report }
-    after { Appsignal.config = nil }
 
     def run
       run_within_dir project_fixture_path
@@ -82,11 +91,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
       )
     end
 
-    def send_diagnostics_report
+    def accept_prompt_to_send_diagnostics_report
       add_cli_input "y"
     end
 
-    def dont_send_diagnostics_report
+    def dont_accept_prompt_to_send_diagnostics_report
       add_cli_input "n"
     end
 
@@ -138,7 +147,25 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         end
       end
 
-      context "when user doesn't want to send report", :report => false do
+      context "when user uses the --send-report option", :send_report => :yes_cli_option do
+        it "sends the report without prompting" do
+          run
+          expect(output).to include "Diagnostics report",
+            "Confirmed sending report using --send-report option.",
+            "Transmitting diagnostics report"
+        end
+      end
+
+      context "when user uses the --no-send-report option", :send_report => :no_cli_option do
+        it "does not send the report" do
+          run
+          expect(output).to include "Diagnostics report",
+            "Not sending report. (Specified with the --no-send-report option.)",
+            "Not sending diagnostics information to AppSignal."
+        end
+      end
+
+      context "when user doesn't want to send report", :send_report => :no_cli_input do
         it "does not send report" do
           run
           expect(output).to include "Diagnostics report",
