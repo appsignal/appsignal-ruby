@@ -210,18 +210,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
       it "starts the agent in diagnose mode and outputs the report" do
         run
         working_directory_stat = File.stat("/tmp/appsignal")
-        expect(output).to include \
-          "Agent diagnostics",
-          "  Extension config: valid",
-          "  Agent started: started",
-          "  Agent user id: #{Process.uid}",
-          "  Agent user group id: #{Process.gid}",
-          "  Agent config: valid",
-          "  Agent logger: started",
-          "  Agent working directory user id: #{working_directory_stat.uid}",
-          "  Agent working directory user group id: #{working_directory_stat.gid}",
-          "  Agent working directory permissions: #{working_directory_stat.mode}",
-          "  Agent lock path: writable"
+        expect_valid_agent_diagnostics_report(output, working_directory_stat)
       end
 
       it "adds the agent diagnostics to the report" do
@@ -257,13 +246,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         it "force starts the agent in diagnose mode and outputs a log" do
           run
           expect(output).to include("active: false")
-          expect(output).to include \
-            "Agent diagnostics",
-            "  Extension config: valid",
-            "  Agent started: started",
-            "  Agent config: valid",
-            "  Agent logger: started",
-            "  Agent lock path: writable"
+          expect_valid_agent_diagnostics_report(output, working_directory_stat)
         end
       end
 
@@ -341,11 +324,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         it "prints the tests, but shows a dash `-` for missed results" do
           expect(output).to include \
             "Agent diagnostics",
-            "  Extension config: invalid",
-            "  Agent started: -",
-            "  Agent config: -",
-            "  Agent logger: -",
-            "  Agent lock path: -"
+            "  Extension tests\n    Configuration: invalid",
+            "  Agent tests",
+            "    Started: -",
+            "    Configuration: -",
+            "    Logger: -",
+            "    Lock path: -"
         end
 
         it "adds the output to the report" do
@@ -374,8 +358,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         it "prints the error and output" do
           expect(output).to include \
             "Agent diagnostics",
-            "  Extension config: valid",
-            "  Agent started: not started\n    Error: some-error"
+            "  Extension tests\n    Configuration: valid",
+            "  Agent tests\n    Started: not started\n      Error: some-error"
         end
 
         it "adds the agent report to the diagnostics report" do
@@ -400,8 +384,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
           run
           expect(output).to include \
             "Agent diagnostics",
-            "  Extension config: valid",
-            "  Agent config: invalid\n    Output: some output"
+            "  Extension tests\n    Configuration: valid",
+            "    Configuration: invalid\n      Output: some output"
         end
       end
     end
@@ -1002,5 +986,20 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :report => true do
         end
       end
     end
+  end
+
+  def expect_valid_agent_diagnostics_report(output, working_directory_stat)
+    expect(output).to include \
+      "Agent diagnostics",
+      "  Extension tests\n    Configuration: valid",
+      "    Started: started",
+      "    Process user id: #{Process.uid}",
+      "    Process user group id: #{Process.gid}\n" \
+        "    Configuration: valid",
+      "    Logger: started",
+      "    Working directory user id: #{working_directory_stat.uid}",
+      "    Working directory user group id: #{working_directory_stat.gid}",
+      "    Working directory permissions: #{working_directory_stat.mode}",
+      "    Lock path: writable"
   end
 end
