@@ -8,6 +8,8 @@ require "tmpdir"
 
 module Appsignal
   class Config
+    include Appsignal::Utils::DeprecationMessage
+
     DEFAULT_CONFIG = {
       :debug                          => false,
       :log                            => "file",
@@ -241,17 +243,21 @@ module Appsignal
         DEPRECATED_CONFIG_KEY_MAPPING.each do |old_key, new_key|
           old_config_value = config.delete(old_key)
           next unless old_config_value
-          logger.warn "Old configuration key found. Please update the "\
-            "'#{old_key}' to '#{new_key}'."
+          deprecation_message \
+            "Old configuration key found. Please update the "\
+            "'#{old_key}' to '#{new_key}'.",
+            logger
 
           next if config[new_key] # Skip if new key is already in use
           config[new_key] = old_config_value
         end
 
         if config.include?(:working_dir_path)
-          logger.warn "'working_dir_path' is deprecated, please use " \
-                      "'working_directory_path' instead and specify the " \
-                      "full path to the working directory"
+          deprecation_message \
+            "'working_dir_path' is deprecated, please use " \
+            "'working_directory_path' instead and specify the " \
+            "full path to the working directory",
+            logger
         end
       end
     end
