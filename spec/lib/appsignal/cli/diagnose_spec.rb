@@ -107,6 +107,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         "support@appsignal.com"
     end
 
+    it "logs to the log file" do
+      run
+      log_contents = File.read(config.log_file_path)
+      expect(log_contents).to contains_log :info, "Starting AppSignal diagnose"
+    end
+
     describe "report" do
       context "when user wants to send report" do
         it "sends report" do
@@ -811,7 +817,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           it "log files fall back on system tmp directory" do
             expect(output).to include \
               %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-              %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+              %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
           end
 
           it "transmits path data in report" do
@@ -841,7 +847,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             it "log files fall back on system tmp directory" do
               expect(output).to include \
                 %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+                %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
             end
 
             it "transmits path data in report" do
@@ -869,7 +875,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               it "log files fall back on system tmp directory" do
                 expect(output).to include \
                   %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                  %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+                  %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
               end
 
               it "transmits path data in report" do
@@ -886,7 +892,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                   expect(output).to include \
                     %(root_path: "#{root_path}"\n    Writable?: true),
                     %(log_dir_path: "#{log_dir}"\n    Writable?: true),
-                    %(log_file_path: "#{log_file}"\n    Exists?: false)
+                    %(log_file_path: "#{log_file}"\n    Writable?: true)
                 end
 
                 it "transmits path data in report" do
