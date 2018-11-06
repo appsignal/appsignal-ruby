@@ -97,6 +97,8 @@ module Appsignal
           check_api_key
           print_empty_line
 
+          data[:process] = process_user
+
           paths_section
           print_empty_line
 
@@ -379,7 +381,6 @@ module Appsignal
 
         def paths_section
           puts "Paths"
-          data[:process] = process_user
           data_section :paths do
             appsignal_paths.each do |name, path|
               path_info = {
