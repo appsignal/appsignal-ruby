@@ -433,10 +433,9 @@ module Appsignal
             "(file: #{ownership[:user]}:#{ownership[:uid]}, " \
             "process: #{process_user[:user]}:#{process_user[:uid]})"
           puts_value "Ownership?", owner, :level => 2
-          if path.key?(:content)
-            puts "    Contents (last 10 lines):"
-            puts path[:content]
-          end
+          return unless path.key?(:content)
+          puts "    Contents (last 10 lines):"
+          puts path[:content][0..10]
         end
 
         def print_empty_line

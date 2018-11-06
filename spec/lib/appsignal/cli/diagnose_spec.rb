@@ -927,10 +927,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         context "when file exists" do
           let(:contents) do
-            [
-              "log line 1",
-              "log line 2"
-            ]
+            [].tap do |lines|
+              1..12.times do |i|
+                lines << "log line #{i}"
+              end
+            end
           end
           before do
             File.open file_path, "a" do |f|
@@ -942,8 +943,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "outputs file location and content" do
-            expect(output).to include(%(Path: "#{file_path}"))
-            expect(output).to include(*contents)
+            expect(output).to include(
+              %(Path: "#{file_path}"),
+              "Contents (last 10 lines):"
+            )
+            expect(output).to include(*contents[0..10])
+            expect(output).to_not include(*contents[11])
           end
 
           it "transmits file data in report" do
