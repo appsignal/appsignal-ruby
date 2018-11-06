@@ -27,6 +27,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     let(:gem_path) { Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip }
     let(:received_report) { DiagnosticsReportEndpoint.received_report }
     let(:process_user) { Etc.getpwuid(Process.uid).name }
+    let(:process_group) { Etc.getgrgid(Process.gid).name }
     before(:context) { Appsignal.stop }
     before do
       # Clear previous reports
@@ -188,8 +189,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         expect(output).to include \
           "Gem version: #{Appsignal::VERSION}",
           "Agent version: #{Appsignal::Extension.agent_version}",
-          "Agent architecture: #{Appsignal::System.installed_agent_architecture}",
-          "Gem install path: #{gem_path}"
+          "Agent architecture: #{Appsignal::System.installed_agent_architecture}"
       end
 
       it "transmits version numbers in report" do
@@ -199,7 +199,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "package_version" => Appsignal::VERSION,
             "agent_version" => Appsignal::Extension.agent_version,
             "agent_architecture" => Appsignal::System.installed_agent_architecture,
-            "package_install_path" => gem_path,
             "extension_loaded" => true
           }
         )
@@ -674,6 +673,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     end
 
     describe "paths" do
+      let(:config) { Appsignal::Config.new(root_path, "production") }
+      let(:root_path) { tmp_dir }
       let(:system_tmp_dir) { Appsignal::Config.system_tmp_dir }
       before do
         FileUtils.mkdir_p(root_path)
@@ -682,39 +683,110 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       after { FileUtils.rm_rf([root_path, system_tmp_dir]) }
 
       describe "report" do
-        let(:root_path) { tmp_dir }
-
         it "adds paths to the report" do
-          run
-          expect(received_report["paths"].keys)
-            .to match_array(%w[root_path working_dir log_dir_path log_file_path])
+          run_within_dir root_path
+          expect(received_report["paths"].keys).to match_array(
+            %w[
+              package_install_path root_path working_dir log_dir_path
+              ext/install.log ext/mkmf.log appsignal.log
+            ]
+          )
         end
-      end
 
-      context "when a directory is not configured" do
-        let(:root_path) { File.join(tmp_dir, "writable_path") }
-        let(:config) do
-          silence(:allowed => ["Push api key not set after loading config"]) do
-            Appsignal::Config.new(root_path, "production", :log_file => nil)
+        describe "working_dir" do
+          before { run_within_dir root_path }
+
+          it "outputs current path" do
+            expect(output).to include %(Current working directory\n    Path: "#{tmp_dir}")
+          end
+
+          it "transmits path data in report" do
+            expect(received_report["paths"]["working_dir"]).to match(
+              "path" => tmp_dir,
+              "exists" => true,
+              "type" => "directory",
+              "mode" => kind_of(String),
+              "writable" => boolean,
+              "ownership" => {
+                "uid" => kind_of(Integer),
+                "user" => kind_of(String),
+                "gid" => kind_of(Integer),
+                "group" => kind_of(String)
+              }
+            )
           end
         end
-        before do
-          FileUtils.mkdir_p(File.join(root_path, "log"), :mode => 0o555)
-          FileUtils.chmod(0o555, system_tmp_dir)
-          run_within_dir root_path
+
+        describe "root_path" do
+          before { run_within_dir root_path }
+
+          it "outputs root path" do
+            expect(output).to include %(Root path\n    Path: "#{root_path}")
+          end
+
+          it "transmits path data in report" do
+            expect(received_report["paths"]["root_path"]).to match(
+              "path" => root_path,
+              "exists" => true,
+              "type" => "directory",
+              "mode" => kind_of(String),
+              "writable" => boolean,
+              "ownership" => {
+                "uid" => kind_of(Integer),
+                "user" => kind_of(String),
+                "gid" => kind_of(Integer),
+                "group" => kind_of(String)
+              }
+            )
+          end
         end
 
-        it "outputs unconfigured directory" do
-          expect(output).to include %(log_file_path: ""\n    Configured?: false)
+        describe "package_install_path" do
+          before { run_within_dir root_path }
+
+          it "outputs gem install path" do
+            expect(output).to match %(AppSignal gem path\n    Path: "#{gem_path}")
+          end
+
+          it "transmits path data in report" do
+            expect(received_report["paths"]["package_install_path"]).to match(
+              "path" => gem_path,
+              "exists" => true,
+              "type" => "directory",
+              "mode" => kind_of(String),
+              "writable" => boolean,
+              "ownership" => {
+                "uid" => kind_of(Integer),
+                "user" => kind_of(String),
+                "gid" => kind_of(Integer),
+                "group" => kind_of(String)
+              }
+            )
+          end
         end
 
-        it "transmits path data in report" do
-          expect(received_report["paths"]["log_file_path"]).to eq(
-            "path" => nil,
-            "configured" => false,
-            "exists" => false,
-            "writable" => false
-          )
+        describe "log_dir_path" do
+          before { run_within_dir root_path }
+
+          it "outputs log directory path" do
+            expect(output).to match %(Log directory\n    Path: "#{system_tmp_dir}")
+          end
+
+          it "transmits path data in report" do
+            expect(received_report["paths"]["log_dir_path"]).to match(
+              "path" => system_tmp_dir,
+              "exists" => true,
+              "type" => "directory",
+              "mode" => kind_of(String),
+              "writable" => boolean,
+              "ownership" => {
+                "uid" => kind_of(Integer),
+                "user" => kind_of(String),
+                "gid" => kind_of(Integer),
+                "group" => kind_of(String)
+              }
+            )
+          end
         end
       end
 
@@ -732,29 +804,81 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         it "outputs not existing path" do
-          expect(output).to include %(root_path: "#{execution_path}"\n    Exists?: false)
+          expect(output).to include %(Root path\n    Path: "#{execution_path}"\n    Exists?: false)
         end
 
         it "transmits path data in report" do
           expect(received_report["paths"]["root_path"]).to eq(
             "path" => execution_path,
-            "configured" => true,
-            "exists" => false,
-            "writable" => false
+            "exists" => false
+          )
+        end
+      end
+
+      context "when not writable" do
+        let(:root_path) { File.join(tmp_dir, "not_writable_path") }
+        before do
+          FileUtils.chmod(0o555, root_path)
+          run_within_dir root_path
+        end
+
+        it "outputs not writable root path" do
+          expect(output).to include %(Root path\n    Path: "#{root_path}"\n    Writable?: false)
+        end
+
+        it "transmits path data in report" do
+          expect(received_report["paths"]["root_path"]).to eq(
+            "path" => root_path,
+            "exists" => true,
+            "type" => "directory",
+            "mode" => "40555",
+            "writable" => false,
+            "ownership" => {
+              "uid" => Process.uid,
+              "user" => process_user,
+              "gid" => Process.gid,
+              "group" => process_group
+            }
+          )
+        end
+      end
+
+      context "when writable" do
+        let(:root_path) { File.join(tmp_dir, "writable_path") }
+        before do
+          FileUtils.chmod(0o755, root_path)
+          run_within_dir root_path
+        end
+
+        it "outputs writable root path" do
+          expect(output).to include %(Root path\n    Path: "#{root_path}"\n    Writable?: true)
+        end
+
+        it "transmits path data in report" do
+          expect(received_report["paths"]["root_path"]).to eq(
+            "path" => root_path,
+            "exists" => true,
+            "type" => "directory",
+            "mode" => "40755",
+            "writable" => true,
+            "ownership" => {
+              "uid" => Process.uid,
+              "user" => process_user,
+              "gid" => Process.gid,
+              "group" => process_group
+            }
           )
         end
       end
 
       describe "ownership" do
-        let(:config) { Appsignal::Config.new(root_path, "production") }
-
         context "when a directory is owned by the current user" do
           let(:root_path) { File.join(tmp_dir, "owned_path") }
           before { run_within_dir root_path }
 
           it "outputs ownership" do
             expect(output).to include \
-              %(root_path: "#{root_path}"\n    Writable?: true\n    ) \
+              %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    ) \
                 "Ownership?: true (file: #{process_user}:#{Process.uid}, "\
                 "process: #{process_user}:#{Process.uid})"
           end
@@ -762,10 +886,16 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           it "transmits path data in report" do
             expect(received_report["paths"]["root_path"]).to eq(
               "path" => root_path,
-              "configured" => true,
               "exists" => true,
+              "type" => "directory",
+              "mode" => "40755",
               "writable" => true,
-              "ownership" => { "uid" => Process.uid, "user" => process_user }
+              "ownership" => {
+                "uid" => Process.uid,
+                "user" => process_user,
+                "gid" => Process.gid,
+                "group" => process_group
+              }
             )
           end
         end
@@ -781,233 +911,75 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
           it "outputs no ownership" do
             expect(output).to include \
-              %(root_path: "#{root_path}"\n    Writable?: true\n    ) \
+              %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    ) \
                 "Ownership?: false (file: root:0, process: #{process_user}:#{Process.uid})"
-          end
-        end
-      end
-
-      describe "working_dir" do
-        let(:root_path) { tmp_dir }
-        let(:config) { Appsignal::Config.new(root_path, "production") }
-        before { run_within_dir root_path }
-
-        it "outputs current path" do
-          expect(output).to include %(working_dir: "#{tmp_dir}"\n    Writable?: true)
-        end
-
-        it "transmits path data in report" do
-          expect(received_report["paths"]["working_dir"]).to eq(
-            "path" => tmp_dir,
-            "configured" => true,
-            "exists" => true,
-            "writable" => true,
-            "ownership" => { "uid" => Process.uid, "user" => process_user }
-          )
-        end
-      end
-
-      describe "root_path" do
-        let(:system_tmp_log_file) { File.join(system_tmp_dir, "appsignal.log") }
-        let(:config) { Appsignal::Config.new(root_path, "production") }
-
-        context "when not writable" do
-          let(:root_path) { File.join(tmp_dir, "not_writable_path") }
-          before do
-            FileUtils.chmod(0o555, root_path)
-            run_within_dir root_path
-          end
-
-          it "outputs not writable root path" do
-            expect(output).to include %(root_path: "#{root_path}"\n    Writable?: false)
-          end
-
-          it "log files fall back on system tmp directory" do
-            expect(output).to include \
-              %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-              %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
-          end
-
-          it "transmits path data in report" do
-            expect(received_report["paths"]["root_path"]).to eq(
-              "path" => root_path,
-              "configured" => true,
-              "exists" => true,
-              "writable" => false,
-              "ownership" => { "uid" => Process.uid, "user" => process_user }
-            )
-          end
-        end
-
-        context "when writable" do
-          let(:root_path) { File.join(tmp_dir, "writable_path") }
-
-          context "without log dir" do
-            before do
-              FileUtils.chmod(0o777, root_path)
-              run_within_dir root_path
-            end
-
-            it "outputs writable root path" do
-              expect(output).to include %(root_path: "#{root_path}"\n    Writable?: true)
-            end
-
-            it "log files fall back on system tmp directory" do
-              expect(output).to include \
-                %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
-            end
-
-            it "transmits path data in report" do
-              expect(received_report["paths"]["root_path"]).to eq(
-                "path" => root_path,
-                "configured" => true,
-                "exists" => true,
-                "writable" => true,
-                "ownership" => { "uid" => Process.uid, "user" => process_user }
-              )
-            end
-          end
-
-          context "with log dir" do
-            let(:log_dir) { File.join(root_path, "log") }
-            let(:log_file) { File.join(log_dir, "appsignal.log") }
-            before { FileUtils.mkdir_p(log_dir) }
-
-            context "when not writable" do
-              before do
-                FileUtils.chmod(0o444, log_dir)
-                run_within_dir root_path
-              end
-
-              it "log files fall back on system tmp directory" do
-                expect(output).to include \
-                  %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                  %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
-              end
-
-              it "transmits path data in report" do
-                expect(received_report["paths"]["log_dir_path"]).to be_kind_of(Hash)
-                expect(received_report["paths"]["log_file_path"]).to be_kind_of(Hash)
-              end
-            end
-
-            context "when writable" do
-              context "without log file" do
-                before { run_within_dir root_path }
-
-                it "outputs writable but without log file" do
-                  expect(output).to include \
-                    %(root_path: "#{root_path}"\n    Writable?: true),
-                    %(log_dir_path: "#{log_dir}"\n    Writable?: true),
-                    %(log_file_path: "#{log_file}"\n    Writable?: true)
-                end
-
-                it "transmits path data in report" do
-                  expect(received_report["paths"]["log_dir_path"]).to be_kind_of(Hash)
-                  expect(received_report["paths"]["log_file_path"]).to be_kind_of(Hash)
-                end
-              end
-
-              context "with log file" do
-                context "when writable" do
-                  before do
-                    FileUtils.touch(log_file)
-                    run_within_dir root_path
-                  end
-
-                  it "lists log file as writable" do
-                    expect(output).to include %(log_file_path: "#{log_file}"\n    Writable?: true)
-                  end
-
-                  it "transmits path data in report" do
-                    expect(received_report["paths"]["log_dir_path"]).to be_kind_of(Hash)
-                    expect(received_report["paths"]["log_file_path"]).to be_kind_of(Hash)
-                  end
-                end
-
-                context "when not writable" do
-                  before do
-                    FileUtils.touch(log_file)
-                    FileUtils.chmod(0o444, log_file)
-                    run_within_dir root_path
-                  end
-                  around do |example|
-                    silence(:allowed => ["Push api key not set after loading config"]) do
-                      example.run
-                    end
-                  end
-
-                  it "lists log file as not writable" do
-                    expect(output).to include %(log_file_path: "#{log_file}"\n    Writable?: false)
-                  end
-
-                  it "transmits path data in report" do
-                    expect(received_report["paths"]["log_dir_path"]).to be_kind_of(Hash)
-                    expect(received_report["paths"]["log_file_path"]).to be_kind_of(Hash)
-                  end
-                end
-              end
-            end
           end
         end
       end
     end
 
-    describe "logs" do
-      shared_examples "ext log file" do |log_file|
-        let(:ext_path) { File.join(gem_path, "ext") }
-        let(:log_path) { File.join(ext_path, log_file) }
-        before do
-          FileUtils.mkdir_p ext_path
-          allow(cli).to receive(:gem_path).and_return(gem_path)
-        end
-        after { FileUtils.rm_rf ext_path }
+    describe "files" do
+      shared_examples "diagnose file" do |shared_example_options|
+        let(:parent_directory) { File.join(tmp_dir, "diagnose_files") }
+        let(:file_path) { File.join(parent_directory, filename) }
+        before { FileUtils.mkdir_p File.dirname(file_path) }
+        after { FileUtils.rm_rf parent_directory }
 
         context "when file exists" do
-          let(:gem_path) { File.join(tmp_dir, "gem") }
-          let(:log_content) do
+          let(:contents) do
             [
               "log line 1",
               "log line 2"
             ]
           end
           before do
-            File.open log_path, "a" do |f|
-              log_content.each do |line|
+            File.open file_path, "a" do |f|
+              contents.each do |line|
                 f.puts line
               end
             end
             run
           end
 
-          it "outputs install.log" do
-            expect(output).to include(%(Path: "#{log_path}"))
-            expect(output).to include(*log_content)
+          it "outputs file location and content" do
+            expect(output).to include(%(Path: "#{file_path}"))
+            expect(output).to include(*contents)
           end
 
-          it "transmits log data in report" do
-            expect(received_report["logs"][File.join("ext", log_file)]).to eq(
-              "path" => log_path,
+          it "transmits file data in report" do
+            expect(received_report["paths"][filename]).to match(
+              "path" => file_path,
               "exists" => true,
-              "content" => log_content
+              "type" => "file",
+              "mode" => kind_of(String),
+              "writable" => boolean,
+              "ownership" => {
+                "uid" => kind_of(Integer),
+                "user" => kind_of(String),
+                "gid" => kind_of(Integer),
+                "group" => kind_of(String)
+              },
+              "content" => contents
             )
           end
-
-          after { FileUtils.rm_rf(gem_path) }
         end
 
         context "when file does not exist" do
-          let(:gem_path) { File.join(tmp_dir, "gem_without_log_files") }
-          before { run }
-
-          it "outputs install.log" do
-            expect(output).to include %(Path: "#{log_path}"\n    File not found.)
+          before do
+            if shared_example_options && shared_example_options[:stub_not_exists]
+              allow(File).to receive(:exist?).and_call_original
+              expect(File).to receive(:exist?).with(file_path).and_return(false)
+            end
+            run
           end
 
-          it "transmits log data in report" do
-            expect(received_report["logs"][File.join("ext", log_file)]).to eq(
-              "path" => log_path,
+          it "outputs file does not exists" do
+            expect(output).to include %(Path: "#{file_path}"\n    Exists?: false)
+          end
+
+          it "transmits file data in report" do
+            expect(received_report["paths"][filename]).to eq(
+              "path" => file_path,
               "exists" => false
             )
           end
@@ -1015,7 +987,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       describe "install.log" do
-        it_behaves_like "ext log file", "install.log"
+        it_behaves_like "diagnose file" do
+          let(:filename) { File.join("ext", "install.log") }
+          before do
+            expect(Bundler::CLI::Common).to receive(:select_spec)
+              .with("appsignal")
+              .at_least(:once)
+              .and_return(double(:full_gem_path => parent_directory))
+          end
+        end
 
         it "outputs header" do
           run
@@ -1024,11 +1004,34 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       describe "mkmf.log" do
-        it_behaves_like "ext log file", "mkmf.log"
+        it_behaves_like "diagnose file" do
+          let(:filename) { File.join("ext", "mkmf.log") }
+          before do
+            expect(Bundler::CLI::Common).to receive(:select_spec)
+              .with("appsignal")
+              .at_least(:once)
+              .and_return(double(:full_gem_path => parent_directory))
+          end
+        end
 
         it "outputs header" do
           run
           expect(output).to include("Makefile install log")
+        end
+      end
+
+      describe "appsignal.log" do
+        it_behaves_like "diagnose file", :stub_not_exists => true do
+          let(:filename) { "appsignal.log" }
+          before do
+            ENV["APPSIGNAL_LOG"] = "stdout"
+            expect_any_instance_of(Appsignal::Config).to receive(:log_file_path).at_least(:once).and_return(file_path)
+          end
+        end
+
+        it "outputs header" do
+          run
+          expect(output).to include("AppSignal log")
         end
       end
     end
