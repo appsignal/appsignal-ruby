@@ -79,26 +79,26 @@ module Appsignal
         def run(options = {})
           $stdout.sync = true
           header
-          empty_line
+          print_empty_line
 
           library_information
-          empty_line
+          print_empty_line
 
           host_information
-          empty_line
+          print_empty_line
 
           configure_appsignal(options)
           run_agent_diagnose_mode
-          empty_line
+          print_empty_line
 
           config
-          empty_line
+          print_empty_line
 
           check_api_key
-          empty_line
+          print_empty_line
 
           paths_section
-          empty_line
+          print_empty_line
 
           log_files
 
@@ -469,7 +469,7 @@ module Appsignal
           puts "Log files"
           data_section :logs do
             install_log
-            empty_line
+            print_empty_line
             mkmf_log
           end
         end
@@ -516,7 +516,7 @@ module Appsignal
           passwd_struct.name
         end
 
-        def empty_line
+        def print_empty_line
           puts "\n"
         end
 
