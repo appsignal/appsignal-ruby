@@ -2,6 +2,8 @@ module Appsignal
   class CLI
     class Diagnose
       class Paths
+        BYTES_TO_READ_FOR_FILES = 2 * 1024 * 1024 # 2 Mebibytes
+
         def report
           {}.tap do |hash|
             paths.each do |filename, config|
@@ -70,7 +72,12 @@ module Appsignal
               :gid => path_gid,
               :group => Utils.group_for_gid(path_gid)
             }
-            info[:content] = File.read(path).split("\n") if info[:type] == "file"
+            if info[:type] == "file"
+              info[:content] = Utils.read_file_content(
+                path,
+                BYTES_TO_READ_FOR_FILES
+              ).split("\n")
+            end
           end
         end
 
