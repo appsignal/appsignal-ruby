@@ -12,11 +12,9 @@ cache:
 
 rvm:
   - "2.0.0"
-  - "2.1.8"
-  - "2.2.4"
-  - "2.3.0"
-  - "2.4.0"
-  - "2.5.1"
+  - "2.3.8"
+  - "2.4.5"
+  - "2.5.3"
   - "jruby-19mode"
 
 gemfile:
@@ -41,28 +39,28 @@ gemfile:
 matrix:
   fast_finish: true
   include:
-    - rvm: "2.3.0"
+    - rvm: "2.1.8"
+      gemfile: "gemfiles/no_dependencies.gemfile"
+    - rvm: "2.2.4"
+      gemfile: "gemfiles/no_dependencies.gemfile"
+    - rvm: "2.5.3"
       gemfile: "gemfiles/no_dependencies.gemfile"
       script: "bundle exec rubocop"
   exclude:
     # Rails 5 doesn't support Ruby < 2.2
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.0.gemfile"
-    - rvm: "2.1.8"
-      gemfile: "gemfiles/rails-5.0.gemfile"
     - rvm: "2.0.0"
       gemfile: "gemfiles/rails-5.1.gemfile"
-    - rvm: "2.1.8"
-      gemfile: "gemfiles/rails-5.1.gemfile"
-    - rvm: "2.5.1"
+    - rvm: "2.5.3"
       gemfile: "gemfiles/rails-4.0.gemfile"
-    - rvm: "2.5.1"
+    - rvm: "2.5.3"
       gemfile: "gemfiles/rails-4.1.gemfile"
 
   allow_failures:
-    - rvm: "2.4.0"
+    - rvm: "2.4.5"
       gemfile: "gemfiles/rails-4.0.gemfile"
-    - rvm: "2.4.0"
+    - rvm: "2.4.5"
       gemfile: "gemfiles/rails-4.1.gemfile"
 
 env:
