@@ -188,6 +188,8 @@ module Appsignal
             initial_config
           )
           Appsignal.config.write_to_environment
+          Appsignal.start_logger
+          Appsignal.logger.info("Starting AppSignal diagnose")
         end
 
         def run_agent_diagnose_mode

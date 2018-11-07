@@ -107,6 +107,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         "support@appsignal.com"
     end
 
+    it "logs to the log file" do
+      run
+      log_contents = File.read(config.log_file_path)
+      expect(log_contents).to contains_log :info, "Starting AppSignal diagnose"
+    end
+
     describe "report" do
       context "when user wants to send report" do
         it "sends report" do
@@ -687,7 +693,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       context "when a directory is not configured" do
         let(:root_path) { File.join(tmp_dir, "writable_path") }
-        let(:config) { Appsignal::Config.new(root_path, "production", :log_file => nil) }
+        let(:config) do
+          silence(:allowed => ["Push api key not set after loading config"]) do
+            Appsignal::Config.new(root_path, "production", :log_file => nil)
+          end
+        end
         before do
           FileUtils.mkdir_p(File.join(root_path, "log"), :mode => 0o555)
           FileUtils.chmod(0o555, system_tmp_dir)
@@ -711,7 +721,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       context "when a directory does not exist" do
         let(:root_path) { tmp_dir }
         let(:execution_path) { File.join(tmp_dir, "not_existing_dir") }
-        let(:config) { Appsignal::Config.new(execution_path, "production") }
+        let(:config) do
+          silence(:allowed => ["Push api key not set after loading config"]) do
+            Appsignal::Config.new(execution_path, "production")
+          end
+        end
         before do
           allow(Dir).to receive(:pwd).and_return(execution_path)
           run_within_dir tmp_dir
@@ -811,7 +825,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           it "log files fall back on system tmp directory" do
             expect(output).to include \
               %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-              %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+              %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
           end
 
           it "transmits path data in report" do
@@ -841,7 +855,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             it "log files fall back on system tmp directory" do
               expect(output).to include \
                 %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+                %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
             end
 
             it "transmits path data in report" do
@@ -869,7 +883,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               it "log files fall back on system tmp directory" do
                 expect(output).to include \
                   %(log_dir_path: "#{system_tmp_dir}"\n    Writable?: true),
-                  %(log_file_path: "#{system_tmp_log_file}"\n    Exists?: false)
+                  %(log_file_path: "#{system_tmp_log_file}"\n    Writable?: true)
               end
 
               it "transmits path data in report" do
@@ -886,7 +900,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                   expect(output).to include \
                     %(root_path: "#{root_path}"\n    Writable?: true),
                     %(log_dir_path: "#{log_dir}"\n    Writable?: true),
-                    %(log_file_path: "#{log_file}"\n    Exists?: false)
+                    %(log_file_path: "#{log_file}"\n    Writable?: true)
                 end
 
                 it "transmits path data in report" do
@@ -917,6 +931,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     FileUtils.touch(log_file)
                     FileUtils.chmod(0o444, log_file)
                     run_within_dir root_path
+                  end
+                  around do |example|
+                    silence(:allowed => ["Push api key not set after loading config"]) do
+                      example.run
+                    end
                   end
 
                   it "lists log file as not writable" do

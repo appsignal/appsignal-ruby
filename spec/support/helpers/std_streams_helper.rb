@@ -56,18 +56,41 @@ module StdStreamsHelper
   # If an error is found the output the output is raised as an error, failing
   # the spec. Warnings and other AppSignal messages are ignored.
   #
-  # Usage
+  # @example
+  #   silence { do_something }
+  #   # Does nothing
   #
-  #     silence { do_something }
+  #   silence { puts "ERROR!" }
+  #   # => Error found in silenced output:
+  #   # ERROR!
   #
-  #     silence { puts "ERROR!" }
-  #     # => Error found in silenced output:
-  #     # ERROR!
-  def silence(&block)
+  # @example Ignore certain errors
+  #   silence(:allowed => ["my error"]) { puts "my error!" }
+  #   # Does nothing
+  #
+  #   silence { puts "my error!" }
+  #   # => Error found in silenced output:
+  #   # my error!
+  def silence(options = {}, &block)
     stream = Tempfile.new(SecureRandom.uuid)
     capture_std_streams(stream, stream, &block)
   ensure
-    output = stream.read
-    raise "Error found in silenced output:\n#{output}" if output =~ /(ERR|Error|error)/
+    output = filter_allowed_errors(stream.read, options.fetch(:allowed, []))
+    if output =~ /(ERR|Error|error)/
+      raise "Error found in silenced output:\n#{output}"
+    end
+  end
+
+  def filter_allowed_errors(output, allowed_errors)
+    output.lines.reject do |line|
+      reject = false
+      allowed_errors.each do |error|
+        if line.include?(error)
+          reject = true
+          break
+        end
+      end
+      reject
+    end.join(",")
   end
 end
