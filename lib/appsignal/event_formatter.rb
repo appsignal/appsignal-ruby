@@ -14,6 +14,8 @@ module Appsignal
   # @api private
   class EventFormatter
     class << self
+      include Appsignal::Utils::DeprecationMessage
+
       def formatters
         @@formatters ||= {}
       end
@@ -33,7 +35,7 @@ module Appsignal
         end
 
         if registered?(name, formatter)
-          Appsignal.logger.warn(
+          logger.warn(
             "Formatter for '#{name}' already registered, not registering "\
             "'#{formatter.name}'"
           )
@@ -82,18 +84,22 @@ module Appsignal
       rescue => ex
         formatter_classes.delete(name)
         formatters.delete(name)
-        Appsignal.logger.warn("'#{ex.message}' when initializing #{name} event formatter")
+        logger.warn("'#{ex.message}' when initializing #{name} event formatter")
       end
 
       def register_deprecated_formatter(name)
-        Appsignal.logger.warn(
+        deprecation_message \
           "Formatter for '#{name}' is using a deprecated registration " \
           "method. This event formatter will not be loaded. " \
           "Please update the formatter according to the documentation at: " \
-          "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html"
-        )
+          "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html",
+          logger
 
         deprecated_formatter_classes[name] = self
+      end
+
+      def logger
+        Appsignal.logger
       end
     end
 
