@@ -575,6 +575,20 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             expect(output).to include("#{key}: #{value}")
           end
         end
+
+        it "transmits validation in report" do
+          default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
+          expect(received_report["config"]).to eq(
+            "config" => default_config.merge("env" => ""),
+            "sources" => {
+              "default" => default_config,
+              "system" => {},
+              "initial" => { "env" => "" },
+              "file" => {},
+              "env" => {}
+            }
+          )
+        end
       end
 
       context "with configured environment" do
@@ -589,6 +603,30 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           Appsignal.config.config_hash.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end
+        end
+
+        it "transmits config in report" do
+          run
+          additional_initial_config = {}
+          if DependencyHelper.rails_present?
+            additional_initial_config = {
+              :name => "MyApp",
+              :log_path => File.join(Rails.root, "log")
+            }
+          end
+          final_config = { "env" => "production" }
+            .merge(additional_initial_config)
+            .merge(config.config_hash)
+          expect(received_report["config"]).to match(
+            "config" => hash_with_string_keys(final_config),
+            "sources" => {
+              "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "system" => {},
+              "initial" => hash_with_string_keys(config.initial_config.merge(additional_initial_config)),
+              "file" => hash_with_string_keys(config.file_config),
+              "env" => {}
+            }
+          )
         end
       end
 
@@ -605,6 +643,19 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
             expect(output).to include("#{key}: #{value}")
           end
+        end
+
+        it "transmits config in report" do
+          expect(received_report["config"]).to match(
+            "config" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
+            "sources" => {
+              "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "system" => {},
+              "initial" => hash_with_string_keys(config.initial_config),
+              "file" => hash_with_string_keys(config.file_config),
+              "env" => {}
+            }
+          )
         end
       end
     end
@@ -1055,5 +1106,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       "    Working directory user group id: #{working_directory_stat.gid}",
       "    Working directory permissions: #{working_directory_stat.mode}",
       "    Lock path: writable"
+  end
+
+  def hash_with_string_keys(hash)
+    Hash[hash.map { |key, value| [key.to_s, value] }]
   end
 end

@@ -93,7 +93,7 @@ module Appsignal
           run_agent_diagnose_mode
           print_empty_line
 
-          config
+          print_config_section
           print_empty_line
 
           check_api_key
@@ -358,26 +358,38 @@ module Appsignal
           end
         end
 
-        def config
+        def print_config_section
           puts "Configuration"
-          data_section :config do
-            puts_environment
-
-            Appsignal.config.config_hash.each do |key, value|
-              puts_and_save key, key, value
-            end
-          end
+          config = Appsignal.config
+          data[:config] = {
+            :config => config.config_hash.merge(:env => config.env),
+            :sources => {
+              :default => Appsignal::Config::DEFAULT_CONFIG,
+              :system => config.system_config,
+              :initial => config.initial_config,
+              :file => config.file_config,
+              :env => config.env_config
+            }
+          }
+          print_environment(config)
+          print_config_options(config)
         end
 
-        def puts_environment
-          env = Appsignal.config.env
-          puts_and_save :env, "Environment", env
+        def print_environment(config)
+          env = config.env
+          puts_value "Environment", env
 
           return unless env == ""
           puts "    Warning: No environment set, no config loaded!"
           puts "    Please make sure appsignal diagnose is run within your "
           puts "    project directory with an environment."
           puts "      appsignal diagnose --environment=production"
+        end
+
+        def print_config_options(config)
+          config.config_hash.each do |key, value|
+            puts "  #{key}: #{value}"
+          end
         end
 
         def process_user
