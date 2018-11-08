@@ -73,6 +73,14 @@ describe Appsignal::Hooks::DelayedJobHook do
           end
         end
 
+        it "increments the attempts counter" do
+          expect(Appsignal).to receive(:increment_counter).with(
+            "delayed_job_attempts",
+            1,
+            :action => "TestClass#perform"
+          )
+        end
+
         it "wraps it in a transaction with the correct params" do
           expect(Appsignal).to receive(:monitor_transaction).with(
             "perform_job.delayed_job",

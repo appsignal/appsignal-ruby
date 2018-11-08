@@ -37,6 +37,16 @@ module Appsignal
           Appsignal.config[:filter_parameters]
         )
 
+        attempts = extract_value(job, :attempts, 0)
+
+        if attempts > 0
+          Appsignal.increment_counter(
+            "delayed_job_attempts",
+            attempts,
+            :action => "#{class_name}##{method_name}"
+          )
+        end
+
         Appsignal.monitor_transaction(
           "perform_job.delayed_job",
           :class    => class_name,
@@ -45,7 +55,7 @@ module Appsignal
             :id       => extract_value(job, :id, nil, true),
             :queue    => extract_value(job, :queue),
             :priority => extract_value(job, :priority, 0),
-            :attempts => extract_value(job, :attempts, 0)
+            :attempts => attempts
           },
           :params      => params,
           :queue_start => extract_value(job, :run_at)
