@@ -380,7 +380,7 @@ module Appsignal
           option = :env
           option_sources = sources_for_option(option)
           sources_label = config_sources_label(option, option_sources)
-          print "  Environment: #{env}"
+          print "  Environment: #{format_config_option(env)}"
 
           if env == ""
             puts "\n    Warning: No environment set, no config loaded!"
@@ -396,7 +396,7 @@ module Appsignal
           config.config_hash.each do |key, value|
             option_sources = sources_for_option(key)
             sources_label = config_sources_label(key, option_sources)
-            puts "  #{key}: #{value}#{sources_label}"
+            puts "  #{key}: #{format_config_option(value)}#{sources_label}"
           end
 
           puts "\nRead more about how the diagnose config output is rendered\n"\
@@ -421,11 +421,23 @@ module Appsignal
               max_source_length = sources.map(&:length).max + 1 # 1 is for ":"
               sources.each do |source|
                 source_label = "#{source}:".ljust(max_source_length)
-                a << "      #{source_label} #{data[:config][:sources][source][option]}"
+                value = data[:config][:sources][source][option]
+                a << "      #{source_label} #{format_config_option(value)}"
               end
             end.join("\n")
           else
             " (Not configured)"
+          end
+        end
+
+        def format_config_option(value)
+          case value
+          when NilClass
+            "nil"
+          when String
+            value.inspect
+          else
+            value
           end
         end
 

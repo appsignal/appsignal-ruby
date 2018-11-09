@@ -565,15 +565,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs a warning that no config is loaded" do
           expect(output).to include \
-            "Environment: \n    Warning: No environment set, no config loaded!",
+            "Environment: \"\"\n",
+            "    Warning: No environment set, no config loaded!",
             "  appsignal diagnose --environment=production"
         end
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
-          end
+          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
         end
 
         it "transmits validation in report" do
@@ -595,7 +594,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         describe "environment" do
           it "outputs environment" do
             run
-            expect(output).to include("Environment: production")
+            expect(output).to include(%(Environment: "production"))
           end
 
           context "when the source is a single source" do
@@ -603,7 +602,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs the label source after the value" do
               expect(output).to include(
-                %(Environment: #{Appsignal.config.env} (Loaded from: initial)\n)
+                %(Environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
               )
             end
           end
@@ -620,10 +619,10 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs a list of sources with their values" do
               expect(output).to include(
-                "  Environment: production\n" \
-                "    Sources:\n" \
-                "      initial: development\n" \
-                "      env:     production\n"
+                %(  Environment: "production"\n) +
+                %(    Sources:\n) +
+                %(      initial: "development"\n) +
+                %(      env:     "production"\n)
               )
             end
           end
@@ -632,9 +631,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "outputs configuration" do
           run
           expect(output).to include("Configuration")
-          Appsignal.config.config_hash.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
-          end
+          expect_config_to_be_printed(Appsignal.config.config_hash)
         end
 
         describe "option sources" do
@@ -643,7 +640,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs the label source after the value" do
               expect(output).to include(
-                %(push_api_key: #{Appsignal.config[:push_api_key]} (Loaded from: file)\n)
+                %(push_api_key: "#{Appsignal.config[:push_api_key]}" (Loaded from: file)\n)
               )
             end
 
@@ -666,20 +663,20 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             if DependencyHelper.rails_present?
               it "outputs a list of sources with their values" do
                 expect(output).to include(
-                  %(  name: MyApp\n) +
+                  %(  name: "MyApp"\n) +
                   %(    Sources:\n) +
-                  %(      initial: MyApp\n) +
-                  %(      file:    TestApp\n) +
-                  %(      env:     MyApp\n)
+                  %(      initial: "MyApp"\n) +
+                  %(      file:    "TestApp"\n) +
+                  %(      env:     "MyApp"\n)
                 )
               end
             else
               it "outputs a list of sources with their values" do
                 expect(output).to include(
-                  %(  name: MyApp\n) +
+                  %(  name: "MyApp"\n) +
                   %(    Sources:\n) +
-                  %(      file: TestApp\n) +
-                  %(      env:  MyApp\n)
+                  %(      file: "TestApp"\n) +
+                  %(      env:  "MyApp"\n)
                 )
               end
             end
@@ -716,14 +713,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before { run_within_dir tmp_dir }
 
         it "outputs environment" do
-          expect(output).to include("Environment: foobar")
+          expect(output).to include(%(Environment: "foobar"))
         end
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
-          end
+          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
         end
 
         it "transmits config in report" do
@@ -737,6 +732,23 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "env" => {}
             }
           )
+        end
+      end
+
+      def expect_config_to_be_printed(config)
+        nil_options = config.select { |_, v| v.nil? }
+        nil_options.each_key do |key|
+          expect(output).to include(%(#{key}: nil))
+        end
+        string_options = config.select { |_, v| v.is_a?(String) }
+        string_options.each do |key, value|
+          expect(output).to include(%(#{key}: "#{value}"))
+        end
+        other_options = config.select do |k, _|
+          !string_options.key?(k) && !nil_options.key?(k)
+        end
+        other_options.each do |key, value|
+          expect(output).to include(%(#{key}: #{value}))
         end
       end
     end
