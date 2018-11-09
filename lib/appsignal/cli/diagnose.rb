@@ -42,8 +42,8 @@ module Appsignal
     # @example Don't prompt about sending the report and don't sent it
     #   appsignal diagnose --no-send-report
     #
-    # @see http://docs.appsignal.com/support/debugging.html Debugging AppSignal
-    # @see http://docs.appsignal.com/ruby/command-line/diagnose.html
+    # @see https://docs.appsignal.com/support/debugging.html Debugging AppSignal
+    # @see https://docs.appsignal.com/ruby/command-line/diagnose.html
     #   AppSignal diagnose documentation
     # @since 1.1.0
     class Diagnose
@@ -316,7 +316,7 @@ module Appsignal
           puts "=" * 80
           puts "Use this information to debug your configuration."
           puts "More information is available on the documentation site."
-          puts "http://docs.appsignal.com/"
+          puts "https://docs.appsignal.com/"
           puts "Send this output to support@appsignal.com if you need help."
           puts "=" * 80
         end

@@ -104,7 +104,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       run
       expect(output).to include \
         "AppSignal diagnose",
-        "http://docs.appsignal.com/",
+        "https://docs.appsignal.com/",
         "support@appsignal.com"
     end
 
