@@ -4,6 +4,8 @@ require "rbconfig"
 require "bundler/cli"
 require "bundler/cli/common"
 require "etc"
+require "appsignal/cli/diagnose/utils"
+require "appsignal/cli/diagnose/paths"
 
 module Appsignal
   class CLI
@@ -79,28 +81,30 @@ module Appsignal
         def run(options = {})
           $stdout.sync = true
           header
-          empty_line
+          print_empty_line
 
           library_information
-          empty_line
+          print_empty_line
 
           host_information
-          empty_line
+          print_empty_line
 
           configure_appsignal(options)
           run_agent_diagnose_mode
-          empty_line
+          print_empty_line
 
           config
-          empty_line
+          print_empty_line
 
           check_api_key
-          empty_line
+          print_empty_line
 
-          paths_section
-          empty_line
+          data[:process] = process_user
 
-          log_files
+          paths_report = Paths.new
+          data[:paths] = paths_report.report
+          print_paths_section(paths_report)
+          print_empty_line
 
           transmit_report_to_appsignal if send_report_to_appsignal?(options)
         end
@@ -325,7 +329,6 @@ module Appsignal
             puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
             puts_and_save :agent_architecture, "Agent architecture",
               Appsignal::System.installed_agent_architecture
-            puts_and_save :package_install_path, "Gem install path", gem_path
             puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
           end
         end
@@ -377,73 +380,13 @@ module Appsignal
           puts "      appsignal diagnose --environment=production"
         end
 
-        def paths_section
-          puts "Paths"
-          data[:process] = process_user
-          data_section :paths do
-            appsignal_paths.each do |name, path|
-              path_info = {
-                :path => path,
-                :configured => !path.nil?,
-                :exists => false,
-                :writable => false
-              }
-              save name, path_info
-
-              puts_value name, path.to_s.inspect
-
-              unless path_info[:configured]
-                puts_value "Configured?", "false", :level => 2
-                next
-              end
-              unless File.exist?(path)
-                puts_value "Exists?", "false", :level => 2
-                next
-              end
-
-              path_info[:exists] = true
-              path_info[:writable] = File.writable?(path)
-              puts_value "Writable?", path_info[:writable], :level => 2
-
-              file_owner = path_ownership(path)
-              path_info[:ownership] = file_owner
-              save name, path_info
-
-              owned = process_user[:uid] == file_owner[:uid]
-              owner = "#{owned} " \
-                "(file: #{file_owner[:user]}:#{file_owner[:uid]}, " \
-                "process: #{process_user[:user]}:#{process_user[:uid]})"
-              puts_value "Ownership?", owner, :level => 2
-            end
-          end
-        end
-
-        def path_ownership(path)
-          file_uid = File.stat(path).uid
-          {
-            :uid => file_uid,
-            :user => username_for_uid(file_uid)
-          }
-        end
-
         def process_user
           return @process_user if defined?(@process_user)
 
           process_uid = Process.uid
           @process_user = {
             :uid => process_uid,
-            :user => username_for_uid(process_uid)
-          }
-        end
-
-        def appsignal_paths
-          config = Appsignal.config
-          log_file_path = config.log_file_path
-          {
-            :working_dir => Dir.pwd,
-            :root_path => config.root_path,
-            :log_dir_path => log_file_path ? File.dirname(log_file_path) : "",
-            :log_file_path => log_file_path
+            :user => Utils.username_for_uid(process_uid)
           }
         end
 
@@ -465,58 +408,37 @@ module Appsignal
           end
         end
 
-        def log_files
-          puts "Log files"
-          data_section :logs do
-            install_log
-            empty_line
-            mkmf_log
+        def print_paths_section(report)
+          puts "Paths"
+          report_paths = report.paths
+          data[:paths].each do |name, file|
+            print_path_details report_paths[name][:label], file
           end
         end
 
-        def install_log
-          puts "  Extension install log"
-          filename = File.join("ext", "install.log")
-          log_info = log_file_info(File.join(gem_path, filename))
-          save filename, log_info
-          puts_log_file log_info
-        end
+        def print_path_details(name, path)
+          puts "  #{name}"
+          puts_value "Path", path[:path].to_s.inspect, :level => 2
 
-        def mkmf_log
-          puts "  Makefile install log"
-          filename = File.join("ext", "mkmf.log")
-          log_info = log_file_info(File.join(gem_path, filename))
-          save filename, log_info
-          puts_log_file log_info
-        end
-
-        def log_file_info(log_file)
-          {
-            :path => log_file,
-            :exists => File.exist?(log_file)
-          }.tap do |info|
-            next unless info[:exists]
-            info[:content] = File.read(log_file).split("\n")
+          unless path[:exists]
+            puts_value "Exists?", path[:exists], :level => 2
+            return
           end
+
+          puts_value "Writable?", path[:writable], :level => 2
+
+          ownership = path[:ownership]
+          owned = process_user[:uid] == ownership[:uid]
+          owner = "#{owned} " \
+            "(file: #{ownership[:user]}:#{ownership[:uid]}, " \
+            "process: #{process_user[:user]}:#{process_user[:uid]})"
+          puts_value "Ownership?", owner, :level => 2
+          return unless path.key?(:content)
+          puts "    Contents (last 10 lines):"
+          puts path[:content][0..10]
         end
 
-        def puts_log_file(log_info)
-          puts_value "Path", log_info[:path].to_s.inspect, :level => 2
-          if log_info[:exists]
-            puts "    Contents:"
-            puts log_info[:content].join("\n")
-          else
-            puts "    File not found."
-          end
-        end
-
-        def username_for_uid(uid)
-          passwd_struct = Etc.getpwuid(uid)
-          return unless passwd_struct
-          passwd_struct.name
-        end
-
-        def empty_line
+        def print_empty_line
           puts "\n"
         end
 
@@ -526,11 +448,6 @@ module Appsignal
           true
         rescue LoadError
           false
-        end
-
-        def gem_path
-          @gem_path ||= \
-            Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
         end
       end
     end
