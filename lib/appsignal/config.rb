@@ -122,11 +122,12 @@ module Appsignal
       @logger         = logger
       @valid          = false
       @config_hash    = Hash[DEFAULT_CONFIG]
+      env_loaded_from_initial = env.to_s
       @env =
         if ENV.key?("APPSIGNAL_APP_ENV".freeze)
           env_loaded_from_env = ENV["APPSIGNAL_APP_ENV".freeze]
         else
-          env_loaded_from_initial = env.to_s
+          env_loaded_from_initial
         end
 
       # Set config based on the system

@@ -31,7 +31,7 @@ describe Appsignal::Config do
           end
 
           it "sets the environment as loaded through the env_config" do
-            expect(config.initial_config).to eq({})
+            expect(config.initial_config).to eq(:env => env)
             expect(config.env_config).to eq(:env => env_env)
             expect(config.config_hash).to_not have_key(:env)
           end

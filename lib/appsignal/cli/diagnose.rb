@@ -377,18 +377,55 @@ module Appsignal
 
         def print_environment(config)
           env = config.env
-          puts_value "Environment", env
+          option = :env
+          option_sources = sources_for_option(option)
+          sources_label = config_sources_label(option, option_sources)
+          print "  Environment: #{env}"
 
-          return unless env == ""
-          puts "    Warning: No environment set, no config loaded!"
-          puts "    Please make sure appsignal diagnose is run within your "
-          puts "    project directory with an environment."
-          puts "      appsignal diagnose --environment=production"
+          if env == ""
+            puts "\n    Warning: No environment set, no config loaded!"
+            puts "    Please make sure appsignal diagnose is run within your "
+            puts "    project directory with an environment."
+            puts "      appsignal diagnose --environment=production"
+          else
+            puts sources_label
+          end
         end
 
         def print_config_options(config)
           config.config_hash.each do |key, value|
-            puts "  #{key}: #{value}"
+            option_sources = sources_for_option(key)
+            sources_label = config_sources_label(key, option_sources)
+            puts "  #{key}: #{value}#{sources_label}"
+          end
+
+          puts "\nRead more about how the diagnose config output is rendered\n"\
+            "https://docs.appsignal.com/ruby/command-line/diagnose.html"
+        end
+
+        def sources_for_option(option)
+          config_sources = data[:config][:sources]
+          [].tap do |option_sources|
+            config_sources.each do |source, c|
+              option_sources << source if c.key?(option)
+            end
+          end
+        end
+
+        def config_sources_label(option, sources)
+          return if sources == [:default]
+          if sources.length == 1
+            " (Loaded from: #{sources.join(", ")})"
+          elsif sources.any?
+            ["\n    Sources:"].tap do |a|
+              max_source_length = sources.map(&:length).max + 1 # 1 is for ":"
+              sources.each do |source|
+                source_label = "#{source}:".ljust(max_source_length)
+                a << "      #{source_label} #{data[:config][:sources][source][option]}"
+              end
+            end.join("\n")
+          else
+            " (Not configured)"
           end
         end
 

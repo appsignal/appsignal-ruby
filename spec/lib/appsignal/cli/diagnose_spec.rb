@@ -592,16 +592,97 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       context "with configured environment" do
-        before { run }
+        describe "environment" do
+          it "outputs environment" do
+            run
+            expect(output).to include("Environment: production")
+          end
 
-        it "outputs environment" do
-          expect(output).to include("Environment: production")
+          context "when the source is a single source" do
+            before { run }
+
+            it "outputs the label source after the value" do
+              expect(output).to include(
+                %(Environment: #{Appsignal.config.env} (Loaded from: initial)\n)
+              )
+            end
+          end
+
+          context "when the source is multiple sources" do
+            let(:options) { { :environment => "development" } }
+            before do
+              ENV["APPSIGNAL_APP_ENV"] = "production"
+              config.instance_variable_set(:@env, ENV["APPSIGNAL_APP_ENV"])
+              stub_api_request(config, "auth").to_return(:status => 200)
+              capture_diagnatics_report_request
+              run
+            end
+
+            it "outputs a list of sources with their values" do
+              expect(output).to include(
+                "  Environment: production\n" \
+                "    Sources:\n" \
+                "      initial: development\n" \
+                "      env:     production\n"
+              )
+            end
+          end
         end
 
         it "outputs configuration" do
+          run
           expect(output).to include("Configuration")
           Appsignal.config.config_hash.each do |key, value|
             expect(output).to include("#{key}: #{value}")
+          end
+        end
+
+        describe "option sources" do
+          context "when the source is a single source" do
+            before { run }
+
+            it "outputs the label source after the value" do
+              expect(output).to include(
+                %(push_api_key: #{Appsignal.config[:push_api_key]} (Loaded from: file)\n)
+              )
+            end
+
+            context "when the source is only default" do
+              it "does not print a source" do
+                expect(output).to include("debug: #{Appsignal.config[:debug]}\n")
+              end
+            end
+          end
+
+          context "when the source is multiple sources" do
+            before do
+              ENV["APPSIGNAL_APP_NAME"] = "MyApp"
+              config[:name] = ENV["APPSIGNAL_APP_NAME"]
+              stub_api_request(config, "auth").to_return(:status => 200)
+              capture_diagnatics_report_request
+              run
+            end
+
+            if DependencyHelper.rails_present?
+              it "outputs a list of sources with their values" do
+                expect(output).to include(
+                  %(  name: MyApp\n) +
+                  %(    Sources:\n) +
+                  %(      initial: MyApp\n) +
+                  %(      file:    TestApp\n) +
+                  %(      env:     MyApp\n)
+                )
+              end
+            else
+              it "outputs a list of sources with their values" do
+                expect(output).to include(
+                  %(  name: MyApp\n) +
+                  %(    Sources:\n) +
+                  %(      file: TestApp\n) +
+                  %(      env:  MyApp\n)
+                )
+              end
+            end
           end
         end
 
