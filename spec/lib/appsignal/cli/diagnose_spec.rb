@@ -578,7 +578,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "transmits validation in report" do
           default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
           expect(received_report["config"]).to eq(
-            "config" => default_config.merge("env" => ""),
+            "options" => default_config.merge("env" => ""),
             "sources" => {
               "default" => default_config,
               "system" => {},
@@ -696,7 +696,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             .merge(additional_initial_config)
             .merge(config.config_hash)
           expect(received_report["config"]).to match(
-            "config" => hash_with_string_keys(final_config),
+            "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
@@ -723,7 +723,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits config in report" do
           expect(received_report["config"]).to match(
-            "config" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
+            "options" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},

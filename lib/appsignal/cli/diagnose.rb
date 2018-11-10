@@ -362,7 +362,7 @@ module Appsignal
           puts "Configuration"
           config = Appsignal.config
           data[:config] = {
-            :config => config.config_hash.merge(:env => config.env),
+            :options => config.config_hash.merge(:env => config.env),
             :sources => {
               :default => Appsignal::Config::DEFAULT_CONFIG,
               :system => config.system_config,
