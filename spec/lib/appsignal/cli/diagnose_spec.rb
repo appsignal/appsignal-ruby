@@ -190,8 +190,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       it "outputs version numbers" do
         expect(output).to include \
           "Gem version: #{Appsignal::VERSION}",
-          "Agent version: #{Appsignal::Extension.agent_version}",
-          "Agent architecture: #{Appsignal::System.installed_agent_architecture}"
+          "Agent version: #{Appsignal::Extension.agent_version}"
       end
 
       it "transmits version numbers in report" do
@@ -200,7 +199,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "language" => "ruby",
             "package_version" => Appsignal::VERSION,
             "agent_version" => Appsignal::Extension.agent_version,
-            "agent_architecture" => Appsignal::System.installed_agent_architecture,
             "extension_loaded" => true
           }
         )
@@ -234,6 +232,131 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits extension_loaded: false in report" do
           expect(received_report["library"]["extension_loaded"]).to eq(false)
+        end
+      end
+    end
+
+    describe "installation report" do
+      let(:rbconfig) { RbConfig::CONFIG }
+
+      it "adds the installation report to the diagnostics report" do
+        run
+        jruby = DependencyHelper.running_jruby?
+        expect(received_report["installation"]).to match(
+          "result" => {
+            "status" => "success"
+          },
+          "language" => {
+            "name" => "ruby",
+            "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}",
+            "implementation" => jruby ? "jruby" : "ruby"
+          },
+          "download" => {
+            "download_url" => kind_of(String),
+            "checksum" => "verified"
+          },
+          "build" => {
+            "time" => kind_of(String),
+            "package_path" => File.expand_path("../../../../../", __FILE__),
+            "architecture" => rbconfig["host_cpu"],
+            "target" => Appsignal::System.agent_platform,
+            "musl_override" => false,
+            "library_type" => jruby ? "dynamic" : "static",
+            "source" => "remote",
+            "dependencies" => kind_of(Hash),
+            "flags" => kind_of(Hash),
+            "agent_version" => Appsignal::Extension.agent_version
+          },
+          "host" => {
+            "root_user" => false,
+            "dependencies" => kind_of(Hash)
+          }
+        )
+      end
+
+      it "prints the extension installation report" do
+        run
+        jruby = Appsignal::System.jruby?
+        expect(output).to include(
+          "Extension installation report",
+          "Language details",
+          "  Implementation: #{jruby ? "jruby" : "ruby"}",
+          "  Ruby version: #{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}",
+          "Download details",
+          "  Download URL: https://",
+          "  Checksum: verified",
+          "Build details",
+          "  Install time: 20",
+          "  Architecture: #{rbconfig["host_cpu"]}",
+          "  Target: #{Appsignal::System.agent_platform}",
+          "  Musl override: false",
+          "  Library type: #{jruby ? "dynamic" : "static"}",
+          "  Dependencies: {",
+          "  Flags: {",
+          "Host details",
+          "  Root user: false",
+          "  Dependencies: {"
+        )
+      end
+
+      context "without install report" do
+        let(:error) { RuntimeError.new("foo") }
+        before do
+          allow(File).to receive(:read).and_call_original
+          expect(File).to receive(:read)
+            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .and_raise(error)
+        end
+
+        it "sends an error" do
+          run
+          expect(received_report["installation"]).to match(
+            "parsing_error" => {
+              "error" => "RuntimeError: foo",
+              "backtrace" => error.backtrace
+            }
+          )
+        end
+
+        it "prints the error" do
+          run
+          expect(output).to include(
+            "Extension installation report",
+            "  Error found while parsing the report.",
+            "  Error: RuntimeError: foo"
+          )
+          expect(output).to_not include("Raw report:")
+        end
+      end
+
+      context "when report is invalid YAML" do
+        let(:raw_report) { "foo:\nbar" }
+        before do
+          allow(File).to receive(:read).and_call_original
+          expect(File).to receive(:read)
+            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .and_return(raw_report)
+        end
+
+        it "sends an error" do
+          run
+          expect(received_report["installation"]).to match(
+            "parsing_error" => {
+              "error" => kind_of(String),
+              "backtrace" => kind_of(Array),
+              "raw" => raw_report
+            }
+          )
+        end
+
+        it "prints the error" do
+          run
+          expect(output).to include(
+            "Extension installation report",
+            "  Error found while parsing the report.",
+            "  Error: ",
+            "  Raw report:\n#{raw_report}"
+          )
         end
       end
     end
@@ -471,7 +594,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         context "when not root user" do
           it "outputs false" do
             run
-            expect(output).to include "root user: false"
+            expect(output).to include "Root user: false"
           end
 
           it "transmits root: false in report" do
@@ -487,7 +610,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "outputs true, with warning" do
-            expect(output).to include "root user: true (not recommended)"
+            expect(output).to include "Root user: true (not recommended)"
           end
 
           it "transmits root: true in report" do
@@ -834,7 +957,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           expect(received_report["paths"].keys).to match_array(
             %w[
               package_install_path root_path working_dir log_dir_path
-              ext/install.log ext/mkmf.log appsignal.log
+              ext/mkmf.log appsignal.log
             ]
           )
         end
@@ -1135,22 +1258,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "exists" => false
             )
           end
-        end
-      end
-
-      describe "install.log" do
-        it_behaves_like "diagnose file" do
-          let(:filename) { File.join("ext", "install.log") }
-          before do
-            expect_any_instance_of(Appsignal::CLI::Diagnose::Paths).to receive(:gem_path)
-              .at_least(:once)
-              .and_return(parent_directory)
-          end
-        end
-
-        it "outputs header" do
-          run
-          expect(output).to include("Extension install log")
         end
       end
 

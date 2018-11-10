@@ -303,7 +303,7 @@ namespace :extension do
           appsignal_extension.o \
           appsignal_extension.so \
           appsignal_extension.bundle \
-          install.log \
+          install.report \
           libappsignal.* \
           appsignal.version \
           Makefile \

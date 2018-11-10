@@ -1,27 +1,35 @@
 require File.expand_path("../base.rb", __FILE__)
 
+def local_build?
+  File.exist?(ext_path("appsignal-agent")) &&
+    (
+      File.exist?(ext_path("libappsignal.dylib")) ||
+      File.exist?(ext_path("libappsignal.so"))
+    ) &&
+    File.exist?(ext_path("appsignal.h"))
+end
+
 task :default do
   begin
-    logger.info "Installing appsignal agent #{Appsignal::VERSION} for Ruby #{RUBY_VERSION} on #{RUBY_PLATFORM}"
-    write_agent_architecture
+    library_type = "dynamic"
+    report["language"]["implementation"] = "jruby"
+    report["build"]["library_type"] = library_type
     next unless check_architecture
     arch_config = AGENT_CONFIG["triples"][ARCH]
 
-    unless File.exist?(ext_path("appsignal-agent")) &&
-        (
-          File.exist?(ext_path("libappsignal.dylib")) ||
-          File.exist?(ext_path("libappsignal.so"))
-        ) &&
-        File.exist?(ext_path("appsignal.h"))
-      archive = download_archive(arch_config, "dynamic")
+    if local_build?
+      report["build"]["source"] = "local"
+    else
+      archive = download_archive(arch_config, library_type)
       next unless archive
-      next unless verify_archive(archive, arch_config, "dynamic")
+      next unless verify_archive(archive, arch_config, library_type)
       unarchive(archive)
     end
-  rescue => ex
-    installation_failed "Exception while installing: #{ex}"
-    ex.backtrace.each do |line|
-      logger.error line
-    end
+    successful_installation
+  rescue => error
+    fail_installation_with_error(error)
+  ensure
+    create_dummy_makefile unless installation_succeeded?
+    write_report
   end
 end

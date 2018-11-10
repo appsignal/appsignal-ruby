@@ -26,10 +26,10 @@ bundle_and_spec_all_rvm
 ext/libappsignal.*
 ext/appsignal-agent
 ext/appsignal.h
-ext/appsignal.architecture
 ext/appsignal.version
 ext/Makefile
 ext/*.bundle
 ext/*.o
 ext/*.so
+ext/*.report
 pkg/

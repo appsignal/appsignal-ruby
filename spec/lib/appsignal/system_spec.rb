@@ -19,41 +19,6 @@ describe Appsignal::System do
     end
   end
 
-  describe ".installed_agent_architecture" do
-    let(:const_name) { "GEM_EXT_PATH".freeze }
-    let(:tmp_ext_dir) { File.join(tmp_dir, "ext") }
-    let(:architecture_file) { File.join(Appsignal::System::GEM_EXT_PATH, "appsignal.architecture") }
-    around do |example|
-      original_gem_ext_path = Appsignal::System.const_get(const_name)
-      Appsignal::System.send(:remove_const, const_name)
-      Appsignal::System.const_set(const_name, tmp_ext_dir)
-      example.run
-      Appsignal::System.send(:remove_const, const_name)
-      Appsignal::System.const_set(const_name, original_gem_ext_path)
-    end
-    after { FileUtils.rm_rf(tmp_ext_dir) }
-    subject { described_class.installed_agent_architecture }
-
-    context "with an ext/appsignal.architecture file" do
-      before do
-        FileUtils.mkdir_p(Appsignal::System::GEM_EXT_PATH)
-        File.open(architecture_file, "w") do |file|
-          file.write "foo"
-        end
-      end
-
-      it "returns the contents of the file" do
-        expect(subject).to eq("foo")
-      end
-    end
-
-    context "without an ext/appsignal.architecture file" do
-      it "returns nil" do
-        expect(subject).to be_nil
-      end
-    end
-  end
-
   describe ".agent_platform" do
     let(:os) { "linux-gnu" }
     let(:ldd_output) { "" }
