@@ -1,3 +1,10 @@
+# 2.8.0
+- Add diagnose --[no-]send-report option. PR #438
+- Print deprecation warnings to STDOUT as well. PR #439
+- Diagnose command starts the AppSignal logger. PR #440
+- Send appsignal.log file contents with diagnose report. PR #442
+- Track source of config option for diagnose report. PR #444
+
 # 2.7.3 Beta
 - Add user and group context to diagnose report. PR #436
 - Add user and group context to agent logs. PR #436
