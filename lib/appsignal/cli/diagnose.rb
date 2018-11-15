@@ -42,8 +42,8 @@ module Appsignal
     # @example Don't prompt about sending the report and don't sent it
     #   appsignal diagnose --no-send-report
     #
-    # @see http://docs.appsignal.com/support/debugging.html Debugging AppSignal
-    # @see http://docs.appsignal.com/ruby/command-line/diagnose.html
+    # @see https://docs.appsignal.com/support/debugging.html Debugging AppSignal
+    # @see https://docs.appsignal.com/ruby/command-line/diagnose.html
     #   AppSignal diagnose documentation
     # @since 1.1.0
     class Diagnose
@@ -93,7 +93,7 @@ module Appsignal
           run_agent_diagnose_mode
           print_empty_line
 
-          config
+          print_config_section
           print_empty_line
 
           check_api_key
@@ -316,7 +316,7 @@ module Appsignal
           puts "=" * 80
           puts "Use this information to debug your configuration."
           puts "More information is available on the documentation site."
-          puts "http://docs.appsignal.com/"
+          puts "https://docs.appsignal.com/"
           puts "Send this output to support@appsignal.com if you need help."
           puts "=" * 80
         end
@@ -358,26 +358,87 @@ module Appsignal
           end
         end
 
-        def config
+        def print_config_section
           puts "Configuration"
-          data_section :config do
-            puts_environment
+          config = Appsignal.config
+          data[:config] = {
+            :options => config.config_hash.merge(:env => config.env),
+            :sources => {
+              :default => Appsignal::Config::DEFAULT_CONFIG,
+              :system => config.system_config,
+              :initial => config.initial_config,
+              :file => config.file_config,
+              :env => config.env_config
+            }
+          }
+          print_environment(config)
+          print_config_options(config)
+        end
 
-            Appsignal.config.config_hash.each do |key, value|
-              puts_and_save key, key, value
+        def print_environment(config)
+          env = config.env
+          option = :env
+          option_sources = sources_for_option(option)
+          sources_label = config_sources_label(option, option_sources)
+          print "  Environment: #{format_config_option(env)}"
+
+          if env == ""
+            puts "\n    Warning: No environment set, no config loaded!"
+            puts "    Please make sure appsignal diagnose is run within your "
+            puts "    project directory with an environment."
+            puts "      appsignal diagnose --environment=production"
+          else
+            puts sources_label
+          end
+        end
+
+        def print_config_options(config)
+          config.config_hash.each do |key, value|
+            option_sources = sources_for_option(key)
+            sources_label = config_sources_label(key, option_sources)
+            puts "  #{key}: #{format_config_option(value)}#{sources_label}"
+          end
+
+          puts "\nRead more about how the diagnose config output is rendered\n"\
+            "https://docs.appsignal.com/ruby/command-line/diagnose.html"
+        end
+
+        def sources_for_option(option)
+          config_sources = data[:config][:sources]
+          [].tap do |option_sources|
+            config_sources.each do |source, c|
+              option_sources << source if c.key?(option)
             end
           end
         end
 
-        def puts_environment
-          env = Appsignal.config.env
-          puts_and_save :env, "Environment", env
+        def config_sources_label(option, sources)
+          return if sources == [:default]
+          if sources.length == 1
+            " (Loaded from: #{sources.join(", ")})"
+          elsif sources.any?
+            ["\n    Sources:"].tap do |a|
+              max_source_length = sources.map(&:length).max + 1 # 1 is for ":"
+              sources.each do |source|
+                source_label = "#{source}:".ljust(max_source_length)
+                value = data[:config][:sources][source][option]
+                a << "      #{source_label} #{format_config_option(value)}"
+              end
+            end.join("\n")
+          else
+            " (Not configured)"
+          end
+        end
 
-          return unless env == ""
-          puts "    Warning: No environment set, no config loaded!"
-          puts "    Please make sure appsignal diagnose is run within your "
-          puts "    project directory with an environment."
-          puts "      appsignal diagnose --environment=production"
+        def format_config_option(value)
+          case value
+          when NilClass
+            "nil"
+          when String
+            value.inspect
+          else
+            value
+          end
         end
 
         def process_user

@@ -84,27 +84,69 @@ module Appsignal
       :ignore_exceptions => :ignore_errors
     }.freeze
 
-    attr_reader :root_path, :env, :initial_config, :config_hash
+    # @attribute [r] system_config
+    #   Config detected on the system level.
+    #   Used in diagnose report.
+    #   @api private
+    #   @return [Hash]
+    # @!attribute [r] initial_config
+    #   Config detected on the system level.
+    #   Used in diagnose report.
+    #   @api private
+    #   @return [Hash]
+    # @!attribute [r] file_config
+    #   Config loaded from `config/appsignal.yml` config file.
+    #   Used in diagnose report.
+    #   @api private
+    #   @return [Hash]
+    # @!attribute [r] env_config
+    #   Config loaded from the system environment.
+    #   Used in diagnose report.
+    #   @api private
+    #   @return [Hash]
+    # @!attribute [r] config_hash
+    #   Config used by the AppSignal gem.
+    #   Combined Hash of the {system_config}, {initial_config}, {file_config},
+    #   {env_config} attributes.
+    #   @see #[]
+    #   @see #[]=
+    #   @api private
+    #   @return [Hash]
+
+    attr_reader :root_path, :env, :config_hash, :system_config,
+      :initial_config, :file_config, :env_config
     attr_accessor :logger
 
     def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger)
       @root_path      = root_path
-      @env            = ENV.fetch("APPSIGNAL_APP_ENV".freeze, env.to_s)
-      @initial_config = initial_config
       @logger         = logger
       @valid          = false
       @config_hash    = Hash[DEFAULT_CONFIG]
+      env_loaded_from_initial = env.to_s
+      @env =
+        if ENV.key?("APPSIGNAL_APP_ENV".freeze)
+          env_loaded_from_env = ENV["APPSIGNAL_APP_ENV".freeze]
+        else
+          env_loaded_from_initial
+        end
 
       # Set config based on the system
-      detect_from_system
+      @system_config = detect_from_system
+      merge(system_config)
       # Initial config
-      merge(@config_hash, initial_config)
+      @initial_config = initial_config
+      merge(initial_config)
       # Load the config file if it exists
-      load_from_disk
+      @file_config = load_from_disk || {}
+      merge(file_config)
       # Load config from environment variables
-      load_from_environment
+      @env_config = load_from_environment
+      merge(env_config)
       # Validate that we have a correct config
       validate
+      # Track origin of env
+      @initial_config[:env] = env_loaded_from_initial if env_loaded_from_initial
+      @env_config[:env] = env_loaded_from_env if env_loaded_from_env
     end
 
     # @api private
@@ -209,10 +251,12 @@ module Appsignal
     end
 
     def detect_from_system
-      config_hash[:log] = "stdout" if Appsignal::System.heroku?
+      {}.tap do |hash|
+        hash[:log] = "stdout" if Appsignal::System.heroku?
 
-      # Make active by default if APPSIGNAL_PUSH_API_KEY is present
-      config_hash[:active] = true if ENV["APPSIGNAL_PUSH_API_KEY"]
+        # Make active by default if APPSIGNAL_PUSH_API_KEY is present
+        hash[:active] = true if ENV["APPSIGNAL_PUSH_API_KEY"]
+      end
     end
 
     def load_from_disk
@@ -226,11 +270,10 @@ module Appsignal
             hash[key.to_sym] = value # convert keys to symbols
           end
 
-        config_for_this_env = maintain_backwards_compatibility(config_for_this_env)
-
-        merge(@config_hash, config_for_this_env)
+        maintain_backwards_compatibility(config_for_this_env)
       else
         @logger.error "Not loading from config file: config for '#{env}' not found"
+        nil
       end
     end
 
@@ -297,15 +340,15 @@ module Appsignal
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
       end
 
-      merge(@config_hash, config)
+      config
     end
 
-    def merge(original_config, new_config)
+    def merge(new_config)
       new_config.each do |key, value|
-        unless original_config[key].nil?
+        unless config_hash[key].nil?
           @logger.debug("Config key '#{key}' is being overwritten")
         end
-        original_config[key] = value
+        config_hash[key] = value
       end
     end
   end

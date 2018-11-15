@@ -1,28 +1,39 @@
 describe Appsignal::Config do
   describe "#initialize" do
-    subject { config.env }
-
     describe "environment" do
       context "when environment is nil" do
-        let(:config) { described_class.new("", "") }
+        let(:config) { described_class.new("", nil) }
 
         it "sets an empty string" do
-          expect(subject).to eq("")
+          expect(config.env).to eq("")
         end
       end
 
       context "when environment is given" do
+        let(:env) { "my_env" }
         let(:config) { described_class.new("", "my_env") }
 
         it "sets the environment" do
-          expect(subject).to eq("my_env")
+          expect(config.env).to eq(env)
+        end
+
+        it "sets the environment as loaded through the initial_config" do
+          expect(config.initial_config).to eq(:env => env)
+          expect(config.config_hash).to_not have_key(:env)
         end
 
         context "with APPSIGNAL_APP_ENV environment variable" do
-          before { ENV["APPSIGNAL_APP_ENV"] = "my_env_env" }
+          let(:env_env) { "my_env_env" }
+          before { ENV["APPSIGNAL_APP_ENV"] = env_env }
 
           it "uses the environment variable" do
-            expect(subject).to eq("my_env_env")
+            expect(config.env).to eq(env_env)
+          end
+
+          it "sets the environment as loaded through the env_config" do
+            expect(config.initial_config).to eq(:env => env)
+            expect(config.env_config).to eq(:env => env_env)
+            expect(config.config_hash).to_not have_key(:env)
           end
         end
       end
@@ -40,6 +51,11 @@ describe Appsignal::Config do
 
         it "becomes active" do
           expect(subject).to be_truthy
+        end
+
+        it "sets the push_api_key as loaded through the env_config" do
+          expect(config.env_config).to eq(:push_api_key => "abc")
+          expect(config.system_config).to eq(:active => true)
         end
       end
 
@@ -59,27 +75,36 @@ describe Appsignal::Config do
         it "is set to stdout" do
           expect(subject).to eq("stdout")
         end
+
+        it "sets the log as loaded through the system" do
+          expect(config.system_config).to eq(:log => "stdout")
+        end
       end
 
       context "when not running on Heroku" do
         it "is set to file" do
           expect(subject).to eq("file")
         end
+
+        it "does not set log as loaded through the system" do
+          expect(config.system_config).to eq({})
+        end
       end
     end
   end
 
   describe "initial config" do
-    let(:config) do
-      described_class.new(
-        "non-existing-path",
-        "production",
+    let(:initial_config) do
+      {
         :push_api_key => "abc",
         :name => "TestApp",
         :active => true,
         :revision => "v2.5.1",
         :request_headers => []
-      )
+      }
+    end
+    let(:config) do
+      described_class.new("non-existing-path", "production", initial_config)
     end
 
     it "merges with the default config" do
@@ -112,6 +137,10 @@ describe Appsignal::Config do
         :revision                       => "v2.5.1",
         :request_headers                => []
       )
+    end
+
+    it "sets the initial_config" do
+      expect(config.initial_config).to eq(initial_config)
     end
 
     describe "overriding system detected config" do
@@ -181,6 +210,16 @@ describe Appsignal::Config do
     it "does not log an error" do
       expect_any_instance_of(Logger).to_not receive(:error)
       config
+    end
+
+    it "sets the file_config" do
+      # config found in spec/support/project_fixture/config/appsignal.yml
+      expect(config.file_config).to match(
+        :active => true,
+        :push_api_key => "abc",
+        :name => "TestApp",
+        :request_headers => kind_of(Array)
+      )
     end
 
     describe "overriding system and defaults config" do
@@ -301,6 +340,24 @@ describe Appsignal::Config do
         :debug => true
       )
     end
+    let(:env_config) do
+      {
+        :running_in_container => true,
+        :push_api_key => "aaa-bbb-ccc",
+        :active => true,
+        :name => "App name",
+        :debug => true,
+        :ignore_actions => %w[action1 action2],
+        :ignore_errors => %w[ExampleStandardError AnotherError],
+        :ignore_namespaces => %w[admin private_namespace],
+        :instrument_net_http => false,
+        :instrument_redis => false,
+        :instrument_sequel => false,
+        :files_world_accessible => false,
+        :request_headers => %w[accept accept-charset],
+        :revision => "v2.5.1"
+      }
+    end
     before do
       ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]    = "true"
       ENV["APPSIGNAL_PUSH_API_KEY"]            = "aaa-bbb-ccc"
@@ -321,21 +378,7 @@ describe Appsignal::Config do
     it "overrides config with environment values" do
       expect(config.valid?).to be_truthy
       expect(config.active?).to be_truthy
-
-      expect(config[:running_in_container]).to be_truthy
-      expect(config[:push_api_key]).to eq "aaa-bbb-ccc"
-      expect(config[:active]).to eq(true)
-      expect(config[:name]).to eq "App name"
-      expect(config[:debug]).to eq(true)
-      expect(config[:ignore_actions]).to eq %w[action1 action2]
-      expect(config[:ignore_errors]).to eq %w[ExampleStandardError AnotherError]
-      expect(config[:ignore_namespaces]).to eq %w[admin private_namespace]
-      expect(config[:instrument_net_http]).to eq(false)
-      expect(config[:instrument_redis]).to eq(false)
-      expect(config[:instrument_sequel]).to eq(false)
-      expect(config[:files_world_accessible]).to eq(false)
-      expect(config[:request_headers]).to eq(%w[accept accept-charset])
-      expect(config[:revision]).to eq("v2.5.1")
+      expect(config.config_hash).to include(env_config)
     end
 
     context "with mixed case `true` env variables values" do
@@ -348,6 +391,10 @@ describe Appsignal::Config do
         expect(config[:debug]).to eq(true)
         expect(config[:instrument_sequel]).to eq(true)
       end
+    end
+
+    it "sets the env_config" do
+      expect(config.env_config).to eq(env_config)
     end
   end
 

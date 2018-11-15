@@ -104,7 +104,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       run
       expect(output).to include \
         "AppSignal diagnose",
-        "http://docs.appsignal.com/",
+        "https://docs.appsignal.com/",
         "support@appsignal.com"
     end
 
@@ -565,30 +565,146 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs a warning that no config is loaded" do
           expect(output).to include \
-            "Environment: \n    Warning: No environment set, no config loaded!",
+            "Environment: \"\"\n",
+            "    Warning: No environment set, no config loaded!",
             "  appsignal diagnose --environment=production"
         end
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
-          end
+          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
+        end
+
+        it "transmits validation in report" do
+          default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
+          expect(received_report["config"]).to eq(
+            "options" => default_config.merge("env" => ""),
+            "sources" => {
+              "default" => default_config,
+              "system" => {},
+              "initial" => { "env" => "" },
+              "file" => {},
+              "env" => {}
+            }
+          )
         end
       end
 
       context "with configured environment" do
-        before { run }
+        describe "environment" do
+          it "outputs environment" do
+            run
+            expect(output).to include(%(Environment: "production"))
+          end
 
-        it "outputs environment" do
-          expect(output).to include("Environment: production")
+          context "when the source is a single source" do
+            before { run }
+
+            it "outputs the label source after the value" do
+              expect(output).to include(
+                %(Environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
+              )
+            end
+          end
+
+          context "when the source is multiple sources" do
+            let(:options) { { :environment => "development" } }
+            before do
+              ENV["APPSIGNAL_APP_ENV"] = "production"
+              config.instance_variable_set(:@env, ENV["APPSIGNAL_APP_ENV"])
+              stub_api_request(config, "auth").to_return(:status => 200)
+              capture_diagnatics_report_request
+              run
+            end
+
+            it "outputs a list of sources with their values" do
+              expect(output).to include(
+                %(  Environment: "production"\n) +
+                %(    Sources:\n) +
+                %(      initial: "development"\n) +
+                %(      env:     "production"\n)
+              )
+            end
+          end
         end
 
         it "outputs configuration" do
+          run
           expect(output).to include("Configuration")
-          Appsignal.config.config_hash.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
+          expect_config_to_be_printed(Appsignal.config.config_hash)
+        end
+
+        describe "option sources" do
+          context "when the source is a single source" do
+            before { run }
+
+            it "outputs the label source after the value" do
+              expect(output).to include(
+                %(push_api_key: "#{Appsignal.config[:push_api_key]}" (Loaded from: file)\n)
+              )
+            end
+
+            context "when the source is only default" do
+              it "does not print a source" do
+                expect(output).to include("debug: #{Appsignal.config[:debug]}\n")
+              end
+            end
           end
+
+          context "when the source is multiple sources" do
+            before do
+              ENV["APPSIGNAL_APP_NAME"] = "MyApp"
+              config[:name] = ENV["APPSIGNAL_APP_NAME"]
+              stub_api_request(config, "auth").to_return(:status => 200)
+              capture_diagnatics_report_request
+              run
+            end
+
+            if DependencyHelper.rails_present?
+              it "outputs a list of sources with their values" do
+                expect(output).to include(
+                  %(  name: "MyApp"\n) +
+                  %(    Sources:\n) +
+                  %(      initial: "MyApp"\n) +
+                  %(      file:    "TestApp"\n) +
+                  %(      env:     "MyApp"\n)
+                )
+              end
+            else
+              it "outputs a list of sources with their values" do
+                expect(output).to include(
+                  %(  name: "MyApp"\n) +
+                  %(    Sources:\n) +
+                  %(      file: "TestApp"\n) +
+                  %(      env:  "MyApp"\n)
+                )
+              end
+            end
+          end
+        end
+
+        it "transmits config in report" do
+          run
+          additional_initial_config = {}
+          if DependencyHelper.rails_present?
+            additional_initial_config = {
+              :name => "MyApp",
+              :log_path => File.join(Rails.root, "log")
+            }
+          end
+          final_config = { "env" => "production" }
+            .merge(additional_initial_config)
+            .merge(config.config_hash)
+          expect(received_report["config"]).to match(
+            "options" => hash_with_string_keys(final_config),
+            "sources" => {
+              "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "system" => {},
+              "initial" => hash_with_string_keys(config.initial_config.merge(additional_initial_config)),
+              "file" => hash_with_string_keys(config.file_config),
+              "env" => {}
+            }
+          )
         end
       end
 
@@ -597,14 +713,42 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before { run_within_dir tmp_dir }
 
         it "outputs environment" do
-          expect(output).to include("Environment: foobar")
+          expect(output).to include(%(Environment: "foobar"))
         end
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          Appsignal::Config::DEFAULT_CONFIG.each do |key, value|
-            expect(output).to include("#{key}: #{value}")
-          end
+          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
+        end
+
+        it "transmits config in report" do
+          expect(received_report["config"]).to match(
+            "options" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
+            "sources" => {
+              "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "system" => {},
+              "initial" => hash_with_string_keys(config.initial_config),
+              "file" => hash_with_string_keys(config.file_config),
+              "env" => {}
+            }
+          )
+        end
+      end
+
+      def expect_config_to_be_printed(config)
+        nil_options = config.select { |_, v| v.nil? }
+        nil_options.each_key do |key|
+          expect(output).to include(%(#{key}: nil))
+        end
+        string_options = config.select { |_, v| v.is_a?(String) }
+        string_options.each do |key, value|
+          expect(output).to include(%(#{key}: "#{value}"))
+        end
+        other_options = config.select do |k, _|
+          !string_options.key?(k) && !nil_options.key?(k)
+        end
+        other_options.each do |key, value|
+          expect(output).to include(%(#{key}: #{value}))
         end
       end
     end
@@ -1055,5 +1199,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       "    Working directory user group id: #{working_directory_stat.gid}",
       "    Working directory permissions: #{working_directory_stat.mode}",
       "    Lock path: writable"
+  end
+
+  def hash_with_string_keys(hash)
+    Hash[hash.map { |key, value| [key.to_s, value] }]
   end
 end
