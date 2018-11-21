@@ -114,9 +114,10 @@ module Appsignal
         def send_report_to_appsignal?(options)
           puts "\nDiagnostics report"
           puts "  Do you want to send this diagnostics report to AppSignal?"
-          puts "  If you share this diagnostics report you will be given\n" \
-            "  a support token you can use to refer to your diagnotics \n" \
-            "  report when you contact us at support@appsignal.com\n\n"
+          puts "  If you share this report you will be given a link to \n" \
+            "  AppSignal.com to validate the report.\n" \
+            "  You can also contact us at support@appsignal.com\n" \
+            "  with your support token.\n\n"
           send_diagnostics =
             if options.key?(:send_report)
               if options[:send_report]
@@ -140,7 +141,7 @@ module Appsignal
         end
 
         def transmit_report_to_appsignal
-          puts "\n  Transmitting diagnostics report"
+          puts "  Transmitting diagnostics report"
           transmitter = Transmitter.new(
             DIAGNOSE_ENDPOINT,
             Appsignal.config
@@ -155,11 +156,10 @@ module Appsignal
             return
           end
 
-          puts "  Please email us at support@appsignal.com with the following"
-          puts "  support token."
           begin
             response_data = JSON.parse(response.body)
-            puts "  Your support token: #{response_data["token"]}"
+            puts "\n  Your support token: #{response_data["token"]}"
+            puts "  View this report:   https://appsignal.com/diagnose/#{response_data["token"]}"
           rescue JSON::ParserError
             puts "  Error: Couldn't decode server response."
             puts "  #{response.body}"
