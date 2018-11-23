@@ -119,13 +119,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "sends report" do
           run
           expect(output).to include "Diagnostics report",
-            "Send diagnostics report to AppSignal? (Y/n): ",
-            "Please email us at support@appsignal.com with the following\n  support token."
+            "Send diagnostics report to AppSignal? (Y/n): "
         end
 
         it "outputs the support token from the server" do
           run
           expect(output).to include "Your support token: my_support_token"
+          expect(output).to include "View this report:   https://appsignal.com/diagnose/my_support_token"
         end
 
         context "when server response is invalid" do
