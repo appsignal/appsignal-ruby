@@ -1072,7 +1072,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         context "when file exists" do
           let(:contents) do
             [].tap do |lines|
-              1..12.times do |i|
+              (1..12).each do |i|
                 lines << "log line #{i}"
               end
             end
@@ -1091,8 +1091,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               %(Path: "#{file_path}"),
               "Contents (last 10 lines):"
             )
-            expect(output).to include(*contents[0..10])
-            expect(output).to_not include(*contents[11])
+            expect(output).to include(*contents.last(10).join("\n"))
+            expect(output).to_not include(*contents.first(2).join("\n"))
           end
 
           it "transmits file data in report" do
