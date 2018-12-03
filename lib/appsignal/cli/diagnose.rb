@@ -496,7 +496,7 @@ module Appsignal
           puts_value "Ownership?", owner, :level => 2
           return unless path.key?(:content)
           puts "    Contents (last 10 lines):"
-          puts path[:content][0..10]
+          puts path[:content].last(10)
         end
 
         def print_empty_line
