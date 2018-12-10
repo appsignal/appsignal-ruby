@@ -65,6 +65,7 @@ matrix:
 
 env:
   global:
+    - "RUNNING_IN_CI=true"
     - "RAILS_ENV=test"
     - "JRUBY_OPTS=''" # Workaround https://github.com/travis-ci/travis-ci/issues/6471
 
