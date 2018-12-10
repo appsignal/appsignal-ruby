@@ -8,6 +8,7 @@
 # 2.7.3 Beta
 - Add user and group context to diagnose report. PR #436
 - Add user and group context to agent logs. PR #436
+- Fixes for running with multiple users
 
 # 2.7.2
 - Change the order of instructions in the install script for Rails. PR #433
