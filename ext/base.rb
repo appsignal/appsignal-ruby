@@ -5,6 +5,7 @@ require "open-uri"
 require "zlib"
 require "yaml"
 require "rubygems/package"
+require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
 require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
 
 EXT_PATH     = File.expand_path("..", __FILE__).freeze

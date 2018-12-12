@@ -1,4 +1,3 @@
-require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
 require File.expand_path("../base.rb", __FILE__)
 
 def install # rubocop:disable Metrics/CyclomaticComplexity
