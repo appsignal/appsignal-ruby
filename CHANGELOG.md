@@ -1,9 +1,17 @@
 # 2.8.0
+- Group extension and agent tests in diagnose output. PR #437
 - Add diagnose --[no-]send-report option. PR #438
 - Print deprecation warnings to STDOUT as well. PR #439
 - Diagnose command starts the AppSignal logger. PR #440
 - Send appsignal.log file contents with diagnose report. PR #442
 - Track source of config option for diagnose report. PR #444
+- Link back to AppSignal diagnose report page. Claim you reports. PR #445
+- Print only last 10 lines of files in diagnose report output. PR #442 & #447
+- Support container memory host metrics better. PR #448
+- Build dynamic musl extension library. Supports JRuby for musl builds. PR #448
+- Change `files_world_accessible` permissions to not make files executable.
+  PR #448
+- Make agent debug logging for disk IO metrics more robust. PR #448
 
 # 2.7.3 Beta
 - Add user and group context to diagnose report. PR #436
