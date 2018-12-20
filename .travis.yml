@@ -70,7 +70,7 @@ env:
     - "JRUBY_OPTS=''" # Workaround https://github.com/travis-ci/travis-ci/issues/6471
 
 before_install:
-  - "gem update --system"
+  - "gem update --system 2.7.8"
   - "gem update bundler"
 before_script:
   - "bundle exec rake extension:install"
