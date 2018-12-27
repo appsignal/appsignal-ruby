@@ -239,6 +239,7 @@ namespace :extension do
           appsignal-agent \
           appsignal.h \
           appsignal_extension.o \
+          appsignal_extension.so \
           appsignal_extension.bundle \
           install.log \
           libappsignal.* \

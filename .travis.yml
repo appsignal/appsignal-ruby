@@ -57,6 +57,10 @@ matrix:
       gemfile: "gemfiles/rails-4.0.gemfile"
     - rvm: "2.5.3"
       gemfile: "gemfiles/rails-4.1.gemfile"
+    - rvm: "2.6.0"
+      gemfile: "gemfiles/rails-4.0.gemfile"
+    - rvm: "2.6.0"
+      gemfile: "gemfiles/rails-4.1.gemfile"
 
   allow_failures:
     - rvm: "2.4.5"
@@ -75,5 +79,8 @@ before_install:
   - "gem update bundler"
 before_script:
   - "bundle exec rake extension:install"
+after_failure:
+  - "find . -name ext/install.log -exec cat {} \\;"
+  - "find . -name ext/mkmf.log -exec cat {} \\;"
 
 script: "bundle exec rake test"
