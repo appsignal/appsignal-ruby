@@ -1,3 +1,6 @@
+# 2.8.1
+- Fix installation on Ruby 2.6 for libc and musl library builds. PR #453
+
 # 2.8.0
 - Group extension and agent tests in diagnose output. PR #437
 - Add diagnose --[no-]send-report option. PR #438
