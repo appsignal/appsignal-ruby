@@ -81,9 +81,10 @@ module Appsignal
           end
         end
 
+        # Returns the AppSignal gem installation path. The root directory of
+        # this gem.
         def gem_path
-          @gem_path ||= \
-            Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip
+          File.expand_path("../../../../../", __FILE__)
         end
       end
     end

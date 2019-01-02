@@ -1,3 +1,5 @@
+require "bundler/cli"
+require "bundler/cli/common"
 require "appsignal/cli"
 
 describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input do
@@ -1140,10 +1142,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it_behaves_like "diagnose file" do
           let(:filename) { File.join("ext", "install.log") }
           before do
-            expect(Bundler::CLI::Common).to receive(:select_spec)
-              .with("appsignal")
+            expect_any_instance_of(Appsignal::CLI::Diagnose::Paths).to receive(:gem_path)
               .at_least(:once)
-              .and_return(double(:full_gem_path => parent_directory))
+              .and_return(parent_directory)
           end
         end
 
@@ -1157,10 +1158,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it_behaves_like "diagnose file" do
           let(:filename) { File.join("ext", "mkmf.log") }
           before do
-            expect(Bundler::CLI::Common).to receive(:select_spec)
-              .with("appsignal")
+            expect_any_instance_of(Appsignal::CLI::Diagnose::Paths).to receive(:gem_path)
               .at_least(:once)
-              .and_return(double(:full_gem_path => parent_directory))
+              .and_return(parent_directory)
           end
         end
 
