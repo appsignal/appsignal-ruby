@@ -1,3 +1,6 @@
+# Unreleased
+- Remove Bundler requirement from diagnose command. PR #451
+
 # 2.8.1
 - Fix installation on Ruby 2.6 for libc and musl library builds. PR #453
 
