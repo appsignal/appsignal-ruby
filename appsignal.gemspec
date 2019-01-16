@@ -21,6 +21,9 @@ Gem::Specification.new do |gem|
   gem.require_paths         = %w[lib ext]
   gem.version               = Appsignal::VERSION
   gem.required_ruby_version = ">= 1.9"
+  # Default extension installer. Overridden by JRuby gemspec as defined in
+  # `Rakefile`.
+  gem.extensions            = %w[ext/extconf.rb]
 
   gem.add_dependency "rack"
 
