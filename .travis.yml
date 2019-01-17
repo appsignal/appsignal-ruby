@@ -80,7 +80,7 @@ before_install:
 before_script:
   - "bundle exec rake extension:install"
 after_failure:
-  - "find . -name ext/install.log -exec cat {} \\;"
-  - "find . -name ext/mkmf.log -exec cat {} \\;"
+  - "find ./ext -name install.log -exec cat {} \\;"
+  - "find ./ext -name mkmf.log -exec cat {} \\;"
 
 script: "bundle exec rake test"
