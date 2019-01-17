@@ -11,11 +11,6 @@ cache:
     - vendor/bundle
 
 rvm:
-  - "2.0.0"
-  - "2.3.8"
-  - "2.4.5"
-  - "2.5.3"
-  - "2.6.0"
   - "jruby-19mode"
 
 gemfile:
@@ -76,6 +71,7 @@ env:
 
 before_install:
   - "gem update --system 2.7.8"
+  - "gem uninstall bundler --all"
   - "gem install bundler --version 1.17.3"
 before_script:
   - "bundle exec rake extension:install"
