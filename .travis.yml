@@ -71,7 +71,7 @@ env:
 
 before_install:
   - "gem update --system 2.7.8"
-  - "gem uninstall bundler --all"
+  - "gem uninstall bundler --all --executables"
   - "gem install bundler --version 1.17.3"
 before_script:
   - "bundle exec rake extension:install"
