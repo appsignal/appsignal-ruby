@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -eu
+
+case "${_BUNDLER_VERSION-"latest"}" in
+  "latest")
+    bundle $@
+  ;;
+  *)
+    bundle _${_BUNDLER_VERSION}_ $@
+  ;;
+esac

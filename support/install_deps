@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -eu
+
+case "${_RUBYGEMS_VERSION-"latest"}" in
+  "latest")
+    gem update --no-document --system
+  ;;
+  *)
+    gem update --no-document --system $_RUBYGEMS_VERSION
+  ;;
+esac
+
+case "${_BUNDLER_VERSION-"latest"}" in
+  "latest")
+    gem update bundler --no-document
+  ;;
+  *)
+    gem install bundler --no-document --version $_BUNDLER_VERSION
+  ;;
+esac
