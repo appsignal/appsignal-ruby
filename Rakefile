@@ -40,23 +40,26 @@ VERSION_MANAGERS = {
 }.freeze
 
 namespace :build do
+  def base_gemspec
+    eval(File.read("appsignal.gemspec")) # rubocop:disable Security/Eval
+  end
+
   def modify_base_gemspec
-    eval(File.read("appsignal.gemspec")).tap do |s| # rubocop:disable Security/Eval
+    base_gemspec.tap do |s|
       yield s
     end
   end
 
   namespace :ruby do
-    spec = modify_base_gemspec do |s|
-      s.extensions = %w[ext/extconf.rb]
-    end
-
-    Gem::PackageTask.new(spec) { |_pkg| }
+    # Extension default set in `appsignal.gemspec`
+    Gem::PackageTask.new(base_gemspec) { |_pkg| }
   end
 
   namespace :jruby do
     spec = modify_base_gemspec do |s|
       s.platform = "java"
+      # Override extensions config with JRuby extension installer
+      # Default set in `appsignal.gemspec`
       s.extensions = %w[ext/Rakefile]
       s.add_dependency "ffi"
     end

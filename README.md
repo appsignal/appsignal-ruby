@@ -172,6 +172,29 @@ bundle exec rake install
 bundle exec rake extension:install
 ```
 
+#### Git source for Bundler
+
+When specifying a git source for the AppSignal gem in Bundler we do not support
+JRuby. This is because our gemspec defaults to the Ruby implementation for
+installing the AppSignal C-extension.
+
+```ruby
+# Gemfile
+gem "appsignal",
+  :git => "https://github.com/appsignal/appsignal-ruby.git",
+  :branch => "master"
+```
+
+When you need to use a git source of the gem in your JRuby install, you'll need
+to run the following to install the C-extension on JRuby. Note that this
+post-install step is not possible on platforms such as Heroku where the app is
+sent through a deploy pipeline and the app is started immediately after.
+
+```bash
+bundle install
+(cd $(bundle show appsignal)/ext && rake)
+```
+
 ### Testing
 
 ```bash
