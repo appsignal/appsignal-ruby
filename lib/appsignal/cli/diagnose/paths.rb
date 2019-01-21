@@ -17,7 +17,6 @@ module Appsignal
             begin
               config = Appsignal.config
               log_file_path = config.log_file_path
-              install_log_path = File.join("ext", "install.log")
               makefile_log_path = File.join("ext", "mkmf.log")
               {
                 :package_install_path => {
@@ -35,10 +34,6 @@ module Appsignal
                 :log_dir_path => {
                   :label => "Log directory",
                   :path => log_file_path ? File.dirname(log_file_path) : ""
-                },
-                install_log_path => {
-                  :label => "Extension install log",
-                  :path => File.join(gem_path, install_log_path)
                 },
                 makefile_log_path => {
                   :label => "Makefile install log",
