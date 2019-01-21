@@ -1,0 +1,106 @@
+travis: # Default `.travis.yml` contents
+  sudo: false
+
+  branches:
+    only:
+      - "master"
+      - "develop"
+
+  language: ruby
+  cache:
+    directories:
+      - vendor/bundle
+
+  env:
+    global:
+      - "RUNNING_IN_CI=true"
+      - "RAILS_ENV=test"
+      - "JRUBY_OPTS=''" # Workaround https://github.com/travis-ci/travis-ci/issues/6471
+
+  before_install:
+    - "./support/install_deps"
+  install: "./support/bundler_wrapper install --jobs=3 --retry=3"
+  before_script:
+    - "./support/bundler_wrapper exec rake extension:install"
+  script: "./support/bundler_wrapper exec rake test"
+  after_failure:
+    - "find ./ext -name install.log -exec cat {} \\;"
+    - "find ./ext -name mkmf.log -exec cat {} \\;"
+
+  matrix:
+    fast_finish: true
+    include: # Builds based on the matrix below are added to this list
+      - rvm: "2.6.0"
+        gemfile: "gemfiles/no_dependencies.gemfile"
+        before_script: "" # Unset default: No need to install the extension
+        script:
+          - "./support/bundler_wrapper exec rake travis:validate"
+          - "./support/bundler_wrapper exec rubocop"
+
+matrix:
+  defaults:
+    rubygems: "latest"
+    bundler: "latest"
+
+  gemsets: # By default all gems are tested
+    none:
+      - "no_dependencies"
+    minimal:
+      - "no_dependencies"
+      - "rails-4.2"
+      - "rails-5.2"
+
+  ruby:
+    - ruby: "2.0.0"
+      rubygems: "2.7.8"
+    - ruby: "2.1.8"
+      rubygems: "2.7.8"
+      gems: "none"
+    - ruby: "2.2.4"
+      rubygems: "2.7.8"
+      gems: "none"
+    - ruby: "2.3.8"
+      gems: "none"
+    - ruby: "2.4.5"
+      gems: "none"
+    - ruby: "2.5.3"
+      gems: "minimal"
+    - ruby: "2.6.0"
+    - ruby: "jruby-19mode"
+      gems: "minimal"
+  gems:
+    - gem: "no_dependencies"
+    - gem: "capistrano2"
+    - gem: "capistrano3"
+    - gem: "grape"
+    - gem: "padrino"
+      bundler: "1.17.3"
+    - gem: "que"
+    - gem: "rails-3.2"
+      bundler: "1.17.3"
+      exclude:
+        ruby:
+          - "2.6.0"
+    - gem: "rails-4.2"
+      bundler: "1.17.3"
+      exclude:
+        ruby:
+          - "2.6.0"
+    - gem: "rails-5.0"
+      exclude:
+        ruby:
+          - "2.0.0"
+    - gem: "rails-5.1"
+      exclude:
+        ruby:
+          - "2.0.0"
+    - gem: "rails-5.2"
+      exclude:
+        ruby:
+          - "2.0.0"
+    - gem: "resque"
+      bundler: "1.17.3"
+    - gem: "sequel"
+    - gem: "sequel-435"
+    - gem: "sinatra"
+    - gem: "webmachine"

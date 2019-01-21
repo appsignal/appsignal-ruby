@@ -39,6 +39,65 @@ VERSION_MANAGERS = {
   :rvm => ->(version) { "rvm use --default #{version.split("-").first}" }
 }.freeze
 
+namespace :travis do
+  task :generate do
+    yaml = YAML.load_file("build_matrix.yml")
+    matrix = yaml["matrix"]
+    defaults = matrix["defaults"]
+    gems = matrix["gems"]
+
+    builds = []
+    matrix["ruby"].each do |ruby|
+      ruby_version = ruby["ruby"]
+      gemset =
+        if ruby["gems"]
+          # Only a specific gemset for this Ruby
+          selected_gems = matrix["gemsets"].fetch(ruby["gems"])
+          gems.select { |g| selected_gems.include?(g["gem"]) }
+        else
+          # All gems for this Ruby
+          gems
+        end
+      gemset.each do |gem|
+        # Don't add build if ignored for this combination of Ruby and gem
+        next if (gem.dig("exclude", "ruby") || []).include?(ruby_version)
+
+        env = ""
+        rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
+        env = "_RUBYGEMS_VERSION=#{rubygems}" if rubygems
+        bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
+        env += " _BUNDLER_VERSION=#{bundler}" if bundler
+
+        builds << {
+          "rvm" => ruby_version,
+          "gemfile" => "gemfiles/#{gem["gem"]}.gemfile",
+          "env" => env
+        }
+      end
+    end
+    travis = yaml["travis"]
+    travis["matrix"]["include"] = travis["matrix"]["include"] + builds
+
+    header = "# DO NOT EDIT\n" \
+      "# This is a generated file by the `rake travis:generate` task.\n" \
+      "# See `build_matrix.yml` for the build matrix.\n" \
+      "# Generate this file with `rake travis:generate`.\n"
+    generated_yaml = header + YAML.dump(travis)
+    File.write(".travis.yml", generated_yaml)
+    puts "Generated `.travis.yml`"
+    puts "Build count: #{builds.length}"
+  end
+
+  task :validate => :generate do
+    `git status | grep .travis.yml 2>&1`
+    if $?.exitstatus.zero? # rubocop:disable Style/SpecialGlobalVars
+      puts "The `.travis.yml` is modified. The changes were not committed."
+      puts "Please run `rake travis:generate` and commit the changes."
+      exit 1
+    end
+  end
+end
+
 namespace :build do
   def modify_base_gemspec
     eval(File.read("appsignal.gemspec")).tap do |s| # rubocop:disable Security/Eval
