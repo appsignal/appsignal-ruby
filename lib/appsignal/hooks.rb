@@ -67,16 +67,24 @@ module Appsignal
       end
 
       def extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
-        value =
-          if object_or_hash.respond_to?(:[])
-            begin
-              object_or_hash[field]
-            rescue NameError
-              nil
-            end
-          elsif object_or_hash.respond_to?(field)
-            object_or_hash.send(field)
-          end || default_value
+        value = nil
+
+        # Attempt to read value from hash
+        if object_or_hash.respond_to?(:[])
+          value = begin
+            object_or_hash[field]
+          rescue NameError
+            nil
+          end
+        end
+
+        # Attempt to read value from object
+        if !value && object_or_hash.respond_to?(field)
+          value = object_or_hash.send(field)
+        end
+
+        # Set default value if nothing was found
+        value ||= default_value
 
         if convert_to_s
           value.to_s
