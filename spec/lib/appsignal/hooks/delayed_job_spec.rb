@@ -346,6 +346,143 @@ describe Appsignal::Hooks::DelayedJobHook do
         end
       end
     end
+
+    describe ".extract_value" do
+      let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
+
+      context "for a hash" do
+        let(:hash) { { :key => "value", :bool_false => false } }
+
+        context "when the key exists" do
+          subject { plugin.extract_value(hash, :key) }
+
+          it { is_expected.to eq "value" }
+
+          context "when the value is false" do
+            subject { plugin.extract_value(hash, :bool_false) }
+
+            it { is_expected.to be false }
+          end
+        end
+
+        context "when the key does not exist" do
+          subject { plugin.extract_value(hash, :nonexistent_key) }
+
+          it { is_expected.to be_nil }
+
+          context "with a default value" do
+            subject { plugin.extract_value(hash, :nonexistent_key, 1) }
+
+            it { is_expected.to eq 1 }
+          end
+        end
+      end
+
+      context "for a struct" do
+        before :context do
+          TestStruct = Struct.new(:key)
+        end
+        let(:struct) { TestStruct.new("value") }
+
+        context "when the key exists" do
+          subject { plugin.extract_value(struct, :key) }
+
+          it { is_expected.to eq "value" }
+        end
+
+        context "when the key does not exist" do
+          subject { plugin.extract_value(struct, :nonexistent_key) }
+
+          it { is_expected.to be_nil }
+
+          context "with a default value" do
+            subject { plugin.extract_value(struct, :nonexistent_key, 1) }
+
+            it { is_expected.to eq 1 }
+          end
+        end
+      end
+
+      context "for a struct with a method" do
+        before :context do
+          class TestStructClass < Struct.new(:id) # rubocop:disable Style/StructInheritance
+            def appsignal_name
+              "TestStruct#perform"
+            end
+
+            def bool_false
+              false
+            end
+          end
+        end
+        let(:struct) { TestStructClass.new("id") }
+
+        context "when the Struct responds to a method" do
+          subject { plugin.extract_value(struct, :appsignal_name) }
+
+          it "returns the method value" do
+            is_expected.to eq "TestStruct#perform"
+          end
+
+          context "when the value is false" do
+            subject { plugin.extract_value(struct, :bool_false) }
+
+            it "returns the method value" do
+              is_expected.to be false
+            end
+          end
+        end
+
+        context "when the key does not exist" do
+          subject { plugin.extract_value(struct, :nonexistent_key) }
+
+          context "without a method with the same name" do
+            it "returns nil" do
+              is_expected.to be_nil
+            end
+          end
+
+          context "with a default value" do
+            let(:default_value) { :my_default_value }
+            subject { plugin.extract_value(struct, :nonexistent_key, default_value) }
+
+            it "returns the default value" do
+              is_expected.to eq default_value
+            end
+          end
+        end
+      end
+
+      context "for an object" do
+        let(:object) { double(:existing_method => "value") }
+
+        context "when the method exists" do
+          subject { plugin.extract_value(object, :existing_method) }
+
+          it { is_expected.to eq "value" }
+        end
+
+        context "when the method does not exist" do
+          subject { plugin.extract_value(object, :nonexistent_method) }
+
+          it { is_expected.to be_nil }
+
+          context "and there is a default value" do
+            subject { plugin.extract_value(object, :nonexistent_method, 1) }
+
+            it { is_expected.to eq 1 }
+          end
+        end
+      end
+
+      context "when we need to call to_s on the value" do
+        let(:object) { double(:existing_method => 1) }
+
+        subject { plugin.extract_value(object, :existing_method, nil, true) }
+
+        it { is_expected.to eq "1" }
+      end
+    end
   end
 
   context "without delayed job" do

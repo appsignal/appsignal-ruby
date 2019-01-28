@@ -65,33 +65,6 @@ module Appsignal
       def truncate(text)
         text.size > 200 ? "#{text[0...197]}..." : text
       end
-
-      def extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
-        value = nil
-
-        # Attempt to read value from hash
-        if object_or_hash.respond_to?(:[])
-          value = begin
-            object_or_hash[field]
-          rescue NameError
-            nil
-          end
-        end
-
-        # Attempt to read value from object
-        if !value && object_or_hash.respond_to?(field)
-          value = object_or_hash.send(field)
-        end
-
-        # Set default value if nothing was found
-        value ||= default_value
-
-        if convert_to_s
-          value.to_s
-        else
-          value
-        end
-      end
     end
   end
 end

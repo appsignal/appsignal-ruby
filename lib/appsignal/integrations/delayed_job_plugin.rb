@@ -53,6 +53,33 @@ module Appsignal
           block.call(job)
         end
       end
+
+      def self.extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
+        value = nil
+
+        # Attempt to read value from hash
+        if object_or_hash.respond_to?(:[])
+          value = begin
+            object_or_hash[field]
+          rescue NameError
+            nil
+          end
+        end
+
+        # Attempt to read value from object
+        if value.nil? && object_or_hash.respond_to?(field)
+          value = object_or_hash.send(field)
+        end
+
+        # Set default value if nothing was found
+        value = default_value if value.nil?
+
+        if convert_to_s
+          value.to_s
+        else
+          value
+        end
+      end
     end
   end
 end
