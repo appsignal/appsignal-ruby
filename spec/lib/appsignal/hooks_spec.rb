@@ -175,18 +175,27 @@ describe Appsignal::Hooks::Helpers do
       context "when the Struct responds to a method" do
         subject { with_helpers.extract_value(struct, :appsignal_name) }
 
-        it { is_expected.to eq "TestStruct#perform" }
+        it "returns the method value" do
+          is_expected.to eq "TestStruct#perform"
+        end
       end
 
       context "when the key does not exist" do
         subject { with_helpers.extract_value(struct, :nonexistent_key) }
 
-        it { is_expected.to be_nil }
+        context "without a method with the same name" do
+          it "returns nil" do
+            is_expected.to be_nil
+          end
+        end
 
         context "with a default value" do
-          subject { with_helpers.extract_value(struct, :nonexistent_key, 1) }
+          let(:default_value) { :my_default_value }
+          subject { with_helpers.extract_value(struct, :nonexistent_key, default_value) }
 
-          it { is_expected.to eq 1 }
+          it "returns the default value" do
+            is_expected.to eq default_value
+          end
         end
       end
     end
