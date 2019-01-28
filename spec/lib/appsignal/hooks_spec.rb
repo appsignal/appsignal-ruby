@@ -164,7 +164,7 @@ describe Appsignal::Hooks::Helpers do
 
     context "for a struct with a method" do
       before :context do
-        class TestStructClass < Struct.new(:id)
+        class TestStructClass < Struct.new(:id) # rubocop:disable Style/StructInheritance
           def appsignal_name
             "TestStruct#perform"
           end
