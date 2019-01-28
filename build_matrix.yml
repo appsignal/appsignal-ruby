@@ -98,6 +98,10 @@ matrix:
       exclude:
         ruby:
           - "2.0.0"
+    - gem: "rails-6.0"
+      exclude:
+        ruby:
+          - "2.0.0"
     - gem: "resque"
       bundler: "1.17.3"
     - gem: "sequel"

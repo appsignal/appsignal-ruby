@@ -123,6 +123,9 @@ matrix:
     gemfile: gemfiles/rails-5.2.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
+    gemfile: gemfiles/rails-6.0.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.6.0
     gemfile: gemfiles/resque.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=1.17.3
   - rvm: 2.6.0
