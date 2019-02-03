@@ -233,7 +233,7 @@ Every stable and unstable release is tagged in git with a version tag.
 Thinking of contributing to our gem? Awesome! 🚀
 
 Please follow our [Contributing guide][contributing-guide] in our
-documentation.
+documentation and follow our [Code of Conduct][coc].
 
 Also, we would be very happy to send you Stroopwafles. Have look at everyone
 we send a package to so far on our [Stroopwafles page][waffles-page].
@@ -247,6 +247,7 @@ the most out of using AppSignal.
 [appsignal]: https://appsignal.com
 [appsignal-sign-up]: https://appsignal.com/users/sign_up
 [contact]: mailto:support@appsignal.com
+[coc]: https://docs.appsignal.com/appsignal/code-of-conduct.html
 [waffles-page]: https://appsignal.com/waffles
 [docs]: http://docs.appsignal.com
 [contributing-guide]: http://docs.appsignal.com/appsignal/contributing.html
