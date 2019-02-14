@@ -30,19 +30,20 @@ describe Appsignal::Utils::HashSanitizer do
     let(:sanitized_params) { described_class.sanitize(params) }
     subject { sanitized_params }
 
-    it { is_expected.to be_instance_of Hash }
-    it { expect(subject[:text]).to eq("string") }
-    it { expect(subject["string"]).to eq("string key value") }
-    it do
+    it "returns a sanitized Hash" do
+      expect(subject).to_not eq(params)
+      is_expected.to be_instance_of Hash
+      expect(subject[:text]).to eq("string")
+      expect(subject["string"]).to eq("string key value")
       expect(subject[:file]).to be_instance_of String
       expect(subject[:file]).to include "::UploadedFile"
+      expect(subject[:float]).to eq(0.0)
+      expect(subject[:bool_true]).to be(true)
+      expect(subject[:bool_false]).to be(false)
+      expect(subject[:nil]).to be_nil
+      expect(subject[:int]).to eq(1)
+      expect(subject[:int64]).to eq(1 << 64)
     end
-    it { expect(subject[:float]).to eq(0.0) }
-    it { expect(subject[:bool_true]).to be(true) }
-    it { expect(subject[:bool_false]).to be(false) }
-    it { expect(subject[:nil]).to be_nil }
-    it { expect(subject[:int]).to eq(1) }
-    it { expect(subject[:int64]).to eq(1 << 64) }
 
     it "does not change the original params" do
       subject
@@ -50,29 +51,34 @@ describe Appsignal::Utils::HashSanitizer do
       expect(params[:hash][:nested_array][2]).to eq(file)
     end
 
-    describe ":hash" do
+    describe ":hash key" do
       subject { sanitized_params[:hash] }
 
-      it { is_expected.to be_instance_of Hash }
-      it { expect(subject[:nested_text]).to eq("string") }
+      it "returns a sanitized Hash" do
+        expect(subject).to_not eq(params[:hash])
+        is_expected.to be_instance_of Hash
+        expect(subject[:nested_text]).to eq("string")
+      end
 
-      describe ":nested_array" do
+      describe ":nested_array key" do
         subject { sanitized_params[:hash][:nested_array] }
 
-        it { is_expected.to be_instance_of Array }
-        it { expect(subject[0]).to eq("something") }
-        it { expect(subject[1]).to eq("else") }
-        it do
+        it "returns a sanitized Array" do
+          expect(subject).to_not eq(params[:hash][:nested_array])
+          is_expected.to be_instance_of Array
+          expect(subject[0]).to eq("something")
+          expect(subject[1]).to eq("else")
           expect(subject[2]).to be_instance_of String
           expect(subject[2]).to include "::UploadedFile"
         end
 
-        describe ":nested_hash" do
+        describe ":nested_hash key" do
           subject { sanitized_params[:hash][:nested_array][3] }
 
-          it { is_expected.to be_instance_of Hash }
-          it { expect(subject[:key]).to eq("value") }
-          it do
+          it "returns a sanitized Hash" do
+            expect(subject).to_not eq(params[:hash][:nested_array][3])
+            is_expected.to be_instance_of Hash
+            expect(subject[:key]).to eq("value")
             expect(subject[:file]).to be_instance_of String
             expect(subject[:file]).to include "::UploadedFile"
           end
@@ -86,17 +92,19 @@ describe Appsignal::Utils::HashSanitizer do
       end
       subject { sanitized_params }
 
-      it { expect(subject[:text]).to eq(described_class::FILTERED) }
-      it { expect(subject[:hash]).to eq(described_class::FILTERED) }
-      it do
+      it "returns a sanitized Hash with the given keys filtered out" do
+        expect(subject).to_not eq(params)
+        expect(subject[:text]).to eq(described_class::FILTERED)
+        expect(subject[:hash]).to eq(described_class::FILTERED)
+
         expect(subject[:file]).to be_instance_of String
         expect(subject[:file]).to include "::UploadedFile"
+        expect(subject[:float]).to eq(0.0)
+        expect(subject[:bool_true]).to be(true)
+        expect(subject[:bool_false]).to be(false)
+        expect(subject[:nil]).to be_nil
+        expect(subject[:int]).to eq(1)
       end
-      it { expect(subject[:float]).to eq(0.0) }
-      it { expect(subject[:bool_true]).to be(true) }
-      it { expect(subject[:bool_false]).to be(false) }
-      it { expect(subject[:nil]).to be_nil }
-      it { expect(subject[:int]).to eq(1) }
 
       context "with strings as key filter values" do
         let(:sanitized_params) do
@@ -108,7 +116,7 @@ describe Appsignal::Utils::HashSanitizer do
         end
       end
 
-      describe ":hash" do
+      describe ":hash key" do
         let(:sanitized_params) do
           described_class.sanitize(params, %w[nested_text])
         end
