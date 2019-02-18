@@ -8,16 +8,38 @@ describe Appsignal::Minutely do
   end
 
   describe ".start" do
-    it "calls the probes every <wait_time>" do
-      probe = double(:name => "MyProbe")
-      expect(probe).to receive(:call).at_least(:twice)
-      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.0001)
+    class Probe
+      attr_reader :calls
 
+      def initialize
+        @calls = 0
+      end
+
+      def call
+        @calls += 1
+      end
+    end
+
+    let(:log_stream) { StringIO.new }
+    let(:log) do
+      log_stream.rewind
+      log_stream.read
+    end
+    before do
+      Appsignal.logger = Logger.new(log_stream)
+      # Speed up test time
+      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
+    end
+
+    it "calls the probes every <wait_time>" do
+      probe = Probe.new
       Appsignal::Minutely.probes << probe
       Appsignal::Minutely.start
       sleep 0.01
-    end
 
+      expect(probe.calls).to be >= 2
+      expect(log).to include("Gathering minutely metrics with 1 probe")
+    end
   end
 
   describe ".wait_time" do
