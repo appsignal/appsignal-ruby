@@ -3,21 +3,21 @@ describe Appsignal::Minutely do
     Appsignal::Minutely.probes.clear
   end
 
-  it "should have a list of probes" do
+  it "has a list of probes" do
     expect(Appsignal::Minutely.probes).to be_instance_of(Array)
   end
 
   describe ".start" do
-    it "should call the probes periodically" do
-      probe = double
+    it "calls the probes every <wait_time>" do
+      probe = double(:name => "MyProbe")
       expect(probe).to receive(:call).at_least(:twice)
+      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.0001)
+
       Appsignal::Minutely.probes << probe
-      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.1)
-
       Appsignal::Minutely.start
-
-      sleep 0.5
+      sleep 0.01
     end
+
   end
 
   describe ".wait_time" do
@@ -28,7 +28,7 @@ describe Appsignal::Minutely do
   end
 
   describe ".add_gc_probe" do
-    it "should add the gc probe to the list" do
+    it "adds the GC probe to the probes list" do
       expect(Appsignal::Minutely.probes).to be_empty
 
       Appsignal::Minutely.add_gc_probe
@@ -40,7 +40,7 @@ describe Appsignal::Minutely do
 
   describe Appsignal::Minutely::GCProbe do
     describe "#call" do
-      it "should collect GC metrics" do
+      it "collects GC metrics" do
         expect(Appsignal).to receive(:set_process_gauge).at_least(8).times
 
         Appsignal::Minutely::GCProbe.new.call
