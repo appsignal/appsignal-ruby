@@ -12,11 +12,68 @@ module Appsignal
       end
 
       def install
+        require "sidekiq/api" if Appsignal.config[:enable_minutely_probes]
+        Appsignal::Minutely.probes << SidekiqProbe.new
+
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
             chain.add Appsignal::Hooks::SidekiqPlugin
           end
         end
+      end
+    end
+
+    class SidekiqProbe
+      def initialize
+        @cache = {}
+      end
+
+      def call
+        stats = ::Sidekiq::Stats.new
+        redis_info = ::Sidekiq.redis_info
+        gauge "worker_count", stats.workers_size
+        gauge "process_count", stats.processes_size
+        gauge "connection_count", redis_info.fetch("connected_clients")
+        gauge "memory_usage", redis_info.fetch("used_memory")
+        gauge "memory_usage_rss", redis_info.fetch("used_memory_rss")
+        gauge_delta :jobs_processed, "job_count", stats.processed,
+          :status => :processed
+        gauge_delta :jobs_failed, "job_count", stats.failed, :status => :failed
+        gauge "job_count", stats.retry_size, :status => :retry_queue
+        gauge_delta :jobs_dead, "job_count", stats.dead_size, :status => :died
+        gauge "job_count", stats.scheduled_size, :status => :scheduled
+        gauge "job_count", stats.enqueued, :status => :enqueued
+
+        ::Sidekiq::Queue.all.each do |queue|
+          gauge "queue_length", queue.size, :queue => queue.name
+          gauge "queue_latency", queue.latency, :queue => queue.name
+        end
+      end
+
+      private
+
+      # Track a gauge metric with the `sidekiq_` prefix
+      def gauge(key, value, tags = {})
+        Appsignal.set_gauge "sidekiq_#{key}", value, tags
+      end
+
+      # Track the delta of two values for a gauge metric
+      #
+      # First call will store the data for the metric and the second call will
+      # set a gauge metric with the difference. This is used for absolute
+      # counter values which we want to track as gauges.
+      #
+      # @example
+      #   gauge_delta :my_cache_key, "my_gauge", 10
+      #   gauge_delta :my_cache_key, "my_gauge", 15
+      #   # Creates a gauge with the value `5`
+      # @see #gauge
+      def gauge_delta(cache_key, key, value, tags = {})
+        previous_value = @cache[cache_key]
+        @cache[cache_key] = value
+        return unless previous_value
+        new_value = value - previous_value
+        gauge key, new_value, tags
       end
     end
 
@@ -31,6 +88,7 @@ module Appsignal
       ].freeze
 
       def call(_worker, item, _queue)
+        job_status = nil
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::BACKGROUND_JOB,
@@ -43,6 +101,7 @@ module Appsignal
           begin
             yield
           rescue Exception => exception # rubocop:disable Lint/RescueException
+            job_status = :failed
             transaction.set_error(exception)
             raise exception
           end
@@ -56,10 +115,23 @@ module Appsignal
           end
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current!
+          queue = item["queue"] || "unknown"
+          if job_status
+            increment_counter "queue_job_count", 1,
+              :queue => queue,
+              :status => job_status
+          end
+          increment_counter "queue_job_count", 1,
+            :queue => queue,
+            :status => :processed
         end
       end
 
       private
+
+      def increment_counter(key, value, tags = {})
+        Appsignal.increment_counter "sidekiq_#{key}", value, tags
+      end
 
       def formatted_action_name(job)
         sidekiq_action_name = parse_action_name(job)
