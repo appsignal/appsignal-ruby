@@ -20,6 +20,13 @@ describe Appsignal::Minutely do
       end
     end
 
+    class BrokenProbe < Probe
+      def call
+        super
+        raise "oh no!"
+      end
+    end
+
     let(:log_stream) { StringIO.new }
     let(:log) do
       log_stream.rewind
@@ -39,6 +46,26 @@ describe Appsignal::Minutely do
 
       expect(probe.calls).to be >= 2
       expect(log).to include("Gathering minutely metrics with 1 probe")
+      expect(log).to include("Gathering minutely metrics with Probe probe")
+    end
+
+    context "with a broken probe" do
+      it "logs the error and continues calling the probes every <wait_time>" do
+        probe = Probe.new
+        broken_probe = BrokenProbe.new
+        Appsignal::Minutely.probes << probe
+        Appsignal::Minutely.probes << broken_probe
+        Appsignal::Minutely.start
+        sleep 0.01
+
+        expect(probe.calls).to be >= 2
+        expect(broken_probe.calls).to be >= 2
+
+        expect(log).to include("Gathering minutely metrics with 2 probes")
+        expect(log).to include("Gathering minutely metrics with Probe probe")
+        expect(log).to include("Gathering minutely metrics with BrokenProbe probe")
+        expect(log).to include("Error in minutely thread (BrokenProbe): oh no!")
+      end
     end
   end
 
