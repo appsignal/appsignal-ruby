@@ -1,6 +1,10 @@
 describe Appsignal::Minutely do
   before do
+    Appsignal::Minutely.stop
     Appsignal::Minutely.probes.clear
+  end
+  after do
+    Appsignal::Minutely.stop
   end
 
   it "has a list of probes" do
@@ -66,6 +70,25 @@ describe Appsignal::Minutely do
       end
     end
 
+    it "ensures only one minutely probes thread is active at a time" do
+      alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
+      probe = Probe.new
+      Appsignal::Minutely.probes << probe
+      expect do
+        Appsignal::Minutely.start
+      end.to change { alive_thread_counter.call }.by(1)
+
+      wait_for("enough probe calls") { probe.calls >= 2 }
+      expect(log).to include("Gathering minutely metrics with 1 probe")
+      expect(log).to include("Gathering minutely metrics with Probe probe")
+      expect do
+        # Fetch old thread
+        thread = Appsignal::Minutely.class_variable_get(:@@thread)
+        Appsignal::Minutely.start
+        thread && thread.join # Wait for old thread to exit
+      end.to_not(change { alive_thread_counter.call })
+    end
+
     # Wait for a condition to be met
     #
     # @example
@@ -95,9 +118,9 @@ describe Appsignal::Minutely do
   end
 
   describe ".wait_time" do
-    it "should get the time to the next minute" do
-      allow_any_instance_of(Time).to receive(:sec).and_return(30)
-      expect(Appsignal::Minutely.wait_time).to eq 30
+    it "gets the time to the next minute" do
+      allow_any_instance_of(Time).to receive(:sec).and_return(20)
+      expect(Appsignal::Minutely.wait_time).to eq 40
     end
   end
 

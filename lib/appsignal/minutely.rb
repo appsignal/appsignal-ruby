@@ -11,7 +11,8 @@ module Appsignal
       end
 
       def start
-        Thread.new do
+        stop
+        @@thread = Thread.new do
           loop do
             logger = Appsignal.logger
             logger.debug("Gathering minutely metrics with #{probes.count} probes")
@@ -27,6 +28,10 @@ module Appsignal
             sleep(Appsignal::Minutely.wait_time)
           end
         end
+      end
+
+      def stop
+        defined?(@@thread) && @@thread.kill
       end
 
       def wait_time
