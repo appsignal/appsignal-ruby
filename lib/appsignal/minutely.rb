@@ -12,14 +12,19 @@ module Appsignal
 
       def start
         Thread.new do
-          begin
-            loop do
-              Appsignal.logger.debug("Gathering minutely metrics with #{probes.count} probe(s)")
-              probes.each(&:call)
-              sleep(wait_time)
+          loop do
+            logger = Appsignal.logger
+            logger.debug("Gathering minutely metrics with #{probes.count} probes")
+            probes.each do |probe|
+              begin
+                name = probe.class.name
+                logger.debug("Gathering minutely metrics with #{name} probe")
+                probe.call
+              rescue => ex
+                logger.error("Error in minutely thread (#{name}): #{ex}")
+              end
             end
-          rescue => ex
-            Appsignal.logger.error("Error in minutely thread: #{ex}")
+            sleep(Appsignal::Minutely.wait_time)
           end
         end
       end
