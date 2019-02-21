@@ -51,6 +51,13 @@ module Appsignal
           Appsignal::Utils::Data.generate(command),
           Appsignal::EventFormatter::DEFAULT
         )
+
+        # Send global query metrics
+        Appsignal.add_distribution_value(
+          "mongodb_query_duration",
+          event.duration,
+          :database => event.database_name
+        )
       end
     end
   end
