@@ -12,7 +12,6 @@ module Appsignal
       end
 
       def install
-        require "sidekiq/api" if Appsignal.config[:enable_minutely_probes]
         Appsignal::Minutely.probes << SidekiqProbe.new
 
         ::Sidekiq.configure_server do |config|
@@ -24,8 +23,12 @@ module Appsignal
     end
 
     class SidekiqProbe
-      def initialize
+      attr_reader :config
+
+      def initialize(config = {})
+        @config = config
         @cache = {}
+        require "sidekiq/api" if Appsignal.config[:enable_minutely_probes]
       end
 
       def call
@@ -52,8 +55,11 @@ module Appsignal
 
       private
 
+      attr_reader :cache
+
       # Track a gauge metric with the `sidekiq_` prefix
       def gauge(key, value, tags = {})
+        tags[:hostname] = hostname if hostname
         Appsignal.set_gauge "sidekiq_#{key}", value, tags
       end
 
@@ -69,11 +75,23 @@ module Appsignal
       #   # Creates a gauge with the value `5`
       # @see #gauge
       def gauge_delta(cache_key, key, value, tags = {})
-        previous_value = @cache[cache_key]
-        @cache[cache_key] = value
+        previous_value = cache[cache_key]
+        cache[cache_key] = value
         return unless previous_value
         new_value = value - previous_value
         gauge key, new_value, tags
+      end
+
+      def hostname
+        return @hostname if defined?(@hostname)
+        if config.key?(:hostname)
+          @hostname = config[:hostname]
+          return @hostname
+        end
+
+        host = nil
+        ::Sidekiq.redis { |c| host = c.connection[:host] }
+        @hostname = host
       end
     end
 
