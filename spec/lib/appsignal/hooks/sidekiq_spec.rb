@@ -594,6 +594,8 @@ end
 describe Appsignal::Hooks::SidekiqProbe do
   describe "#call" do
     let(:probe) { described_class.new }
+    let(:redis_hostname) { "localhost" }
+    let(:expected_default_tags) { { :hostname => "localhost" } }
     before do
       Appsignal.config = project_fixture_config
       class Sidekiq
@@ -603,6 +605,16 @@ describe Appsignal::Hooks::SidekiqProbe do
             "used_memory" => 1024,
             "used_memory_rss" => 512
           }
+        end
+
+        def self.redis
+          yield Client.new
+        end
+
+        class Client
+          def connection
+            { :host => "localhost" }
+          end
         end
 
         class Stats
@@ -691,8 +703,22 @@ describe Appsignal::Hooks::SidekiqProbe do
       probe.call
     end
 
+    context "when hostname is configured for probe" do
+      let(:redis_hostname) { "my_redis_server" }
+      let(:probe) { described_class.new(:hostname => redis_hostname) }
+
+      it "uses the redis hostname for the hostname tag" do
+        allow(Appsignal).to receive(:set_gauge).and_call_original
+        probe.call
+        expect(Appsignal).to have_received(:set_gauge)
+          .with(anything, anything, :hostname => redis_hostname).at_least(:once)
+      end
+    end
+
     def expect_gauge(key, value, tags = {})
-      expect(Appsignal).to receive(:set_gauge).with("sidekiq_#{key}", value, tags).and_call_original
+      expect(Appsignal).to receive(:set_gauge)
+        .with("sidekiq_#{key}", value, expected_default_tags.merge(tags))
+        .and_call_original
     end
   end
 end
