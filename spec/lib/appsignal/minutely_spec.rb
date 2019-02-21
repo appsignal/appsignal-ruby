@@ -43,14 +43,43 @@ describe Appsignal::Minutely do
       allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
     end
 
-    it "calls the probes every <wait_time>" do
-      probe = Probe.new
-      Appsignal::Minutely.probes.register :my_probe, probe
-      Appsignal::Minutely.start
+    context "with an instance of a class" do
+      it "calls the probe every <wait_time>" do
+        probe = Probe.new
+        Appsignal::Minutely.probes.register :my_probe, probe
+        Appsignal::Minutely.start
 
-      wait_for("enough probe calls") { probe.calls >= 2 }
-      expect(log).to include("Gathering minutely metrics with 1 probe")
-      expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+        wait_for("enough probe calls") { probe.calls >= 2 }
+        expect(log).to include("Gathering minutely metrics with 1 probe")
+        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+      end
+    end
+
+    context "with probe class" do
+      it "creates an instance of the class and call that every <wait time>" do
+        probe = Probe
+        probe_instance = Probe.new
+        expect(probe).to receive(:new).and_return(probe_instance)
+        Appsignal::Minutely.probes.register :my_probe, probe
+        Appsignal::Minutely.start
+
+        wait_for("enough probe calls") { probe_instance.calls >= 2 }
+        expect(log).to include("Gathering minutely metrics with 1 probe")
+        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+      end
+    end
+
+    context "with a lambda" do
+      it "calls the lambda every <wait time>" do
+        calls = 0
+        probe = -> { calls += 1 }
+        Appsignal::Minutely.probes.register :my_probe, probe
+        Appsignal::Minutely.start
+
+        wait_for("enough probe calls") { calls >= 2 }
+        expect(log).to include("Gathering minutely metrics with 1 probe")
+        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+      end
     end
 
     context "with a broken probe" do
@@ -115,6 +144,27 @@ describe Appsignal::Minutely do
 
       return unless i == max_wait
       raise "Waited 5 seconds for #{name} condition, but was not met."
+    end
+  end
+
+  describe ".stop" do
+    it "stops the minutely thread" do
+      Appsignal::Minutely.start
+      thread = Appsignal::Minutely.class_variable_get(:@@thread)
+      expect(%w[sleep run]).to include(thread.status)
+      Appsignal::Minutely.stop
+      thread.join
+      expect(thread.status).to eql(false)
+    end
+
+    it "clears the probe instances array" do
+      Appsignal::Minutely.probes.register :my_probe, -> {}
+      Appsignal::Minutely.start
+      thread = Appsignal::Minutely.class_variable_get(:@@thread)
+      expect(Appsignal::Minutely.send(:probe_instances)).to_not be_empty
+      Appsignal::Minutely.stop
+      thread.join
+      expect(Appsignal::Minutely.send(:probe_instances)).to be_empty
     end
   end
 
