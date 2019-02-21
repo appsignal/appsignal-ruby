@@ -130,7 +130,7 @@ module Appsignal
 
           if config[:enable_gc_instrumentation]
             GC::Profiler.enable
-            Appsignal::Minutely.add_gc_probe
+            Appsignal::Minutely.register_garbage_collection_probe
           end
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]

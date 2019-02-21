@@ -95,7 +95,7 @@ describe Appsignal do
         end
 
         it "should add the gc probe to minutely" do
-          expect(Appsignal::Minutely).to receive(:add_gc_probe)
+          expect(Appsignal::Minutely).to receive(:register_garbage_collection_probe)
           Appsignal.start
         end
       end
@@ -117,7 +117,7 @@ describe Appsignal do
         end
 
         it "should not add the gc probe to minutely" do
-          expect(Appsignal::Minutely).not_to receive(:add_gc_probe)
+          expect(Appsignal::Minutely).not_to receive(:register_garbage_collection_probe)
           Appsignal.start
         end
       end
