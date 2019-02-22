@@ -7,8 +7,9 @@ describe Appsignal::Minutely do
     Appsignal::Minutely.stop
   end
 
-  it "has a list of probes" do
-    expect(Appsignal::Minutely.probes).to be_instance_of(Array)
+  it "returns a ProbeCollection" do
+    expect(Appsignal::Minutely.probes)
+      .to be_instance_of(Appsignal::Minutely::ProbeCollection)
   end
 
   describe ".start" do
@@ -44,43 +45,43 @@ describe Appsignal::Minutely do
 
     it "calls the probes every <wait_time>" do
       probe = Probe.new
-      Appsignal::Minutely.probes << probe
+      Appsignal::Minutely.probes.register :my_probe, probe
       Appsignal::Minutely.start
 
       wait_for("enough probe calls") { probe.calls >= 2 }
       expect(log).to include("Gathering minutely metrics with 1 probe")
-      expect(log).to include("Gathering minutely metrics with Probe probe")
+      expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
     end
 
     context "with a broken probe" do
       it "logs the error and continues calling the probes every <wait_time>" do
         probe = Probe.new
         broken_probe = BrokenProbe.new
-        Appsignal::Minutely.probes << probe
-        Appsignal::Minutely.probes << broken_probe
+        Appsignal::Minutely.probes.register :my_probe, probe
+        Appsignal::Minutely.probes.register :broken_probe, broken_probe
         Appsignal::Minutely.start
 
         wait_for("enough probe calls") { probe.calls >= 2 }
         wait_for("enough broken_probe calls") { broken_probe.calls >= 2 }
 
         expect(log).to include("Gathering minutely metrics with 2 probes")
-        expect(log).to include("Gathering minutely metrics with Probe probe")
-        expect(log).to include("Gathering minutely metrics with BrokenProbe probe")
-        expect(log).to include("Error in minutely thread (BrokenProbe): oh no!")
+        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+        expect(log).to include("Gathering minutely metrics with 'broken_probe' probe")
+        expect(log).to include("Error in minutely probe 'broken_probe': oh no!")
       end
     end
 
     it "ensures only one minutely probes thread is active at a time" do
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = Probe.new
-      Appsignal::Minutely.probes << probe
+      Appsignal::Minutely.probes.register :my_probe, probe
       expect do
         Appsignal::Minutely.start
       end.to change { alive_thread_counter.call }.by(1)
 
       wait_for("enough probe calls") { probe.calls >= 2 }
       expect(log).to include("Gathering minutely metrics with 1 probe")
-      expect(log).to include("Gathering minutely metrics with Probe probe")
+      expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
       expect do
         # Fetch old thread
         thread = Appsignal::Minutely.class_variable_get(:@@thread)
@@ -124,14 +125,102 @@ describe Appsignal::Minutely do
     end
   end
 
-  describe ".add_gc_probe" do
+  describe ".register_garbage_collection_probe" do
     it "adds the GC probe to the probes list" do
-      expect(Appsignal::Minutely.probes).to be_empty
+      expect(Appsignal::Minutely.probes.count).to eql(0)
 
-      Appsignal::Minutely.add_gc_probe
+      Appsignal::Minutely.register_garbage_collection_probe
 
-      expect(Appsignal::Minutely.probes.size).to eq(1)
-      expect(Appsignal::Minutely.probes[0]).to be_instance_of(Appsignal::Minutely::GCProbe)
+      expect(Appsignal::Minutely.probes.count).to eql(1)
+      expect(Appsignal::Minutely.probes[:garbage_collection])
+        .to be_instance_of(Appsignal::Minutely::GCProbe)
+    end
+  end
+
+  describe Appsignal::Minutely::ProbeCollection do
+    let(:collection) { described_class.new }
+
+    describe "#count" do
+      it "returns how many probes are registered" do
+        expect(collection.count).to eql(0)
+        collection.register :my_probe_1, -> {}
+        expect(collection.count).to eql(1)
+        collection.register :my_probe_2, -> {}
+        expect(collection.count).to eql(2)
+      end
+    end
+
+    describe "#clear" do
+      it "clears the list of probes" do
+        collection.register :my_probe_1, -> {}
+        collection.register :my_probe_2, -> {}
+        expect(collection.count).to eql(2)
+        collection.clear
+        expect(collection.count).to eql(0)
+      end
+    end
+
+    describe "#[]" do
+      it "returns the probe for that name" do
+        probe = -> {}
+        collection.register :my_probe, probe
+        expect(collection[:my_probe]).to eql(probe)
+      end
+    end
+
+    describe "#<<" do
+      let(:out_stream) { std_stream }
+      let(:output) { out_stream.read }
+      let(:log_stream) { std_stream }
+      let(:log) { log_contents(log_stream) }
+      before { Appsignal.logger = test_logger(log_stream) }
+
+      it "adds the probe, but prints a deprecation warning" do
+        probe = -> {}
+        capture_stdout(out_stream) { collection << probe }
+        deprecation_message = "Deprecated " \
+          "`Appsignal::Minute.probes <<` call. Please use " \
+          "`Appsignal::Minutely.probes.register` instead."
+        expect(output).to include "appsignal WARNING: #{deprecation_message}"
+        expect(log).to contains_log :warn, deprecation_message
+        expect(collection[probe.object_id]).to eql(probe)
+      end
+    end
+
+    describe "#register" do
+      let(:log_stream) { std_stream }
+      let(:log) { log_contents(log_stream) }
+      before { Appsignal.logger = test_logger(log_stream) }
+
+      it "adds the by key probe" do
+        probe = -> {}
+        collection.register :my_probe, probe
+        expect(collection[:my_probe]).to eql(probe)
+      end
+
+      context "when a probe is already registered with the same key" do
+        it "logs a debug message" do
+          probe = -> {}
+          collection.register :my_probe, probe
+          collection.register :my_probe, probe
+          expect(log).to contains_log :debug, "A probe with the name " \
+            "`my_probe` is already registered. Overwriting the entry " \
+            "with the new probe."
+          expect(collection[:my_probe]).to eql(probe)
+        end
+      end
+    end
+
+    describe "#each" do
+      it "loops over the registered probes" do
+        probe = -> {}
+        collection.register :my_probe, probe
+        list = []
+        collection.each do |name, p|
+          list << [name, p]
+        end
+        expect(list).to eql([[:my_probe, probe]])
+      end
     end
   end
 
