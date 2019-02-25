@@ -8,6 +8,7 @@ default: &defaults
     "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",
     "SERVER_PROTOCOL", "HTTP_USER_AGENT"
   ]
+  enable_minutely_probes: false
 
 production:
   <<: *defaults

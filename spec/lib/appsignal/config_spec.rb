@@ -218,7 +218,8 @@ describe Appsignal::Config do
         :active => true,
         :push_api_key => "abc",
         :name => "TestApp",
-        :request_headers => kind_of(Array)
+        :request_headers => kind_of(Array),
+        :enable_minutely_probes => false
       )
     end
 

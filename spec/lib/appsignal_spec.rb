@@ -90,12 +90,14 @@ describe Appsignal do
         unless Appsignal::System.jruby?
           it "installs the allocation event hook" do
             expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
+              .and_call_original
             Appsignal.start
           end
         end
 
         it "should add the gc probe to minutely" do
           expect(Appsignal::Minutely).to receive(:register_garbage_collection_probe)
+            .and_call_original
           Appsignal.start
         end
       end
