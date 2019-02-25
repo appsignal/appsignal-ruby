@@ -130,7 +130,7 @@ describe Appsignal::Config do
         :enable_allocation_tracking     => true,
         :enable_gc_instrumentation      => false,
         :enable_host_metrics            => true,
-        :enable_minutely_probes         => false,
+        :enable_minutely_probes         => true,
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :files_world_accessible         => true,
@@ -492,7 +492,6 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
       expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
       expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
-      expect(ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]).to       eq "false"
       expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq ""
       expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
       expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
