@@ -44,6 +44,11 @@ module Appsignal
       #
       # - Lambda - A lambda is an object that listens to a `call` method call.
       #   This `call` method is called every minute.
+      # - Class - A class object is an object that listens to a `new` and
+      #   `call` method call. The `new` method is called when the Minutely
+      #   probe thread is started to initialize all probes. This allows probes
+      #   to load dependencies once beforehand. Their `call` method is called
+      #   every minute.
       # - Class instance - A class instance object is an object that listens to
       #   a `call` method call. The `call` method is called every minute.
       #
@@ -72,6 +77,25 @@ module Appsignal
       #   Appsignal::Minutely.probes.register :my_probe, MyProbe.new
       #   # "started" # printed immediately
       #   # "called" # printed every minute
+      #
+      # @example Add a probe class
+      #   class MyProbe
+      #     def initialize
+      #       # Add things that only need to be done on start up for this probe
+      #       require "some/library/dependency"
+      #       @cache = {} # initialize a local cache variable
+      #       puts "started"
+      #     end
+      #
+      #     def call
+      #       puts "called"
+      #     end
+      #   end
+      #
+      #   Appsignal::Minutely.probes.register :my_probe, MyProbe
+      #   Appsignal::Minutely.start # This is called for you
+      #   # "started" # Printed on Appsignal::Minutely.start
+      #   # "called" # Repeated every minute
       #
       # @param name [Symbol/String] Name of the probe. Can be used with {[]}.
       #   This name will be used in errors in the log and allows overwriting of
@@ -111,11 +135,12 @@ module Appsignal
       # @api private
       def start
         stop
+        initialize_probes
         @@thread = Thread.new do
           loop do
             logger = Appsignal.logger
             logger.debug("Gathering minutely metrics with #{probes.count} probes")
-            probes.each do |name, probe|
+            probe_instances.each do |name, probe|
               begin
                 logger.debug("Gathering minutely metrics with '#{name}' probe")
                 probe.call
@@ -131,6 +156,7 @@ module Appsignal
       # @api private
       def stop
         defined?(@@thread) && @@thread.kill
+        probe_instances.clear
       end
 
       # @api private
@@ -141,6 +167,19 @@ module Appsignal
       # @api private
       def register_garbage_collection_probe
         probes.register :garbage_collection, GCProbe.new
+      end
+
+      private
+
+      def initialize_probes
+        probes.each do |name, probe|
+          instance = probe.respond_to?(:new) ? probe.new : probe
+          probe_instances[name] = instance
+        end
+      end
+
+      def probe_instances
+        @@probe_instances ||= {}
       end
     end
 
