@@ -1,11 +1,5 @@
 describe Appsignal::Minutely do
-  before do
-    Appsignal::Minutely.stop
-    Appsignal::Minutely.probes.clear
-  end
-  after do
-    Appsignal::Minutely.stop
-  end
+  before { Appsignal::Minutely.probes.clear }
 
   it "returns a ProbeCollection" do
     expect(Appsignal::Minutely.probes)
