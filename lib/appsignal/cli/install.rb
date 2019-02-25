@@ -77,8 +77,7 @@ module Appsignal
 
           require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
 
-          config[:name] = Rails.application.class.parent_name
-
+          config[:name] = detected_rails_app_name
           name_overwritten = yes_or_no("  Your app's name is: '#{config[:name]}' \n  Do you want to change how this is displayed in AppSignal? (y/n): ")
           puts
           if name_overwritten
