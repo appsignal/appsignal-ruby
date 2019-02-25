@@ -571,23 +571,6 @@ describe Appsignal::Hooks::SidekiqHook do
 
       expect(Sidekiq.middlewares).to include(Appsignal::Hooks::SidekiqPlugin)
     end
-
-    context "when enable_minutely_probes is true" do
-      it "loads Sidekiq::API" do
-        Appsignal.config[:enable_minutely_probes] = true
-        expect(defined?(Sidekiq::API)).to be_falsy
-        described_class.new.install
-        expect(defined?(Sidekiq::API)).to be_truthy
-      end
-    end
-
-    context "when enable_minutely_probes is false" do
-      it "does not load Sidekiq::API" do
-        expect(defined?(Sidekiq::API)).to be_falsy
-        described_class.new.install
-        expect(defined?(Sidekiq::API)).to be_falsy
-      end
-    end
   end
 end
 
@@ -681,6 +664,12 @@ describe Appsignal::Hooks::SidekiqProbe do
       end
     end
     after { Object.send(:remove_const, "Sidekiq") }
+
+    it "loads Sidekiq::API" do
+      expect(defined?(Sidekiq::API)).to be_falsy
+      probe
+      expect(defined?(Sidekiq::API)).to be_truthy
+    end
 
     it "collects custom metrics" do
       expect_gauge("worker_count", 24).twice

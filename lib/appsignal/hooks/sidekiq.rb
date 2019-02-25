@@ -12,7 +12,7 @@ module Appsignal
       end
 
       def install
-        Appsignal::Minutely.probes << SidekiqProbe.new
+        Appsignal::Minutely.probes.register :sidekiq, SidekiqProbe
 
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
@@ -28,7 +28,7 @@ module Appsignal
       def initialize(config = {})
         @config = config
         @cache = {}
-        require "sidekiq/api" if Appsignal.config[:enable_minutely_probes]
+        require "sidekiq/api"
       end
 
       def call
