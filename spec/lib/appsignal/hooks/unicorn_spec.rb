@@ -50,3 +50,29 @@ describe Appsignal::Hooks::UnicornHook do
     end
   end
 end
+
+describe Appsignal::Hooks::UnicornProbe do
+  describe "#call" do
+    let(:probe) { described_class.new }
+
+    before do
+      module Unicorn
+        class HttpServer
+          def worker_processes
+            3
+          end
+        end
+      end
+      Unicorn::HttpServer.new
+    end
+    after(:context) { Object.send(:remove_const, :Unicorn) }
+
+    it "sends back the amount of activer workers" do
+      expect(Appsignal).to receive(:set_gauge)
+        .with("unicorn_worker_count", 3)
+        .and_call_original
+
+      probe.call
+    end
+  end
+end

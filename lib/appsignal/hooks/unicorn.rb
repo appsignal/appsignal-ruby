@@ -12,6 +12,7 @@ module Appsignal
       end
 
       def install
+        Appsignal::Minutely.probes.register :unicorn, UnicornProbe
         # Make sure that appsignal is started and the last transaction
         # in a worker gets flushed.
         #
@@ -35,6 +36,14 @@ module Appsignal
             Appsignal.stop("unicorn")
             close_without_appsignal
           end
+        end
+      end
+    end
+
+    class UnicornProbe
+      def call
+        ObjectSpace.each_object(Unicorn::HttpServer) do |s|
+          Appsignal.set_gauge("unicorn_worker_count", s.worker_processes)
         end
       end
     end
