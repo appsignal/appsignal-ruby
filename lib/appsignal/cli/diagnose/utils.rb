@@ -30,6 +30,23 @@ module Appsignal
 
           IO.binread(path, length, offset)
         end
+
+        def self.parse_yaml(contents)
+          arguments = [contents]
+          if YAML.respond_to? :safe_load
+            method = :safe_load
+            arguments << \
+              if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
+                # Use keyword params for Ruby 2.6 and up
+                { :permitted_classes => [Time] }
+              else
+                [Time]
+              end
+          else
+            method = :load
+          end
+          YAML.send(method, *arguments)
+        end
       end
     end
   end
