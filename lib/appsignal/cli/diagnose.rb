@@ -332,13 +332,9 @@ module Appsignal
         end
 
         def fetch_installation_report
-          raw_report = File.read(File.expand_path("../../../../ext/install.report", __FILE__))
-          method = YAML.respond_to?(:safe_load) ? :safe_load : :load
-          YAML.send(
-            method,
-            raw_report,
-            [Time]
-          )
+          path = File.expand_path("../../../../ext/install.report", __FILE__)
+          raw_report = File.read(path)
+          Utils.parse_yaml(raw_report)
         rescue => e
           {
             "parsing_error" => {
