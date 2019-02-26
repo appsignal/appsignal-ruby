@@ -182,7 +182,7 @@ module Appsignal
           if rails_app?
             data[:app][:rails] = true
             current_path = Rails.root
-            initial_config[:name] = Rails.application.class.parent_name
+            initial_config[:name] = detected_rails_app_name
             initial_config[:log_path] = current_path.join("log")
           end
 

@@ -5,6 +5,15 @@ module Appsignal
     module Helpers
       private
 
+      def detected_rails_app_name
+        rails_class = Rails.application.class
+        if rails_class.respond_to? :module_parent_name # Rails 6
+          rails_class.module_parent_name
+        else # Older Rails versions
+          rails_class.parent_name
+        end
+      end
+
       def colorize(text, color)
         return text if Gem.win_platform?
 
