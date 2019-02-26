@@ -62,13 +62,24 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         double(
           :request_id    => 2,
           :command_name  => :find,
-          :database_name => "test"
+          :database_name => "test",
+          :duration      => 0.9919
         )
       end
 
       before do
         store = transaction.store("mongo_driver")
         store[2] = command
+      end
+
+      it "should emit a measurement" do
+        expect(Appsignal).to receive(:add_distribution_value).with(
+          "mongodb_query_duration",
+          0.9919,
+          :database => "test"
+        ).and_call_original
+
+        subscriber.finish("SUCCEEDED", event)
       end
 
       it "should get the query from the store" do
@@ -106,6 +117,12 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
 
       subscriber.finish("SUCCEEDED", double)
     end
+
+    it "should not attempt to send duration metrics" do
+      expect(Appsignal).to_not receive(:add_distribution_value)
+
+      subscriber.finish("SUCCEEDED", double)
+    end
   end
 
   context "when appsignal is paused" do
@@ -120,6 +137,12 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
 
     it "should not attempt to finish an event" do
       expect(Appsignal::Extension).to_not receive(:finish_event)
+
+      subscriber.finish("SUCCEEDED", double)
+    end
+
+    it "should not attempt to send duration metrics" do
+      expect(Appsignal).to_not receive(:add_distribution_value)
 
       subscriber.finish("SUCCEEDED", double)
     end
