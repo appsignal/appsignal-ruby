@@ -248,12 +248,19 @@ module Appsignal
         end
 
         def write_config_file(data)
-          template = ERB.new(
-            File.read(File.join(File.dirname(__FILE__), "../../../resources/appsignal.yml.erb")),
-            nil,
-            "-"
+          filename = File.join(
+            File.dirname(__FILE__),
+            "../../../resources/appsignal.yml.erb"
           )
-
+          file_contents = File.read(filename)
+          arguments = [file_contents]
+          if ruby_2_6_or_up?
+            arguments << { :trim_mode => "-" }
+          else
+            arguments << nil
+            arguments << "-"
+          end
+          template = ERB.new(*arguments)
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
           FileUtils.mkdir_p(File.join(Dir.pwd, "config"))
