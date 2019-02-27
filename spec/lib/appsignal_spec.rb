@@ -652,6 +652,29 @@ describe Appsignal do
 
         after { Appsignal.send_error(error, nil, namespace) }
       end
+
+      context "when given a block" do
+        it "yields the transaction and allows additional metadata to be set" do
+          captured_transaction = nil
+          Appsignal.send_error(StandardError.new("my_error")) do |transaction|
+            captured_transaction = transaction
+            transaction.set_action("my_action")
+            transaction.set_namespace("my_namespace")
+
+            # Don't flush the transaction, so we can inspect it
+            expect(transaction).to receive(:complete)
+          end
+          expect(captured_transaction.to_h).to include(
+            "namespace" => "my_namespace",
+            "action" => "my_action",
+            "error" => {
+              "name" => "StandardError",
+              "message" => "my_error",
+              "backtrace" => kind_of(String) # TODO: should be Array
+            }
+          )
+        end
+      end
     end
 
     describe ".listen_for_error" do
