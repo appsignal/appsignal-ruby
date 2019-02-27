@@ -347,7 +347,7 @@ module Appsignal
     # @param namespace [String] The namespace in which the error occurred.
     #   See also {.set_namespace}.
     # @yield [transaction] yields block to allow modification of the
-    #   transaction before its send.
+    #   transaction before it's send.
     # @yieldparam transaction [Transaction] yields the AppSignal transaction
     #   used to send the error.
     # @return [void]
