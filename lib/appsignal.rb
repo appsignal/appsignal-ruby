@@ -334,11 +334,22 @@ module Appsignal
     #     Appsignal.send_error(e, :key => "value")
     #   end
     #
+    # @example Add more metadata to transaction
+    #   Appsignal.send_error(e, :key => "value") do |transaction|
+    #     transaction.params(:search_query => params[:search_query])
+    #     transaction.set_action("my_action_name")
+    #     transaction.set_namespace("my_namespace")
+    #   end
+    #
     # @param error [Exception] The error to send to AppSignal.
     # @param tags [Hash{String, Symbol => String, Symbol, Integer}] Additional
     #   tags to add to the error. See also {.tag_request}.
     # @param namespace [String] The namespace in which the error occurred.
     #   See also {.set_namespace}.
+    # @yield [transaction] yields block to allow modification of the
+    #   transaction before its send.
+    # @yieldparam transaction [Transaction] yields the AppSignal transaction
+    #   used to send the error.
     # @return [void]
     #
     # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
@@ -359,6 +370,7 @@ module Appsignal
       )
       transaction.set_tags(tags) if tags
       transaction.set_error(error)
+      yield transaction if block_given?
       transaction.complete
     end
     alias :send_exception :send_error
