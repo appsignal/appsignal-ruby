@@ -1,5 +1,13 @@
-# Unreleased
+# 2.8.4
+- Log memory usage of agent if high
+
+# 2.8.3
+- Fix multi user permission issue for agent directories and files.
+  Commit ab1b35f850777d5999b41627d75be0b3904bc0a1
+
+# 2.8.2
 - Remove Bundler requirement from diagnose command. PR #451
+- Fix Delayed::Job action name reporting for structs. PR #463
 
 # 2.8.1
 - Fix installation on Ruby 2.6 for libc and musl library builds. PR #453
