@@ -831,25 +831,25 @@ describe Appsignal do
     end
 
     describe ".without_instrumentation" do
-      let(:transaction) { double }
+      let(:transaction) { http_request_transaction }
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
-      it "should pause and unpause the transaction around the block" do
-        expect(transaction).to receive(:pause!)
-        expect(transaction).to receive(:resume!)
+      it "does not record events on the transaction" do
+        expect(transaction).to receive(:pause!).and_call_original
+        expect(transaction).to receive(:resume!).and_call_original
+        Appsignal.instrument("register.this.event") { :do_nothing }
+        Appsignal.without_instrumentation do
+          Appsignal.instrument("dont.register.this.event") { :do_nothing }
+        end
+        expect(transaction.to_h["events"].map { |e| e["name"] })
+          .to match_array("register.this.event")
       end
 
       context "without transaction" do
         let(:transaction) { nil }
 
         it "should not crash" do
-          # just execute the after block
-        end
-      end
-
-      after do
-        Appsignal.without_instrumentation do
-          # nothing
+          Appsignal.without_instrumentation { :do_nothing }
         end
       end
     end

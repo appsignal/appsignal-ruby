@@ -214,7 +214,7 @@ describe Appsignal::Transaction do
 
   context "pausing" do
     describe "#pause!" do
-      it "should change the pause flag to true" do
+      it "changes the pause flag to true" do
         expect do
           transaction.pause!
         end.to change(transaction, :paused).from(false).to(true)
@@ -224,7 +224,7 @@ describe Appsignal::Transaction do
     describe "#resume!" do
       before { transaction.pause! }
 
-      it "should change the pause flag to false" do
+      it "changes the pause flag to false" do
         expect do
           transaction.resume!
         end.to change(transaction, :paused).from(true).to(false)
@@ -232,14 +232,16 @@ describe Appsignal::Transaction do
     end
 
     describe "#paused?" do
-      it "should return the pause state" do
-        expect(transaction.paused?).to be_falsy
+      context "when not paused" do
+        it "return false" do
+          expect(transaction.paused?).to be_falsy
+        end
       end
 
       context "when paused" do
         before { transaction.pause! }
 
-        it "should return the pause state" do
+        it "returns true" do
           expect(transaction.paused?).to be_truthy
         end
       end
@@ -690,10 +692,19 @@ describe Appsignal::Transaction do
     end
 
     describe "#start_event" do
-      it "should start the event in the extension" do
+      it "starts the event in the extension" do
         expect(transaction.ext).to receive(:start_event).with(0).and_call_original
 
         transaction.start_event
+      end
+
+      context "when transaction is paused" do
+        it "does not start the event" do
+          transaction.pause!
+          expect(transaction.ext).to_not receive(:start_event)
+
+          transaction.start_event
+        end
       end
     end
 
@@ -736,6 +747,15 @@ describe Appsignal::Transaction do
           nil,
           nil
         )
+      end
+
+      context "when transaction is paused" do
+        it "does not finish the event" do
+          transaction.pause!
+          expect(transaction.ext).to_not receive(:finish_event)
+
+          transaction.start_event
+        end
       end
     end
 
@@ -782,6 +802,21 @@ describe Appsignal::Transaction do
           1000,
           nil
         )
+      end
+
+      context "when transaction is paused" do
+        it "does not record the event" do
+          transaction.pause!
+          expect(transaction.ext).to_not receive(:record_event)
+
+          transaction.record_event(
+            "name",
+            nil,
+            nil,
+            1000,
+            nil
+          )
+        end
       end
     end
 

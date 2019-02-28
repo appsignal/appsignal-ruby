@@ -277,10 +277,12 @@ module Appsignal
     alias_method :add_exception, :set_error
 
     def start_event
+      return if paused?
       @ext.start_event(self.class.garbage_collection_profiler.total_time)
     end
 
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
+      return if paused?
       @ext.finish_event(
         name,
         title || BLANK,
@@ -291,6 +293,7 @@ module Appsignal
     end
 
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
+      return if paused?
       @ext.record_event(
         name,
         title || BLANK,
