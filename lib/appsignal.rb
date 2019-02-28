@@ -752,7 +752,7 @@ module Appsignal
     end
     deprecate :is_ignored_action?, :none, 2017, 3
 
-    # Convenience method for skipping instrumentations around a block of code.
+    # Convenience method for skipping instrumentation around a block of code.
     #
     # @example
     #   Appsignal.without_instrumentation do
