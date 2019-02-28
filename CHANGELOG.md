@@ -1,5 +1,7 @@
 # 2.8.4
-- Log memory usage of agent if high
+- Log memory usage of agent if high.
+  Commit 46cf3770e13eff9f5fccbf8a4525a8dbfd8eeaad
+- Fix `Appsignal::Transaction.pause!`. PR #482
 
 # 2.8.3
 - Fix multi user permission issue for agent directories and files.
