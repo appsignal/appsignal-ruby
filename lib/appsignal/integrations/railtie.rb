@@ -2,6 +2,7 @@
 
 Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
+require "appsignal/utils/rails_helper"
 require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
@@ -17,7 +18,7 @@ module Appsignal
         Appsignal.config = Appsignal::Config.new(
           Rails.root,
           Rails.env,
-          :name => detected_rails_app_name,
+          :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
           :log_path => Rails.root.join("log")
         )
 
@@ -37,15 +38,6 @@ module Appsignal
         end
 
         Appsignal.start
-      end
-
-      def self.detected_rails_app_name
-        rails_class = Rails.application.class
-        if rails_class.respond_to? :module_parent_name # Rails 6
-          rails_class.module_parent_name
-        else # Older Rails versions
-          rails_class.parent_name
-        end
       end
     end
   end
