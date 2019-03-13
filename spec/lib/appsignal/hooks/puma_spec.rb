@@ -99,17 +99,24 @@ describe Appsignal::Hooks::PumaProbe do
 
   describe "hostname" do
     it "returns the socket hostname" do
-      expect(probe.hostname).to eql(Socket.gethostname)
+      expect(probe.send(:hostname)).to eql(Socket.gethostname)
     end
 
-    it "returns the configured host" do
-      Appsignal.config[:hostname] = "frontend1"
-
-      expect(probe.hostname).to eql("frontend1")
+    context "with overridden hostname" do
+      around do |sample|
+        Appsignal.config[:hostname] = "frontend1"
+        sample.run
+        Appsignal.config[:hostname] = nil
+      end
+      it "returns the configured host" do
+        expect(probe.send(:hostname)).to eql("frontend1")
+      end
     end
   end
 
   describe "#call" do
+    let(:expected_default_tags) { { :hostname => Socket.gethostname } }
+
     context "with multiple worker stats" do
       before(:context) do
         class Puma
@@ -143,14 +150,14 @@ describe Appsignal::Hooks::PumaProbe do
       after(:context) { Object.send(:remove_const, :Puma) }
 
       it "calls `puma_gauge` with the (summed) worker metrics" do
-        expect(probe).to receive(:puma_gauge).with(2, :workers, :kind => :count)
-        expect(probe).to receive(:puma_gauge).with(2, :workers, :kind => :booted)
-        expect(probe).to receive(:puma_gauge).with(0, :workers, :kind => :old)
+        expect_gauge(2, :workers, :kind => :count)
+        expect_gauge(2, :workers, :kind => :booted)
+        expect_gauge(0, :workers, :kind => :old)
 
-        expect(probe).to receive(:puma_gauge).with(0, :backlog)
-        expect(probe).to receive(:puma_gauge).with(10, :running)
-        expect(probe).to receive(:puma_gauge).with(10, :pool_capacity)
-        expect(probe).to receive(:puma_gauge).with(10, :max_threads)
+        expect_gauge(0, :backlog)
+        expect_gauge(10, :running)
+        expect_gauge(10, :pool_capacity)
+        expect_gauge(10, :max_threads)
       end
     end
 
@@ -170,10 +177,10 @@ describe Appsignal::Hooks::PumaProbe do
       after(:context) { Object.send(:remove_const, :Puma) }
 
       it "calls `puma_gauge` with the (summed) worker metrics" do
-        expect(probe).to receive(:puma_gauge).with(0, :backlog)
-        expect(probe).to receive(:puma_gauge).with(5, :running)
-        expect(probe).to receive(:puma_gauge).with(5, :pool_capacity)
-        expect(probe).to receive(:puma_gauge).with(5, :max_threads)
+        expect_gauge(0, :backlog)
+        expect_gauge(5, :running)
+        expect_gauge(5, :pool_capacity)
+        expect_gauge(5, :max_threads)
       end
     end
 
@@ -192,21 +199,11 @@ describe Appsignal::Hooks::PumaProbe do
     end
 
     after { probe.call }
-  end
 
-  describe "#puma_gauge" do
-    it "prefixes the name with puma_ and adds hostname" do
+    def expect_gauge(value, key, tags = {})
       expect(Appsignal).to receive(:set_gauge)
-        .with("puma_workers", 10, :hostname => probe.hostname)
-
-      probe.puma_gauge(10, "workers")
-    end
-
-    it "merges the hostname tag with given tags" do
-      expect(Appsignal).to receive(:set_gauge)
-        .with("puma_workers", 10, :kind => :idle, :hostname => probe.hostname)
-
-      probe.puma_gauge(10, "workers", :kind => :idle)
+        .with("puma_#{key}", value, expected_default_tags.merge(tags))
+        .and_call_original
     end
   end
 end
