@@ -54,8 +54,7 @@ module Appsignal
           :max_threads => 0
         }
 
-        # Multiple workers
-        if stats[:worker_status]
+        if stats[:worker_status] # Multiple workers
           stats[:worker_status].each do |worker|
             stat = worker[:last_status]
 
@@ -65,29 +64,28 @@ module Appsignal
             counts[:max_threads] += stat[:max_threads]
           end
 
-          puma_gauge(stats[:workers], :workers, :kind => :count)
-          puma_gauge(stats[:booted_workers], :workers, :kind => :booted)
-          puma_gauge(stats[:old_workers], :workers, :kind => :old)
+          gauge(:workers, stats[:workers], :kind => :count)
+          gauge(:workers, stats[:booted_workers], :kind => :booted)
+          gauge(:workers, stats[:old_workers], :kind => :old)
 
-        # Single worker
-        else
+        else # Single worker
           counts[:backlog] += stats[:backlog]
           counts[:running] += stats[:running]
           counts[:pool_capacity] += stats[:pool_capacity]
           counts[:max_threads] += stats[:max_threads]
         end
 
-        puma_gauge(counts[:backlog], :connections_backlog)
-        puma_gauge(counts[:running], :running)
-        puma_gauge(counts[:pool_capacity], :pool_capacity)
-        puma_gauge(counts[:max_threads], :max_threads)
+        gauge(:connections_backlog, counts[:backlog])
+        gauge(:running, counts[:running])
+        gauge(:pool_capacity, counts[:pool_capacity])
+        gauge(:max_threads, counts[:max_threads])
       end
 
       private
 
       attr_reader :hostname
 
-      def puma_gauge(count, field, tags = {})
+      def gauge(field, count, tags = {})
         Appsignal.set_gauge("puma_#{field}", count, tags.merge(:hostname => hostname))
       end
     end
