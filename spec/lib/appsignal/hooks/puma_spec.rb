@@ -150,14 +150,14 @@ describe Appsignal::Hooks::PumaProbe do
       after(:context) { Object.send(:remove_const, :Puma) }
 
       it "calls `puma_gauge` with the (summed) worker metrics" do
-        expect_gauge(2, :workers, :type => :count)
-        expect_gauge(2, :workers, :type => :booted)
-        expect_gauge(0, :workers, :type => :old)
+        expect_gauge(:workers, 2, :type => :count)
+        expect_gauge(:workers, 2, :type => :booted)
+        expect_gauge(:workers, 0, :type => :old)
 
-        expect_gauge(0, :connection_backlog)
-        expect_gauge(10, :pool_capacity)
-        expect_gauge(10, :threads, :type => :running)
-        expect_gauge(10, :threads, :type => :max)
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 10)
+        expect_gauge(:threads, 10, :type => :running)
+        expect_gauge(:threads, 10, :type => :max)
       end
     end
 
@@ -177,10 +177,10 @@ describe Appsignal::Hooks::PumaProbe do
       after(:context) { Object.send(:remove_const, :Puma) }
 
       it "calls `puma_gauge` with the (summed) worker metrics" do
-        expect_gauge(0, :connection_backlog)
-        expect_gauge(5, :pool_capacity)
-        expect_gauge(5, :threads, :type => :running)
-        expect_gauge(5, :threads, :type => :max)
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 5)
+        expect_gauge(:threads, 5, :type => :running)
+        expect_gauge(:threads, 5, :type => :max)
       end
     end
 
@@ -200,7 +200,7 @@ describe Appsignal::Hooks::PumaProbe do
 
     after { probe.call }
 
-    def expect_gauge(value, key, tags = {})
+    def expect_gauge(key, value, tags = {})
       expect(Appsignal).to receive(:set_gauge)
         .with("puma_#{key}", value, expected_default_tags.merge(tags))
         .and_call_original
