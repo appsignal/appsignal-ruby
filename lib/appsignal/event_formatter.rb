@@ -84,7 +84,7 @@ module Appsignal
       rescue => ex
         formatter_classes.delete(name)
         formatters.delete(name)
-        logger.warn("'#{ex.message}' when initializing #{name} event formatter")
+        logger.error("'#{ex.message}' when initializing #{name} event formatter")
       end
 
       def register_deprecated_formatter(name)
