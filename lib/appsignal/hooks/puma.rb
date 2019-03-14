@@ -77,7 +77,7 @@ module Appsignal
           counts[:max_threads] += stats[:max_threads]
         end
 
-        puma_gauge(counts[:backlog], :backlog)
+        puma_gauge(counts[:backlog], :connections_backlog)
         puma_gauge(counts[:running], :running)
         puma_gauge(counts[:pool_capacity], :pool_capacity)
         puma_gauge(counts[:max_threads], :max_threads)
