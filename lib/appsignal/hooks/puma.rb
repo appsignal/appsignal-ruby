@@ -39,7 +39,6 @@ module Appsignal
     end
 
     class PumaProbe
-
       def initialize
         @hostname = Appsignal.config[:hostname] || Socket.gethostname
       end
@@ -85,6 +84,7 @@ module Appsignal
       end
 
       private
+
       attr_reader :hostname
 
       def puma_gauge(count, field, tags = {})
