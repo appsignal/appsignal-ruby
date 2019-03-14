@@ -223,6 +223,10 @@ module Appsignal
     # @return [void]
     # @since 0.7.0
     def start_logger(path_arg = nil)
+      if path_arg
+        logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
+      end
+
       if config && config[:log] == "file" && config.log_file_path
         start_file_logger(config.log_file_path)
       else
@@ -237,10 +241,6 @@ module Appsignal
         end
 
       logger << @in_memory_log.string if @in_memory_log
-
-      if path_arg
-        logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
-      end
     end
 
     # Returns if the C-extension was loaded properly.

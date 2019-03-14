@@ -99,13 +99,3 @@ Style/ClassVars:
 Style/DoubleNegation:
   Exclude:
     - 'lib/appsignal.rb'
-
-# Offense count: 5
-# Configuration parameters: MinBodyLength.
-Style/GuardClause:
-  Exclude:
-    - 'lib/appsignal.rb'
-    - 'lib/appsignal/event_formatter.rb'
-    - 'lib/appsignal/event_formatter/moped/query_formatter.rb'
-    - 'lib/appsignal/hooks.rb'
-    - 'lib/appsignal/marker.rb'
