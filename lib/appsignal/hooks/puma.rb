@@ -64,9 +64,9 @@ module Appsignal
             counts[:max_threads] += stat[:max_threads]
           end
 
-          gauge(:workers, stats[:workers], :kind => :count)
-          gauge(:workers, stats[:booted_workers], :kind => :booted)
-          gauge(:workers, stats[:old_workers], :kind => :old)
+          gauge(:workers, stats[:workers], :type => :count)
+          gauge(:workers, stats[:booted_workers], :type => :booted)
+          gauge(:workers, stats[:old_workers], :type => :old)
 
         else # Single worker
           counts[:backlog] += stats[:backlog]
@@ -75,10 +75,10 @@ module Appsignal
           counts[:max_threads] += stats[:max_threads]
         end
 
-        gauge(:connections_backlog, counts[:backlog])
-        gauge(:running, counts[:running])
+        gauge(:connection_backlog, counts[:backlog])
         gauge(:pool_capacity, counts[:pool_capacity])
-        gauge(:max_threads, counts[:max_threads])
+        gauge(:threads, counts[:running], :type => :running)
+        gauge(:threads, counts[:max_threads], :type => :max)
       end
 
       private
