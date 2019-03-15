@@ -63,24 +63,24 @@ describe Appsignal::EventFormatter do
     end
 
     context "when there is an error initializing the formatter" do
-      it "does not register the formatter and logs a warning" do
+      it "does not register the formatter and logs an error" do
         logs = capture_logs do
           described_class.register "mock.dependent", MockDependentFormatter
         end
         expect(klass.registered?("mock.dependent")).to be_falsy
-        expect(logs).to contains_log :warn, \
+        expect(logs).to contains_log :error, \
           "'uninitialized constant MockDependentFormatter::NonsenseDependency' " \
           "when initializing mock.dependent event formatter"
       end
     end
 
     context "when formatter has no format/2 method" do
-      it "does not register the formatter and logs a warning" do
+      it "does not register the formatter and logs an error" do
         logs = capture_logs do
           described_class.register "mock.incorrect", IncorrectFormatMockFormatter
         end
         expect(klass.registered?("mock.incorrect")).to be_falsy
-        expect(logs).to contains_log :warn, \
+        expect(logs).to contains_log :error, \
           "'IncorrectFormatMockFormatter does not have a format(payload) " \
           "method' when initializing mock.incorrect event formatter"
       end
