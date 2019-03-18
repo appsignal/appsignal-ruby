@@ -13,13 +13,16 @@ end
 class MockFormatterDouble < MockFormatter
 end
 
-class MissingFormatMockFormatter < Appsignal::EventFormatter
-  def transform(_payload)
-  end
+class MissingFormatMockFormatter
 end
 
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
+  end
+end
+
+class IncorrectFormatMock2Formatter < Appsignal::EventFormatter
+  def format(_payload, _foo = nil)
   end
 end
 
@@ -74,15 +77,41 @@ describe Appsignal::EventFormatter do
       end
     end
 
-    context "when formatter has no format/2 method" do
-      it "does not register the formatter and logs an error" do
-        logs = capture_logs do
-          described_class.register "mock.incorrect", IncorrectFormatMockFormatter
+    context "when formatter has no format/1 method" do
+      context "when the formatter has no format method" do
+        it "does not register the formatter and logs an error" do
+          logs = capture_logs do
+            described_class.register "mock.missing", MissingFormatMockFormatter
+          end
+          expect(klass.registered?("mock.missing")).to be_falsy
+          expect(logs).to contains_log :error, \
+            "'MissingFormatMockFormatter does not have a format(payload) " \
+            "method' when initializing mock.missing event formatter"
         end
-        expect(klass.registered?("mock.incorrect")).to be_falsy
-        expect(logs).to contains_log :error, \
-          "'IncorrectFormatMockFormatter does not have a format(payload) " \
-          "method' when initializing mock.incorrect event formatter"
+      end
+
+      context "when the formatter has an format/0 method" do
+        it "does not register the formatter and logs an error" do
+          logs = capture_logs do
+            described_class.register "mock.incorrect", IncorrectFormatMockFormatter
+          end
+          expect(klass.registered?("mock.incorrect")).to be_falsy
+          expect(logs).to contains_log :error, \
+            "'IncorrectFormatMockFormatter does not have a format(payload) " \
+            "method' when initializing mock.incorrect event formatter"
+        end
+      end
+
+      context "when formatter has an format/2 method" do
+        it "does not register the formatter and logs an error" do
+          logs = capture_logs do
+            described_class.register "mock.incorrect", IncorrectFormatMock2Formatter
+          end
+          expect(klass.registered?("mock.incorrect")).to be_falsy
+          expect(logs).to contains_log :error, \
+            "'IncorrectFormatMock2Formatter does not have a format(payload) " \
+            "method' when initializing mock.incorrect event formatter"
+        end
       end
     end
 

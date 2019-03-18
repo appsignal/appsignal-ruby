@@ -29,14 +29,15 @@ module Appsignal
       end
 
       def try_to_install(name)
-        if dependencies_present? && !installed?
-          Appsignal.logger.info("Installing #{name} hook")
-          begin
-            install
-            @installed = true
-          rescue => ex
-            Appsignal.logger.error("Error while installing #{name} hook: #{ex}")
-          end
+        return unless dependencies_present?
+        return if installed?
+
+        Appsignal.logger.info("Installing #{name} hook")
+        begin
+          install
+          @installed = true
+        rescue => ex
+          Appsignal.logger.error("Error while installing #{name} hook: #{ex}")
         end
       end
 

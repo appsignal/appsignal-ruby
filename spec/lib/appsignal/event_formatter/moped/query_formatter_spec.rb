@@ -16,6 +16,12 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
       it { is_expected.to be_nil }
     end
 
+    context "when ops is nil in the payload" do
+      let(:payload) { { :ops => nil } }
+
+      it { is_expected.to be_nil }
+    end
+
     context "Moped::Protocol::Command" do
       let(:op) do
         double(
