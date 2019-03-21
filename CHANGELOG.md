@@ -1,7 +1,7 @@
-# 2.9.0 (Unreleased)
+# 2.9.0
 - Fix installations using git source. PR #455
-- Track installation results in installation report. PR 450
-- Fix Rails 6 deprecation warnings. PR #460, PR #478
+- Track installation results in installation report. PR #450
+- Fix Rails 6 deprecation warnings. PR #460, PR #478, PR #483
 - Improve error handling in minutely probes mechanism. PR #467
 - Only allow on minutely probe thread to run. PR #469
 - Change minutely probes register method to use a key for every probe. PR #473
@@ -10,6 +10,9 @@
 - Fix Ruby 2.6 deprecation warnings. PR #479
 - Support blocks for `Appsignal.send_error` to add more metadata to the
   AppSignal transaction. PR #481
+- Move instrumentation & metrics helpers to modules. PR #487
+- Add Puma minutely probe. PR #488
+- Log invalid EventFormatter registrations as errors. PR #491
 
 # 2.8.4
 - Log memory usage of agent if high
