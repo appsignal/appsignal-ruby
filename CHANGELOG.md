@@ -3,7 +3,7 @@
 - Track installation results in installation report. PR #450
 - Fix Rails 6 deprecation warnings. PR #460, PR #478, PR #483
 - Improve error handling in minutely probes mechanism. PR #467
-- Only allow on minutely probe thread to run. PR #469
+- Only allow one minutely probe thread to run at a time. PR #469
 - Change minutely probes register method to use a key for every probe. PR #473
 - Send Sidekiq metrics by default. PR #471
 - Send MongoDB metrics by default. PR #472
