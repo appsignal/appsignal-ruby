@@ -16,10 +16,12 @@ describe Appsignal::Utils::JSON do
         }
       end
 
-      it { is_expected.to eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}}) }
+      it "returns a JSON string" do
+        is_expected.to eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}})
+      end
     end
 
-    context "with a body that contains strings with invalid utf-8 content" do
+    context "with a body that contains strings with invalid UTF-8 content" do
       let(:string_with_invalid_utf8) { [0x61, 0x61, 0x85].pack("c*") }
       let(:body) do
         {
@@ -34,7 +36,9 @@ describe Appsignal::Utils::JSON do
         }
       end
 
-      it { is_expected.to eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}}) }
+      it "returns a JSON string with invalid UTF-8 content" do
+        is_expected.to eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}})
+      end
     end
   end
 end

@@ -24,7 +24,7 @@ travis: # Default `.travis.yml` contents
     - "./support/bundler_wrapper exec rake extension:install"
   script: "./support/bundler_wrapper exec rake test"
   after_failure:
-    - "find ./ext -name install.log -exec cat {} \\;"
+    - "find ./ext -name install.report -exec cat {} \\;"
     - "find ./ext -name mkmf.log -exec cat {} \\;"
 
   matrix:
@@ -95,6 +95,10 @@ matrix:
         ruby:
           - "2.0.0"
     - gem: "rails-5.2"
+      exclude:
+        ruby:
+          - "2.0.0"
+    - gem: "rails-6.0"
       exclude:
         ruby:
           - "2.0.0"

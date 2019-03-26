@@ -2,6 +2,7 @@
 
 Appsignal.logger.info("Loading Rails (#{Rails.version}) integration")
 
+require "appsignal/utils/rails_helper"
 require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
@@ -17,7 +18,7 @@ module Appsignal
         Appsignal.config = Appsignal::Config.new(
           Rails.root,
           Rails.env,
-          :name => Rails.application.class.parent_name,
+          :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
           :log_path => Rails.root.join("log")
         )
 

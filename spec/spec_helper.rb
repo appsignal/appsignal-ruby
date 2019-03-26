@@ -83,6 +83,7 @@ RSpec.configure do |config|
   end
 
   config.before do
+    stop_minutely_probes
     ENV["RAILS_ENV"] ||= "test"
     ENV["RACK_ENV"] ||= "test"
     ENV["PADRINO_ENV"] ||= "test"
@@ -114,11 +115,23 @@ RSpec.configure do |config|
 
   config.after do
     Thread.current[:appsignal_transaction] = nil
+    stop_minutely_probes
   end
 
   config.after :context do
     FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
     Appsignal.config = nil
     Appsignal.logger = nil
+  end
+
+  def stop_minutely_probes
+    thread =
+      begin
+        Appsignal::Minutely.class_variable_get(:@@thread) # Fetch old thread
+      rescue NameError
+        nil
+      end
+    Appsignal::Minutely.stop
+    thread && thread.join # Wait for old thread to exit
   end
 end

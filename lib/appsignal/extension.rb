@@ -12,8 +12,8 @@ begin
   end
 rescue LoadError => err
   Appsignal.logger.error(
-    "Failed to load extension (#{err}), please check the install.log file in " \
-    "the ext directory of the gem and email us at support@appsignal.com"
+    "Failed to load extension (#{err}), please run `appsignal diagnose` " \
+      "and email us at support@appsignal.com"
   )
   Appsignal.extension_loaded = false
 end

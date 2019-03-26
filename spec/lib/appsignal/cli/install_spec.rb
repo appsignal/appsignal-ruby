@@ -243,7 +243,12 @@ describe Appsignal::CLI::Install do
 
   if rails_present?
     context "with rails" do
-      let(:installation_instructions) { ["Installing for Ruby on Rails"] }
+      let(:installation_instructions) do
+        [
+          "Installing for Ruby on Rails",
+          "Your app's name is: 'MyApp'"
+        ]
+      end
       let(:app_name) { "MyApp" }
       let(:config_dir) { File.join(tmp_dir, "config") }
       let(:environments_dir) { File.join(config_dir, "environments") }

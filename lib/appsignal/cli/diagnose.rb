@@ -82,6 +82,8 @@ module Appsignal
           print_empty_line
 
           library_information
+          data[:installation] = fetch_installation_report
+          print_installation_report
           print_empty_line
 
           host_information
@@ -180,7 +182,8 @@ module Appsignal
           if rails_app?
             data[:app][:rails] = true
             current_path = Rails.root
-            initial_config[:name] = Rails.application.class.parent_name
+            initial_config[:name] =
+              Appsignal::Utils::RailsHelper.detected_rails_app_name
             initial_config[:log_path] = current_path.join("log")
           end
 
@@ -325,10 +328,87 @@ module Appsignal
             save :language, "ruby"
             puts_and_save :package_version, "Gem version", Appsignal::VERSION
             puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
-            puts_and_save :agent_architecture, "Agent architecture",
-              Appsignal::System.installed_agent_architecture
             puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
           end
+        end
+
+        def fetch_installation_report
+          path = File.expand_path("../../../../ext/install.report", __FILE__)
+          raw_report = File.read(path)
+          Utils.parse_yaml(raw_report)
+        rescue => e
+          {
+            "parsing_error" => {
+              "error" => "#{e.class}: #{e}",
+              "backtrace" => e.backtrace
+            }.tap do |r|
+              r["raw"] = raw_report if raw_report
+            end
+          }
+        end
+
+        def print_installation_report
+          puts "\nExtension installation report"
+          install_report = data[:installation]
+          if install_report.key? "parsing_error"
+            print_installation_report_parsing_error(install_report)
+            return
+          end
+
+          print_installation_result_report(install_report)
+          print_installation_language_report(install_report)
+          print_installation_download_report(install_report)
+          print_installation_build_report(install_report)
+          print_installation_host_report(install_report)
+        end
+
+        def print_installation_report_parsing_error(report)
+          report = report["parsing_error"]
+          puts "  Error found while parsing the report."
+          puts "  Error: #{report["error"]}"
+          puts "  Raw report:\n#{report["raw"]}" if report["raw"]
+        end
+
+        def print_installation_result_report(report)
+          report = report.fetch("download", {})
+          puts "  Installation result"
+          puts "    Status: #{report["status"]}"
+          puts "    Message: #{report["message"]}" if report["message"]
+          puts "    Error: #{report["error"]}" if report["error"]
+        end
+
+        def print_installation_language_report(report)
+          report = report.fetch("language", {})
+          puts "  Language details"
+          puts "    Implementation: #{report["implementation"]}"
+          puts "    Ruby version: #{report["version"]}"
+        end
+
+        def print_installation_download_report(report)
+          report = report.fetch("download", {})
+          puts "  Download details"
+          puts "    Download URL: #{report["download_url"]}"
+          puts "    Checksum: #{report["checksum"]}"
+        end
+
+        def print_installation_build_report(report)
+          report = report.fetch("build", {})
+          puts "  Build details"
+          puts "    Install time: #{report["time"]}"
+          puts "    Architecture: #{report["architecture"]}"
+          puts "    Target: #{report["target"]}"
+          puts "    Musl override: #{report["musl_override"]}"
+          puts "    Library type: #{report["library_type"]}"
+          puts "    Source: #{report["source"]}" if report["source"] != "remote"
+          puts "    Dependencies: #{report["dependencies"]}"
+          puts "    Flags: #{report["flags"]}"
+        end
+
+        def print_installation_host_report(report)
+          report = report.fetch("host", {})
+          puts "  Host details"
+          puts "    Root user: #{report["root_user"]}"
+          puts "    Dependencies: #{report["dependencies"]}"
         end
 
         def host_information
@@ -349,7 +429,7 @@ module Appsignal
             save :heroku, Appsignal::System.heroku?
 
             save :root, Process.uid.zero?
-            puts_value "root user",
+            puts_value "Root user",
               Process.uid.zero? ? "true (not recommended)" : "false"
             puts_and_save :running_in_container, "Running in container",
               Appsignal::Extension.running_in_container?

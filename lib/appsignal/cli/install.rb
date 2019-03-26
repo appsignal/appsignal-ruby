@@ -77,8 +77,7 @@ module Appsignal
 
           require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
 
-          config[:name] = Rails.application.class.parent_name
-
+          config[:name] = Appsignal::Utils::RailsHelper.detected_rails_app_name
           name_overwritten = yes_or_no("  Your app's name is: '#{config[:name]}' \n  Do you want to change how this is displayed in AppSignal? (y/n): ")
           puts
           if name_overwritten
@@ -249,12 +248,19 @@ module Appsignal
         end
 
         def write_config_file(data)
-          template = ERB.new(
-            File.read(File.join(File.dirname(__FILE__), "../../../resources/appsignal.yml.erb")),
-            nil,
-            "-"
+          filename = File.join(
+            File.dirname(__FILE__),
+            "../../../resources/appsignal.yml.erb"
           )
-
+          file_contents = File.read(filename)
+          arguments = [file_contents]
+          if ruby_2_6_or_up?
+            arguments << { :trim_mode => "-" }
+          else
+            arguments << nil
+            arguments << "-"
+          end
+          template = ERB.new(*arguments)
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
           FileUtils.mkdir_p(File.join(Dir.pwd, "config"))

@@ -36,7 +36,7 @@ module Appsignal
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
       :enable_host_metrics            => true,
-      :enable_minutely_probes         => false,
+      :enable_minutely_probes         => true,
       :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers                    => [],
       :files_world_accessible         => true
@@ -214,7 +214,6 @@ module Appsignal
       ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]       = config_hash[:working_directory_path] if config_hash[:working_directory_path]
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
-      ENV["_APPSIGNAL_ENABLE_MINUTELY_PROBES"]       = config_hash[:enable_minutely_probes].to_s
       ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s

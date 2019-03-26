@@ -2,6 +2,9 @@ describe Appsignal::Hooks::PumaHook do
   context "with puma" do
     before(:context) do
       class Puma
+        def self.stats
+        end
+
         def self.cli_config
           @cli_config ||= CliConfig.new
         end
@@ -41,6 +44,11 @@ describe Appsignal::Hooks::PumaHook do
 
         cluster.stop_workers
       end
+
+      it "adds the Puma minutely probe" do
+        probe = Appsignal::Minutely.probes[:puma]
+        expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+      end
     end
 
     context "with nil hooks" do
@@ -75,6 +83,127 @@ describe Appsignal::Hooks::PumaHook do
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_falsy }
+    end
+  end
+end
+
+describe Appsignal::Hooks::PumaProbe do
+  before(:context) do
+    Appsignal.config = project_fixture_config
+  end
+  after(:context) do
+    Appsignal.config = nil
+  end
+
+  let(:probe) { Appsignal::Hooks::PumaProbe.new }
+
+  describe "hostname" do
+    it "returns the socket hostname" do
+      expect(probe.send(:hostname)).to eql(Socket.gethostname)
+    end
+
+    context "with overridden hostname" do
+      around do |sample|
+        Appsignal.config[:hostname] = "frontend1"
+        sample.run
+        Appsignal.config[:hostname] = nil
+      end
+      it "returns the configured host" do
+        expect(probe.send(:hostname)).to eql("frontend1")
+      end
+    end
+  end
+
+  describe "#call" do
+    let(:expected_default_tags) { { :hostname => Socket.gethostname } }
+
+    context "with multiple worker stats" do
+      before(:context) do
+        class Puma
+          def self.stats
+            {
+              "workers" => 2,
+              "booted_workers" => 2,
+              "old_workers" => 0,
+              "worker_status" => [
+                {
+                  "last_status" => {
+                    "backlog" => 0,
+                    "running" => 5,
+                    "pool_capacity" => 5,
+                    "max_threads" => 5
+                  }
+                },
+                {
+                  "last_status" => {
+                    "backlog" => 0,
+                    "running" => 5,
+                    "pool_capacity" => 5,
+                    "max_threads" => 5
+                  }
+                }
+              ]
+            }.to_json
+          end
+        end
+      end
+      after(:context) { Object.send(:remove_const, :Puma) }
+
+      it "calls `puma_gauge` with the (summed) worker metrics" do
+        expect_gauge(:workers, 2, :type => :count)
+        expect_gauge(:workers, 2, :type => :booted)
+        expect_gauge(:workers, 0, :type => :old)
+
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 10)
+        expect_gauge(:threads, 10, :type => :running)
+        expect_gauge(:threads, 10, :type => :max)
+      end
+    end
+
+    context "with single worker stats" do
+      before(:context) do
+        class Puma
+          def self.stats
+            {
+              "backlog" => 0,
+              "running" => 5,
+              "pool_capacity" => 5,
+              "max_threads" => 5
+            }.to_json
+          end
+        end
+      end
+      after(:context) { Object.send(:remove_const, :Puma) }
+
+      it "calls `puma_gauge` with the (summed) worker metrics" do
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 5)
+        expect_gauge(:threads, 5, :type => :running)
+        expect_gauge(:threads, 5, :type => :max)
+      end
+    end
+
+    context "without stats" do
+      before(:context) do
+        class Puma
+          def self.stats
+          end
+        end
+      end
+      after(:context) { Object.send(:remove_const, :Puma) }
+
+      it "does not track metrics" do
+        expect(probe).to_not receive(:puma_gauge)
+      end
+    end
+
+    after { probe.call }
+
+    def expect_gauge(key, value, tags = {})
+      expect(Appsignal).to receive(:set_gauge)
+        .with("puma_#{key}", value, expected_default_tags.merge(tags))
+        .and_call_original
     end
   end
 end

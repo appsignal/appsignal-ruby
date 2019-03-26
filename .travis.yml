@@ -24,7 +24,7 @@ before_script:
 - "./support/bundler_wrapper exec rake extension:install"
 script: "./support/bundler_wrapper exec rake test"
 after_failure:
-- find ./ext -name install.log -exec cat {} \;
+- find ./ext -name install.report -exec cat {} \;
 - find ./ext -name mkmf.log -exec cat {} \;
 matrix:
   fast_finish: true
@@ -121,6 +121,9 @@ matrix:
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
     gemfile: gemfiles/rails-5.2.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.6.0
+    gemfile: gemfiles/rails-6.0.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
     gemfile: gemfiles/resque.gemfile

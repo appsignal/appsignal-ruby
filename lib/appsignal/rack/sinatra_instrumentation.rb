@@ -32,7 +32,7 @@ module Appsignal
       attr_reader :raise_errors_on
 
       def initialize(app, options = {})
-        Appsignal.logger.debug "Initializing Appsignal::Rack::SinatraInstrumentation"
+        Appsignal.logger.debug "Initializing Appsignal::Rack::SinatraBaseInstrumentation"
         @app = app
         @options = options
         @raise_errors_on = raise_errors?(@app)

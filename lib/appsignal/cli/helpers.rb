@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
+require "appsignal/utils/rails_helper"
+
 module Appsignal
   class CLI
     module Helpers
       private
+
+      def ruby_2_6_or_up?
+        Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
+      end
 
       def colorize(text, color)
         return text if Gem.win_platform?

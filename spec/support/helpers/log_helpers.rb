@@ -1,4 +1,10 @@
 module LogHelpers
+  def capture_logs(&block)
+    log = std_stream
+    use_logger_with(log, &block)
+    log_contents(log)
+  end
+
   def use_logger_with(log)
     Appsignal.logger = test_logger(log)
     yield
