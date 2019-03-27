@@ -230,12 +230,38 @@ describe Appsignal::Hooks::PumaProbe do
           expect(log_contents(log)).to_not contains_log(:error, "Error in minutely probe 'puma'")
         end
       end
+
+      context "when it does not have a complete stats payload" do
+        let(:log) { StringIO.new }
+
+        it "tracks whatever metrics we do have" do
+          use_logger_with log do
+            expect(Puma).to receive(:stats).and_return({
+              "backlog" => 1,
+              "running" => 5
+            }.to_json)
+
+            expect_gauge(:connection_backlog, 1)
+            expect_no_gauge(:pool_capacity)
+            expect_gauge(:threads, 5, :type => :running)
+            expect_no_gauge(:threads, :type => :max)
+            probe.call
+          end
+
+          expect(log_contents(log)).to_not contains_log(:error, "Error in minutely probe 'puma'")
+        end
+      end
     end
 
     def expect_gauge(key, value, tags = {})
       expect(Appsignal).to receive(:set_gauge)
         .with("puma_#{key}", value, expected_default_tags.merge(tags))
         .and_call_original
+    end
+
+    def expect_no_gauge(key, tags = {})
+      expect(Appsignal).to_not receive(:set_gauge)
+        .with("puma_#{key}", anything, tags)
     end
   end
 end
