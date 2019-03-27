@@ -1,3 +1,7 @@
+# 2.9.1
+- Fix memory leak in custom metrics key names.
+  Commit 9064e2ccfd19ee05c333d0ecda4deafdd743629e
+
 # 2.9.0
 - Fix installations using git source. PR #455
 - Track installation results in installation report. PR #450
