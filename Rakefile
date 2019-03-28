@@ -3,6 +3,10 @@ require "rubygems/package_task"
 require "fileutils"
 
 VERSION_MANAGERS = {
+  :chruby => {
+    :env => "#!/bin/bash\nsource /usr/local/opt/chruby/share/chruby/chruby.sh",
+    :switch_command => ->(version) { "chruby #{version}" }
+  },
   :rbenv => {
     :env => "#!/bin/bash",
     :switch_command => ->(version) { "rbenv local #{version}" }
