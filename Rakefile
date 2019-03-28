@@ -2,41 +2,15 @@ require "bundler"
 require "rubygems/package_task"
 require "fileutils"
 
-GEMFILES = %w[
-  capistrano2
-  capistrano3
-  grape
-  no_dependencies
-  padrino
-  rails-3.2
-  rails-4.0
-  rails-4.1
-  rails-4.2
-  rails-5.0
-  resque
-  sequel
-  sequel-435
-  sinatra
-  grape
-  webmachine
-  que
-].freeze
-
-RUBY_VERSIONS = %w[
-  2.0.0-p648
-  2.1.8
-  2.2.4
-  2.3.0
-  2.4.0
-].freeze
-
-EXCLUSIONS = {
-  "rails-5.0" => %w[2.0.0 2.1.8]
-}.freeze
-
 VERSION_MANAGERS = {
-  :rbenv => ->(version) { "rbenv local #{version}" },
-  :rvm => ->(version) { "rvm use --default #{version.split("-").first}" }
+  :rbenv => {
+    :env => "#!/bin/bash",
+    :switch_command => ->(version) { "rbenv local #{version}" }
+  },
+  :rvm => {
+    :env => "#!/bin/bash --login",
+    :switch_command => ->(version) { "rvm use --default #{version}" }
+  }
 }.freeze
 
 namespace :build_matrix do
@@ -84,6 +58,55 @@ namespace :build_matrix do
         puts "The `.travis.yml` is modified. The changes were not committed."
         puts "Please run `rake build_matrix:travis:generate` and commit the changes."
         exit 1
+      end
+    end
+  end
+
+  namespace :local do
+    task :generate do
+      yaml = YAML.load_file("build_matrix.yml")
+      matrix = yaml["matrix"]
+      defaults = matrix["defaults"]
+
+      VERSION_MANAGERS.each do |version_manager, config|
+        out = []
+        out << config[:env]
+        out << "rm -f .ruby-version"
+        out << "echo 'Using #{version_manager}'"
+        matrix["ruby"].each do |ruby|
+          ruby_version = ruby["ruby"]
+          out << "echo 'Switching to #{ruby_version}'"
+          out << "#{config[:switch_command].call(ruby_version)} || { echo 'Switching Ruby failed'; exit 1; }"
+          out << "ruby -v"
+          out << "echo 'Compiling extension'"
+          out << "./support/bundler_wrapper exec rake extension:install"
+          out << "rm -f gemfiles/*.gemfile.lock"
+          gemset_for_ruby(ruby, matrix).each do |gem|
+            next if excluded_for_ruby?(gem, ruby)
+            gemfile = gem["gem"]
+            out << "echo 'Bundling #{gemfile} in #{ruby_version}'"
+            rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
+            rubygems_version = "env _RUBYGEMS_VERSION=#{rubygems_version}" if rubygems
+            bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
+            bundler_version = "env _BUNDLER_VERSION=#{bundler}" if bundler
+            gemfile_env = "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile"
+            out << "#{bundler_version} #{rubygems_version} ./support/install_deps"
+            out << "#{bundler_version} #{gemfile_env} ./support/bundler_wrapper install --quiet || { echo 'Bundling failed'; exit 1; }"
+            out << "echo 'Running #{gemfile} in #{ruby_version}'"
+            out << "#{bundler_version} #{gemfile_env} ./support/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
+          end
+          out << ""
+        end
+        out << "rm -f .ruby-version"
+        out << "echo 'Successfully ran specs for all environments'"
+
+        script = "bundle_and_spec_all_#{version_manager}"
+        FileUtils.rm_f(script)
+        File.open(script, "w") do |file|
+          file.write out.join("\n")
+        end
+        File.chmod(0o775, script)
+        puts "Generated #{script}"
       end
     end
   end
@@ -238,44 +261,6 @@ task :spec_all_gemfiles do
     unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
       raise "Not successful"
     end
-  end
-end
-
-task :generate_bundle_and_spec_all do
-  VERSION_MANAGERS.each do |version_manager, switch_command|
-    out = []
-    out << if version_manager == :rvm
-             "#!/bin/bash --login"
-           else
-             "#!/bin/sh"
-           end
-    out << "rm -f .ruby-version"
-    out << "echo 'Using #{version_manager}'"
-    RUBY_VERSIONS.each do |version|
-      short_version = version.split("-").first
-      out << "echo 'Switching to #{short_version}'"
-      out << "#{switch_command.call(version)} || { echo 'Switching Ruby failed'; exit 1; }"
-      out << "ruby -v"
-      out << "echo 'Compiling extension'"
-      out << "cd ext && rm -f appsignal-agent appsignal_extension.bundle appsignal.h libappsignal.a Makefile && ruby extconf.rb && make && cd .."
-      GEMFILES.each do |gemfile|
-        next if EXCLUSIONS[gemfile] && EXCLUSIONS[gemfile].include?(short_version)
-        out << "echo 'Bundling #{gemfile} in #{short_version}'"
-        out << "bundle --quiet --gemfile gemfiles/#{gemfile}.gemfile || { echo 'Bundling failed'; exit 1; }"
-        out << "echo 'Running #{gemfile} in #{short_version}'"
-        out << "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec || { echo 'Running specs failed'; exit 1; }"
-      end
-    end
-    out << "rm -f .ruby-version"
-    out << "echo 'Successfully ran specs for all environments'"
-
-    script = "bundle_and_spec_all_#{version_manager}"
-    FileUtils.rm_f(script)
-    File.open(script, "w") do |file|
-      file.write out.join("\n")
-    end
-    File.chmod(0o775, script)
-    puts "Generated #{script}"
   end
 end
 
