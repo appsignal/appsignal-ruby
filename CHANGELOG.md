@@ -1,3 +1,6 @@
+# 2.9.2
+- Fix Puma.stats calls. PR #496
+
 # 2.9.1
 - Fix memory leak in custom metrics key names.
   Commit 9064e2ccfd19ee05c333d0ecda4deafdd743629e
