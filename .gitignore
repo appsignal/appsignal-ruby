@@ -21,8 +21,7 @@ Gemfile.lock
 gemfiles/*.lock
 .DS_Store
 .ruby-version
-bundle_and_spec_all_rbenv
-bundle_and_spec_all_rvm
+bundle_and_spec_all_*
 ext/libappsignal.*
 ext/appsignal-agent
 ext/appsignal.h

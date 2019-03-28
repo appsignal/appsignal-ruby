@@ -230,9 +230,9 @@ BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/webmachine.gemfile bundle exec rspec
 ```
 
-If you have either [RVM][rvm] or [rbenv][rbenv] installed you can also use
-`rake generate_bundle_and_spec_all` to generate a script that runs specs for
-all Ruby versions and gem combinations we support.
+If you have either [RVM][rvm], [rbenv][rbenv] or [chruby][chruby] installed you
+can also use `rake build_matrix:local:generate` to generate a script that runs
+specs for all Ruby versions and gem combinations we support.
 
 We run the suite against all of the Gemfiles mentioned above and on
 a number of different Ruby versions.
@@ -286,3 +286,4 @@ the most out of using AppSignal.
 [semver]: http://semver.org/
 [rvm]: http://rvm.io/
 [rbenv]: https://github.com/rbenv/rbenv
+[chruby]: https://github.com/postmodern/chruby/
