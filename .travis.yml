@@ -1,7 +1,7 @@
 # DO NOT EDIT
-# This is a generated file by the `rake travis:generate` task.
+# This is a generated file by the `rake build_matrix:travis:generate` task.
 # See `build_matrix.yml` for the build matrix.
-# Generate this file with `rake travis:generate`.
+# Generate this file with `rake build_matrix:travis:generate`.
 ---
 sudo: false
 branches:
