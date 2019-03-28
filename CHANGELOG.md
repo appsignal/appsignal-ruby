@@ -1,5 +1,7 @@
-# 2.9.2
+# 2.9.2 Alpha 1
 - Fix Puma.stats calls. PR #496
+- Only send Puma metrics if available. PR #497
+- Track memory metrics of the current process. PR #499
 
 # 2.9.1
 - Fix memory leak in custom metrics key names.
