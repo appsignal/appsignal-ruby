@@ -90,9 +90,6 @@ matrix:
     gemfile: gemfiles/no_dependencies.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.5.3
-    gemfile: gemfiles/rails-4.2.gemfile
-    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=1.17.3
-  - rvm: 2.5.3
     gemfile: gemfiles/rails-5.2.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
@@ -143,9 +140,6 @@ matrix:
   - rvm: jruby-19mode
     gemfile: gemfiles/no_dependencies.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
-  - rvm: jruby-19mode
-    gemfile: gemfiles/rails-4.2.gemfile
-    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=1.17.3
   - rvm: jruby-19mode
     gemfile: gemfiles/rails-5.2.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest

@@ -47,8 +47,8 @@ matrix:
       - "no_dependencies"
     minimal:
       - "no_dependencies"
-      - "rails-4.2"
       - "rails-5.2"
+      - "rails-6.2"
 
   ruby:
     - ruby: "2.0.0"
