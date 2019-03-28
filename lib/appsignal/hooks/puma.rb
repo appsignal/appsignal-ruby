@@ -44,9 +44,10 @@ module Appsignal
       end
 
       def call
-        return unless ::Puma.stats
+        puma_stats = fetch_puma_stats
+        return unless puma_stats
 
-        stats = JSON.parse Puma.stats, :symbolize_names => true
+        stats = JSON.parse puma_stats, :symbolize_names => true
         counts = {
           :backlog => 0,
           :running => 0,
@@ -87,6 +88,11 @@ module Appsignal
 
       def gauge(field, count, tags = {})
         Appsignal.set_gauge("puma_#{field}", count, tags.merge(:hostname => hostname))
+      end
+
+      def fetch_puma_stats
+        ::Puma.stats
+      rescue NoMethodError # rubocop:disable Lint/HandleExceptions
       end
     end
   end

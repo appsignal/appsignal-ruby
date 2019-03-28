@@ -158,6 +158,8 @@ describe Appsignal::Hooks::PumaProbe do
         expect_gauge(:pool_capacity, 10)
         expect_gauge(:threads, 10, :type => :running)
         expect_gauge(:threads, 10, :type => :max)
+
+        probe.call
       end
     end
 
@@ -181,6 +183,7 @@ describe Appsignal::Hooks::PumaProbe do
         expect_gauge(:pool_capacity, 5)
         expect_gauge(:threads, 5, :type => :running)
         expect_gauge(:threads, 5, :type => :max)
+        probe.call
       end
     end
 
@@ -193,12 +196,41 @@ describe Appsignal::Hooks::PumaProbe do
       end
       after(:context) { Object.send(:remove_const, :Puma) }
 
-      it "does not track metrics" do
-        expect(probe).to_not receive(:puma_gauge)
+      context "when it returns nil" do
+        it "does not track metrics" do
+          expect(probe).to_not receive(:puma_gauge)
+          probe.call
+        end
+      end
+
+      # Puma.stats raises a NoMethodError on a nil object on the first call.
+      context "when it returns a NoMethodError on the first call" do
+        let(:log) { StringIO.new }
+
+        it "ignores the first call and tracks the second call" do
+          use_logger_with log do
+            expect(Puma).to receive(:stats)
+              .and_raise(NoMethodError.new("undefined method `stats' for nil:NilClass"))
+            probe.call
+
+            expect(Puma).to receive(:stats).and_return({
+              "backlog" => 1,
+              "running" => 5,
+              "pool_capacity" => 4,
+              "max_threads" => 6
+            }.to_json)
+
+            expect_gauge(:connection_backlog, 1)
+            expect_gauge(:pool_capacity, 4)
+            expect_gauge(:threads, 5, :type => :running)
+            expect_gauge(:threads, 6, :type => :max)
+            probe.call
+          end
+
+          expect(log_contents(log)).to_not contains_log(:error, "Error in minutely probe 'puma'")
+        end
       end
     end
-
-    after { probe.call }
 
     def expect_gauge(key, value, tags = {})
       expect(Appsignal).to receive(:set_gauge)
