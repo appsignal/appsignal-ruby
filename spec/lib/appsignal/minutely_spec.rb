@@ -169,18 +169,6 @@ describe Appsignal::Minutely do
     end
   end
 
-  describe ".register_garbage_collection_probe" do
-    it "adds the GC probe to the probes list" do
-      expect(Appsignal::Minutely.probes.count).to eql(0)
-
-      Appsignal::Minutely.register_garbage_collection_probe
-
-      expect(Appsignal::Minutely.probes.count).to eql(1)
-      expect(Appsignal::Minutely.probes[:garbage_collection])
-        .to be_instance_of(Appsignal::Minutely::GCProbe)
-    end
-  end
-
   describe Appsignal::Minutely::ProbeCollection do
     let(:collection) { described_class.new }
 
@@ -264,16 +252,6 @@ describe Appsignal::Minutely do
           list << [name, p]
         end
         expect(list).to eql([[:my_probe, probe]])
-      end
-    end
-  end
-
-  describe Appsignal::Minutely::GCProbe do
-    describe "#call" do
-      it "collects GC metrics" do
-        expect(Appsignal).to receive(:set_process_gauge).at_least(8).times
-
-        Appsignal::Minutely::GCProbe.new.call
       end
     end
   end

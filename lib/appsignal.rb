@@ -135,10 +135,7 @@ module Appsignal
             Appsignal::Extension.install_allocation_event_hook
           end
 
-          if config[:enable_gc_instrumentation]
-            GC::Profiler.enable
-            Appsignal::Minutely.register_garbage_collection_probe
-          end
+          GC::Profiler.enable if config[:enable_gc_instrumentation]
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]
         else

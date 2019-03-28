@@ -164,11 +164,6 @@ module Appsignal
         60 - Time.now.sec
       end
 
-      # @api private
-      def register_garbage_collection_probe
-        probes.register :garbage_collection, GCProbe.new
-      end
-
       private
 
       def initialize_probes
@@ -180,14 +175,6 @@ module Appsignal
 
       def probe_instances
         @@probe_instances ||= {}
-      end
-    end
-
-    class GCProbe
-      def call
-        GC.stat.each do |key, value|
-          Appsignal.set_process_gauge("gc.#{key}", value)
-        end
       end
     end
   end

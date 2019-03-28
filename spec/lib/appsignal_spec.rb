@@ -94,12 +94,6 @@ describe Appsignal do
             Appsignal.start
           end
         end
-
-        it "should add the gc probe to minutely" do
-          expect(Appsignal::Minutely).to receive(:register_garbage_collection_probe)
-            .and_call_original
-          Appsignal.start
-        end
       end
 
       context "when allocation tracking and gc instrumentation have been disabled" do
