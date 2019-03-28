@@ -8,3 +8,8 @@ gemspec :path => '../'
 if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.1.0")
   gem 'nokogiri', '~> 1.6.0'
 end
+if Gem::Version.new(RUBY_VERSION) <= Gem::Version.new("2.1.0")
+  gem 'public_suffix', "~> 2.0.0"
+else
+  gem 'public_suffix'
+end
