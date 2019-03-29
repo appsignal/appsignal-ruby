@@ -33,7 +33,7 @@ matrix:
     gemfile: gemfiles/no_dependencies.gemfile
     before_script: ''
     script:
-    - "./support/bundler_wrapper exec rake travis:validate"
+    - "./support/bundler_wrapper exec rake build_matrix:travis:validate"
     - "./support/bundler_wrapper exec rubocop"
   - rvm: 2.0.0
     gemfile: gemfiles/no_dependencies.gemfile

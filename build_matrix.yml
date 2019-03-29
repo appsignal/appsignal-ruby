@@ -34,7 +34,7 @@ travis: # Default `.travis.yml` contents
         gemfile: "gemfiles/no_dependencies.gemfile"
         before_script: "" # Unset default: No need to install the extension
         script:
-          - "./support/bundler_wrapper exec rake travis:validate"
+          - "./support/bundler_wrapper exec rake build_matrix:travis:validate"
           - "./support/bundler_wrapper exec rubocop"
 
 matrix:
