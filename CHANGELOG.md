@@ -1,3 +1,6 @@
+# 2.9.3
+- Remove GCProbe. PR #501
+
 # 2.9.2
 - Fix Puma.stats calls. PR #496
 - Only send Puma metrics if available. PR #497
