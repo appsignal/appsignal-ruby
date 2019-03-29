@@ -22,11 +22,13 @@ module Appsignal
   end
 end
 
-Appsignal::EventFormatter.register(
-  "render_partial.action_view",
-  Appsignal::EventFormatter::ActionView::RenderFormatter
-)
-Appsignal::EventFormatter.register(
-  "render_template.action_view",
-  Appsignal::EventFormatter::ActionView::RenderFormatter
-)
+if defined?(Rails)
+  Appsignal::EventFormatter.register(
+    "render_partial.action_view",
+    Appsignal::EventFormatter::ActionView::RenderFormatter
+  )
+  Appsignal::EventFormatter.register(
+    "render_template.action_view",
+    Appsignal::EventFormatter::ActionView::RenderFormatter
+  )
+end
