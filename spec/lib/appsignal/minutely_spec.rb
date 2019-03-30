@@ -27,12 +27,9 @@ describe Appsignal::Minutely do
     end
 
     let(:log_stream) { StringIO.new }
-    let(:log) do
-      log_stream.rewind
-      log_stream.read
-    end
+    let(:log) { log_contents(log_stream) }
     before do
-      Appsignal.logger = Logger.new(log_stream)
+      Appsignal.logger = test_logger(log_stream)
       # Speed up test time
       allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
     end
@@ -44,8 +41,8 @@ describe Appsignal::Minutely do
         Appsignal::Minutely.start
 
         wait_for("enough probe calls") { probe.calls >= 2 }
-        expect(log).to include("Gathering minutely metrics with 1 probe")
-        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
     end
 
@@ -58,8 +55,8 @@ describe Appsignal::Minutely do
         Appsignal::Minutely.start
 
         wait_for("enough probe calls") { probe_instance.calls >= 2 }
-        expect(log).to include("Gathering minutely metrics with 1 probe")
-        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
     end
 
@@ -71,8 +68,8 @@ describe Appsignal::Minutely do
         Appsignal::Minutely.start
 
         wait_for("enough probe calls") { calls >= 2 }
-        expect(log).to include("Gathering minutely metrics with 1 probe")
-        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
     end
 
@@ -87,10 +84,9 @@ describe Appsignal::Minutely do
         wait_for("enough probe calls") { probe.calls >= 2 }
         wait_for("enough broken_probe calls") { broken_probe.calls >= 2 }
 
-        expect(log).to include("Gathering minutely metrics with 2 probes")
-        expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
-        expect(log).to include("Gathering minutely metrics with 'broken_probe' probe")
-        expect(log).to include("Error in minutely probe 'broken_probe': oh no!")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 2 probes")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'broken_probe' probe")
       end
     end
 
@@ -103,8 +99,8 @@ describe Appsignal::Minutely do
       end.to change { alive_thread_counter.call }.by(1)
 
       wait_for("enough probe calls") { probe.calls >= 2 }
-      expect(log).to include("Gathering minutely metrics with 1 probe")
-      expect(log).to include("Gathering minutely metrics with 'my_probe' probe")
+      expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+      expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       expect do
         # Fetch old thread
         thread = Appsignal::Minutely.class_variable_get(:@@thread)
