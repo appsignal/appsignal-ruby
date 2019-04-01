@@ -684,9 +684,9 @@ describe Appsignal::Hooks::SidekiqProbe do
       expect_gauge("job_count", 14, :status => :scheduled).twice
       expect_gauge("job_count", 15, :status => :enqueued).twice
       expect_gauge("queue_length", 10, :queue => "default").twice
-      expect_gauge("queue_latency", 12, :queue => "default").twice
+      expect_gauge("queue_latency", 12_000, :queue => "default").twice
       expect_gauge("queue_length", 1, :queue => "critical").twice
-      expect_gauge("queue_latency", 2, :queue => "critical").twice
+      expect_gauge("queue_latency", 2_000, :queue => "critical").twice
       # Call probe twice so we can calculate the delta for some gauge values
       probe.call
       probe.call
