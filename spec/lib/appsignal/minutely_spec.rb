@@ -87,6 +87,9 @@ describe Appsignal::Minutely do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 2 probes")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'broken_probe' probe")
+        expect(log).to contains_log(:error, "Error in minutely probe 'broken_probe': oh no!")
+        gem_path = File.expand_path("../../../../", __FILE__) # Start of backtrace
+        expect(log).to contains_log(:debug, gem_path)
       end
     end
 

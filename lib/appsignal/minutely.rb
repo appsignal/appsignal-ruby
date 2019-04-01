@@ -145,7 +145,8 @@ module Appsignal
                 logger.debug("Gathering minutely metrics with '#{name}' probe")
                 probe.call
               rescue => ex
-                logger.error("Error in minutely probe '#{name}': #{ex}")
+                logger.error "Error in minutely probe '#{name}': #{ex}\n"
+                logger.debug ex.backtrace.join("\n")
               end
             end
             sleep(Appsignal::Minutely.wait_time)
