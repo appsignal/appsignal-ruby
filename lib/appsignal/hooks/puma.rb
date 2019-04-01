@@ -27,6 +27,8 @@ module Appsignal
           end
         end
 
+        return unless defined?(::Puma::Cluster)
+        # For clustered mode with multiple workers
         ::Puma::Cluster.class_eval do
           alias stop_workers_without_appsignal stop_workers
 

@@ -8,11 +8,6 @@ describe Appsignal::Hooks::PumaHook do
         def self.cli_config
           @cli_config ||= CliConfig.new
         end
-
-        class Cluster
-          def stop_workers
-          end
-        end
       end
 
       class CliConfig
@@ -31,23 +26,46 @@ describe Appsignal::Hooks::PumaHook do
       it { is_expected.to be_truthy }
     end
 
-    context "when installed" do
-      before do
-        Appsignal::Hooks::PumaHook.new.install
+    describe "installation" do
+      context "when not clustered mode" do
+        it "does not add AppSignal stop behavior Puma::Cluster" do
+          expect(defined?(::Puma::Cluster)).to be_falsy
+          # Does not error on call
+          Appsignal::Hooks::PumaHook.new.install
+        end
+
+        it "adds the Puma minutely probe" do
+          probe = Appsignal::Minutely.probes[:puma]
+          expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+        end
       end
 
-      it "adds behavior to Unicorn::Worker#close" do
-        cluster = Puma::Cluster.new
+      context "when in clustered mode" do
+        before do
+          class Puma
+            class Cluster
+              def stop_workers
+                @called = true
+              end
+            end
+          end
+          Appsignal::Hooks::PumaHook.new.install
+        end
+        after { Puma.send(:remove_const, :Cluster) }
 
-        expect(Appsignal).to receive(:stop)
-        expect(cluster).to receive(:stop_workers_without_appsignal)
+        it "adds behavior to Puma::Cluster.stop_workers" do
+          cluster = Puma::Cluster.new
 
-        cluster.stop_workers
-      end
+          expect(cluster.instance_variable_defined?(:@called)).to be_falsy
+          expect(Appsignal).to receive(:stop).and_call_original
+          cluster.stop_workers
+          expect(cluster.instance_variable_get(:@called)).to be(true)
+        end
 
-      it "adds the Puma minutely probe" do
-        probe = Appsignal::Minutely.probes[:puma]
-        expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+        it "adds the Puma minutely probe" do
+          probe = Appsignal::Minutely.probes[:puma]
+          expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+        end
       end
     end
 
