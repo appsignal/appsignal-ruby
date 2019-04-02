@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9.4
+- Log error backtraces in minutely probes as debug messages. PR #495
+- Don't add cluster behavior in Puma single mode. PR #504
+- Only register ActionView event formatter in Rails. PR #503
+- Convert Sidekiq latency from seconds to ms. PR #505
+
 ## 2.9.3
 - Remove GCProbe. PR #501
 
