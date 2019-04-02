@@ -49,7 +49,8 @@ module Appsignal
 
         ::Sidekiq::Queue.all.each do |queue|
           gauge "queue_length", queue.size, :queue => queue.name
-          gauge "queue_latency", queue.latency, :queue => queue.name
+          # Convert latency from seconds to milliseconds
+          gauge "queue_latency", queue.latency * 1_000.0, :queue => queue.name
         end
       end
 
