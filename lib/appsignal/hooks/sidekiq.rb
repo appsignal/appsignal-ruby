@@ -89,11 +89,15 @@ module Appsignal
         return @hostname if defined?(@hostname)
         if config.key?(:hostname)
           @hostname = config[:hostname]
+          Appsignal.logger.debug "Sidekiq probe: Using hostname config " \
+            "option #{@hostname.inspect} as hostname"
           return @hostname
         end
 
         host = nil
         ::Sidekiq.redis { |c| host = c.connection[:host] }
+        Appsignal.logger.debug "Sidekiq probe: Using Redis server hostname " \
+          "#{host.inspect} as hostname"
         @hostname = host
       end
     end
