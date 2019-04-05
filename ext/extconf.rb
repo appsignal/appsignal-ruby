@@ -25,7 +25,7 @@ def install
   is_linux_system = [
     Appsignal::System::LINUX_TARGET,
     Appsignal::System::MUSL_TARGET
-  ].include?(PLATFORM)
+  ].include?(AGENT_PLATFORM)
 
   require "mkmf"
   link_libraries if is_linux_system
