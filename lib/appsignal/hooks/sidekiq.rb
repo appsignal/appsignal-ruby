@@ -28,6 +28,8 @@ module Appsignal
       def initialize(config = {})
         @config = config
         @cache = {}
+        config_string = " with config: #{config}" unless config.empty?
+        Appsignal.logger.debug("Initializing Sidekiq probe#{config_string}")
         require "sidekiq/api"
       end
 

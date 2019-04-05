@@ -671,6 +671,11 @@ describe Appsignal::Hooks::SidekiqProbe do
       expect(defined?(Sidekiq::API)).to be_truthy
     end
 
+    it "logs on initialize" do
+      log = capture_logs { probe }
+      expect(log).to contains_log(:debug, "Initializing Sidekiq probe\n")
+    end
+
     it "collects custom metrics" do
       expect_gauge("worker_count", 24).twice
       expect_gauge("process_count", 25).twice
@@ -698,6 +703,11 @@ describe Appsignal::Hooks::SidekiqProbe do
 
       it "uses the redis hostname for the hostname tag" do
         allow(Appsignal).to receive(:set_gauge).and_call_original
+        log = capture_logs { probe }
+        expect(log).to contains_log(
+          :debug,
+          %(Initializing Sidekiq probe with config: {:hostname=>"#{redis_hostname}"})
+        )
         probe.call
         expect(Appsignal).to have_received(:set_gauge)
           .with(anything, anything, :hostname => redis_hostname).at_least(:once)
