@@ -10,8 +10,8 @@ require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
 EXT_PATH     = File.expand_path("..", __FILE__).freeze
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
-PLATFORM     = Appsignal::System.agent_platform
-ARCH         = "#{RbConfig::CONFIG["host_cpu"]}-#{PLATFORM}".freeze
+AGENT_PLATFORM = Appsignal::System.agent_platform
+ARCH = "#{RbConfig::CONFIG["host_cpu"]}-#{AGENT_PLATFORM}".freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -37,7 +37,7 @@ def report
           "time" => Time.now.utc,
           "package_path" => File.dirname(__dir__),
           "architecture" => rbconfig["host_cpu"],
-          "target" => PLATFORM,
+          "target" => AGENT_PLATFORM,
           "musl_override" => Appsignal::System.force_musl_build?,
           "dependencies" => {},
           "flags" => {}
