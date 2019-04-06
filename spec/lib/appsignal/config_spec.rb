@@ -202,14 +202,16 @@ describe Appsignal::Config do
   context "with a config file" do
     let(:config) { project_fixture_config("production") }
 
-    it "is not valid or active" do
-      expect(config.valid?).to be_truthy
-      expect(config.active?).to be_truthy
-    end
+    context "with valid config" do
+      it "is valid and active" do
+        expect(config.valid?).to be_truthy
+        expect(config.active?).to be_truthy
+      end
 
-    it "does not log an error" do
-      expect_any_instance_of(Logger).to_not receive(:error)
-      config
+      it "does not log an error" do
+        log = capture_logs { config }
+        expect(log).to_not contains_log(:error)
+      end
     end
 
     it "sets the file_config" do
