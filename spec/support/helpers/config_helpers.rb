@@ -1,7 +1,7 @@
 module ConfigHelpers
   def project_fixture_path
     File.expand_path(
-      File.join(File.dirname(__FILE__), "../project_fixture")
+      File.join(File.dirname(__FILE__), "../fixtures/projects/valid")
     )
   end
 

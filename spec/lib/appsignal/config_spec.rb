@@ -479,7 +479,7 @@ describe Appsignal::Config do
 
     it "writes the current config to environment variables" do
       expect(ENV["_APPSIGNAL_ACTIVE"]).to                       eq "true"
-      expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/project_fixture")
+      expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/fixtures/projects/valid")
       expect(ENV["_APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
       expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
       expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
