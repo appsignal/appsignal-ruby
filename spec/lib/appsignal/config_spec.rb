@@ -214,6 +214,30 @@ describe Appsignal::Config do
       end
     end
 
+    context "with the config file causing an error" do
+      let(:config_path) do
+        File.expand_path(
+          File.join(File.dirname(__FILE__), "../../support/fixtures/projects/broken")
+        )
+      end
+      let(:config) { Appsignal::Config.new(config_path, "foo") }
+
+      it "logs & prints an error, skipping the file source" do
+        stdout = std_stream
+        stderr = std_stream
+        log = capture_logs { capture_std_streams(stdout, stderr) { config } }
+        message = "An error occured while loading the AppSignal config file. " \
+          "Skipping file config.\n" \
+          "File: #{File.join(config_path, "config", "appsignal.yml").inspect}\n" \
+          "NotExistingConstant: uninitialized constant NotExistingConstant\n"
+        expect(log).to contains_log :error, message
+        expect(log).to include("/appsignal/config.rb:") # Backtrace
+        expect(stdout.read).to_not include("appsignal:")
+        expect(stderr.read).to include "appsignal: #{message}"
+        expect(config.file_config).to eql({})
+      end
+    end
+
     it "sets the file_config" do
       # config found in spec/support/project_fixture/config/appsignal.yml
       expect(config.file_config).to match(

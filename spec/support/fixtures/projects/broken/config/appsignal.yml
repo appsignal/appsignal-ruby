@@ -1,0 +1,1 @@
+<%= NotExistingConstant.not_existing_method %>
