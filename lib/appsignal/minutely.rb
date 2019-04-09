@@ -137,6 +137,7 @@ module Appsignal
         stop
         initialize_probes
         @@thread = Thread.new do
+          sleep initial_wait_time
           loop do
             logger = Appsignal.logger
             logger.debug("Gathering minutely metrics with #{probes.count} probes")
@@ -149,7 +150,7 @@ module Appsignal
                 logger.debug ex.backtrace.join("\n")
               end
             end
-            sleep(Appsignal::Minutely.wait_time)
+            sleep wait_time
           end
         end
       end
@@ -166,6 +167,12 @@ module Appsignal
       end
 
       private
+
+      def initial_wait_time
+        remaining_seconds = 60 - Time.now.sec
+        return remaining_seconds if remaining_seconds > 30
+        remaining_seconds + 60
+      end
 
       def initialize_probes
         probes.each do |name, probe|
