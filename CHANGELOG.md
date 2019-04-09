@@ -33,6 +33,14 @@
 - Move instrumentation & metrics helpers to modules. PR #487
 - Add Puma minutely probe. PR #488
 - Log invalid EventFormatter registrations as errors. PR #491
+- Support container CPU host metrics.
+  Commit f2fca1ec5a850cd84fbc8cefe63af8f039ebb155
+- Support StatsD server in agent.
+  Commit f2fca1ec5a850cd84fbc8cefe63af8f039ebb155
+- Fix samples being reported for multiple namespaces.
+  Commit f2fca1ec5a850cd84fbc8cefe63af8f039ebb155
+- Report memory and swap usage in percent using the memory_usage and
+  swap_usage metrics. Commit f2fca1ec5a850cd84fbc8cefe63af8f039ebb155
 
 ## 2.8.4
 - Log memory usage of agent if high.
