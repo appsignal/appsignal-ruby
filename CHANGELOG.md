@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.5
+- Delay the first minutely probe for a bit, since it might take some
+  time for dependencies to initialize. PR #511
+
 ## 2.9.4
 - Log error backtraces in minutely probes as debug messages. PR #495
 - Don't add cluster behavior in Puma single mode. PR #504
