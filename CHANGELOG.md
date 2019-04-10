@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2.9.5
+- Improve logging in minutely probes. PR #508
 - Delay the first minutely probe for a bit, since it might take some
   time for dependencies to initialize. PR #511
 
