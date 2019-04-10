@@ -31,7 +31,14 @@ describe Appsignal::Minutely do
     before do
       Appsignal.logger = test_logger(log_stream)
       # Speed up test time
-      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
+      expect(Appsignal::Minutely).to receive(:initial_wait_time)
+        .ordered
+        .once
+        .and_return(0.001)
+      expect(Appsignal::Minutely).to receive(:wait_time)
+        .ordered
+        .at_least(:once)
+        .and_return(0.001)
     end
 
     context "with an instance of a class" do
@@ -94,6 +101,9 @@ describe Appsignal::Minutely do
     end
 
     it "ensures only one minutely probes thread is active at a time" do
+      # Starting twice in this spec, so expecting it more than once
+      expect(Appsignal::Minutely).to receive(:initial_wait_time).at_least(:once).and_return(0.001)
+
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = Probe.new
       Appsignal::Minutely.probes.register :my_probe, probe
@@ -141,6 +151,10 @@ describe Appsignal::Minutely do
   end
 
   describe ".stop" do
+    before do
+      allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
+    end
+
     it "stops the minutely thread" do
       Appsignal::Minutely.start
       thread = Appsignal::Minutely.class_variable_get(:@@thread)
@@ -163,8 +177,30 @@ describe Appsignal::Minutely do
 
   describe ".wait_time" do
     it "gets the time to the next minute" do
-      allow_any_instance_of(Time).to receive(:sec).and_return(20)
-      expect(Appsignal::Minutely.wait_time).to eq 40
+      time = Time.new(2019, 4, 9, 12, 0, 20)
+      Timecop.freeze time do
+        expect(Appsignal::Minutely.wait_time).to eq 40
+      end
+    end
+  end
+
+  describe ".initial_wait_time" do
+    context "when started in the last 30 seconds of a minute" do
+      it "waits for the number of seconds + 60" do
+        time = Time.new(2019, 4, 9, 12, 0, 31)
+        Timecop.freeze time do
+          expect(Appsignal::Minutely.send(:initial_wait_time)).to eql(29 + 60)
+        end
+      end
+    end
+
+    context "when started in the first 30 seconds of a minute" do
+      it "waits the remaining seconds in the minute" do
+        time = Time.new(2019, 4, 9, 12, 0, 29)
+        Timecop.freeze time do
+          expect(Appsignal::Minutely.send(:initial_wait_time)).to eql(31)
+        end
+      end
     end
   end
 
