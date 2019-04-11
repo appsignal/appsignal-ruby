@@ -31,14 +31,8 @@ describe Appsignal::Minutely do
     before do
       Appsignal.logger = test_logger(log_stream)
       # Speed up test time
-      expect(Appsignal::Minutely).to receive(:initial_wait_time)
-        .ordered
-        .once
-        .and_return(0.001)
-      expect(Appsignal::Minutely).to receive(:wait_time)
-        .ordered
-        .at_least(:once)
-        .and_return(0.001)
+      allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
+      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
     end
 
     context "with an instance of a class" do
@@ -101,9 +95,6 @@ describe Appsignal::Minutely do
     end
 
     it "ensures only one minutely probes thread is active at a time" do
-      # Starting twice in this spec, so expecting it more than once
-      expect(Appsignal::Minutely).to receive(:initial_wait_time).at_least(:once).and_return(0.001)
-
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = Probe.new
       Appsignal::Minutely.probes.register :my_probe, probe
@@ -112,8 +103,13 @@ describe Appsignal::Minutely do
       end.to change { alive_thread_counter.call }.by(1)
 
       wait_for("enough probe calls") { probe.calls >= 2 }
+      expect(Appsignal::Minutely).to have_received(:initial_wait_time).once
+      expect(Appsignal::Minutely).to have_received(:wait_time).at_least(:once)
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
+
+      # Starting twice in this spec, so expecting it more than once
+      expect(Appsignal::Minutely).to have_received(:initial_wait_time).once
       expect do
         # Fetch old thread
         thread = Appsignal::Minutely.class_variable_get(:@@thread)
