@@ -30,6 +30,20 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
       expect(return_value).to eq "value"
     end
 
+    it "instruments an ActiveSupport::Notifications.instrument event with no registered formatter" do
+      expect(Appsignal::Transaction.current).to receive(:start_event)
+        .at_least(:once)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
+        .at_least(:once)
+        .with("no-registered.formatter", nil, nil, nil)
+
+      return_value = as.instrument("no-registered.formatter", :key => "something") do
+        "value"
+      end
+
+      expect(return_value).to eq "value"
+    end
+
     it "should convert non-string names to strings" do
       expect(Appsignal::Transaction.current).to receive(:start_event)
         .at_least(:once)
