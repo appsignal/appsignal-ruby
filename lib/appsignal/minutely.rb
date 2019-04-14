@@ -129,14 +129,14 @@ module Appsignal
       # @see ProbeCollection
       # @return [ProbeCollection] Returns list of probes.
       def probes
-        @@probes ||= ProbeCollection.new
+        @probes ||= ProbeCollection.new
       end
 
       # @api private
       def start
         stop
         initialize_probes
-        @@thread = Thread.new do
+        @thread = Thread.new do
           sleep initial_wait_time
           loop do
             logger = Appsignal.logger
@@ -157,7 +157,7 @@ module Appsignal
 
       # @api private
       def stop
-        defined?(@@thread) && @@thread.kill
+        defined?(@thread) && @thread.kill
         probe_instances.clear
       end
 
@@ -182,7 +182,7 @@ module Appsignal
       end
 
       def probe_instances
-        @@probe_instances ||= {}
+        @probe_instances ||= {}
       end
     end
   end
