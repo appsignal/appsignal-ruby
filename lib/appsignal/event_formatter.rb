@@ -17,15 +17,15 @@ module Appsignal
       include Appsignal::Utils::DeprecationMessage
 
       def formatters
-        @@formatters ||= {}
+        @formatters ||= {}
       end
 
       def deprecated_formatter_classes
-        @@deprecated_formatter_classes ||= {}
+        @deprecated_formatter_classes ||= {}
       end
 
       def formatter_classes
-        @@formatter_classes ||= {}
+        @formatter_classes ||= {}
       end
 
       def register(name, formatter = nil)
@@ -94,7 +94,7 @@ module Appsignal
           "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html",
           logger
 
-        deprecated_formatter_classes[name] = self
+        EventFormatter.deprecated_formatter_classes[name] = self
       end
 
       def logger
