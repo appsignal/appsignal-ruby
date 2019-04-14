@@ -9,17 +9,18 @@ travis: # Default `.travis.yml` contents
   language: ruby
   cache:
     directories:
-      - vendor/bundle
+      - "$TRAVIS_BUILD_DIR/vendor/cache"
 
   env:
     global:
+      - "BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache"
       - "RUNNING_IN_CI=true"
       - "RAILS_ENV=test"
       - "JRUBY_OPTS=''" # Workaround https://github.com/travis-ci/travis-ci/issues/6471
 
   before_install:
     - "./support/install_deps"
-  install: "./support/bundler_wrapper install --jobs=3 --retry=3"
+  install: "./support/bundler_wrapper install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-$TRAVIS_BUILD_DIR/vendor/cache}"
   before_script:
     - "./support/bundler_wrapper exec rake extension:install"
   script: "./support/bundler_wrapper exec rake test"
