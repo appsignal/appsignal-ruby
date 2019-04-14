@@ -267,6 +267,8 @@ we send a package to so far on our [Stroopwafles page][waffles-page].
 AppSignal. They will help you get set up, tweak your code and make sure you get
 the most out of using AppSignal.
 
+Also see our [SUPPORT.md file](SUPPORT.md).
+
 [appsignal]: https://appsignal.com
 [appsignal-sign-up]: https://appsignal.com/users/sign_up
 [contact]: mailto:support@appsignal.com
