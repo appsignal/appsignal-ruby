@@ -10,7 +10,7 @@ concerns your private app data. During the support process we'll need the
 AppSignal logs and other resources that contain your app's private data,
 something for which the public GitHub issue tracker is not suited.
 
-Please contact us on our website (appsignal.com)[https://appsignal.com/] or via
+Please contact us on our website [appsignal.com](https://appsignal.com/) or via
 email at [support@appsignal.com][contact].
 
 [contact]: mailto:support@appsignal.com
