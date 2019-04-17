@@ -89,12 +89,6 @@ Style/ClassAndModuleChildren:
   Exclude:
     - 'lib/appsignal/integrations/padrino.rb'
 
-# Offense count: 6
-Style/ClassVars:
-  Exclude:
-    - 'lib/appsignal/event_formatter.rb'
-    - 'lib/appsignal/minutely.rb'
-
 # Offense count: 1
 Style/DoubleNegation:
   Exclude:

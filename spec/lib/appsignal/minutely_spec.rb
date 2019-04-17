@@ -112,7 +112,7 @@ describe Appsignal::Minutely do
       expect(Appsignal::Minutely).to have_received(:initial_wait_time).once
       expect do
         # Fetch old thread
-        thread = Appsignal::Minutely.class_variable_get(:@@thread)
+        thread = Appsignal::Minutely.instance_variable_get(:@thread)
         Appsignal::Minutely.start
         thread && thread.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
@@ -153,7 +153,7 @@ describe Appsignal::Minutely do
 
     it "stops the minutely thread" do
       Appsignal::Minutely.start
-      thread = Appsignal::Minutely.class_variable_get(:@@thread)
+      thread = Appsignal::Minutely.instance_variable_get(:@thread)
       expect(%w[sleep run]).to include(thread.status)
       Appsignal::Minutely.stop
       thread.join
@@ -163,7 +163,7 @@ describe Appsignal::Minutely do
     it "clears the probe instances array" do
       Appsignal::Minutely.probes.register :my_probe, -> {}
       Appsignal::Minutely.start
-      thread = Appsignal::Minutely.class_variable_get(:@@thread)
+      thread = Appsignal::Minutely.instance_variable_get(:@thread)
       expect(Appsignal::Minutely.send(:probe_instances)).to_not be_empty
       Appsignal::Minutely.stop
       thread.join
