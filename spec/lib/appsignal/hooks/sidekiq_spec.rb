@@ -665,6 +665,30 @@ describe Appsignal::Hooks::SidekiqProbe do
     end
     after { Object.send(:remove_const, "Sidekiq") }
 
+    describe ".dependencies_present?" do
+      before do
+        class Redis; end
+        Redis.const_set(:VERSION, version)
+      end
+      after { Object.send(:remove_const, "Redis") }
+
+      context "when Redis version is < 3.3.5" do
+        let(:version) { "3.3.4" }
+
+        it "does not start probe" do
+          expect(described_class.dependencies_present?).to be_falsy
+        end
+      end
+
+      context "when Redis version is >= 3.3.5" do
+        let(:version) { "3.3.5" }
+
+        it "does not start probe" do
+          expect(described_class.dependencies_present?).to be_truthy
+        end
+      end
+    end
+
     it "loads Sidekiq::API" do
       expect(defined?(Sidekiq::API)).to be_falsy
       probe

@@ -19,6 +19,18 @@ describe Appsignal::Minutely do
       end
     end
 
+    class ProbeWithoutDependency < Probe
+      def self.dependencies_present?
+        true
+      end
+    end
+
+    class ProbeWithMissingDependency < Probe
+      def self.dependencies_present?
+        false
+      end
+    end
+
     class BrokenProbe < Probe
       def call
         super
@@ -45,6 +57,24 @@ describe Appsignal::Minutely do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
+
+      context "when dependency requirement is not met" do
+        it "does not initialize the probe" do
+          # Working probe which we can use to wait for X ticks
+          working_probe = ProbeWithoutDependency.new
+          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+
+          probe = ProbeWithMissingDependency.new
+          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
+          Appsignal::Minutely.start
+
+          wait_for("enough probe calls") { working_probe.calls >= 2 }
+          # Only counts initialized probes
+          expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+          expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
+            "ProbeWithMissingDependency.dependency_present? returned falsy"
+        end
+      end
     end
 
     context "with probe class" do
@@ -58,6 +88,26 @@ describe Appsignal::Minutely do
         wait_for("enough probe calls") { probe_instance.calls >= 2 }
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
+      end
+
+      context "when dependency requirement is not met" do
+        it "does not initialize the probe" do
+          # Working probe which we can use to wait for X ticks
+          working_probe = ProbeWithoutDependency
+          working_probe_instance = working_probe.new
+          expect(working_probe).to receive(:new).and_return(working_probe_instance)
+          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+
+          probe = ProbeWithMissingDependency
+          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
+          Appsignal::Minutely.start
+
+          wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
+          # Only counts initialized probes
+          expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+          expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
+            "ProbeWithMissingDependency.dependency_present? returned falsy"
+        end
       end
     end
 
