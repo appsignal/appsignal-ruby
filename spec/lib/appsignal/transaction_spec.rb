@@ -64,7 +64,7 @@ describe Appsignal::Transaction do
 
         it "logs a debug message" do
           create_transaction("2")
-          expect(log_contents(log)).to contains_log :debug,
+          expect(log_contents(log)).to contains_log :warn,
             "Trying to start new transaction with id '2', but a " \
             "transaction with id '#{transaction_id}' is already " \
             "running. Using transaction '#{transaction_id}'."
