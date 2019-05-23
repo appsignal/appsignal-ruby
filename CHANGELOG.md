@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.9.7
+- Fix minutely probes not being loaded from Rails initializers. PR #528
+
 ## 2.9.6
 - Print link to diagnose docs on unsuccessful demo command. PR #512
 - Add support for minutely probe `.dependencies_present?` check. PR #523
