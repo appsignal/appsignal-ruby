@@ -167,33 +167,6 @@ describe Appsignal::Minutely do
         thread && thread.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
     end
-
-    # Wait for a condition to be met
-    #
-    # @example
-    #   # Perform threaded operation
-    #   wait_for("enough probe calls") { probe.calls >= 2 }
-    #   # Assert on result
-    #
-    # @param name [String] The name of the condition to check. Used in the
-    #   error when it fails.
-    # @yield Assertion to check.
-    # @yieldreturn [Boolean] True/False value that indicates if the condition
-    #   is met.
-    # @raise [StandardError] Raises error if the condition is not met after 5
-    #   seconds, 5_000 tries.
-    def wait_for(name)
-      max_wait = 5_000
-      i = 0
-      while i <= max_wait
-        break if yield
-        i += 1
-        sleep 0.001
-      end
-
-      return unless i == max_wait
-      raise "Waited 5 seconds for #{name} condition, but was not met."
-    end
   end
 
   describe ".stop" do
@@ -214,6 +187,9 @@ describe Appsignal::Minutely do
       Appsignal::Minutely.probes.register :my_probe, -> {}
       Appsignal::Minutely.start
       thread = Appsignal::Minutely.class_variable_get(:@@thread)
+      wait_for("probes initialized") do
+        !Appsignal::Minutely.send(:probe_instances).empty?
+      end
       expect(Appsignal::Minutely.send(:probe_instances)).to_not be_empty
       Appsignal::Minutely.stop
       thread.join
@@ -335,5 +311,32 @@ describe Appsignal::Minutely do
         expect(list).to eql([[:my_probe, probe]])
       end
     end
+  end
+
+  # Wait for a condition to be met
+  #
+  # @example
+  #   # Perform threaded operation
+  #   wait_for("enough probe calls") { probe.calls >= 2 }
+  #   # Assert on result
+  #
+  # @param name [String] The name of the condition to check. Used in the
+  #   error when it fails.
+  # @yield Assertion to check.
+  # @yieldreturn [Boolean] True/False value that indicates if the condition
+  #   is met.
+  # @raise [StandardError] Raises error if the condition is not met after 5
+  #   seconds, 5_000 tries.
+  def wait_for(name)
+    max_wait = 5_000
+    i = 0
+    while i <= max_wait
+      break if yield
+      i += 1
+      sleep 0.001
+    end
+
+    return unless i == max_wait
+    raise "Waited 5 seconds for #{name} condition, but was not met."
   end
 end

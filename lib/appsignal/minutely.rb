@@ -135,9 +135,9 @@ module Appsignal
       # @api private
       def start
         stop
-        initialize_probes
         @@thread = Thread.new do
           sleep initial_wait_time
+          initialize_probes
           loop do
             logger = Appsignal.logger
             logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
