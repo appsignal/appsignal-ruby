@@ -35,7 +35,7 @@ def report
         },
         "build" => {
           "time" => Time.now.utc,
-          "package_path" => File.dirname(__dir__),
+          "package_path" => File.dirname(EXT_PATH),
           "architecture" => rbconfig["host_cpu"],
           "target" => AGENT_PLATFORM,
           "musl_override" => Appsignal::System.force_musl_build?,
