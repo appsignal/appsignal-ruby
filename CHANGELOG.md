@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.9.8
+- Fix Ruby 1.9 compatibility in extension installation. PR #531
+
 ## 2.9.7
 - Fix minutely probes not being loaded from Rails initializers. PR #528
 
