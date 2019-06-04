@@ -120,6 +120,21 @@ describe Appsignal::Rack::GenericInstrumentation do
           )
         end
       end
+
+      context "when transaction gets completed inside instrumentation" do
+        let(:app) { lambda { |_args| Appsignal::Transaction.complete_current! } }
+
+        it "does not track any transaction details" do
+          middleware.call(env)
+          expect(transaction).to match_transaction(
+            "id" => "1",
+            "action" => nil,
+            "events" => [],
+            "metadata" => {},
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST
+          )
+        end
+      end
     end
   end
 end

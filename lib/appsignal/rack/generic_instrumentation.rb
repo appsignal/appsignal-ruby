@@ -22,7 +22,7 @@ module Appsignal
 
       def call_with_appsignal_monitoring(env)
         request = ::Rack::Request.new(env)
-        transaction = Appsignal::Transaction.create(
+        Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
           request
@@ -32,9 +32,10 @@ module Appsignal
             @app.call(env)
           end
         rescue Exception => error # rubocop:disable Lint/RescueException
-          transaction.set_error(error)
+          Appsignal::Transaction.current.set_error(error)
           raise error
         ensure
+          transaction = Appsignal::Transaction.current
           if env["appsignal.route"]
             transaction.set_action_if_nil(env["appsignal.route"])
           else
