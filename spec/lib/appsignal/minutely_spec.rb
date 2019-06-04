@@ -114,7 +114,7 @@ describe Appsignal::Minutely do
     context "with a lambda" do
       it "calls the lambda every <wait time>" do
         calls = 0
-        probe = -> { calls += 1 }
+        probe = lambda { calls += 1 }
         Appsignal::Minutely.probes.register :my_probe, probe
         Appsignal::Minutely.start
 
@@ -184,7 +184,7 @@ describe Appsignal::Minutely do
     end
 
     it "clears the probe instances array" do
-      Appsignal::Minutely.probes.register :my_probe, -> {}
+      Appsignal::Minutely.probes.register :my_probe, lambda {}
       Appsignal::Minutely.start
       thread = Appsignal::Minutely.class_variable_get(:@@thread)
       wait_for("probes initialized") do
@@ -232,17 +232,17 @@ describe Appsignal::Minutely do
     describe "#count" do
       it "returns how many probes are registered" do
         expect(collection.count).to eql(0)
-        collection.register :my_probe_1, -> {}
+        collection.register :my_probe_1, lambda {}
         expect(collection.count).to eql(1)
-        collection.register :my_probe_2, -> {}
+        collection.register :my_probe_2, lambda {}
         expect(collection.count).to eql(2)
       end
     end
 
     describe "#clear" do
       it "clears the list of probes" do
-        collection.register :my_probe_1, -> {}
-        collection.register :my_probe_2, -> {}
+        collection.register :my_probe_1, lambda {}
+        collection.register :my_probe_2, lambda {}
         expect(collection.count).to eql(2)
         collection.clear
         expect(collection.count).to eql(0)
@@ -251,7 +251,7 @@ describe Appsignal::Minutely do
 
     describe "#[]" do
       it "returns the probe for that name" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         expect(collection[:my_probe]).to eql(probe)
       end
@@ -265,7 +265,7 @@ describe Appsignal::Minutely do
       before { Appsignal.logger = test_logger(log_stream) }
 
       it "adds the probe, but prints a deprecation warning" do
-        probe = -> {}
+        probe = lambda {}
         capture_stdout(out_stream) { collection << probe }
         deprecation_message = "Deprecated " \
           "`Appsignal::Minute.probes <<` call. Please use " \
@@ -282,14 +282,14 @@ describe Appsignal::Minutely do
       before { Appsignal.logger = test_logger(log_stream) }
 
       it "adds the by key probe" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         expect(collection[:my_probe]).to eql(probe)
       end
 
       context "when a probe is already registered with the same key" do
         it "logs a debug message" do
-          probe = -> {}
+          probe = lambda {}
           collection.register :my_probe, probe
           collection.register :my_probe, probe
           expect(log).to contains_log :debug, "A probe with the name " \
@@ -302,7 +302,7 @@ describe Appsignal::Minutely do
 
     describe "#each" do
       it "loops over the registered probes" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         list = []
         collection.each do |name, p|

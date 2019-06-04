@@ -5,15 +5,15 @@ require "fileutils"
 VERSION_MANAGERS = {
   :chruby => {
     :env => "#!/bin/bash\nsource /usr/local/opt/chruby/share/chruby/chruby.sh",
-    :switch_command => ->(version) { "chruby #{version}" }
+    :switch_command => lambda { |version| "chruby #{version}" }
   },
   :rbenv => {
     :env => "#!/bin/bash",
-    :switch_command => ->(version) { "rbenv local #{version}" }
+    :switch_command => lambda { |version| "rbenv local #{version}" }
   },
   :rvm => {
     :env => "#!/bin/bash --login",
-    :switch_command => ->(version) { "rvm use --default #{version}" }
+    :switch_command => lambda { |version| "rvm use --default #{version}" }
   }
 }.freeze
 
