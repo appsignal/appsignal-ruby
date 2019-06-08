@@ -34,4 +34,42 @@ module TransactionHelpers
   def clear_current_transaction!
     Thread.current[:appsignal_transaction] = nil
   end
+
+  # Track the AppSignal transaction JSON when a transaction gets completed
+  # ({Appsignal::Transaction.complete}).
+  #
+  # It will also add sample data to the transaction when it gets completed.
+  # This can be disabled by setting the `sample` option to `false`.
+  #
+  # It will be tracked for every transaction that is started inside the
+  # `keep_transactions` block.
+  #
+  # @example Keep a transaction while also adding sample data
+  #   keep_transactions do
+  #     transaction = Appsignal::Transaction.new(...)
+  #     transaction.complete
+  #     transaction.to_h # => Hash with transaction data before it was completed
+  #   end
+  #
+  # @example Keep a transaction without adding sample data
+  #   keep_transactions :sample => false do
+  #     transaction = Appsignal::Transaction.new(...)
+  #     transaction.complete
+  #     transaction.to_h
+  #     # => Hash with transaction data before it was completed with an empty
+  #     #    Hash for the `sample_data` key.
+  #   end
+  #
+  # @yield block to perform while the transactions are tracked.
+  # @param options [Hash]
+  # @option options [Boolean] :sample Whether or not to sample transactions.
+  # @return [Object] returns the block return value.
+  def keep_transactions(options = {})
+    Appsignal::Testing.keep_transactions = true
+    Appsignal::Testing.sample_transactions = options.fetch(:sample, true)
+    yield
+  ensure
+    Appsignal::Testing.keep_transactions = nil
+    Appsignal::Testing.sample_transactions = nil
+  end
 end

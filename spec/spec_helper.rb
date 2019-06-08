@@ -31,16 +31,9 @@ if DependencyHelper.rails_present?
   end
 end
 require "appsignal"
-
-module Appsignal
-  class << self
-    remove_method :testing?
-
-    def testing?
-      true
-    end
-  end
-end
+# Include patches of AppSignal modules and classes to make test helpers
+# available.
+require File.join(DirectoryHelper.support_dir, "testing.rb")
 
 puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 

@@ -154,13 +154,8 @@ describe Appsignal::Transaction do
   describe "#complete" do
     context "when transaction is being sampled" do
       it "samples data" do
-        expect(transaction.ext).to receive(:finish).and_return(true)
-        # Stub call to extension, because that would remove the transaction
-        # from the extension.
-        expect(transaction.ext).to receive(:complete)
-
         transaction.set_tags(:foo => "bar")
-        transaction.complete
+        keep_transactions { transaction.complete }
         expect(transaction.to_h["sample_data"]).to include(
           "tags" => { "foo" => "bar" }
         )
@@ -169,11 +164,8 @@ describe Appsignal::Transaction do
 
     context "when transaction is not being sampled" do
       it "does not sample data" do
-        expect(transaction).to_not receive(:sample_data)
-        expect(transaction.ext).to receive(:finish).and_return(false)
-        expect(transaction.ext).to receive(:complete).and_call_original
-
-        transaction.complete
+        keep_transactions(:sample => false) { transaction.complete }
+        expect(transaction.to_h["sample_data"]).to be_empty
       end
     end
 
