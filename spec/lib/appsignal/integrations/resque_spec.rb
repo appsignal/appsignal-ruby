@@ -33,6 +33,7 @@ if DependencyHelper.resque_present?
               keep_transactions { job.perform }
             end.to change { created_transactions.length }.by(1)
 
+            expect(last_transaction).to be_completed
             expect(last_transaction.to_h).to include(
               "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
               "action" => "TestJob#perform",
@@ -67,6 +68,7 @@ if DependencyHelper.resque_present?
               perform
             end.to change { created_transactions.length }.by(1)
 
+            expect(last_transaction).to be_completed
             expect(last_transaction.to_h).to include(
               "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
               "action" => "BrokenTestJob#perform",

@@ -43,6 +43,7 @@ describe Appsignal::Hooks::RakeHook do
       it "creates a background job transaction" do
         perform
 
+        expect(last_transaction).to be_completed
         expect(last_transaction.to_h).to include(
           "id" => kind_of(String),
           "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
