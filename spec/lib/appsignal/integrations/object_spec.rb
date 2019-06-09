@@ -16,8 +16,8 @@ describe Object do
       context "when active" do
         let(:transaction) { http_request_transaction }
         before do
-          expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
           Appsignal.config = project_fixture_config
+          expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
         end
         after { Appsignal.config = nil }
 
@@ -137,9 +137,9 @@ describe Object do
       context "when active" do
         let(:transaction) { http_request_transaction }
         before do
+          Appsignal.config = project_fixture_config
           expect(Appsignal::Transaction).to receive(:current).at_least(:once)
             .and_return(transaction)
-          Appsignal.config = project_fixture_config
         end
         after { Appsignal.config = nil }
 
