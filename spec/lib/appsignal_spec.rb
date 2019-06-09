@@ -650,13 +650,12 @@ describe Appsignal do
       context "when given a block" do
         it "yields the transaction and allows additional metadata to be set" do
           captured_transaction = nil
-          Appsignal.send_error(StandardError.new("my_error")) do |transaction|
-            captured_transaction = transaction
-            transaction.set_action("my_action")
-            transaction.set_namespace("my_namespace")
-
-            # Don't flush the transaction, so we can inspect it
-            expect(transaction).to receive(:complete)
+          keep_transactions do
+            Appsignal.send_error(StandardError.new("my_error")) do |transaction|
+              captured_transaction = transaction
+              transaction.set_action("my_action")
+              transaction.set_namespace("my_namespace")
+            end
           end
           expect(captured_transaction.to_h).to include(
             "namespace" => "my_namespace",

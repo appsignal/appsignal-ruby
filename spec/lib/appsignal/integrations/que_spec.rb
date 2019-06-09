@@ -59,9 +59,8 @@ if DependencyHelper.que_present?
             kind_of(Appsignal::Transaction::GenericRequest)
           ).and_return(transaction)
         allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-        expect(transaction.ext).to receive(:finish).and_return(true)
-        expect(transaction.ext).to receive(:complete)
       end
+      around { |example| keep_transactions { example.run } }
 
       subject { transaction.to_h }
 
