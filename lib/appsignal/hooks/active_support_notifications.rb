@@ -30,16 +30,13 @@ module Appsignal
             # Events that start with a bang are internal to Rails
             instrument_this = name[0] != BANG
 
-            if instrument_this
-              transaction = Appsignal::Transaction.current
-              transaction.start_event
-            end
+            Appsignal::Transaction.current.start_event if instrument_this
 
             instrument_without_appsignal(name, payload, &block)
           ensure
             if instrument_this
               title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              transaction.finish_event(
+              Appsignal::Transaction.current.finish_event(
                 name.to_s,
                 title,
                 body,

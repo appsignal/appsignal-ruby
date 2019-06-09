@@ -25,6 +25,10 @@ module Appsignal
     class SidekiqProbe
       attr_reader :config
 
+      def self.dependencies_present?
+        Gem::Version.new(Redis::VERSION) >= Gem::Version.new("3.3.5")
+      end
+
       def initialize(config = {})
         @config = config
         @cache = {}

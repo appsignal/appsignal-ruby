@@ -19,6 +19,18 @@ describe Appsignal::Minutely do
       end
     end
 
+    class ProbeWithoutDependency < Probe
+      def self.dependencies_present?
+        true
+      end
+    end
+
+    class ProbeWithMissingDependency < Probe
+      def self.dependencies_present?
+        false
+      end
+    end
+
     class BrokenProbe < Probe
       def call
         super
@@ -45,6 +57,24 @@ describe Appsignal::Minutely do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
+
+      context "when dependency requirement is not met" do
+        it "does not initialize the probe" do
+          # Working probe which we can use to wait for X ticks
+          working_probe = ProbeWithoutDependency.new
+          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+
+          probe = ProbeWithMissingDependency.new
+          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
+          Appsignal::Minutely.start
+
+          wait_for("enough probe calls") { working_probe.calls >= 2 }
+          # Only counts initialized probes
+          expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+          expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
+            "ProbeWithMissingDependency.dependency_present? returned falsy"
+        end
+      end
     end
 
     context "with probe class" do
@@ -59,12 +89,32 @@ describe Appsignal::Minutely do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
+
+      context "when dependency requirement is not met" do
+        it "does not initialize the probe" do
+          # Working probe which we can use to wait for X ticks
+          working_probe = ProbeWithoutDependency
+          working_probe_instance = working_probe.new
+          expect(working_probe).to receive(:new).and_return(working_probe_instance)
+          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+
+          probe = ProbeWithMissingDependency
+          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
+          Appsignal::Minutely.start
+
+          wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
+          # Only counts initialized probes
+          expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+          expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
+            "ProbeWithMissingDependency.dependency_present? returned falsy"
+        end
+      end
     end
 
     context "with a lambda" do
       it "calls the lambda every <wait time>" do
         calls = 0
-        probe = -> { calls += 1 }
+        probe = lambda { calls += 1 }
         Appsignal::Minutely.probes.register :my_probe, probe
         Appsignal::Minutely.start
 
@@ -117,33 +167,6 @@ describe Appsignal::Minutely do
         thread && thread.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
     end
-
-    # Wait for a condition to be met
-    #
-    # @example
-    #   # Perform threaded operation
-    #   wait_for("enough probe calls") { probe.calls >= 2 }
-    #   # Assert on result
-    #
-    # @param name [String] The name of the condition to check. Used in the
-    #   error when it fails.
-    # @yield Assertion to check.
-    # @yieldreturn [Boolean] True/False value that indicates if the condition
-    #   is met.
-    # @raise [StandardError] Raises error if the condition is not met after 5
-    #   seconds, 5_000 tries.
-    def wait_for(name)
-      max_wait = 5_000
-      i = 0
-      while i <= max_wait
-        break if yield
-        i += 1
-        sleep 0.001
-      end
-
-      return unless i == max_wait
-      raise "Waited 5 seconds for #{name} condition, but was not met."
-    end
   end
 
   describe ".stop" do
@@ -161,9 +184,12 @@ describe Appsignal::Minutely do
     end
 
     it "clears the probe instances array" do
-      Appsignal::Minutely.probes.register :my_probe, -> {}
+      Appsignal::Minutely.probes.register :my_probe, lambda {}
       Appsignal::Minutely.start
       thread = Appsignal::Minutely.instance_variable_get(:@thread)
+      wait_for("probes initialized") do
+        !Appsignal::Minutely.send(:probe_instances).empty?
+      end
       expect(Appsignal::Minutely.send(:probe_instances)).to_not be_empty
       Appsignal::Minutely.stop
       thread.join
@@ -206,17 +232,17 @@ describe Appsignal::Minutely do
     describe "#count" do
       it "returns how many probes are registered" do
         expect(collection.count).to eql(0)
-        collection.register :my_probe_1, -> {}
+        collection.register :my_probe_1, lambda {}
         expect(collection.count).to eql(1)
-        collection.register :my_probe_2, -> {}
+        collection.register :my_probe_2, lambda {}
         expect(collection.count).to eql(2)
       end
     end
 
     describe "#clear" do
       it "clears the list of probes" do
-        collection.register :my_probe_1, -> {}
-        collection.register :my_probe_2, -> {}
+        collection.register :my_probe_1, lambda {}
+        collection.register :my_probe_2, lambda {}
         expect(collection.count).to eql(2)
         collection.clear
         expect(collection.count).to eql(0)
@@ -225,7 +251,7 @@ describe Appsignal::Minutely do
 
     describe "#[]" do
       it "returns the probe for that name" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         expect(collection[:my_probe]).to eql(probe)
       end
@@ -239,7 +265,7 @@ describe Appsignal::Minutely do
       before { Appsignal.logger = test_logger(log_stream) }
 
       it "adds the probe, but prints a deprecation warning" do
-        probe = -> {}
+        probe = lambda {}
         capture_stdout(out_stream) { collection << probe }
         deprecation_message = "Deprecated " \
           "`Appsignal::Minute.probes <<` call. Please use " \
@@ -256,14 +282,14 @@ describe Appsignal::Minutely do
       before { Appsignal.logger = test_logger(log_stream) }
 
       it "adds the by key probe" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         expect(collection[:my_probe]).to eql(probe)
       end
 
       context "when a probe is already registered with the same key" do
         it "logs a debug message" do
-          probe = -> {}
+          probe = lambda {}
           collection.register :my_probe, probe
           collection.register :my_probe, probe
           expect(log).to contains_log :debug, "A probe with the name " \
@@ -276,7 +302,7 @@ describe Appsignal::Minutely do
 
     describe "#each" do
       it "loops over the registered probes" do
-        probe = -> {}
+        probe = lambda {}
         collection.register :my_probe, probe
         list = []
         collection.each do |name, p|
@@ -285,5 +311,32 @@ describe Appsignal::Minutely do
         expect(list).to eql([[:my_probe, probe]])
       end
     end
+  end
+
+  # Wait for a condition to be met
+  #
+  # @example
+  #   # Perform threaded operation
+  #   wait_for("enough probe calls") { probe.calls >= 2 }
+  #   # Assert on result
+  #
+  # @param name [String] The name of the condition to check. Used in the
+  #   error when it fails.
+  # @yield Assertion to check.
+  # @yieldreturn [Boolean] True/False value that indicates if the condition
+  #   is met.
+  # @raise [StandardError] Raises error if the condition is not met after 5
+  #   seconds, 5_000 tries.
+  def wait_for(name)
+    max_wait = 5_000
+    i = 0
+    while i <= max_wait
+      break if yield
+      i += 1
+      sleep 0.001
+    end
+
+    return unless i == max_wait
+    raise "Waited 5 seconds for #{name} condition, but was not met."
   end
 end

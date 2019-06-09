@@ -6,12 +6,14 @@ module Appsignal
           passwd_struct = Etc.getpwuid(uid)
           return unless passwd_struct
           passwd_struct.name
+        rescue ArgumentError # rubocop:disable Lint/HandleExceptions
         end
 
         def self.group_for_gid(gid)
           passwd_struct = Etc.getgrgid(gid)
           return unless passwd_struct
           passwd_struct.name
+        rescue ArgumentError # rubocop:disable Lint/HandleExceptions
         end
 
         def self.read_file_content(path, bytes_to_read)

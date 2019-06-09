@@ -135,12 +135,12 @@ module Appsignal
       # @api private
       def start
         stop
-        initialize_probes
         @thread = Thread.new do
           sleep initial_wait_time
+          initialize_probes
           loop do
             logger = Appsignal.logger
-            logger.debug("Gathering minutely metrics with #{probes.count} probes")
+            logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
             probe_instances.each do |name, probe|
               begin
                 logger.debug("Gathering minutely metrics with '#{name}' probe")
@@ -176,9 +176,25 @@ module Appsignal
 
       def initialize_probes
         probes.each do |name, probe|
-          instance = probe.respond_to?(:new) ? probe.new : probe
+          if probe.respond_to? :new
+            instance = probe.new
+            klass = probe
+          else
+            instance = probe
+            klass = instance.class
+          end
+          unless dependencies_present?(klass)
+            Appsignal.logger.debug "Skipping '#{name}' probe, " \
+              "#{klass}.dependency_present? returned falsy"
+            next
+          end
           probe_instances[name] = instance
         end
+      end
+
+      def dependencies_present?(probe)
+        return true unless probe.respond_to? :dependencies_present?
+        probe.dependencies_present?
       end
 
       def probe_instances

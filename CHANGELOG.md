@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.9.8
+- Fix Ruby 1.9 compatibility in extension installation. PR #531
+
+## 2.9.7
+- Fix minutely probes not being loaded from Rails initializers. PR #528
+
+## 2.9.6
+- Print link to diagnose docs on unsuccessful demo command. PR #512
+- Add support for minutely probe `.dependencies_present?` check. PR #523
+- Do not activate Sidekiq minutely probe on unsupported Redis gem versions.
+  PR #523.
+
 ## 2.9.5
 - Improve logging in minutely probes. PR #508
 - Delay the first minutely probe for a bit, since it might take some
