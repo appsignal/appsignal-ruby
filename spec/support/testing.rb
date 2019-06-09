@@ -2,11 +2,13 @@ module Appsignal
   class << self
     remove_method :testing?
 
+    # @api private
     def testing?
       true
     end
   end
 
+  # @api private
   module Testing
     class << self
       def transactions
@@ -77,9 +79,19 @@ module Appsignal
       # and it's no longer possible to request the transaction JSON.
       #
       # @see TransactionHelpers#keep_transactions
+      # @see #_completed?
       def complete
+        @completed = true # see {#_completed?} method
         @transaction_json = to_json if Appsignal::Testing.keep_transactions?
         original_complete
+      end
+
+      # Returns true when the Transaction was completed.
+      # {Appsignal::Extension::Transaction.complete} was called.
+      #
+      # @return [Boolean] returns if the transaction was completed.
+      def _completed?
+        @completed || false
       end
 
       alias original_to_json to_json
