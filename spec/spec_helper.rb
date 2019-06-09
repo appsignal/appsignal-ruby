@@ -113,7 +113,8 @@ RSpec.configure do |config|
   end
 
   config.after do
-    Thread.current[:appsignal_transaction] = nil
+    Appsignal::Testing.clear!
+    clear_current_transaction!
     stop_minutely_probes
   end
 

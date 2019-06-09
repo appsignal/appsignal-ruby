@@ -37,38 +37,22 @@ if DependencyHelper.que_present?
         end
       end
       let(:instance) { job.new(job_attrs) }
-      let(:transaction) do
-        Appsignal::Transaction.new(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new(env)
-        )
-      end
 
       before do
         allow(Que).to receive(:execute)
 
         start_agent
         expect(Appsignal.active?).to be_truthy
-        transaction
-
-        expect(Appsignal::Transaction).to receive(:create)
-          .with(
-            kind_of(String),
-            Appsignal::Transaction::BACKGROUND_JOB,
-            kind_of(Appsignal::Transaction::GenericRequest)
-          ).and_return(transaction)
-        allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
       end
       around { |example| keep_transactions { example.run } }
 
-      subject { transaction.to_h }
+      subject { last_transaction.to_h }
 
       context "success" do
         it "creates a transaction for a job" do
           expect do
             instance._run
-          end.to_not raise_exception
+          end.to change { created_transactions.length }.by(1)
 
           expect(subject).to include(
             "action" => "MyQueJob#run",
@@ -106,12 +90,14 @@ if DependencyHelper.que_present?
       context "with exception" do
         let(:error) { ExampleException.new("oh no!") }
 
-        it "should report exceptions and re-raise them" do
+        it "reports exceptions and re-raise them" do
           allow(instance).to receive(:run).and_raise(error)
 
           expect do
-            instance._run
-          end.to raise_error(ExampleException)
+            expect do
+              instance._run
+            end.to raise_error(ExampleException)
+          end.to change { created_transactions.length }.by(1)
 
           expect(subject).to include(
             "action" => "MyQueJob#run",
@@ -139,12 +125,10 @@ if DependencyHelper.que_present?
       context "with error" do
         let(:error) { ExampleStandardError.new("oh no!") }
 
-        it "should report errors and not re-raise them" do
+        it "reports errors and not re-raise them" do
           allow(instance).to receive(:run).and_raise(error)
 
-          expect do
-            instance._run
-          end.to_not raise_error
+          expect { instance._run }.to change { created_transactions.length }.by(1)
 
           expect(subject).to include(
             "action" => "MyQueJob#run",

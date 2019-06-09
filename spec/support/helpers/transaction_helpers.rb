@@ -29,6 +29,21 @@ module TransactionHelpers
     )
   end
 
+  # Returns the all {Appsignal::Transaction} objects created during this test
+  # run so far.
+  #
+  # @return [Array<Appsignal::Transaction>]
+  def created_transactions
+    Appsignal::Testing.transactions
+  end
+
+  # Returns the last created {Appsignal::Transaction}.
+  #
+  # @return [Appsignal::Transaction]
+  def last_transaction
+    created_transactions.last
+  end
+
   # Use when {Appsignal::Transaction.clear_current_transaction!} is stubbed to
   # clear the current transaction on the current thread.
   def clear_current_transaction!

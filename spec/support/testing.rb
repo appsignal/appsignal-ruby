@@ -9,6 +9,14 @@ module Appsignal
 
   module Testing
     class << self
+      def transactions
+        @transactions ||= []
+      end
+
+      def clear!
+        transactions.clear
+      end
+
       attr_writer :keep_transactions
       # @see TransactionHelpers#keep_transactions
       def keep_transactions?
@@ -24,6 +32,22 @@ module Appsignal
         else
           @sample_transactions
         end
+      end
+    end
+  end
+
+  class Transaction
+    class << self
+      alias original_new new
+
+      # Override the {Appsignal::Transaction.new} method so we can track which
+      # transactions are created on the {Appsignal::Testing.transactions} list.
+      #
+      # @see TransactionHelpers#last_transaction
+      def new(*args)
+        transaction = original_new(*args)
+        Appsignal::Testing.transactions << transaction
+        transaction
       end
     end
   end
