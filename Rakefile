@@ -143,9 +143,23 @@ namespace :build do
     end
   end
 
+  def define_build_task(task_name, base_gemspec, &block)
+    Gem::PackageTask.new(base_gemspec, &block)
+  rescue StandardError => error
+    puts "Warning: An error occurred defining `build:#{task_name}:gem` Rake task."
+    puts "This task will not be availble."
+    if ENV["DEBUG"]
+      puts "#{error}: #{error.message}"
+      puts error.backtrace
+    else
+      puts "For more information, run the same command with `DEBUG=true`."
+    end
+    puts
+  end
+
   namespace :ruby do
     # Extension default set in `appsignal.gemspec`
-    Gem::PackageTask.new(base_gemspec) { |_pkg| }
+    define_build_task(:ruby, base_gemspec) { |_pkg| }
   end
 
   namespace :jruby do
@@ -157,7 +171,7 @@ namespace :build do
       s.add_dependency "ffi"
     end
 
-    Gem::PackageTask.new(spec) { |_pkg| }
+    define_build_task(:jruby, spec) { |_pkg| }
   end
 
   desc "Build all gem versions"
