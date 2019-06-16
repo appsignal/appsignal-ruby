@@ -20,7 +20,17 @@ module Appsignal
         Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
       end
 
+      def coloring=(value)
+        @coloring = value
+      end
+
+      def coloring?
+        return true unless defined?(@coloring)
+        @coloring
+      end
+
       def colorize(text, color)
+        return text unless coloring?
         return text if Gem.win_platform?
 
         reset_color_code = COLOR_CODES.fetch(:default)

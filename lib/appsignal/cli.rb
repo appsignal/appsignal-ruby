@@ -32,7 +32,7 @@ module Appsignal
             when :diagnose
               Appsignal::CLI::Diagnose.run(options)
             when :install
-              Appsignal::CLI::Install.run(argv.shift)
+              Appsignal::CLI::Install.run(argv.shift, options)
             when :notify_of_deploy
               Appsignal::CLI::NotifyOfDeploy.run(options)
             end
@@ -86,7 +86,11 @@ module Appsignal
               options[:send_report] = arg
             end
           end,
-          "install" => OptionParser.new,
+          "install" => OptionParser.new do |o|
+            o.on "--[no-]color", "Colorize the output of the diagnose command" do |arg|
+              options[:color] = arg
+            end
+          end,
           "notify_of_deploy" => OptionParser.new do |o|
             o.banner = "Usage: appsignal notify_of_deploy [options]"
 

@@ -9,6 +9,7 @@ describe Appsignal::CLI::Install do
   let(:config) { Appsignal::Config.new(tmp_dir, "") }
   let(:config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
   let(:config_file) { File.read(config_file_path) }
+  let(:options) { {} }
   before do
     stub_api_validation_request
     # Stub calls to speed up tests
@@ -87,7 +88,7 @@ describe Appsignal::CLI::Install do
     Dir.chdir tmp_dir do
       prepare_cli_input
       capture_stdout(out_stream) do
-        run_cli(["install", push_api_key])
+        run_cli(["install", push_api_key], options)
       end
     end
   end
@@ -623,9 +624,32 @@ describe Appsignal::CLI::Install do
       it_behaves_like "push_api_key validation"
       it_behaves_like "demo data"
 
-      it "prints the instructions in color" do
-        run
-        expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+      context "without color options" do
+        let(:options) { {} }
+
+        it "prints the instructions in color" do
+          run
+          expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+        end
+      end
+
+      context "with --color option" do
+        let(:options) { { "color" => nil } }
+
+        it "prints the instructions in color" do
+          run
+          expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+        end
+      end
+
+      context "with --no-color option" do
+        let(:options) { { "no-color" => nil } }
+
+        it "prints the instructions without special colors" do
+          run
+          expect(output).to include("Starting AppSignal Installer")
+          expect(output).to_not have_color_markers
+        end
       end
 
       it "prints a message about unknown framework" do

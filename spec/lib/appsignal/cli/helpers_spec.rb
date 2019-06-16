@@ -24,7 +24,7 @@ describe Appsignal::CLI::Helpers do
   describe ".colorize" do
     subject { cli.send(:colorize, "text", :green) }
 
-    context "on windows" do
+    context "when on windows" do
       before { allow(Gem).to receive(:win_platform?).and_return(true) }
 
       it "outputs plain string" do
@@ -32,7 +32,15 @@ describe Appsignal::CLI::Helpers do
       end
     end
 
-    context "not on windows" do
+    context "when coloring is set to false" do
+      before { cli.send(:coloring=, false) }
+
+      it "outputs plain string" do
+        expect(subject).to eq "text"
+      end
+    end
+
+    context "when not on windows" do
       before { allow(Gem).to receive(:win_platform?).and_return(false) }
 
       it "wraps text in color tags" do
