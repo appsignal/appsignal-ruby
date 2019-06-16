@@ -67,7 +67,7 @@ module Appsignal
           request   = ::Rack::Request.new(env)
         else
           logger.error("Unrecognized name '#{name}'")
-          return
+          return yield
         end
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
