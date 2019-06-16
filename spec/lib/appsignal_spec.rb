@@ -362,7 +362,6 @@ describe Appsignal do
 
       context "with an unmatched transaction name" do
         it "still yields to the block, and raises a specific exception afterwards" do
-          expect(Appsignal).to receive(:active?).and_return(true)
           expect do |blk|
             Appsignal.monitor_transaction("unknown.sidekiq", &blk)
           end.to yield_control
