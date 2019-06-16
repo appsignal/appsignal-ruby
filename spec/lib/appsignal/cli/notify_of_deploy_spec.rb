@@ -116,12 +116,22 @@ describe Appsignal::CLI::NotifyOfDeploy do
 
       context "with required options" do
         let(:options) { { :environment => "production", :revision => "aaaaa", :user => "thijs" } }
+        let(:log_stream) { std_stream }
+        let(:log) { log_contents(log_stream) }
+        before { Appsignal.logger = test_logger(log_stream) }
 
         it "notifies of a deploy" do
           run
           expect(output).to_not include_config_error
           expect(output).to_not include_missing_options([])
           expect(output).to include_deploy_notification_with(options)
+        end
+
+        it "prints a deprecation message" do
+          run
+          deprecation_message = "This command (appsignal notify_of_deploy) has been deprecated"
+          expect(output).to include("appsignal WARNING: #{deprecation_message}")
+          expect(log).to contains_log :warn, deprecation_message
         end
 
         context "with no app name configured" do
