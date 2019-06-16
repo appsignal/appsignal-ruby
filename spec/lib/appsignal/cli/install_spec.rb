@@ -623,6 +623,11 @@ describe Appsignal::CLI::Install do
       it_behaves_like "push_api_key validation"
       it_behaves_like "demo data"
 
+      it "prints the instructions in color" do
+        run
+        expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+      end
+
       it "prints a message about unknown framework" do
         run
 

@@ -36,7 +36,7 @@ describe Appsignal::CLI::Helpers do
       before { allow(Gem).to receive(:win_platform?).and_return(false) }
 
       it "wraps text in color tags" do
-        expect(subject).to eq "\e[32mtext\e[0m"
+        expect(subject).to have_colorized_text(:green, "text")
       end
     end
   end
