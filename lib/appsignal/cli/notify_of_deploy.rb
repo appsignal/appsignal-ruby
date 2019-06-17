@@ -60,6 +60,8 @@ module Appsignal
     #   Terminology: Deploy marker
     class NotifyOfDeploy
       class << self
+        include Appsignal::Utils::DeprecationMessage
+
         # @param options [Hash]
         # @option options :environment [String] environment to load
         #   configuration for.
@@ -85,6 +87,14 @@ module Appsignal
             },
             config
           ).transmit
+
+          puts
+          message = "This command (appsignal notify_of_deploy) has been " \
+            "deprecated in favor of the `revision` config option. Please " \
+            "see our documentation for more information on the recommended " \
+            "method: " \
+            "https://docs.appsignal.com/application/markers/deploy-markers.html"
+          deprecation_message message, Appsignal.logger
         end
 
         private
