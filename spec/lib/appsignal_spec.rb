@@ -240,6 +240,16 @@ describe Appsignal do
 
   context "not active" do
     describe ".monitor_transaction" do
+      let(:log_stream) { StringIO.new }
+      let(:log) { log_contents(log_stream) }
+      before do
+        Appsignal.config = project_fixture_config("not_active")
+        Appsignal.start
+        Appsignal.start_logger
+        Appsignal.logger = test_logger(log_stream)
+      end
+      after { Appsignal.logger = nil }
+
       it "should do nothing but still yield the block" do
         expect(Appsignal::Transaction).to_not receive(:create)
         expect(Appsignal).to_not receive(:instrument)
@@ -251,6 +261,23 @@ describe Appsignal do
             object.some_method
           end).to eq 1
         end.to_not raise_error
+      end
+
+      context "with an unknown event type" do
+        it "yields the given block" do
+          expect do |blk|
+            Appsignal.monitor_transaction("unknown.sidekiq", &blk)
+          end.to yield_control
+        end
+
+        it "logs an error" do
+          Appsignal.monitor_transaction("unknown.sidekiq") {}
+          expect(log).to contains_log(
+            :error,
+            "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
+              "(for jobs and tasks) or 'process_action' (for HTTP requests)"
+          )
+        end
       end
     end
 
@@ -299,10 +326,15 @@ describe Appsignal do
   end
 
   context "with config and started" do
+    let(:log_stream) { StringIO.new }
+    let(:log) { log_contents(log_stream) }
     before do
       Appsignal.config = project_fixture_config
       Appsignal.start
+      Appsignal.start_logger
+      Appsignal.logger = test_logger(log_stream)
     end
+    after { Appsignal.logger = nil }
 
     describe ".monitor_transaction" do
       context "with a successful call" do
@@ -365,6 +397,15 @@ describe Appsignal do
           expect do |blk|
             Appsignal.monitor_transaction("unknown.sidekiq", &blk)
           end.to yield_control
+        end
+
+        it "logs an error" do
+          Appsignal.monitor_transaction("unknown.sidekiq") {}
+          expect(log).to contains_log(
+            :error,
+            "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
+              "(for jobs and tasks) or 'process_action' (for HTTP requests)"
+          )
         end
       end
     end
