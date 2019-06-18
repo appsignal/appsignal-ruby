@@ -360,8 +360,8 @@ describe Appsignal do
         end
       end
 
-      context "with an unmatched transaction name" do
-        it "still yields to the block, and raises a specific exception afterwards" do
+      context "with an unknown event type" do
+        it "yields the given block" do
           expect do |blk|
             Appsignal.monitor_transaction("unknown.sidekiq", &blk)
           end.to yield_control

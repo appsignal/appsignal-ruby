@@ -58,8 +58,8 @@ module Appsignal
       # @since 0.10.0
       def monitor_transaction(name, env = {})
         # Always verify input, even when Appsignal is not active.
-        # This makes it more likely invalid configuration
-        # gets flagged in test/dev environments
+        # This makes it more likely invalid arguments get flagged in test/dev
+        # environments.
         if name.start_with?("perform_job".freeze)
           namespace = Appsignal::Transaction::BACKGROUND_JOB
           request   = Appsignal::Transaction::GenericRequest.new(env)
@@ -67,7 +67,9 @@ module Appsignal
           namespace = Appsignal::Transaction::HTTP_REQUEST
           request   = ::Rack::Request.new(env)
         else
-          logger.error("Unrecognized name '#{name}': names must start with either 'perform_job' (for jobs and tasks) or 'process_action' (for HTTP requests)")
+          logger.error "Unrecognized name '#{name}': names must start with " \
+            "either 'perform_job' (for jobs and tasks) or 'process_action' " \
+            "(for HTTP requests)"
           return yield
         end
 
