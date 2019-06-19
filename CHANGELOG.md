@@ -4,6 +4,7 @@
 - Fix error in the ActiveSupport::Notifications integration when a transaction
   gets completed during event instrumentation. PR #532
 - Fix Redis constant load error. PR #543
+- Add more logging for errors in debug mode. PR #544
 - Deprecate notify_of_deploy command. PR #545
 - Always call the block given to `Appsignal.monitor_transaction` and log errors
   from the helper even when AppSignal is not active. PR #547
