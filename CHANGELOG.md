@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.9.9
+- Fix error in the ActiveSupport::Notifications integration when a transaction
+  gets completed during event instrumentation. PR #532
+- Fix Redis constant load error. PR #543
+- Deprecate notify_of_deploy command. PR #545
+- Always call the block given to `Appsignal.monitor_transaction` and log errors
+  from the helper even when AppSignal is not active. PR #547
+
 ## 2.9.8
 - Fix Ruby 1.9 compatibility in extension installation. PR #531
 
