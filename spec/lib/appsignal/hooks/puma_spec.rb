@@ -71,12 +71,14 @@ describe Appsignal::Hooks::PumaHook do
 
     context "with nil hooks" do
       before do
+        Puma.cli_config.options.delete(:before_fork)
         Puma.cli_config.options.delete(:before_worker_boot)
         Puma.cli_config.options.delete(:before_worker_shutdown)
         Appsignal::Hooks::PumaHook.new.install
       end
 
       it "should add a before shutdown worker callback" do
+        expect(Puma.cli_config.options[:before_fork].first).to be_a(Proc)
         expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
         expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
       end
@@ -84,12 +86,14 @@ describe Appsignal::Hooks::PumaHook do
 
     context "with existing hooks" do
       before do
+        Puma.cli_config.options[:before_fork] = []
         Puma.cli_config.options[:before_worker_boot] = []
         Puma.cli_config.options[:before_worker_shutdown] = []
         Appsignal::Hooks::PumaHook.new.install
       end
 
       it "should add a before shutdown worker callback" do
+        expect(Puma.cli_config.options[:before_fork].first).to be_a(Proc)
         expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
         expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
       end
