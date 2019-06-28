@@ -16,6 +16,11 @@ module Appsignal
         end
 
         if ::Puma.respond_to?(:cli_config) && ::Puma.cli_config
+          ::Puma.cli_config.options[:before_fork] ||= []
+          ::Puma.cli_config.options[:before_fork] << proc do |_id|
+            Appsignal::Minutely.start
+          end
+
           ::Puma.cli_config.options[:before_worker_boot] ||= []
           ::Puma.cli_config.options[:before_worker_boot] << proc do |_id|
             Appsignal.forked
