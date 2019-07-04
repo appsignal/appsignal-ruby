@@ -251,7 +251,10 @@ module Appsignal
 
     def detect_from_system
       {}.tap do |hash|
-        hash[:log] = "stdout" if Appsignal::System.heroku?
+        if Appsignal::System.heroku?
+          hash[:log] = "stdout"
+          hash[:revision] = ENV["HEROKU_SLUG_COMMIT"]
+        end
 
         # Make active by default if APPSIGNAL_PUSH_API_KEY is present
         hash[:active] = true if ENV["APPSIGNAL_PUSH_API_KEY"]

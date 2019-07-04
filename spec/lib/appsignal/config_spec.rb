@@ -77,7 +77,7 @@ describe Appsignal::Config do
         end
 
         it "sets the log as loaded through the system" do
-          expect(config.system_config).to eq(:log => "stdout")
+          expect(config.system_config).to match(hash_including(:log => "stdout"))
         end
       end
 
@@ -87,6 +87,36 @@ describe Appsignal::Config do
         end
 
         it "does not set log as loaded through the system" do
+          expect(config.system_config).to eq({})
+        end
+      end
+    end
+
+    describe ":revision" do
+      subject { config[:revision] }
+
+      context "when running on Heroku" do
+        let(:revision) { SecureRandom.hex(16) }
+
+        around { |example| recognize_as_heroku { example.run } }
+
+        before { ENV["HEROKU_SLUG_COMMIT"] = revision }
+
+        it "is set to the value of HEROKU_SLUG_COMMIT" do
+          expect(subject).to eq(revision)
+        end
+
+        it "sets revision as loaded through the system" do
+          expect(config.system_config).to match(hash_including(:revision => revision))
+        end
+      end
+
+      context "when not running on Heroku" do
+        it "is not set" do
+          expect(subject).to eq(nil)
+        end
+
+        it "does not set revision as loaded through the system" do
           expect(config.system_config).to eq({})
         end
       end
