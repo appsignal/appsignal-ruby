@@ -176,20 +176,28 @@ module Appsignal
 
       def initialize_probes
         probes.each do |name, probe|
-          if probe.respond_to? :new
-            instance = probe.new
-            klass = probe
-          else
-            instance = probe
-            klass = instance.class
-          end
-          unless dependencies_present?(klass)
-            Appsignal.logger.debug "Skipping '#{name}' probe, " \
-              "#{klass}.dependency_present? returned falsy"
-            next
-          end
-          probe_instances[name] = instance
+          initialize_probe(name, probe)
         end
+      end
+
+      def initialize_probe(name, probe)
+        if probe.respond_to? :new
+          instance = probe.new
+          klass = probe
+        else
+          instance = probe
+          klass = instance.class
+        end
+        unless dependencies_present?(klass)
+          Appsignal.logger.debug "Skipping '#{name}' probe, " \
+            "#{klass}.dependency_present? returned falsy"
+          return
+        end
+        probe_instances[name] = instance
+      rescue => error
+        logger = Appsignal.logger
+        logger.error "Error while initializing minutely probe '#{name}': #{error}"
+        logger.debug error.backtrace.join("\n")
       end
 
       def dependencies_present?(probe)

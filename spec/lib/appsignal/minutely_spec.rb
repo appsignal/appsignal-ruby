@@ -38,6 +38,17 @@ describe Appsignal::Minutely do
       end
     end
 
+    class BrokenProbeOnInitialize < Probe
+      def initialize
+        super
+        raise "oh no initialize!"
+      end
+
+      def call
+        true
+      end
+    end
+
     let(:log_stream) { StringIO.new }
     let(:log) { log_contents(log_stream) }
     before do
@@ -107,6 +118,32 @@ describe Appsignal::Minutely do
           expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
           expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
             "ProbeWithMissingDependency.dependency_present? returned falsy"
+        end
+      end
+
+      context "when there is a problem initializing the probe" do
+        it "logs an error" do
+          # Working probe which we can use to wait for X ticks
+          working_probe = ProbeWithoutDependency
+          working_probe_instance = working_probe.new
+          expect(working_probe).to receive(:new).and_return(working_probe_instance)
+          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+
+          probe = BrokenProbeOnInitialize
+          Appsignal::Minutely.probes.register :broken_probe_on_initialize, probe
+          Appsignal::Minutely.start
+
+          wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
+          # Only counts initialized probes
+          expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+          # Logs error
+          expect(log).to contains_log(
+            :error,
+            "Error while initializing minutely probe 'broken_probe_on_initialize': " \
+              "oh no initialize!"
+          )
+          # Start of the error backtrace as debug log
+          expect(log).to contains_log :debug, File.expand_path("../../../../", __FILE__)
         end
       end
     end
