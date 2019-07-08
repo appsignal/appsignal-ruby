@@ -10,7 +10,7 @@ module CLIHelpers
   def format_cli_arguments_and_options(command, options = {})
     [*command].tap do |o|
       options.each do |key, value|
-        o << "--#{key}=#{value}"
+        o << (value.nil? ? "--#{key}" : "--#{key}=#{value}")
       end
     end
   end

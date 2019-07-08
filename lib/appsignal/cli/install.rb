@@ -13,7 +13,8 @@ module Appsignal
       EXCLUDED_ENVIRONMENTS = ["test"].freeze
 
       class << self
-        def run(push_api_key)
+        def run(push_api_key, options) # rubocop:disable Metrics/AbcSize
+          self.coloring = options.delete(:color) { true }
           $stdout.sync = true
 
           puts

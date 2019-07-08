@@ -7,24 +7,36 @@ module Appsignal
     module Helpers
       private
 
+      COLOR_CODES = {
+        :red => 31,
+        :green => 32,
+        :yellow => 33,
+        :blue => 34,
+        :pink => 35,
+        :default => 0
+      }.freeze
+
       def ruby_2_6_or_up?
         Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
       end
 
+      def coloring=(value)
+        @coloring = value
+      end
+
+      def coloring?
+        return true unless defined?(@coloring)
+        @coloring
+      end
+
       def colorize(text, color)
+        return text unless coloring?
         return text if Gem.win_platform?
 
-        color_code =
-          case color
-          when :red then 31
-          when :green then 32
-          when :yellow then 33
-          when :blue then 34
-          when :pink then 35
-          else 0
-          end
+        reset_color_code = COLOR_CODES.fetch(:default)
+        color_code = COLOR_CODES.fetch(color, reset_color_code)
 
-        "\e[#{color_code}m#{text}\e[0m"
+        "\e[#{color_code}m#{text}\e[#{reset_color_code}m"
       end
 
       def periods
