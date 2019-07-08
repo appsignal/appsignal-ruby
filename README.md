@@ -6,7 +6,7 @@ issues.
 
 - [AppSignal.com website][appsignal]
 - [Documentation][docs]
-- [Ruby doc][ruby-doc]
+- [Ruby code documentation][ruby-doc]
 - [Support][contact]
 
 [![Build Status](https://travis-ci.org/appsignal/appsignal-ruby.png?branch=master)](https://travis-ci.org/appsignal/appsignal-ruby)
