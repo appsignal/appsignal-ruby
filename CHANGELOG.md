@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.9.10
+- Fix Puma minutely probe start where `daemonize` is set to `true`. PR #548
+
 ## 2.9.9
 - Fix error in the ActiveSupport::Notifications integration when a transaction
   gets completed during event instrumentation. PR #532
