@@ -6,6 +6,7 @@ issues.
 
 - [AppSignal.com website][appsignal]
 - [Documentation][docs]
+- [Ruby doc][ruby-doc]
 - [Support][contact]
 
 [![Build Status](https://travis-ci.org/appsignal/appsignal-ruby.png?branch=master)](https://travis-ci.org/appsignal/appsignal-ruby)
@@ -275,6 +276,7 @@ Also see our [SUPPORT.md file](SUPPORT.md).
 [coc]: https://docs.appsignal.com/appsignal/code-of-conduct.html
 [waffles-page]: https://appsignal.com/waffles
 [docs]: http://docs.appsignal.com
+[ruby-doc]: https://www.rubydoc.info/gems/appsignal
 [contributing-guide]: http://docs.appsignal.com/appsignal/contributing.html
 [supported-systems]: http://docs.appsignal.com/support/operating-systems.html
 [integrations]: http://docs.appsignal.com/ruby/integrations/index.html
