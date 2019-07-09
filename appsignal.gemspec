@@ -2,7 +2,7 @@
 
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
-Gem::Specification.new do |gem|
+Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.authors = [
     "Robert Beekman",
     "Thijs Cadier"
@@ -24,6 +24,15 @@ Gem::Specification.new do |gem|
   # Default extension installer. Overridden by JRuby gemspec as defined in
   # `Rakefile`.
   gem.extensions            = %w[ext/extconf.rb]
+
+  gem.metadata = {
+    "bug_tracker_uri"   => "https://github.com/appsignal/appsignal-ruby/issues",
+    "changelog_uri"     =>
+      "https://github.com/appsignal/appsignal-ruby/blob/master/CHANGELOG.md",
+    "documentation_uri" => "https://docs.appsignal.com/ruby/",
+    "homepage_uri"      => "https://docs.appsignal.com/ruby/",
+    "source_code_uri"   => "https://github.com/appsignal/appsignal-ruby"
+  }
 
   gem.add_dependency "rack"
 
