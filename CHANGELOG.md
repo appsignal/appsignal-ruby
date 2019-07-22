@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.9.11
+- Bump agent to v-a718022
+  - Fix container CPU runtime metrics.
+    See https://github.com/appsignal/probes-rs/pull/38 for more information.
+  - Improve host metrics calculations accuracy for counter metrics.
+    See https://github.com/appsignal/probes-rs/pull/40 for more information.
+  - Support Kernel 4.18+ format of /proc/diskstats file parsing.
+    See https://github.com/appsignal/probes-rs/pull/39 for more information.
+
 ## 2.9.10
 - Fix Puma minutely probe start where `daemonize` is set to `true`. PR #548
 
