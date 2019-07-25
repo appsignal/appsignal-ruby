@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.12
+- Bump agent to a3e0f83
+  - More reliable detection of whether agent is running on Docker.
+
 ## 2.9.11
 - Bump agent to v-a718022
   - Fix container CPU runtime metrics.
