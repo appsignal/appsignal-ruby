@@ -85,6 +85,9 @@ module Appsignal
             o.on "--[no-]send-report", "Confirm sending the report to AppSignal automatically" do |arg|
               options[:send_report] = arg
             end
+            o.on "--[no-]color", "Colorize the output of the diagnose command" do |arg|
+              options[:color] = arg
+            end
           end,
           "install" => OptionParser.new do |o|
             o.on "--[no-]color", "Colorize the output of the diagnose command" do |arg|
