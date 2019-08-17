@@ -49,7 +49,6 @@ matrix:
     minimal:
       - "no_dependencies"
       - "rails-5.2"
-      - "rails-6.2"
 
   ruby:
     - ruby: "2.0.0"
@@ -103,6 +102,10 @@ matrix:
       exclude:
         ruby:
           - "2.0.0"
+          - "2.1.8"
+          - "2.2.4"
+          - "2.3.8"
+          - "2.4.5"
     - gem: "resque"
       bundler: "1.17.3"
     - gem: "sequel"
