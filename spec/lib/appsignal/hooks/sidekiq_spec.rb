@@ -732,6 +732,23 @@ describe Appsignal::Hooks::SidekiqProbe do
       probe.call
     end
 
+    context "when `redis_info` is not defined" do
+      before do
+        allow(Sidekiq).to receive(:respond_to?).with(:redis_info).and_return(false)
+      end
+
+      it "does not collect redis metrics" do
+        expect_gauge("connection_count", 2).never
+        expect_gauge("memory_usage", 1024).never
+        expect_gauge("memory_usage_rss", 512).never
+        probe.call
+      end
+
+      it "does not crash" do
+        expect { probe.call }.to_not raise_error
+      end
+    end
+
     context "when hostname is configured for probe" do
       let(:redis_hostname) { "my_redis_server" }
       let(:probe) { described_class.new(:hostname => redis_hostname) }
