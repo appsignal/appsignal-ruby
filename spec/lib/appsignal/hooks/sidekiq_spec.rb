@@ -743,10 +743,6 @@ describe Appsignal::Hooks::SidekiqProbe do
         expect_gauge("memory_usage_rss", 512).never
         probe.call
       end
-
-      it "does not crash" do
-        expect { probe.call }.to_not raise_error
-      end
     end
 
     context "when hostname is configured for probe" do
