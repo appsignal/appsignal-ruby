@@ -1,8 +1,14 @@
 # Changelog
 
+## 2.9.13
+- Bump agent to v-e1c9363
+  - Detect revision from Heroku dynos automatically when Dyno Metadata is
+    turned on.
+
 ## 2.9.12
-- Bump agent to a3e0f83 - commit 3d94dd42645922214fc2f5bc09cfa7c597323198
-  - More reliable detection of whether agent is running on Docker.
+- Bump agent to v-a3e0f83 - commit 3d94dd42645922214fc2f5bc09cfa7c597323198
+  - Better detect zombie/defunct processes on containers and consider the
+    processes dead. This should improve the appsignal-agent start behavior.
 - Fix Sequel install hook version detection mismatch. PR #553
 - Improve support for older Sidekiq versions. PR #555
 
