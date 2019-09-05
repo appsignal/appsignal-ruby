@@ -5,7 +5,8 @@ require File.expand_path("../lib/appsignal/version", __FILE__)
 Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.authors = [
     "Robert Beekman",
-    "Thijs Cadier"
+    "Thijs Cadier",
+    "Tom de Bruijn"
   ]
   gem.email                 = ["support@appsignal.com"]
   gem.description           = "The official appsignal.com gem"
