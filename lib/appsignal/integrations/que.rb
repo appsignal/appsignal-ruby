@@ -5,16 +5,17 @@ module Appsignal
     module QuePlugin
       def self.included(base)
         base.class_eval do
-          def _run_with_appsignal
+          def _run_with_appsignal(*)
+            local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
             env = {
               :metadata    => {
-                :id        => attrs[:job_id],
-                :queue     => attrs[:queue],
-                :run_at    => attrs[:run_at].to_s,
-                :priority  => attrs[:priority],
-                :attempts  => attrs[:error_count].to_i
+                :id        => local_attrs[:job_id] || local_attrs[:id],
+                :queue     => local_attrs[:queue],
+                :run_at    => local_attrs[:run_at].to_s,
+                :priority  => local_attrs[:priority],
+                :attempts  => local_attrs[:error_count].to_i
               },
-              :params => attrs[:args]
+              :params => local_attrs[:args]
             }
 
             request = Appsignal::Transaction::GenericRequest.new(env)
@@ -31,7 +32,7 @@ module Appsignal
               transaction.set_error(error)
               raise error
             ensure
-              transaction.set_action "#{attrs[:job_class]}#run"
+              transaction.set_action "#{local_attrs[:job_class]}#run"
               Appsignal::Transaction.complete_current!
             end
           end

@@ -76,6 +76,10 @@ matrix:
     - gem: "padrino"
       bundler: "1.17.3"
     - gem: "que"
+    - gem: "que_beta"
+      exclude:
+        ruby:
+          - "2.0.0"
     - gem: "rails-3.2"
       bundler: "1.17.3"
       exclude:
