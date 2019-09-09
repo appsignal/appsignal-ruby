@@ -2,7 +2,6 @@
 
 module Appsignal
   module Helpers
-    # @api private
     module Instrumentation # rubocop:disable Metrics/ModuleLength
       # Creates an AppSignal transaction for the given block.
       #
