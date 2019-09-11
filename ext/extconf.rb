@@ -15,9 +15,9 @@ def install
   if local_build?
     report["build"]["source"] = "local"
   else
-    archive = download_archive(ARCH, library_type)
+    archive = download_archive(library_type)
     return unless archive
-    return unless verify_archive(archive, ARCH, library_type)
+    return unless verify_archive(archive, library_type)
     unarchive(archive)
   end
 

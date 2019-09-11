@@ -19,9 +19,9 @@ task :default do
     if local_build?
       report["build"]["source"] = "local"
     else
-      archive = download_archive(ARCH, library_type)
+      archive = download_archive(library_type)
       next unless archive
-      next unless verify_archive(archive, ARCH, library_type)
+      next unless verify_archive(archive, library_type)
       unarchive(archive)
     end
     successful_installation
