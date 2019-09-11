@@ -102,23 +102,47 @@ def check_architecture
   end
 end
 
-def download_archive(arch_config, type)
+def download_archive(arch, type)
   report["build"]["source"] = "remote"
-  if arch_config.key?(type)
-    download_url = arch_config[type]["download_url"]
-    report["download"]["download_url"] = download_url
-    open(download_url, :ssl_ca_cert => CA_CERT_PATH)
-  else
+  arch_config = AGENT_CONFIG["triples"][arch]
+
+  if !arch_config.key?(type)
     abort_installation(
       "AppSignal currently does not support your system. " \
-        "Expected config for architecture '#{ARCH}' and package type '#{type}', but none found. " \
+        "Expected config for architecture '#{arch}' and package type '#{type}', but none found. " \
         "For a full list of supported systems visit: " \
         "https://docs.appsignal.com/support/operating-systems.html"
     )
+    return
   end
+
+  version = AGENT_CONFIG["version"]
+  filename = arch_config[type]["filename"]
+  attempted_mirror_urls = []
+
+  AGENT_CONFIG["mirrors"].each do |mirror|
+    download_url = [mirror, version, filename].join("/")
+    attempted_mirror_urls << download_url
+    report["download"]["download_url"] = download_url
+
+    begin
+      return open(download_url, :ssl_ca_cert => CA_CERT_PATH)
+    rescue
+      next
+    end
+  end
+
+  abort_installation(
+    "Could not download archive from any of our mirrors. " \
+      "Attempted to download the archive from the following urls: " \
+      "#{attempted_mirror_urls.join("\n")} " \
+      "Please make sure your network allows access to any of these mirrors."
+  )
 end
 
-def verify_archive(archive, arch_config, type)
+def verify_archive(archive, arch, type)
+  arch_config = AGENT_CONFIG["triples"][arch]
+
   if Digest::SHA256.hexdigest(archive.read) == arch_config[type]["checksum"]
     report["download"]["checksum"] = "verified"
     true

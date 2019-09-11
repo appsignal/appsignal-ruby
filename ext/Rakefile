@@ -15,14 +15,13 @@ task :default do
     report["language"]["implementation"] = "jruby"
     report["build"]["library_type"] = library_type
     next unless check_architecture
-    arch_config = AGENT_CONFIG["triples"][ARCH]
 
     if local_build?
       report["build"]["source"] = "local"
     else
-      archive = download_archive(arch_config, library_type)
+      archive = download_archive(ARCH, library_type)
       next unless archive
-      next unless verify_archive(archive, arch_config, library_type)
+      next unless verify_archive(archive, ARCH, library_type)
       unarchive(archive)
     end
     successful_installation
