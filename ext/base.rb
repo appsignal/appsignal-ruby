@@ -132,10 +132,11 @@ def download_archive(type)
     end
   end
 
+  attempted_mirror_urls_mapped = attempted_mirror_urls.map { |mirror| "- #{mirror}" }
   abort_installation(
     "Could not download archive from any of our mirrors. " \
-      "Attempted to download the archive from the following urls: " \
-      "#{attempted_mirror_urls.join("\n")} " \
+      "Attempted to download the archive from the following urls:\n" \
+      "#{attempted_mirror_urls_mapped.join("\n")}\n" \
       "Please make sure your network allows access to any of these mirrors."
   )
 end
