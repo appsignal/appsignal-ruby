@@ -112,6 +112,9 @@ matrix:
     gemfile: gemfiles/que.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
+    gemfile: gemfiles/que_beta.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.6.0
     gemfile: gemfiles/rails-5.0.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: 2.6.0
