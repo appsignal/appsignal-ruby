@@ -1,0 +1,31 @@
+name: Ruby
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        ruby:
+          - "2.0.x"
+          - "2.1.x"
+          - "2.2.x"
+          - "2.3.x"
+          - "2.4.x"
+          - "2.5.x"
+          - "2.6.x"
+    name: Ruby ${{ matrix.ruby }} test suite
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+    - name: "Install bundle"
+      run: |
+        gem install bundler
+        bundle install --jobs 4 --retry 3
+    - name: "Install extension"
+      run: bundle exec rake extension:install
+    - name: "RSpec"
+      run: bundle exec rake test

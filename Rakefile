@@ -315,5 +315,3 @@ begin
 rescue LoadError # rubocop:disable Lint/HandleExceptions
   # When running rake install, there is no RSpec yet.
 end
-
-task :default => [:generate_bundle_and_spec_all, :spec_all_gemfiles]
