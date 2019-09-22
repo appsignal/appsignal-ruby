@@ -36,7 +36,7 @@ jobs:
           - "sequel-435"
           - "sinatra"
           - "webmachine"
-    name: Ruby ${{ matrix.ruby }} on ${{ matrix.os }} test suite
+    name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
     steps:
     - uses: actions/checkout@master
     - uses: actions/setup-ruby@v1
