@@ -24,7 +24,7 @@ jobs:
 
     name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
     runs-on: ${{ matrix.os }}
-    container: ruby:${{ matrix.ruby }}
+    container: ruby:1.9.3
     steps:
     - uses: actions/checkout@master
     - uses: actions/setup-ruby@v1
