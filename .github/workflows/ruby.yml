@@ -4,9 +4,13 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-16.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os:
+          - ubuntu-18.04
+          - macOS-10.14
+          - windows-2016
         ruby:
           - "2.3.x"
           - "2.4.x"
