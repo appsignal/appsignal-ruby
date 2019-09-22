@@ -11,10 +11,10 @@ jobs:
         os:
           - ubuntu-18.04
           - macOS-10.14
-          - windows-2016
+          - windows-latest
         ruby:
-          - "2.3.x"
-          - "2.4.x"
+          # - "2.3.x"
+          # - "2.4.x"
           - "2.5.x"
           - "2.6.x"
         gem:
