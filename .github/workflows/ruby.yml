@@ -16,7 +16,6 @@ jobs:
         os:
           - ubuntu-18.04
           - macOS-10.14
-          - windows-latest
         ruby:
           # - "2.3.x"
           # - "2.4.x"
