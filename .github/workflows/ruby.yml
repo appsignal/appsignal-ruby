@@ -26,7 +26,7 @@ jobs:
     - name: "Install bundle"
       run: |
         gem update --no-document --system
-        gem install bundler
+        gem install bundler --force
         bundle install --jobs 4 --retry 3
     - name: "Install extension"
       run: bundle exec rake extension:install
