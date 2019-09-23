@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.14
+- Support mirrors when downloading the agent & extension. PR #558
+- Support Que's upcoming 1.0.0 release. PR #557
+
 ## 2.9.13
 - Bump agent to v-e1c9363
   - Detect revision from Heroku dynos automatically when Dyno Metadata is
