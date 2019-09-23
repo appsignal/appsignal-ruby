@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.15
+- Bump agent to v-690f4b8 - commit cf4f3787395c8524079f3bed3b2c2367296482a9
+  - Validate transmission_interval option.
+
 ## 2.9.14
 - Support mirrors when downloading the agent & extension. PR #558
 - Support Que's upcoming 1.0.0 release. PR #557
