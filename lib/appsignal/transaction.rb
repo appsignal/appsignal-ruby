@@ -264,6 +264,11 @@ module Appsignal
     end
 
     def set_error(error)
+      unless error.is_a?(Exception)
+        Appsignal.logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
+          "The given value is not an exception: #{error.inspect}"
+        return
+      end
       return unless error
       return unless Appsignal.active?
 

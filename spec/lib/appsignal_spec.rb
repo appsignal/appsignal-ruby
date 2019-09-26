@@ -657,8 +657,10 @@ describe Appsignal do
         let(:error) { double }
 
         it "logs an error message" do
-          expect(Appsignal.logger).to receive(:error)
-            .with("Can't send error, given value is not an exception")
+          expect(Appsignal.logger).to receive(:error).with(
+            "Appsignal.send_error: Cannot send error. " \
+              "The given value is not an exception: #{error.inspect}"
+          )
         end
 
         it "does not send the error" do
@@ -778,13 +780,19 @@ describe Appsignal do
           Appsignal.set_error(error)
         end
 
-        context "when the error is nil" do
-          it "does nothing" do
+        context "when the error is not an Exception" do
+          let(:error) { Object.new }
+
+          it "logs an error" do
+            expect(Appsignal.logger).to receive(:error).with(
+              "Appsignal.set_error: Cannot set error. " \
+                "The given value is not an exception: #{error.inspect}"
+            )
             expect(transaction).to_not receive(:set_error)
             expect(transaction).to_not receive(:set_tags)
             expect(transaction).to_not receive(:set_namespace)
 
-            Appsignal.set_error(nil)
+            Appsignal.set_error(error)
           end
         end
 
