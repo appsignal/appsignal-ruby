@@ -23,12 +23,9 @@ jobs:
 
     name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
     runs-on: ${{ matrix.os }}
-    container: ruby:1.9.3
+    container: ruby:${{ matrix.ruby }}
     steps:
     - uses: actions/checkout@master
-    - uses: actions/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby }}
     - name: "Install bundle"
       env:
         BUNDLE_GEMFILE: gemfiles/${{ matrix.gem }}.gemfile
