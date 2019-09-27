@@ -1,4 +1,4 @@
-name: Ruby 2
+name: Ruby
 
 on:
   push:
@@ -12,9 +12,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os:
-        #   - ubuntu-18.04
-        #   - macOS-10.14
         ruby:
           - "1.9.3"
           - "2.6.4"
@@ -23,7 +20,6 @@ jobs:
           - "sinatra"
 
     name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
-    runs-on: ${{ matrix.os }}
     container: ruby:1.9.3
     steps:
     - uses: actions/checkout@master
