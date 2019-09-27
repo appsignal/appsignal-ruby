@@ -14,10 +14,10 @@ jobs:
       matrix:
         ruby:
           - "1.9.3"
-          - "2.6.4"
+          # - "2.6.4"
         gem:
           - "no_dependencies"
-          - "sinatra"
+          # - "sinatra"
 
     name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
     runs-on: ubuntu-18.04
