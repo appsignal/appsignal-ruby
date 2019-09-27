@@ -30,7 +30,7 @@ jobs:
       env:
         BUNDLE_GEMFILE: gemfiles/${{ matrix.gem }}.gemfile
       run: |
-        gem update --no-document --system
+        gem update --system
         gem install bundler --force
         bundle install --jobs 4 --retry 3
     - name: "Install extension"
