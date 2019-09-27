@@ -12,27 +12,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os:
+        - ubuntu-latest
+        - macos-latest
         ruby:
-          - "1.9.3"
-          - "2.6.4"
+        - "1.9.3"
+        - "2.6.4"
         gem:
-          - "no_dependencies"
-
-    name: Ruby ${{ matrix.ruby }} - ${{ matrix.gem }} on ${{ matrix.os }} test suite
-    runs-on: ubuntu-18.04
-    container: ruby:${{ matrix.ruby }}
-    steps:
-    - uses: actions/checkout@master
-    - name: "Install bundle"
-      env:
-        BUNDLE_GEMFILE: gemfiles/${{ matrix.gem }}.gemfile
-      run: |
-        gem update --system 2.7.8
-        gem install bundler --force --version 1.17.3
-        bundle install --jobs 4 --retry 3
-    - name: "Install extension"
-      run: bundle exec rake extension:install
-    - name: "RSpec"
-      env:
-        BUNDLE_GEMFILE: gemfiles/${{ matrix.gem }}.gemfile
-      run: bundle exec rake test
+        - "no_dependencies"
+        - "sinatra"
