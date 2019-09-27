@@ -28,8 +28,8 @@ jobs:
       env:
         BUNDLE_GEMFILE: gemfiles/${{ matrix.gem }}.gemfile
       run: |
-        gem update --system
-        gem install bundler --force
+        gem update --system 2.7.8
+        gem install bundler --force --version 1.17.3
         bundle install --jobs 4 --retry 3
     - name: "Install extension"
       run: bundle exec rake extension:install
