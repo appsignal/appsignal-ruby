@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.9.16
+- Check set_error arguments for Exceptions. PR #565
+- Bump agent to v-1d8917f - commit 737d6b1b8fc9cd2c0564050bb04246d9267dceb7
+  - Only attempt to send queued payloads if we have a successful transmission.
+
 ## 2.9.15
 - Bump agent to v-690f4b8 - commit cf4f3787395c8524079f3bed3b2c2367296482a9
   - Validate transmission_interval option.
