@@ -75,7 +75,7 @@ module Appsignal
         def install_for_rails(config)
           puts "Installing for Ruby on Rails"
 
-          require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
+          require Appsignal::Utils::RailsHelper.application_config_path
 
           config[:name] = Appsignal::Utils::RailsHelper.detected_rails_app_name
           name_overwritten = yes_or_no("  Your app's name is: '#{config[:name]}' \n  Do you want to change how this is displayed in AppSignal? (y/n): ")
@@ -227,10 +227,11 @@ module Appsignal
 
         def installed_frameworks
           [].tap do |out|
-            out << :rails if framework_available? "rails"
             out << :sinatra if framework_available? "sinatra"
             out << :padrino if framework_available? "padrino"
             out << :grape if framework_available? "grape"
+            out << :rails if framework_available?("rails") &&
+              Appsignal::Utils::RailsHelper.application_config_exists?
           end
         end
 
