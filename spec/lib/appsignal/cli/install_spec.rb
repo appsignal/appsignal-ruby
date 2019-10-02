@@ -428,6 +428,32 @@ describe Appsignal::CLI::Install do
           expect(File.exist?(config_file_path)).to be(false)
         end
       end
+
+      context "when failed to load the Rails application.rb file" do
+        before do
+          File.open(File.join(config_dir, "application.rb"), "w") do |file|
+            file.write("I am invalid code")
+          end
+        end
+
+        it "prompts the user to fill in an app name" do
+          enter_app_name app_name
+          choose_config_file
+          run
+
+          expect(output).to include("Installing for Ruby on Rails")
+          expect(output).to include("Unable to automatically detect your Rails app's name.")
+          expect(output).to include("Choose your app's display name for AppSignal.com:")
+          expect(output).to include_file_config
+          expect(output).to include_complete_install
+
+          expect(config_file).to configure_app_name(app_name)
+          expect(config_file).to configure_push_api_key(push_api_key)
+          expect(config_file).to configure_environment("development")
+          expect(config_file).to configure_environment("staging")
+          expect(config_file).to configure_environment("production")
+        end
+      end
     end
   end
 

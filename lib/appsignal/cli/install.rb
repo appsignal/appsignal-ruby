@@ -81,17 +81,30 @@ module Appsignal
         end
 
         def configure_rails_app_name(config)
-          require Appsignal::Utils::RailsHelper.application_config_path
+          loaded =
+            begin
+              load Appsignal::Utils::RailsHelper.application_config_path
+              true
+            rescue LoadError, StandardError
+              false
+            end
 
-          config[:name] = Appsignal::Utils::RailsHelper.detected_rails_app_name
-          puts
-          name_overwritten = yes_or_no(
-            "  Your app's name is: '#{config[:name]}' \n  " \
-              "Do you want to change how this is displayed in AppSignal? " \
-              "(y/n): "
-          )
-          if name_overwritten
-            config[:name] = required_input("  Choose app's display name: ")
+          name_overwritten = false
+          if loaded
+            config[:name] = Appsignal::Utils::RailsHelper.detected_rails_app_name
+            puts
+            name_overwritten = yes_or_no(
+              "  Your app's name is: '#{config[:name]}' \n  " \
+                "Do you want to change how this is displayed in AppSignal? " \
+                "(y/n): "
+            )
+            if name_overwritten
+              config[:name] = required_input("  Choose app's display name: ")
+              puts
+            end
+          else
+            puts "  Unable to automatically detect your Rails app's name."
+            config[:name] = required_input("  Choose your app's display name for AppSignal.com: ")
             puts
           end
           name_overwritten
