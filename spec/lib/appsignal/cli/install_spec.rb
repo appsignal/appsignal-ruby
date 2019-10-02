@@ -16,6 +16,10 @@ describe Appsignal::CLI::Install do
     allow(described_class).to receive(:press_any_key)
     allow(Appsignal::Demo).to receive(:transmit).and_return(true)
   end
+  after do
+    FileUtils.rm_rf(tmp_dir)
+    FileUtils.mkdir_p(tmp_dir)
+  end
   around do |example|
     original_stdin = $stdin
     $stdin = StringIO.new
@@ -157,15 +161,9 @@ describe Appsignal::CLI::Install do
   shared_examples "capistrano install" do
     let(:capfile) { File.join(tmp_dir, "Capfile") }
     before do
-      FileUtils.mkdir_p(tmp_dir)
-
       enter_app_name "foo"
       add_cli_input "n"
       choose_environment_config
-    end
-    after do
-      FileUtils.rm_rf(tmp_dir)
-      FileUtils.mkdir_p(tmp_dir)
     end
 
     context "without Capfile" do
@@ -260,7 +258,6 @@ describe Appsignal::CLI::Install do
         FileUtils.touch(File.join(environments_dir, "development.rb"))
         FileUtils.touch(File.join(environments_dir, "staging.rb"))
         FileUtils.touch(File.join(environments_dir, "production.rb"))
-        enter_app_name app_name
       end
 
       describe "environments" do
@@ -408,6 +405,27 @@ describe Appsignal::CLI::Install do
             expect(output).to include(*installation_instructions)
             expect(output).to include_complete_install
           end
+        end
+      end
+
+      context "when there is no Rails application.rb file" do
+        before do
+          # Do not detect it as another framework for testing
+          allow(described_class).to receive(:framework_available?).and_call_original
+          allow(described_class).to receive(:framework_available?).with("sinatra").and_return(false)
+
+          File.delete(File.join(config_dir, "application.rb"))
+          expect(File.exist?(File.join(config_dir, "application.rb"))).to eql(false)
+        end
+
+        it "fails the installation" do
+          run
+
+          expect(output).to include("We could not detect which framework you are using.")
+          expect(output).to_not include("Installing for Ruby on Rails")
+          expect(output).to include_complete_install
+
+          expect(File.exist?(config_file_path)).to be(false)
         end
       end
     end

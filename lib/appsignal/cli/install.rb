@@ -75,18 +75,26 @@ module Appsignal
         def install_for_rails(config)
           puts "Installing for Ruby on Rails"
 
-          require File.expand_path(File.join(Dir.pwd, "config/application.rb"))
+          name_overwritten = configure_rails_app_name(config)
+          configure(config, rails_environments, name_overwritten)
+          done_notice
+        end
+
+        def configure_rails_app_name(config)
+          require Appsignal::Utils::RailsHelper.application_config_path
 
           config[:name] = Appsignal::Utils::RailsHelper.detected_rails_app_name
-          name_overwritten = yes_or_no("  Your app's name is: '#{config[:name]}' \n  Do you want to change how this is displayed in AppSignal? (y/n): ")
           puts
+          name_overwritten = yes_or_no(
+            "  Your app's name is: '#{config[:name]}' \n  " \
+              "Do you want to change how this is displayed in AppSignal? " \
+              "(y/n): "
+          )
           if name_overwritten
             config[:name] = required_input("  Choose app's display name: ")
             puts
           end
-
-          configure(config, rails_environments, name_overwritten)
-          done_notice
+          name_overwritten
         end
 
         def install_for_sinatra(config)
@@ -227,7 +235,10 @@ module Appsignal
 
         def installed_frameworks
           [].tap do |out|
-            out << :rails if framework_available? "rails"
+            if framework_available?("rails") &&
+                File.exist?(Appsignal::Utils::RailsHelper.application_config_path)
+              out << :rails
+            end
             out << :sinatra if framework_available? "sinatra"
             out << :padrino if framework_available? "padrino"
             out << :grape if framework_available? "grape"

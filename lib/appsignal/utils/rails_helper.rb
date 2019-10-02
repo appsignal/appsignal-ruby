@@ -11,6 +11,10 @@ module Appsignal
           rails_class.parent_name
         end
       end
+
+      def self.application_config_path
+        File.expand_path(File.join(Dir.pwd, "config/application.rb"))
+      end
     end
   end
 end
