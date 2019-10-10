@@ -1,5 +1,5 @@
 RSpec.describe "Puma plugin" do
-  let(:probe) { Probe.new }
+  let(:probe) { MockProbe.new }
   before do
     module Puma
       def self.stats
@@ -22,18 +22,6 @@ RSpec.describe "Puma plugin" do
       end
     end
 
-    class Probe
-      attr_reader :calls
-
-      def initialize
-        @calls = 0
-      end
-
-      def call
-        @calls += 1
-      end
-    end
-
     Appsignal::Minutely.probes.clear
     ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"] = "true"
     Appsignal.config = project_fixture_config
@@ -47,7 +35,6 @@ RSpec.describe "Puma plugin" do
   after do
     Appsignal.config = nil
     Object.send :remove_const, :Puma
-    Object.send :remove_const, :Probe
     Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED
   end
 
