@@ -11,25 +11,20 @@ module Appsignal
       end
 
       def install
-        if ::Puma.respond_to?(:stats)
+        if ::Puma.respond_to?(:stats) && !defined?(APPSIGNAL_PUMA_PLUGIN_LOADED)
+          # Only install the minutely probe if a user isn't using our Puma
+          # plugin, which lives in `lib/puma/appsignal.rb`. This plugin defines
+          # the {APPSIGNAL_PUMA_PLUGIN_LOADED} constant.
+          #
+          # We prefer people use the AppSignal Puma plugin. This fallback is
+          # only there when users relied on our *magic* integration.
+          #
+          # Using the Puma plugin, the minutely probe thread will still run in
+          # Puma workers, for other non-Puma probes, but the Puma probe only
+          # runs in the Puma main process.
+          # For more information:
+          # https://docs.appsignal.com/ruby/integrations/puma.html
           Appsignal::Minutely.probes.register :puma, PumaProbe
-        end
-
-        if ::Puma.respond_to?(:cli_config) && ::Puma.cli_config
-          ::Puma.cli_config.options[:before_fork] ||= []
-          ::Puma.cli_config.options[:before_fork] << proc do |_id|
-            Appsignal::Minutely.start
-          end
-
-          ::Puma.cli_config.options[:before_worker_boot] ||= []
-          ::Puma.cli_config.options[:before_worker_boot] << proc do |_id|
-            Appsignal.forked
-          end
-
-          ::Puma.cli_config.options[:before_worker_shutdown] ||= []
-          ::Puma.cli_config.options[:before_worker_shutdown] << proc do |_id|
-            Appsignal.stop("puma before_worker_shutdown")
-          end
         end
 
         return unless defined?(::Puma::Cluster)
