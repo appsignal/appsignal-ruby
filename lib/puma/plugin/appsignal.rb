@@ -13,8 +13,8 @@ APPSIGNAL_PUMA_PLUGIN_LOADED = true
 # For even more information:
 # https://docs.appsignal.com/ruby/integrations/puma.html
 Puma::Plugin.create do
-  def start(_launcher = nil)
-    in_background do
+  def start(launcher = nil)
+    launcher.events.on_booted do
       require "appsignal"
       if ::Puma.respond_to?(:stats)
         Appsignal::Minutely.probes.register :puma, Appsignal::Hooks::PumaProbe

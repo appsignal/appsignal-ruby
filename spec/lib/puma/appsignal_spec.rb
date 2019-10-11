@@ -1,7 +1,23 @@
 RSpec.describe "Puma plugin" do
   include WaitForHelper
 
+  class MockPumaLauncher
+    def events
+      return @events if defined?(@events)
+
+      @events = MockPumaEvents.new
+    end
+  end
+
+  class MockPumaEvents
+    def on_booted(&block)
+      @on_booted = block if block_given?
+      @on_booted if defined?(@on_booted)
+    end
+  end
+
   let(:probe) { MockProbe.new }
+  let(:launcher) { MockPumaLauncher.new }
   before do
     module Puma
       def self.stats
@@ -15,11 +31,6 @@ RSpec.describe "Puma plugin" do
             @plugin = Class.new(::Puma::Plugin)
             @plugin.class_eval(&block)
           end
-        end
-
-        def in_background(&block)
-          @in_background = block if block_given?
-          @in_background if defined?(@in_background)
         end
       end
     end
@@ -44,13 +55,13 @@ RSpec.describe "Puma plugin" do
     expect(Appsignal::Minutely.probes[:my_probe]).to eql(probe)
     expect(Appsignal::Minutely.probes[:puma]).to be_nil
     plugin = Puma::Plugin.plugin.new
-    expect(plugin.in_background).to be_nil
+    expect(launcher.events.on_booted).to be_nil
 
-    plugin.start
+    plugin.start(launcher)
     expect(Appsignal::Minutely.probes[:puma]).to be_nil
-    expect(plugin.in_background).to_not be_nil
+    expect(launcher.events.on_booted).to_not be_nil
 
-    plugin.in_background.call
+    launcher.events.on_booted.call
     expect(Appsignal::Minutely.probes[:puma]).to eql(Appsignal::Hooks::PumaProbe)
 
     # Minutely probes started and called
@@ -64,13 +75,13 @@ RSpec.describe "Puma plugin" do
       expect(Appsignal::Minutely.probes[:my_probe]).to eql(probe)
       expect(Appsignal::Minutely.probes[:puma]).to be_nil
       plugin = Puma::Plugin.plugin.new
-      expect(plugin.in_background).to be_nil
+      expect(launcher.events.on_booted).to be_nil
 
-      plugin.start
+      plugin.start(launcher)
       expect(Appsignal::Minutely.probes[:puma]).to be_nil
-      expect(plugin.in_background).to_not be_nil
+      expect(launcher.events.on_booted).to_not be_nil
 
-      plugin.in_background.call
+      launcher.events.on_booted.call
       expect(Appsignal::Minutely.probes[:puma]).to be_nil
 
       # Minutely probes started and called
