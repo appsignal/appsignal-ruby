@@ -27,6 +27,8 @@ describe Appsignal::Hooks::PumaHook do
     end
 
     describe "installation" do
+      before { Appsignal::Minutely.probes.clear }
+
       context "when not clustered mode" do
         it "does not add AppSignal stop behavior Puma::Cluster" do
           expect(defined?(::Puma::Cluster)).to be_falsy
@@ -34,9 +36,27 @@ describe Appsignal::Hooks::PumaHook do
           Appsignal::Hooks::PumaHook.new.install
         end
 
-        it "adds the Puma minutely probe" do
-          probe = Appsignal::Minutely.probes[:puma]
-          expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+        context "with APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
+          before do
+            # Set in lib/puma/appsignal.rb
+            APPSIGNAL_PUMA_PLUGIN_LOADED = true
+          end
+          after { Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED }
+
+          it "does not add the Puma minutely probe" do
+            Appsignal::Hooks::PumaHook.new.install
+            expect(Appsignal::Minutely.probes[:puma]).to be_nil
+          end
+        end
+
+        context "without APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
+          it "adds the Puma minutely probe" do
+            expect(defined?(APPSIGNAL_PUMA_PLUGIN_LOADED)).to be_nil
+
+            Appsignal::Hooks::PumaHook.new.install
+            probe = Appsignal::Minutely.probes[:puma]
+            expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+          end
         end
       end
 
@@ -49,11 +69,11 @@ describe Appsignal::Hooks::PumaHook do
               end
             end
           end
-          Appsignal::Hooks::PumaHook.new.install
         end
         after { Puma.send(:remove_const, :Cluster) }
 
         it "adds behavior to Puma::Cluster.stop_workers" do
+          Appsignal::Hooks::PumaHook.new.install
           cluster = Puma::Cluster.new
 
           expect(cluster.instance_variable_defined?(:@called)).to be_falsy
@@ -62,40 +82,28 @@ describe Appsignal::Hooks::PumaHook do
           expect(cluster.instance_variable_get(:@called)).to be(true)
         end
 
-        it "adds the Puma minutely probe" do
-          probe = Appsignal::Minutely.probes[:puma]
-          expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+        context "with APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
+          before do
+            # Set in lib/puma/appsignal.rb
+            APPSIGNAL_PUMA_PLUGIN_LOADED = true
+          end
+          after { Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED }
+
+          it "does not add the Puma minutely probe" do
+            Appsignal::Hooks::PumaHook.new.install
+            expect(Appsignal::Minutely.probes[:puma]).to be_nil
+          end
         end
-      end
-    end
 
-    context "with nil hooks" do
-      before do
-        Puma.cli_config.options.delete(:before_fork)
-        Puma.cli_config.options.delete(:before_worker_boot)
-        Puma.cli_config.options.delete(:before_worker_shutdown)
-        Appsignal::Hooks::PumaHook.new.install
-      end
+        context "without APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
+          it "adds the Puma minutely probe" do
+            expect(defined?(APPSIGNAL_PUMA_PLUGIN_LOADED)).to be_nil
 
-      it "should add a before shutdown worker callback" do
-        expect(Puma.cli_config.options[:before_fork].first).to be_a(Proc)
-        expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
-        expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
-      end
-    end
-
-    context "with existing hooks" do
-      before do
-        Puma.cli_config.options[:before_fork] = []
-        Puma.cli_config.options[:before_worker_boot] = []
-        Puma.cli_config.options[:before_worker_shutdown] = []
-        Appsignal::Hooks::PumaHook.new.install
-      end
-
-      it "should add a before shutdown worker callback" do
-        expect(Puma.cli_config.options[:before_fork].first).to be_a(Proc)
-        expect(Puma.cli_config.options[:before_worker_boot].first).to be_a(Proc)
-        expect(Puma.cli_config.options[:before_worker_shutdown].first).to be_a(Proc)
+            Appsignal::Hooks::PumaHook.new.install
+            probe = Appsignal::Minutely.probes[:puma]
+            expect(probe).to eql(Appsignal::Hooks::PumaProbe)
+          end
+        end
       end
     end
   end
