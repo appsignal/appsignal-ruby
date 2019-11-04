@@ -30,7 +30,7 @@ describe Appsignal do
     context "with no config set beforehand" do
       it "should do nothing when config is not set and there is no valid config in the env" do
         expect(Appsignal.logger).to receive(:error).with(
-          "Push API key not set after loading config"
+          "Push api key not set after loading config"
         ).once
         expect(Appsignal.logger).to receive(:error).with(
           "Not starting, no valid config for this environment"
