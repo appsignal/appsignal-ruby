@@ -234,12 +234,11 @@ module Appsignal
           "#{endpoint_uri.scheme}://#{endpoint_uri.host}:#{endpoint_uri.port}"
         end
 
-      push_api_key = config_hash[:push_api_key] || ""
-      if push_api_key.strip.empty?
-        @valid = false
-        @logger.error "Push API key not set after loading config"
-      else
+      if config_hash[:push_api_key]
         @valid = true
+      else
+        @valid = false
+        @logger.error "Push api key not set after loading config"
       end
     end
 
@@ -254,10 +253,8 @@ module Appsignal
       {}.tap do |hash|
         hash[:log] = "stdout" if Appsignal::System.heroku?
 
-        # Make AppSignal active by default if APPSIGNAL_PUSH_API_KEY
-        # environment variable is present and not empty.
-        env_push_api_key = ENV["APPSIGNAL_PUSH_API_KEY"] || ""
-        hash[:active] = true unless env_push_api_key.strip.empty?
+        # Make active by default if APPSIGNAL_PUSH_API_KEY is present
+        hash[:active] = true if ENV["APPSIGNAL_PUSH_API_KEY"]
       end
     end
 
