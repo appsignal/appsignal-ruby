@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0
+- Add validation for empty Push API key. Empty keys will no longer start
+  AppSignal. PR #569
+
 ## 2.9.17
 - Handle missing file and load errors from `application.rb` in `appsignal
   install` for Rails apps. PR #568
