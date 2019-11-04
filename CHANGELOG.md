@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.9.17
+- Handle missing file and load errors from `application.rb` in `appsignal
+  install` for Rails apps. PR #568
+- Add validation for empty Push API key. Empty keys will no longer start
+  AppSignal. PR #569
+- Support minutely probes for Puma in clustered mode. PR #570
+  See the installation instructions for the Puma plugin:
+  https://docs.appsignal.com/ruby/integrations/puma.html
+
 ## 2.9.16
 - Check set_error arguments for Exceptions. PR #565
 - Bump agent to v-1d8917f - commit 737d6b1b8fc9cd2c0564050bb04246d9267dceb7
