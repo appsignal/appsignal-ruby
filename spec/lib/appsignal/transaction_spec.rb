@@ -622,7 +622,11 @@ describe Appsignal::Transaction do
 
     describe "#set_error" do
       let(:env) { http_request_env_with_data }
-      let(:error) { double(:error, :message => "test message", :backtrace => ["line 1"]) }
+      let(:error) do
+        e = ExampleStandardError.new("test message")
+        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e
+      end
 
       it "should also respond to add_exception for backwords compatibility" do
         expect(transaction).to respond_to(:add_exception)
@@ -635,10 +639,24 @@ describe Appsignal::Transaction do
         transaction.set_error(error)
       end
 
+      context "when error is not an error" do
+        let(:error) { Object.new }
+
+        it "does not add the error" do
+          expect(Appsignal.logger).to receive(:error).with(
+            "Appsignal::Transaction#set_error: Cannot set error. " \
+            "The given value is not an exception: #{error.inspect}"
+          )
+          expect(transaction.ext).to_not receive(:set_error)
+
+          transaction.set_error(error)
+        end
+      end
+
       context "for a http request" do
         it "should set an error in the extension" do
           expect(transaction.ext).to receive(:set_error).with(
-            "RSpec::Mocks::Double",
+            "ExampleStandardError",
             "test message",
             Appsignal::Utils::Data.generate(["line 1"])
           )
@@ -648,7 +666,12 @@ describe Appsignal::Transaction do
       end
 
       context "when error message is nil" do
-        let(:error) { double(:error, :message => nil, :backtrace => ["line 1"]) }
+        let(:error) do
+          e = ExampleStandardError.new
+          allow(e).to receive(:message).and_return(nil)
+          allow(e).to receive(:backtrace).and_return(["line 1"])
+          e
+        end
 
         it "should not raise an error" do
           expect { transaction.set_error(error) }.to_not raise_error
@@ -656,7 +679,7 @@ describe Appsignal::Transaction do
 
         it "should set an error in the extension" do
           expect(transaction.ext).to receive(:set_error).with(
-            "RSpec::Mocks::Double",
+            "ExampleStandardError",
             "",
             Appsignal::Utils::Data.generate(["line 1"])
           )

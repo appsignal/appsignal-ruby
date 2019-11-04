@@ -1,5 +1,51 @@
 # Changelog
 
+## 2.9.17
+- Handle missing file and load errors from `application.rb` in `appsignal
+  install` for Rails apps. PR #568
+- Add validation for empty Push API key. Empty keys will no longer start
+  AppSignal. PR #569
+- Support minutely probes for Puma in clustered mode. PR #570
+  See the installation instructions for the Puma plugin:
+  https://docs.appsignal.com/ruby/integrations/puma.html
+
+## 2.9.16
+- Check set_error arguments for Exceptions. PR #565
+- Bump agent to v-1d8917f - commit 737d6b1b8fc9cd2c0564050bb04246d9267dceb7
+  - Only attempt to send queued payloads if we have a successful transmission.
+
+## 2.9.15
+- Bump agent to v-690f4b8 - commit cf4f3787395c8524079f3bed3b2c2367296482a9
+  - Validate transmission_interval option.
+
+## 2.9.14
+- Support mirrors when downloading the agent & extension. PR #558
+- Support Que's upcoming 1.0.0 release. PR #557
+
+## 2.9.13
+- Bump agent to v-e1c9363
+  - Detect revision from Heroku dynos automatically when Dyno Metadata is
+    turned on.
+
+## 2.9.12
+- Bump agent to v-a3e0f83 - commit 3d94dd42645922214fc2f5bc09cfa7c597323198
+  - Better detect zombie/defunct processes on containers and consider the
+    processes dead. This should improve the appsignal-agent start behavior.
+- Fix Sequel install hook version detection mismatch. PR #553
+- Improve support for older Sidekiq versions. PR #555
+
+## 2.9.11
+- Bump agent to v-a718022
+  - Fix container CPU runtime metrics.
+    See https://github.com/appsignal/probes-rs/pull/38 for more information.
+  - Improve host metrics calculations accuracy for counter metrics.
+    See https://github.com/appsignal/probes-rs/pull/40 for more information.
+  - Support Kernel 4.18+ format of /proc/diskstats file parsing.
+    See https://github.com/appsignal/probes-rs/pull/39 for more information.
+
+## 2.9.10
+- Fix Puma minutely probe start where `daemonize` is set to `true`. PR #548
+
 ## 2.9.9
 - Fix error in the ActiveSupport::Notifications integration when a transaction
   gets completed during event instrumentation. PR #532

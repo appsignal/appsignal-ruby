@@ -2,7 +2,6 @@
 
 module Appsignal
   module Helpers
-    # @api private
     module Metrics
       def set_gauge(key, value, tags = {})
         Appsignal::Extension.set_gauge(

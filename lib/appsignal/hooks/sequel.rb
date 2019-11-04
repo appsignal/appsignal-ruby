@@ -42,7 +42,7 @@ module Appsignal
 
       def install
         # Register the extension...
-        if ::Sequel::MAJOR >= 4 && ::Sequel::MINOR >= 35
+        if (::Sequel::MAJOR >= 4 && ::Sequel::MINOR >= 35) || ::Sequel::MAJOR >= 5
           ::Sequel::Database.register_extension(
             :appsignal_integration,
             Appsignal::Hooks::SequelLogConnectionExtension

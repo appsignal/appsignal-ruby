@@ -1,4 +1,6 @@
 describe Appsignal::Minutely do
+  include WaitForHelper
+
   before { Appsignal::Minutely.probes.clear }
 
   it "returns a ProbeCollection" do
@@ -7,38 +9,26 @@ describe Appsignal::Minutely do
   end
 
   describe ".start" do
-    class Probe
-      attr_reader :calls
-
-      def initialize
-        @calls = 0
-      end
-
-      def call
-        @calls += 1
-      end
-    end
-
-    class ProbeWithoutDependency < Probe
+    class ProbeWithoutDependency < MockProbe
       def self.dependencies_present?
         true
       end
     end
 
-    class ProbeWithMissingDependency < Probe
+    class ProbeWithMissingDependency < MockProbe
       def self.dependencies_present?
         false
       end
     end
 
-    class BrokenProbe < Probe
+    class BrokenProbe < MockProbe
       def call
         super
         raise "oh no!"
       end
     end
 
-    class BrokenProbeOnInitialize < Probe
+    class BrokenProbeOnInitialize < MockProbe
       def initialize
         super
         raise "oh no initialize!"
@@ -60,7 +50,7 @@ describe Appsignal::Minutely do
 
     context "with an instance of a class" do
       it "calls the probe every <wait_time>" do
-        probe = Probe.new
+        probe = MockProbe.new
         Appsignal::Minutely.probes.register :my_probe, probe
         Appsignal::Minutely.start
 
@@ -90,8 +80,8 @@ describe Appsignal::Minutely do
 
     context "with probe class" do
       it "creates an instance of the class and call that every <wait time>" do
-        probe = Probe
-        probe_instance = Probe.new
+        probe = MockProbe
+        probe_instance = MockProbe.new
         expect(probe).to receive(:new).and_return(probe_instance)
         Appsignal::Minutely.probes.register :my_probe, probe
         Appsignal::Minutely.start
@@ -163,7 +153,7 @@ describe Appsignal::Minutely do
 
     context "with a broken probe" do
       it "logs the error and continues calling the probes every <wait_time>" do
-        probe = Probe.new
+        probe = MockProbe.new
         broken_probe = BrokenProbe.new
         Appsignal::Minutely.probes.register :my_probe, probe
         Appsignal::Minutely.probes.register :broken_probe, broken_probe
@@ -183,7 +173,7 @@ describe Appsignal::Minutely do
 
     it "ensures only one minutely probes thread is active at a time" do
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
-      probe = Probe.new
+      probe = MockProbe.new
       Appsignal::Minutely.probes.register :my_probe, probe
       expect do
         Appsignal::Minutely.start
@@ -348,32 +338,5 @@ describe Appsignal::Minutely do
         expect(list).to eql([[:my_probe, probe]])
       end
     end
-  end
-
-  # Wait for a condition to be met
-  #
-  # @example
-  #   # Perform threaded operation
-  #   wait_for("enough probe calls") { probe.calls >= 2 }
-  #   # Assert on result
-  #
-  # @param name [String] The name of the condition to check. Used in the
-  #   error when it fails.
-  # @yield Assertion to check.
-  # @yieldreturn [Boolean] True/False value that indicates if the condition
-  #   is met.
-  # @raise [StandardError] Raises error if the condition is not met after 5
-  #   seconds, 5_000 tries.
-  def wait_for(name)
-    max_wait = 5_000
-    i = 0
-    while i <= max_wait
-      break if yield
-      i += 1
-      sleep 0.001
-    end
-
-    return unless i == max_wait
-    raise "Waited 5 seconds for #{name} condition, but was not met."
   end
 end

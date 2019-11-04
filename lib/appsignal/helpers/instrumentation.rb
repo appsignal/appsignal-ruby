@@ -2,7 +2,6 @@
 
 module Appsignal
   module Helpers
-    # @api private
     module Instrumentation # rubocop:disable Metrics/ModuleLength
       # Creates an AppSignal transaction for the given block.
       #
@@ -202,7 +201,8 @@ module Appsignal
       )
         return unless active?
         unless error.is_a?(Exception)
-          logger.error("Can't send error, given value is not an exception")
+          logger.error "Appsignal.send_error: Cannot send error. The given " \
+            "value is not an exception: #{error.inspect}"
           return
         end
         transaction = Appsignal::Transaction.new(
@@ -257,9 +257,12 @@ module Appsignal
       #   Exception handling guide
       # @since 0.6.6
       def set_error(exception, tags = nil, namespace = nil)
-        return if !active? ||
-            Appsignal::Transaction.current.nil? ||
-            exception.nil?
+        unless exception.is_a?(Exception)
+          logger.error "Appsignal.set_error: Cannot set error. The given " \
+            "value is not an exception: #{exception.inspect}"
+          return
+        end
+        return if !active? || Appsignal::Transaction.current.nil?
         transaction = Appsignal::Transaction.current
         transaction.set_error(exception)
         transaction.set_tags(tags) if tags

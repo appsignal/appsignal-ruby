@@ -11,14 +11,13 @@ def install
   report["language"]["implementation"] = "ruby"
   report["build"]["library_type"] = library_type
   return unless check_architecture
-  arch_config = AGENT_CONFIG["triples"][ARCH]
 
   if local_build?
     report["build"]["source"] = "local"
   else
-    archive = download_archive(arch_config, library_type)
+    archive = download_archive(library_type)
     return unless archive
-    return unless verify_archive(archive, arch_config, library_type)
+    return unless verify_archive(archive, library_type)
     unarchive(archive)
   end
 

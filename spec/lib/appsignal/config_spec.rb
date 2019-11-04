@@ -47,15 +47,43 @@ describe Appsignal::Config do
       subject { config[:active] }
 
       context "with APPSIGNAL_PUSH_API_KEY env variable" do
-        before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
+        context "when not empty" do
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
 
-        it "becomes active" do
-          expect(subject).to be_truthy
+          it "becomes active" do
+            expect(subject).to be_truthy
+          end
+
+          it "sets the push_api_key as loaded through the env_config" do
+            expect(config.env_config).to eq(:push_api_key => "abc")
+            expect(config.system_config).to eq(:active => true)
+          end
         end
 
-        it "sets the push_api_key as loaded through the env_config" do
-          expect(config.env_config).to eq(:push_api_key => "abc")
-          expect(config.system_config).to eq(:active => true)
+        context "when empty string" do
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "" }
+
+          it "does not becomes active" do
+            expect(subject).to be_falsy
+          end
+
+          it "sets the push_api_key as loaded through the env_config" do
+            expect(config.env_config).to eq(:push_api_key => "")
+            expect(config.system_config).to be_empty
+          end
+        end
+
+        context "when blank string" do
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = " " }
+
+          it "does not becomes active" do
+            expect(subject).to be_falsy
+          end
+
+          it "sets the push_api_key as loaded through the env_config" do
+            expect(config.env_config).to eq(:push_api_key => " ")
+            expect(config.system_config).to be_empty
+          end
         end
       end
 
@@ -288,7 +316,7 @@ describe Appsignal::Config do
         expect_any_instance_of(Logger).to receive(:error).once
           .with("Not loading from config file: config for 'nonsense' not found")
         expect_any_instance_of(Logger).to receive(:error).once
-          .with("Push api key not set after loading config")
+          .with("Push API key not set after loading config")
         config
       end
     end
@@ -739,6 +767,22 @@ describe Appsignal::Config do
 
       context "with missing push_api_key" do
         let(:push_api_key) { nil }
+
+        it "sets valid to false" do
+          is_expected.to eq(false)
+        end
+      end
+
+      context "with empty push_api_key" do
+        let(:push_api_key) { "" }
+
+        it "sets valid to false" do
+          is_expected.to eq(false)
+        end
+      end
+
+      context "with blank push_api_key" do
+        let(:push_api_key) { " " }
 
         it "sets valid to false" do
           is_expected.to eq(false)

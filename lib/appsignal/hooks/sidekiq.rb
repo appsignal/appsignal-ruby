@@ -38,13 +38,29 @@ module Appsignal
       end
 
       def call
-        stats = ::Sidekiq::Stats.new
+        track_redis_info
+        track_stats
+        track_queues
+      end
+
+      private
+
+      attr_reader :cache
+
+      def track_redis_info
+        return unless ::Sidekiq.respond_to?(:redis_info)
         redis_info = ::Sidekiq.redis_info
-        gauge "worker_count", stats.workers_size
-        gauge "process_count", stats.processes_size
+
         gauge "connection_count", redis_info.fetch("connected_clients")
         gauge "memory_usage", redis_info.fetch("used_memory")
         gauge "memory_usage_rss", redis_info.fetch("used_memory_rss")
+      end
+
+      def track_stats
+        stats = ::Sidekiq::Stats.new
+
+        gauge "worker_count", stats.workers_size
+        gauge "process_count", stats.processes_size
         gauge_delta :jobs_processed, "job_count", stats.processed,
           :status => :processed
         gauge_delta :jobs_failed, "job_count", stats.failed, :status => :failed
@@ -52,17 +68,15 @@ module Appsignal
         gauge_delta :jobs_dead, "job_count", stats.dead_size, :status => :died
         gauge "job_count", stats.scheduled_size, :status => :scheduled
         gauge "job_count", stats.enqueued, :status => :enqueued
+      end
 
+      def track_queues
         ::Sidekiq::Queue.all.each do |queue|
           gauge "queue_length", queue.size, :queue => queue.name
           # Convert latency from seconds to milliseconds
           gauge "queue_latency", queue.latency * 1_000.0, :queue => queue.name
         end
       end
-
-      private
-
-      attr_reader :cache
 
       # Track a gauge metric with the `sidekiq_` prefix
       def gauge(key, value, tags = {})

@@ -12,6 +12,7 @@ AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
 ARCH = "#{RbConfig::CONFIG["host_cpu"]}-#{AGENT_PLATFORM}".freeze
+ARCH_CONFIG = AGENT_CONFIG["triples"][ARCH].freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -102,31 +103,53 @@ def check_architecture
   end
 end
 
-def download_archive(arch_config, type)
+def download_archive(type)
   report["build"]["source"] = "remote"
-  if arch_config.key?(type)
-    download_url = arch_config[type]["download_url"]
-    report["download"]["download_url"] = download_url
-    open(download_url, :ssl_ca_cert => CA_CERT_PATH)
-  else
+
+  unless ARCH_CONFIG.key?(type)
     abort_installation(
       "AppSignal currently does not support your system. " \
-        "Expected config for architecture '#{ARCH}' and package type '#{type}', but none found. " \
+        "Expected config for architecture '#{arch}' and package type '#{type}', but none found. " \
         "For a full list of supported systems visit: " \
         "https://docs.appsignal.com/support/operating-systems.html"
     )
+    return
   end
+
+  version = AGENT_CONFIG["version"]
+  filename = ARCH_CONFIG[type]["filename"]
+  attempted_mirror_urls = []
+
+  AGENT_CONFIG["mirrors"].each do |mirror|
+    download_url = [mirror, version, filename].join("/")
+    attempted_mirror_urls << download_url
+    report["download"]["download_url"] = download_url
+
+    begin
+      return open(download_url, :ssl_ca_cert => CA_CERT_PATH)
+    rescue
+      next
+    end
+  end
+
+  attempted_mirror_urls_mapped = attempted_mirror_urls.map { |mirror| "- #{mirror}" }
+  abort_installation(
+    "Could not download archive from any of our mirrors. " \
+      "Attempted to download the archive from the following urls:\n" \
+      "#{attempted_mirror_urls_mapped.join("\n")}\n" \
+      "Please make sure your network allows access to any of these mirrors."
+  )
 end
 
-def verify_archive(archive, arch_config, type)
-  if Digest::SHA256.hexdigest(archive.read) == arch_config[type]["checksum"]
+def verify_archive(archive, type)
+  if Digest::SHA256.hexdigest(archive.read) == ARCH_CONFIG[type]["checksum"]
     report["download"]["checksum"] = "verified"
     true
   else
     report["download"]["checksum"] = "invalid"
     abort_installation(
       "Checksum of downloaded archive could not be verified: " \
-        "Expected '#{arch_config[type]["checksum"]}', got '#{checksum}'."
+        "Expected '#{ARCH_CONFIG[type]["checksum"]}', got '#{checksum}'."
     )
   end
 end
