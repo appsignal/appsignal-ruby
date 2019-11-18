@@ -39,7 +39,8 @@ module Appsignal
       :enable_minutely_probes         => true,
       :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers                    => [],
-      :files_world_accessible         => true
+      :files_world_accessible         => true,
+      :transaction_debug_mode         => false
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -75,6 +76,7 @@ module Appsignal
       "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
+      "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
       "APP_REVISION"                             => :revision
     }.freeze
 
@@ -219,6 +221,7 @@ module Appsignal
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
+      ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
       ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end
 
@@ -324,7 +327,7 @@ module Appsignal
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
          APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES
-         APPSIGNAL_FILES_WORLD_ACCESSIBLE].each do |var|
+         APPSIGNAL_FILES_WORLD_ACCESSIBLE APPSIGNAL_TRANSACTION_DEBUG_MODE].each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?
