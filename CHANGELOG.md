@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.9.18 (Beta)
+- Bump agent to v-c348132
+  - Improve transmitter logging on timeout
+  - Improve queued payloads transmitter. Should prevent payloads being sent
+    multiple times.
+  - Add transaction debug mode
+  - Wrap Option in Mutex in TransactionInProgess
+
 ## 2.9.17
 - Handle missing file and load errors from `application.rb` in `appsignal
   install` for Rails apps. PR #568
