@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.9.18 (Beta)
+## 2.9.18
 - Bump agent to v-c348132
   - Improve transmitter logging on timeout
   - Improve queued payloads transmitter. Should prevent payloads being sent
