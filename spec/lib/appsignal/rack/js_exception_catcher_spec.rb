@@ -3,19 +3,33 @@ describe Appsignal::Rack::JSExceptionCatcher do
   let(:options)        { nil }
   let(:config_options) { { :enable_frontend_error_catching => true } }
   let(:config)         { project_fixture_config("production", config_options) }
+  let(:deprecation_message) do
+    "The Appsignal::Rack::JSExceptionCatcher is deprecated. " \
+      "Please use the official AppSignal JavaScript integration instead. " \
+      "https://docs.appsignal.com/front-end/"
+  end
   before { Appsignal.config = config }
 
   describe "#initialize" do
     it "logs to the logger" do
-      expect(Appsignal.logger).to receive(:debug)
-        .with("Initializing Appsignal::Rack::JSExceptionCatcher")
-
-      Appsignal::Rack::JSExceptionCatcher.new(app, options)
+      stdout = std_stream
+      stderr = std_stream
+      log = capture_logs do
+        capture_std_streams(stdout, stderr) do
+          Appsignal::Rack::JSExceptionCatcher.new(app, options)
+        end
+      end
+      expect(log).to contains_log(:warn, deprecation_message)
+      expect(log).to contains_log(:debug, "Initializing Appsignal::Rack::JSExceptionCatcher")
+      expect(stdout.read).to include "appsignal WARNING: #{deprecation_message}"
+      expect(stderr.read).to_not include("appsignal:")
     end
   end
 
   describe "#call" do
-    let(:catcher) { Appsignal::Rack::JSExceptionCatcher.new(app, options) }
+    let(:catcher) do
+      silence { Appsignal::Rack::JSExceptionCatcher.new(app, options) }
+    end
     after { catcher.call(env) }
 
     context "when path is not frontend_error_catching_path" do
