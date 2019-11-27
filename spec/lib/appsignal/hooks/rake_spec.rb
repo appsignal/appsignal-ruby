@@ -4,69 +4,71 @@ describe Appsignal::Hooks::RakeHook do
   let(:task) { Rake::Task.new("task:name", Rake::Application.new) }
   let(:arguments) { Rake::TaskArguments.new(["foo"], ["bar"]) }
   let(:generic_request) { Appsignal::Transaction::GenericRequest.new({}) }
-  before(:context) do
-    Appsignal.config = project_fixture_config
-    expect(Appsignal.active?).to be_truthy
-    Appsignal::Hooks.load_hooks
-  end
+  before(:context) { start_agent }
 
   describe "#execute" do
     context "without error" do
+      before { expect(Appsignal).to_not receive(:stop) }
+
+      def perform
+        task.execute(arguments)
+      end
+
       it "creates no transaction" do
-        expect(Appsignal::Transaction).to_not receive(:create)
+        expect(Appsignal::Transaction).to_not receive(:new)
+        expect { perform }.to_not(change { created_transactions })
       end
 
       it "calls the original task" do
-        expect(task).to receive(:execute_without_appsignal).with("foo")
+        expect(task).to receive(:execute_without_appsignal).with(arguments)
+        perform
       end
-
-      after { task.execute("foo") }
     end
 
     context "with error" do
       let(:error) { ExampleException }
-      let(:transaction) { background_job_transaction }
       before do
-        task.enhance { raise error }
-
-        expect(Appsignal::Transaction).to receive(:create).with(
-          kind_of(String),
-          Appsignal::Transaction::BACKGROUND_JOB,
-          kind_of(Appsignal::Transaction::GenericRequest)
-        ).and_return(transaction)
+        task.enhance { raise error, "my error message" }
+        # We don't call `and_call_original` here as we don't want AppSignal to
+        # stop and start for every spec.
+        expect(Appsignal).to receive(:stop).with("rake")
       end
 
-      it "sets the action" do
-        expect(transaction).to receive(:set_action).with("task:name")
+      def perform
+        keep_transactions do
+          expect { task.execute(arguments) }.to raise_error(error)
+        end
       end
 
-      it "sets the error" do
-        expect(transaction).to receive(:set_error).with(error)
-      end
+      it "creates a background job transaction" do
+        perform
 
-      it "completes the transaction and stops" do
-        expect(transaction).to receive(:complete).ordered
-        expect(Appsignal).to receive(:stop).with("rake").ordered
-      end
-
-      it "adds the task arguments to the request" do
-        expect(Appsignal::Transaction::GenericRequest).to receive(:new)
-          .with(:params => { :foo => "bar" })
-          .and_return(generic_request)
+        expect(last_transaction).to be_completed
+        expect(last_transaction.to_h).to include(
+          "id" => kind_of(String),
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+          "action" => "task:name",
+          "error" => {
+            "name" => "ExampleException",
+            "message" => "my error message",
+            "backtrace" => kind_of(String)
+          },
+          "sample_data" => hash_including(
+            "params" => { "foo" => "bar" }
+          )
+        )
       end
 
       context "when first argument is not a `Rake::TaskArguments`" do
         let(:arguments) { nil }
 
-        it "adds the first argument regardless" do
-          expect(Appsignal::Transaction::GenericRequest).to receive(:new)
-            .with(:params => nil)
-            .and_return(generic_request)
-        end
-      end
+        it "does not add the params to the transaction" do
+          perform
 
-      after do
-        expect { task.execute(arguments) }.to raise_error ExampleException
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_excluding("params")
+          )
+        end
       end
     end
   end

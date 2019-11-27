@@ -17,67 +17,129 @@ if DependencyHelper.resque_present? && DependencyHelper.active_job_present?
       end
     end
 
-    it "wraps it in a transaction with the correct params" do
-      expect(Appsignal).to receive(:monitor_single_transaction).with(
-        "perform_job.resque",
-        :class  => "TestActiveJob",
-        :method => "perform",
-        :params => ["argument"],
-        :metadata => {
-          :id    => kind_of(String),
-          :queue => "default"
-        }
-      )
+    def perform
+      keep_transactions do
+        job.perform_now
+      end
+    end
+
+    context "without error" do
+      it "creates a new transaction" do
+        expect { perform }.to change { created_transactions.length }.by(1)
+
+        expect(last_transaction.to_h).to include(
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+          "action" => "TestActiveJob#perform",
+          "error" => nil,
+          "events" => [
+            hash_including(
+              "name" => "perform_job.resque",
+              "title" => "",
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT,
+              "count" => 1,
+              "duration" => kind_of(Float)
+            )
+          ],
+          "sample_data" => hash_including(
+            "params" => ["argument"],
+            "metadata" => {
+              "id" => kind_of(String),
+              "queue" => "default"
+            }
+          )
+        )
+      end
+    end
+
+    context "with error" do
+      let(:job) do
+        class BrokenTestActiveJob < ActiveJob::Base
+          include Appsignal::Integrations::ResqueActiveJobPlugin
+
+          def perform(_)
+            raise ExampleException, "my error message"
+          end
+        end
+
+        BrokenTestActiveJob.new(args)
+      end
+
+      it "creates a new transaction with an error" do
+        expect do
+          expect { perform }.to raise_error(ExampleException, "my error message")
+        end.to change { created_transactions.length }.by(1)
+
+        expect(last_transaction.to_h).to include(
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+          "action" => "BrokenTestActiveJob#perform",
+          "error" => {
+            "name" => "ExampleException",
+            "message" => "my error message",
+            "backtrace" => kind_of(String)
+          },
+          "sample_data" => hash_including(
+            "params" => ["argument"],
+            "metadata" => {
+              "id" => kind_of(String),
+              "queue" => "default"
+            }
+          )
+        )
+      end
     end
 
     context "with complex arguments" do
-      let(:args) do
-        {
-          :foo => "Foo",
-          :bar => "Bar"
-        }
-      end
-
-      it "truncates large argument values" do
-        expect(Appsignal).to receive(:monitor_single_transaction).with(
-          "perform_job.resque",
-          :class  => "TestActiveJob",
-          :method => "perform",
-          :params => [
+      context "with too long values" do
+        let(:args) do
+          {
             :foo => "Foo",
-            :bar => "Bar"
-          ],
-          :metadata => {
-            :id    => kind_of(String),
-            :queue => "default"
+            :bar => "a" * 2001
           }
-        )
+        end
+
+        it "truncates large argument values" do
+          perform
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+            "action" => "TestActiveJob#perform",
+            "error" => nil,
+            "sample_data" => hash_including(
+              "params" => ["foo" => "Foo", "bar" => "#{"a" * 2000}..."],
+              "metadata" => {
+                "id" => kind_of(String),
+                "queue" => "default"
+              }
+            )
+          )
+        end
       end
 
       context "with parameter filtering" do
-        before do
-          Appsignal.config = project_fixture_config("production")
-          Appsignal.config[:filter_parameters] = ["foo"]
+        let(:args) do
+          {
+            :foo => "Foo",
+            :bar => "Bar"
+          }
         end
+        before { Appsignal.config[:filter_parameters] = ["foo"] }
 
         it "filters selected arguments" do
-          expect(Appsignal).to receive(:monitor_single_transaction).with(
-            "perform_job.resque",
-            :class  => "TestActiveJob",
-            :method => "perform",
-            :params => [
-              :foo => "[FILTERED]",
-              :bar => "Bar"
-            ],
-            :metadata => {
-              :id    => kind_of(String),
-              :queue => "default"
-            }
+          perform
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+            "action" => "TestActiveJob#perform",
+            "error" => nil,
+            "sample_data" => hash_including(
+              "params" => ["foo" => "[FILTERED]", "bar" => "Bar"],
+              "metadata" => {
+                "id" => kind_of(String),
+                "queue" => "default"
+              }
+            )
           )
         end
       end
     end
-
-    after { job.perform_now }
   end
 end

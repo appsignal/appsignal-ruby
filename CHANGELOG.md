@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0
+- Add validation for empty Push API key. Empty keys will no longer start
+  AppSignal. PR #569
+
 ## 2.9.18
 - Bump agent to v-c348132
   - Improve transmitter logging on timeout

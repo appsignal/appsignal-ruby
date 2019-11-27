@@ -37,47 +37,30 @@ if DependencyHelper.que_present?
         end
       end
       let(:instance) { job.new(job_attrs) }
-      let(:transaction) do
-        Appsignal::Transaction.new(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new(env)
-        )
-      end
 
       before do
         allow(Que).to receive(:execute)
 
         start_agent
         expect(Appsignal.active?).to be_truthy
-        transaction
-
-        expect(Appsignal::Transaction).to receive(:create)
-          .with(
-            kind_of(String),
-            Appsignal::Transaction::BACKGROUND_JOB,
-            kind_of(Appsignal::Transaction::GenericRequest)
-          ).and_return(transaction)
-        allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-        expect(transaction.ext).to receive(:finish).and_return(true)
-        expect(transaction.ext).to receive(:complete)
       end
-
-      subject { transaction.to_h }
+      around { |example| keep_transactions { example.run } }
 
       context "success" do
         it "creates a transaction for a job" do
           expect do
             instance._run
-          end.to_not raise_exception
+          end.to change { created_transactions.length }.by(1)
 
-          expect(subject).to include(
+          expect(last_transaction).to be_completed
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash).to include(
             "action" => "MyQueJob#run",
             "id" => instance_of(String),
             "namespace" => Appsignal::Transaction::BACKGROUND_JOB
           )
-          expect(subject["error"]).to be_nil
-          expect(subject["events"].first).to include(
+          expect(transaction_hash["error"]).to be_nil
+          expect(transaction_hash["events"].first).to include(
             "allocation_count" => kind_of(Integer),
             "body" => "",
             "body_format" => Appsignal::EventFormatter::DEFAULT,
@@ -91,7 +74,7 @@ if DependencyHelper.que_present?
             "name" => "perform_job.que",
             "title" => ""
           )
-          expect(subject["sample_data"]).to include(
+          expect(transaction_hash["sample_data"]).to include(
             "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,
@@ -107,24 +90,28 @@ if DependencyHelper.que_present?
       context "with exception" do
         let(:error) { ExampleException.new("oh no!") }
 
-        it "should report exceptions and re-raise them" do
+        it "reports exceptions and re-raise them" do
           allow(instance).to receive(:run).and_raise(error)
 
           expect do
-            instance._run
-          end.to raise_error(ExampleException)
+            expect do
+              instance._run
+            end.to raise_error(ExampleException)
+          end.to change { created_transactions.length }.by(1)
 
-          expect(subject).to include(
+          expect(last_transaction).to be_completed
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash).to include(
             "action" => "MyQueJob#run",
             "id" => instance_of(String),
             "namespace" => Appsignal::Transaction::BACKGROUND_JOB
           )
-          expect(subject["error"]).to include(
+          expect(transaction_hash["error"]).to include(
             "backtrace" => kind_of(String),
             "name" => error.class.name,
             "message" => error.message
           )
-          expect(subject["sample_data"]).to include(
+          expect(transaction_hash["sample_data"]).to include(
             "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,
@@ -140,24 +127,24 @@ if DependencyHelper.que_present?
       context "with error" do
         let(:error) { ExampleStandardError.new("oh no!") }
 
-        it "should report errors and not re-raise them" do
+        it "reports errors and not re-raise them" do
           allow(instance).to receive(:run).and_raise(error)
 
-          expect do
-            instance._run
-          end.to_not raise_error
+          expect { instance._run }.to change { created_transactions.length }.by(1)
 
-          expect(subject).to include(
+          expect(last_transaction).to be_completed
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash).to include(
             "action" => "MyQueJob#run",
             "id" => instance_of(String),
             "namespace" => Appsignal::Transaction::BACKGROUND_JOB
           )
-          expect(subject["error"]).to include(
+          expect(transaction_hash["error"]).to include(
             "backtrace" => kind_of(String),
             "name" => error.class.name,
             "message" => error.message
           )
-          expect(subject["sample_data"]).to include(
+          expect(transaction_hash["sample_data"]).to include(
             "params" => %w[1 birds],
             "metadata" => {
               "attempts" => 0,

@@ -31,16 +31,9 @@ if DependencyHelper.rails_present?
   end
 end
 require "appsignal"
-
-module Appsignal
-  class << self
-    remove_method :testing?
-
-    def testing?
-      true
-    end
-  end
-end
+# Include patches of AppSignal modules and classes to make test helpers
+# available.
+require File.join(DirectoryHelper.support_dir, "testing.rb")
 
 puts "Running specs in #{RUBY_VERSION} on #{RUBY_PLATFORM}\n\n"
 
@@ -72,6 +65,12 @@ RSpec.configure do |config|
 
   config.example_status_persistence_file_path = "spec/examples.txt"
   config.fail_if_no_examples = true
+  config.mock_with :rspec do |mocks|
+    mocks.syntax = :expect
+  end
+  config.expect_with :rspec do |expectations|
+    expectations.syntax = :expect
+  end
 
   def spec_system_tmp_dir
     File.join(tmp_dir, "system-tmp")
@@ -114,7 +113,8 @@ RSpec.configure do |config|
   end
 
   config.after do
-    Thread.current[:appsignal_transaction] = nil
+    Appsignal::Testing.clear!
+    clear_current_transaction!
     stop_minutely_probes
   end
 

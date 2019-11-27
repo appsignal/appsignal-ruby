@@ -2,7 +2,7 @@ require "bundler/cli"
 require "bundler/cli/common"
 require "appsignal/cli"
 
-describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input do
+describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input, :color => false do
   include CLIHelpers
 
   class DiagnosticsReportEndpoint
@@ -24,7 +24,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
     let(:config) { project_fixture_config }
-    let(:cli) { described_class }
+    let(:cli_class) { described_class }
     let(:options) { { :environment => config.env } }
     let(:gem_path) { Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip }
     let(:received_report) { DiagnosticsReportEndpoint.received_report }
@@ -34,11 +34,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     before do
       # Clear previous reports
       DiagnosticsReportEndpoint.clear_report!
-      if cli.instance_variable_defined? :@data
+      if cli_class.instance_variable_defined? :@data
         # Because this is saved on the class rather than an instance of the
         # class we need to clear it like this in case a certain test doesn't
         # generate a report.
-        cli.remove_instance_variable :@data
+        cli_class.remove_instance_variable :@data
       end
 
       if DependencyHelper.rails_present?
@@ -54,16 +54,18 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     before :api_stub => true do
       stub_api_request config, "auth"
     end
+    before(:color => false) { options["no-color"] = nil }
+    before(:color => true) { options["color"] = nil }
     before(:send_report => :yes_cli_input) do
       accept_prompt_to_send_diagnostics_report
       capture_diagnatics_report_request
     end
     before(:send_report => :no_cli_input) { dont_accept_prompt_to_send_diagnostics_report }
     before(:send_report => :yes_cli_option) do
-      options[:send_report] = true
+      options["send-report"] = nil
       capture_diagnatics_report_request
     end
-    before(:send_report => :no_cli_option) { options[:send_report] = false }
+    before(:send_report => :no_cli_option) { options["no-send-report"] = nil }
     after { Appsignal.config = nil }
 
     def capture_diagnatics_report_request
@@ -77,7 +79,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     def run_within_dir(chdir)
       prepare_cli_input
       Dir.chdir chdir do
-        capture_stdout(out_stream) { cli.run(options) }
+        capture_stdout(out_stream) { run_cli("diagnose", options) }
       end
     end
 
@@ -228,6 +230,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs extension is not loaded" do
           expect(output).to include "Extension loaded: false"
+          expect(output).to include "Extension is not loaded. No agent report created."
+        end
+
+        context "with color", :color => true do
+          it "outputs extension is not loaded in color" do
+            expect(output).to have_colorized_text :red,
+              "  Extension is not loaded. No agent report created."
+          end
         end
 
         it "transmits extension_loaded: false in report" do
@@ -682,6 +692,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       context "without environment" do
         let(:config) { project_fixture_config(nil) }
         let(:options) { {} }
+        let(:warning_message) do
+          "    Warning: No environment set, no config loaded!\n" \
+            "    Please make sure appsignal diagnose is run within your\n" \
+            "    project directory with an environment.\n" \
+            "      appsignal diagnose --environment=production"
+        end
         before do
           ENV.delete("RAILS_ENV") # From spec_helper
           ENV.delete("RACK_ENV")
@@ -689,10 +705,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         it "outputs a warning that no config is loaded" do
-          expect(output).to include \
-            "Environment: \"\"\n",
-            "    Warning: No environment set, no config loaded!",
-            "  appsignal diagnose --environment=production"
+          expect(output).to include "Environment: \"\"\n#{warning_message}"
+          expect(output).to_not have_color_markers
+        end
+
+        context "with color", :color => true do
+          it "outputs a warning that no config is loaded in color" do
+            expect(output).to include "Environment: \"\"\n"
+            expect(output).to have_colorized_text :red, warning_message
+          end
         end
 
         it "outputs config defaults" do
@@ -890,6 +911,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "Validating Push API key: valid"
         end
 
+        context "with color", :color => true do
+          it "outputs valid in color" do
+            expect(output).to include "Validation",
+              "Validating Push API key: #{colorize("valid", :green)}"
+          end
+        end
+
         it "transmits validation in report" do
           expect(received_report).to include(
             "validation" => {
@@ -908,6 +936,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "outputs invalid" do
           expect(output).to include "Validation",
             "Validating Push API key: invalid"
+        end
+
+        context "with color", :color => true do
+          it "outputs invalid in color" do
+            expect(output).to include "Validation",
+              "Validating Push API key: #{colorize("invalid", :red)}"
+          end
         end
 
         it "transmits validation in report" do
@@ -929,6 +964,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           expect(output).to include "Validation",
             "Validating Push API key: Failed with status 500\n" +
             %("Could not confirm authorization: 500")
+        end
+
+        context "with color", :color => true do
+          it "outputs error in color" do
+            expect(output).to include "Validation",
+              "Validating Push API key: " +
+              colorize(%(Failed with status 500\n"Could not confirm authorization: 500"), :red)
+          end
         end
 
         it "transmits validation in report" do

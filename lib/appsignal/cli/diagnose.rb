@@ -77,6 +77,7 @@ module Appsignal
         # @return [void]
         # @api private
         def run(options = {})
+          self.coloring = options.delete(:color) { true }
           $stdout.sync = true
           header
           print_empty_line
@@ -200,7 +201,7 @@ module Appsignal
         def run_agent_diagnose_mode
           puts "Agent diagnostics"
           unless Appsignal.extension_loaded?
-            puts "  Extension is not loaded. No agent report created."
+            puts colorize("  Extension is not loaded. No agent report created.", :red)
             return
           end
 
@@ -461,10 +462,11 @@ module Appsignal
           print "  Environment: #{format_config_option(env)}"
 
           if env == ""
-            puts "\n    Warning: No environment set, no config loaded!"
-            puts "    Please make sure appsignal diagnose is run within your "
-            puts "    project directory with an environment."
-            puts "      appsignal diagnose --environment=production"
+            message = "    Warning: No environment set, no config loaded!\n" \
+              "    Please make sure appsignal diagnose is run within your\n" \
+              "    project directory with an environment.\n" \
+              "      appsignal diagnose --environment=production"
+            puts "\n#{colorize(message, :red)}"
           else
             puts sources_label
           end
@@ -531,20 +533,19 @@ module Appsignal
 
         def check_api_key
           puts "Validation"
-          data_section :validation do
-            auth_check = ::Appsignal::AuthCheck.new(Appsignal.config)
-            status, error = auth_check.perform_with_result
-            result =
-              case status
-              when "200"
-                "valid"
-              when "401"
-                "invalid"
-              else
-                "Failed with status #{status}\n#{error.inspect}"
-              end
-            puts_and_save :push_api_key, "Validating Push API key", result
-          end
+          auth_check = ::Appsignal::AuthCheck.new(Appsignal.config)
+          status, error = auth_check.perform_with_result
+          result, color =
+            case status
+            when "200"
+              ["valid", :green]
+            when "401"
+              ["invalid", :red]
+            else
+              ["Failed with status #{status}\n#{error.inspect}", :red]
+            end
+          data[:validation][:push_api_key] = result
+          puts_value "Validating Push API key", colorize(result, color)
         end
 
         def print_paths_section(report)

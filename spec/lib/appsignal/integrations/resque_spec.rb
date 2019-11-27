@@ -18,65 +18,66 @@ if DependencyHelper.resque_present?
           extend Appsignal::Integrations::ResquePlugin
 
           def self.perform
-            raise ExampleException
+            raise ExampleException, "my error message"
           end
         end
       end
 
       describe :around_perform_resque_plugin do
-        let(:transaction) { Appsignal::Transaction.new("1", "background", {}, {}) }
         let(:job) { ::Resque::Job.new("default", "class" => "TestJob") }
-        before do
-          allow(transaction).to receive(:complete).and_return(true)
-          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-          expect(Appsignal).to receive(:stop)
-        end
+        before { expect(Appsignal).to receive(:stop) }
 
         context "without exception" do
           it "creates a new transaction" do
-            expect(Appsignal::Transaction).to receive(:create).and_return(transaction)
-          end
+            expect do
+              keep_transactions { job.perform }
+            end.to change { created_transactions.length }.by(1)
 
-          it "wraps it in a transaction with the correct params" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.resque",
-              :class => "TestJob",
-              :method => "perform"
+            expect(last_transaction).to be_completed
+            expect(last_transaction.to_h).to include(
+              "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+              "action" => "TestJob#perform",
+              "error" => nil,
+              "events" => [
+                hash_including(
+                  "name" => "perform_job.resque",
+                  "title" => "",
+                  "body" => "",
+                  "body_format" => Appsignal::EventFormatter::DEFAULT,
+                  "count" => 1,
+                  "duration" => kind_of(Float)
+                )
+              ]
             )
           end
-
-          it "closes the transaction" do
-            expect(transaction).to receive(:complete)
-          end
-
-          after { job.perform }
         end
 
         context "with exception" do
           let(:job) { ::Resque::Job.new("default", "class" => "BrokenTestJob") }
-          let(:transaction) do
-            Appsignal::Transaction.new(
-              SecureRandom.uuid,
-              Appsignal::Transaction::BACKGROUND_JOB,
-              Appsignal::Transaction::GenericRequest.new({})
-            )
-          end
-          before do
-            allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-            expect(Appsignal::Transaction).to receive(:create)
-              .with(
-                kind_of(String),
-                Appsignal::Transaction::BACKGROUND_JOB,
-                kind_of(Appsignal::Transaction::GenericRequest)
-              ).and_return(transaction)
+
+          def perform
+            keep_transactions do
+              expect do
+                job.perform
+              end.to raise_error(ExampleException, "my error message")
+            end
           end
 
           it "sets the exception on the transaction" do
-            expect(transaction).to receive(:set_error).with(ExampleException)
-          end
+            expect do
+              perform
+            end.to change { created_transactions.length }.by(1)
 
-          after do
-            expect { job.perform }.to raise_error(ExampleException)
+            expect(last_transaction).to be_completed
+            expect(last_transaction.to_h).to include(
+              "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+              "action" => "BrokenTestJob#perform",
+              "error" => {
+                "name" => "ExampleException",
+                "message" => "my error message",
+                "backtrace" => kind_of(String)
+              }
+            )
           end
         end
       end

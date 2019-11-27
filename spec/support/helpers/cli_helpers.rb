@@ -1,3 +1,5 @@
+require "appsignal/cli/helpers"
+
 module CLIHelpers
   def cli
     Appsignal::CLI
@@ -10,7 +12,7 @@ module CLIHelpers
   def format_cli_arguments_and_options(command, options = {})
     [*command].tap do |o|
       options.each do |key, value|
-        o << "--#{key}=#{value}"
+        o << (value.nil? ? "--#{key}" : "--#{key}=#{value}")
       end
     end
   end
@@ -22,5 +24,17 @@ module CLIHelpers
   def prepare_cli_input
     # Prepare the input by rewinding the pointer in the StringIO
     $stdin.rewind
+  end
+
+  def colorize(*args)
+    ColorizeHelper.colorize(*args)
+  end
+end
+
+module ColorizeHelper
+  extend Appsignal::CLI::Helpers
+
+  def self.colorize(*_args)
+    super
   end
 end

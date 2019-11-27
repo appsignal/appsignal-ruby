@@ -30,7 +30,7 @@ describe Appsignal do
     context "with no config set beforehand" do
       it "should do nothing when config is not set and there is no valid config in the env" do
         expect(Appsignal.logger).to receive(:error).with(
-          "Push api key not set after loading config"
+          "Push API key not set after loading config"
         ).once
         expect(Appsignal.logger).to receive(:error).with(
           "Not starting, no valid config for this environment"
@@ -701,13 +701,12 @@ describe Appsignal do
       context "when given a block" do
         it "yields the transaction and allows additional metadata to be set" do
           captured_transaction = nil
-          Appsignal.send_error(StandardError.new("my_error")) do |transaction|
-            captured_transaction = transaction
-            transaction.set_action("my_action")
-            transaction.set_namespace("my_namespace")
-
-            # Don't flush the transaction, so we can inspect it
-            expect(transaction).to receive(:complete)
+          keep_transactions do
+            Appsignal.send_error(StandardError.new("my_error")) do |transaction|
+              captured_transaction = transaction
+              transaction.set_action("my_action")
+              transaction.set_namespace("my_namespace")
+            end
           end
           expect(captured_transaction.to_h).to include(
             "namespace" => "my_namespace",

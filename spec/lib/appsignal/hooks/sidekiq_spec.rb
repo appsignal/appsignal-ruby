@@ -38,28 +38,15 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
     }
   end
   let(:plugin) { Appsignal::Hooks::SidekiqPlugin.new }
-  let(:test_store) { {} }
   let(:log) { StringIO.new }
   before do
     start_agent
     Appsignal.logger = test_logger(log)
-
-    # Stub calls to extension, because that would remove the transaction
-    # from the extension.
-    allow_any_instance_of(Appsignal::Extension::Transaction).to receive(:finish).and_return(true)
-    allow_any_instance_of(Appsignal::Extension::Transaction).to receive(:complete)
-
-    # Stub removal of current transaction from current thread so we can fetch
-    # it later.
-    expect(Appsignal::Transaction).to receive(:clear_current_transaction!) do
-      transaction = Thread.current[:appsignal_transaction]
-      test_store[:transaction] = transaction if transaction
-    end
   end
+  around { |example| keep_transactions { example.run } }
   after :with_yaml_parse_error => false do
     expect(log_contents(log)).to_not contains_log(:warn, "Unable to load YAML")
   end
-  after { clear_current_transaction! }
 
   shared_examples "sidekiq metadata" do
     describe "internal Sidekiq job values" do
@@ -513,7 +500,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
   end
 
   def transaction
-    test_store[:transaction]
+    last_transaction
   end
 
   def expect_transaction_to_have_sidekiq_event(transaction_hash)
