@@ -1,8 +1,20 @@
 # Changelog
 
 ## 2.10.0
-- Add validation for empty Push API key. Empty keys will no longer start
-  AppSignal. PR #569
+- Rescue errors while parsing `appsignal.yml` file. It will prints a warning
+  instead. PR #517
+- Refactoring: Reduce class variable usage. PR #520
+- Bump log level about starting new transactions while a transaction is already
+  active from debug to a warning. PR #525
+- Refactoring: Add internal AppSignal test helpers and other test suite
+  refactorings. PR #536, #537, #538, #539
+- Fix internal Rakefile loading on Ruby 1.9.3. PR #541
+- Add a `--no-color` option to the `appsignal install` command. PR #550
+- Add output coloring to `appsignal diagnose` warnings. PR #551
+- Add validation for empty Push API key. Empty Push API key values will no
+  longer start AppSignal. PR #569
+- Deprecate the JSExceptionCatcher middleware in favor of our new front-end
+  JavaScript integration (https://docs.appsignal.com/front-end/). PR #572
 
 ## 2.9.18
 - Bump agent to v-c348132
