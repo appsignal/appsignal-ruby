@@ -31,7 +31,7 @@ travis: # Default `.travis.yml` contents
   matrix:
     fast_finish: true
     include: # Builds based on the matrix below are added to this list
-      - rvm: "2.6.4"
+      - rvm: "2.6.5"
         gemfile: "gemfiles/no_dependencies.gemfile"
         before_script: "" # Unset default: No need to install the extension
         script:
@@ -65,7 +65,7 @@ matrix:
       gems: "none"
     - ruby: "2.5.3"
       gems: "minimal"
-    - ruby: "2.6.4"
+    - ruby: "2.6.5"
     - ruby: "2.7.0"
     - ruby: "jruby-19mode"
       gems: "minimal"
@@ -85,13 +85,13 @@ matrix:
       bundler: "1.17.3"
       exclude:
         ruby:
-          - "2.6.4"
+          - "2.6.5"
           - "2.7.0"
     - gem: "rails-4.2"
       bundler: "1.17.3"
       exclude:
         ruby:
-          - "2.6.4"
+          - "2.6.5"
           - "2.7.0"
     - gem: "rails-5.0"
       exclude:
