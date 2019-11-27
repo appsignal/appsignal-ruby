@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module Appsignal
-  VERSION = "2.9.18".freeze
+  VERSION = "2.10.0".freeze
 end
