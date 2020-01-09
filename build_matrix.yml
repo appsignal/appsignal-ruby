@@ -66,6 +66,7 @@ matrix:
     - ruby: "2.5.3"
       gems: "minimal"
     - ruby: "2.6.4"
+    - ruby: "2.7.0"
     - ruby: "jruby-19mode"
       gems: "minimal"
   gems:
@@ -85,11 +86,13 @@ matrix:
       exclude:
         ruby:
           - "2.6.4"
+          - "2.7.0"
     - gem: "rails-4.2"
       bundler: "1.17.3"
       exclude:
         ruby:
           - "2.6.4"
+          - "2.7.0"
     - gem: "rails-5.0"
       exclude:
         ruby:

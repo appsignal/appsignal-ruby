@@ -141,6 +141,54 @@ matrix:
   - rvm: 2.6.4
     gemfile: gemfiles/webmachine.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/no_dependencies.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/capistrano2.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/capistrano3.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/grape.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/padrino.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=1.17.3
+  - rvm: 2.7.0
+    gemfile: gemfiles/que.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/que_beta.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/rails-5.0.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/rails-5.1.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/rails-5.2.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/rails-6.0.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/resque.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=1.17.3
+  - rvm: 2.7.0
+    gemfile: gemfiles/sequel.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/sequel-435.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/sinatra.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
+  - rvm: 2.7.0
+    gemfile: gemfiles/webmachine.gemfile
+    env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
   - rvm: jruby-19mode
     gemfile: gemfiles/no_dependencies.gemfile
     env: _RUBYGEMS_VERSION=latest _BUNDLER_VERSION=latest
