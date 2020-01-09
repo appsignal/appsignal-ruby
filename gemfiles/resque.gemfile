@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
 gem 'resque'
-gem 'rails', '~> 4.2.0'
 gem 'sinatra'
 gem 'mime-types', '~> 2.6'
 
