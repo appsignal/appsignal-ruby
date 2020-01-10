@@ -1,7 +1,7 @@
 # Changelog
 
 ## 2.10.1
-- Update bundled to more recent SSL CA certificates. PR #577
+- Update to more recent bundled SSL CA certificates. PR #577
 - Remove TLS version lock from transmitter used by diagnose command, preventing
   it from sending the report. Was locked to TLS v1, now uses the Ruby default.
   PR #580
