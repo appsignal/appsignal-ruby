@@ -78,7 +78,6 @@ module Appsignal
       client.tap do |http|
         if uri.scheme == "https"
           http.use_ssl     = true
-          http.ssl_version = :TLSv1
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
 
           ca_file = config[:ca_file_path]
