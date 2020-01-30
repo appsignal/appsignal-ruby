@@ -258,7 +258,7 @@ describe Appsignal::Config do
         message = "An error occured while loading the AppSignal config file. " \
           "Skipping file config.\n" \
           "File: #{File.join(config_path, "config", "appsignal.yml").inspect}\n" \
-          "NotExistingConstant: uninitialized constant NotExistingConstant\n"
+          "KeyError: key not found"
         expect(log).to contains_log :error, message
         expect(log).to include("/appsignal/config.rb:") # Backtrace
         expect(stdout.read).to_not include("appsignal:")

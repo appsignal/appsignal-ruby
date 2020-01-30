@@ -284,7 +284,7 @@ module Appsignal
       message = "An error occured while loading the AppSignal config file." \
         " Skipping file config.\n" \
         "File: #{config_file.inspect}\n" \
-        "#{e.name}: #{e}"
+        "#{e.class.name}: #{e}"
       $stderr.puts "appsignal: #{message}"
       logger.error "#{message}\n#{e.backtrace.join("\n")}"
       nil
