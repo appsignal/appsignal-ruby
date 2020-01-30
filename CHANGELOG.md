@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.2
+- Fix wait_for test suite helper. PR #581
+- Fix exception handling of config file issues. PR #582
+  - The improvement introduced in #517 didn't fetch the class name correctly
+    causing an error on most scenarios.
+
 ## 2.10.1
 - Update to more recent bundled SSL CA certificates. PR #577
 - Remove TLS version lock from transmitter used by diagnose command, preventing
