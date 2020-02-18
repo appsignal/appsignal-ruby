@@ -25,7 +25,7 @@ module Appsignal
           Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
         else
           # Otherwise, log the issue about trying to start another transaction
-          Appsignal.logger.warn "Trying to start new transaction with id " \
+          Appsignal.logger.warn_once_then_debug :transaction_id, "Trying to start new transaction with id " \
             "'#{id}', but a transaction with id '#{current.transaction_id}' " \
             "is already running. Using transaction '#{current.transaction_id}'."
 

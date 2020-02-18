@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require "json"
-require "logger"
 require "securerandom"
 
+require "appsignal/logger"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
 
@@ -195,7 +195,7 @@ module Appsignal
     end
 
     def logger
-      @logger ||= Logger.new(in_memory_log).tap do |l|
+      @logger ||= Appsignal::Logger.new(in_memory_log).tap do |l|
         l.level = Logger::INFO
         l.formatter = log_formatter("appsignal")
       end
@@ -294,12 +294,12 @@ module Appsignal
     private
 
     def start_stdout_logger
-      @logger = Logger.new($stdout)
+      @logger = Appsignal::Logger.new($stdout)
       logger.formatter = log_formatter("appsignal")
     end
 
     def start_file_logger(path)
-      @logger = Logger.new(path)
+      @logger = Appsignal::Logger.new(path)
       logger.formatter = log_formatter
     rescue SystemCallError => error
       start_stdout_logger
