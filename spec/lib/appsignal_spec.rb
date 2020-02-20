@@ -1021,6 +1021,7 @@ describe Appsignal do
             Appsignal.start_logger
             Appsignal.logger.error("Log to file")
           end
+          expect(Appsignal.logger).to be_a(Appsignal::Logger)
         end
 
         it "logs to file" do
@@ -1031,10 +1032,6 @@ describe Appsignal do
 
         it "amends in memory log to log file" do
           expect(log_file_contents).to include "[ERROR] appsignal: Log in memory"
-        end
-
-        it "logs with an Appsignal::Logger" do
-          expect(Appsignal.logger).to be_a(Appsignal::Logger)
         end
       end
 
@@ -1065,10 +1062,6 @@ describe Appsignal do
             "[WARN] appsignal: Unable to start logger with log path '#{log_file}'.",
             "[WARN] appsignal: Permission denied"
         end
-
-        it "logs with an Appsignal::Logger" do
-          expect(Appsignal.logger).to be_a(Appsignal::Logger)
-        end
       end
     end
 
@@ -1082,6 +1075,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to not writable log path")
         end
+        expect(Appsignal.logger).to be_a(Appsignal::Logger)
       end
       after do
         FileUtils.chmod 0o755, Appsignal::Config.system_tmp_dir
@@ -1101,10 +1095,6 @@ describe Appsignal do
           "appsignal: Unable to log to '#{log_path}' "\
           "or the '#{Appsignal::Config.system_tmp_dir}' fallback."
       end
-
-      it "logs with an Appsignal::Logger" do
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
-      end
     end
 
     context "when on Heroku" do
@@ -1114,6 +1104,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to stdout")
         end
+        expect(Appsignal.logger).to be_a(Appsignal::Logger)
       end
       around { |example| recognize_as_heroku { example.run } }
 
@@ -1123,10 +1114,6 @@ describe Appsignal do
 
       it "amends in memory log to stdout" do
         expect(output).to include "[ERROR] appsignal: Log in memory"
-      end
-
-      it "logs with an Appsignal::Logger" do
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
       end
     end
 
