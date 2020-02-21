@@ -12,13 +12,20 @@ module LogHelpers
   end
 
   def test_logger(log)
-    Logger.new(log).tap do |logger|
-      logger.formatter =
-        proc do |severity, _datetime, _progname, msg|
-          # This format is used in the `contains_log` matcher.
-          "[#{severity}] #{msg}\n"
-        end
+    Appsignal::Logger.new(log).tap do |logger|
+      logger.formatter = logger_formatter
     end
+  end
+
+  def logger_formatter
+    proc do |severity, _datetime, _progname, msg|
+      log_line(severity, msg)
+    end
+  end
+
+  def log_line(severity, message)
+    # This format is used in the `contains_log` matcher.
+    "[#{severity}] #{message}\n"
   end
 
   def log_contents(log)
