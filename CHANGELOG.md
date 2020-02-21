@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.3
+- Only warn about reused transactions once. Repeated occurrences are logged as
+  debug messages. PR #585
+
 ## 2.10.2
 - Fix wait_for test suite helper. PR #581
 - Fix exception handling of config file issues. PR #582
