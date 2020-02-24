@@ -17,7 +17,7 @@ global_job_config:
     commands:
     - checkout
 blocks:
-- name: Linters
+- name: Validation
   dependencies: []
   task:
     prologue:
@@ -28,11 +28,21 @@ blocks:
     - name: Validate CI setup
       commands:
       - "./support/bundler_wrapper exec rake build_matrix:semaphore:validate"
+- name: Linters
+  dependencies:
+  - Validation
+  task:
+    prologue:
+      commands:
+      - sem-version ruby 2.6.5
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+    jobs:
     - name: RuboCop
       commands:
       - "./support/bundler_wrapper exec rubocop"
-- name: Ruby 1.9.3
-  dependencies: []
+- name: Ruby 1.9.3 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -67,8 +77,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.0.0
-  dependencies: []
+- name: Ruby 2.0.0 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -99,6 +110,33 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) .bundle
+- name: Ruby 2.0.0 - secondary
+  dependencies:
+  - Ruby 2.0.0 - primary
+  task:
+    env_vars:
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.0.0
+      - cache restore v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.0.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
     - name: Ruby 2.0.0 for capistrano2
       env_vars:
       - name: BUNDLE_GEMFILE
@@ -223,8 +261,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.1.8
-  dependencies: []
+- name: Ruby 2.1.8 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -259,8 +298,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.2.4
-  dependencies: []
+- name: Ruby 2.2.4 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -295,8 +335,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.3.8
-  dependencies: []
+- name: Ruby 2.3.8 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -331,8 +372,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.4.5
-  dependencies: []
+- name: Ruby 2.4.5 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -367,8 +409,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.5.3
-  dependencies: []
+- name: Ruby 2.5.3 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -399,6 +442,33 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) .bundle
+- name: Ruby 2.5.3 - secondary
+  dependencies:
+  - Ruby 2.5.3 - primary
+  task:
+    env_vars:
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.5.3
+      - cache restore v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.5.3
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
     - name: Ruby 2.5.3 for rails-5.2
       env_vars:
       - name: BUNDLE_GEMFILE
@@ -413,8 +483,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.6.5
-  dependencies: []
+- name: Ruby 2.6.5 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -445,6 +516,33 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) .bundle
+- name: Ruby 2.6.5 - secondary
+  dependencies:
+  - Ruby 2.6.5 - primary
+  task:
+    env_vars:
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.6.5
+      - cache restore v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.6.5
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
     - name: Ruby 2.6.5 for capistrano2
       env_vars:
       - name: BUNDLE_GEMFILE
@@ -599,8 +697,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.7.0
-  dependencies: []
+- name: Ruby 2.7.0 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -631,6 +730,33 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) .bundle
+- name: Ruby 2.7.0 - secondary
+  dependencies:
+  - Ruby 2.7.0 - primary
+  task:
+    env_vars:
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.7.0
+      - cache restore v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.7.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
     - name: Ruby 2.7.0 for capistrano2
       env_vars:
       - name: BUNDLE_GEMFILE
@@ -785,8 +911,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby jruby-9.1.17.0
-  dependencies: []
+- name: Ruby jruby-9.1.17.0 - primary
+  dependencies:
+  - Validation
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -817,6 +944,33 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) .bundle
+- name: Ruby jruby-9.1.17.0 - secondary
+  dependencies:
+  - Ruby jruby-9.1.17.0 - primary
+  task:
+    env_vars:
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby jruby-9.1.17.0
+      - cache restore v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-jruby-9.1.17.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
     - name: Ruby jruby-9.1.17.0 for rails-5.2
       env_vars:
       - name: BUNDLE_GEMFILE

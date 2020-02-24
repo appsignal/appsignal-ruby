@@ -24,6 +24,43 @@ def env_map(key, value)
   }
 end
 
+def build_task(ruby_version, type)
+  bundle_dir = ".bundle"
+  bundle_path = "../#{bundle_dir}/"
+  cache_key_base = "v1-bundler-#{ruby_version}"
+  cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
+  {
+    "name" => "Ruby #{ruby_version} - #{type}",
+    "dependencies" => ["Validation"],
+    "task" => {
+      "env_vars" => [
+        env_map("BUNDLE_PATH", bundle_path),
+        env_map("RUNNING_IN_CI", "true"),
+        env_map("RAILS_ENV", "test"),
+        env_map("JRUBY_OPTS", ""),
+        env_map("COV", "1")
+      ],
+      "prologue" => {
+        "commands" => [
+          "sem-version ruby #{ruby_version}",
+          "cache restore #{cache_key},#{cache_key_base}",
+          "./support/install_deps",
+          "./support/bundler_wrapper install --jobs=3 --retry=3",
+          "./support/bundler_wrapper exec rake extension:install"
+        ]
+      },
+      "jobs" => [],
+      "epilogue" => {
+        "on_pass" => {
+          "commands" => [
+            "cache store #{cache_key} #{bundle_dir}"
+          ]
+        }
+      }
+    }
+  }
+end
+
 namespace :build_matrix do
   namespace :semaphore do
     task :generate do
@@ -31,44 +68,14 @@ namespace :build_matrix do
       matrix = yaml["matrix"]
       defaults = matrix["defaults"]
       semaphore = yaml["semaphore"]
-      bundle_dir = ".bundle"
-      bundle_path = "../#{bundle_dir}/"
 
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
-        cache_key_base = "v1-bundler-#{ruby_version}"
-        cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
-        ruby_block = {
-          "name" => "Ruby #{ruby_version}",
-          "dependencies" => [],
-          "task" => {
-            "env_vars" => [
-              env_map("BUNDLE_PATH", bundle_path),
-              env_map("RUNNING_IN_CI", "true"),
-              env_map("RAILS_ENV", "test"),
-              env_map("JRUBY_OPTS", ""),
-              env_map("COV", "1")
-            ],
-            "prologue" => {
-              "commands" => [
-                "sem-version ruby #{ruby_version}",
-                "cache restore #{cache_key},#{cache_key_base}",
-                "./support/install_deps",
-                "./support/bundler_wrapper install --jobs=3 --retry=3",
-                "./support/bundler_wrapper exec rake extension:install"
-              ]
-            },
-            "jobs" => [],
-            "epilogue" => {
-              "on_pass" => {
-                "commands" => [
-                  "cache store #{cache_key} #{bundle_dir}"
-                ]
-              }
-            }
-          }
-        }
+        ruby_primary_block = build_task(ruby_version, :primary)
+        ruby_secondary_block = build_task(ruby_version, :secondary).tap do |t|
+          t["dependencies"] = ["Ruby #{ruby_version} - primary"]
+        end
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
 
@@ -78,13 +85,24 @@ namespace :build_matrix do
           bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
           env << env_map("_BUNDLER_VERSION", bundler) if bundler
 
-          ruby_block["task"]["jobs"] << {
-            "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
-            "env_vars" => env,
-            "commands" => ["./support/bundler_wrapper exec rake test"]
-          }
+          if gem["gem"] == "no_dependencies"
+            ruby_primary_block["task"]["jobs"] << {
+              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
+              "env_vars" => env,
+              "commands" => ["./support/bundler_wrapper exec rake test"]
+            }
+          else
+            ruby_secondary_block["task"]["jobs"] << {
+              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
+              "env_vars" => env,
+              "commands" => ["./support/bundler_wrapper exec rake test"]
+            }
+          end
         end
-        builds << ruby_block
+        builds << ruby_primary_block
+        if ruby_secondary_block["task"]["jobs"].count.nonzero?
+          builds << ruby_secondary_block
+        end
       end
       semaphore["blocks"] += builds
 
@@ -360,7 +378,7 @@ namespace :extension do
           appsignal.version \
           Makefile \
           mkmf.log
-      COMMAND
+    COMMAND
   end
 end
 
