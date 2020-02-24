@@ -1,42 +1,38 @@
-travis: # Default `.travis.yml` contents
-  sudo: false
+semaphore: # Default `.semaphore/semaphore.yml` contents
+  version: v1.0
+  name: AppSignal Ruby Build and Tests
 
-  branches:
-    only:
-      - "master"
-      - "develop"
+  agent:
+    machine:
+      type: e1-standard-2
+      os_image: ubuntu1804
 
-  language: ruby
-  cache:
-    directories:
-      - "$TRAVIS_BUILD_DIR/vendor/cache"
+  # Cancel all running and queued workflows before this one
+  auto_cancel:
+    running:
+      # Ignore master AND develop branch as we want it to build all workflows
+      when: "branch != 'master' AND branch != 'develop'"
 
-  env:
-    global:
-      - "BUNDLE_PATH=$TRAVIS_BUILD_DIR/vendor/cache"
-      - "RUNNING_IN_CI=true"
-      - "RAILS_ENV=test"
-      - "JRUBY_OPTS=''" # Workaround https://github.com/travis-ci/travis-ci/issues/6471
+  global_job_config:
+    prologue:
+      commands:
+        - checkout
 
-  before_install:
-    - "./support/install_deps"
-  install: "./support/bundler_wrapper install --jobs=3 --retry=3 --path=${BUNDLE_PATH:-$TRAVIS_BUILD_DIR/vendor/cache}"
-  before_script:
-    - "./support/bundler_wrapper exec rake extension:install"
-  script: "./support/bundler_wrapper exec rake test"
-  after_failure:
-    - "find ./ext -name install.report -exec cat {} \\;"
-    - "find ./ext -name mkmf.log -exec cat {} \\;"
-
-  matrix:
-    fast_finish: true
-    include: # Builds based on the matrix below are added to this list
-      - rvm: "2.6.5"
-        gemfile: "gemfiles/no_dependencies.gemfile"
-        before_script: "" # Unset default: No need to install the extension
-        script:
-          - "./support/bundler_wrapper exec rake build_matrix:travis:validate"
-          - "./support/bundler_wrapper exec rubocop"
+  blocks:
+    - name: Linters
+      dependencies: []
+      task:
+        prologue:
+          commands:
+            - sem-version ruby 2.6.5
+            - ./support/bundler_wrapper install --jobs=3 --retry=3
+        jobs:
+        - name: Validate CI setup
+          commands:
+            - ./support/bundler_wrapper exec rake build_matrix:semaphore:validate
+        - name: RuboCop
+          commands:
+            - ./support/bundler_wrapper exec rubocop
 
 matrix:
   defaults:
@@ -51,6 +47,9 @@ matrix:
       - "rails-5.2"
 
   ruby:
+    - ruby: "1.9.3"
+      rubygems: "2.7.8"
+      gems: "none"
     - ruby: "2.0.0"
       rubygems: "2.7.8"
     - ruby: "2.1.8"
@@ -67,7 +66,7 @@ matrix:
       gems: "minimal"
     - ruby: "2.6.5"
     - ruby: "2.7.0"
-    - ruby: "jruby-19mode"
+    - ruby: "jruby-9.1.17.0"
       gems: "minimal"
   gems:
     - gem: "no_dependencies"
