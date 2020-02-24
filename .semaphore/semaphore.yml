@@ -40,7 +40,7 @@ blocks:
     - name: RuboCop
       commands:
       - "./support/bundler_wrapper exec rubocop"
-- name: Ruby 1.9.3 - primary
+- name: Ruby 1.9.3
   dependencies:
   - Validation
   task:
@@ -77,7 +77,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.0.0 - primary
+- name: Ruby 2.0.0
   dependencies:
   - Validation
   task:
@@ -114,9 +114,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.0.0 - secondary
+- name: Ruby 2.0.0 - Gems
   dependencies:
-  - Ruby 2.0.0 - primary
+  - Ruby 2.0.0
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -261,7 +261,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.1.8 - primary
+- name: Ruby 2.1.8
   dependencies:
   - Validation
   task:
@@ -298,7 +298,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.2.4 - primary
+- name: Ruby 2.2.4
   dependencies:
   - Validation
   task:
@@ -335,7 +335,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.3.8 - primary
+- name: Ruby 2.3.8
   dependencies:
   - Validation
   task:
@@ -372,7 +372,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.4.5 - primary
+- name: Ruby 2.4.5
   dependencies:
   - Validation
   task:
@@ -409,7 +409,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.5.3 - primary
+- name: Ruby 2.5.3
   dependencies:
   - Validation
   task:
@@ -446,9 +446,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.5.3 - secondary
+- name: Ruby 2.5.3 - Gems
   dependencies:
-  - Ruby 2.5.3 - primary
+  - Ruby 2.5.3
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -483,7 +483,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.6.5 - primary
+- name: Ruby 2.6.5
   dependencies:
   - Validation
   task:
@@ -520,9 +520,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.6.5 - secondary
+- name: Ruby 2.6.5 - Gems
   dependencies:
-  - Ruby 2.6.5 - primary
+  - Ruby 2.6.5
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -697,7 +697,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.7.0 - primary
+- name: Ruby 2.7.0
   dependencies:
   - Validation
   task:
@@ -734,9 +734,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby 2.7.0 - secondary
+- name: Ruby 2.7.0 - Gems
   dependencies:
-  - Ruby 2.7.0 - primary
+  - Ruby 2.7.0
   task:
     env_vars:
     - name: BUNDLE_PATH
@@ -911,7 +911,7 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby jruby-9.1.17.0 - primary
+- name: Ruby jruby-9.1.17.0
   dependencies:
   - Validation
   task:
@@ -948,9 +948,9 @@ blocks:
       on_pass:
         commands:
         - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) .bundle
-- name: Ruby jruby-9.1.17.0 - secondary
+- name: Ruby jruby-9.1.17.0 - Gems
   dependencies:
-  - Ruby jruby-9.1.17.0 - primary
+  - Ruby jruby-9.1.17.0
   task:
     env_vars:
     - name: BUNDLE_PATH

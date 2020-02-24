@@ -24,13 +24,13 @@ def env_map(key, value)
   }
 end
 
-def build_task(ruby_version, type)
+def build_task(ruby_version, type = nil)
   bundle_dir = ".bundle"
   bundle_path = "../#{bundle_dir}/"
   cache_key_base = "v1-bundler-#{ruby_version}"
   cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
   {
-    "name" => "Ruby #{ruby_version} - #{type}",
+    "name" => "Ruby #{ruby_version}#{type ? " - #{type}" : nil}",
     "dependencies" => ["Validation"],
     "task" => {
       "env_vars" => [
@@ -72,9 +72,9 @@ namespace :build_matrix do
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
-        ruby_primary_block = build_task(ruby_version, :primary)
-        ruby_secondary_block = build_task(ruby_version, :secondary).tap do |t|
-          t["dependencies"] = ["Ruby #{ruby_version} - primary"]
+        ruby_primary_block = build_task(ruby_version)
+        ruby_secondary_block = build_task(ruby_version, "Gems").tap do |t|
+          t["dependencies"] = ["Ruby #{ruby_version}"]
         end
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
