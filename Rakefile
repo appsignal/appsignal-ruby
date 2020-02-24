@@ -35,11 +35,13 @@ namespace :build_matrix do
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
+        cache_key = "v1-bundler-#{ruby_version}-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)"
         ruby_block = {
           "name" => "Ruby #{ruby_version}",
           "dependencies" => [],
           "task" => {
             "env_vars" => [
+              env_map("BUNDLE_PATH", bundle_path),
               env_map("RUNNING_IN_CI", "true"),
               env_map("RAILS_ENV", "test"),
               env_map("JRUBY_OPTS", ""),
@@ -48,18 +50,26 @@ namespace :build_matrix do
             "prologue" => {
               "commands" => [
                 "sem-version ruby #{ruby_version}",
+                "cache restore #{cache_key} $BUNDLE_PATH",
                 "./support/install_deps",
                 "./support/bundler_wrapper install --jobs=3 --retry=3",
                 "./support/bundler_wrapper exec rake extension:install"
               ]
             },
-            "jobs" => []
+            "jobs" => [],
+            "epilogue" => {
+              "always" => {
+                "commands" => [
+                  "cache store #{cache_key}"
+                ]
+              }
+            }
           }
         }
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
 
-          env = [env_map("gemfile", "gemfiles/#{gem["gem"]}.gemfile")]
+          env = [env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")]
           rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
           env << env_map("_RUBYGEMS_VERSION", rubygems) if rubygems
           bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
