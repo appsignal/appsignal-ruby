@@ -1,0 +1,818 @@
+# DO NOT EDIT
+# This is a generated file by the `rake build_matrix:semaphore:generate` task.
+# See `build_matrix.yml` for the build matrix.
+# Generate this file with `rake build_matrix:semaphore:generate`.
+---
+version: v1.0
+name: AppSignal Ruby Build and Tests
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+auto_cancel:
+  running:
+    when: branch != 'master' AND branch != 'develop'
+global_job_config:
+  env_vars:
+  - name: BUNDLE_DIR
+    value: ".bundle"
+  - name: BUNDLE_PATH
+    value: "../$BUNDLE_DIR/"
+  prologue:
+    commands:
+    - checkout
+blocks:
+- name: Linters
+  dependencies: []
+  task:
+    prologue:
+      commands:
+      - sem-version ruby 2.6.5
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+    jobs:
+    - name: Validate CI setup
+      commands:
+      - "./support/bundler_wrapper exec rake build_matrix:semaphore:validate"
+    - name: RuboCop
+      commands:
+      - "./support/bundler_wrapper exec rubocop"
+- name: Ruby 1.9.3
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 1.9.3
+      - cache restore v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE),v1-bundler-1.9.3
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 1.9.3 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.0.0
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.0.0
+      - cache restore v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.0.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.0.0 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for capistrano2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for capistrano3
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for grape
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for padrino
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/padrino.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for que
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/que.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for rails-3.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-3.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for rails-4.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-4.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for resque
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/resque.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for sequel
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for sequel-435
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel-435.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for sinatra
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sinatra.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.0.0 for webmachine
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.1.8
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.1.8
+      - cache restore v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.1.8
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.1.8 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.2.4
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.2.4
+      - cache restore v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.2.4
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.2.4 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: 2.7.8
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.3.8
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.3.8
+      - cache restore v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.3.8
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.3.8 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.4.5
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.4.5
+      - cache restore v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.4.5
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.4.5 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.5.3
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.5.3
+      - cache restore v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.5.3
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.5.3 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.5.3 for rails-5.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.6.5
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.6.5
+      - cache restore v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.6.5
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.6.5 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for capistrano2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for capistrano3
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for grape
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for padrino
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/padrino.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for que
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/que.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for que_beta
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/que_beta.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for rails-5.0
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for rails-5.1
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for rails-5.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for rails-6.0
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for resque
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/resque.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for sequel
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for sequel-435
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel-435.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for sinatra
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sinatra.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.5 for webmachine
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby 2.7.0
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby 2.7.0
+      - cache restore v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.7.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby 2.7.0 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for capistrano2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for capistrano3
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/capistrano3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for grape
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for padrino
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/padrino.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for que
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/que.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for que_beta
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/que_beta.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for rails-5.0
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for rails-5.1
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for rails-5.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for rails-6.0
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for resque
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/resque.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: 1.17.3
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for sequel
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for sequel-435
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sequel-435.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for sinatra
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/sinatra.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.0 for webmachine
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
+- name: Ruby jruby-9.1.17.0
+  dependencies: []
+  task:
+    env_vars:
+    - name: RUNNING_IN_CI
+      value: 'true'
+    - name: RAILS_ENV
+      value: test
+    - name: JRUBY_OPTS
+      value: ''
+    - name: COV
+      value: '1'
+    prologue:
+      commands:
+      - sem-version ruby jruby-9.1.17.0
+      - cache restore v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-jruby-9.1.17.0
+      - "./support/install_deps"
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    jobs:
+    - name: Ruby jruby-9.1.17.0 for no_dependencies
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby jruby-9.1.17.0 for rails-5.2
+      env_vars:
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-5.2.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    epilogue:
+      always:
+        commands:
+        - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
