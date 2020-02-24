@@ -31,6 +31,8 @@ namespace :build_matrix do
       matrix = yaml["matrix"]
       defaults = matrix["defaults"]
       semaphore = yaml["semaphore"]
+      bundle_dir = ".bundle"
+      bundle_path = "../#{bundle_dir}/"
 
       builds = []
       matrix["ruby"].each do |ruby|
@@ -42,6 +44,7 @@ namespace :build_matrix do
           "dependencies" => [],
           "task" => {
             "env_vars" => [
+              env_map("BUNDLE_PATH", bundle_path),
               env_map("RUNNING_IN_CI", "true"),
               env_map("RAILS_ENV", "test"),
               env_map("JRUBY_OPTS", ""),
@@ -58,9 +61,9 @@ namespace :build_matrix do
             },
             "jobs" => [],
             "epilogue" => {
-              "always" => {
+              "on_pass" => {
                 "commands" => [
-                  "cache store #{cache_key} $BUNDLE_DIR"
+                  "cache store #{cache_key} #{bundle_dir}"
                 ]
               }
             }
