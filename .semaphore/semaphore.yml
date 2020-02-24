@@ -14,8 +14,10 @@ auto_cancel:
     when: branch != 'master' AND branch != 'develop'
 global_job_config:
   env_vars:
+  - name: BUNDLE_DIR
+    value: ".bundle"
   - name: BUNDLE_PATH
-    value: "../.bundle/"
+    value: "../$BUNDLE_DIR/"
   prologue:
     commands:
     - checkout
@@ -67,7 +69,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.0.0
   dependencies: []
   task:
@@ -221,7 +223,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.1.8
   dependencies: []
   task:
@@ -255,7 +257,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.2.4
   dependencies: []
   task:
@@ -289,7 +291,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.3.8
   dependencies: []
   task:
@@ -323,7 +325,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.4.5
   dependencies: []
   task:
@@ -357,7 +359,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.5.3
   dependencies: []
   task:
@@ -401,7 +403,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.6.5
   dependencies: []
   task:
@@ -585,7 +587,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby 2.7.0
   dependencies: []
   task:
@@ -769,7 +771,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR
 - name: Ruby jruby-9.1.17.0
   dependencies: []
   task:
@@ -813,4 +815,4 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
+        - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_DIR

@@ -15,8 +15,10 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
 
   global_job_config:
     env_vars:
+      - name: "BUNDLE_DIR"
+        value: ".bundle"
       - name: "BUNDLE_PATH"
-        value: "../.bundle/"
+        value: "../$BUNDLE_DIR/"
     prologue:
       commands:
         - checkout

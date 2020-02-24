@@ -60,7 +60,7 @@ namespace :build_matrix do
             "epilogue" => {
               "always" => {
                 "commands" => [
-                  "cache store #{cache_key} $BUNDLE_PATH"
+                  "cache store #{cache_key} $BUNDLE_DIR"
                 ]
               }
             }
