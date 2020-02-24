@@ -2,7 +2,7 @@
 
 set -eu
 
-gem_args="--no-document --no-post-install-message"
+gem_args="--no-document --no-verbose"
 
 case "${_RUBYGEMS_VERSION-"latest"}" in
   "latest")
