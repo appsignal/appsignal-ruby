@@ -17,50 +17,110 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
+def env_map(key, value)
+  {
+    "name" => key,
+    "value" => value
+  }
+end
+
+def build_task(ruby_version, type)
+  bundle_dir = ".bundle"
+  bundle_path = "../#{bundle_dir}/"
+  cache_key_base = "v1-bundler-#{ruby_version}"
+  cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
+  {
+    "name" => "Ruby #{ruby_version} - #{type}",
+    "dependencies" => ["Validation"],
+    "task" => {
+      "env_vars" => [
+        env_map("BUNDLE_PATH", bundle_path),
+        env_map("RUNNING_IN_CI", "true"),
+        env_map("RAILS_ENV", "test"),
+        env_map("JRUBY_OPTS", ""),
+        env_map("COV", "1")
+      ],
+      "prologue" => {
+        "commands" => [
+          "sem-version ruby #{ruby_version}",
+          "cache restore #{cache_key},#{cache_key_base}",
+          "./support/install_deps",
+          "./support/bundler_wrapper install --jobs=3 --retry=3",
+          "./support/bundler_wrapper exec rake extension:install"
+        ]
+      },
+      "jobs" => [],
+      "epilogue" => {
+        "on_pass" => {
+          "commands" => [
+            "cache store #{cache_key} #{bundle_dir}"
+          ]
+        }
+      }
+    }
+  }
+end
+
 namespace :build_matrix do
-  namespace :travis do
+  namespace :semaphore do
     task :generate do
       yaml = YAML.load_file("build_matrix.yml")
       matrix = yaml["matrix"]
       defaults = matrix["defaults"]
+      semaphore = yaml["semaphore"]
 
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
+        ruby_primary_block = build_task(ruby_version, :primary)
+        ruby_secondary_block = build_task(ruby_version, :secondary).tap do |t|
+          t["dependencies"] = ["Ruby #{ruby_version} - primary"]
+        end
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
 
-          env = ""
+          env = [env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")]
           rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
-          env = "_RUBYGEMS_VERSION=#{rubygems}" if rubygems
+          env << env_map("_RUBYGEMS_VERSION", rubygems) if rubygems
           bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
-          env += " _BUNDLER_VERSION=#{bundler}" if bundler
+          env << env_map("_BUNDLER_VERSION", bundler) if bundler
 
-          builds << {
-            "rvm" => ruby_version,
-            "gemfile" => "gemfiles/#{gem["gem"]}.gemfile",
-            "env" => env
-          }
+          if gem["gem"] == "no_dependencies"
+            ruby_primary_block["task"]["jobs"] << {
+              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
+              "env_vars" => env,
+              "commands" => ["./support/bundler_wrapper exec rake test"]
+            }
+          else
+            ruby_secondary_block["task"]["jobs"] << {
+              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
+              "env_vars" => env,
+              "commands" => ["./support/bundler_wrapper exec rake test"]
+            }
+          end
+        end
+        builds << ruby_primary_block
+        if ruby_secondary_block["task"]["jobs"].count.nonzero?
+          builds << ruby_secondary_block
         end
       end
-      travis = yaml["travis"]
-      travis["matrix"]["include"] = travis["matrix"]["include"] + builds
+      semaphore["blocks"] += builds
 
       header = "# DO NOT EDIT\n" \
-        "# This is a generated file by the `rake build_matrix:travis:generate` task.\n" \
+        "# This is a generated file by the `rake build_matrix:semaphore:generate` task.\n" \
         "# See `build_matrix.yml` for the build matrix.\n" \
-        "# Generate this file with `rake build_matrix:travis:generate`.\n"
-      generated_yaml = header + YAML.dump(travis)
-      File.write(".travis.yml", generated_yaml)
-      puts "Generated `.travis.yml`"
+        "# Generate this file with `rake build_matrix:semaphore:generate`.\n"
+      generated_yaml = header + YAML.dump(semaphore)
+      File.write(".semaphore/semaphore.yml", generated_yaml)
+      puts "Generated `.semaphore/semaphore.yml`"
       puts "Build count: #{builds.length}"
     end
 
     task :validate => :generate do
-      `git status | grep .travis.yml 2>&1`
+      `git status | grep .semaphore/semaphore.yml 2>&1`
       if $?.exitstatus.zero? # rubocop:disable Style/SpecialGlobalVars
-        puts "The `.travis.yml` is modified. The changes were not committed."
-        puts "Please run `rake build_matrix:travis:generate` and commit the changes."
+        puts "The `.semaphore/semaphore.yml` is modified. The changes were not committed."
+        puts "Please run `rake build_matrix:semaphore:generate` and commit the changes."
         exit 1
       end
     end
@@ -318,7 +378,7 @@ namespace :extension do
           appsignal.version \
           Makefile \
           mkmf.log
-      COMMAND
+    COMMAND
   end
 end
 
