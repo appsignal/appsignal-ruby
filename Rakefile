@@ -35,13 +35,13 @@ namespace :build_matrix do
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
-        cache_key = "v1-bundler-#{ruby_version}-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)"
+        cache_key_base = "v1-bundler-#{ruby_version}"
+        cache_key = "#{cache_key_base}-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)"
         ruby_block = {
           "name" => "Ruby #{ruby_version}",
           "dependencies" => [],
           "task" => {
             "env_vars" => [
-              env_map("BUNDLE_PATH", bundle_path),
               env_map("RUNNING_IN_CI", "true"),
               env_map("RAILS_ENV", "test"),
               env_map("JRUBY_OPTS", ""),
@@ -50,7 +50,7 @@ namespace :build_matrix do
             "prologue" => {
               "commands" => [
                 "sem-version ruby #{ruby_version}",
-                "cache restore #{cache_key} $BUNDLE_PATH",
+                "cache restore #{cache_key},#{cache_key_base}",
                 "./support/install_deps",
                 "./support/bundler_wrapper install --jobs=3 --retry=3",
                 "./support/bundler_wrapper exec rake extension:install"
@@ -60,7 +60,7 @@ namespace :build_matrix do
             "epilogue" => {
               "always" => {
                 "commands" => [
-                  "cache store #{cache_key}"
+                  "cache store #{cache_key} $BUNDLE_PATH"
                 ]
               }
             }

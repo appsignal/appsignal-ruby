@@ -14,8 +14,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       when: "branch != 'master' AND branch != 'develop'"
 
   global_job_config:
-    env_keys:
-      - name: "BUNDLE_PATH",
+    env_vars:
+      - name: "BUNDLE_PATH"
         value: ".bundle/"
     prologue:
       commands:
