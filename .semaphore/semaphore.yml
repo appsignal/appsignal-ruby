@@ -49,7 +49,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 1.9.3
-      - cache restore v1-bundler-1.9.3-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-1.9.3
+      - cache restore v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE),v1-bundler-1.9.3
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -67,8 +67,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-1.9.3-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-1.9.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.0.0
   dependencies: []
   task:
@@ -84,7 +83,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.0.0
-      - cache restore v1-bundler-2.0.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.0.0
+      - cache restore v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.0.0
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -222,8 +221,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.0.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.0.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.1.8
   dependencies: []
   task:
@@ -239,7 +237,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.1.8
-      - cache restore v1-bundler-2.1.8-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.1.8
+      - cache restore v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.1.8
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -257,8 +255,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.1.8-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.1.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.2.4
   dependencies: []
   task:
@@ -274,7 +271,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.2.4
-      - cache restore v1-bundler-2.2.4-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.2.4
+      - cache restore v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.2.4
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -292,8 +289,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.2.4-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.2.4-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.3.8
   dependencies: []
   task:
@@ -309,7 +305,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.3.8
-      - cache restore v1-bundler-2.3.8-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.3.8
+      - cache restore v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.3.8
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -327,8 +323,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.3.8-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.3.8-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.4.5
   dependencies: []
   task:
@@ -344,7 +339,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.4.5
-      - cache restore v1-bundler-2.4.5-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.4.5
+      - cache restore v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.4.5
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -362,8 +357,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.4.5-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.4.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.5.3
   dependencies: []
   task:
@@ -379,7 +373,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.5.3
-      - cache restore v1-bundler-2.5.3-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.5.3
+      - cache restore v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.5.3
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -407,8 +401,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.5.3-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.5.3-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.6.5
   dependencies: []
   task:
@@ -424,7 +417,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.6.5
-      - cache restore v1-bundler-2.6.5-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.6.5
+      - cache restore v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.6.5
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -592,8 +585,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.6.5-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.6.5-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby 2.7.0
   dependencies: []
   task:
@@ -609,7 +601,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby 2.7.0
-      - cache restore v1-bundler-2.7.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-2.7.0
+      - cache restore v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-2.7.0
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -777,8 +769,7 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-2.7.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-2.7.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH
 - name: Ruby jruby-9.1.17.0
   dependencies: []
   task:
@@ -794,7 +785,7 @@ blocks:
     prologue:
       commands:
       - sem-version ruby jruby-9.1.17.0
-      - cache restore v1-bundler-jruby-9.1.17.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile),v1-bundler-jruby-9.1.17.0
+      - cache restore v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE),v1-bundler-jruby-9.1.17.0
       - "./support/install_deps"
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
@@ -822,5 +813,4 @@ blocks:
     epilogue:
       always:
         commands:
-        - cache store v1-bundler-jruby-9.1.17.0-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)
-          $BUNDLE_PATH
+        - cache store v1-bundler-jruby-9.1.17.0-$(checksum $BUNDLE_GEMFILE) $BUNDLE_PATH

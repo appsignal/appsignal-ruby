@@ -36,7 +36,7 @@ namespace :build_matrix do
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
         cache_key_base = "v1-bundler-#{ruby_version}"
-        cache_key = "#{cache_key_base}-$(checksum gemfiles/$BUNDLE_GEMFILE.gemfile)"
+        cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
         ruby_block = {
           "name" => "Ruby #{ruby_version}",
           "dependencies" => [],
