@@ -15,7 +15,7 @@ auto_cancel:
 global_job_config:
   env_vars:
   - name: BUNDLE_PATH
-    value: ".bundle/"
+    value: "../.bundle/"
   prologue:
     commands:
     - checkout
