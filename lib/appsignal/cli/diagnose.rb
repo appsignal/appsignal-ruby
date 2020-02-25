@@ -337,7 +337,7 @@ module Appsignal
           path = File.expand_path("../../../../ext/install.report", __FILE__)
           raw_report = File.read(path)
           Utils.parse_yaml(raw_report)
-        rescue => e
+        rescue StandardError, Psych::SyntaxError => e # rubocop:disable Lint/ShadowedException
           {
             "parsing_error" => {
               "error" => "#{e.class}: #{e}",
