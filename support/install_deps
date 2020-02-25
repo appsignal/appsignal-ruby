@@ -7,21 +7,20 @@ if [[ $(ruby --version) != "ruby 1.9.3"* ]]; then
   gem_args+=" --no-document"
 fi
 
-echo $gem_args
-# case "${_RUBYGEMS_VERSION-"latest"}" in
-#   "latest")
-#     gem update $gem_args --system
-#   ;;
-#   *)
-#     gem update $gem_args --system $_RUBYGEMS_VERSION
-#   ;;
-# esac
-#
-# case "${_BUNDLER_VERSION-"latest"}" in
-#   "latest")
-#     gem update bundler $gem_args
-#   ;;
-#   *)
-#     gem install bundler $gem_args --version $_BUNDLER_VERSION
-#   ;;
-# esac
+case "${_RUBYGEMS_VERSION-"latest"}" in
+  "latest")
+    gem update $gem_args --system
+  ;;
+  *)
+    gem update $gem_args --system $_RUBYGEMS_VERSION
+  ;;
+esac
+
+case "${_BUNDLER_VERSION-"latest"}" in
+  "latest")
+    gem update bundler $gem_args
+  ;;
+  *)
+    gem install bundler $gem_args --version $_BUNDLER_VERSION
+  ;;
+esac
