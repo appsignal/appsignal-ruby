@@ -80,7 +80,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.0.0-p648
@@ -100,7 +100,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.0.0-p648 - Gems
@@ -120,7 +120,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for capistrano3
@@ -132,7 +132,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for grape
@@ -144,7 +144,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for padrino
@@ -168,7 +168,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for rails-3.2
@@ -216,7 +216,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for sequel-435
@@ -228,7 +228,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for sinatra
@@ -240,7 +240,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.0.0-p648 for webmachine
@@ -252,7 +252,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.1.10
@@ -272,7 +272,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.2.10
@@ -292,7 +292,7 @@ blocks:
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.3.8
