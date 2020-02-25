@@ -17,9 +17,6 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
-BUNDLE_DIR = ".bundle".freeze
-BUNDLE_PATH = "../#{BUNDLE_DIR}/".freeze
-
 def env_map(key, value)
   {
     "name" => key,
