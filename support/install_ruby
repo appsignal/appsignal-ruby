@@ -5,15 +5,18 @@ set -eu
 # Install missing Ruby versions at start of build
 
 ruby_install_dir=$HOME/.rbenv/versions/$RUBY_VERSION
+cache_key=ruby-install-$RUBY_VERSION
 
 if ! [ -d $ruby_install_dir ]; then
   # If Ruby version does not exist, try and restore the install dir cache
-  cache restore ruby-install-$RUBY_VERSION
+  cache restore $cache_key
 fi
 
 if ! [ -d $ruby_install_dir ]; then
+  echo "Installing Ruby $RUBY_VERSION"
+  sudo apt install libssl1.0-dev -y
   # Install Ruby version if it's not available on the system
   rbenv install $RUBY_VERSION
   # Cache Ruby install dir
-  cache store ruby-install-$RUBY_VERSION $ruby_install_dir
+  cache store $cache_key $ruby_install_dir
 fi
