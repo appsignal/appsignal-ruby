@@ -247,7 +247,7 @@ module Appsignal
         key.to_s,
         Appsignal::Utils::Data.generate(data)
       )
-    rescue RuntimeError => e
+    rescue => e
       Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{data.inspect}'")
     end
 
