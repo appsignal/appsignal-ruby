@@ -17,6 +17,9 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
+BUNDLE_DIR = ".bundle".freeze
+BUNDLE_PATH = "../#{BUNDLE_DIR}/".freeze
+
 def env_map(key, value)
   {
     "name" => key,
@@ -25,38 +28,16 @@ def env_map(key, value)
 end
 
 def build_task(ruby_version, type = nil)
-  bundle_dir = ".bundle"
-  bundle_path = "../#{bundle_dir}/"
-  cache_key_base = "v1-bundler-#{ruby_version}"
-  cache_key = "#{cache_key_base}-$(checksum $BUNDLE_GEMFILE)"
   {
     "name" => "Ruby #{ruby_version}#{type ? " - #{type}" : nil}",
     "dependencies" => ["Validation"],
     "task" => {
-      "env_vars" => [
-        env_map("BUNDLE_PATH", bundle_path),
-        env_map("RUNNING_IN_CI", "true"),
-        env_map("RAILS_ENV", "test"),
-        env_map("JRUBY_OPTS", ""),
-        env_map("COV", "1")
-      ],
       "prologue" => {
         "commands" => [
-          "sem-version ruby #{ruby_version}",
-          "cache restore #{cache_key},#{cache_key_base}",
-          "./support/install_deps",
-          "./support/bundler_wrapper install --jobs=3 --retry=3",
           "./support/bundler_wrapper exec rake extension:install"
         ]
       },
-      "jobs" => [],
-      "epilogue" => {
-        "on_pass" => {
-          "commands" => [
-            "cache store #{cache_key} #{bundle_dir}"
-          ]
-        }
-      }
+      "jobs" => []
     }
   }
 end
@@ -79,24 +60,24 @@ namespace :build_matrix do
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
 
-          env = [env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")]
+          env = [
+            env_map("RUBY_VERSION", ruby_version),
+            env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")
+          ]
           rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
           env << env_map("_RUBYGEMS_VERSION", rubygems) if rubygems
           bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
           env << env_map("_BUNDLER_VERSION", bundler) if bundler
 
+          job = {
+            "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
+            "env_vars" => env,
+            "commands" => ["./support/bundler_wrapper exec rake test"]
+          }
           if gem["gem"] == "no_dependencies"
-            ruby_primary_block["task"]["jobs"] << {
-              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
-              "env_vars" => env,
-              "commands" => ["./support/bundler_wrapper exec rake test"]
-            }
+            ruby_primary_block["task"]["jobs"] << job
           else
-            ruby_secondary_block["task"]["jobs"] << {
-              "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
-              "env_vars" => env,
-              "commands" => ["./support/bundler_wrapper exec rake test"]
-            }
+            ruby_secondary_block["task"]["jobs"] << job
           end
         end
         builds << ruby_primary_block
