@@ -17,4 +17,3 @@ if ! [ -d $ruby_install_dir ]; then
   # Cache Ruby install dir
   cache store ruby-install-$RUBY_VERSION $ruby_install_dir
 fi
-sem-version ruby $RUBY_VERSION
