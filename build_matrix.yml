@@ -27,7 +27,6 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         value: "1"
     prologue:
       commands:
-        - gem env
         - checkout
         - ./support/install_ruby
         - sem-version ruby $RUBY_VERSION

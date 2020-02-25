@@ -26,7 +26,6 @@ global_job_config:
     value: '1'
   prologue:
     commands:
-    - gem env
     - checkout
     - "./support/install_ruby"
     - sem-version ruby $RUBY_VERSION
