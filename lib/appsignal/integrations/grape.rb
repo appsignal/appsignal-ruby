@@ -23,7 +23,10 @@ module Appsignal
         begin
           app.call(env)
         rescue Exception => error # rubocop:disable Lint/RescueException
-          transaction.set_error(error)
+          # Do not set error if "grape.skip_appsignal_error" is set to `true`.
+          unless env["grape.skip_appsignal_error"]
+            transaction.set_error(error)
+          end
           raise error
         ensure
           request_method = request.request_method.to_s.upcase

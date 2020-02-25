@@ -93,6 +93,16 @@ if DependencyHelper.grape_present?
             expect(transaction).to receive(:set_error).with(kind_of(ExampleException))
           end
 
+          context "with env['grape.skip_appsignal_error'] = true" do
+            before do
+              env["grape.skip_appsignal_error"] = true
+            end
+
+            it "does not add the error" do
+              expect(transaction).to_not receive(:set_error)
+            end
+          end
+
           after do
             expect { middleware.call(env) }.to raise_error ExampleException
           end
