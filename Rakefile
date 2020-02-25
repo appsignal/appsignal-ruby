@@ -94,7 +94,8 @@ namespace :build_matrix do
       generated_yaml = header + YAML.dump(semaphore)
       File.write(".semaphore/semaphore.yml", generated_yaml)
       puts "Generated `.semaphore/semaphore.yml`"
-      puts "Build count: #{builds.length}"
+      puts "Task count: #{builds.length}"
+      puts "Job count: #{builds.sum { |block| block["task"]["jobs"].count }}"
     end
 
     task :validate => :generate do
