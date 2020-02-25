@@ -257,7 +257,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.1.8
+- name: Ruby 2.1.10
   dependencies:
   - Validation
   task:
@@ -265,10 +265,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.1.8 for no_dependencies
+    - name: Ruby 2.1.10 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.1.8
+        value: 2.1.10
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -277,7 +277,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.2.4
+- name: Ruby 2.2.10
   dependencies:
   - Validation
   task:
@@ -285,10 +285,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.2.4 for no_dependencies
+    - name: Ruby 2.2.10 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.2.4
+        value: 2.2.10
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -317,7 +317,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.4.5
+- name: Ruby 2.4.9
   dependencies:
   - Validation
   task:
@@ -325,10 +325,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.4.5 for no_dependencies
+    - name: Ruby 2.4.9 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.4.5
+        value: 2.4.9
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -337,7 +337,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.5.3
+- name: Ruby 2.5.7
   dependencies:
   - Validation
   task:
@@ -345,10 +345,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.5.3 for no_dependencies
+    - name: Ruby 2.5.7 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.5.3
+        value: 2.5.7
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -357,18 +357,18 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.5.3 - Gems
+- name: Ruby 2.5.7 - Gems
   dependencies:
-  - Ruby 2.5.3
+  - Ruby 2.5.7
   task:
     prologue:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.5.3 for rails-5.2
+    - name: Ruby 2.5.7 for rails-5.2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.5.3
+        value: 2.5.7
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.2.gemfile
       - name: _RUBYGEMS_VERSION
