@@ -47,6 +47,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
           env_vars:
             - name: RUBY_VERSION
               value: 2.6.5
+            - name: BUNDLE_GEMFILE
+              value: gemfiles/no_dependencies.gemfile
           commands:
             - ./support/bundler_wrapper exec rake build_matrix:semaphore:validate
     - name: Linters
@@ -57,6 +59,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
           env_vars:
             - name: RUBY_VERSION
               value: 2.6.5
+            - name: BUNDLE_GEMFILE
+              value: gemfiles/no_dependencies.gemfile
           commands:
             - ./support/bundler_wrapper exec rubocop
 
