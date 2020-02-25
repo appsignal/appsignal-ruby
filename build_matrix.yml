@@ -15,8 +15,6 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
 
   global_job_config:
     env_vars:
-      - name: GEM_HOME
-        value: ".gem/"
       - name: BUNDLE_PATH
         value: "../.bundle/"
       - name: RUNNING_IN_CI
@@ -41,7 +39,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       on_pass:
         commands:
           - cache store v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) .bundle
-          - cache store v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) .gem
+          - cache store v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $GEM_HOME
 
   blocks:
     - name: Validation
