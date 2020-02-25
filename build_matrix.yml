@@ -39,7 +39,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       on_pass:
         commands:
           - cache store v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) .bundle
-          - cache store v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $GEM_HOME
+          - cache store v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
 
   blocks:
     - name: Validation
