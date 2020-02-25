@@ -248,7 +248,12 @@ module Appsignal
         Appsignal::Utils::Data.generate(data)
       )
     rescue RuntimeError => e
-      Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{data.inspect}'")
+      begin
+        inspected_data = data.inspect
+        Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'")
+      rescue => e
+        Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}). Can't inspect data.")
+      end
     end
 
     def sample_data

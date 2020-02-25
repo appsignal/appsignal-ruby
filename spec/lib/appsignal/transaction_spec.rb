@@ -568,7 +568,7 @@ describe Appsignal::Transaction do
       end
 
       context "when the data cannot be converted to JSON" do
-        it "does not update the sample data on the transaction" do
+        it "does not update the sample data on the transaction", :not_ruby19 do
           klass = Class.new do
             def to_s
               raise "foo" # Cause a deliberate error
@@ -579,6 +579,19 @@ describe Appsignal::Transaction do
           expect(transaction.to_h["sample_data"]).to eq({})
           expect(log_contents(log)).to contains_log :error,
             "Error generating data (RuntimeError: foo) for"
+        end
+
+        it "does not update the sample data on the transaction", :only_ruby19 do
+          klass = Class.new do
+            def to_s
+              raise "foo" # Cause a deliberate error
+            end
+          end
+          transaction.set_sample_data("params", klass.new => 1)
+
+          expect(transaction.to_h["sample_data"]).to eq({})
+          expect(log_contents(log)).to contains_log :error,
+            "Error generating data (RuntimeError: foo). Can't inspect data."
         end
       end
     end
