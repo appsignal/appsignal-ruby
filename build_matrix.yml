@@ -16,7 +16,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   global_job_config:
     env_vars:
       - name: BUNDLE_PATH
-        value: "../.bundle"
+        value: "../.bundle/"
       - name: RUNNING_IN_CI
         value: "true"
       - name: RAILS_ENV
@@ -28,14 +28,17 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
     prologue:
       commands:
         - checkout
+        - ./support/install_ruby
         - sem-version ruby $RUBY_VERSION
         - cache restore v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),v1-bundler-$RUBY_VERSION
+        - cache restore v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),v1-gems-$RUBY_VERSION
         - ./support/install_deps
         - ./support/bundler_wrapper install --jobs=3 --retry=3
     epilogue:
       on_pass:
         commands:
           - cache store v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) .bundle
+          - cache store v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
 
   blocks:
     - name: Validation
@@ -76,22 +79,26 @@ matrix:
       - "rails-5.2"
 
   ruby:
-    - ruby: "1.9.3"
+    - ruby: "1.9.3-p551"
       rubygems: "2.7.8"
+      bundler: "1.17.3"
       gems: "none"
-    - ruby: "2.0.0"
+    - ruby: "2.0.0-p648"
       rubygems: "2.7.8"
-    - ruby: "2.1.8"
+      bundler: "1.17.3"
+    - ruby: "2.1.10"
       rubygems: "2.7.8"
+      bundler: "1.17.3"
       gems: "none"
-    - ruby: "2.2.4"
+    - ruby: "2.2.10"
       rubygems: "2.7.8"
+      bundler: "1.17.3"
       gems: "none"
     - ruby: "2.3.8"
       gems: "none"
-    - ruby: "2.4.5"
+    - ruby: "2.4.9"
       gems: "none"
-    - ruby: "2.5.3"
+    - ruby: "2.5.7"
       gems: "minimal"
     - ruby: "2.6.5"
     - ruby: "2.7.0"
@@ -108,7 +115,7 @@ matrix:
     - gem: "que_beta"
       exclude:
         ruby:
-          - "2.0.0"
+          - "2.0.0-p648"
     - gem: "rails-3.2"
       bundler: "1.17.3"
       exclude:
@@ -124,23 +131,23 @@ matrix:
     - gem: "rails-5.0"
       exclude:
         ruby:
-          - "2.0.0"
+          - "2.0.0-p648"
     - gem: "rails-5.1"
       exclude:
         ruby:
-          - "2.0.0"
+          - "2.0.0-p648"
     - gem: "rails-5.2"
       exclude:
         ruby:
-          - "2.0.0"
+          - "2.0.0-p648"
     - gem: "rails-6.0"
       exclude:
         ruby:
-          - "2.0.0"
-          - "2.1.8"
-          - "2.2.4"
+          - "2.0.0-p648"
+          - "2.1.10"
+          - "2.2.10"
           - "2.3.8"
-          - "2.4.5"
+          - "2.4.9"
     - gem: "resque"
       bundler: "1.17.3"
     - gem: "sequel"
