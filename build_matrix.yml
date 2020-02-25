@@ -28,13 +28,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
     prologue:
       commands:
         - checkout
-        # Install missing Ruby versions at start of build
-        - cache restore ruby-install-$RUBY_VERSION
-        - if ! [ -d $HOME/.rbenv/versions/$RUBY_VERSION ]; then rbenv install $RUBY_VERSION; fi
-        - rbenv local $RUBY_VERSION
-        - cache store ruby-install-$RUBY_VERSION $HOME/.rbenv/versions/$RUBY_VERSION
-
-        - sem-version ruby $RUBY_VERSION
+        - ./support/install_ruby
         - cache restore v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),v1-bundler-$RUBY_VERSION
         - ./support/install_deps
         - ./support/bundler_wrapper install --jobs=3 --retry=3

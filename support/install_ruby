@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -eu
+
+# Install missing Ruby versions at start of build
+
+ruby_install_dir=$HOME/.rbenv/versions/$RUBY_VERSION
+
+if ! [ -d $ruby_install_dir ]; then
+  # If Ruby version does not exist, try and restore the install dir cache
+  cache restore ruby-install-$RUBY_VERSION
+fi
+
+if ! [ -d $ruby_install_dir ]; then
+  # Install Ruby version if it's not available on the system
+  rbenv install $RUBY_VERSION
+  # Cache Ruby install dir
+  cache store ruby-install-$RUBY_VERSION $ruby_install_dir
+fi
+sem-version ruby $RUBY_VERSION
