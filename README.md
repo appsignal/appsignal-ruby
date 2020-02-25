@@ -9,7 +9,7 @@ issues.
 - [Ruby code documentation][ruby-doc]
 - [Support][contact]
 
-[![Build Status](https://travis-ci.org/appsignal/appsignal-ruby.png?branch=master)](https://travis-ci.org/appsignal/appsignal-ruby)
+[![Build status](https://appsignal.semaphoreci.com/badges/appsignal-ruby/branches/master.svg)](https://appsignal.semaphoreci.com/projects/appsignal-ruby)
 [![Gem Version](https://badge.fury.io/rb/appsignal.svg)](http://badge.fury.io/rb/appsignal)
 [![Code Climate](https://codeclimate.com/github/appsignal/appsignal.png)](https://codeclimate.com/github/appsignal/appsignal)
 
