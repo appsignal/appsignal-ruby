@@ -65,7 +65,7 @@ blocks:
         value: gemfiles/no_dependencies.gemfile
       commands:
       - "./support/bundler_wrapper exec rubocop"
-- name: Ruby 1.9.3
+- name: Ruby 1.9.3-p551
   dependencies:
   - Validation
   task:
@@ -73,10 +73,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 1.9.3 for no_dependencies
+    - name: Ruby 1.9.3-p551 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 1.9.3
+        value: 1.9.3-p551
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -85,7 +85,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.0.0
+- name: Ruby 2.0.0-p648
   dependencies:
   - Validation
   task:
@@ -93,10 +93,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.0.0 for no_dependencies
+    - name: Ruby 2.0.0-p648 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -105,18 +105,18 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 2.0.0 - Gems
+- name: Ruby 2.0.0-p648 - Gems
   dependencies:
-  - Ruby 2.0.0
+  - Ruby 2.0.0-p648
   task:
     prologue:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.0.0 for capistrano2
+    - name: Ruby 2.0.0-p648 for capistrano2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -125,10 +125,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for capistrano3
+    - name: Ruby 2.0.0-p648 for capistrano3
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano3.gemfile
       - name: _RUBYGEMS_VERSION
@@ -137,10 +137,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for grape
+    - name: Ruby 2.0.0-p648 for grape
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
       - name: _RUBYGEMS_VERSION
@@ -149,10 +149,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for padrino
+    - name: Ruby 2.0.0-p648 for padrino
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/padrino.gemfile
       - name: _RUBYGEMS_VERSION
@@ -161,10 +161,10 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for que
+    - name: Ruby 2.0.0-p648 for que
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/que.gemfile
       - name: _RUBYGEMS_VERSION
@@ -173,10 +173,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for rails-3.2
+    - name: Ruby 2.0.0-p648 for rails-3.2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-3.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -185,10 +185,10 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for rails-4.2
+    - name: Ruby 2.0.0-p648 for rails-4.2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-4.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -197,10 +197,10 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for resque
+    - name: Ruby 2.0.0-p648 for resque
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/resque.gemfile
       - name: _RUBYGEMS_VERSION
@@ -209,10 +209,10 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for sequel
+    - name: Ruby 2.0.0-p648 for sequel
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel.gemfile
       - name: _RUBYGEMS_VERSION
@@ -221,10 +221,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for sequel-435
+    - name: Ruby 2.0.0-p648 for sequel-435
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel-435.gemfile
       - name: _RUBYGEMS_VERSION
@@ -233,10 +233,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for sinatra
+    - name: Ruby 2.0.0-p648 for sinatra
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/sinatra.gemfile
       - name: _RUBYGEMS_VERSION
@@ -245,10 +245,10 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.0.0 for webmachine
+    - name: Ruby 2.0.0-p648 for webmachine
       env_vars:
       - name: RUBY_VERSION
-        value: 2.0.0
+        value: 2.0.0-p648
       - name: BUNDLE_GEMFILE
         value: gemfiles/webmachine.gemfile
       - name: _RUBYGEMS_VERSION
