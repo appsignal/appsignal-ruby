@@ -38,7 +38,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         # Because this is saved on the class rather than an instance of the
         # class we need to clear it like this in case a certain test doesn't
         # generate a report.
-        cli_class.remove_instance_variable :@data
+        cli_class.send :remove_instance_variable, :@data
       end
 
       if DependencyHelper.rails_present?

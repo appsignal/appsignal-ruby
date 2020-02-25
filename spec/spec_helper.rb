@@ -81,6 +81,13 @@ RSpec.configure do |config|
     FileUtils.mkdir_p(spec_system_tmp_dir)
   end
 
+  config.before :each, :not_ruby19 => true do
+    is_ruby19 = Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.0.0")
+    next unless is_ruby19
+
+    skip "Skipping spec for Ruby 1.9"
+  end
+
   config.before do
     stop_minutely_probes
     ENV["RAILS_ENV"] ||= "test"
