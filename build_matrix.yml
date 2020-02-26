@@ -76,6 +76,7 @@ matrix:
     minimal:
       - "no_dependencies"
       - "rails-5.2"
+      - "rails-6.0"
 
   ruby:
     - ruby: "2.0.0-p648"
