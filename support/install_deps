@@ -3,6 +3,9 @@
 set -eu
 
 gem_args="--no-document --no-verbose"
+if [[ $(ruby --version) != "ruby 1.9.3"* ]]; then
+  gem_args+=" --no-document"
+fi
 
 case "${_RUBYGEMS_VERSION-"latest"}" in
   "latest")
