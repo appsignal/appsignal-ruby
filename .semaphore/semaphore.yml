@@ -28,6 +28,7 @@ global_job_config:
     commands:
     - checkout
     - sem-version ruby $RUBY_VERSION
+    - "./support/check_versions"
     - cache restore v1-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),v1-bundler-$RUBY_VERSION
     - cache restore v1-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),v1-gems-$RUBY_VERSION
     - "./support/install_deps"
