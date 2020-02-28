@@ -441,30 +441,36 @@ describe Appsignal::Transaction do
 
     describe "#set_http_or_background_action" do
       context "for a hash with controller and action" do
-        let(:from) { { :controller => "HomeController", :action => "show" } }
-
-        it "should set the action" do
-          expect(transaction).to receive(:set_action).with("HomeController#show")
+        it "sets the action" do
+          transaction.set_http_or_background_action(
+            :controller => "HomeController",
+            :action => "show"
+          )
+          expect(transaction.to_h["action"]).to eql("HomeController#show")
         end
       end
 
       context "for a hash with just action" do
-        let(:from) { { :action => "show" } }
-
-        it "should set the action" do
-          expect(transaction).to receive(:set_action).with("show")
+        it "sets the action" do
+          transaction.set_http_or_background_action(:action => "show")
+          expect(transaction.to_h["action"]).to eql("show")
         end
       end
 
       context "for a hash with class and method" do
-        let(:from) { { :class => "Worker", :method => "perform" } }
-
-        it "should set the action" do
-          expect(transaction).to receive(:set_action).with("Worker#perform")
+        it "sets the action" do
+          transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
+          expect(transaction.to_h["action"]).to eql("Worker#perform")
         end
       end
 
-      after { transaction.set_http_or_background_action(from) }
+      context "when action is already set" do
+        it "does not overwrite the set action" do
+          transaction.set_action("MyCustomAction#perform")
+          transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
+          expect(transaction.to_h["action"]).to eql("MyCustomAction#perform")
+        end
+      end
     end
 
     describe "set_queue_start" do
