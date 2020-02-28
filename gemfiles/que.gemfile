@@ -1,10 +1,5 @@
 source 'https://rubygems.org'
 
 gem 'que'
-if Gem::Version.new(RUBY_VERSION) <= Gem::Version.new("2.1.0")
-  gem 'public_suffix', "~> 2.0.0"
-else
-  gem 'public_suffix'
-end
 
 gemspec :path => '../'

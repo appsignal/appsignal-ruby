@@ -4,10 +4,5 @@ gem 'capistrano', '~> 3.0'
 gem 'i18n', '~> 1.2.0'
 gem 'net-ssh', '2.9.2'
 gem 'rack', '~> 1.6'
-if Gem::Version.new(RUBY_VERSION) <= Gem::Version.new("2.1.0")
-  gem 'public_suffix', "~> 2.0.0"
-else
-  gem 'public_suffix'
-end
 
 gemspec :path => '../'
