@@ -218,7 +218,7 @@ module Appsignal
         from[:controller] || from[:class],
         from[:action] || from[:method]
       ]
-      set_action(group_and_action.compact.join("#"))
+      set_action_if_nil(group_and_action.compact.join("#"))
     end
 
     def set_queue_start(start)
