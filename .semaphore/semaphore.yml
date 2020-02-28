@@ -14,7 +14,9 @@ auto_cancel:
     when: branch != 'master' AND branch != 'develop'
 global_job_config:
   env_vars:
-  - name: CACHE
+  - name: _BUNDLER_CACHE
+    value: v2
+  - name: _GEMS_CACHE
     value: v2
   - name: BUNDLE_PATH
     value: "../.bundle/"
@@ -31,15 +33,16 @@ global_job_config:
     - checkout
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
-    - cache restore $CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$CACHE-bundler-$RUBY_VERSION
-    - cache restore $CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$CACHE-gems-$RUBY_VERSION
+    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_BUNDLER_CACHE-bundler-$RUBY_VERSION
+    - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_GEMS_CACHE-gems-$RUBY_VERSION
     - "./support/install_deps"
     - "./support/bundler_wrapper install --jobs=3 --retry=3"
   epilogue:
     on_pass:
       commands:
-      - cache store $CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) .bundle
-      - cache store $CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+      - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+        .bundle
+      - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
 blocks:
 - name: Validation
   dependencies: []
