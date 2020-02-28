@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.4
+- Fix `Appsignal::Transaction#set_http_or_background_action` helper (used by
+  `Appsignal.monitor_transaction`), to allow overwriting the action name of a
+  `Transaction` with `Appsignal.set_action`. PR #594
+- Move build to Semaphore. PR #587, #590 and #592
+
 ## 2.10.3
 - Only warn about reused transactions once. Repeated occurrences are logged as
   debug messages. PR #585
