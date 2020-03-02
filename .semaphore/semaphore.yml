@@ -360,6 +360,18 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.5.7 for rails-6.0
+      env_vars:
+      - name: RUBY_VERSION
+        value: 2.5.7
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
 - name: Ruby 2.6.5
   dependencies:
   - Validation
