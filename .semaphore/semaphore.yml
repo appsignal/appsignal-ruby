@@ -84,6 +84,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 1.9.3-p551
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
