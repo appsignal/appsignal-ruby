@@ -59,6 +59,7 @@ namespace :build_matrix do
 
           env = [
             env_map("RUBY_VERSION", ruby_version),
+            env_map("GEMSET", gem["gem"]),
             env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")
           ]
           rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]

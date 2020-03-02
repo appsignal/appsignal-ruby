@@ -33,14 +33,14 @@ global_job_config:
     - checkout
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
-    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_BUNDLER_CACHE-bundler-$RUBY_VERSION
+    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE),$_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET,$_BUNDLER_CACHE-bundler-$RUBY_VERSION
     - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_GEMS_CACHE-gems-$RUBY_VERSION
     - "./support/install_deps"
     - "./support/bundler_wrapper install --jobs=3 --retry=3"
   epilogue:
     on_pass:
       commands:
-      - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
         .bundle
       - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
 blocks:
@@ -52,6 +52,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       commands:
@@ -64,6 +66,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       commands:
@@ -80,6 +84,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -100,6 +106,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: capistrano2
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -112,6 +120,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: capistrano3
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano3.gemfile
       - name: _RUBYGEMS_VERSION
@@ -124,6 +134,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
       - name: _RUBYGEMS_VERSION
@@ -136,6 +148,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: padrino
       - name: BUNDLE_GEMFILE
         value: gemfiles/padrino.gemfile
       - name: _RUBYGEMS_VERSION
@@ -148,6 +162,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: que
       - name: BUNDLE_GEMFILE
         value: gemfiles/que.gemfile
       - name: _RUBYGEMS_VERSION
@@ -160,6 +176,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: rails-3.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-3.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -172,6 +190,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: rails-4.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-4.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -184,6 +204,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: resque
       - name: BUNDLE_GEMFILE
         value: gemfiles/resque.gemfile
       - name: _RUBYGEMS_VERSION
@@ -196,6 +218,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: sequel
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel.gemfile
       - name: _RUBYGEMS_VERSION
@@ -208,6 +232,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: sequel-435
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel-435.gemfile
       - name: _RUBYGEMS_VERSION
@@ -220,6 +246,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: sinatra
       - name: BUNDLE_GEMFILE
         value: gemfiles/sinatra.gemfile
       - name: _RUBYGEMS_VERSION
@@ -232,6 +260,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.0.0-p648
+      - name: GEMSET
+        value: webmachine
       - name: BUNDLE_GEMFILE
         value: gemfiles/webmachine.gemfile
       - name: _RUBYGEMS_VERSION
@@ -252,6 +282,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.1.10
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -272,6 +304,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.2.10
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -292,6 +326,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.3.8
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -312,6 +348,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.4.9
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -332,6 +370,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.5.7
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -352,6 +392,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.5.7
+      - name: GEMSET
+        value: rails-5.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -364,6 +406,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.5.7
+      - name: GEMSET
+        value: rails-6.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-6.0.gemfile
       - name: _RUBYGEMS_VERSION
@@ -384,6 +428,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -404,6 +450,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: capistrano2
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -416,6 +464,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: capistrano3
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano3.gemfile
       - name: _RUBYGEMS_VERSION
@@ -428,6 +478,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
       - name: _RUBYGEMS_VERSION
@@ -440,6 +492,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: padrino
       - name: BUNDLE_GEMFILE
         value: gemfiles/padrino.gemfile
       - name: _RUBYGEMS_VERSION
@@ -452,6 +506,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: que
       - name: BUNDLE_GEMFILE
         value: gemfiles/que.gemfile
       - name: _RUBYGEMS_VERSION
@@ -464,6 +520,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: que_beta
       - name: BUNDLE_GEMFILE
         value: gemfiles/que_beta.gemfile
       - name: _RUBYGEMS_VERSION
@@ -476,6 +534,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: rails-5.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.0.gemfile
       - name: _RUBYGEMS_VERSION
@@ -488,6 +548,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: rails-5.1
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.1.gemfile
       - name: _RUBYGEMS_VERSION
@@ -500,6 +562,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: rails-5.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -512,6 +576,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: rails-6.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-6.0.gemfile
       - name: _RUBYGEMS_VERSION
@@ -524,6 +590,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: resque
       - name: BUNDLE_GEMFILE
         value: gemfiles/resque.gemfile
       - name: _RUBYGEMS_VERSION
@@ -536,6 +604,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: sequel
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel.gemfile
       - name: _RUBYGEMS_VERSION
@@ -548,6 +618,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: sequel-435
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel-435.gemfile
       - name: _RUBYGEMS_VERSION
@@ -560,6 +632,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: sinatra
       - name: BUNDLE_GEMFILE
         value: gemfiles/sinatra.gemfile
       - name: _RUBYGEMS_VERSION
@@ -572,6 +646,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.5
+      - name: GEMSET
+        value: webmachine
       - name: BUNDLE_GEMFILE
         value: gemfiles/webmachine.gemfile
       - name: _RUBYGEMS_VERSION
@@ -592,6 +668,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -612,6 +690,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: capistrano2
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -624,6 +704,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: capistrano3
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano3.gemfile
       - name: _RUBYGEMS_VERSION
@@ -636,6 +718,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
       - name: _RUBYGEMS_VERSION
@@ -648,6 +732,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: padrino
       - name: BUNDLE_GEMFILE
         value: gemfiles/padrino.gemfile
       - name: _RUBYGEMS_VERSION
@@ -660,6 +746,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: que
       - name: BUNDLE_GEMFILE
         value: gemfiles/que.gemfile
       - name: _RUBYGEMS_VERSION
@@ -672,6 +760,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: que_beta
       - name: BUNDLE_GEMFILE
         value: gemfiles/que_beta.gemfile
       - name: _RUBYGEMS_VERSION
@@ -684,6 +774,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: rails-5.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.0.gemfile
       - name: _RUBYGEMS_VERSION
@@ -696,6 +788,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: rails-5.1
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.1.gemfile
       - name: _RUBYGEMS_VERSION
@@ -708,6 +802,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: rails-5.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.2.gemfile
       - name: _RUBYGEMS_VERSION
@@ -720,6 +816,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: rails-6.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-6.0.gemfile
       - name: _RUBYGEMS_VERSION
@@ -732,6 +830,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: resque
       - name: BUNDLE_GEMFILE
         value: gemfiles/resque.gemfile
       - name: _RUBYGEMS_VERSION
@@ -744,6 +844,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: sequel
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel.gemfile
       - name: _RUBYGEMS_VERSION
@@ -756,6 +858,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: sequel-435
       - name: BUNDLE_GEMFILE
         value: gemfiles/sequel-435.gemfile
       - name: _RUBYGEMS_VERSION
@@ -768,6 +872,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: sinatra
       - name: BUNDLE_GEMFILE
         value: gemfiles/sinatra.gemfile
       - name: _RUBYGEMS_VERSION
@@ -780,6 +886,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.7.0
+      - name: GEMSET
+        value: webmachine
       - name: BUNDLE_GEMFILE
         value: gemfiles/webmachine.gemfile
       - name: _RUBYGEMS_VERSION
@@ -800,6 +908,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: jruby-9.1.17.0
+      - name: GEMSET
+        value: no_dependencies
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
@@ -820,6 +930,8 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: jruby-9.1.17.0
+      - name: GEMSET
+        value: rails-5.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-5.2.gemfile
       - name: _RUBYGEMS_VERSION
