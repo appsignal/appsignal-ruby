@@ -365,7 +365,12 @@ end
 begin
   require "rspec/core/rake_task"
   desc "Run the AppSignal gem test suite."
-  RSpec::Core::RakeTask.new :test
+  RSpec::Core::RakeTask.new :test do |t|
+    is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
+    unless is_jruby
+      t.rspec_opts = "--exclude-pattern=spec/lib/appsignal/extension/jruby_spec.rb"
+    end
+  end
 rescue LoadError # rubocop:disable Lint/HandleExceptions
   # When running rake install, there is no RSpec yet.
 end
