@@ -85,7 +85,7 @@ RSpec.configure do |config|
     is_ruby19 = Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.0.0")
     next if is_ruby19
 
-    skip "Skipping spec for Ruby only for Ruby 1.9"
+    skip "Skipping spec. Only for Ruby 1.9"
   end
 
   config.before :each, :not_ruby19 => true do
