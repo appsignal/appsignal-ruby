@@ -76,8 +76,14 @@ module Appsignal
       ldd_version && ldd_version[0]
     end
 
+    # @api private
     def self.jruby?
       RUBY_PLATFORM == "java"
+    end
+
+    # @api private
+    def self.ruby_2_or_up?
+      versionify(RUBY_VERSION) >= versionify("2.0")
     end
   end
 end
