@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.5
+- Improve Ruby 1.9 compatibility. PR #591
+- Add grape.skip_appsignal_error request env. PR #588
+  More information: https://docs.appsignal.com/ruby/integrations/grape.html
+- Fix compatibility with the `http_logger` gem. Fix `SystemStackError`. PR #597
+
 ## 2.10.4
 - Fix `Appsignal::Transaction#set_http_or_background_action` helper (used by
   `Appsignal.monitor_transaction`), to allow overwriting the action name of a
