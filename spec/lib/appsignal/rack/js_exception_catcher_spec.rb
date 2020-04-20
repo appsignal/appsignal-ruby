@@ -11,18 +11,22 @@ describe Appsignal::Rack::JSExceptionCatcher do
   before { Appsignal.config = config }
 
   describe "#initialize" do
+    let(:out_stream) { std_stream }
+    let(:err_stream) { std_stream }
+    let(:output) { out_stream.read }
+    let(:stderr) { err_stream.read }
+
     it "logs to the logger" do
-      stdout = std_stream
-      stderr = std_stream
       log = capture_logs do
-        capture_std_streams(stdout, stderr) do
+        capture_std_streams(out_stream, err_stream) do
           Appsignal::Rack::JSExceptionCatcher.new(app, options)
         end
       end
       expect(log).to contains_log(:warn, deprecation_message)
       expect(log).to contains_log(:debug, "Initializing Appsignal::Rack::JSExceptionCatcher")
-      expect(stdout.read).to include "appsignal WARNING: #{deprecation_message}"
-      expect(stderr.read).to_not include("appsignal:")
+      expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
+      expect(stderr).to_not include("appsignal:")
+      expect(output).to be_empty
     end
   end
 

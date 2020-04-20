@@ -5,6 +5,8 @@ describe Appsignal::CLI::NotifyOfDeploy do
 
   let(:out_stream) { std_stream }
   let(:output) { out_stream.read }
+  let(:err_stream) { std_stream }
+  let(:stderr) { err_stream.read }
 
   define :include_deploy_notification do
     match do |log|
@@ -32,7 +34,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
   end
 
   def run
-    capture_stdout(out_stream) do
+    capture_std_streams(out_stream, err_stream) do
       run_cli("notify_of_deploy", options)
     end
   end
@@ -130,7 +132,7 @@ describe Appsignal::CLI::NotifyOfDeploy do
         it "prints a deprecation message" do
           run
           deprecation_message = "This command (appsignal notify_of_deploy) has been deprecated"
-          expect(output).to include("appsignal WARNING: #{deprecation_message}")
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
           expect(log).to contains_log :warn, deprecation_message
         end
 
