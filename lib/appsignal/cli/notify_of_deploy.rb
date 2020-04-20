@@ -94,7 +94,7 @@ module Appsignal
             "see our documentation for more information on the recommended " \
             "method: " \
             "https://docs.appsignal.com/application/markers/deploy-markers.html"
-          deprecation_message message, Appsignal.logger
+          deprecation_message message
         end
 
         private
