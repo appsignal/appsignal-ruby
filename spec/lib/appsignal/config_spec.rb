@@ -323,11 +323,11 @@ describe Appsignal::Config do
     end
 
     describe "support for old config keys" do
-      let(:out_stream) { std_stream }
-      let(:output) { out_stream.read }
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
       let(:config) { project_fixture_config(env, {}, test_logger(log)) }
       let(:log) { StringIO.new }
-      before { capture_stdout(out_stream) { config } }
+      before { capture_std_streams(std_stream, err_stream) { config } }
 
       describe ":api_key" do
         context "without :push_api_key" do
@@ -338,7 +338,7 @@ describe Appsignal::Config do
             expect(config.config_hash).to_not have_key :api_key
 
             message = "Old configuration key found. Please update the 'api_key' to 'push_api_key'"
-            expect(output).to include "appsignal WARNING: #{message}"
+            expect(stderr).to include "appsignal WARNING: #{message}"
             expect(log_contents(log)).to contains_log :warn, message
           end
         end
@@ -351,7 +351,7 @@ describe Appsignal::Config do
             expect(config.config_hash).to_not have_key :api_key
 
             message = "Old configuration key found. Please update the 'api_key' to 'push_api_key'"
-            expect(output).to include "appsignal WARNING: #{message}"
+            expect(stderr).to include "appsignal WARNING: #{message}"
             expect(log_contents(log)).to contains_log :warn, message
           end
         end
@@ -366,7 +366,7 @@ describe Appsignal::Config do
             expect(config.config_hash).to_not have_key :ignore_exceptions
 
             message = "Old configuration key found. Please update the 'ignore_exceptions' to 'ignore_errors'"
-            expect(output).to include "appsignal WARNING: #{message}"
+            expect(stderr).to include "appsignal WARNING: #{message}"
             expect(log_contents(log)).to contains_log :warn, message
           end
         end
@@ -379,7 +379,7 @@ describe Appsignal::Config do
             expect(config.config_hash).to_not have_key :ignore_exceptions
 
             message = "Old configuration key found. Please update the 'ignore_exceptions' to 'ignore_errors'"
-            expect(output).to include "appsignal WARNING: #{message}"
+            expect(stderr).to include "appsignal WARNING: #{message}"
             expect(log_contents(log)).to contains_log :warn, message
           end
         end

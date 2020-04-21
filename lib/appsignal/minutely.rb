@@ -33,8 +33,7 @@ module Appsignal
       # @return [void]
       def <<(probe)
         deprecation_message "Deprecated `Appsignal::Minute.probes <<` " \
-          "call. Please use `Appsignal::Minutely.probes.register` instead.",
-          logger
+          "call. Please use `Appsignal::Minutely.probes.register` instead."
         register probe.object_id, probe
       end
 

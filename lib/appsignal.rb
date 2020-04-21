@@ -6,6 +6,7 @@ require "securerandom"
 require "appsignal/logger"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
+require "appsignal/utils/deprecation_message"
 
 # AppSignal for Ruby gem's main module.
 #
@@ -15,9 +16,9 @@ require "appsignal/helpers/metrics"
 # {Appsignal::Helpers::Metrics}) for ease of use.
 module Appsignal
   class << self
-    extend Gem::Deprecate
     include Helpers::Instrumentation
     include Helpers::Metrics
+    include Utils::DeprecationMessage
 
     # Accessor for the AppSignal configuration.
     # Return the current AppSignal configuration.
@@ -280,16 +281,18 @@ module Appsignal
 
     # @deprecated No replacement
     def is_ignored_error?(error) # rubocop:disable Naming/PredicateName
+      deprecation_message "Appsignal.is_ignored_error? is deprecated " \
+        "with no replacement and will be removed in version 3.0."
       Appsignal.config[:ignore_errors].include?(error.class.name)
     end
     alias :is_ignored_exception? :is_ignored_error?
-    deprecate :is_ignored_error?, :none, 2017, 3
 
     # @deprecated No replacement
     def is_ignored_action?(action) # rubocop:disable Naming/PredicateName
+      deprecation_message "Appsignal.is_ignored_action? is deprecated " \
+        "with no replacement and will be removed in version 3.0."
       Appsignal.config[:ignore_actions].include?(action)
     end
-    deprecate :is_ignored_action?, :none, 2017, 3
 
     private
 

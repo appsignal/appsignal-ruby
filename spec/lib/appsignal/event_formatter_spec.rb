@@ -116,7 +116,8 @@ describe Appsignal::EventFormatter do
     end
 
     context "when registering deprecated formatters" do
-      let(:stdout_stream) { std_stream }
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
       let(:deprecated_formatter) do
         Class.new(Appsignal::EventFormatter) do
           register "mock.deprecated"
@@ -133,16 +134,16 @@ describe Appsignal::EventFormatter do
           "https://docs.appsignal.com/ruby/instrumentation/event-formatters.html"
 
         logs = capture_logs do
-          capture_stdout(stdout_stream) { deprecated_formatter }
+          capture_std_streams(std_stream, err_stream) { deprecated_formatter }
         end
         expect(logs).to contains_log :warn, message
-        expect(stdout_stream.read).to include "appsignal WARNING: #{message}"
+        expect(stderr).to include "appsignal WARNING: #{message}"
 
         expect(klass.deprecated_formatter_classes.keys).to include("mock.deprecated")
       end
 
       it "initializes deprecated formatters" do
-        capture_stdout(stdout_stream) { deprecated_formatter }
+        capture_std_streams(std_stream, err_stream) { deprecated_formatter }
         klass.initialize_deprecated_formatters
 
         expect(klass.registered?("mock.deprecated")).to be_truthy

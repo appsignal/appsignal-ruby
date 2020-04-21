@@ -28,10 +28,9 @@ module Appsignal
       def initialize(app, _options = nil)
         Appsignal.logger.debug \
           "Initializing Appsignal::Rack::JSExceptionCatcher"
-        message = "The Appsignal::Rack::JSExceptionCatcher is deprecated. " \
-          "Please use the official AppSignal JavaScript integration instead. " \
-          "https://docs.appsignal.com/front-end/"
-        deprecation_message message, Appsignal.logger
+        deprecation_message "The Appsignal::Rack::JSExceptionCatcher is " \
+          "deprecated. Please use the official AppSignal JavaScript " \
+          "integration instead. https://docs.appsignal.com/front-end/"
         @app = app
       end
 

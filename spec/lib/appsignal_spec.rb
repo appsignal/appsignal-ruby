@@ -949,7 +949,7 @@ describe Appsignal do
 
       it "outputs deprecated warning" do
         subject
-        expect(stderr).to include("Appsignal.is_ignored_error? is deprecated with no replacement.")
+        expect(stderr).to include("Appsignal.is_ignored_error? is deprecated with no replacement")
       end
 
       context "when error is not in the ignored list" do
@@ -981,7 +981,7 @@ describe Appsignal do
 
       it "outputs deprecated warning" do
         subject
-        expect(stderr).to include("Appsignal.is_ignored_action? is deprecated with no replacement.")
+        expect(stderr).to include("Appsignal.is_ignored_action? is deprecated with no replacement")
       end
 
       context "when action is not in the ingore list" do
