@@ -229,11 +229,10 @@ module Appsignal
     end
 
     def set_http_or_background_queue_start
-      if namespace == HTTP_REQUEST
-        set_queue_start(http_queue_start)
-      elsif namespace == BACKGROUND_JOB
-        set_queue_start(background_queue_start)
-      end
+      start = http_queue_start || background_queue_start
+      return unless start
+
+      set_queue_start(start)
     end
 
     def set_metadata(key, value)
@@ -346,14 +345,14 @@ module Appsignal
     #
     # @return [nil] if no {#environment} is present.
     # @return [nil] if there is no `:queue_start` in the {#environment}.
-    # @return [Integer]
+    # @return [Integer] `:queue_start` time (in seconds) converted to milliseconds
     def background_queue_start
       env = environment
       return unless env
       queue_start = env[:queue_start]
       return unless queue_start
 
-      (queue_start.to_f * 1000.0).to_i
+      (queue_start.to_f * 1000.0).to_i # Convert seconds to milliseconds
     end
 
     # Returns HTTP queue start time in milliseconds.

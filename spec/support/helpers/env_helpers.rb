@@ -27,7 +27,7 @@ module EnvHelpers
       :priority => 1,
       :attempts => 0,
       :queue => "default",
-      :queue_start => fixed_time - 10.0
+      :queue_start => fixed_time
     }.merge(args)
   end
 end
