@@ -228,6 +228,22 @@ module Appsignal
       Appsignal.logger.warn("Queue start value #{start} is too big")
     end
 
+    # Set the queue time based on the HTTP header or `:queue_start` env key
+    # value.
+    #
+    # This method will first try to read the queue time from the HTTP headers
+    # `X-Request-Start` or `X-Queue-Start`. Which are parsed by Rack as
+    # `HTTP_X_QUEUE_START` and `HTTP_X_REQUEST_START`.
+    # The header value is parsed by AppSignal as either milliseconds or
+    # microseconds.
+    #
+    # If no headers are found, or the value could not be parsed, it falls back
+    # on the `:queue_start` env key on this Transaction's {request} environment
+    # (called like `request.env[:queue_start]`). This value is parsed by
+    # AppSignal as seconds.
+    #
+    # @see https://docs.appsignal.com/ruby/instrumentation/request-queue-time.html
+    # @return [void]
     def set_http_or_background_queue_start
       start = http_queue_start || background_queue_start
       return unless start
