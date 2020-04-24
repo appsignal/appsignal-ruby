@@ -500,23 +500,40 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_http_or_background_queue_start" do
-      context "for a http transaction" do
-        let(:namespace) { Appsignal::Transaction::HTTP_REQUEST }
-        let(:env) { { "HTTP_X_REQUEST_START" => (fixed_time * 1000).to_s } }
+      let(:header_factor) { 1_000 }
+      let(:env_queue_start) { fixed_time + 20 } # in seconds
 
-        it "should set the queue start on the transaction" do
-          expect(transaction).to receive(:set_queue_start).with(13_897_836_000)
+      context "when a queue time is found in a request header" do
+        let(:header_time) { ((fixed_time + 10) * header_factor).to_i } # in milliseconds
+        let(:env) { { "HTTP_X_REQUEST_START" => "t=#{header_time}" } }
+
+        it "sets the http header value in milliseconds on the transaction" do
+          expect(transaction).to receive(:set_queue_start).with(1_389_783_610_000)
 
           transaction.set_http_or_background_queue_start
         end
+
+        context "when a :queue_start key is found in the transaction environment" do
+          let(:env) do
+            {
+              "HTTP_X_REQUEST_START" => "t=#{header_time}",
+              :queue_start => env_queue_start
+            }
+          end
+
+          it "sets the http header value in milliseconds on the transaction" do
+            expect(transaction).to receive(:set_queue_start).with(1_389_783_610_000)
+
+            transaction.set_http_or_background_queue_start
+          end
+        end
       end
 
-      context "for a background transaction" do
-        let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
-        let(:env) { { :queue_start => fixed_time } }
+      context "when a :queue_start key is found in the transaction environment" do
+        let(:env) { { :queue_start => env_queue_start } } # in seconds
 
-        it "should set the queue start on the transaction" do
-          expect(transaction).to receive(:set_queue_start).with(1_389_783_600_000)
+        it "sets the :queue_start value in milliseconds on the transaction" do
+          expect(transaction).to receive(:set_queue_start).with(1_389_783_620_000)
 
           transaction.set_http_or_background_queue_start
         end
@@ -910,7 +927,7 @@ describe Appsignal::Transaction do
       context "when queue start is set" do
         let(:env) { background_env_with_data }
 
-        it { is_expected.to eq 1_389_783_590_000 }
+        it { is_expected.to eq 1_389_783_600_000 }
       end
     end
 
@@ -949,7 +966,7 @@ describe Appsignal::Transaction do
             it { is_expected.to be_nil }
           end
 
-          context "with some cruft" do
+          context "with unparsable content at the end" do
             let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa" } }
 
             it { is_expected.to eq 1_389_783_599_600 }
@@ -969,7 +986,7 @@ describe Appsignal::Transaction do
         end
       end
 
-      context "time in miliseconds" do
+      context "time in milliseconds" do
         let(:factor) { 1_000 }
 
         it_should_behave_like "http queue start"
