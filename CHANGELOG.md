@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.10.6
+- Check if queued payloads are for correct app and not expired
+
 ## 2.10.5
 - Improve Ruby 1.9 compatibility. PR #591
 - Add grape.skip_appsignal_error request env. PR #588
