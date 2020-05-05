@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.7
+- Revert fix for compatibility with the `http_logger` gem. PR #604.
+  For more information, see issue #603 about our reasoning and discussion.
+
 ## 2.10.6
 - Check if queued payloads are for correct app and not expired
 
