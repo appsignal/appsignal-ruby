@@ -93,40 +93,4 @@ describe Appsignal::System do
       end
     end
   end
-
-  describe ".ruby_2_or_up?" do
-    around do |example|
-      original_ruby_version = RUBY_VERSION
-      Object.send(:remove_const, "RUBY_VERSION")
-      Object.const_set("RUBY_VERSION", ruby_version)
-      example.run
-      Object.send(:remove_const, "RUBY_VERSION")
-      Object.const_set("RUBY_VERSION", original_ruby_version)
-    end
-    subject { described_class.ruby_2_or_up? }
-
-    context "when on Ruby 1.9" do
-      let(:ruby_version) { "1.9.3-p533" }
-
-      it "returns false" do
-        is_expected.to be(false)
-      end
-    end
-
-    context "when on Ruby 2.0" do
-      let(:ruby_version) { "2.0.0" }
-
-      it "returns true" do
-        is_expected.to be(true)
-      end
-    end
-
-    context "when on Ruby 2.x" do
-      let(:ruby_version) { "2.1.0" }
-
-      it "returns true" do
-        is_expected.to be(true)
-      end
-    end
-  end
 end

@@ -13,20 +13,15 @@ module Appsignal
       end
 
       def install
-        if Appsignal::System.ruby_2_or_up?
-          require "appsignal/integrations/net_http"
-          Net::HTTP.send(:prepend, Appsignal::Integrations::NetHttpIntegration)
-        else
-          Net::HTTP.class_eval do
-            alias request_without_appsignal request
+        Net::HTTP.class_eval do
+          alias request_without_appsignal request
 
-            def request(request, body = nil, &block)
-              Appsignal.instrument(
-                "request.net_http",
-                "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || address}"
-              ) do
-                request_without_appsignal(request, body, &block)
-              end
+          def request(request, body = nil, &block)
+            Appsignal.instrument(
+              "request.net_http",
+              "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || address}"
+            ) do
+              request_without_appsignal(request, body, &block)
             end
           end
         end
