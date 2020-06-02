@@ -32,7 +32,8 @@ def report
           "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
         },
         "download" => {
-          "checksum" => "unverified"
+          "checksum" => "unverified",
+          "http_proxy" => http_proxy
         },
         "build" => {
           "time" => Time.now.utc,
@@ -126,7 +127,11 @@ def download_archive(type)
     report["download"]["download_url"] = download_url
 
     begin
-      return open(download_url, :ssl_ca_cert => CA_CERT_PATH)
+      return open(
+        download_url,
+        :ssl_ca_cert => CA_CERT_PATH,
+        :proxy => http_proxy
+      )
     rescue
       next
     end
@@ -171,4 +176,8 @@ end
 def store_download_version_on_report
   path = File.expand_path(File.join(File.dirname(__FILE__), "appsignal.version"))
   report["build"]["agent_version"] = File.read(path).strip
+end
+
+def http_proxy
+  Gem.configuration[:http_proxy] || ENV["http_proxy"] || ENV["HTTP_PROXY"]
 end
