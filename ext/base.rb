@@ -142,14 +142,16 @@ def download_archive(type)
 end
 
 def verify_archive(archive, type)
-  if Digest::SHA256.hexdigest(archive.read) == ARCH_CONFIG[type]["checksum"]
+  expected_checksum = ARCH_CONFIG[type]["checksum"]
+  actual_checksum = Digest::SHA256.hexdigest(archive.read)
+  if actual_checksum == expected_checksum
     report["download"]["checksum"] = "verified"
     true
   else
     report["download"]["checksum"] = "invalid"
     abort_installation(
       "Checksum of downloaded archive could not be verified: " \
-        "Expected '#{ARCH_CONFIG[type]["checksum"]}', got '#{checksum}'."
+        "Expected '#{expected_checksum}', got '#{actual_checksum}'."
     )
   end
 end
