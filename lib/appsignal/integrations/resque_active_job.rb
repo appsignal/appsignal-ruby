@@ -16,10 +16,11 @@ module Appsignal
 
             Appsignal.monitor_single_transaction(
               "perform_job.resque",
-              :class    => job.class.to_s,
-              :method   => "perform",
-              :params   => params,
-              :metadata => {
+              :class       => job.class.to_s,
+              :method      => "perform",
+              :params      => params,
+              :queue_start => job.respond_to?(:enqueued_at) ? Time.parse(job.enqueued_at).utc : nil,
+              :metadata    => {
                 :id       => job.job_id,
                 :queue    => job.queue_name
               }
