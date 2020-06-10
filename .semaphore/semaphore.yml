@@ -43,6 +43,11 @@ global_job_config:
       - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
         .bundle
       - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+    on_fail:
+      commands:
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
 blocks:
 - name: Validation
   dependencies: []
