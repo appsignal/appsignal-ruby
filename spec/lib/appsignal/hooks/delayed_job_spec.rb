@@ -347,6 +347,103 @@ describe Appsignal::Hooks::DelayedJobHook do
       end
     end
 
+    describe ".class_and_method_name_from_object_or_hash" do
+      let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
+      subject { plugin.class_and_method_name_from_object_or_hash(payload, default) }
+
+      context "with appsignal_name defined" do
+        let(:default) { "Default#name" }
+
+        context "for a hash" do
+          context "with value" do
+            let(:payload) { { :appsignal_name => "UserWorker#perform" } }
+
+            it { is_expected.to eql %w[UserWorker perform] }
+          end
+
+          context "without value" do
+            let(:payload) { {} }
+
+            it { is_expected.to eql %w[Default name] }
+          end
+
+          context "with non-string value" do
+            let(:payload) { { :appsignal_name => Object.new } }
+
+            it { is_expected.to eql %w[Default name] }
+          end
+        end
+
+        context "for an object" do
+          before :context do
+            StructWithAppSignalName = Struct.new(:appsignal_name)
+          end
+          let(:payload) { StructWithAppSignalName.new("UserWorker#perform") }
+
+          context "with value" do
+            let(:payload) { StructWithAppSignalName.new("UserWorker#perform") }
+
+            it { is_expected.to eql %w[UserWorker perform] }
+          end
+
+          context "without value" do
+            let(:payload) { StructWithAppSignalName.new(nil) }
+
+            it { is_expected.to eql %w[Default name] }
+          end
+
+          context "with non-string value" do
+            let(:payload) { StructWithAppSignalName.new(Object.new) }
+
+            it { is_expected.to eql %w[Default name] }
+          end
+        end
+
+        context "for an object acting as hash" do
+          class ClassActingAsHash
+            def self.[](_key)
+              Object.new
+            end
+
+            def self.appsignal_name
+              "UserWorker#perform"
+            end
+          end
+          let(:payload) { ClassActingAsHash }
+
+          # We check for hash values before object values
+          # this means ClassActingAsHash returns `Object.new` instead
+          # of `self.appsignal_name`. Since this isn't a valid `String`
+          # we return the default value.
+          it "does not crash on unexpected return values" do
+            expect(subject).to eql(%w[Default name])
+          end
+        end
+      end
+
+      context "without appsignal_name defined" do
+        let(:payload) { {} }
+
+        context "with instance method" do
+          let(:default) { "UserWorker#perform" }
+
+          it { is_expected.to eql %w[UserWorker perform] }
+        end
+
+        context "with class method" do
+          let(:default) { "UserWorker.perform" }
+
+          it { is_expected.to eql %w[UserWorker perform] }
+        end
+
+        context "with invalid data" do
+          let(:default) { "Banana" }
+
+          it { is_expected.to eql %w[unknown unknown] }
+        end
+      end
+    end
+
     describe ".extract_value" do
       let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
 
