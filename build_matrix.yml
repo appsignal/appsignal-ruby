@@ -37,7 +37,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE),$_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET,$_BUNDLER_CACHE-bundler-$RUBY_VERSION
         - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_GEMS_CACHE-gems-$RUBY_VERSION
         - ./support/install_deps
-        - ./support/bundler_wrapper install --jobs=3 --retry=3
+        - ./support/bundler_wrapper install --jobs=3 --retry=3 --clean
     epilogue:
       on_pass:
         commands:
