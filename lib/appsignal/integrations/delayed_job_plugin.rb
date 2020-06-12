@@ -62,7 +62,7 @@ module Appsignal
         return pound_split if pound_split.length == 2
 
         dot_split = default_name.split(".")
-        return dot_split if dot_split.length == 2
+        return default_name if dot_split.length == 2
 
         ["unknown"]
       end
