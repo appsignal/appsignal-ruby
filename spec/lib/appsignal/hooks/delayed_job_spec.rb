@@ -234,7 +234,7 @@ describe Appsignal::Hooks::DelayedJobHook do
 
           it "wraps it in a transaction using the class method job name" do
             perform
-            expect(last_transaction.to_h["action"]).to eql("unknown#unknown")
+            expect(last_transaction.to_h["action"]).to eql("unknown")
           end
         end
 
@@ -245,7 +245,7 @@ describe Appsignal::Hooks::DelayedJobHook do
 
           it "wraps it in a transaction using the class method job name" do
             perform
-            expect(last_transaction.to_h["action"]).to eql("unknown#unknown")
+            expect(last_transaction.to_h["action"]).to eql("unknown")
           end
         end
 
