@@ -36,6 +36,7 @@ describe Appsignal::Hooks::DelayedJobHook do
       let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
       let(:created_at) { time - 3600 }
       let(:run_at) { time - 3600 }
+      let(:payload_object) { double(:args => args) }
       let(:job_data) do
         {
           :id             => 123,
@@ -45,38 +46,40 @@ describe Appsignal::Hooks::DelayedJobHook do
           :queue          => "default",
           :created_at     => created_at,
           :run_at         => run_at,
-          :payload_object => double(:args => args)
+          :payload_object => payload_object
         }
       end
       let(:args) { ["argument"] }
       let(:job) { double(job_data) }
       let(:invoked_block) { proc {} }
 
-      context "with a normal call" do
-        let(:default_params) do
-          {
-            :class    => "TestClass",
-            :method   => "perform",
-            :metadata => {
-              :priority => 1,
-              :attempts => 1,
-              :queue    => "default",
-              :id       => "123"
-            },
-            :params      => args,
-            :queue_start => run_at
-          }
-        end
-        after do
-          Timecop.freeze(time) do
+      def perform
+        Timecop.freeze(time) do
+          keep_transactions do
             plugin.invoke_with_instrumentation(job, invoked_block)
           end
         end
+      end
 
-        it "wraps it in a transaction with the correct params" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.delayed_job",
-            default_params.merge(:params => ["argument"])
+      context "with a normal call" do
+        it "wraps it in a transaction" do
+          perform
+          transaction_data = last_transaction.to_h
+          expect(transaction_data).to include(
+            "action" => "TestClass#perform",
+            "namespace" => "background_job",
+            "error" => nil
+          )
+          expect(transaction_data["events"].map { |e| e["name"] })
+            .to eql(["perform_job.delayed_job"])
+          expect(transaction_data["sample_data"]).to include(
+            "metadata" => {
+              "priority" => 1,
+              "attempts" => 1,
+              "queue"    => "default",
+              "id"       => "123"
+            },
+            "params" => ["argument"]
           )
         end
 
@@ -89,14 +92,13 @@ describe Appsignal::Hooks::DelayedJobHook do
           end
 
           it "adds the more complex arguments" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.delayed_job",
-              default_params.merge(
-                :params => {
-                  :foo => "Foo",
-                  :bar => "Bar"
-                }
-              )
+            perform
+            transaction_data = last_transaction.to_h
+            expect(transaction_data["sample_data"]).to include(
+              "params" => {
+                "foo" => "Foo",
+                "bar" => "Bar"
+              }
             )
           end
 
@@ -107,14 +109,13 @@ describe Appsignal::Hooks::DelayedJobHook do
             end
 
             it "filters selected arguments" do
-              expect(Appsignal).to receive(:monitor_transaction).with(
-                "perform_job.delayed_job",
-                default_params.merge(
-                  :params => {
-                    :foo => "[FILTERED]",
-                    :bar => "Bar"
-                  }
-                )
+              perform
+              transaction_data = last_transaction.to_h
+              expect(transaction_data["sample_data"]).to include(
+                "params" => {
+                  "foo" => "[FILTERED]",
+                  "bar" => "Bar"
+                }
               )
             end
           end
@@ -124,90 +125,127 @@ describe Appsignal::Hooks::DelayedJobHook do
           let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
 
           it "reports queue_start with run_at time" do
+            # TODO: Not available in transaction.to_h yet.
+            # https://github.com/appsignal/appsignal-agent/issues/293
             expect(Appsignal).to receive(:monitor_transaction).with(
               "perform_job.delayed_job",
-              default_params.merge(:queue_start => run_at)
-            )
+              a_hash_including(:queue_start => run_at)
+            ).and_call_original
+            perform
+          end
+        end
+
+        context "with class method job" do
+          let(:job_data) do
+            { :name => "CustomClassMethod.perform", :payload_object => payload_object }
+          end
+
+          it "wraps it in a transaction using the class method job name" do
+            perform
+            expect(last_transaction.to_h["action"]).to eql("CustomClassMethod#perform")
           end
         end
 
         context "with custom name call" do
+          before { perform }
+
+          context "with appsignal_name defined" do
+            context "with payload_object being an object" do
+              context "with value" do
+                let(:payload_object) { double(:appsignal_name => "CustomClass#perform") }
+
+                it "wraps it in a transaction using the custom name" do
+                  expect(last_transaction.to_h["action"]).to eql("CustomClass#perform")
+                end
+              end
+
+              context "with non-String value" do
+                let(:payload_object) { double(:appsignal_name => Object.new) }
+
+                it "wraps it in a transaction using the original job name" do
+                  expect(last_transaction.to_h["action"]).to eql("TestClass#perform")
+                end
+              end
+
+              context "with class method name as job" do
+                let(:payload_object) { double(:appsignal_name => "CustomClassMethod.perform") }
+
+                it "wraps it in a transaction using the custom name" do
+                  perform
+                  expect(last_transaction.to_h["action"]).to eql("CustomClassMethod.perform")
+                end
+              end
+            end
+
+            context "with payload_object being a Hash" do
+              context "with value" do
+                let(:payload_object) { double(:appsignal_name => "CustomClassHash#perform") }
+
+                it "wraps it in a transaction using the custom name" do
+                  expect(last_transaction.to_h["action"]).to eql("CustomClassHash#perform")
+                end
+              end
+
+              context "with non-String value" do
+                let(:payload_object) { double(:appsignal_name => Object.new) }
+
+                it "wraps it in a transaction using the original job name" do
+                  expect(last_transaction.to_h["action"]).to eql("TestClass#perform")
+                end
+              end
+
+              context "with class method name as job" do
+                let(:payload_object) { { :appsignal_name => "CustomClassMethod.perform" } }
+
+                it "wraps it in a transaction using the custom name" do
+                  perform
+                  expect(last_transaction.to_h["action"]).to eql("CustomClassMethod.perform")
+                end
+              end
+            end
+
+            context "with payload_object being acting like a Hash and returning a non-String value" do
+              class ClassActingAsHash
+                def self.[](_key)
+                  Object.new
+                end
+
+                def self.appsignal_name
+                  "ClassActingAsHash#perform"
+                end
+              end
+              let(:payload_object) { ClassActingAsHash }
+
+              # We check for hash values before object values
+              # this means ClassActingAsHash returns `Object.new` instead
+              # of `self.appsignal_name`. Since this isn't a valid `String`
+              # we return the default job name as action name.
+              it "wraps it in a transaction using the original job name" do
+                expect(last_transaction.to_h["action"]).to eql("TestClass#perform")
+              end
+            end
+          end
+        end
+
+        context "without job name" do
           let(:job_data) do
-            {
-              :payload_object => double(
-                :appsignal_name => "CustomClass#perform",
-                :args           => args
-              ),
-              :id         => "123",
-              :name       => "TestClass#perform",
-              :priority   => 1,
-              :attempts   => 1,
-              :queue      => "default",
-              :created_at => created_at,
-              :run_at     => run_at
-            }
-          end
-          let(:default_params) do
-            {
-              :class => "CustomClass",
-              :method => "perform",
-              :metadata => {
-                :priority => 1,
-                :attempts => 1,
-                :queue    => "default",
-                :id       => "123"
-              },
-              :queue_start => run_at
-            }
+            { :name => "", :payload_object => payload_object }
           end
 
-          it "wraps it in a transaction with the correct params" do
-            expect(Appsignal).to receive(:monitor_transaction).with(
-              "perform_job.delayed_job",
-              default_params.merge(
-                :params => ["argument"]
-              )
-            )
+          it "wraps it in a transaction using the class method job name" do
+            perform
+            expect(last_transaction.to_h["action"]).to eql("unknown")
+          end
+        end
+
+        context "with invalid job name" do
+          let(:job_data) do
+            { :name => "Banana", :payload_object => payload_object }
           end
 
-          context "with more complex params" do
-            let(:args) do
-              {
-                :foo => "Foo",
-                :bar => "Bar"
-              }
-            end
-
-            it "adds the more complex arguments" do
-              expect(Appsignal).to receive(:monitor_transaction).with(
-                "perform_job.delayed_job",
-                default_params.merge(
-                  :params => {
-                    :foo => "Foo",
-                    :bar => "Bar"
-                  }
-                )
-              )
-            end
-
-            context "with parameter filtering" do
-              before do
-                Appsignal.config = project_fixture_config("production")
-                Appsignal.config[:filter_parameters] = ["foo"]
-              end
-
-              it "filters selected arguments" do
-                expect(Appsignal).to receive(:monitor_transaction).with(
-                  "perform_job.delayed_job",
-                  default_params.merge(
-                    :params => {
-                      :foo => "[FILTERED]",
-                      :bar => "Bar"
-                    }
-                  )
-                )
-              end
-            end
+          it "wraps it in a transaction using the class method job name" do
+            perform
+            expect(last_transaction.to_h["action"]).to eql("unknown")
           end
         end
 
@@ -215,7 +253,7 @@ describe Appsignal::Hooks::DelayedJobHook do
           require "active_job"
 
           context "when wrapped by ActiveJob" do
-            let(:wrapped_job) do
+            let(:payload_object) do
               ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(
                 "arguments"  => args,
                 "job_class"  => "TestClass",
@@ -233,32 +271,30 @@ describe Appsignal::Hooks::DelayedJobHook do
                 :queue          => "default",
                 :created_at     => created_at,
                 :run_at         => run_at,
-                :payload_object => wrapped_job
+                :payload_object => payload_object
               )
-            end
-            let(:default_params) do
-              {
-                :class    => "TestClass",
-                :method   => "perform",
-                :metadata => {
-                  :priority => 1,
-                  :attempts => 1,
-                  :queue    => "default",
-                  :id       => "123"
-                },
-                :queue_start => run_at,
-                :params      => args
-              }
             end
             let(:args) { ["activejob_argument"] }
 
-            context "with simple params" do
-              it "wraps it in a transaction with the correct params" do
-                expect(Appsignal).to receive(:monitor_transaction).with(
-                  "perform_job.delayed_job",
-                  default_params.merge(:params => ["activejob_argument"])
-                )
-              end
+            it "wraps it in a transaction with the correct params" do
+              perform
+              transaction_data = last_transaction.to_h
+              expect(transaction_data).to include(
+                "action" => "TestClass#perform",
+                "namespace" => "background_job",
+                "error" => nil
+              )
+              expect(transaction_data["events"].map { |e| e["name"] })
+                .to eql(["perform_job.delayed_job"])
+              expect(transaction_data["sample_data"]).to include(
+                "metadata" => {
+                  "priority" => 1,
+                  "attempts" => 1,
+                  "queue"    => "default",
+                  "id"       => "123"
+                },
+                "params" => ["activejob_argument"]
+              )
             end
 
             context "with more complex params" do
@@ -270,14 +306,14 @@ describe Appsignal::Hooks::DelayedJobHook do
               end
 
               it "adds the more complex arguments" do
-                expect(Appsignal).to receive(:monitor_transaction).with(
-                  "perform_job.delayed_job",
-                  default_params.merge(
-                    :params => {
-                      :foo => "Foo",
-                      :bar => "Bar"
-                    }
-                  )
+                perform
+                transaction_data = last_transaction.to_h
+                expect(transaction_data).to include("action" => "TestClass#perform")
+                expect(transaction_data["sample_data"]).to include(
+                  "params" => {
+                    "foo" => "Foo",
+                    "bar" => "Bar"
+                  }
                 )
               end
 
@@ -288,14 +324,14 @@ describe Appsignal::Hooks::DelayedJobHook do
                 end
 
                 it "filters selected arguments" do
-                  expect(Appsignal).to receive(:monitor_transaction).with(
-                    "perform_job.delayed_job",
-                    default_params.merge(
-                      :params => {
-                        :foo => "[FILTERED]",
-                        :bar => "Bar"
-                      }
-                    )
+                  perform
+                  transaction_data = last_transaction.to_h
+                  expect(transaction_data).to include("action" => "TestClass#perform")
+                  expect(transaction_data["sample_data"]).to include(
+                    "params" => {
+                      "foo" => "[FILTERED]",
+                      "bar" => "Bar"
+                    }
                   )
                 end
               end
@@ -307,8 +343,9 @@ describe Appsignal::Hooks::DelayedJobHook do
               it "reports queue_start with run_at time" do
                 expect(Appsignal).to receive(:monitor_transaction).with(
                   "perform_job.delayed_job",
-                  default_params.merge(:queue_start => run_at)
-                )
+                  a_hash_including(:queue_start => run_at)
+                ).and_call_original
+                perform
               end
             end
           end
@@ -316,130 +353,28 @@ describe Appsignal::Hooks::DelayedJobHook do
       end
 
       context "with an erroring call" do
-        let(:error) { ExampleException }
-        let(:transaction) do
-          Appsignal::Transaction.new(
-            SecureRandom.uuid,
-            Appsignal::Transaction::BACKGROUND_JOB,
-            Appsignal::Transaction::GenericRequest.new({})
-          )
-        end
+        let(:error) { ExampleException.new("uh oh") }
         before do
           expect(invoked_block).to receive(:call).and_raise(error)
-
-          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-          expect(Appsignal::Transaction).to receive(:create)
-            .with(
-              kind_of(String),
-              Appsignal::Transaction::BACKGROUND_JOB,
-              kind_of(Appsignal::Transaction::GenericRequest)
-            ).and_return(transaction)
         end
 
         it "adds the error to the transaction" do
-          expect(transaction).to receive(:set_error).with(error)
-          expect(transaction).to receive(:complete)
-
           expect do
-            plugin.invoke_with_instrumentation(job, invoked_block)
+            perform
           end.to raise_error(error)
-        end
-      end
-    end
 
-    describe ".class_and_method_name_from_object_or_hash" do
-      let(:plugin) { Appsignal::Hooks::DelayedJobPlugin }
-      subject { plugin.class_and_method_name_from_object_or_hash(payload, default) }
-
-      context "with appsignal_name defined" do
-        let(:default) { "Default#name" }
-
-        context "for a hash" do
-          context "with value" do
-            let(:payload) { { :appsignal_name => "UserWorker#perform" } }
-
-            it { is_expected.to eql %w[UserWorker perform] }
-          end
-
-          context "without value" do
-            let(:payload) { {} }
-
-            it { is_expected.to eql %w[Default name] }
-          end
-
-          context "with non-string value" do
-            let(:payload) { { :appsignal_name => Object.new } }
-
-            it { is_expected.to eql %w[Default name] }
-          end
-        end
-
-        context "for an object" do
-          before :context do
-            StructWithAppSignalName = Struct.new(:appsignal_name)
-          end
-          let(:payload) { StructWithAppSignalName.new("UserWorker#perform") }
-
-          context "with value" do
-            let(:payload) { StructWithAppSignalName.new("UserWorker#perform") }
-
-            it { is_expected.to eql %w[UserWorker perform] }
-          end
-
-          context "without value" do
-            let(:payload) { StructWithAppSignalName.new(nil) }
-
-            it { is_expected.to eql %w[Default name] }
-          end
-
-          context "with non-string value" do
-            let(:payload) { StructWithAppSignalName.new(Object.new) }
-
-            it { is_expected.to eql %w[Default name] }
-          end
-        end
-
-        context "for an object acting as hash" do
-          class ClassActingAsHash
-            def self.[](_key)
-              Object.new
-            end
-
-            def self.appsignal_name
-              "UserWorker#perform"
-            end
-          end
-          let(:payload) { ClassActingAsHash }
-
-          # We check for hash values before object values
-          # this means ClassActingAsHash returns `Object.new` instead
-          # of `self.appsignal_name`. Since this isn't a valid `String`
-          # we return the default value.
-          it "does not crash on unexpected return values" do
-            expect(subject).to eql(%w[Default name])
-          end
-        end
-      end
-
-      context "without appsignal_name defined" do
-        let(:payload) { {} }
-
-        context "with instance method" do
-          let(:default) { "UserWorker#perform" }
-
-          it { is_expected.to eql %w[UserWorker perform] }
-        end
-
-        context "with class method" do
-          let(:default) { "UserWorker.perform" }
-
-          it { is_expected.to eql %w[UserWorker perform] }
-        end
-
-        context "with invalid data" do
-          let(:default) { "Banana" }
-
-          it { is_expected.to eql %w[unknown unknown] }
+          transaction_data = last_transaction.to_h
+          expect(transaction_data).to include(
+            "action" => "TestClass#perform",
+            "namespace" => "background_job",
+            "error" => {
+              "name" => "ExampleException",
+              "message" => "uh oh",
+              # TODO: backtrace should be an Array of Strings
+              # https://github.com/appsignal/appsignal-agent/issues/294
+              "backtrace" => kind_of(String)
+            }
+          )
         end
       end
     end

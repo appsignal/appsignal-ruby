@@ -64,7 +64,7 @@ module Appsignal
         dot_split = default_name.split(".")
         return dot_split if dot_split.length == 2
 
-        %w[unknown unknown]
+        ["unknown"]
       end
 
       def self.extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
