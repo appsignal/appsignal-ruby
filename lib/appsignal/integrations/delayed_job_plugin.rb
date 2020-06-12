@@ -27,9 +27,8 @@ module Appsignal
           method_name = "perform"
         else
           # Delayed Job
-          args = extract_value(job.payload_object, :args, {})
-          class_and_method_name = extract_value(job.payload_object, :appsignal_name, job.name)
-          class_name, method_name = class_and_method_name.split("#")
+          args = extract_value(payload, :args, {})
+          class_name, method_name = class_and_method_name_from_object_or_hash(payload, job.name)
         end
 
         params = Appsignal::Utils::HashSanitizer.sanitize(
@@ -52,6 +51,20 @@ module Appsignal
         ) do
           block.call(job)
         end
+      end
+
+      def self.class_and_method_name_from_object_or_hash(payload, default_name)
+        # Attempt to find appsignal_name override
+        class_and_method_name = extract_value(payload, :appsignal_name, nil)
+        return class_and_method_name.split("#") if class_and_method_name.is_a?(String)
+
+        pound_split = default_name.split("#")
+        return pound_split if pound_split.length == 2
+
+        dot_split = default_name.split(".")
+        return default_name if dot_split.length == 2
+
+        ["unknown"]
       end
 
       def self.extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
