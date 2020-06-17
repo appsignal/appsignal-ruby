@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.10.9
+- Use http proxy if configured when downloading agent
+- Clear event details cache every 48 hours
+
 ## 2.10.8
 - Fix failed checksum error log. PR #609
 - Fix DelayedJob action name detection for objects that listen to the `[]`
