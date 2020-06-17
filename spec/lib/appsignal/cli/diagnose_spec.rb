@@ -263,7 +263,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           },
           "download" => {
             "download_url" => kind_of(String),
-            "checksum" => "verified"
+            "checksum" => "verified",
+            "http_proxy" => nil
           },
           "build" => {
             "time" => kind_of(String),
