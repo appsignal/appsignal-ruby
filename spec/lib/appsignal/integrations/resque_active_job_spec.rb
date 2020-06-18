@@ -1,4 +1,4 @@
-if DependencyHelper.resque_present? && DependencyHelper.active_job_present?
+if DependencyHelper.active_job_present?
   require "active_job"
 
   describe Appsignal::Integrations::ResqueActiveJobPlugin do
