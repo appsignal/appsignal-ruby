@@ -9,6 +9,11 @@ module DependencyHelper
     dependency_present? "rails"
   end
 
+  def rails6_present?
+    rails_present? &&
+      Gem.loaded_specs["rails"].version >= Gem::Version.new("6.0.0")
+  end
+
   def sequel_present?
     dependency_present? "sequel"
   end

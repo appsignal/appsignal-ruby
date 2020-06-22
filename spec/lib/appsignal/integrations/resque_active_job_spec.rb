@@ -1,21 +1,18 @@
-if DependencyHelper.resque_present? && DependencyHelper.active_job_present?
+if DependencyHelper.active_job_present?
   require "active_job"
+  require File.expand_path("lib/appsignal/integrations/resque_active_job.rb")
+
+  class TestActiveJob < ActiveJob::Base
+    include Appsignal::Integrations::ResqueActiveJobPlugin
+
+    def perform(_)
+    end
+  end
 
   describe Appsignal::Integrations::ResqueActiveJobPlugin do
-    let(:file) { File.expand_path("lib/appsignal/integrations/resque_active_job.rb") }
     let(:args) { "argument" }
     let(:job) { TestActiveJob.new(args) }
-    before do
-      load file
-      start_agent
-
-      class TestActiveJob < ActiveJob::Base
-        include Appsignal::Integrations::ResqueActiveJobPlugin
-
-        def perform(_)
-        end
-      end
-    end
+    before { start_agent }
 
     def perform
       keep_transactions do
@@ -137,6 +134,51 @@ if DependencyHelper.resque_present? && DependencyHelper.active_job_present?
                 "queue" => "default"
               }
             )
+          )
+        end
+      end
+    end
+
+    context "without queue time" do
+      it "does not add queue time to transaction" do
+        # TODO: Not available in transaction.to_h yet.
+        # https://github.com/appsignal/appsignal-agent/issues/293
+        expect(Appsignal).to receive(:monitor_single_transaction).with(
+          "perform_job.resque",
+          a_hash_including(:queue_start => nil)
+        ).and_call_original
+
+        perform
+        expect(last_transaction.to_h).to include(
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+          "action" => "TestActiveJob#perform",
+          "events" => [
+            hash_including("name" => "perform_job.resque")
+          ]
+        )
+      end
+    end
+
+    if DependencyHelper.rails6_present?
+      context "with queue time" do
+        it "adds queue time to transction" do
+          queue_start = "2017-01-01 10:01:00UTC"
+          queue_start_time = Time.parse(queue_start)
+          # TODO: Not available in transaction.to_h yet.
+          # https://github.com/appsignal/appsignal-agent/issues/293
+          expect(Appsignal).to receive(:monitor_single_transaction).with(
+            "perform_job.resque",
+            a_hash_including(:queue_start => queue_start_time)
+          ).and_call_original
+          job.enqueued_at = queue_start
+
+          perform
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+            "action" => "TestActiveJob#perform",
+            "events" => [
+              hash_including("name" => "perform_job.resque")
+            ]
           )
         end
       end

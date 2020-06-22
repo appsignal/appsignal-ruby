@@ -1,5 +1,24 @@
 # Changelog
 
+# 2.10.9
+- Use http proxy if configured when downloading agent. PR #606
+- Clear event details cache every 48 hours.
+  Commit eb5e899db69fcd7cfa221567bfd6ac04f2654c9c
+- Add support for Resque ActiveJob queue time reporting. PR #616
+
+## 2.10.8
+- Fix failed checksum error log. PR #609
+- Fix DelayedJob action name detection for objects that listen to the `[]`
+  method and return a non-String value. #611
+- CI test build improvements. PR #607, #608, #614
+
+## 2.10.7
+- Revert fix for compatibility with the `http_logger` gem. PR #604.
+  For more information, see issue #603 about our reasoning and discussion.
+
+## 2.10.6
+- Check if queued payloads are for correct app and not expired
+
 ## 2.10.5
 - Improve Ruby 1.9 compatibility. PR #591
 - Add grape.skip_appsignal_error request env. PR #588
