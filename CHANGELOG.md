@@ -1,8 +1,10 @@
 # Changelog
 
 # 2.10.9
-- Use http proxy if configured when downloading agent
-- Clear event details cache every 48 hours
+- Use http proxy if configured when downloading agent. PR #606
+- Clear event details cache every 48 hours.
+  Commit eb5e899db69fcd7cfa221567bfd6ac04f2654c9c
+- Add support for Resque ActiveJob queue time reporting. PR #616
 
 ## 2.10.8
 - Fix failed checksum error log. PR #609
