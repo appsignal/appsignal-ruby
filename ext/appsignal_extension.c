@@ -639,6 +639,14 @@ static VALUE running_in_container() {
   return appsignal_running_in_container() == 1 ? Qtrue : Qfalse;
 }
 
+static VALUE set_environment_metadata(VALUE self, VALUE key, VALUE value) {
+  appsignal_set_environment_metadata(
+      make_appsignal_string(key),
+      make_appsignal_string(value)
+  );
+  return Qnil;
+}
+
 void Init_appsignal_extension(void) {
   Appsignal = rb_define_module("Appsignal");
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
@@ -697,9 +705,10 @@ void Init_appsignal_extension(void) {
   // Get JSON content of a data
   rb_define_method(Data, "to_s", data_to_s, 0);
 
-  // Event hook installation
+  // Other helper methods
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
   rb_define_singleton_method(Extension, "running_in_container?", running_in_container, 0);
+  rb_define_singleton_method(Extension, "set_environment_metadata", set_environment_metadata, 2);
 
   // Metrics
   rb_define_singleton_method(Extension, "set_gauge",              set_gauge,              3);

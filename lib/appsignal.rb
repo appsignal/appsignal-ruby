@@ -312,6 +312,7 @@ module Appsignal
   end
 end
 
+require "appsignal/environment"
 require "appsignal/system"
 require "appsignal/utils"
 require "appsignal/extension"
