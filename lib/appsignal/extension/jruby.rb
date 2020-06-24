@@ -60,6 +60,9 @@ module Appsignal
           [:appsignal_string],
           :appsignal_string
         attach_function :appsignal_running_in_container, [], :bool
+        attach_function :appsignal_set_environment_metadata,
+          [:appsignal_string, :appsignal_string],
+          :void
 
         # Metrics methods
         attach_function :appsignal_set_gauge,
@@ -222,6 +225,13 @@ module Appsignal
 
       def running_in_container?
         appsignal_running_in_container
+      end
+
+      def set_environment_metadata(key, value)
+        appsignal_set_environment_metadata(
+          make_appsignal_string(key),
+          make_appsignal_string(value)
+        )
       end
 
       def set_gauge(key, value, tags)
