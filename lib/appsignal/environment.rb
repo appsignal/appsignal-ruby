@@ -65,5 +65,55 @@ module Appsignal
       Appsignal.logger.error "Unable to report on environment metadata:\n" \
         "#{e.class}: #{e}"
     end
+
+    # @see report_supported_gems
+    SUPPORTED_GEMS = %w[
+      actioncable
+      activejob
+      capistrano
+      celluloid
+      data_mapper
+      delayed_job
+      mongo_ruby_driver
+      padrino
+      passenger
+      puma
+      que
+      rack
+      rails
+      rake
+      redis
+      resque
+      sequel
+      shoryuken
+      sidekiq
+      sinatra
+      unicorn
+      webmachine
+    ].freeze
+
+    # Report on the list of AppSignal supported gems
+    #
+    # This list is used to report if which AppSignal supported gems are present
+    # in this app and what version. This data will help AppSignal improve its
+    # support by knowing what gems and versions of gems it still needs to
+    # support or can drop support for.
+    #
+    # It will ask Bundler to report name and version information from the gems
+    # that are present in the app bundle.
+    def self.report_supported_gems
+      return unless defined?(Bundler) # Do nothing if Bundler is not present
+
+      bundle_gem_specs = ::Bundler.rubygems.all_specs
+      SUPPORTED_GEMS.each do |gem_name|
+        gem_spec = bundle_gem_specs.find { |spec| spec.name == gem_name }
+        next unless gem_spec
+
+        report("ruby_#{gem_name}_version") { gem_spec.version.to_s }
+      end
+    rescue => e
+      Appsignal.logger.error "Unable to report supported gems:\n" \
+        "#{e.class}: #{e}"
+    end
   end
 end

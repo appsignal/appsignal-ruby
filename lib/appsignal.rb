@@ -322,6 +322,7 @@ module Appsignal
           RUBY_ENGINE_VERSION
         end
       end
+      Appsignal::Environment.report_supported_gems
     end
   end
 end

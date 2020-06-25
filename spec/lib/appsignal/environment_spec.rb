@@ -111,4 +111,32 @@ describe Appsignal::Environment do
       end
     end
   end
+
+  describe ".report_supported_gems" do
+    it "reports about all AppSignal supported gems in the bundle" do
+      logs = capture_logs { described_class.report_supported_gems }
+
+      expect(logs).to be_empty
+
+      bundle_gem_specs = ::Bundler.rubygems.all_specs
+      rack_spec = bundle_gem_specs.find { |s| s.name == "rack" }
+      rake_spec = bundle_gem_specs.find { |s| s.name == "rake" }
+      expect_environment_metadata("ruby_rack_version", rack_spec.version.to_s)
+      expect_environment_metadata("ruby_rake_version", rake_spec.version.to_s)
+      expect(rack_spec.version.to_s).to_not be_empty
+      expect(rake_spec.version.to_s).to_not be_empty
+    end
+
+    context "when something unforseen errors" do
+      it "does not re-raise the error and writes it to the log" do
+        expect(Bundler).to receive(:rubygems).and_raise(RuntimeError, "bundler error")
+
+        logs = capture_logs { described_class.report_supported_gems }
+        expect(logs).to contains_log(
+          :error,
+          "Unable to report supported gems:\nRuntimeError: bundler error"
+        )
+      end
+    end
+  end
 end
