@@ -134,9 +134,13 @@ module Appsignal
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
+            Appsignal::Environment.report_enabled("allocation_tracking")
           end
 
-          GC::Profiler.enable if config[:enable_gc_instrumentation]
+          if config[:enable_gc_instrumentation]
+            GC::Profiler.enable
+            Appsignal::Environment.report_enabled("gc_instrumentation")
+          end
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]
 
