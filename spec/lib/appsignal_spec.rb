@@ -1,4 +1,6 @@
 describe Appsignal do
+  include EnvironmentMetadataHelper
+
   before do
     # Make sure we have a clean state because we want to test
     # initialization here.
@@ -137,6 +139,19 @@ describe Appsignal do
         it "should not start minutely" do
           expect(Appsignal::Minutely).to_not receive(:start)
           Appsignal.start
+        end
+      end
+
+      describe "environment metadata" do
+        before { capture_environment_metadata_report_calls }
+
+        it "collects and reports environment metadata" do
+          Appsignal.start
+          expect_environment_metadata("ruby_version", "#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}")
+          expect_environment_metadata("ruby_engine", RUBY_ENGINE)
+          if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.3.0")
+            expect_environment_metadata("ruby_engine_version", RUBY_ENGINE_VERSION)
+          end
         end
       end
     end

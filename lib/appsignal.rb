@@ -139,6 +139,8 @@ module Appsignal
           GC::Profiler.enable if config[:enable_gc_instrumentation]
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]
+
+          collect_environment_metadata
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -308,6 +310,18 @@ module Appsignal
       start_stdout_logger
       logger.warn "Unable to start logger with log path '#{path}'."
       logger.warn error
+    end
+
+    def collect_environment_metadata
+      Appsignal::Environment.report("ruby_version") do
+        "#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}"
+      end
+      Appsignal::Environment.report("ruby_engine") { RUBY_ENGINE }
+      if defined?(RUBY_ENGINE_VERSION)
+        Appsignal::Environment.report("ruby_engine_version") do
+          RUBY_ENGINE_VERSION
+        end
+      end
     end
   end
 end

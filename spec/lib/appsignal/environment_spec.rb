@@ -1,22 +1,11 @@
 describe Appsignal::Environment do
+  include EnvironmentMetadataHelper
+
   before(:context) { start_agent }
-  before do
-    allow(Appsignal::Extension).to receive(:set_environment_metadata)
-      .and_call_original
-  end
+  before { capture_environment_metadata_report_calls }
 
   def report(key, &value_block)
     described_class.report(key, &value_block)
-  end
-
-  def expect_environment_metadata(key, value)
-    expect(Appsignal::Extension).to have_received(:set_environment_metadata)
-      .with(key, value)
-  end
-
-  def expect_not_environment_metadata(key)
-    expect(Appsignal::Extension).to_not have_received(:set_environment_metadata)
-      .with(key, anything)
   end
 
   describe ".report" do
