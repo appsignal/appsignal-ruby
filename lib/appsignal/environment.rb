@@ -49,6 +49,8 @@ module Appsignal
 
       value =
         case yielded_value
+        when TrueClass, FalseClass
+          yielded_value.to_s
         when String
           yielded_value
         else

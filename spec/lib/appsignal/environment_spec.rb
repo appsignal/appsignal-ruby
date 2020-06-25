@@ -58,6 +58,19 @@ describe Appsignal::Environment do
       end
     end
 
+    context "when the value is true or false" do
+      it "reports true or false as Strings" do
+        logs =
+          capture_logs do
+            report("_test_true") { true }
+            report("_test_false") { false }
+            expect_environment_metadata("_test_true", "true")
+            expect_environment_metadata("_test_false", "false")
+          end
+        expect(logs).to be_empty
+      end
+    end
+
     context "when the value is nil" do
       it "does not set the value" do
         logs =
