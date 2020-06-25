@@ -27,20 +27,43 @@ module Appsignal
     # @yieldreturn [String] The value of the key of the environment metadata.
     # @return [void]
     def self.report(key)
-      value =
-        begin
-          yield
-        rescue => e
-          Appsignal.logger.warn("Unable to report on environment metadata `#{key}`: #{e}")
+      key =
+        case key
+        when String
+          key
+        else
+          Appsignal.logger.error "Unable to report on environment metadata: " \
+            "Unsupported value type for #{key.inspect}"
           return
         end
 
-      unless value
-        Appsignal.logger.warn("Unable to report on environment metadata `#{key}`: Value is nil")
-        return
-      end
+      yielded_value =
+        begin
+          yield
+        rescue => e
+          Appsignal.logger.error \
+            "Unable to report on environment metadata #{key.inspect}:\n" \
+              "#{e.class}: #{e}"
+          return
+        end
+
+      value =
+        case yielded_value
+        when TrueClass, FalseClass
+          yielded_value.to_s
+        when String
+          yielded_value
+        else
+          Appsignal.logger.error "Unable to report on environment metadata " \
+            "#{key.inspect}: Unsupported value type for " \
+            "#{yielded_value.inspect}"
+          return
+        end
 
       Appsignal::Extension.set_environment_metadata(key, value)
+    rescue => e
+      Appsignal.logger.error "Unable to report on environment metadata:\n" \
+        "#{e.class}: #{e}"
     end
   end
 end
