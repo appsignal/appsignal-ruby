@@ -25,6 +25,8 @@ module Appsignal
             end
           end
         end
+
+        Appsignal::Environment.report_enabled("net_http")
       end
     end
   end

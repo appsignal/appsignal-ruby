@@ -56,6 +56,8 @@ module Appsignal
 
         # ... and automatically add it to future instances.
         ::Sequel::Database.extension(:appsignal_integration)
+
+        Appsignal::Environment.report_enabled("sequel")
       end
     end
   end

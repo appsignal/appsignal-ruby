@@ -115,5 +115,12 @@ module Appsignal
       Appsignal.logger.error "Unable to report supported gems:\n" \
         "#{e.class}: #{e}"
     end
+
+    def self.report_enabled(feature)
+      Appsignal::Environment.report("ruby_#{feature}_enabled") { true }
+    rescue => e
+      Appsignal.logger.error "Unable to report integration enabled:\n" \
+        "#{e.class}: #{e}"
+    end
   end
 end

@@ -34,6 +34,8 @@ module Appsignal
             end
           end
         end
+
+        Appsignal::Environment.report("ruby_active_job_resque_enabled") { true }
       end
     end
   end

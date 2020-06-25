@@ -139,4 +139,29 @@ describe Appsignal::Environment do
       end
     end
   end
+
+  describe ".report_enabled" do
+    it "reports a feature being enabled" do
+      logs = capture_logs { described_class.report_enabled("a_test") }
+
+      expect(logs).to be_empty
+      expect_environment_metadata("ruby_a_test_enabled", "true")
+    end
+
+    context "when something unforseen errors" do
+      it "does not re-raise the error and writes it to the log" do
+        klass = Class.new do
+          def to_s
+            raise "to_s error"
+          end
+        end
+
+        logs = capture_logs { described_class.report_enabled(klass.new) }
+        expect(logs).to contains_log(
+          :error,
+          "Unable to report integration enabled:\nRuntimeError: to_s error"
+        )
+      end
+    end
+  end
 end
