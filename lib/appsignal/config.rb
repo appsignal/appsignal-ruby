@@ -18,6 +18,7 @@ module Appsignal
       :ignore_namespaces              => [],
       :filter_parameters              => [],
       :filter_session_data            => [],
+      :send_environment_metadata      => true,
       :send_params                    => true,
       :request_headers                => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
@@ -62,6 +63,7 @@ module Appsignal
       "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
+      "APPSIGNAL_SEND_ENVIRONMENT_METADATA"      => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS"                    => :send_params,
       "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING"     => :enable_allocation_tracking,
@@ -222,6 +224,7 @@ module Appsignal
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
       ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
+      ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
       ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end
 
@@ -337,8 +340,9 @@ module Appsignal
          APPSIGNAL_SKIP_SESSION_DATA APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
          APPSIGNAL_ENABLE_ALLOCATION_TRACKING APPSIGNAL_ENABLE_GC_INSTRUMENTATION
          APPSIGNAL_RUNNING_IN_CONTAINER APPSIGNAL_ENABLE_HOST_METRICS
-         APPSIGNAL_SEND_PARAMS APPSIGNAL_ENABLE_MINUTELY_PROBES
-         APPSIGNAL_FILES_WORLD_ACCESSIBLE APPSIGNAL_TRANSACTION_DEBUG_MODE].each do |var|
+         APPSIGNAL_SEND_ENVIRONMENT_METADATA APPSIGNAL_SEND_PARAMS
+         APPSIGNAL_ENABLE_MINUTELY_PROBES APPSIGNAL_FILES_WORLD_ACCESSIBLE
+         APPSIGNAL_TRANSACTION_DEBUG_MODE].each do |var|
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?
