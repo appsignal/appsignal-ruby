@@ -8,7 +8,7 @@ describe Appsignal::Rack::JSExceptionCatcher do
       "deprecated and will be removed in a future version. Please use " \
       "the official AppSignal JavaScript integration by disabling " \
       "`enable_frontend_error_catching` in your configuration and " \
-      "installing AppSignal for Javascript instead. " \
+      "installing AppSignal for JavaScript instead. " \
       "(https://docs.appsignal.com/front-end/)"
   end
   before { Appsignal.config = config }
