@@ -148,6 +148,7 @@ describe Appsignal::Config do
         :instrument_redis               => true,
         :instrument_sequel              => true,
         :skip_session_data              => false,
+        :send_environment_metadata      => true,
         :send_params                    => true,
         :endpoint                       => "https://push.appsignal.com",
         :push_api_key                   => "abc",
@@ -411,7 +412,8 @@ describe Appsignal::Config do
         :instrument_sequel => false,
         :files_world_accessible => false,
         :request_headers => %w[accept accept-charset],
-        :revision => "v2.5.1"
+        :revision => "v2.5.1",
+        :send_environment_metadata => false
       }
     end
     before do
@@ -428,6 +430,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
       ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
       ENV["APPSIGNAL_REQUEST_HEADERS"]         = "accept,accept-charset"
+      ENV["APPSIGNAL_SEND_ENVIRONMENT_METADATA"] = "false"
       ENV["APP_REVISION"] = "v2.5.1"
     end
 
@@ -527,6 +530,7 @@ describe Appsignal::Config do
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config[:transaction_debug_mode] = true
+      config[:send_environment_metadata] = false
       config[:revision] = "v2.5.1"
       config.write_to_environment
     end
@@ -555,6 +559,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]).to       eq "true"
+      expect(ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]).to    eq "false"
       expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
