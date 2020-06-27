@@ -29,8 +29,11 @@ module Appsignal
         Appsignal.logger.debug \
           "Initializing Appsignal::Rack::JSExceptionCatcher"
         deprecation_message "The Appsignal::Rack::JSExceptionCatcher is " \
-          "deprecated. Please use the official AppSignal JavaScript " \
-          "integration instead. https://docs.appsignal.com/front-end/"
+          "deprecated and will be removed in a future version. Please use " \
+          "the official AppSignal JavaScript integration by disabling " \
+          "`enable_frontend_error_catching` in your configuration and " \
+          "installing AppSignal for JavaScript instead. " \
+          "(https://docs.appsignal.com/front-end/)"
         @app = app
       end
 
