@@ -134,11 +134,17 @@ module Appsignal
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
+            Appsignal::Environment.report_enabled("allocation_tracking")
           end
 
-          GC::Profiler.enable if config[:enable_gc_instrumentation]
+          if config[:enable_gc_instrumentation]
+            GC::Profiler.enable
+            Appsignal::Environment.report_enabled("gc_instrumentation")
+          end
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]
+
+          collect_environment_metadata
         else
           logger.info("Not starting, not active for #{config.env}")
         end
@@ -308,6 +314,19 @@ module Appsignal
       start_stdout_logger
       logger.warn "Unable to start logger with log path '#{path}'."
       logger.warn error
+    end
+
+    def collect_environment_metadata
+      Appsignal::Environment.report("ruby_version") do
+        "#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}"
+      end
+      Appsignal::Environment.report("ruby_engine") { RUBY_ENGINE }
+      if defined?(RUBY_ENGINE_VERSION)
+        Appsignal::Environment.report("ruby_engine_version") do
+          RUBY_ENGINE_VERSION
+        end
+      end
+      Appsignal::Environment.report_supported_gems
     end
   end
 end

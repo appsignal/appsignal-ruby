@@ -1,22 +1,11 @@
 describe Appsignal::Environment do
+  include EnvironmentMetadataHelper
+
   before(:context) { start_agent }
-  before do
-    allow(Appsignal::Extension).to receive(:set_environment_metadata)
-      .and_call_original
-  end
+  before { capture_environment_metadata_report_calls }
 
   def report(key, &value_block)
     described_class.report(key, &value_block)
-  end
-
-  def expect_environment_metadata(key, value)
-    expect(Appsignal::Extension).to have_received(:set_environment_metadata)
-      .with(key, value)
-  end
-
-  def expect_not_environment_metadata(key)
-    expect(Appsignal::Extension).to_not have_received(:set_environment_metadata)
-      .with(key, anything)
   end
 
   describe ".report" do
@@ -118,6 +107,59 @@ describe Appsignal::Environment do
           :error,
           "Unable to report on environment metadata:\n" \
             "RuntimeError: inspect error"
+        )
+      end
+    end
+  end
+
+  describe ".report_supported_gems" do
+    it "reports about all AppSignal supported gems in the bundle" do
+      logs = capture_logs { described_class.report_supported_gems }
+
+      expect(logs).to be_empty
+
+      bundle_gem_specs = ::Bundler.rubygems.all_specs
+      rack_spec = bundle_gem_specs.find { |s| s.name == "rack" }
+      rake_spec = bundle_gem_specs.find { |s| s.name == "rake" }
+      expect_environment_metadata("ruby_rack_version", rack_spec.version.to_s)
+      expect_environment_metadata("ruby_rake_version", rake_spec.version.to_s)
+      expect(rack_spec.version.to_s).to_not be_empty
+      expect(rake_spec.version.to_s).to_not be_empty
+    end
+
+    context "when something unforseen errors" do
+      it "does not re-raise the error and writes it to the log" do
+        expect(Bundler).to receive(:rubygems).and_raise(RuntimeError, "bundler error")
+
+        logs = capture_logs { described_class.report_supported_gems }
+        expect(logs).to contains_log(
+          :error,
+          "Unable to report supported gems:\nRuntimeError: bundler error"
+        )
+      end
+    end
+  end
+
+  describe ".report_enabled" do
+    it "reports a feature being enabled" do
+      logs = capture_logs { described_class.report_enabled("a_test") }
+
+      expect(logs).to be_empty
+      expect_environment_metadata("ruby_a_test_enabled", "true")
+    end
+
+    context "when something unforseen errors" do
+      it "does not re-raise the error and writes it to the log" do
+        klass = Class.new do
+          def to_s
+            raise "to_s error"
+          end
+        end
+
+        logs = capture_logs { described_class.report_enabled(klass.new) }
+        expect(logs).to contains_log(
+          :error,
+          "Unable to report integration enabled:\nRuntimeError: to_s error"
         )
       end
     end

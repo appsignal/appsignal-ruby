@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+if defined?(Appsignal)
+  Appsignal::Environment.report_enabled("object_instrumentation")
+end
+
 class Object
   def self.appsignal_instrument_class_method(method_name, options = {})
     singleton_class.send \

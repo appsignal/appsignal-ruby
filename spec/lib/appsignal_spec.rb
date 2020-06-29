@@ -1,4 +1,6 @@
 describe Appsignal do
+  include EnvironmentMetadataHelper
+
   before do
     # Make sure we have a clean state because we want to test
     # initialization here.
@@ -80,18 +82,22 @@ describe Appsignal do
           allow(GC::Profiler).to receive(:enable)
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
           Appsignal.config.config_hash[:enable_gc_instrumentation] = true
+          capture_environment_metadata_report_calls
         end
 
         it "should enable Ruby's GC::Profiler" do
           expect(GC::Profiler).to receive(:enable)
           Appsignal.start
+          expect_environment_metadata("ruby_gc_instrumentation_enabled", "true")
         end
 
         unless Appsignal::System.jruby?
+
           it "installs the allocation event hook" do
             expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
               .and_call_original
             Appsignal.start
+            expect_environment_metadata("ruby_allocation_tracking_enabled", "true")
           end
         end
       end
@@ -100,6 +106,7 @@ describe Appsignal do
         before do
           Appsignal.config.config_hash[:enable_allocation_tracking] = false
           Appsignal.config.config_hash[:enable_gc_instrumentation] = false
+          capture_environment_metadata_report_calls
         end
 
         it "should not enable Ruby's GC::Profiler" do
@@ -110,11 +117,13 @@ describe Appsignal do
         it "should not install the allocation event hook" do
           expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
           Appsignal.start
+          expect_not_environment_metadata("ruby_allocation_tracking_enabled")
         end
 
         it "should not add the gc probe to minutely" do
           expect(Appsignal::Minutely).not_to receive(:register_garbage_collection_probe)
           Appsignal.start
+          expect_not_environment_metadata("ruby_gc_instrumentation_enabled")
         end
       end
 
@@ -137,6 +146,19 @@ describe Appsignal do
         it "should not start minutely" do
           expect(Appsignal::Minutely).to_not receive(:start)
           Appsignal.start
+        end
+      end
+
+      describe "environment metadata" do
+        before { capture_environment_metadata_report_calls }
+
+        it "collects and reports environment metadata" do
+          Appsignal.start
+          expect_environment_metadata("ruby_version", "#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}")
+          expect_environment_metadata("ruby_engine", RUBY_ENGINE)
+          if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.3.0")
+            expect_environment_metadata("ruby_engine_version", RUBY_ENGINE_VERSION)
+          end
         end
       end
     end
