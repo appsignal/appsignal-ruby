@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.11.0
+- Track queue time regardless of namespace. Support custom namespaces. PR #602
+- Report Ruby environment metadata. PR #621
+
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
 - Clear event details cache every 48 hours.
