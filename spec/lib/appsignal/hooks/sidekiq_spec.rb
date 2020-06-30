@@ -48,348 +48,6 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
     expect(log_contents(log)).to_not contains_log(:warn, "Unable to load YAML")
   end
 
-  shared_examples "sidekiq metadata" do
-    describe "internal Sidekiq job values" do
-      it "does not save internal Sidekiq values as metadata on transaction" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["metadata"].keys)
-          .to_not include(*Appsignal::Hooks::SidekiqPlugin::JOB_KEYS)
-      end
-    end
-
-    context "with parameter filtering" do
-      before do
-        Appsignal.config = project_fixture_config("production")
-        Appsignal.config[:filter_parameters] = ["foo"]
-      end
-
-      it "filters selected arguments" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => [
-            "foo",
-            {
-              "foo" => "[FILTERED]",
-              "bar" => "Bar",
-              "baz" => { "1" => "foo" }
-            }
-          ]
-        )
-      end
-    end
-
-    context "with encrypted arguments" do
-      before do
-        item["encrypt"] = true
-        item["args"] << "super secret value" # Last argument will be replaced
-      end
-
-      it "replaces the last argument (the secret bag) with an [encrypted data] string" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => expected_args << "[encrypted data]"
-        )
-      end
-    end
-
-    context "when using the Sidekiq delayed extension" do
-      let(:item) do
-        {
-          "jid" => "efb140489485999d32b5504c",
-          "class" => "Sidekiq::Extensions::DelayedClass",
-          "queue" => "default",
-          "args" => [
-            "---\n- !ruby/class 'DelayedTestClass'\n- :foo_method\n- - :bar: baz\n"
-          ],
-          "retry" => true,
-          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-          "extra" => "data"
-        }
-      end
-
-      it "uses the delayed class and method name for the action" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["action"]).to eq("DelayedTestClass.foo_method")
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => ["bar" => "baz"]
-        )
-      end
-
-      context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
-        before { item["args"] = [] }
-
-        it "logs a warning and uses the default argument" do
-          perform_job
-
-          transaction_hash = transaction.to_h
-          expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedClass#perform")
-          expect(transaction_hash["sample_data"]).to include("params" => [])
-          expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
-        end
-      end
-    end
-
-    context "when using the Sidekiq ActiveRecord instance delayed extension" do
-      let(:item) do
-        {
-          "jid" => "efb140489485999d32b5504c",
-          "class" => "Sidekiq::Extensions::DelayedModel",
-          "queue" => "default",
-          "args" => [
-            "---\n- !ruby/object:DelayedTestClass {}\n- :foo_method\n- - :bar: :baz\n"
-          ],
-          "retry" => true,
-          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-          "extra" => "data"
-        }
-      end
-
-      it "uses the delayed class and method name for the action" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["action"]).to eq("DelayedTestClass#foo_method")
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => ["bar" => "baz"]
-        )
-      end
-
-      context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
-        before { item["args"] = [] }
-
-        it "logs a warning and uses the default argument" do
-          perform_job
-
-          transaction_hash = transaction.to_h
-          expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedModel#perform")
-          expect(transaction_hash["sample_data"]).to include("params" => [])
-          expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
-        end
-      end
-    end
-
-    context "when using ActiveJob" do
-      let(:item) do
-        {
-          "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-          "wrapped" => "ActiveJobTestClass",
-          "queue" => "default",
-          "args" => [{
-            "job_class" => "ActiveJobTestJob",
-            "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
-            "queue_name" => "default",
-            "arguments" => [
-              "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
-            ]
-          }],
-          "retry" => true,
-          "jid" => "efb140489485999d32b5504c",
-          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
-        }
-      end
-
-      it "creates a transaction with events" do
-        perform_job
-
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "id" => kind_of(String),
-          "action" => "ActiveJobTestClass#perform",
-          "error" => nil,
-          "namespace" => namespace,
-          "metadata" => {
-            "queue" => "default"
-          },
-          "sample_data" => {
-            "environment" => {},
-            "params" => [
-              "foo",
-              {
-                "foo" => "Foo",
-                "bar" => "Bar",
-                "baz" => { "1" => "bar" }
-              }
-            ],
-            "tags" => {}
-          }
-        )
-        # TODO: Not available in transaction.to_h yet.
-        # https://github.com/appsignal/appsignal-agent/issues/293
-        expect(transaction.request.env).to eq(
-          :queue_start => Time.parse("2001-01-01 10:00:00UTC").to_f
-        )
-        expect_transaction_to_have_sidekiq_event(transaction_hash)
-      end
-
-      context "with ActionMailer job" do
-        let(:item) do
-          {
-            "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-            "wrapped" => "ActionMailer::DeliveryJob",
-            "queue" => "default",
-            "args" => [{
-              "job_class" => "ActiveMailerTestJob",
-              "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
-              "queue_name" => "default",
-              "arguments" => [
-                "MailerClass", "mailer_method", "deliver_now",
-                "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
-              ]
-            }],
-            "retry" => true,
-            "jid" => "efb140489485999d32b5504c",
-            "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-            "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
-          }
-        end
-
-        it "creates a transaction for the ActionMailer class" do
-          perform_job
-
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "id" => kind_of(String),
-            "action" => "MailerClass#mailer_method",
-            "error" => nil,
-            "namespace" => namespace,
-            "metadata" => {
-              "queue" => "default"
-            },
-            "sample_data" => {
-              "environment" => {},
-              "params" => [
-                "foo",
-                {
-                  "foo" => "Foo",
-                  "bar" => "Bar",
-                  "baz" => { "1" => "bar" }
-                }
-              ],
-              "tags" => {}
-            }
-          )
-        end
-      end
-
-      context "with parameter filtering" do
-        before do
-          Appsignal.config = project_fixture_config("production")
-          Appsignal.config[:filter_parameters] = ["foo"]
-        end
-
-        it "filters selected arguments" do
-          perform_job
-
-          transaction_hash = transaction.to_h
-          expect(transaction_hash["sample_data"]).to include(
-            "params" => [
-              "foo",
-              {
-                "foo" => "[FILTERED]",
-                "bar" => "Bar",
-                "baz" => { "1" => "bar" }
-              }
-            ]
-          )
-        end
-      end
-
-      context "when Sidekiq job payload is missing the 'wrapped' value" do
-        let(:item) do
-          {
-            "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
-            "queue" => "default",
-            "args" => [first_argument],
-            "retry" => true,
-            "jid" => "efb140489485999d32b5504c",
-            "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-            "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
-          }
-        end
-        before { perform_job }
-
-        context "when the first argument is not a Hash object" do
-          let(:first_argument) { "foo" }
-
-          include_examples "unknown job action name"
-        end
-
-        context "when the first argument is a Hash object not containing a job payload" do
-          let(:first_argument) { { "foo" => "bar" } }
-
-          include_examples "unknown job action name"
-
-          context "when the argument contains an invalid job_class value" do
-            let(:first_argument) { { "job_class" => :foo } }
-
-            include_examples "unknown job action name"
-          end
-        end
-
-        context "when the first argument is a Hash object containing a job payload" do
-          let(:first_argument) do
-            {
-              "job_class" => "ActiveMailerTestJob",
-              "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
-              "queue_name" => "default",
-              "arguments" => [
-                "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
-              ]
-            }
-          end
-
-          it "sets the action name to the job class in the first argument" do
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "action" => "ActiveMailerTestJob#perform"
-            )
-          end
-
-          it "stores the job metadata on the transaction" do
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "id" => kind_of(String),
-              "error" => nil,
-              "namespace" => namespace,
-              "metadata" => {
-                "queue" => "default"
-              },
-              "sample_data" => {
-                "environment" => {},
-                "params" => [
-                  "foo",
-                  {
-                    "foo" => "Foo",
-                    "bar" => "Bar",
-                    "baz" => { "1" => "bar" }
-                  }
-                ],
-                "tags" => {}
-              }
-            )
-          end
-
-          it "does not log a debug message" do
-            expect(log_contents(log)).to_not contains_log(
-              :debug, "Unable to determine an action name from Sidekiq payload"
-            )
-          end
-        end
-      end
-    end
-  end
-
   shared_examples "unknown job action name" do
     it "sets the action name to unknown" do
       transaction_hash = transaction.to_h
@@ -411,6 +69,346 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
       expect(log_contents(log)).to contains_log(
         :debug, "Unable to determine an action name from Sidekiq payload: #{item}"
       )
+    end
+  end
+
+  describe "internal Sidekiq job values" do
+    it "does not save internal Sidekiq values as metadata on transaction" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash["metadata"].keys)
+        .to_not include(*Appsignal::Hooks::SidekiqPlugin::JOB_KEYS)
+    end
+  end
+
+  context "with parameter filtering" do
+    before do
+      Appsignal.config = project_fixture_config("production")
+      Appsignal.config[:filter_parameters] = ["foo"]
+    end
+
+    it "filters selected arguments" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => [
+          "foo",
+          {
+            "foo" => "[FILTERED]",
+            "bar" => "Bar",
+            "baz" => { "1" => "foo" }
+          }
+        ]
+      )
+    end
+  end
+
+  context "with encrypted arguments" do
+    before do
+      item["encrypt"] = true
+      item["args"] << "super secret value" # Last argument will be replaced
+    end
+
+    it "replaces the last argument (the secret bag) with an [encrypted data] string" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => expected_args << "[encrypted data]"
+      )
+    end
+  end
+
+  context "when using the Sidekiq delayed extension" do
+    let(:item) do
+      {
+        "jid" => "efb140489485999d32b5504c",
+        "class" => "Sidekiq::Extensions::DelayedClass",
+        "queue" => "default",
+        "args" => [
+          "---\n- !ruby/class 'DelayedTestClass'\n- :foo_method\n- - :bar: baz\n"
+        ],
+        "retry" => true,
+        "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+        "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+        "extra" => "data"
+      }
+    end
+
+    it "uses the delayed class and method name for the action" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash["action"]).to eq("DelayedTestClass.foo_method")
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => ["bar" => "baz"]
+      )
+    end
+
+    context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
+      before { item["args"] = [] }
+
+      it "logs a warning and uses the default argument" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedClass#perform")
+        expect(transaction_hash["sample_data"]).to include("params" => [])
+        expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
+      end
+    end
+  end
+
+  context "when using the Sidekiq ActiveRecord instance delayed extension" do
+    let(:item) do
+      {
+        "jid" => "efb140489485999d32b5504c",
+        "class" => "Sidekiq::Extensions::DelayedModel",
+        "queue" => "default",
+        "args" => [
+          "---\n- !ruby/object:DelayedTestClass {}\n- :foo_method\n- - :bar: :baz\n"
+        ],
+        "retry" => true,
+        "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+        "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+        "extra" => "data"
+      }
+    end
+
+    it "uses the delayed class and method name for the action" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash["action"]).to eq("DelayedTestClass#foo_method")
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => ["bar" => "baz"]
+      )
+    end
+
+    context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
+      before { item["args"] = [] }
+
+      it "logs a warning and uses the default argument" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedModel#perform")
+        expect(transaction_hash["sample_data"]).to include("params" => [])
+        expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
+      end
+    end
+  end
+
+  context "when using ActiveJob" do
+    let(:item) do
+      {
+        "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+        "wrapped" => "ActiveJobTestClass",
+        "queue" => "default",
+        "args" => [{
+          "job_class" => "ActiveJobTestJob",
+          "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+          "queue_name" => "default",
+          "arguments" => [
+            "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
+          ]
+        }],
+        "retry" => true,
+        "jid" => "efb140489485999d32b5504c",
+        "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+        "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
+      }
+    end
+
+    it "creates a transaction with events" do
+      perform_job
+
+      transaction_hash = transaction.to_h
+      expect(transaction_hash).to include(
+        "id" => kind_of(String),
+        "action" => "ActiveJobTestClass#perform",
+        "error" => nil,
+        "namespace" => namespace,
+        "metadata" => {
+          "queue" => "default"
+        },
+        "sample_data" => {
+          "environment" => {},
+          "params" => [
+            "foo",
+            {
+              "foo" => "Foo",
+              "bar" => "Bar",
+              "baz" => { "1" => "bar" }
+            }
+          ],
+          "tags" => {}
+        }
+      )
+      # TODO: Not available in transaction.to_h yet.
+      # https://github.com/appsignal/appsignal-agent/issues/293
+      expect(transaction.request.env).to eq(
+        :queue_start => Time.parse("2001-01-01 10:00:00UTC").to_f
+      )
+      expect_transaction_to_have_sidekiq_event(transaction_hash)
+    end
+
+    context "with ActionMailer job" do
+      let(:item) do
+        {
+          "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+          "wrapped" => "ActionMailer::DeliveryJob",
+          "queue" => "default",
+          "args" => [{
+            "job_class" => "ActiveMailerTestJob",
+            "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+            "queue_name" => "default",
+            "arguments" => [
+              "MailerClass", "mailer_method", "deliver_now",
+              "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
+            ]
+          }],
+          "retry" => true,
+          "jid" => "efb140489485999d32b5504c",
+          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
+        }
+      end
+
+      it "creates a transaction for the ActionMailer class" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "id" => kind_of(String),
+          "action" => "MailerClass#mailer_method",
+          "error" => nil,
+          "namespace" => namespace,
+          "metadata" => {
+            "queue" => "default"
+          },
+          "sample_data" => {
+            "environment" => {},
+            "params" => [
+              "foo",
+              {
+                "foo" => "Foo",
+                "bar" => "Bar",
+                "baz" => { "1" => "bar" }
+              }
+            ],
+            "tags" => {}
+          }
+        )
+      end
+    end
+
+    context "with parameter filtering" do
+      before do
+        Appsignal.config = project_fixture_config("production")
+        Appsignal.config[:filter_parameters] = ["foo"]
+      end
+
+      it "filters selected arguments" do
+        perform_job
+
+        transaction_hash = transaction.to_h
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => [
+            "foo",
+            {
+              "foo" => "[FILTERED]",
+              "bar" => "Bar",
+              "baz" => { "1" => "bar" }
+            }
+          ]
+        )
+      end
+    end
+
+    context "when Sidekiq job payload is missing the 'wrapped' value" do
+      let(:item) do
+        {
+          "class" => "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper",
+          "queue" => "default",
+          "args" => [first_argument],
+          "retry" => true,
+          "jid" => "efb140489485999d32b5504c",
+          "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+          "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f
+        }
+      end
+      before { perform_job }
+
+      context "when the first argument is not a Hash object" do
+        let(:first_argument) { "foo" }
+
+        include_examples "unknown job action name"
+      end
+
+      context "when the first argument is a Hash object not containing a job payload" do
+        let(:first_argument) { { "foo" => "bar" } }
+
+        include_examples "unknown job action name"
+
+        context "when the argument contains an invalid job_class value" do
+          let(:first_argument) { { "job_class" => :foo } }
+
+          include_examples "unknown job action name"
+        end
+      end
+
+      context "when the first argument is a Hash object containing a job payload" do
+        let(:first_argument) do
+          {
+            "job_class" => "ActiveMailerTestJob",
+            "job_id" => "23e79d48-6966-40d0-b2d4-f7938463a263",
+            "queue_name" => "default",
+            "arguments" => [
+              "foo", { "foo" => "Foo", "bar" => "Bar", "baz" => { 1 => :bar } }
+            ]
+          }
+        end
+
+        it "sets the action name to the job class in the first argument" do
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "ActiveMailerTestJob#perform"
+          )
+        end
+
+        it "stores the job metadata on the transaction" do
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "id" => kind_of(String),
+            "error" => nil,
+            "namespace" => namespace,
+            "metadata" => {
+              "queue" => "default"
+            },
+            "sample_data" => {
+              "environment" => {},
+              "params" => [
+                "foo",
+                {
+                  "foo" => "Foo",
+                  "bar" => "Bar",
+                  "baz" => { "1" => "bar" }
+                }
+              ],
+              "tags" => {}
+            }
+          )
+        end
+
+        it "does not log a debug message" do
+          expect(log_contents(log)).to_not contains_log(
+            :debug, "Unable to determine an action name from Sidekiq payload"
+          )
+        end
+      end
     end
   end
 
@@ -452,8 +450,6 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
       )
       expect_transaction_to_have_sidekiq_event(transaction_hash)
     end
-
-    include_examples "sidekiq metadata"
   end
 
   context "without an error" do
@@ -487,8 +483,6 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
       )
       expect_transaction_to_have_sidekiq_event(transaction_hash)
     end
-
-    include_examples "sidekiq metadata"
   end
 
   def perform_job
