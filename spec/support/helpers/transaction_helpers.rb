@@ -44,6 +44,12 @@ module TransactionHelpers
     created_transactions.last
   end
 
+  # Set current transaction manually.
+  # Cleared by {clear_current_transaction!}
+  def set_current_transaction(transaction) # rubocop:disable Style/AccessorMethodName
+    Thread.current[:appsignal_transaction] = transaction
+  end
+
   # Use when {Appsignal::Transaction.clear_current_transaction!} is stubbed to
   # clear the current transaction on the current thread.
   def clear_current_transaction!

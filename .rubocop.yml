@@ -64,6 +64,9 @@ Style/Encoding: # For Ruby 1.9 as it doesn't default to UTF-8
 Style/Lambda:
   EnforcedStyle: lambda
 
+Style/WordArray:
+  Enabled: false
+
 Naming/FileName:
   Exclude:
     - "ext/Rakefile"
