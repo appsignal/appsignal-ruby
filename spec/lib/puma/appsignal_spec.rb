@@ -62,7 +62,7 @@ RSpec.describe "Puma plugin" do
     expect(launcher.events.on_booted).to_not be_nil
 
     launcher.events.on_booted.call
-    expect(Appsignal::Minutely.probes[:puma]).to eql(Appsignal::Hooks::PumaProbe)
+    expect(Appsignal::Minutely.probes[:puma]).to eql(Appsignal::Probes::PumaProbe)
 
     # Minutely probes started and called
     wait_for("enough probe calls") { probe.calls >= 2 }
