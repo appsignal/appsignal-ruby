@@ -1,4 +1,4 @@
-class Sidekiq
+module Sidekiq
   class API
   end
 end

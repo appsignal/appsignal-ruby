@@ -17,7 +17,8 @@ Puma::Plugin.create do
     launcher.events.on_booted do
       require "appsignal"
       if ::Puma.respond_to?(:stats)
-        Appsignal::Minutely.probes.register :puma, Appsignal::Hooks::PumaProbe
+        require "appsignal/probes/puma"
+        Appsignal::Minutely.probes.register :puma, Appsignal::Probes::PumaProbe
       end
       Appsignal.start
       Appsignal.start_logger
