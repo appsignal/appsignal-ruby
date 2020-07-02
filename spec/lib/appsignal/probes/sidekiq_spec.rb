@@ -7,7 +7,7 @@ describe Appsignal::Probes::SidekiqProbe do
     let(:expected_default_tags) { { :hostname => "localhost" } }
     before do
       Appsignal.config = project_fixture_config
-      module Sidekiq
+      module SidekiqMock
         def self.redis_info
           {
             "connected_clients" => 2,
@@ -88,15 +88,14 @@ describe Appsignal::Probes::SidekiqProbe do
           end
         end
       end
+      stub_const("Sidekiq", SidekiqMock)
     end
-    after { Object.send(:remove_const, "Sidekiq") }
+    after { Object.send(:remove_const, :SidekiqMock) }
 
     describe ".dependencies_present?" do
       before do
-        class Redis; end
-        Redis.const_set(:VERSION, version)
+        stub_const("Redis::VERSION", version)
       end
-      after { Object.send(:remove_const, "Redis") }
 
       context "when Redis version is < 3.3.5" do
         let(:version) { "3.3.4" }
@@ -116,9 +115,13 @@ describe Appsignal::Probes::SidekiqProbe do
     end
 
     it "loads Sidekiq::API" do
-      expect(defined?(Sidekiq::API)).to be_falsy
+      # Hide the Sidekiq constant if it was already loaded. It will be
+      # redefined by loading "sidekiq/api" in the probe.
+      hide_const "Sidekiq::Stats"
+
+      expect(defined?(Sidekiq::Stats)).to be_falsy
       probe
-      expect(defined?(Sidekiq::API)).to be_truthy
+      expect(defined?(Sidekiq::Stats)).to be_truthy
     end
 
     it "logs config on initialize" do

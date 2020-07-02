@@ -3,8 +3,15 @@ source 'https://rubygems.org'
 gem 'rails', '~> 4.2.0'
 gem 'mime-types', '~> 2.6'
 
-gemspec :path => '../'
+ruby_version = Gem::Version.new(RUBY_VERSION)
+if ruby_version < Gem::Version.new("2.3.0")
+  gem "sidekiq", "~> 4.0"
+else
+  gem "sidekiq"
+end
 
-if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.1.0")
+if ruby_version < Gem::Version.new("2.1.0")
   gem 'nokogiri', '~> 1.6.0'
 end
+
+gemspec :path => '../'
