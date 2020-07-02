@@ -33,8 +33,8 @@ global_job_config:
     - checkout
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
-    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE),$_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET,$_BUNDLER_CACHE-bundler-$RUBY_VERSION
-    - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE),$_GEMS_CACHE-gems-$RUBY_VERSION
+    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+    - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
     - "./support/install_deps"
     - bundle config set clean 'true'
     - "./support/bundler_wrapper install --jobs=3 --retry=3"
