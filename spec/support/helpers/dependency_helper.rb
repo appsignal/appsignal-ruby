@@ -1,6 +1,10 @@
 module DependencyHelper
   module_function
 
+  def ruby_version
+    Gem::Version.new(RUBY_VERSION)
+  end
+
   def running_jruby?
     defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
   end

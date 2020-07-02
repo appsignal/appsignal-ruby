@@ -71,7 +71,8 @@ module Appsignal
       module ActiveJobHelpers
         ACTION_MAILER_CLASSES = [
           "ActionMailer::DeliveryJob",
-          "ActionMailer::Parameterized::DeliveryJob"
+          "ActionMailer::Parameterized::DeliveryJob",
+          "ActionMailer::MailDeliveryJob"
         ].freeze
 
         def self.action_name(job)

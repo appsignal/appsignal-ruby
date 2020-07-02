@@ -32,49 +32,35 @@ if DependencyHelper.active_job_present?
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
-    let(:given_args) do
-      [
-        "foo",
-        {
-          :foo => "Foo",
-          :bar => "Bar",
-          "baz" => { 1 => :foo }
-        }
-      ]
-    end
-    let(:expected_args) do
-      [
-        "foo",
-        {
-          "foo" => "Foo",
-          "bar" => "Bar",
-          "baz" => { "1" => "foo" }
-        }
-      ]
-    end
     let(:log) { StringIO.new }
-    let(:given_args) do
+    let(:parameterized_given_args) do
+      {
+        :foo => "Foo",
+        "bar" => "Bar",
+        "baz" => { "1" => "foo" }
+      }
+    end
+    let(:method_given_args) do
       [
         "foo",
-        {
-          :foo => "Foo",
-          "bar" => "Bar",
-          "baz" => { "1" => "foo" }
-        }
+        parameterized_given_args
       ]
     end
-    let(:expected_args) do
+    let(:parameterized_expected_args) do
+      {
+        "_aj_symbol_keys" => ["foo"],
+        "foo" => "Foo",
+        "bar" => "Bar",
+        "baz" => {
+          "_aj_symbol_keys" => [],
+          "1" => "foo"
+        }
+      }
+    end
+    let(:method_expected_args) do
       [
         "foo",
-        {
-          "_aj_symbol_keys" => ["foo"],
-          "foo" => "Foo",
-          "bar" => "Bar",
-          "baz" => {
-            "_aj_symbol_keys" => [],
-            "1" => "foo"
-          }
-        }
+        parameterized_expected_args
       ]
     end
     before do
@@ -88,7 +74,7 @@ if DependencyHelper.active_job_present?
       end
 
       class ActiveJobErrorTestJob < ActiveJob::Base
-        def perform(*_args)
+        def perform
           raise "uh oh"
         end
       end
@@ -100,7 +86,7 @@ if DependencyHelper.active_job_present?
     end
 
     it "reports the name from the ActiveJob integration" do
-      perform_job(ActiveJobTestJob, given_args)
+      perform_job(ActiveJobTestJob)
 
       transaction = last_transaction
       transaction_hash = transaction.to_h
@@ -110,7 +96,7 @@ if DependencyHelper.active_job_present?
         "namespace" => namespace,
         "metadata" => {},
         "sample_data" => hash_including(
-          "params" => [expected_args],
+          "params" => [],
           "tags" => {
             "queue" => "default"
           }
@@ -125,7 +111,7 @@ if DependencyHelper.active_job_present?
     context "with error" do
       it "reports the error on the transaction from the ActiveRecord integration" do
         expect do
-          perform_job(ActiveJobErrorTestJob, given_args)
+          perform_job(ActiveJobErrorTestJob)
         end.to raise_error(RuntimeError, "uh oh")
 
         transaction = last_transaction
@@ -140,7 +126,7 @@ if DependencyHelper.active_job_present?
           "namespace" => namespace,
           "metadata" => {},
           "sample_data" => hash_including(
-            "params" => [expected_args],
+            "params" => [],
             "tags" => {
               "queue" => "default"
             }
@@ -159,7 +145,7 @@ if DependencyHelper.active_job_present?
         allow(current_transaction).to receive(:complete).and_call_original
         set_current_transaction current_transaction
 
-        perform_job(ActiveJobTestJob, given_args)
+        perform_job(ActiveJobTestJob)
 
         expect(created_transactions.count).to eql(1)
         expect(current_transaction).to_not have_received(:complete)
@@ -175,7 +161,7 @@ if DependencyHelper.active_job_present?
           "namespace" => namespace,
           "metadata" => {},
           "sample_data" => hash_including(
-            "params" => [expected_args],
+            "params" => [],
             "tags" => {
               "queue" => "default"
             }
@@ -189,11 +175,11 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    context "with filtered params" do
+    context "with params" do
       it "filters the configured params" do
         Appsignal.config = project_fixture_config("production")
         Appsignal.config[:filter_parameters] = ["foo"]
-        perform_job(ActiveJobTestJob, given_args)
+        perform_job(ActiveJobTestJob, method_given_args)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -241,7 +227,7 @@ if DependencyHelper.active_job_present?
       end
 
       it "sets provider_job_id as tag" do
-        perform_job(ProviderWrappedActiveJobTestJob, given_args)
+        perform_job(ProviderWrappedActiveJobTestJob)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -296,7 +282,7 @@ if DependencyHelper.active_job_present?
 
       before do
         class ActionMailerTestJob < ActionMailer::Base
-          def welcome(*args)
+          def welcome(_first_arg = nil, _second_arg = nil)
           end
         end
       end
@@ -320,19 +306,123 @@ if DependencyHelper.active_job_present?
         end
       end
 
-      context "with params" do
-        it "sets the Action mailer data on the transaction" do
-          perform_mailer(ActionMailerTestJob, :welcome, given_args)
+      context "with multiple arguments" do
+        it "sets the arguments on the transaction" do
+          perform_mailer(ActionMailerTestJob, :welcome, method_given_args)
 
           transaction = last_transaction
           transaction_hash = transaction.to_h
           expect(transaction_hash).to include(
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome", "deliver_now", expected_args],
+              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + method_expected_args,
               "tags" => { "queue" => "mailers" }
             )
           )
+        end
+      end
+
+      if DependencyHelper.rails_version >= Gem::Version.new("5.2.0")
+        context "with parameterized arguments" do
+          it "sets the arguments on the transaction" do
+            perform_mailer(ActionMailerTestJob, :welcome, parameterized_given_args)
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "action" => "ActionMailerTestJob#welcome",
+              "sample_data" => hash_including(
+                "params" => ["ActionMailerTestJob", "welcome", "deliver_now", parameterized_expected_args],
+                "tags" => { "queue" => "mailers" }
+              )
+            )
+          end
+        end
+      end
+    end
+
+    if DependencyHelper.rails_version >= Gem::Version.new("6.0.0")
+      context "with ActionMailer MailDeliveryJob job" do
+        include ActionMailerHelpers
+
+        before do
+          class ActionMailerTestMailDeliveryJob < ActionMailer::Base
+            self.delivery_job = ActionMailer::MailDeliveryJob
+
+            def welcome(*_args)
+            end
+          end
+        end
+        after do
+          Object.send(:remove_const, :ActionMailerTestMailDeliveryJob)
+        end
+
+        it "sets the Action mailer data on the transaction" do
+          perform_mailer(ActionMailerTestMailDeliveryJob, :welcome)
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "ActionMailerTestMailDeliveryJob#welcome",
+            "sample_data" => hash_including(
+              "params" => [
+                "ActionMailerTestMailDeliveryJob",
+                "welcome",
+                "deliver_now",
+                { active_job_internal_key => ["args"], "args" => [] }
+              ],
+              "tags" => { "queue" => "mailers" }
+            )
+          )
+        end
+
+        context "with method arguments" do
+          it "sets the Action mailer data on the transaction" do
+            perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, method_given_args)
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "action" => "ActionMailerTestMailDeliveryJob#welcome",
+              "sample_data" => hash_including(
+                "params" => [
+                  "ActionMailerTestMailDeliveryJob",
+                  "welcome",
+                  "deliver_now",
+                  {
+                    active_job_internal_key => ["args"],
+                    "args" => method_expected_args
+                  }
+                ],
+                "tags" => { "queue" => "mailers" }
+              )
+            )
+          end
+        end
+
+        context "with parameterized arguments" do
+          it "sets the Action mailer data on the transaction" do
+            perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, parameterized_given_args)
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "action" => "ActionMailerTestMailDeliveryJob#welcome",
+              "sample_data" => hash_including(
+                "params" => [
+                  "ActionMailerTestMailDeliveryJob",
+                  "welcome",
+                  "deliver_now",
+                  {
+                    active_job_internal_key => ["params", "args"],
+                    "args" => [],
+                    "params" => parameterized_expected_args
+                  }
+                ],
+                "tags" => { "queue" => "mailers" }
+              )
+            )
+          end
         end
       end
     end
@@ -343,12 +433,26 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    def perform_job(job_class, args)
-      perform_active_job { job_class.perform_later(args) }
+    def perform_job(job_class, args = nil)
+      perform_active_job do
+        if args
+          job_class.perform_later(args)
+        else
+          job_class.perform_later
+        end
+      end
     end
 
     def perform_mailer(mailer, method, args = nil)
       perform_active_job { perform_action_mailer(mailer, method, args) }
+    end
+
+    def active_job_internal_key
+      if DependencyHelper.ruby_version >= Gem::Version.new("2.7.0")
+        "_aj_ruby2_keywords"
+      else
+        "_aj_symbol_keys"
+      end
     end
   end
 end

@@ -409,7 +409,6 @@ if DependencyHelper.active_job_present?
 
       transaction = last_transaction
       transaction_hash = transaction.to_h
-      pp transaction_hash
       expect(transaction_hash).to include(
         "action" => "ActiveJobSidekiqTestJob#perform",
         "error" => nil,
@@ -475,40 +474,17 @@ if DependencyHelper.active_job_present?
         end
       end
 
-      context "without arguments" do
-        it "reports ActionMailer data on the transaction" do
-          perform_mailer(ActionMailerSidekiqTestJob, :welcome)
+      it "reports ActionMailer data on the transaction" do
+        perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
 
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "ActionMailerSidekiqTestJob#welcome",
-            "namespace" => namespace,
-            "metadata" => hash_including(
-              "queue" => "mailers"
-            ),
-            "sample_data" => hash_including(
-              "environment" => {},
-              "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"],
-              "tags" => expected_tags.merge("queue" => "mailers")
-            )
+        transaction = last_transaction
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "action" => "ActionMailerSidekiqTestJob#welcome",
+          "sample_data" => hash_including(
+            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_args
           )
-        end
-      end
-
-      context "with arguments" do
-        it "reports ActionMailer data on the transaction" do
-          perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
-
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "ActionMailerSidekiqTestJob#welcome",
-            "sample_data" => hash_including(
-              "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now", expected_args]
-            )
-          )
-        end
+        )
       end
     end
 
