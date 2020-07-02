@@ -2,7 +2,9 @@
 
 # 2.11.0
 - Track queue time regardless of namespace. Support custom namespaces. PR #602
-- Report Ruby environment metadata. PR #621
+- Improve deprecation message from frontend error middleware. PR #620
+- Report Ruby environment metadata. PR #621, #627
+- Refactor: Move minutely probes to their own files and modules. PR #623
 
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
