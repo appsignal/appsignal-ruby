@@ -142,7 +142,7 @@ if DependencyHelper.padrino_present?
               expect_a_transaction_to_be_created
               # Uses path for action name
               expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp#unknown")
-              expect(response).to match_response(404, "<h1>Not Found</h1>")
+              expect(response).to match_response(404, "GET /404")
             end
           end
 

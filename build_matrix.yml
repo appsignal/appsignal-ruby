@@ -124,7 +124,9 @@ matrix:
     - gem: "capistrano3"
     - gem: "grape"
     - gem: "padrino"
-      bundler: "1.17.3"
+      exclude:
+        ruby:
+          - "2.0.0-p648"
     - gem: "que"
     - gem: "que_beta"
       exclude:
