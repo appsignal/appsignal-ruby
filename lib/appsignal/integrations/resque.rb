@@ -4,18 +4,15 @@ module Appsignal
   module Integrations
     # @api private
     module ResquePlugin
-      # Do not use this file as a template for your own background processor
-      # Resque is an exception to the rule and the code below causes the
-      # extension to shut itself down after a single job.
-      # see http://docs.appsignal.com/background-monitoring/custom.html
-      def around_perform_resque_plugin(*_args)
-        Appsignal.monitor_single_transaction(
-          "perform_job.resque",
-          :class => to_s,
-          :method => "perform"
-        ) do
-          yield
-        end
+      def self.extended(_)
+        callers = caller
+        Appsignal::Utils::DeprecationMessage.message \
+          "The AppSignal ResquePlugin is deprecated and does " \
+          "nothing on extend. In this version of the AppSignal Ruby gem " \
+          "the integration with Resque is automatic on all Resque workers. " \
+          "Please remove the following line from this file to remove this " \
+          "message: extend Appsignal::Integrations::ResquePlugin\n" \
+          "#{callers.first}"
       end
     end
   end
