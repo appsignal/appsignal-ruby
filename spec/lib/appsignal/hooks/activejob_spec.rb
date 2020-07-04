@@ -251,6 +251,46 @@ if DependencyHelper.active_job_present?
       end
     end
 
+    context "with enqueued_at", :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
+      before do
+        module ActiveJob
+          module QueueAdapters
+            # Adapter used in our test suite to add provider data to the job
+            # data, as is done by Rails provided ActiveJob adapters.
+            #
+            # This implementation is based on the
+            # `ActiveJob::QueueAdapters::InlineAdapter`.
+            class AppsignalTestAdapter < InlineAdapter
+              def enqueue(job)
+                Base.execute(job.serialize.merge("enqueued_at" => "2020-10-10T10:10:10Z"))
+              end
+            end
+          end
+        end
+
+        class ProviderWrappedActiveJobTestJob < ActiveJob::Base
+          self.queue_adapter = :appsignal_test
+
+          def perform(*_args)
+          end
+        end
+      end
+      after do
+        ActiveJob::QueueAdapters.send(:remove_const, :AppsignalTestAdapter)
+        Object.send(:remove_const, :ProviderWrappedActiveJobTestJob)
+      end
+
+      it "sets queue time on transaction" do
+        allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
+        perform_job(ProviderWrappedActiveJobTestJob)
+
+        transaction = last_transaction
+        queue_time = Time.parse("2020-10-10T10:10:10Z")
+        expect(transaction).to have_received(:set_queue_start)
+          .with((queue_time.to_f * 1_000).to_i)
+      end
+    end
+
     context "with ActionMailer job" do
       include ActionMailerHelpers
 

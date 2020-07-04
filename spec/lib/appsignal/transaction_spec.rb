@@ -473,22 +473,20 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "set_queue_start" do
-      it "should set the queue start in extension" do
-        expect(transaction.ext).to receive(:set_queue_start).with(
-          10.0
-        ).once
+    describe "#set_queue_start" do
+      it "sets the queue start in extension" do
+        expect(transaction.ext).to receive(:set_queue_start).with(10.0).once
 
         transaction.set_queue_start(10.0)
       end
 
-      it "should not set the queue start in extension when value is nil" do
+      it "does not set the queue start in extension when value is nil" do
         expect(transaction.ext).to_not receive(:set_queue_start)
 
         transaction.set_queue_start(nil)
       end
 
-      it "should not raise an error when the queue start is too big" do
+      it "does not raise an error when the queue start is too big" do
         expect(transaction.ext).to receive(:set_queue_start).and_raise(RangeError)
 
         expect(Appsignal.logger).to receive(:warn).with("Queue start value 10 is too big")

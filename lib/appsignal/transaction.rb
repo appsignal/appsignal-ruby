@@ -221,6 +221,16 @@ module Appsignal
       set_action_if_nil(group_and_action.compact.join("#"))
     end
 
+    # Set queue start time for transaction.
+    #
+    # Most commononly called by {set_http_or_background_queue_start}.
+    #
+    # @param start [Integer] Queue start time in milliseconds.
+    # @raise [RangeError] When the queue start time value is too big, this
+    #   method raises a RangeError.
+    # @raise [TypeError] Raises a TypeError when the given `start` argument is
+    #   not an Integer.
+    # @return [void]
     def set_queue_start(start)
       return unless start
       @ext.set_queue_start(start)

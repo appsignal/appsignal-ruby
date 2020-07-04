@@ -54,6 +54,10 @@ module Appsignal
             transaction.set_tags(tags)
 
             transaction.set_action_if_nil(ActiveJobHelpers.action_name(job))
+            enqueued_at = job["enqueued_at"]
+            if enqueued_at # Present in Rails 6 and up
+              transaction.set_queue_start((Time.parse(enqueued_at).to_f * 1_000).to_i)
+            end
 
             if current_transaction.nil_transaction?
               # Only complete transaction if ActiveJob is not wrapped in
