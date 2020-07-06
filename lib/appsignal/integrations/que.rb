@@ -32,7 +32,7 @@ module Appsignal
               transaction.set_error(error)
               raise error
             ensure
-              transaction.set_action "#{local_attrs[:job_class]}#run"
+              transaction.set_action_if_nil "#{local_attrs[:job_class]}#run"
               Appsignal::Transaction.complete_current!
             end
           end

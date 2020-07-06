@@ -14,7 +14,6 @@ if DependencyHelper.que_present?
           :error_count => 0
         }
       end
-
       let(:env) do
         {
           :class => "MyQueJob",
@@ -29,7 +28,6 @@ if DependencyHelper.que_present?
           :params => %w[1 birds]
         }
       end
-
       let(:job) do
         Class.new(::Que::Job) do
           def run(*args)
@@ -37,7 +35,6 @@ if DependencyHelper.que_present?
         end
       end
       let(:instance) { job.new(job_attrs) }
-
       before do
         allow(Que).to receive(:execute)
 
@@ -46,10 +43,14 @@ if DependencyHelper.que_present?
       end
       around { |example| keep_transactions { example.run } }
 
+      def perform_job(job)
+        job._run
+      end
+
       context "success" do
         it "creates a transaction for a job" do
           expect do
-            instance._run
+            perform_job(instance)
           end.to change { created_transactions.length }.by(1)
 
           expect(last_transaction).to be_completed
@@ -95,7 +96,7 @@ if DependencyHelper.que_present?
 
           expect do
             expect do
-              instance._run
+              perform_job(instance)
             end.to raise_error(ExampleException)
           end.to change { created_transactions.length }.by(1)
 
@@ -130,7 +131,7 @@ if DependencyHelper.que_present?
         it "reports errors and not re-raise them" do
           allow(instance).to receive(:run).and_raise(error)
 
-          expect { instance._run }.to change { created_transactions.length }.by(1)
+          expect { perform_job(instance) }.to change { created_transactions.length }.by(1)
 
           expect(last_transaction).to be_completed
           transaction_hash = last_transaction.to_h
@@ -154,6 +155,24 @@ if DependencyHelper.que_present?
               "run_at" => fixed_time.to_s
             }
           )
+        end
+      end
+
+      context "when action set in job" do
+        let(:job) do
+          Class.new(::Que::Job) do
+            def run(*_args)
+              Appsignal.set_action("MyCustomJob#perform")
+            end
+          end
+        end
+
+        it "uses the custom action" do
+          perform_job(instance)
+
+          expect(last_transaction).to be_completed
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash).to include("action" => "MyCustomJob#perform")
         end
       end
     end
