@@ -165,8 +165,12 @@ matrix:
           - "2.3.8"
           - "2.4.9"
           - "jruby-9.1.17.0"
-    - gem: "resque"
+    - gem: "resque-1"
       bundler: "1.17.3"
+    - gem: "resque-2"
+      exclude:
+        ruby:
+          - "2.0.0-p648"
     - gem: "sequel"
     - gem: "sequel-435"
     - gem: "sinatra"

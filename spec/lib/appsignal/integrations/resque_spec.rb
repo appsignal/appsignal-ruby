@@ -1,93 +1,28 @@
-if DependencyHelper.resque_present?
-  describe "Resque integration" do
-    let(:file) { File.expand_path("lib/appsignal/integrations/resque.rb") }
+require "appsignal/integrations/resque"
 
-    context "with resque" do
-      before do
-        load file
-        start_agent
+describe "Legacy Resque integration" do
+  let(:err_stream) { std_stream }
+  let(:stderr) { err_stream.read }
+  let(:log_stream) { std_stream }
+  let(:log) { log_contents(log_stream) }
 
-        class TestJob
-          extend Appsignal::Integrations::ResquePlugin
+  it "logs and prints a deprecation message on extend" do
+    Appsignal.logger = test_logger(log_stream)
 
-          def self.perform
-          end
-        end
-
-        class BrokenTestJob
-          extend Appsignal::Integrations::ResquePlugin
-
-          def self.perform
-            raise ExampleException, "my error message"
-          end
-        end
-      end
-
-      describe :around_perform_resque_plugin do
-        let(:job) { ::Resque::Job.new("default", "class" => "TestJob") }
-        before { expect(Appsignal).to receive(:stop) }
-
-        context "without exception" do
-          it "creates a new transaction" do
-            expect do
-              keep_transactions { job.perform }
-            end.to change { created_transactions.length }.by(1)
-
-            expect(last_transaction).to be_completed
-            expect(last_transaction.to_h).to include(
-              "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-              "action" => "TestJob#perform",
-              "error" => nil,
-              "events" => [
-                hash_including(
-                  "name" => "perform_job.resque",
-                  "title" => "",
-                  "body" => "",
-                  "body_format" => Appsignal::EventFormatter::DEFAULT,
-                  "count" => 1,
-                  "duration" => kind_of(Float)
-                )
-              ]
-            )
-          end
-        end
-
-        context "with exception" do
-          let(:job) { ::Resque::Job.new("default", "class" => "BrokenTestJob") }
-
-          def perform
-            keep_transactions do
-              expect do
-                job.perform
-              end.to raise_error(ExampleException, "my error message")
-            end
-          end
-
-          it "sets the exception on the transaction" do
-            expect do
-              perform
-            end.to change { created_transactions.length }.by(1)
-
-            expect(last_transaction).to be_completed
-            expect(last_transaction.to_h).to include(
-              "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-              "action" => "BrokenTestJob#perform",
-              "error" => {
-                "name" => "ExampleException",
-                "message" => "my error message",
-                "backtrace" => kind_of(String)
-              }
-            )
-          end
-        end
+    capture_std_streams(std_stream, err_stream) do
+      Class.new do
+        extend Appsignal::Integrations::ResquePlugin
       end
     end
 
-    context "without resque" do
-      before(:context) { Object.send(:remove_const, :Resque) }
-
-      it { expect { ::Resque }.to raise_error(NameError) }
-      it { expect { load file }.to_not raise_error }
-    end
+    deprecation_message =
+      "The AppSignal ResquePlugin is deprecated and does " \
+      "nothing on extend. In this version of the AppSignal Ruby gem " \
+      "the integration with Resque is automatic on all Resque workers. " \
+      "Please remove the following line from this file to remove this " \
+      "message: extend Appsignal::Integrations::ResquePlugin\n" \
+      "#{__FILE__}:"
+    expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
+    expect(log).to contains_log :warn, deprecation_message
   end
 end

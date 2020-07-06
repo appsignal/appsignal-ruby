@@ -4,38 +4,15 @@ module Appsignal
   module Integrations
     # @api private
     module ResqueActiveJobPlugin
-      include Appsignal::Hooks::Helpers
-
-      def self.included(base)
-        base.class_eval do
-          around_perform do |job, block|
-            params = Appsignal::Utils::HashSanitizer.sanitize(
-              job.arguments,
-              Appsignal.config[:filter_parameters]
-            )
-
-            queue_start =
-              if job.respond_to?(:enqueued_at) && job.enqueued_at
-                Time.parse(job.enqueued_at).utc
-              end
-
-            Appsignal.monitor_single_transaction(
-              "perform_job.resque",
-              :class       => job.class.to_s,
-              :method      => "perform",
-              :params      => params,
-              :queue_start => queue_start,
-              :metadata    => {
-                :id       => job.job_id,
-                :queue    => job.queue_name
-              }
-            ) do
-              block.call
-            end
-          end
-        end
-
-        Appsignal::Environment.report("ruby_active_job_resque_enabled") { true }
+      def self.included(_)
+        callers = caller
+        Appsignal::Utils::DeprecationMessage.message \
+          "The AppSignal ResqueActiveJobPlugin is deprecated and does " \
+          "nothing on extend. In this version of the AppSignal Ruby gem " \
+          "the integration with Resque is automatic on all Resque workers. " \
+          "Please remove the following line from this file to remove this " \
+          "message: include Appsignal::Integrations::ResqueActiveJobPlugin\n" \
+          "#{callers.first}"
       end
     end
   end
