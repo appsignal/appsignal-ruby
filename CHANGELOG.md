@@ -3,8 +3,17 @@
 # 2.11.0
 - Track queue time regardless of namespace. Support custom namespaces. PR #602
 - Improve deprecation message from frontend error middleware. PR #620
-- Report Ruby environment metadata. PR #621, #627
+- Report Ruby environment metadata. PR #621, #627, #619, #618
 - Refactor: Move minutely probes to their own files and modules. PR #623
+- Allow custom action names in Que integration. Needed for Active Job
+  integration. PR #628
+- Add Active Job support. Support Active Job without separate AppSignal
+  integration of the background job library. Add support for previously
+  unsupported Active Job adapters. Adapters that were previously already
+  supported (Sidekiq, DelayedJob and Resque) still work in this new setup.
+  PR #629
+- Add automatic Resque integration. Remove manual Resque and Resque Active Job
+  integrations. PR #630
 
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
