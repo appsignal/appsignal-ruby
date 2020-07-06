@@ -73,6 +73,7 @@ module Appsignal
 end
 
 require "appsignal/hooks/action_cable"
+require "appsignal/hooks/active_job"
 require "appsignal/hooks/active_support_notifications"
 require "appsignal/hooks/celluloid"
 require "appsignal/hooks/delayed_job"
@@ -81,6 +82,7 @@ require "appsignal/hooks/passenger"
 require "appsignal/hooks/puma"
 require "appsignal/hooks/rake"
 require "appsignal/hooks/redis"
+require "appsignal/hooks/resque"
 require "appsignal/hooks/sequel"
 require "appsignal/hooks/shoryuken"
 require "appsignal/hooks/sidekiq"

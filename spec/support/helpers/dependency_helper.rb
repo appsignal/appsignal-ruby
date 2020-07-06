@@ -1,6 +1,10 @@
 module DependencyHelper
   module_function
 
+  def ruby_version
+    Gem::Version.new(RUBY_VERSION)
+  end
+
   def running_jruby?
     defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
   end
@@ -10,8 +14,11 @@ module DependencyHelper
   end
 
   def rails6_present?
-    rails_present? &&
-      Gem.loaded_specs["rails"].version >= Gem::Version.new("6.0.0")
+    rails_present? && rails_version >= Gem::Version.new("6.0.0")
+  end
+
+  def rails_version
+    Gem.loaded_specs["rails"].version
   end
 
   def sequel_present?

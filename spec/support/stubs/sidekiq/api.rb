@@ -1,4 +1,4 @@
 module Sidekiq
-  class API
+  class Stats
   end
 end
