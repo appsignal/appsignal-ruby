@@ -32,6 +32,7 @@ if DependencyHelper.active_job_present?
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
+    let(:queue) { "default" }
     let(:log) { StringIO.new }
     let(:parameterized_given_args) do
       {
@@ -78,11 +79,19 @@ if DependencyHelper.active_job_present?
           raise "uh oh"
         end
       end
+
+      class ActiveJobCustomQueueTestJob < ActiveJob::Base
+        queue_as :custom_queue
+
+        def perform(*_args)
+        end
+      end
     end
     around { |example| keep_transactions { example.run } }
     after do
       Object.send(:remove_const, :ActiveJobTestJob)
       Object.send(:remove_const, :ActiveJobErrorTestJob)
+      Object.send(:remove_const, :ActiveJobCustomQueueTestJob)
     end
 
     it "reports the name from the ActiveJob integration" do
@@ -97,15 +106,55 @@ if DependencyHelper.active_job_present?
         "metadata" => {},
         "sample_data" => hash_including(
           "params" => [],
-          "tags" => {
-            "queue" => "default"
-          }
+          "tags" => { "queue" => queue }
         )
       )
       events = transaction_hash["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
       expect(events).to eq(["perform_start.active_job", "perform.active_job"])
+    end
+
+    context "with custom queue" do
+      it "reports the custom queue as tag on the transaction" do
+        perform_job(ActiveJobCustomQueueTestJob)
+
+        transaction = last_transaction
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "sample_data" => hash_including(
+            "tags" => { "queue" => "custom_queue" }
+          )
+        )
+      end
+    end
+
+    if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
+      context "with priority" do
+        before do
+          class ActiveJobPriorityTestJob < ActiveJob::Base
+            queue_with_priority 10
+
+            def perform(*_args)
+            end
+          end
+        end
+        after do
+          Object.send(:remove_const, :ActiveJobPriorityTestJob)
+        end
+
+        it "reports the priority as tag on the transaction" do
+          perform_job(ActiveJobPriorityTestJob)
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "sample_data" => hash_including(
+              "tags" => { "queue" => queue, "priority" => 10 }
+            )
+          )
+        end
+      end
     end
 
     context "with error" do
@@ -127,9 +176,7 @@ if DependencyHelper.active_job_present?
           "metadata" => {},
           "sample_data" => hash_including(
             "params" => [],
-            "tags" => {
-              "queue" => "default"
-            }
+            "tags" => { "queue" => queue }
           )
         )
         events = transaction_hash["events"]
@@ -162,9 +209,7 @@ if DependencyHelper.active_job_present?
           "metadata" => {},
           "sample_data" => hash_including(
             "params" => [],
-            "tags" => {
-              "queue" => "default"
-            }
+            "tags" => { "queue" => queue }
           )
         )
         events = transaction_hash["events"]

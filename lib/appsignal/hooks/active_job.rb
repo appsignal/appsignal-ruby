@@ -46,7 +46,11 @@ module Appsignal
                 Appsignal.config[:filter_parameters]
               )
 
-            tags = { :queue => job["queue_name"] }
+            tags = {}
+            queue = job["queue_name"]
+            tags[:queue] = queue if queue
+            priority = job["priority"]
+            tags[:priority] = priority if priority
             provider_job_id = job["provider_job_id"]
             tags[:provider_job_id] = provider_job_id if provider_job_id
             transaction.set_tags(tags)
