@@ -15,8 +15,6 @@ module Appsignal
           .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
       end
 
-      # @todo Add queue time support for Rails 6's enqueued_at. For both
-      #   existing and new transactions.
       module ActiveJobClassInstrumentation
         def execute(job)
           current_transaction = Appsignal::Transaction.current
