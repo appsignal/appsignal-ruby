@@ -21,7 +21,7 @@ if DependencyHelper.active_job_present?
 
     describe "#install" do
       it "extends ActiveJob::Base with the AppSignal ActiveJob plugin" do
-        described_class.new.install
+        start_agent
 
         path, _line_number = ActiveJob::Base.method(:execute).source_location
         expect(path).to end_with("/lib/appsignal/hooks/active_job.rb")
@@ -95,6 +95,10 @@ if DependencyHelper.active_job_present?
     end
 
     it "reports the name from the ActiveJob integration" do
+      tags = { :queue => queue }
+      expect(Appsignal).to receive(:increment_counter)
+        .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+
       perform_job(ActiveJobTestJob)
 
       transaction = last_transaction
@@ -117,6 +121,9 @@ if DependencyHelper.active_job_present?
 
     context "with custom queue" do
       it "reports the custom queue as tag on the transaction" do
+        tags = { :queue => "custom_queue" }
+        expect(Appsignal).to receive(:increment_counter)
+          .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
         perform_job(ActiveJobCustomQueueTestJob)
 
         transaction = last_transaction
@@ -144,6 +151,10 @@ if DependencyHelper.active_job_present?
         end
 
         it "reports the priority as tag on the transaction" do
+          tags = { :priority => 10, :queue => queue }
+          expect(Appsignal).to receive(:increment_counter)
+            .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+
           perform_job(ActiveJobPriorityTestJob)
 
           transaction = last_transaction
@@ -159,6 +170,13 @@ if DependencyHelper.active_job_present?
 
     context "with error" do
       it "reports the error on the transaction from the ActiveRecord integration" do
+        allow(Appsignal).to receive(:increment_counter) # Other calls we're testing in another test
+        tags = { :queue => queue }
+        expect(Appsignal).to receive(:increment_counter)
+          .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
+        expect(Appsignal).to receive(:increment_counter)
+          .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+
         expect do
           perform_job(ActiveJobErrorTestJob)
         end.to raise_error(RuntimeError, "uh oh")
