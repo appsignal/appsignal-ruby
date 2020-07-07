@@ -14,6 +14,8 @@
   PR #629
 - Add automatic Resque integration. Remove manual Resque and Resque Active Job
   integrations. PR #630
+- Fix issue with unknown events from being reported as often for long running
+  agents. Commit ba9afb538f44c68b8035a8cf40a39d89bc77b021
 
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
