@@ -17,6 +17,7 @@ module Appsignal
 
       module ActiveJobClassInstrumentation
         def execute(job)
+          job_status = nil
           current_transaction = Appsignal::Transaction.current
           transaction =
             if current_transaction.nil_transaction?
@@ -36,9 +37,16 @@ module Appsignal
 
           super
         rescue Exception => exception # rubocop:disable Lint/RescueException
+          job_status = :failed
           transaction.set_error(exception)
           raise exception
         ensure
+          tags = {}
+          queue = job["queue_name"]
+          tags[:queue] = queue if queue
+          priority = job["priority"]
+          tags[:priority] = priority if priority
+
           if transaction
             transaction.params =
               Appsignal::Utils::HashSanitizer.sanitize(
@@ -46,14 +54,12 @@ module Appsignal
                 Appsignal.config[:filter_parameters]
               )
 
-            tags = {}
-            queue = job["queue_name"]
-            tags[:queue] = queue if queue
-            priority = job["priority"]
-            tags[:priority] = priority if priority
+            transaction_tags = tags
             provider_job_id = job["provider_job_id"]
-            tags[:provider_job_id] = provider_job_id if provider_job_id
-            transaction.set_tags(tags)
+            if provider_job_id
+              transaction_tags[:provider_job_id] = provider_job_id
+            end
+            transaction.set_tags(transaction_tags)
 
             transaction.set_action_if_nil(ActiveJobHelpers.action_name(job))
             enqueued_at = job["enqueued_at"]
@@ -67,6 +73,13 @@ module Appsignal
               Appsignal::Transaction.complete_current!
             end
           end
+
+          if job_status
+            ActiveJobHelpers.increment_counter "queue_job_count", 1,
+              tags.merge(:status => job_status)
+          end
+          ActiveJobHelpers.increment_counter "queue_job_count", 1,
+            tags.merge(:status => :processed)
         end
       end
 
@@ -84,6 +97,10 @@ module Appsignal
           else
             "#{job["job_class"]}#perform"
           end
+        end
+
+        def self.increment_counter(key, value, tags = {})
+          Appsignal.increment_counter "active_job_#{key}", value, tags
         end
       end
     end
