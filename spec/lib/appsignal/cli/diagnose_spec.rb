@@ -290,6 +290,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         jruby = Appsignal::System.jruby?
         expect(output).to include(
           "Extension installation report",
+          "Installation result",
+          "  Status: success",
           "Language details",
           "  Implementation: #{jruby ? "jruby" : "ruby"}",
           "  Ruby version: #{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}",
@@ -308,6 +310,46 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           "  Root user: false",
           "  Dependencies: {"
         )
+      end
+
+      context "with error in install report" do
+        let(:error) { RuntimeError.new("some error") }
+        before do
+          allow(File).to receive(:read).and_call_original
+          expect(File).to receive(:read)
+            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .and_return(
+              YAML.dump(
+                "result" => {
+                  "status" => "error",
+                  "error" => "RuntimeError: some error",
+                  "backtrace" => error.backtrace
+                }
+              )
+            )
+        end
+
+        it "sends an error" do
+          run
+          expect(received_report["installation"]).to match(
+            "result" => {
+              "status" => "error",
+              "error" => "RuntimeError: some error",
+              "backtrace" => error.backtrace
+            }
+          )
+        end
+
+        it "prints the error" do
+          run
+
+          expect(output).to include(
+            "Extension installation report",
+            "Installation result",
+            "Status: error\n    Error: RuntimeError: some error"
+          )
+          expect(output).to_not include("Raw report:")
+        end
       end
 
       context "without install report" do
