@@ -371,7 +371,7 @@ module Appsignal
         end
 
         def print_installation_result_report(report)
-          report = report.fetch("download", {})
+          report = report.fetch("result", {})
           puts "  Installation result"
           puts "    Status: #{report["status"]}"
           puts "    Message: #{report["message"]}" if report["message"]
