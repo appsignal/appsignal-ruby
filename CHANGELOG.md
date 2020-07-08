@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.10.10
+- Bump agent to v-4548c88. PR #634
+  - Fix issue with host metrics values being reported as "Infinity".
+
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
 - Clear event details cache every 48 hours.
