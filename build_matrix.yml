@@ -10,8 +10,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   # Cancel all running and queued workflows before this one
   auto_cancel:
     running:
-      # Ignore master AND develop branch as we want it to build all workflows
-      when: "branch != 'master' AND branch != 'develop'"
+      # Ignore main AND develop branch as we want it to build all workflows
+      when: "branch != 'main' AND branch != 'develop'"
 
   global_job_config:
     env_vars:

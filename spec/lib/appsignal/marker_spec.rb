@@ -4,7 +4,7 @@ describe Appsignal::Marker do
     described_class.new(
       {
         :revision => "503ce0923ed177a3ce000005",
-        :repository => "master",
+        :repository => "main",
         :user => "batman",
         :rails_env => "production"
       },

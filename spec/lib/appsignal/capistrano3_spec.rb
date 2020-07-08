@@ -15,7 +15,7 @@ if DependencyHelper.capistrano3_present?
         c.set(:log_level, :error)
         c.set(:logger, logger)
         c.set(:rails_env, "production")
-        c.set(:repository, "master")
+        c.set(:repository, "main")
         c.set(:deploy_to, "/home/username/app")
         c.set(:current_release, "")
         c.set(:current_revision, "503ce0923ed177a3ce000005")

@@ -29,7 +29,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.metadata = {
     "bug_tracker_uri"   => "https://github.com/appsignal/appsignal-ruby/issues",
     "changelog_uri"     =>
-      "https://github.com/appsignal/appsignal-ruby/blob/master/CHANGELOG.md",
+      "https://github.com/appsignal/appsignal-ruby/blob/main/CHANGELOG.md",
     "documentation_uri" => "https://docs.appsignal.com/ruby/",
     "homepage_uri"      => "https://docs.appsignal.com/ruby/",
     "source_code_uri"   => "https://github.com/appsignal/appsignal-ruby"
