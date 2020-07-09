@@ -110,7 +110,10 @@ if DependencyHelper.active_job_present?
         "metadata" => {},
         "sample_data" => hash_including(
           "params" => [],
-          "tags" => { "queue" => queue }
+          "tags" => {
+            "active_job_id" => kind_of(String),
+            "queue" => queue
+          }
         )
       )
       events = transaction_hash["events"]
@@ -130,7 +133,7 @@ if DependencyHelper.active_job_present?
         transaction_hash = transaction.to_h
         expect(transaction_hash).to include(
           "sample_data" => hash_including(
-            "tags" => { "queue" => "custom_queue" }
+            "tags" => hash_including("queue" => "custom_queue")
           )
         )
       end
@@ -161,7 +164,7 @@ if DependencyHelper.active_job_present?
           transaction_hash = transaction.to_h
           expect(transaction_hash).to include(
             "sample_data" => hash_including(
-              "tags" => { "queue" => queue, "priority" => 10 }
+              "tags" => hash_including("queue" => queue, "priority" => 10)
             )
           )
         end
@@ -194,7 +197,10 @@ if DependencyHelper.active_job_present?
           "metadata" => {},
           "sample_data" => hash_including(
             "params" => [],
-            "tags" => { "queue" => queue }
+            "tags" => {
+              "active_job_id" => kind_of(String),
+              "queue" => queue
+            }
           )
         )
         events = transaction_hash["events"]
@@ -227,7 +233,10 @@ if DependencyHelper.active_job_present?
           "metadata" => {},
           "sample_data" => hash_including(
             "params" => [],
-            "tags" => { "queue" => queue }
+            "tags" => {
+              "active_job_id" => kind_of(String),
+              "queue" => queue
+            }
           )
         )
         events = transaction_hash["events"]
@@ -363,7 +372,10 @@ if DependencyHelper.active_job_present?
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
               "params" => ["ActionMailerTestJob", "welcome", "deliver_now"],
-              "tags" => { "queue" => "mailers" }
+              "tags" => {
+                "active_job_id" => kind_of(String),
+                "queue" => "mailers"
+              }
             )
           )
         end
@@ -379,7 +391,10 @@ if DependencyHelper.active_job_present?
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
               "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + method_expected_args,
-              "tags" => { "queue" => "mailers" }
+              "tags" => {
+                "active_job_id" => kind_of(String),
+                "queue" => "mailers"
+              }
             )
           )
         end
@@ -392,11 +407,15 @@ if DependencyHelper.active_job_present?
 
             transaction = last_transaction
             transaction_hash = transaction.to_h
+            pp transaction_hash
             expect(transaction_hash).to include(
               "action" => "ActionMailerTestJob#welcome",
               "sample_data" => hash_including(
                 "params" => ["ActionMailerTestJob", "welcome", "deliver_now", parameterized_expected_args],
-                "tags" => { "queue" => "mailers" }
+                "tags" => {
+                  "active_job_id" => kind_of(String),
+                  "queue" => "mailers"
+                }
               )
             )
           end
@@ -434,7 +453,10 @@ if DependencyHelper.active_job_present?
                 "deliver_now",
                 { active_job_internal_key => ["args"], "args" => [] }
               ],
-              "tags" => { "queue" => "mailers" }
+              "tags" => {
+                "active_job_id" => kind_of(String),
+                "queue" => "mailers"
+              }
             )
           )
         end
@@ -457,7 +479,10 @@ if DependencyHelper.active_job_present?
                     "args" => method_expected_args
                   }
                 ],
-                "tags" => { "queue" => "mailers" }
+                "tags" => {
+                  "active_job_id" => kind_of(String),
+                  "queue" => "mailers"
+                }
               )
             )
           end
@@ -482,7 +507,10 @@ if DependencyHelper.active_job_present?
                     "params" => parameterized_expected_args
                   }
                 ],
-                "tags" => { "queue" => "mailers" }
+                "tags" => {
+                  "active_job_id" => kind_of(String),
+                  "queue" => "mailers"
+                }
               )
             )
           end
