@@ -243,6 +243,27 @@ describe Appsignal::Config do
       end
     end
 
+    context "with an overriden config file" do
+      let(:config) do
+        project_fixture_config("production", {}, Appsignal.logger, File.join(project_fixture_path, "config", "appsignal.yml"))
+      end
+
+      it "is valid and active" do
+        expect(config.valid?).to be_truthy
+        expect(config.active?).to be_truthy
+      end
+
+      context "with an invalid overriden config file" do
+        let(:config) do
+          project_fixture_config("production", {}, Appsignal.logger, File.join(project_fixture_path, "config", "missing.yml"))
+        end
+
+        it "is not valid" do
+          expect(config.valid?).to be_falsy
+        end
+      end
+    end
+
     context "with the config file causing an error" do
       let(:config_path) do
         File.expand_path(

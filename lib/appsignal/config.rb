@@ -119,8 +119,9 @@ module Appsignal
       :initial_config, :file_config, :env_config
     attr_accessor :logger
 
-    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger)
+    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger, config_file = nil)
       @root_path      = root_path
+      @config_file    = config_file
       @logger         = logger
       @valid          = false
       @config_hash    = Hash[DEFAULT_CONFIG]
