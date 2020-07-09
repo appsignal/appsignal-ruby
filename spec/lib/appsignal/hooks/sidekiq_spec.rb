@@ -76,9 +76,10 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
     ]
   end
   let(:job_class) { "TestClass" }
+  let(:jid) { "b4a577edbccf1d805744efa9" }
   let(:item) do
     {
-      "jid"         => "b4a577edbccf1d805744efa9",
+      "jid"         => jid,
       "class"       => job_class,
       "retry_count" => 0,
       "queue"       => "default",
@@ -151,7 +152,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
   context "when using the Sidekiq delayed extension" do
     let(:item) do
       {
-        "jid" => "efb140489485999d32b5504c",
+        "jid" => jid,
         "class" => "Sidekiq::Extensions::DelayedClass",
         "queue" => "default",
         "args" => [
@@ -191,7 +192,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
   context "when using the Sidekiq ActiveRecord instance delayed extension" do
     let(:item) do
       {
-        "jid" => "efb140489485999d32b5504c",
+        "jid" => jid,
         "class" => "Sidekiq::Extensions::DelayedModel",
         "queue" => "default",
         "args" => [
@@ -243,7 +244,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
 
       transaction_hash = transaction.to_h
       expect(transaction_hash).to include(
-        "id" => kind_of(String),
+        "id" => jid,
         "action" => "TestClass#perform",
         "error" => {
           "name" => "ExampleException",
@@ -277,7 +278,7 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
 
       transaction_hash = transaction.to_h
       expect(transaction_hash).to include(
-        "id" => kind_of(String),
+        "id" => jid,
         "action" => "TestClass#perform",
         "error" => nil,
         "metadata" => {

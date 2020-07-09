@@ -35,7 +35,7 @@ module Appsignal
       def call(_worker, item, _queue)
         job_status = nil
         transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
+          item["jid"],
           Appsignal::Transaction::BACKGROUND_JOB,
           Appsignal::Transaction::GenericRequest.new(
             :queue_start => item["enqueued_at"]
