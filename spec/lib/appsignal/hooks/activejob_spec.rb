@@ -407,7 +407,6 @@ if DependencyHelper.active_job_present?
 
             transaction = last_transaction
             transaction_hash = transaction.to_h
-            pp transaction_hash
             expect(transaction_hash).to include(
               "action" => "ActionMailerTestJob#welcome",
               "sample_data" => hash_including(
