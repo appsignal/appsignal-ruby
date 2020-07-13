@@ -18,6 +18,11 @@
   agents. Commit ba9afb538f44c68b8035a8cf40a39d89bc77b021
 - Add support for Active Job priority. PR #632
 - Track Active Job job metrics for magic dashboard. PR #633
+- Report Sidekiq `jid` (job id) as transaction id, reported as "request_id" on
+  AppSignal.com. PR #640
+- Always report Active Job ID, an internal ID used by Active Job. PR #639
+- Support Delayed::Job jobs without specific method name, using
+  `Delayed::Job.enqueue`. PR #642
 
 # 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
