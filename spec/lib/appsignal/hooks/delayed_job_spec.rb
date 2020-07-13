@@ -227,25 +227,14 @@ describe Appsignal::Hooks::DelayedJobHook do
           end
         end
 
-        context "without job name" do
-          let(:job_data) do
-            { :name => "", :payload_object => payload_object }
-          end
-
-          it "wraps it in a transaction using the class method job name" do
-            perform
-            expect(last_transaction.to_h["action"]).to eql("unknown")
-          end
-        end
-
-        context "with invalid job name" do
+        context "with only job class name" do
           let(:job_data) do
             { :name => "Banana", :payload_object => payload_object }
           end
 
-          it "wraps it in a transaction using the class method job name" do
+          it "appends #perform to the class name" do
             perform
-            expect(last_transaction.to_h["action"]).to eql("unknown")
+            expect(last_transaction.to_h["action"]).to eql("Banana#perform")
           end
         end
 

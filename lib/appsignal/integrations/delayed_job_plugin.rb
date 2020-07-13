@@ -64,7 +64,7 @@ module Appsignal
         dot_split = default_name.split(".")
         return default_name if dot_split.length == 2
 
-        ["unknown"]
+        "#{default_name}#perform"
       end
 
       def self.extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
