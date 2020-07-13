@@ -41,11 +41,7 @@ module Appsignal
           transaction.set_error(exception)
           raise exception
         ensure
-          tags = {}
-          queue = job["queue_name"]
-          tags[:queue] = queue if queue
-          priority = job["priority"]
-          tags[:priority] = priority if priority
+          tags = ActiveJobHelpers.tags_for_job(job)
 
           if transaction
             transaction.params =
@@ -54,7 +50,8 @@ module Appsignal
                 Appsignal.config[:filter_parameters]
               )
 
-            transaction_tags = tags
+            transaction_tags = tags.dup
+            transaction_tags["active_job_id"] = job["job_id"]
             provider_job_id = job["provider_job_id"]
             if provider_job_id
               transaction_tags[:provider_job_id] = provider_job_id
@@ -97,6 +94,15 @@ module Appsignal
           else
             "#{job["job_class"]}#perform"
           end
+        end
+
+        def self.tags_for_job(job)
+          tags = {}
+          queue = job["queue_name"]
+          tags[:queue] = queue if queue
+          priority = job["priority"]
+          tags[:priority] = priority if priority
+          tags
         end
 
         def self.increment_counter(key, value, tags = {})
