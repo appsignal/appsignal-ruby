@@ -154,9 +154,11 @@ if DependencyHelper.active_job_present?
         end
 
         it "reports the priority as tag on the transaction" do
-          tags = { :priority => 10, :queue => queue }
+          tags = { :queue => queue }
           expect(Appsignal).to receive(:increment_counter)
             .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+          expect(Appsignal).to receive(:increment_counter)
+            .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :processed))
 
           perform_job(ActiveJobPriorityTestJob)
 
@@ -207,6 +209,47 @@ if DependencyHelper.active_job_present?
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
         expect(events).to eq(["perform_start.active_job", "perform.active_job"])
+      end
+
+      if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
+        context "with priority" do
+          before do
+            class ActiveJobErrorPriorityTestJob < ActiveJob::Base
+              queue_with_priority 10
+
+              def perform(*_args)
+                raise "uh oh"
+              end
+            end
+          end
+          after do
+            Object.send(:remove_const, :ActiveJobErrorPriorityTestJob)
+          end
+
+          it "reports the priority as tag on the transaction" do
+            tags = { :queue => queue }
+            expect(Appsignal).to receive(:increment_counter)
+              .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+            expect(Appsignal).to receive(:increment_counter)
+              .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
+            expect(Appsignal).to receive(:increment_counter)
+              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :processed))
+            expect(Appsignal).to receive(:increment_counter)
+              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :failed))
+
+            expect do
+              perform_job(ActiveJobErrorPriorityTestJob)
+            end.to raise_error(RuntimeError, "uh oh")
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "sample_data" => hash_including(
+                "tags" => hash_including("queue" => queue, "priority" => 10)
+              )
+            )
+          end
+        end
       end
     end
 
