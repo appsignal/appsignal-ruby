@@ -41,8 +41,6 @@ module Appsignal
           transaction.set_error(exception)
           raise exception
         ensure
-          tags = ActiveJobHelpers.tags_for_job(job)
-
           if transaction
             transaction.params =
               Appsignal::Utils::HashSanitizer.sanitize(
@@ -50,7 +48,7 @@ module Appsignal
                 Appsignal.config[:filter_parameters]
               )
 
-            transaction_tags = tags.dup
+            transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
             transaction_tags["active_job_id"] = job["job_id"]
             provider_job_id = job["provider_job_id"]
             if provider_job_id
@@ -71,12 +69,15 @@ module Appsignal
             end
           end
 
-          if job_status
-            ActiveJobHelpers.increment_counter "queue_job_count", 1,
-              tags.merge(:status => job_status)
+          metrics = ActiveJobHelpers.metrics_for(job)
+          metrics.each do |(metric_name, tags)|
+            if job_status
+              ActiveJobHelpers.increment_counter metric_name, 1,
+                tags.merge(:status => job_status)
+            end
+            ActiveJobHelpers.increment_counter metric_name, 1,
+              tags.merge(:status => :processed)
           end
-          ActiveJobHelpers.increment_counter "queue_job_count", 1,
-            tags.merge(:status => :processed)
         end
       end
 
@@ -96,7 +97,29 @@ module Appsignal
           end
         end
 
-        def self.tags_for_job(job)
+        # Returns an array of metrics with tags used to report the job metrics
+        #
+        # If job ONLY has a queue, it will return `queue_job_count` with tags.
+        # If job has a queue AND priority, it will ALSO return
+        # `queue_priority_job_count` with tags.
+        #
+        # @return [Array] Array of metrics with tags to report.
+        def self.metrics_for(job)
+          tags = { :queue => job["queue_name"] }
+          metrics = [["queue_job_count", tags]]
+
+          priority = job["priority"]
+          if priority
+            metrics << [
+              "queue_priority_job_count",
+              tags.merge(:priority => priority)
+            ]
+          end
+
+          metrics
+        end
+
+        def self.transaction_tags_for(job)
           tags = {}
           queue = job["queue_name"]
           tags[:queue] = queue if queue
