@@ -24,7 +24,6 @@ module Appsignal
           # runs in the Puma main process.
           # For more information:
           # https://docs.appsignal.com/ruby/integrations/puma.html
-          require "appsignal/probes/puma"
           Appsignal::Minutely.probes.register :puma, ::Appsignal::Probes::PumaProbe
         end
 
