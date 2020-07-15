@@ -12,7 +12,6 @@ module Appsignal
       end
 
       def install
-        require "appsignal/probes/sidekiq"
         Appsignal::Minutely.probes.register :sidekiq, Appsignal::Probes::SidekiqProbe
 
         ::Sidekiq.configure_server do |config|

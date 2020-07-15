@@ -1,9 +1,10 @@
 module Appsignal
   module Probes
-    # @api private
     class SidekiqProbe
+      # @api private
       attr_reader :config
 
+      # @api private
       def self.dependencies_present?
         Gem::Version.new(::Redis::VERSION) >= Gem::Version.new("3.3.5")
       end
@@ -16,6 +17,7 @@ module Appsignal
         require "sidekiq/api"
       end
 
+      # @api private
       def call
         track_redis_info
         track_stats

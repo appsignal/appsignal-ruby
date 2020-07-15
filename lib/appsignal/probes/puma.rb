@@ -1,11 +1,11 @@
 module Appsignal
   module Probes
-    # @api private
     class PumaProbe
       def initialize
         @hostname = Appsignal.config[:hostname] || Socket.gethostname
       end
 
+      # @api private
       def call
         puma_stats = fetch_puma_stats
         return unless puma_stats
