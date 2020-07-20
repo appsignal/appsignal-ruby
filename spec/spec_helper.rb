@@ -65,6 +65,7 @@ RSpec.configure do |config|
 
   config.example_status_persistence_file_path = "spec/examples.txt"
   config.fail_if_no_examples = true
+  config.filter_run_excluding(:jruby => !DependencyHelper.running_jruby?)
   config.mock_with :rspec do |mocks|
     mocks.syntax = :expect
   end
