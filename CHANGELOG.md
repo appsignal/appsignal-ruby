@@ -1,6 +1,7 @@
 # Changelog
 
 # 2.10.11
+- Fix extension install report status output in `appsignal diagnose`. PR #636
 - Support setting a specific configuration file to load with the
   `Appsignal::Config` initializer. PR #638
 
