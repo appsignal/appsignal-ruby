@@ -10,7 +10,7 @@ if DependencyHelper.capistrano2_present?
     let(:capistrano_config) do
       Capistrano::Configuration.new.tap do |c|
         c.set(:rails_env, "production")
-        c.set(:repository, "master")
+        c.set(:repository, "main")
         c.set(:deploy_to, "/home/username/app")
         c.set(:current_release, "")
         c.set(:current_revision, "503ce0923ed177a3ce000005")

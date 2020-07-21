@@ -121,8 +121,41 @@ module Appsignal
       :initial_config, :file_config, :env_config
     attr_accessor :logger
 
-    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger)
+    # Initialize a new configuration object for AppSignal.
+    #
+    # If this is manually initialized, and not by {Appsignal.start}, it needs
+    # to be assigned to the {Appsignal.config} attribute.
+    #
+    # @example
+    #   require "appsignal"
+    #   Appsignal.config = Appsignal::Config.new(
+    #     app_path,
+    #     "production"
+    #   )
+    #   Appsignal.start
+    #
+    # @param root_path [String] Root path of the app.
+    # @param env [String] The environment to load when AppSignal is started. It
+    #   will look for an environment with this name in the `config/appsignal.yml`
+    #   config file.
+    # @param initial_config [Hash<String, Object>] The initial configuration to
+    #   use. This will be overwritten by the file config and environment
+    #   variables config.
+    # @param logger [Logger] The logger to use for the AppSignal gem. This is
+    #   used by the configuration class only. Default: {Appsignal.logger}. See
+    #   also {Appsignal.start_logger}.
+    # @param config_file [String] Custom config file location. Default
+    #   `config/appsignal.yml`.
+    #
+    # @see https://docs.appsignal.com/ruby/configuration/
+    #   Configuration documentation
+    # @see https://docs.appsignal.com/ruby/configuration/load-order.html
+    #   Configuration load order
+    # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
+    #   How to integrate AppSignal manually
+    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger, config_file = nil)
       @root_path      = root_path
+      @config_file    = config_file
       @logger         = logger
       @valid          = false
       @config_hash    = Hash[DEFAULT_CONFIG]

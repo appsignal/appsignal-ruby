@@ -9,7 +9,7 @@ issues.
 - [Ruby code documentation][ruby-doc]
 - [Support][contact]
 
-[![Build status](https://appsignal.semaphoreci.com/badges/appsignal-ruby/branches/master.svg)](https://appsignal.semaphoreci.com/projects/appsignal-ruby)
+[![Build status](https://appsignal.semaphoreci.com/badges/appsignal-ruby/branches/main.svg)](https://appsignal.semaphoreci.com/projects/appsignal-ruby)
 [![Gem Version](https://badge.fury.io/rb/appsignal.svg)](http://badge.fury.io/rb/appsignal)
 [![Code Climate](https://codeclimate.com/github/appsignal/appsignal.png)](https://codeclimate.com/github/appsignal/appsignal)
 
@@ -183,7 +183,7 @@ installing the AppSignal C-extension.
 # Gemfile
 gem "appsignal",
   :git => "https://github.com/appsignal/appsignal-ruby.git",
-  :branch => "master"
+  :branch => "main"
 ```
 
 When you need to use a git source of the gem in your JRuby install, you'll need
@@ -242,12 +242,12 @@ a number of different Ruby versions.
 
 This gem uses [Semantic Versioning][semver].
 
-The `master` branch corresponds to the current stable release of the gem.
+The `main` branch corresponds to the current stable release of the gem.
 
 The `develop` branch is used for development of features that will end up in
 the next minor release.
 
-Open a Pull Request on the `master` branch if you're fixing a bug. For new new
+Open a Pull Request on the `main` branch if you're fixing a bug. For new new
 features, open a Pull Request on the `develop` branch.
 
 Every stable and unstable release is tagged in git with a version tag.
