@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.10.11
+- Support setting a specific configuration file to load with the
+  `Appsignal::Config` initializer. PR #638
+
 # 2.10.10
 - Bump agent to v-4548c88. PR #634
   - Fix issue with host metrics values being reported as "Infinity".
