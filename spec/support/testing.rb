@@ -38,22 +38,6 @@ module Appsignal
     end
   end
 
-  class Transaction
-    class << self
-      alias original_new new
-
-      # Override the {Appsignal::Transaction.new} method so we can track which
-      # transactions are created on the {Appsignal::Testing.transactions} list.
-      #
-      # @see TransactionHelpers#last_transaction
-      def new(*args)
-        transaction = original_new(*args)
-        Appsignal::Testing.transactions << transaction
-        transaction
-      end
-    end
-  end
-
   class Extension
     class Transaction
       alias original_finish finish
@@ -111,3 +95,19 @@ module Appsignal
     end
   end
 end
+
+module AppsignalTest
+  module Transaction
+    # Override the {Appsignal::Transaction.new} method so we can track which
+    # transactions are created on the {Appsignal::Testing.transactions} list.
+    #
+    # @see TransactionHelpers#last_transaction
+    def new(*_args)
+      transaction = super
+      Appsignal::Testing.transactions << transaction
+      transaction
+    end
+  end
+end
+
+Appsignal::Transaction.extend(AppsignalTest::Transaction)
