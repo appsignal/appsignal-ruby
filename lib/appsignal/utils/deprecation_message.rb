@@ -2,7 +2,7 @@ module Appsignal
   module Utils
     module DeprecationMessage
       def self.message(message, logger = Appsignal.logger)
-        $stderr.puts "appsignal WARNING: #{message}"
+        Kernel.warn "appsignal WARNING: #{message}"
         logger.warn message
       end
 

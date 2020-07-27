@@ -321,7 +321,7 @@ module Appsignal
         " Skipping file config.\n" \
         "File: #{config_file.inspect}\n" \
         "#{e.class.name}: #{e}"
-      $stderr.puts "appsignal: #{message}"
+      Kernel.warn "appsignal: #{message}"
       logger.error "#{message}\n#{e.backtrace.join("\n")}"
       nil
     end
