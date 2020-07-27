@@ -25,8 +25,10 @@ module Appsignal
     def initialize(config, logger = nil)
       @config = config
       if logger # rubocop:disable Style/GuardClause
-        warn "Deprecated: `logger` argument will be removed in the next " \
-          "major version."
+        Appsignal::Utils::DeprecationMessage.message \
+          "`Appsignal::AuthCheck.new`'s `logger` argument will be removed " \
+          "in the next major version. Please configure the logger " \
+          "using `Appsignal.logger`."
       end
     end
 
