@@ -183,3 +183,10 @@ end
 def http_proxy
   Gem.configuration[:http_proxy] || ENV["http_proxy"] || ENV["HTTP_PROXY"]
 end
+
+# Fail the installation on purpose in a specific test environment.
+def fail_install_on_purpose_in_test!
+  return unless ENV["_TEST_APPSIGNAL_EXTENSION_FAILURE"]
+
+  raise "AppSignal internal test failure"
+end

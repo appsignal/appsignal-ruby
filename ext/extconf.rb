@@ -7,6 +7,8 @@ def local_build?
 end
 
 def install
+  fail_install_on_purpose_in_test!
+
   library_type = "static"
   report["language"]["implementation"] = "ruby"
   report["build"]["library_type"] = library_type

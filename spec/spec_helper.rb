@@ -65,7 +65,10 @@ RSpec.configure do |config|
 
   config.example_status_persistence_file_path = "spec/examples.txt"
   config.fail_if_no_examples = true
-  config.filter_run_excluding(:jruby => !DependencyHelper.running_jruby?)
+  config.filter_run_excluding(
+    :extension_installation_failure => true,
+    :jruby => !DependencyHelper.running_jruby?
+  )
   config.mock_with :rspec do |mocks|
     mocks.syntax = :expect
   end
@@ -112,6 +115,7 @@ RSpec.configure do |config|
     # in the diagnose task, so add it manually to the list of to-be cleaned up
     # keys.
     env_keys << "_APPSIGNAL_DIAGNOSE"
+    env_keys << "_TEST_APPSIGNAL_EXTENSION_FAILURE"
     env_keys.each do |key|
       # First set the ENV var to an empty string and then delete the key from
       # the env. We set the env var to an empty string first as JRuby doesn't

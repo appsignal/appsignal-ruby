@@ -11,6 +11,8 @@ end
 
 task :default do
   begin
+    fail_install_on_purpose_in_test!
+
     library_type = "dynamic"
     report["language"]["implementation"] = "jruby"
     report["build"]["library_type"] = library_type

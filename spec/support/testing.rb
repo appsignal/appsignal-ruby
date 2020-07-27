@@ -40,7 +40,7 @@ module Appsignal
 
   class Extension
     class Transaction
-      alias original_finish finish
+      alias original_finish finish if method_defined? :finish
 
       # Override default {Extension::Transaction#finish} behavior to always
       # return true, which tells the transaction to add its sample data (unless
@@ -56,7 +56,7 @@ module Appsignal
         return_value
       end
 
-      alias original_complete complete
+      alias original_complete complete if method_defined? :complete
 
       # Override default {Extension::Transaction#complete} behavior to
       # store the transaction JSON before the transaction is completed
@@ -78,7 +78,7 @@ module Appsignal
         @completed || false
       end
 
-      alias original_to_json to_json
+      alias original_to_json to_json if method_defined? :to_json
 
       # Override default {Extension::Transaction#to_json} behavior to
       # return the stored the transaction JSON when the transaction was

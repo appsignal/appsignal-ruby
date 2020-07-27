@@ -70,7 +70,10 @@ namespace :build_matrix do
           job = {
             "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
             "env_vars" => env,
-            "commands" => ["./support/bundler_wrapper exec rake test"]
+            "commands" => [
+              "./support/bundler_wrapper exec rake test",
+              "./support/bundler_wrapper exec rake test:failure"
+            ]
           }
           if gem["gem"] == "no_dependencies"
             ruby_primary_block["task"]["jobs"] << job
@@ -364,11 +367,20 @@ end
 
 begin
   require "rspec/core/rake_task"
+  is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
+  unless is_jruby
+    jruby_opts = "--exclude-pattern=spec/lib/appsignal/extension/jruby_spec.rb"
+  end
+
   desc "Run the AppSignal gem test suite."
   RSpec::Core::RakeTask.new :test do |t|
-    is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
-    unless is_jruby
-      t.rspec_opts = "--exclude-pattern=spec/lib/appsignal/extension/jruby_spec.rb"
+    t.rspec_opts = jruby_opts
+  end
+
+  namespace :test do
+    desc "Run the Appsignal gem test in an extension failure scenario"
+    RSpec::Core::RakeTask.new :failure do |t|
+      t.rspec_opts = "#{jruby_opts} --tag extension_installation_failure"
     end
   end
 rescue LoadError # rubocop:disable Lint/HandleExceptions
