@@ -28,6 +28,29 @@ describe Appsignal::AuthCheck do
     end.join("&")
   end
 
+  describe ".new" do
+    describe "with logger argument" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:log_stream) { std_stream }
+      let(:log) { log_contents(log_stream) }
+
+      it "logs and prints a deprecation message" do
+        Appsignal.logger = test_logger(log_stream)
+
+        capture_std_streams(std_stream, err_stream) do
+          Appsignal::AuthCheck.new(config, Appsignal.logger)
+        end
+
+        deprecation_message =
+          "`Appsignal::AuthCheck.new`'s `logger` argument " \
+          "will be removed in the next major version."
+        expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
+        expect(log).to contains_log :warn, deprecation_message
+      end
+    end
+  end
+
   describe "#perform" do
     subject { auth_check.perform }
 
