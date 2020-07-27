@@ -10,11 +10,12 @@ begin
     require "appsignal_extension"
     Appsignal.extension_loaded = true
   end
-rescue LoadError => err
-  Appsignal.logger.error(
-    "Failed to load extension (#{err}), please run `appsignal diagnose` " \
-      "and email us at support@appsignal.com"
-  )
+rescue LoadError => error
+  error_message = "ERROR: AppSignal failed to load extension. " \
+    "Please run `appsignal diagnose` and email us at support@appsignal.com\n" \
+    "#{error.class}: #{error.message}"
+  Appsignal.logger.error(error_message)
+  Kernel.warn error_message
   Appsignal.extension_loaded = false
 end
 

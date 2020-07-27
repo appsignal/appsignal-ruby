@@ -100,6 +100,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.0.0-p648
   dependencies:
   - Validation
@@ -122,6 +123,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.0.0-p648 - Gems
   dependencies:
   - Ruby 2.0.0-p648
@@ -144,6 +146,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for capistrano3
       env_vars:
       - name: RUBY_VERSION
@@ -158,6 +161,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for grape
       env_vars:
       - name: RUBY_VERSION
@@ -172,6 +176,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for que
       env_vars:
       - name: RUBY_VERSION
@@ -186,6 +191,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for rails-3.2
       env_vars:
       - name: RUBY_VERSION
@@ -200,6 +206,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for rails-4.2
       env_vars:
       - name: RUBY_VERSION
@@ -214,6 +221,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for resque-1
       env_vars:
       - name: RUBY_VERSION
@@ -228,6 +236,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for sequel
       env_vars:
       - name: RUBY_VERSION
@@ -242,6 +251,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for sequel-435
       env_vars:
       - name: RUBY_VERSION
@@ -256,6 +266,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for sinatra
       env_vars:
       - name: RUBY_VERSION
@@ -270,6 +281,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for webmachine
       env_vars:
       - name: RUBY_VERSION
@@ -284,6 +296,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.1.10
   dependencies:
   - Validation
@@ -306,6 +319,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.2.10
   dependencies:
   - Validation
@@ -328,6 +342,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.3.8
   dependencies:
   - Validation
@@ -350,6 +365,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.4.9
   dependencies:
   - Validation
@@ -372,6 +388,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.5.7
   dependencies:
   - Validation
@@ -394,6 +411,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.5.7 - Gems
   dependencies:
   - Ruby 2.5.7
@@ -416,6 +434,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.5.7 for rails-6.0
       env_vars:
       - name: RUBY_VERSION
@@ -430,6 +449,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.6.5
   dependencies:
   - Validation
@@ -452,6 +472,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.6.5 - Gems
   dependencies:
   - Ruby 2.6.5
@@ -474,6 +495,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for capistrano3
       env_vars:
       - name: RUBY_VERSION
@@ -488,6 +510,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for grape
       env_vars:
       - name: RUBY_VERSION
@@ -502,6 +525,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for padrino
       env_vars:
       - name: RUBY_VERSION
@@ -516,6 +540,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for que
       env_vars:
       - name: RUBY_VERSION
@@ -530,6 +555,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for que_beta
       env_vars:
       - name: RUBY_VERSION
@@ -544,6 +570,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for rails-5.0
       env_vars:
       - name: RUBY_VERSION
@@ -558,6 +585,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for rails-5.1
       env_vars:
       - name: RUBY_VERSION
@@ -572,6 +600,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for rails-5.2
       env_vars:
       - name: RUBY_VERSION
@@ -586,6 +615,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for rails-6.0
       env_vars:
       - name: RUBY_VERSION
@@ -600,6 +630,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for resque-1
       env_vars:
       - name: RUBY_VERSION
@@ -614,6 +645,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for resque-2
       env_vars:
       - name: RUBY_VERSION
@@ -628,6 +660,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for sequel
       env_vars:
       - name: RUBY_VERSION
@@ -642,6 +675,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for sequel-435
       env_vars:
       - name: RUBY_VERSION
@@ -656,6 +690,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for sinatra
       env_vars:
       - name: RUBY_VERSION
@@ -670,6 +705,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.5 for webmachine
       env_vars:
       - name: RUBY_VERSION
@@ -684,6 +720,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.7.1
   dependencies:
   - Validation
@@ -706,6 +743,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.7.1 - Gems
   dependencies:
   - Ruby 2.7.1
@@ -728,6 +766,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for capistrano3
       env_vars:
       - name: RUBY_VERSION
@@ -742,6 +781,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for grape
       env_vars:
       - name: RUBY_VERSION
@@ -756,6 +796,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for padrino
       env_vars:
       - name: RUBY_VERSION
@@ -770,6 +811,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for que
       env_vars:
       - name: RUBY_VERSION
@@ -784,6 +826,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for que_beta
       env_vars:
       - name: RUBY_VERSION
@@ -798,6 +841,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for rails-5.0
       env_vars:
       - name: RUBY_VERSION
@@ -812,6 +856,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for rails-5.1
       env_vars:
       - name: RUBY_VERSION
@@ -826,6 +871,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for rails-5.2
       env_vars:
       - name: RUBY_VERSION
@@ -840,6 +886,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for rails-6.0
       env_vars:
       - name: RUBY_VERSION
@@ -854,6 +901,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for resque-1
       env_vars:
       - name: RUBY_VERSION
@@ -868,6 +916,7 @@ blocks:
         value: 1.17.3
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for resque-2
       env_vars:
       - name: RUBY_VERSION
@@ -882,6 +931,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for sequel
       env_vars:
       - name: RUBY_VERSION
@@ -896,6 +946,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for sequel-435
       env_vars:
       - name: RUBY_VERSION
@@ -910,6 +961,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for sinatra
       env_vars:
       - name: RUBY_VERSION
@@ -924,6 +976,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.1 for webmachine
       env_vars:
       - name: RUBY_VERSION
@@ -938,6 +991,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby jruby-9.1.17.0
   dependencies:
   - Validation
@@ -960,6 +1014,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby jruby-9.1.17.0 - Gems
   dependencies:
   - Ruby jruby-9.1.17.0
@@ -982,3 +1037,4 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
