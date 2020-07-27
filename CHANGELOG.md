@@ -23,6 +23,9 @@
 - Always report Active Job ID, an internal ID used by Active Job. PR #639
 - Support Delayed::Job jobs without specific method name, using
   `Delayed::Job.enqueue`. PR #642
+- Print warnings using Kernel.warn. PR #648
+- Update AuthCheck class to use DeprecationMessage helper. PR #649
+- Print extension load error when AppSignal is loaded. PR #651
 
 # 2.10.11
 - Fix extension install report status output in `appsignal diagnose`. PR #636
