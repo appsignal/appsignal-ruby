@@ -27,6 +27,10 @@
 - Update AuthCheck class to use DeprecationMessage helper. PR #649
 - Print extension load error when AppSignal is loaded. PR #651
 
+# 2.10.12
+- Fix `working_directory_path` config option loaded from environment variables.
+  PR #653
+
 # 2.10.11
 - Fix extension install report status output in `appsignal diagnose`. PR #636
 - Support setting a specific configuration file to load with the
