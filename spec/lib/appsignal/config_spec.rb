@@ -417,6 +417,7 @@ describe Appsignal::Config do
         :debug => true
       )
     end
+    let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
     let(:env_config) do
       {
         :running_in_container => true,
@@ -432,7 +433,8 @@ describe Appsignal::Config do
         :instrument_sequel => false,
         :files_world_accessible => false,
         :request_headers => %w[accept accept-charset],
-        :revision => "v2.5.1"
+        :revision => "v2.5.1",
+        :working_directory_path => working_directory_path
       }
     end
     before do
@@ -449,6 +451,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
       ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
       ENV["APPSIGNAL_REQUEST_HEADERS"]         = "accept,accept-charset"
+      ENV["APPSIGNAL_WORKING_DIRECTORY_PATH"]  = working_directory_path
       ENV["APP_REVISION"] = "v2.5.1"
     end
 
