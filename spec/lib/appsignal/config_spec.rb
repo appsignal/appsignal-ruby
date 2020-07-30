@@ -1,4 +1,18 @@
 describe Appsignal::Config do
+  describe "config keys" do
+    it "all config keys have an environment variable version registered" do
+      config = Appsignal::Config
+      mapped_env_keys = config::ENV_TO_KEY_MAPPING.keys.sort
+      configured_env_keys = (
+        config::ENV_STRING_KEYS +
+        config::ENV_BOOLEAN_KEYS +
+        config::ENV_ARRAY_KEYS
+      ).sort
+
+      expect(mapped_env_keys).to eql(configured_env_keys)
+    end
+  end
+
   describe "#initialize" do
     describe "environment" do
       context "when environment is nil" do
