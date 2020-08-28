@@ -1,7 +1,11 @@
+require 'net_x/http_unix'
+
 module Appsignal
   module Probes
     class PumaProbe
-      def initialize
+      def initialize(options={})
+        @path = options[:path]
+        @auth_token = options[:auth_token]
         @hostname = Appsignal.config[:hostname] || Socket.gethostname
       end
 
@@ -53,8 +57,26 @@ module Appsignal
       end
 
       def fetch_puma_stats
-        ::Puma.stats
-      rescue NoMethodError # rubocop:disable Lint/HandleExceptions
+        uri = URI.parse(@path)
+
+        address = if uri.scheme =~ /unix/i
+                    [uri.scheme, '://', uri.host, uri.path].join
+                  else
+                    [uri.host, uri.path].join
+                  end
+
+        client = NetX::HTTPUnix.new(address, uri.port)
+
+        if uri.scheme =~ /ssl/i
+          client.use_ssl = true
+          client.verify_mode = OpenSSL::SSL::VERIFY_NONE if ENV['SSL_NO_VERIFY'] == '1'
+        end
+
+        get_path = "/stats"
+        get_path << "?token=#{@auth_token}" if @auth_token
+        req = Net::HTTP::Get.new(get_path)
+        resp = client.request(req)
+        resp.body
       end
     end
   end

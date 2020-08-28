@@ -1,27 +1,11 @@
-APPSIGNAL_PUMA_PLUGIN_LOADED = true
-
-# AppSignal Puma plugin
+# AppSignal Puma plugin (Deprecated)
 #
-# This plugin ensures the minutely probe thread is started with the Puma
-# minutely probe in the Puma master process.
-#
-# The constant {APPSIGNAL_PUMA_PLUGIN_LOADED} is here to mark the Plugin as
-# loaded by the rest of the AppSignal gem. This ensures that the Puma minutely
-# probe is not also started in every Puma workers, which was the old behavior.
-# See {Appsignal::Hooks::PumaHook#install} for more information.
-#
-# For even more information:
+# This plugin is deprecated, see the documentation below:
 # https://docs.appsignal.com/ruby/integrations/puma.html
 Puma::Plugin.create do
   def start(launcher = nil)
-    launcher.events.on_booted do
-      require "appsignal"
-      if ::Puma.respond_to?(:stats)
-        require "appsignal/probes/puma"
-        Appsignal::Minutely.probes.register :puma, Appsignal::Probes::PumaProbe
-      end
-      Appsignal.start
-      Appsignal.start_logger
-    end
+    deprecation_message "Deprecated Puma plugin: `:appsignal " \
+    "This plugin is deprecated, use the Puma minutely probe as" \
+    "described on: https://docs.appsignal.com/ruby/integrations/puma.html"
   end
 end
