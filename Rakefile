@@ -39,6 +39,10 @@ def build_task(ruby_version, type = nil)
   }
 end
 
+def gems_with_gemfiles
+  YAML.load_file("build_matrix.yml")["matrix"]["gems"].map { |g| g["gem"] }.freeze
+end
+
 namespace :build_matrix do
   namespace :semaphore do
     task :generate do
@@ -310,17 +314,19 @@ task :publish => [
 desc "Install the AppSignal gem, extension and all possible dependencies."
 task :install => "extension:install" do
   Bundler.with_clean_env do
-    GEMFILES.each do |gemfile|
+    gems_with_gemfiles.each do |gemfile|
       system "bundle --gemfile gemfiles/#{gemfile}.gemfile"
     end
   end
 end
 
 task :spec_all_gemfiles do
-  GEMFILES.each do |gemfile|
-    puts "Running tests for #{gemfile}"
-    unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
-      raise "Not successful"
+  Bundler.with_clean_env do
+    gems_with_gemfiles.each do |gemfile|
+      puts "Running tests for #{gemfile}"
+      unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+        raise "Not successful"
+      end
     end
   end
 end
