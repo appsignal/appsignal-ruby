@@ -44,6 +44,36 @@ module Appsignal
               )
             end
           end
+
+          alias start_without_appsignal start
+
+          def start(name, payload = {})
+            # Events that start with a bang are internal to Rails
+            instrument_this = name[0] != BANG
+
+            Appsignal::Transaction.current.start_event if instrument_this
+
+            start_without_appsignal(name, payload)
+          end
+
+          alias finish_without_appsignal finish
+
+          def finish(name, payload = {})
+            finish_without_appsignal(name, payload)
+
+            # Events that start with a bang are internal to Rails
+            instrument_this = name[0] != BANG
+
+            return unless instrument_this
+
+            title, body, body_format = Appsignal::EventFormatter.format(name, payload)
+            Appsignal::Transaction.current.finish_event(
+              name.to_s,
+              title,
+              body,
+              body_format
+            )
+          end
         end
       end
     end
