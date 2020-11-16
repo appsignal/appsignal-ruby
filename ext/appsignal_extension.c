@@ -485,7 +485,7 @@ static VALUE data_append_boolean(VALUE self, VALUE value) {
   return Qnil;
 }
 
-static VALUE data_append_nil(VALUE self, VALUE value) {
+static VALUE data_append_nil(VALUE self) {
   appsignal_data_t* data;
 
   Data_Get_Struct(self, appsignal_data_t, data);
