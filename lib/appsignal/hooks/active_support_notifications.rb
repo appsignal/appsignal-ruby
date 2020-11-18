@@ -23,6 +23,21 @@ module Appsignal
           end
         end
 
+        instrumenter = ::ActiveSupport::Notifications::Instrumenter
+
+        if instrumenter.method_defined?(:start) && instrumenter.method_defined?(:finish)
+          install_start_finish
+        else
+          install_instrument
+        end
+
+        # rubocop:disable Style/GuardClause
+        if instrumenter.method_defined?(:finish_with_state)
+          install_finish_with_state
+        end
+      end
+
+      def install_instrument
         ::ActiveSupport::Notifications::Instrumenter.class_eval do
           alias instrument_without_appsignal instrument
 
@@ -44,7 +59,11 @@ module Appsignal
               )
             end
           end
+        end
+      end
 
+      def install_start_finish
+        ::ActiveSupport::Notifications::Instrumenter.class_eval do
           alias start_without_appsignal start
 
           def start(name, payload = {})
@@ -59,20 +78,43 @@ module Appsignal
           alias finish_without_appsignal finish
 
           def finish(name, payload = {})
-            finish_without_appsignal(name, payload)
-
             # Events that start with a bang are internal to Rails
             instrument_this = name[0] != BANG
 
-            return unless instrument_this
+            if instrument_this
+              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
+              Appsignal::Transaction.current.finish_event(
+                name.to_s,
+                title,
+                body,
+                body_format
+              )
+            end
 
-            title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-            Appsignal::Transaction.current.finish_event(
-              name.to_s,
-              title,
-              body,
-              body_format
-            )
+            finish_without_appsignal(name, payload)
+          end
+        end
+      end
+
+      def install_finish_with_state
+        ::ActiveSupport::Notifications::Instrumenter.class_eval do
+          alias finish_with_state_without_appsignal finish_with_state
+
+          def finish_with_state(listeners_state, name, payload = {})
+            # Events that start with a bang are internal to Rails
+            instrument_this = name[0] != BANG
+
+            if instrument_this
+              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
+              Appsignal::Transaction.current.finish_event(
+                name.to_s,
+                title,
+                body,
+                body_format
+              )
+            end
+
+            finish_with_state_without_appsignal(listeners_state, name, payload)
           end
         end
       end
