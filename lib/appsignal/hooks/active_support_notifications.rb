@@ -6,8 +6,6 @@ module Appsignal
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
       register :active_support_notifications
 
-      BANG = "!".freeze
-
       def dependencies_present?
         defined?(::ActiveSupport::Notifications::Instrumenter)
       end
@@ -23,100 +21,23 @@ module Appsignal
           end
         end
 
+        require "appsignal/integrations/active_support_notifications"
         instrumenter = ::ActiveSupport::Notifications::Instrumenter
-
+        parent_integration_module = Appsignal::Integrations::ActiveSupportNotificationsIntegration
         if instrumenter.method_defined?(:start) && instrumenter.method_defined?(:finish)
-          install_start_finish
+          install_module(parent_integration_module::StartFinishIntegration)
         else
-          install_instrument
+          install_module(parent_integration_module::InstrumentIntegration)
         end
 
         # rubocop:disable Style/GuardClause
         if instrumenter.method_defined?(:finish_with_state)
-          install_finish_with_state
+          install_module(parent_integration_module::FinishStateIntegration)
         end
       end
 
-      def install_instrument
-        ::ActiveSupport::Notifications::Instrumenter.class_eval do
-          alias instrument_without_appsignal instrument
-
-          def instrument(name, payload = {}, &block)
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
-
-            Appsignal::Transaction.current.start_event if instrument_this
-
-            instrument_without_appsignal(name, payload, &block)
-          ensure
-            if instrument_this
-              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              Appsignal::Transaction.current.finish_event(
-                name.to_s,
-                title,
-                body,
-                body_format
-              )
-            end
-          end
-        end
-      end
-
-      def install_start_finish
-        ::ActiveSupport::Notifications::Instrumenter.class_eval do
-          alias start_without_appsignal start
-
-          def start(name, payload = {})
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
-
-            Appsignal::Transaction.current.start_event if instrument_this
-
-            start_without_appsignal(name, payload)
-          end
-
-          alias finish_without_appsignal finish
-
-          def finish(name, payload = {})
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
-
-            if instrument_this
-              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              Appsignal::Transaction.current.finish_event(
-                name.to_s,
-                title,
-                body,
-                body_format
-              )
-            end
-
-            finish_without_appsignal(name, payload)
-          end
-        end
-      end
-
-      def install_finish_with_state
-        ::ActiveSupport::Notifications::Instrumenter.class_eval do
-          alias finish_with_state_without_appsignal finish_with_state
-
-          def finish_with_state(listeners_state, name, payload = {})
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
-
-            if instrument_this
-              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              Appsignal::Transaction.current.finish_event(
-                name.to_s,
-                title,
-                body,
-                body_format
-              )
-            end
-
-            finish_with_state_without_appsignal(listeners_state, name, payload)
-          end
-        end
+      def install_module(mod)
+        ::ActiveSupport::Notifications::Instrumenter.send(:prepend, mod)
       end
     end
   end
