@@ -3,6 +3,11 @@ describe Appsignal::Hooks::CelluloidHook do
     before :context do
       module Celluloid
         def self.shutdown
+          @shut_down = true
+        end
+
+        def self.shut_down?
+          @shut_down == true
         end
       end
       Appsignal::Hooks::CelluloidHook.new.install
@@ -18,7 +23,7 @@ describe Appsignal::Hooks::CelluloidHook do
     end
 
     specify { expect(Appsignal).to receive(:stop) }
-    specify { expect(Celluloid).to receive(:shutdown_without_appsignal) }
+    specify { expect(Celluloid.shut_down?).to be true}
 
     after do
       Celluloid.shutdown
