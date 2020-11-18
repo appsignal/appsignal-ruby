@@ -6,8 +6,6 @@ module Appsignal
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
       register :active_support_notifications
 
-      BANG = "!".freeze
-
       def dependencies_present?
         defined?(::ActiveSupport::Notifications::Instrumenter)
       end
@@ -23,28 +21,8 @@ module Appsignal
           end
         end
 
-        ::ActiveSupport::Notifications::Instrumenter.class_eval do
-          alias instrument_without_appsignal instrument
-
-          def instrument(name, payload = {}, &block)
-            # Events that start with a bang are internal to Rails
-            instrument_this = name[0] != BANG
-
-            Appsignal::Transaction.current.start_event if instrument_this
-
-            instrument_without_appsignal(name, payload, &block)
-          ensure
-            if instrument_this
-              title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-              Appsignal::Transaction.current.finish_event(
-                name.to_s,
-                title,
-                body,
-                body_format
-              )
-            end
-          end
-        end
+        require "appsignal/integrations/active_support_notifications"
+        ::ActiveSupport::Notifications::Instrumenter.send(:prepend, Appsignal::Integrations::ActiveSupportNotificationsIntegration)
       end
     end
   end
