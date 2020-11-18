@@ -1,70 +1,70 @@
 ---
-version: 20f7d0d
+version: c8f8185
 mirrors:
 - https://appsignal-agent-releases.global.ssl.fastly.net
 - https://d135dj0rjqvssy.cloudfront.net
 triples:
   x86_64-darwin:
     static:
-      checksum: 4a246fe0c12b87981cadc4e37cebf5c30472d039dbb261e3f7da2275ed91688c
+      checksum: 8fad088047d8c73e5c0cf9213c20873ad591881d4f7059b178d8eeb89255f73e
       filename: appsignal-x86_64-darwin-all-static.tar.gz
     dynamic:
-      checksum: bc87df3286f25c36438f991eaf687ec81dbb39ae809982b34635d67f9a1ad55f
+      checksum: 9a26f0dc170d38b068f66aaa016772f9e32e5fea99dc57bb9dfbc5f0a41dec89
       filename: appsignal-x86_64-darwin-all-dynamic.tar.gz
   universal-darwin:
     static:
-      checksum: 4a246fe0c12b87981cadc4e37cebf5c30472d039dbb261e3f7da2275ed91688c
+      checksum: 8fad088047d8c73e5c0cf9213c20873ad591881d4f7059b178d8eeb89255f73e
       filename: appsignal-x86_64-darwin-all-static.tar.gz
     dynamic:
-      checksum: bc87df3286f25c36438f991eaf687ec81dbb39ae809982b34635d67f9a1ad55f
+      checksum: 9a26f0dc170d38b068f66aaa016772f9e32e5fea99dc57bb9dfbc5f0a41dec89
       filename: appsignal-x86_64-darwin-all-dynamic.tar.gz
   i686-linux:
     static:
-      checksum: 7c52c3debb02c10041f673f0dd8ca5c9491a1830825dcafde3d361499096f7c3
+      checksum: 0e8c4436684824a325fa1b581f6fad88598c529307b2b5ad0cc2620d22d2782f
       filename: appsignal-i686-linux-all-static.tar.gz
     dynamic:
-      checksum: 4db1352ea7c506c29e0199af10c9363e00505ebff61cdf46e7850c68fbc12b0a
+      checksum: d0fc35643b36b368a985961ea1c68c3204927f9fed412fde64d81b04081651ff
       filename: appsignal-i686-linux-all-dynamic.tar.gz
   x86-linux:
     static:
-      checksum: 7c52c3debb02c10041f673f0dd8ca5c9491a1830825dcafde3d361499096f7c3
+      checksum: 0e8c4436684824a325fa1b581f6fad88598c529307b2b5ad0cc2620d22d2782f
       filename: appsignal-i686-linux-all-static.tar.gz
     dynamic:
-      checksum: 4db1352ea7c506c29e0199af10c9363e00505ebff61cdf46e7850c68fbc12b0a
+      checksum: d0fc35643b36b368a985961ea1c68c3204927f9fed412fde64d81b04081651ff
       filename: appsignal-i686-linux-all-dynamic.tar.gz
   i686-linux-musl:
     static:
-      checksum: 70606a87811c0f3f1dbed1621cae7178da1fc36db10c49221bec0a6e17909413
+      checksum: 28b69e895da6b2a30402eed29cf8c3bbc4f647d6ce9cc5e0b11b4a771d7a1021
       filename: appsignal-i686-linux-musl-all-static.tar.gz
   x86-linux-musl:
     static:
-      checksum: 70606a87811c0f3f1dbed1621cae7178da1fc36db10c49221bec0a6e17909413
+      checksum: 28b69e895da6b2a30402eed29cf8c3bbc4f647d6ce9cc5e0b11b4a771d7a1021
       filename: appsignal-i686-linux-musl-all-static.tar.gz
   x86_64-linux:
     static:
-      checksum: c5cf88e5ac6b02c5bdf5f6f236300db0307fbcda711f7c62c8aa5edfc81cd616
+      checksum: fb457dc39e005bb8f241e1e260bb9ea0460cf922db5e30f514dda8afa0bd57bc
       filename: appsignal-x86_64-linux-all-static.tar.gz
     dynamic:
-      checksum: 1696438f7bd573a36ba1a2156679efbd6728d193079fb9e3811904f216ec2b44
+      checksum: 55b26406ab0309905d5ad3aa34d1910fcc473f2a475ed5b3073d160a7ea68852
       filename: appsignal-x86_64-linux-all-dynamic.tar.gz
   x86_64-linux-musl:
     static:
-      checksum: 5a53d76b7007038a8f60def5204d5edd4fdfc9c77ba5536007e01206f4f4ff6d
+      checksum: cf469d6e3ee1dc6ccb9762a996355ecc407b9a906b9c0a0b6742363347ec9494
       filename: appsignal-x86_64-linux-musl-all-static.tar.gz
     dynamic:
-      checksum: ca8cdd797186efa8315522e8863b9f0f66329852ef8dd696a5e218d3c9b12599
+      checksum: '0938eab03f2b00583a9b730743c68d3d350090a0ff96866b960a9c78a486a992'
       filename: appsignal-x86_64-linux-musl-all-dynamic.tar.gz
   x86_64-freebsd:
     static:
-      checksum: da94014e9ae510791fe864982aa59dc63e776937f614a1f0ac785e2e2354ac88
+      checksum: 5c50e4776dbd0defe7d99015650e85d7983222ea27bd7b586b4c92f7b8336eee
       filename: appsignal-x86_64-freebsd-all-static.tar.gz
     dynamic:
-      checksum: 93bd99f322f7e46185b24c5b6e859a15a7e2f4ffc0382e3cca617c2118b95eb3
+      checksum: 02cd3b26317100290a2cfac014db026a2607723127955da1e4ddd5b76591003a
       filename: appsignal-x86_64-freebsd-all-dynamic.tar.gz
   amd64-freebsd:
     static:
-      checksum: da94014e9ae510791fe864982aa59dc63e776937f614a1f0ac785e2e2354ac88
+      checksum: 5c50e4776dbd0defe7d99015650e85d7983222ea27bd7b586b4c92f7b8336eee
       filename: appsignal-x86_64-freebsd-all-static.tar.gz
     dynamic:
-      checksum: 93bd99f322f7e46185b24c5b6e859a15a7e2f4ffc0382e3cca617c2118b95eb3
+      checksum: 02cd3b26317100290a2cfac014db026a2607723127955da1e4ddd5b76591003a
       filename: appsignal-x86_64-freebsd-all-dynamic.tar.gz
