@@ -380,6 +380,38 @@ module Appsignal
       end
       alias :tag_job :tag_request
 
+      # Add breadcrumbs to the transaction.
+      #
+      # Breadcrumbs can be used to trace what path a user has taken
+      # before encounterin an error.
+      #
+      # Only the last 20 added breadcrumbs will be saved.
+      #
+      # @example
+      #   Appsignal.add_breadcrumb("Navigation", "http://blablabla.com", "", { :response => 200 }, Time.now.utc)
+      #   Appsignal.add_breadcrumb("Network", "[GET] http://blablabla.com", "", { :response => 500 })
+      #   Appsignal.add_breadcrumb("UI", "closed modal(change_password)", "User closed modal without actions")
+      #
+      # @param category [String] category of breadcrumb
+      #   e.g. "UI", "Network", "Navigation", "Console".
+      # @param action [String] name of breadcrumb
+      #   e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
+      # @option message [String]  optional message in string format
+      # @option metadata [Hash<String,String>]  key/value metadata in <string, string> format
+      # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+      # @return [void]
+      #
+      # @see Transaction#add_breadcrumb
+      # @see http://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
+      #   Breadcrumb reference
+      # @since 2.12.0
+      def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
+        return unless active?
+        transaction = Appsignal::Transaction.current
+        return false unless transaction
+        transaction.add_breadcrumb(category, action, message, metadata, time)
+      end
+
       # Instrument helper for AppSignal.
       #
       # For more help, read our custom instrumentation guide, listed under "See

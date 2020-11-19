@@ -11,6 +11,7 @@ module Appsignal
     BLANK          = "".freeze
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
     ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
+    BREADCRUMB_LIMIT = 20
 
     class << self
       def create(id, namespace, request, options = {})
@@ -58,7 +59,7 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded, :breadcrumbs
 
     # @!attribute params
     #   Attribute for parameters of the transaction.
@@ -80,6 +81,7 @@ module Appsignal
       @paused = false
       @discarded = false
       @tags = {}
+      @breadcrumbs = []
       @store = Hash.new({})
       @options = options
       @options[:params_method] ||= :params
@@ -154,6 +156,31 @@ module Appsignal
     #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
+    end
+
+    # Add breadcrumbs to the transaction.
+    #
+    # @param category [String] category of breadcrumb
+    #   e.g. "UI", "Network", "Navigation", "Console".
+    # @param action [String] name of breadcrumb
+    #   e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
+    # @option message [String]  optional message in string format
+    # @option metadata [Hash<String,String>]  key/value metadata in <string, string> format
+    # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+    # @return [void]
+    #
+    # @see Appsignal.add_breadcrumb
+    # @see http://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
+    #   Breadcrumb reference
+    def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
+      @breadcrumbs.push(
+        :time => time.to_i,
+        :category => category,
+        :action => action,
+        :message => message,
+        :metadata => metadata
+      )
+      @breadcrumbs = @breadcrumbs.last(BREADCRUMB_LIMIT)
     end
 
     # Set an action name for the transaction.
@@ -287,7 +314,8 @@ module Appsignal
         :environment  => sanitized_environment,
         :session_data => sanitized_session_data,
         :metadata     => metadata,
-        :tags         => sanitized_tags
+        :tags         => sanitized_tags,
+        :breadcrumbs  => breadcrumbs
       }.each do |key, data|
         set_sample_data(key, data)
       end
