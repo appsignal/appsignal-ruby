@@ -4,11 +4,21 @@ describe Appsignal::Hooks::UnicornHook do
       module Unicorn
         class HttpServer
           def worker_loop(worker)
+            @worker_loop = true
+          end
+
+          def worker_loop?
+            @worker_loop == true
           end
         end
 
         class Worker
           def close
+            @close = true
+          end
+
+          def close?
+            @close == true
           end
         end
       end
@@ -27,18 +37,19 @@ describe Appsignal::Hooks::UnicornHook do
       worker = double
 
       expect(Appsignal).to receive(:forked)
-      expect(server).to receive(:worker_loop_without_appsignal).with(worker)
 
       server.worker_loop(worker)
+
+      expect(server.worker_loop?).to be true
     end
 
     it "adds behavior to Unicorn::Worker#close" do
       worker = Unicorn::Worker.new
 
       expect(Appsignal).to receive(:stop)
-      expect(worker).to receive(:close_without_appsignal)
 
       worker.close
+      expect(worker.close?).to be true
     end
   end
 
