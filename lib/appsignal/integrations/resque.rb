@@ -42,7 +42,7 @@ module Appsignal
             Appsignal::Utils::HashSanitizer.sanitize(
               ResqueHelpers.arguments(payload),
               Appsignal.config[:filter_parameters]
-          )
+            )
           transaction.params = args if args
           transaction.set_tags("queue" => queue)
 
