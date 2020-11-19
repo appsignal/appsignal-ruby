@@ -3,7 +3,7 @@ describe Appsignal::Hooks::UnicornHook do
     before :context do
       module Unicorn
         class HttpServer
-          def worker_loop(worker)
+          def worker_loop(_worker)
             @worker_loop = true
           end
 
