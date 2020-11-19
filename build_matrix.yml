@@ -93,10 +93,6 @@ matrix:
       - "rails-6.0"
 
   ruby:
-    - ruby: "1.9.3-p551"
-      rubygems: "2.7.8"
-      bundler: "1.17.3"
-      gems: "none"
     - ruby: "2.0.0-p648"
       rubygems: "2.7.8"
       bundler: "1.17.3"
