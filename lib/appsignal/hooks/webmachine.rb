@@ -12,13 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/webmachine"
-        ::Webmachine::Decision::FSM.class_eval do
-          include Appsignal::Integrations::WebmachinePlugin::FSM
-          alias run_without_appsignal run
-          alias run run_with_appsignal
-          alias handle_exceptions_without_appsignal handle_exceptions
-          alias handle_exceptions handle_exceptions_with_appsignal
-        end
+        ::Webmachine::Decision::FSM.send(:prepend, Appsignal::Integrations::WebmachineIntegration)
       end
     end
   end
