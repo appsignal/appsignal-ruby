@@ -23,7 +23,7 @@ describe Appsignal::Hooks::CelluloidHook do
     end
 
     specify { expect(Appsignal).to receive(:stop) }
-    specify { expect(Celluloid.shut_down?).to be true}
+    specify { expect(Celluloid.shut_down?).to be true }
 
     after do
       Celluloid.shutdown
