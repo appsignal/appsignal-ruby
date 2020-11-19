@@ -12,7 +12,7 @@ module Appsignal
       # We'd love to be able to hook this into Unicorn in a less
       # intrusive way, but this is the best we can do given the
       # options we have.
-      
+
       module Server
         def worker_loop(worker)
           Appsignal.forked
