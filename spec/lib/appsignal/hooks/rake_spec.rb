@@ -20,8 +20,7 @@ describe Appsignal::Hooks::RakeHook do
       end
 
       it "calls the original task" do
-        expect(task).to receive(:execute_without_appsignal).with(arguments)
-        perform
+        expect(perform).to eq([])
       end
     end
 
