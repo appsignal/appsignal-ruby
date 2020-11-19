@@ -29,14 +29,12 @@ module Appsignal
 
         return unless defined?(::Puma::Cluster)
         # For clustered mode with multiple workers
-        ::Puma::Cluster.class_eval do
-          alias stop_workers_without_appsignal stop_workers
-
+        ::Puma::Cluster.send(:prepend, Module.new do
           def stop_workers
             Appsignal.stop("puma cluster")
-            stop_workers_without_appsignal
+            super
           end
-        end
+        end)
       end
     end
   end
