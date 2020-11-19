@@ -78,29 +78,6 @@ blocks:
         value: gemfiles/no_dependencies.gemfile
       commands:
       - "./support/bundler_wrapper exec rubocop"
-- name: Ruby 1.9.3-p551
-  dependencies:
-  - Validation
-  task:
-    prologue:
-      commands:
-      - "./support/bundler_wrapper exec rake extension:install"
-    jobs:
-    - name: Ruby 1.9.3-p551 for no_dependencies
-      env_vars:
-      - name: RUBY_VERSION
-        value: 1.9.3-p551
-      - name: GEMSET
-        value: no_dependencies
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/no_dependencies.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.0.0-p648
   dependencies:
   - Validation
