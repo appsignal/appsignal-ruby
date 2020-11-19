@@ -13,19 +13,8 @@ module Appsignal
       end
 
       def install
-        ::Redis::Client.class_eval do
-          alias process_without_appsignal process
-
-          def process(commands, &block)
-            sanitized_commands = commands.map do |command, *args|
-              "#{command}#{" ?" * args.size}"
-            end.join("\n")
-
-            Appsignal.instrument "query.redis", id, sanitized_commands do
-              process_without_appsignal(commands, &block)
-            end
-          end
-        end
+        require "appsignal/integrations/redis"
+        ::Redis::Client.send(:prepend, Appsignal::Integrations::RedisIntegration)
 
         Appsignal::Environment.report_enabled("redis")
       end
