@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.11.1
+- Support AS notifications instrumenters that use `start` and `finish`.
+- Updated agent with better logging and an IO stats fix.
+
 # 2.11.0
 - Track queue time regardless of namespace. Support custom namespaces. PR #602
 - Improve deprecation message from frontend error middleware. PR #620
