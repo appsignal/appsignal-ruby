@@ -279,21 +279,6 @@ module Appsignal
       config && config.active? && extension_loaded?
     end
 
-    # @deprecated No replacement
-    def is_ignored_error?(error) # rubocop:disable Naming/PredicateName
-      deprecation_message "Appsignal.is_ignored_error? is deprecated " \
-        "with no replacement and will be removed in version 3.0."
-      Appsignal.config[:ignore_errors].include?(error.class.name)
-    end
-    alias :is_ignored_exception? :is_ignored_error?
-
-    # @deprecated No replacement
-    def is_ignored_action?(action) # rubocop:disable Naming/PredicateName
-      deprecation_message "Appsignal.is_ignored_action? is deprecated " \
-        "with no replacement and will be removed in version 3.0."
-      Appsignal.config[:ignore_actions].include?(action)
-    end
-
     private
 
     def start_stdout_logger
