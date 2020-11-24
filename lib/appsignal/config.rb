@@ -126,12 +126,6 @@ module Appsignal
       APPSIGNAL_REQUEST_HEADERS
     ].freeze
 
-    # Mapping of old and deprecated AppSignal configuration keys
-    DEPRECATED_CONFIG_KEY_MAPPING = {
-      :api_key => :push_api_key,
-      :ignore_exceptions => :ignore_errors
-    }.freeze
-
     # @attribute [r] system_config
     #   Config detected on the system level.
     #   Used in diagnose report.
@@ -376,18 +370,6 @@ module Appsignal
     # Used by {#load_from_disk}. No compatibility for env variables or initial config currently.
     def maintain_backwards_compatibility(configuration)
       configuration.tap do |config|
-        DEPRECATED_CONFIG_KEY_MAPPING.each do |old_key, new_key|
-          old_config_value = config.delete(old_key)
-          next unless old_config_value
-          deprecation_message \
-            "Old configuration key found. Please update the "\
-            "'#{old_key}' to '#{new_key}'.",
-            logger
-
-          next if config[new_key] # Skip if new key is already in use
-          config[new_key] = old_config_value
-        end
-
         if config.include?(:working_dir_path)
           deprecation_message \
             "'working_dir_path' is deprecated, please use " \
