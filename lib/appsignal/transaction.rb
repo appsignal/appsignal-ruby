@@ -80,6 +80,7 @@ module Appsignal
       @paused = false
       @discarded = false
       @tags = {}
+      @store = Hash.new({})
       @options = options
       @options[:params_method] ||= :params
 
@@ -128,6 +129,10 @@ module Appsignal
 
     def discarded?
       @discarded == true
+    end
+
+    def store(key)
+      @store[key]
     end
 
     def params
