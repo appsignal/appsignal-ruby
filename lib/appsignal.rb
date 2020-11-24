@@ -322,8 +322,6 @@ require "appsignal/marker"
 require "appsignal/minutely"
 require "appsignal/garbage_collection_profiler"
 require "appsignal/integrations/railtie" if defined?(::Rails)
-require "appsignal/integrations/resque"
-require "appsignal/integrations/resque_active_job"
 require "appsignal/transaction"
 require "appsignal/version"
 require "appsignal/rack/generic_instrumentation"
