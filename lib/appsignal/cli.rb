@@ -7,12 +7,11 @@ require "appsignal/cli/helpers"
 require "appsignal/cli/demo"
 require "appsignal/cli/diagnose"
 require "appsignal/cli/install"
-require "appsignal/cli/notify_of_deploy"
 
 module Appsignal
   # @api private
   class CLI
-    AVAILABLE_COMMANDS = %w[demo diagnose install notify_of_deploy].freeze
+    AVAILABLE_COMMANDS = %w[demo diagnose install].freeze
 
     class << self
       attr_accessor :options
@@ -33,8 +32,6 @@ module Appsignal
               Appsignal::CLI::Diagnose.run(options)
             when :install
               Appsignal::CLI::Install.run(argv.shift, options)
-            when :notify_of_deploy
-              Appsignal::CLI::NotifyOfDeploy.run(options)
             end
           else
             puts "Command '#{command}' does not exist, run appsignal -h to "\
@@ -92,25 +89,6 @@ module Appsignal
           "install" => OptionParser.new do |o|
             o.on "--[no-]color", "Colorize the output of the diagnose command" do |arg|
               options[:color] = arg
-            end
-          end,
-          "notify_of_deploy" => OptionParser.new do |o|
-            o.banner = "Usage: appsignal notify_of_deploy [options]"
-
-            o.on "--revision=<revision>", "The revision you're deploying" do |arg|
-              options[:revision] = arg
-            end
-
-            o.on "--user=<user>", "The name of the user that's deploying" do |arg|
-              options[:user] = arg
-            end
-
-            o.on "--environment=<app_env>", "The environment you're deploying to" do |arg|
-              options[:environment] = arg
-            end
-
-            o.on "--name=<name>", "The name of the app (optional)" do |arg|
-              options[:name] = arg
             end
           end
         }
