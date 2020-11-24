@@ -222,15 +222,9 @@ module Appsignal
     # Sets the log level and sets the logger. Uses a file-based logger or the
     # STDOUT-based logger. See the `:log` configuration option.
     #
-    # @param path_arg [nil] Deprecated param. Use the `:log_path`
-    #   configuration option instead.
     # @return [void]
     # @since 0.7.0
-    def start_logger(path_arg = nil)
-      if path_arg
-        logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
-      end
-
+    def start_logger
       if config && config[:log] == "file" && config.log_file_path
         start_file_logger(config.log_file_path)
       else
