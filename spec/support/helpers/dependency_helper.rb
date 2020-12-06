@@ -37,6 +37,10 @@ module DependencyHelper
     dependency_present? "actioncable"
   end
 
+  def action_mailer_present?
+    dependency_present? "actionmailer"
+  end
+
   def active_job_present?
     dependency_present? "activejob"
   end
