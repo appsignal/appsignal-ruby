@@ -150,10 +150,9 @@ if DependencyHelper.padrino_present?
             let(:path) { "/static" }
             before do
               env["sinatra.static_file"] = true
-              expect_any_instance_of(app)
-                .to receive(:route_without_appsignal).and_return([200, {}, ["foo"]])
+              app.controllers { get(:static) { "Static!" } }
             end
-            after { expect(response).to match_response(200, "foo") }
+            after { expect(response).to match_response(200, "content") }
 
             it "does not instrument the request" do
               expect_no_transaction_to_be_created
