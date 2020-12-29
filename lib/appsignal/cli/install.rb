@@ -279,10 +279,10 @@ module Appsignal
           )
           file_contents = File.read(filename)
           template = if ruby_2_6_or_up?
-            ERB.new(file_contents, trim_mode: "-")
-          else
-            ERB.new(file_contents, nil, "-")
-          end
+                       ERB.new(file_contents, :trim_mode => "-")
+                     else
+                       ERB.new(file_contents, nil, "-")
+                     end
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
           FileUtils.mkdir_p(File.join(Dir.pwd, "config"))
