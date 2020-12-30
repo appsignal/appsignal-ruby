@@ -2,6 +2,8 @@ module Appsignal
   class CLI
     class Diagnose
       class Utils
+        extend CLI::Helpers
+
         def self.username_for_uid(uid)
           passwd_struct = Etc.getpwuid(uid)
           return unless passwd_struct
@@ -34,7 +36,7 @@ module Appsignal
         end
 
         def self.parse_yaml(contents)
-          if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
+          if ruby_2_6_or_up?
             # Use keyword params for Ruby 2.6 and up
             YAML.safe_load(contents, :permitted_classes => [Time])
           else
