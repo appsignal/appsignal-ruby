@@ -111,12 +111,24 @@ matrix:
     - gem: "que"
     - gem: "que_beta"
     - gem: "rails-5.0"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "rails-5.1"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "rails-5.2"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "rails-6.0"
     - gem: "rails-6.1"
     - gem: "resque-2"
     - gem: "sequel"
     - gem: "sequel-435"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "sinatra"
     - gem: "webmachine"
