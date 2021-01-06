@@ -356,6 +356,57 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#add_breadcrumb" do
+      context "when over the limit" do
+        before do
+          22.times do |i|
+            transaction.add_breadcrumb(
+              "network",
+              "GET http://localhost",
+              "User made external network request",
+              { :code => i + 1 },
+              Time.parse("10-10-2010 10:00:00 UTC")
+            )
+          end
+          transaction.sample_data
+        end
+
+        it "stores last <LIMIT> breadcrumbs on the transaction" do
+          expect(transaction.to_h["sample_data"]["breadcrumbs"].length).to eql(20)
+          expect(transaction.to_h["sample_data"]["breadcrumbs"][0]).to eq(
+            "action" => "GET http://localhost",
+            "category" => "network",
+            "message" => "User made external network request",
+            "metadata" => { "code" => 3 },
+            "time" => 1286704800 # rubocop:disable Style/NumericLiterals
+          )
+          expect(transaction.to_h["sample_data"]["breadcrumbs"][19]).to eq(
+            "action" => "GET http://localhost",
+            "category" => "network",
+            "message" => "User made external network request",
+            "metadata" => { "code" => 22 },
+            "time" => 1286704800 # rubocop:disable Style/NumericLiterals
+          )
+        end
+      end
+
+      context "with defaults" do
+        it "stores breadcrumb with defaults on transaction" do
+          timeframe_start = Time.now.utc.to_i
+          transaction.add_breadcrumb("user_action", "clicked HOME")
+          transaction.sample_data
+          timeframe_end = Time.now.utc.to_i
+
+          breadcrumb = transaction.to_h["sample_data"]["breadcrumbs"][0]
+          expect(breadcrumb["category"]).to eq("user_action")
+          expect(breadcrumb["action"]).to eq("clicked HOME")
+          expect(breadcrumb["message"]).to eq("")
+          expect(breadcrumb["time"]).to be_between(timeframe_start, timeframe_end)
+          expect(breadcrumb["metadata"]).to eq({})
+        end
+      end
+    end
+
     describe "#set_action" do
       context "when the action is set" do
         it "updates the action name on the transaction" do
@@ -648,6 +699,10 @@ describe Appsignal::Transaction do
         expect(transaction.ext).to receive(:set_sample_data).with(
           "tags",
           Appsignal::Utils::Data.generate({})
+        ).once
+        expect(transaction.ext).to receive(:set_sample_data).with(
+          "breadcrumbs",
+          Appsignal::Utils::Data.generate([])
         ).once
 
         transaction.sample_data

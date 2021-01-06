@@ -262,7 +262,8 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
         "sample_data" => {
           "environment" => {},
           "params" => expected_args,
-          "tags" => {}
+          "tags" => {},
+          "breadcrumbs" => []
         }
       )
       expect_transaction_to_have_sidekiq_event(transaction_hash)
@@ -290,7 +291,8 @@ describe Appsignal::Hooks::SidekiqPlugin, :with_yaml_parse_error => false do
         "sample_data" => {
           "environment" => {},
           "params" => expected_args,
-          "tags" => {}
+          "tags" => {},
+          "breadcrumbs" => []
         }
       )
       # TODO: Not available in transaction.to_h yet.
