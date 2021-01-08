@@ -2,4 +2,11 @@ source 'https://rubygems.org'
 
 gem 'rack', '~> 1.6'
 
+ruby_version = Gem::Version.new(RUBY_VERSION)
+if ruby_version < Gem::Version.new("2.0.0")
+  # Newer versions of this gem have rexml as a dependency which doesn't work on
+  # Ruby 1.9
+  gem "crack", "0.4.4"
+end
+
 gemspec :path => '../'
