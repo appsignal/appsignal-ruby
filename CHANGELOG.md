@@ -1,7 +1,6 @@
 # Changelog
 
 # 2.11.2
-
 - Support Ruby 3.0. PR #681
 - Support breadcrumbs. PR #666
 - Log Ruby errors on extension download. PR #679
