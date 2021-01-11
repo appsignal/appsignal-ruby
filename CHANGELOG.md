@@ -1,5 +1,12 @@
 # Changelog
 
+# 2.11.2
+
+- Support Ruby 3.0. PR #681
+- Support breadcrumbs. PR #666
+- Log Ruby errors on extension download. PR #679
+- Fix Ruby 1.9 build. PR #680
+
 # 2.11.1
 - Support AS notifications instrumenters that use `start` and `finish`.
 - Updated agent with better logging and an IO stats fix.
