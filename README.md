@@ -157,6 +157,15 @@ as most Linux distributions, FreeBSD, macOS, excluding Microsoft Windows.
 For more detailed information please visit our [Supported
 systems][supported-systems] page.
 
+## Releases
+
+Following the process below to release a new version of the Ruby gem.
+
+1. Run: `rake publish`
+  1. Update the Ruby gem version number when prompted.
+  1. Update the `CHANGELOG` file with the changes since the last release.
+1. Confirm with your two-factor authentication token for Rubygems.org, _twice_.
+
 ## Development
 
 ### Installation
