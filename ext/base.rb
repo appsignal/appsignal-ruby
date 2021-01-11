@@ -126,11 +126,16 @@ def download_archive(type)
     report["download"]["download_url"] = download_url
 
     begin
-      return open(
+      args = [
         download_url,
         :ssl_ca_cert => CA_CERT_PATH,
         :proxy => http_proxy
-      )
+      ]
+      if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
+        return URI.open(*args)
+      else
+        return open(*args)
+      end
     rescue => error
       download_errors << "- URL: #{download_url}\n  Error: #{error.class}: #{error.message}"
       next
