@@ -20,16 +20,10 @@ module Appsignal
     # https://push.appsignal.com/1/auth
     ACTION = "auth".freeze
 
-    attr_reader :config, :logger
+    attr_reader :config
 
-    def initialize(config, logger = nil)
+    def initialize(config)
       @config = config
-      if logger # rubocop:disable Style/GuardClause
-        Appsignal::Utils::DeprecationMessage.message \
-          "`Appsignal::AuthCheck.new`'s `logger` argument will be removed " \
-          "in the next major version. Please configure the logger " \
-          "using `Appsignal.logger`."
-      end
     end
 
     # Perform push api validation request and return response status code.

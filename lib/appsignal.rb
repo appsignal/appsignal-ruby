@@ -129,7 +129,6 @@ module Appsignal
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
-          Appsignal::EventFormatter.initialize_deprecated_formatters
           initialize_extensions
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
@@ -222,15 +221,9 @@ module Appsignal
     # Sets the log level and sets the logger. Uses a file-based logger or the
     # STDOUT-based logger. See the `:log` configuration option.
     #
-    # @param path_arg [nil] Deprecated param. Use the `:log_path`
-    #   configuration option instead.
     # @return [void]
     # @since 0.7.0
-    def start_logger(path_arg = nil)
-      if path_arg
-        logger.info("Setting the path in start_logger has no effect anymore, set it in the config instead")
-      end
-
+    def start_logger
       if config && config[:log] == "file" && config.log_file_path
         start_file_logger(config.log_file_path)
       else
@@ -285,21 +278,6 @@ module Appsignal
       config && config.active? && extension_loaded?
     end
 
-    # @deprecated No replacement
-    def is_ignored_error?(error) # rubocop:disable Naming/PredicateName
-      deprecation_message "Appsignal.is_ignored_error? is deprecated " \
-        "with no replacement and will be removed in version 3.0."
-      Appsignal.config[:ignore_errors].include?(error.class.name)
-    end
-    alias :is_ignored_exception? :is_ignored_error?
-
-    # @deprecated No replacement
-    def is_ignored_action?(action) # rubocop:disable Naming/PredicateName
-      deprecation_message "Appsignal.is_ignored_action? is deprecated " \
-        "with no replacement and will be removed in version 3.0."
-      Appsignal.config[:ignore_actions].include?(action)
-    end
-
     private
 
     def start_stdout_logger
@@ -344,8 +322,6 @@ require "appsignal/marker"
 require "appsignal/minutely"
 require "appsignal/garbage_collection_profiler"
 require "appsignal/integrations/railtie" if defined?(::Rails)
-require "appsignal/integrations/resque"
-require "appsignal/integrations/resque_active_job"
 require "appsignal/transaction"
 require "appsignal/version"
 require "appsignal/rack/generic_instrumentation"

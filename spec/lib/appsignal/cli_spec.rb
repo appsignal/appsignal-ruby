@@ -16,7 +16,7 @@ describe Appsignal::CLI do
 
       expect(output).to include "appsignal <command> [options]"
       expect(output).to include \
-        "Available commands: demo, diagnose, install, notify_of_deploy"
+        "Available commands: demo, diagnose, install"
     end
   end
 
