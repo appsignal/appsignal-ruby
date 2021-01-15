@@ -60,7 +60,10 @@ describe Appsignal::Hooks::ResqueHook do
           "error" => nil,
           "namespace" => namespace,
           "metadata" => {},
-          "sample_data" => { "tags" => { "queue" => queue } }
+          "sample_data" => {
+            "breadcrumbs" => [],
+            "tags" => { "queue" => queue }
+          }
         )
         expect(transaction_hash["events"].map { |e| e["name"] })
           .to eql(["perform.resque"])
@@ -84,7 +87,10 @@ describe Appsignal::Hooks::ResqueHook do
             },
             "namespace" => namespace,
             "metadata" => {},
-            "sample_data" => { "tags" => { "queue" => queue } }
+            "sample_data" => {
+              "breadcrumbs" => [],
+              "tags" => { "queue" => queue }
+            }
           )
         end
       end
@@ -118,6 +124,7 @@ describe Appsignal::Hooks::ResqueHook do
             "metadata" => {},
             "sample_data" => {
               "tags" => { "queue" => queue },
+              "breadcrumbs" => [],
               "params" => [
                 "foo",
                 {
@@ -174,6 +181,7 @@ describe Appsignal::Hooks::ResqueHook do
             "namespace" => namespace,
             "metadata" => {},
             "sample_data" => {
+              "breadcrumbs" => [],
               "tags" => { "queue" => queue }
               # Params will be set by the ActiveJob integration
             }

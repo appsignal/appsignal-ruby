@@ -2,7 +2,6 @@ source 'https://rubygems.org'
 
 gem 'resque', "~> 2.0"
 gem 'sinatra'
-gem 'mime-types', '~> 2.6'
 
 gemspec :path => '../'
 

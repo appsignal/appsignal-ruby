@@ -486,6 +486,36 @@ describe Appsignal do
       end
     end
 
+    describe ".add_breadcrumb" do
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+      context "with transaction" do
+        let(:transaction) { double }
+        it "should call add_breadcrumb on transaction" do
+          expect(transaction).to receive(:add_breadcrumb)
+            .with("Network", "http", "User made network request", { :response => 200 }, fixed_time)
+        end
+
+        after do
+          Appsignal.add_breadcrumb(
+            "Network",
+            "http",
+            "User made network request",
+            { :response => 200 },
+            fixed_time
+          )
+        end
+      end
+
+      context "without transaction" do
+        let(:transaction) { nil }
+
+        it "should not call add_breadcrumb on transaction" do
+          expect(Appsignal.add_breadcrumb("Network", "http")).to be_falsy
+        end
+      end
+    end
+
     describe "custom stats" do
       let(:tags) { { :foo => "bar" } }
 

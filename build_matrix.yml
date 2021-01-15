@@ -32,6 +32,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
     prologue:
       commands:
         - checkout
+        - git -C /home/semaphore/.rbenv/plugins/ruby-build pull
         - sem-version ruby $RUBY_VERSION
         - ./support/check_versions
         - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
@@ -112,6 +113,7 @@ matrix:
       gems: "minimal"
     - ruby: "2.6.5"
     - ruby: "2.7.1"
+    - ruby: "3.0.0"
     - ruby: "jruby-9.1.17.0"
       gems: "minimal"
   gems:
@@ -134,24 +136,29 @@ matrix:
         ruby:
           - "2.6.5"
           - "2.7.1"
+          - "3.0.0"
     - gem: "rails-4.2"
       bundler: "1.17.3"
       exclude:
         ruby:
           - "2.6.5"
           - "2.7.1"
+          - "3.0.0"
     - gem: "rails-5.0"
       exclude:
         ruby:
           - "2.0.0-p648"
+          - "3.0.0"
     - gem: "rails-5.1"
       exclude:
         ruby:
           - "2.0.0-p648"
+          - "3.0.0"
     - gem: "rails-5.2"
       exclude:
         ruby:
           - "2.0.0-p648"
+          - "3.0.0"
     - gem: "rails-6.0"
       exclude:
         ruby:
@@ -163,11 +170,17 @@ matrix:
           - "jruby-9.1.17.0"
     - gem: "resque-1"
       bundler: "1.17.3"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "resque-2"
       exclude:
         ruby:
           - "2.0.0-p648"
     - gem: "sequel"
     - gem: "sequel-435"
+      exclude:
+        ruby:
+          - "3.0.0"
     - gem: "sinatra"
     - gem: "webmachine"

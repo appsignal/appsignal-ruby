@@ -119,30 +119,33 @@ def download_archive(type)
 
   version = AGENT_CONFIG["version"]
   filename = ARCH_CONFIG[type]["filename"]
-  attempted_mirror_urls = []
+  download_errors = []
 
   AGENT_CONFIG["mirrors"].each do |mirror|
     download_url = [mirror, version, filename].join("/")
-    attempted_mirror_urls << download_url
     report["download"]["download_url"] = download_url
 
     begin
-      return open(
+      args = [
         download_url,
         :ssl_ca_cert => CA_CERT_PATH,
         :proxy => http_proxy
-      )
-    rescue
+      ]
+      if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
+        return URI.open(*args)
+      else
+        return open(*args)
+      end
+    rescue => error
+      download_errors << "- URL: #{download_url}\n  Error: #{error.class}: #{error.message}"
       next
     end
   end
 
-  attempted_mirror_urls_mapped = attempted_mirror_urls.map { |mirror| "- #{mirror}" }
   abort_installation(
     "Could not download archive from any of our mirrors. " \
-      "Attempted to download the archive from the following urls:\n" \
-      "#{attempted_mirror_urls_mapped.join("\n")}\n" \
-      "Please make sure your network allows access to any of these mirrors."
+      "Please make sure your network allows access to any of these mirrors.\n" \
+      "Attempted to download the archive from the following urls:\n#{download_errors.join("\n")}"
   )
 end
 
