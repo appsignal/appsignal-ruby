@@ -1,57 +1,73 @@
 describe Appsignal::Hooks::ShoryukenMiddleware do
-  let(:current_transaction) { background_job_transaction }
-
   class DemoShoryukenWorker
   end
 
+  let(:time) { "2010-01-01 10:01:00UTC" }
   let(:worker_instance) { DemoShoryukenWorker.new }
   let(:queue) { double }
   let(:sqs_msg) { double(:attributes => {}) }
   let(:body) { {} }
+  before(:context) { start_agent }
+  around { |example| keep_transactions { example.run } }
 
-  before :context do
-    start_agent
-  end
-  before do
-    allow(Appsignal::Transaction).to receive(:current).and_return(current_transaction)
+  def perform_job(&block)
+    block ||= lambda {}
+    Timecop.freeze(Time.parse(time)) do
+      Appsignal::Hooks::ShoryukenMiddleware.new.call(
+        worker_instance,
+        queue,
+        sqs_msg,
+        body,
+        &block
+      )
+    end
   end
 
   context "with a performance call" do
     let(:queue) { "some-funky-queue-name" }
+    let(:sent_timestamp) { Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 }
     let(:sqs_msg) do
-      double(:attributes => { "SentTimestamp" => Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 })
+      double(:attributes => { "SentTimestamp" => sent_timestamp })
     end
 
     context "with complex argument" do
-      let(:body) do
-        {
-          :foo => "Foo",
-          :bar => "Bar"
-        }
-      end
-      after do
-        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            # nothing
-          end
-        end
-      end
+      let(:body) { { :foo => "Foo", :bar => "Bar" } }
 
       it "wraps the job in a transaction with the correct params" do
-        expect(Appsignal).to receive(:monitor_transaction).with(
-          "perform_job.shoryuken",
-          :class => "DemoShoryukenWorker",
-          :method => "perform",
-          :metadata => {
-            :queue => "some-funky-queue-name",
-            "SentTimestamp" => 217_123_200_000
-          },
-          :params => {
-            :foo => "Foo",
-            :bar => "Bar"
-          },
-          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+        allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
+        expect { perform_job }.to change { created_transactions.length }.by(1)
+
+        transaction = last_transaction
+        expect(transaction).to be_completed
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "action" => "DemoShoryukenWorker#perform",
+          "id" => kind_of(String), # AppSignal generated id
+          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+          "error" => nil
         )
+        expect(transaction_hash["events"].first).to include(
+          "allocation_count" => kind_of(Integer),
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "child_allocation_count" => kind_of(Integer),
+          "child_duration" => kind_of(Float),
+          "child_gc_duration" => kind_of(Float),
+          "count" => 1,
+          "gc_duration" => kind_of(Float),
+          "start" => kind_of(Float),
+          "duration" => kind_of(Float),
+          "name" => "perform_job.shoryuken",
+          "title" => ""
+        )
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => { "foo" => "Foo", "bar" => "Bar" },
+          "metadata" => {
+            "queue" => queue,
+            "SentTimestamp" => sent_timestamp
+          }
+        )
+        expect(transaction).to have_received(:set_queue_start).with(sent_timestamp)
       end
 
       context "with parameter filtering" do
@@ -61,19 +77,11 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         end
 
         it "filters selected arguments" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.shoryuken",
-            :class => "DemoShoryukenWorker",
-            :method => "perform",
-            :metadata => {
-              :queue => "some-funky-queue-name",
-              "SentTimestamp" => 217_123_200_000
-            },
-            :params => {
-              :foo => "[FILTERED]",
-              :bar => "Bar"
-            },
-            :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
+          perform_job
+
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash["sample_data"]).to include(
+            "params" => { "foo" => "[FILTERED]", "bar" => "Bar" }
           )
         end
       end
@@ -83,23 +91,12 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       let(:body) { "foo bar" }
 
       it "handles string arguments" do
-        expect(Appsignal).to receive(:monitor_transaction).with(
-          "perform_job.shoryuken",
-          :class => "DemoShoryukenWorker",
-          :method => "perform",
-          :metadata => {
-            :queue => "some-funky-queue-name",
-            "SentTimestamp" => 217_123_200_000
-          },
-          :params => { :params => body },
-          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
-        )
+        perform_job
 
-        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            # nothing
-          end
-        end
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => { "params" => body }
+        )
       end
     end
 
@@ -107,58 +104,37 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       let(:body) { 1 }
 
       it "handles primitive types as arguments" do
-        expect(Appsignal).to receive(:monitor_transaction).with(
-          "perform_job.shoryuken",
-          :class => "DemoShoryukenWorker",
-          :method => "perform",
-          :metadata => {
-            :queue => "some-funky-queue-name",
-            "SentTimestamp" => 217_123_200_000
-          },
-          :params => { :params => body },
-          :queue_start => Time.parse("1976-11-18 0:00:00UTC").utc
-        )
+        perform_job
 
-        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            # nothing
-          end
-        end
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => { "params" => body }
+        )
       end
     end
   end
 
   context "with exception" do
-    let(:transaction) do
-      Appsignal::Transaction.new(
-        SecureRandom.uuid,
-        Appsignal::Transaction::BACKGROUND_JOB,
-        Appsignal::Transaction::GenericRequest.new({})
-      )
-    end
-
-    before do
-      allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-      expect(Appsignal::Transaction).to receive(:create)
-        .with(
-          kind_of(String),
-          Appsignal::Transaction::BACKGROUND_JOB,
-          kind_of(Appsignal::Transaction::GenericRequest)
-        ).and_return(transaction)
-    end
-
     it "sets the exception on the transaction" do
-      expect(transaction).to receive(:set_error).with(ExampleException)
-    end
-
-    after do
       expect do
-        Timecop.freeze(Time.parse("01-01-2001 10:01:00UTC")) do
-          Appsignal::Hooks::ShoryukenMiddleware.new.call(worker_instance, queue, sqs_msg, body) do
-            raise ExampleException
-          end
-        end
-      end.to raise_error(ExampleException)
+        expect do
+          perform_job { raise ExampleException, "error message" }
+        end.to raise_error(ExampleException)
+      end.to change { created_transactions.length }.by(1)
+
+      transaction = last_transaction
+      expect(transaction).to be_completed
+      transaction_hash = transaction.to_h
+      expect(transaction_hash).to include(
+        "action" => "DemoShoryukenWorker#perform",
+        "id" => kind_of(String), # AppSignal generated id
+        "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
+        "error" => {
+          "name" => "ExampleException",
+          "message" => "error message",
+          "backtrace" => kind_of(String)
+        }
+      )
     end
   end
 end
