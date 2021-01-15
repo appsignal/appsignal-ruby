@@ -1,7 +1,7 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 1.9
+  TargetRubyVersion: 2.0
   Include:
     - "**/*.cap"
     - "Gemfile"
@@ -77,6 +77,9 @@ Metrics/BlockLength:
 
 Style/FrozenStringLiteralComment:
   Enabled: true
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
 
 # Metrics/LineLength:
 #   Max: 80

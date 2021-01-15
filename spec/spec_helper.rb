@@ -2,7 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 ENV["RACK_ENV"] ||= "test"
 ENV["PADRINO_ENV"] ||= "test"
 
-APPSIGNAL_SPEC_DIR = File.expand_path(File.dirname(__FILE__))
+APPSIGNAL_SPEC_DIR = File.expand_path(__dir__)
 $LOAD_PATH.unshift(File.join(APPSIGNAL_SPEC_DIR, "support/stubs"))
 
 Bundler.require :default
