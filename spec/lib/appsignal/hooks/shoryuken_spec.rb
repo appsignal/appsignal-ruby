@@ -9,9 +9,11 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   let(:sqs_msg) { double(:attributes => {}) }
   let(:body) { {} }
 
+  before :context do
+    start_agent
+  end
   before do
     allow(Appsignal::Transaction).to receive(:current).and_return(current_transaction)
-    start_agent
   end
 
   context "with a performance call" do
