@@ -31,10 +31,7 @@ module Appsignal
         )
 
         if Appsignal.config[:enable_frontend_error_catching]
-          app.middleware.insert_before(
-            Appsignal::Rack::RailsInstrumentation,
-            Appsignal::Rack::JSExceptionCatcher
-          )
+          app.middleware.insert_before(Appsignal::Rack::RailsInstrumentation)
         end
 
         Appsignal.start

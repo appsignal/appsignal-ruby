@@ -79,51 +79,6 @@ if DependencyHelper.rails_present?
 
         after { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
       end
-
-      describe "frontend_error_catching middleware" do
-        let(:config) do
-          Appsignal::Config.new(
-            project_fixture_path,
-            "test",
-            :name => "MyApp",
-            :enable_frontend_error_catching => enable_frontend_error_catching
-          )
-        end
-        before { allow(Appsignal::Config).to receive(:new).and_return(config) }
-        after { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-
-        context "when enabled" do
-          let(:enable_frontend_error_catching) { true }
-
-          it "adds the Rails and JSExceptionCatcher middleware" do
-            expect(app.middleware).to receive(:insert_after).with(
-              ActionDispatch::DebugExceptions,
-              Appsignal::Rack::RailsInstrumentation
-            )
-
-            expect(app.middleware).to receive(:insert_before).with(
-              Appsignal::Rack::RailsInstrumentation,
-              Appsignal::Rack::JSExceptionCatcher
-            )
-          end
-        end
-
-        context "when not enabled" do
-          let(:enable_frontend_error_catching) { false }
-
-          it "adds the Rails middleware, but not the JSExceptionCatcher middleware" do
-            expect(app.middleware).to receive(:insert_after).with(
-              ActionDispatch::DebugExceptions,
-              Appsignal::Rack::RailsInstrumentation
-            )
-
-            expect(app.middleware).to_not receive(:insert_before).with(
-              Appsignal::Rack::RailsInstrumentation,
-              Appsignal::Rack::JSExceptionCatcher
-            )
-          end
-        end
-      end
     end
   end
 end
