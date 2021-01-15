@@ -10,19 +10,8 @@ describe Appsignal::Hooks::WebmachineHook do
         it { is_expected.to be_truthy }
       end
 
-      it "should include the run alias methods" do
-        expect(fsm).to respond_to(:run_with_appsignal)
-        expect(fsm).to respond_to(:run_without_appsignal)
-      end
-
-      it "should include the handle_exceptions alias methods" do
-        expect(
-          fsm.respond_to?(:handle_exceptions_with_appsignal, true)
-        ).to be_truthy
-
-        expect(
-          fsm.respond_to?(:handle_exceptions_without_appsignal, true)
-        ).to be_truthy
+      it "adds behavior to Webmachine::Decision::FSM" do
+        expect(fsm.class.ancestors.first).to eq(Appsignal::Integrations::WebmachineIntegration)
       end
     end
   else

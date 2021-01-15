@@ -1,12 +1,24 @@
 if DependencyHelper.webmachine_present?
   require "appsignal/integrations/webmachine"
 
-  describe Appsignal::Integrations::WebmachinePlugin::FSM do
+  class Response
+    attr_accessor :code
+
+    def body
+      ""
+    end
+
+    def headers
+      {}
+    end
+  end
+
+  describe Appsignal::Integrations::WebmachineIntegration do
     let(:request) do
       Webmachine::Request.new("GET", "http://google.com:80/foo", {}, nil)
     end
-    let(:resource)    { double(:trace? => false, :handle_exception => true) }
-    let(:response)    { double }
+    let(:resource)    { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
+    let(:response)    { Response.new }
     let(:transaction) { double(:set_action_if_nil => true) }
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
     before(:context) { start_agent }
@@ -18,10 +30,8 @@ if DependencyHelper.webmachine_present?
       end
     end
 
-    describe "#run_with_appsignal" do
+    describe "#run" do
       before do
-        allow(fsm).to receive(:request).and_return(request)
-        allow(fsm).to receive(:run_without_appsignal).and_return(true)
         allow(SecureRandom).to receive(:uuid).and_return("uuid")
         allow(Appsignal::Transaction).to receive(:create).and_return(transaction)
       end
@@ -40,7 +50,7 @@ if DependencyHelper.webmachine_present?
       end
 
       it "should call the original method" do
-        expect(fsm).to receive(:run_without_appsignal)
+        expect(fsm).to receive(:run)
       end
 
       it "should instrument the original method" do
@@ -52,9 +62,17 @@ if DependencyHelper.webmachine_present?
       end
 
       after { fsm.run }
+
+      describe "concerning the response" do
+        it "sets a response code" do
+          expect(fsm.response.code).to be_nil
+          fsm.run
+          expect(fsm.response.code).not_to be_nil
+        end
+      end
     end
 
-    describe "#handle_exceptions_with_appsignal" do
+    describe "#handle_exceptions" do
       let(:error) { ExampleException }
 
       it "should catch the error and send it to AppSignal" do

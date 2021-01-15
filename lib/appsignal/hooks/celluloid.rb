@@ -16,16 +16,12 @@ module Appsignal
         # down Celluloid so we're sure our thread does not aggravate this situation.
         # This way we also make sure any outstanding transactions get flushed.
 
-        ::Celluloid.class_eval do
-          class << self
-            alias shutdown_without_appsignal shutdown
-
-            def shutdown
-              Appsignal.stop("celluloid")
-              shutdown_without_appsignal
-            end
+        Celluloid.singleton_class.send(:prepend, Module.new do
+          def shutdown
+            Appsignal.stop("celluloid")
+            super
           end
-        end
+        end)
       end
     end
   end

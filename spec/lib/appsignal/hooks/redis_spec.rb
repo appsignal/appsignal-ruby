@@ -1,33 +1,68 @@
 describe Appsignal::Hooks::RedisHook do
   before do
     Appsignal.config = project_fixture_config
-    Appsignal::Hooks.load_hooks
   end
 
   if DependencyHelper.redis_present?
     context "with redis" do
       context "with instrumentation enabled" do
-        before do
-          Appsignal.config.config_hash[:instrument_redis] = true
-          allow_any_instance_of(Redis::Client).to receive(:process_without_appsignal).and_return(1)
-        end
-
         describe "#dependencies_present?" do
           subject { described_class.new.dependencies_present? }
 
           it { is_expected.to be_truthy }
         end
 
-        it "should instrument a redis call" do
-          Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-          expect(Appsignal::Transaction.current).to receive(:start_event)
-            .at_least(:once)
-          expect(Appsignal::Transaction.current).to receive(:finish_event)
-            .at_least(:once)
-            .with("query.redis", "redis://127.0.0.1:6379/0", "get ?", 0)
+        describe "integration" do
+          before do
+            Appsignal.config.config_hash[:instrument_redis] = true
+          end
 
-          client = Redis::Client.new
-          expect(client.process([[:get, "key"]])).to eq 1
+          context "install" do
+            before do
+              Appsignal::Hooks.load_hooks
+            end
+
+            it "does something" do
+              # Test if the last included module (prepended module) was our
+              # integration. That's not certain with the assertions below
+              # because we have to overwrite the `process` method for the test.
+              expect(Redis::Client.included_modules.first)
+                .to eql(Appsignal::Integrations::RedisIntegration)
+            end
+          end
+
+          context "instrumentation" do
+            before do
+              # Stub Redis::Client class so that it doesn't perform an actual
+              # Redis query. This class will be included (prepended) with the
+              # AppSignal Redis integration.
+              stub_const("Redis::Client", Class.new do
+                def id
+                  :stub_id
+                end
+
+                def process(_commands)
+                  :stub_process
+                end
+              end)
+              # Load the integration again for the stubbed Redis::Client class.
+              # Call it directly because {Appsignal::Hooks.load_hooks} keeps
+              # track if it was installed already or not.
+              Appsignal::Hooks::RedisHook.new.install
+            end
+
+            it "instrument a redis call" do
+              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+              expect(Appsignal::Transaction.current).to receive(:start_event)
+                .at_least(:once)
+              expect(Appsignal::Transaction.current).to receive(:finish_event)
+                .at_least(:once)
+                .with("query.redis", :stub_id, "get ?", 0)
+
+              client = Redis::Client.new
+              expect(client.process([[:get, "key"]])).to eql(:stub_process)
+            end
+          end
         end
       end
 

@@ -19,13 +19,9 @@ module Appsignal
   end
 end
 
-module Padrino::Routing::InstanceMethods
-  alias route_without_appsignal route!
-
+module Appsignal::Integrations::PadrinoIntegration
   def route!(base = settings, pass_block = nil)
-    if !Appsignal.active? || env["sinatra.static_file"]
-      return route_without_appsignal(base, pass_block)
-    end
+    return super if !Appsignal.active? || env["sinatra.static_file"]
 
     transaction = Appsignal::Transaction.create(
       SecureRandom.uuid,
@@ -34,7 +30,7 @@ module Padrino::Routing::InstanceMethods
     )
     begin
       Appsignal.instrument("process_action.padrino") do
-        route_without_appsignal(base, pass_block)
+        super
       end
     rescue Exception => error # rubocop:disable Lint/RescueException
       transaction.set_error(error)
@@ -77,6 +73,8 @@ module Padrino::Routing::InstanceMethods
     "#{settings.name}#unknown"
   end
 end
+
+Padrino::Application.send(:prepend, Appsignal::Integrations::PadrinoIntegration)
 
 Padrino.after_load do
   Appsignal::Integrations::PadrinoPlugin.init
