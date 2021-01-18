@@ -32,7 +32,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
     prologue:
       commands:
         - checkout
-        - git -C /home/semaphore/.rbenv/plugins/ruby-build pull
+        - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
         - sem-version ruby $RUBY_VERSION
         - ./support/check_versions
         - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
