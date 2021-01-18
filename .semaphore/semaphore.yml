@@ -31,7 +31,6 @@ global_job_config:
   prologue:
     commands:
     - checkout
-    - git -C /home/semaphore/.rbenv/plugins/ruby-build pull
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
     - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
