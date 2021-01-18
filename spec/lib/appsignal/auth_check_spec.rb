@@ -39,7 +39,7 @@ describe Appsignal::AuthCheck do
       end
     end
 
-    context "when encountering an exception", :not_ruby19 do
+    context "when encountering an exception" do
       before { stubbed_request.to_timeout }
 
       it "raises an error" do
