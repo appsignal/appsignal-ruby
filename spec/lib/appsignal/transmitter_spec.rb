@@ -143,7 +143,7 @@ describe Appsignal::Transmitter do
     context "with a proxy" do
       let(:config) { project_fixture_config("production", :http_proxy => "http://localhost:8080") }
 
-      it "is of Net::HTTP class", :not_ruby19 do
+      it "is of Net::HTTP class" do
         expect(subject).to be_instance_of(Net::HTTP)
       end
       it { expect(subject.proxy?).to be_truthy }
