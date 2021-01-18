@@ -16,9 +16,9 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   global_job_config:
     env_vars:
       - name: _BUNDLER_CACHE
-        value: "v2"
+        value: "v3"
       - name: _GEMS_CACHE
-        value: "v2"
+        value: "v3"
       - name: BUNDLE_PATH
         value: "../.bundle/"
       - name: RUNNING_IN_CI
@@ -38,11 +38,12 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
         - ./support/install_deps
         - bundle config set clean 'true'
+        - bundle config set --local deployment 'true'
         - ./support/bundler_wrapper install --jobs=3 --retry=3
     epilogue:
       on_pass:
         commands:
-          - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
+          - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) vendor/bundle
           - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
       on_fail:
         commands:
