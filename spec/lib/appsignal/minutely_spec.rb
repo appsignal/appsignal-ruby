@@ -284,25 +284,6 @@ describe Appsignal::Minutely do
       end
     end
 
-    describe "#<<" do
-      let(:err_stream) { std_stream }
-      let(:stderr) { err_stream.read }
-      let(:log_stream) { std_stream }
-      let(:log) { log_contents(log_stream) }
-      before { Appsignal.logger = test_logger(log_stream) }
-
-      it "adds the probe, but prints a deprecation warning" do
-        probe = lambda {}
-        capture_std_streams(std_stream, err_stream) { collection << probe }
-        deprecation_message = "Deprecated " \
-          "`Appsignal::Minute.probes <<` call. Please use " \
-          "`Appsignal::Minutely.probes.register` instead."
-        expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
-        expect(log).to contains_log :warn, deprecation_message
-        expect(collection[probe.object_id]).to eql(probe)
-      end
-    end
-
     describe "#register" do
       let(:log_stream) { std_stream }
       let(:log) { log_contents(log_stream) }

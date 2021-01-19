@@ -78,63 +78,6 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_error_hook)
   end
-
-  describe "missing constants" do
-    let(:err_stream) { std_stream }
-    let(:stderr) { err_stream.read }
-    let(:log_stream) { std_stream }
-    let(:log) { log_contents(log_stream) }
-    before do
-      Appsignal.logger = test_logger(log_stream)
-    end
-
-    def call_constant(&block)
-      capture_std_streams(std_stream, err_stream, &block)
-    end
-
-    describe "SidekiqProbe" do
-      it "logs a deprecation message and returns the new constant" do
-        constant = call_constant { Appsignal::Hooks::SidekiqProbe }
-
-        expect(constant).to eql(Appsignal::Probes::SidekiqProbe)
-        expect(constant.name).to eql("Appsignal::Probes::SidekiqProbe")
-
-        deprecation_message =
-          "The constant Appsignal::Hooks::SidekiqProbe has been deprecated. " \
-          "Please update the constant name to Appsignal::Probes::SidekiqProbe " \
-          "in the following file to remove this message.\n#{__FILE__}:"
-        expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
-        expect(log).to contains_log :warn, deprecation_message
-      end
-    end
-
-    describe "PumaProbe" do
-      it "logs a deprecation message and returns the new constant" do
-        constant = call_constant { Appsignal::Hooks::PumaProbe }
-
-        expect(constant).to eql(Appsignal::Probes::PumaProbe)
-        expect(constant.name).to eql("Appsignal::Probes::PumaProbe")
-
-        deprecation_message =
-          "The constant Appsignal::Hooks::PumaProbe has been deprecated. " \
-          "Please update the constant name to Appsignal::Probes::PumaProbe " \
-          "in the following file to remove this message.\n#{__FILE__}:"
-        expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
-        expect(log).to contains_log :warn, deprecation_message
-      end
-    end
-
-    describe "other constant" do
-      it "raises a NameError like Ruby normally does" do
-        expect do
-          call_constant { Appsignal::Hooks::Unknown }
-        end.to raise_error(NameError)
-
-        expect(stderr).to be_empty
-        expect(log).to be_empty
-      end
-    end
-  end
 end
 
 describe Appsignal::Hooks::Helpers do

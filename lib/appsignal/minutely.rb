@@ -3,8 +3,6 @@
 module Appsignal
   class Minutely
     class ProbeCollection
-      include Appsignal::Utils::DeprecationMessage
-
       def initialize
         @probes = {}
       end
@@ -25,16 +23,6 @@ module Appsignal
       # @return [Object] Returns the registered probe.
       def [](key)
         probes[key]
-      end
-
-      # @param probe [Object] Any object that listens to the `call` method will
-      #   be used as a probe.
-      # @deprecated Use {#register} instead.
-      # @return [void]
-      def <<(probe)
-        deprecation_message "Deprecated `Appsignal::Minute.probes <<` " \
-          "call. Please use `Appsignal::Minutely.probes.register` instead."
-        register probe.object_id, probe
       end
 
       # Register a new minutely probe.

@@ -32,8 +32,6 @@ module Appsignal
       :instrument_redis               => true,
       :instrument_sequel              => true,
       :skip_session_data              => false,
-      :enable_frontend_error_catching => false,
-      :frontend_error_catching_path   => "/appsignal_error_catcher",
       :enable_allocation_tracking     => true,
       :enable_gc_instrumentation      => false,
       :enable_host_metrics            => true,
@@ -49,7 +47,6 @@ module Appsignal
       "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
       "APPSIGNAL_APP_NAME"                       => :name,
       "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
-      "APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH"   => :frontend_error_catching_path,
       "APPSIGNAL_DEBUG"                          => :debug,
       "APPSIGNAL_LOG"                            => :log,
       "APPSIGNAL_LOG_PATH"                       => :log_path,
@@ -57,7 +54,6 @@ module Appsignal
       "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
       "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
       "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
-      "APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING" => :enable_frontend_error_catching,
       "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
       "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
       "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
@@ -86,7 +82,6 @@ module Appsignal
       APPSIGNAL_APP_NAME
       APPSIGNAL_CA_FILE_PATH
       APPSIGNAL_DNS_SERVERS
-      APPSIGNAL_FRONTEND_ERROR_CATCHING_PATH
       APPSIGNAL_HOSTNAME
       APPSIGNAL_HTTP_PROXY
       APPSIGNAL_LOG
@@ -102,7 +97,6 @@ module Appsignal
       APPSIGNAL_ACTIVE
       APPSIGNAL_DEBUG
       APPSIGNAL_ENABLE_ALLOCATION_TRACKING
-      APPSIGNAL_ENABLE_FRONTEND_ERROR_CATCHING
       APPSIGNAL_ENABLE_GC_INSTRUMENTATION
       APPSIGNAL_ENABLE_HOST_METRICS
       APPSIGNAL_ENABLE_MINUTELY_PROBES

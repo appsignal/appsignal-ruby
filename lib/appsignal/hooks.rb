@@ -69,29 +69,6 @@ module Appsignal
         text.size > 200 ? "#{text[0...197]}..." : text
       end
     end
-
-    # Alias Probes constants that have moved to their own module in version
-    # 2.11.0.
-    def self.const_missing(name)
-      case name
-      when :SidekiqProbe
-        callers = caller
-        Appsignal::Utils::DeprecationMessage.message \
-          "The constant Appsignal::Hooks::SidekiqProbe has been deprecated. " \
-          "Please update the constant name to Appsignal::Probes::SidekiqProbe " \
-          "in the following file to remove this message.\n#{callers.first}"
-        Appsignal::Probes::SidekiqProbe
-      when :PumaProbe
-        callers = caller
-        Appsignal::Utils::DeprecationMessage.message \
-          "The constant Appsignal::Hooks::PumaProbe has been deprecated. " \
-          "Please update the constant name to Appsignal::Probes::PumaProbe " \
-          "in the following file to remove this message.\n#{callers.first}"
-        Appsignal::Probes::PumaProbe
-      else
-        super
-      end
-    end
   end
 end
 
