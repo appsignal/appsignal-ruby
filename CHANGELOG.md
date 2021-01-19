@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.11.3
+- Support Shoryuken batch workers. PR #687
+
 # 2.11.2
 - Support Ruby 3.0. PR #681
 - Support breadcrumbs. PR #666
