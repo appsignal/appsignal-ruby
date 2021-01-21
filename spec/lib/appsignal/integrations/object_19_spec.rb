@@ -9,8 +9,8 @@ describe Object do
     context "with instance method" do
       let(:klass) do
         Class.new do
-          def foo(param1, options = {}, keyword_param: 1)
-            [param1, options, keyword_param]
+          def foo(param1, options = {})
+            [param1, options]
           end
           appsignal_instrument_method :foo
         end
@@ -20,8 +20,7 @@ describe Object do
       def call_with_arguments
         instance.foo(
           "abc",
-          { :foo => "bar" },
-          :keyword_param => 2
+          :foo => "bar"
         )
       end
 
@@ -39,7 +38,7 @@ describe Object do
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "foo.AnonymousClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
-            expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+            expect(call_with_arguments).to eq(["abc", { :foo => "bar" }])
           end
         end
 
@@ -131,7 +130,7 @@ describe Object do
         it "does not instrument, but still calls the method" do
           expect(Appsignal.active?).to be_falsy
           expect(transaction).to_not receive(:start_event)
-          expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+          expect(call_with_arguments).to eq(["abc", { :foo => "bar" }])
         end
       end
     end
@@ -139,8 +138,8 @@ describe Object do
     context "with class method" do
       let(:klass) do
         Class.new do
-          def self.bar(param1, options = {}, keyword_param: 1)
-            [param1, options, keyword_param]
+          def self.bar(param1, options = {})
+            [param1, options]
           end
           appsignal_instrument_class_method :bar
         end
@@ -148,8 +147,7 @@ describe Object do
       def call_with_arguments
         klass.bar(
           "abc",
-          { :foo => "bar" },
-          :keyword_param => 2
+          :foo => "bar"
         )
       end
 
@@ -168,7 +166,7 @@ describe Object do
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "bar.class_method.AnonymousClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
-            expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+            expect(call_with_arguments).to eq(["abc", { :foo => "bar" }])
           end
         end
 
@@ -260,7 +258,7 @@ describe Object do
         it "does not instrument, but still call the method" do
           expect(Appsignal.active?).to be_falsy
           expect(transaction).to_not receive(:start_event)
-          expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+          expect(call_with_arguments).to eq(["abc", { :foo => "bar" }])
         end
       end
     end
