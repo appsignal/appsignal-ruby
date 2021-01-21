@@ -275,7 +275,8 @@ namespace :publish do
     Dir.chdir("#{File.dirname(__FILE__)}/pkg") do
       Dir["*.gem"].each do |gem_package|
         puts "## Publishing gem package: #{gem_package}"
-        system "gem push #{gem_package}"
+        result = system "gem push #{gem_package}"
+        raise "Failed to Push gem" unless result
       end
     end
   end
