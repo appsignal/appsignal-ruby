@@ -7,6 +7,11 @@
   other gems that provide instrumentation for gems. PR #683
 - Remove deprecated integrations, classes, methods and arguments. PR #685
 
+# 2.11.4
+- Support Ruby 3.0 for Object method instrumentation with keyword arguments
+  (https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html)
+  PR #693
+
 # 2.11.3
 - Support Shoryuken batch workers. PR #687
 
