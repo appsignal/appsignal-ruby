@@ -374,19 +374,21 @@ end
 begin
   require "rspec/core/rake_task"
   is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
-  unless is_jruby
-    jruby_opts = "--exclude-pattern=spec/lib/appsignal/extension/jruby_spec.rb"
-  end
+  excludes = []
+  excludes << "spec/lib/appsignal/extension/jruby_spec.rb" unless is_jruby
+  is_ruby19 = RUBY_VERSION < "2.0"
+  excludes << "spec/lib/appsignal/integrations/object_spec.rb" if is_ruby19
+  exclude_pattern = "--exclude-pattern=#{excludes.join(",")}" if excludes.any?
 
   desc "Run the AppSignal gem test suite."
   RSpec::Core::RakeTask.new :test do |t|
-    t.rspec_opts = jruby_opts
+    t.rspec_opts = exclude_pattern
   end
 
   namespace :test do
     desc "Run the Appsignal gem test in an extension failure scenario"
     RSpec::Core::RakeTask.new :failure do |t|
-      t.rspec_opts = "#{jruby_opts} --tag extension_installation_failure"
+      t.rspec_opts = "#{exclude_pattern} --tag extension_installation_failure"
     end
   end
 rescue LoadError # rubocop:disable Lint/HandleExceptions
