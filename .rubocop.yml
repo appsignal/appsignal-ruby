@@ -13,6 +13,8 @@ AllCops:
     - "gemfiles/vendor/**/*"
     - "vendor/**/*"
     - "benchmark.rake"
+    - "lib/appsignal/integrations/object_ruby_modern.rb"
+    - "spec/lib/appsignal/integrations/object_spec.rb"
   DisplayCopNames: true
   UseCache: true
   CacheRootDirectory: ./tmp
