@@ -1,9 +1,5 @@
 require "appsignal/integrations/object"
 
-def is_ruby_19
-  RUBY_VERSION < "2.0"
-end
-
 describe Object do
   describe "#instrument_method" do
     context "with instance method" do
