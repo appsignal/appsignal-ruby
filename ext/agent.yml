@@ -1,62 +1,62 @@
 ---
-version: 361340a
+version: d98461b
 mirrors:
 - https://appsignal-agent-releases.global.ssl.fastly.net
 - https://d135dj0rjqvssy.cloudfront.net
 triples:
   x86_64-darwin:
     static:
-      checksum: 4e08cb0cef0ea7e30f8d507380b923f6cfa14adaea12c81804e118acd6395b57
+      checksum: 178ab2329c7b29cf45140e4707e75c20379fa0c7dfd7f39266a7a95aea510780
       filename: appsignal-x86_64-darwin-all-static.tar.gz
     dynamic:
-      checksum: 1a9c3e26bd453fe60a2f511d536e64bdeddb1f939664bda90d6a41eaeedf5250
+      checksum: '0923985cc78c5cf278f45d530679954b94b1a91c87453369116fc05525e29864'
       filename: appsignal-x86_64-darwin-all-dynamic.tar.gz
   universal-darwin:
     static:
-      checksum: 4e08cb0cef0ea7e30f8d507380b923f6cfa14adaea12c81804e118acd6395b57
+      checksum: 178ab2329c7b29cf45140e4707e75c20379fa0c7dfd7f39266a7a95aea510780
       filename: appsignal-x86_64-darwin-all-static.tar.gz
     dynamic:
-      checksum: 1a9c3e26bd453fe60a2f511d536e64bdeddb1f939664bda90d6a41eaeedf5250
+      checksum: '0923985cc78c5cf278f45d530679954b94b1a91c87453369116fc05525e29864'
       filename: appsignal-x86_64-darwin-all-dynamic.tar.gz
   i686-linux:
     static:
-      checksum: 01c027b3e472cb39d844284fcc8ba532628c00731b912e0e9718646ed124ae6e
+      checksum: cb772a8a178edb25d666b650efda80149c98e80e4264435d6176f8a6104f959a
       filename: appsignal-i686-linux-all-static.tar.gz
     dynamic:
-      checksum: 30696eac3ae5646bcb21ff86a1824dd4511a41dd323514e4a97a41b5ff09e2f8
+      checksum: c9ac51f4d1b3cc13773d8fa8ea5cfad6af7909144d85186cef9324ec0531bdac
       filename: appsignal-i686-linux-all-dynamic.tar.gz
   x86-linux:
     static:
-      checksum: 01c027b3e472cb39d844284fcc8ba532628c00731b912e0e9718646ed124ae6e
+      checksum: cb772a8a178edb25d666b650efda80149c98e80e4264435d6176f8a6104f959a
       filename: appsignal-i686-linux-all-static.tar.gz
     dynamic:
-      checksum: 30696eac3ae5646bcb21ff86a1824dd4511a41dd323514e4a97a41b5ff09e2f8
+      checksum: c9ac51f4d1b3cc13773d8fa8ea5cfad6af7909144d85186cef9324ec0531bdac
       filename: appsignal-i686-linux-all-dynamic.tar.gz
   x86_64-linux:
     static:
-      checksum: fe2038d6fa468fc23900fea6d8179d2b37d41d54f4ff33c573116183ac1cb491
+      checksum: d6c280e992d74f97d59da9827ec5707ca4f6776b0568cde1c083c1113e4b7104
       filename: appsignal-x86_64-linux-all-static.tar.gz
     dynamic:
-      checksum: bcbf9546b078fb8bbaae5e7df4ed84831346c814bc865a47d32a3a095a84acbb
+      checksum: ef1a3f5d4b2ed61ea2ae4d5cb1a261a0e685fb9d3e7ea9efe455498aad386e59
       filename: appsignal-x86_64-linux-all-dynamic.tar.gz
   x86_64-linux-musl:
     static:
-      checksum: b2ee5579a62b76a1d2f41f4e06749c4c549f9aaa40764862eff49c5a6a8841f1
+      checksum: 9cf8ad34392662746a45cfce18113ad19cc29954789e2058f30e527163f2e98a
       filename: appsignal-x86_64-linux-musl-all-static.tar.gz
     dynamic:
-      checksum: 53cd2464853e61c2d8f911ec32ff98cb48f824293ffd575da6743bc34625a7eb
+      checksum: 01bd76983227648d9bc41d035e1552fcf18d62f0d6818bf7bb7fc2e7c166513d
       filename: appsignal-x86_64-linux-musl-all-dynamic.tar.gz
   x86_64-freebsd:
     static:
-      checksum: f228dd2f2cf951c9eb9f04487be50fdfdc3d29a956e639787a4022bd73f02e53
+      checksum: 403a597cbdbdba08460c5c9e93347ed9ad1d24333204e6d72db342deb266a296
       filename: appsignal-x86_64-freebsd-all-static.tar.gz
     dynamic:
-      checksum: 030b322b2cb15607260cbb0424c03f6e41646dca7aacc43a30279ad63a336541
+      checksum: a1faae80ae09a6588c4cd35cb91dfa4b2176fc3cb17fbf79db80194c21e75bf9
       filename: appsignal-x86_64-freebsd-all-dynamic.tar.gz
   amd64-freebsd:
     static:
-      checksum: f228dd2f2cf951c9eb9f04487be50fdfdc3d29a956e639787a4022bd73f02e53
+      checksum: 403a597cbdbdba08460c5c9e93347ed9ad1d24333204e6d72db342deb266a296
       filename: appsignal-x86_64-freebsd-all-static.tar.gz
     dynamic:
-      checksum: 030b322b2cb15607260cbb0424c03f6e41646dca7aacc43a30279ad63a336541
+      checksum: a1faae80ae09a6588c4cd35cb91dfa4b2176fc3cb17fbf79db80194c21e75bf9
       filename: appsignal-x86_64-freebsd-all-dynamic.tar.gz
