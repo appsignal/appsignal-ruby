@@ -1,5 +1,10 @@
 # Changelog
 
+# 2.11.5
+- Add more detailed logging to finish_event calls when the event is unknown, so
+  we know what event is being tried to finish. Commit
+  c888a04d1b9ac947652b29c111c650fb5a5cf71c
+
 # 2.11.4
 - Support Ruby 3.0 for Object method instrumentation with keyword arguments
   (https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html)
