@@ -1,7 +1,7 @@
 # Changelog
 
 # 3.0.0
-- Drop Ruby 1.9 support. PR #683, #682
+- Drop Ruby 1.9 support. PR #683, #682, #688, #694
 - Use Module.prepend for all gem integrations. Fixes #603 in combination with
   other gems that provide instrumentation for gems. PR #683
 - Remove deprecated integrations, classes, methods and arguments. PR #685
