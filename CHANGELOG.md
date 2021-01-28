@@ -1,11 +1,15 @@
 # Changelog
 
 # 3.0.0
-
 - Drop Ruby 1.9 support. PR #683, #682
 - Use Module.prepend for all gem integrations. Fixes #603 in combination with
   other gems that provide instrumentation for gems. PR #683
 - Remove deprecated integrations, classes, methods and arguments. PR #685
+
+# 2.11.5
+- Add more detailed logging to finish_event calls when the event is unknown, so
+  we know what event is being tried to finish. Commit
+  c888a04d1b9ac947652b29c111c650fb5a5cf71c
 
 # 2.11.4
 - Support Ruby 3.0 for Object method instrumentation with keyword arguments
