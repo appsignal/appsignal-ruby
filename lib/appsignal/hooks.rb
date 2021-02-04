@@ -69,6 +69,22 @@ module Appsignal
         text.size > 200 ? "#{text[0...197]}..." : text
       end
     end
+
+    # Alias integration constants that have moved to their own module.
+    def self.const_missing(name)
+      case name
+      when :SidekiqPlugin
+        require "appsignal/integrations/sidekiq"
+        callers = caller
+        Appsignal::Utils::DeprecationMessage.message \
+          "The constant Appsignal::Hooks::SidekiqPlugin has been deprecated. " \
+          "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
+          "in the following file to remove this message.\n#{callers.first}"
+        Appsignal::Integrations::SidekiqMiddleware
+      else
+        super
+      end
+    end
   end
 end
 
