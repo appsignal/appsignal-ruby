@@ -4,6 +4,33 @@ require "yaml"
 
 module Appsignal
   module Integrations
+    # Error handler for Sidekiq to report errors from jobs and internal Sidekiq
+    # errors.
+    #
+    # @api private
+    class SidekiqErrorHandler
+      def call(exception, sidekiq_context)
+        transaction = Appsignal::Transaction.current
+
+        if transaction.nil_transaction?
+          # Sidekiq error outside of the middleware scope.
+          # Can be a job JSON parse error or some other error happening in
+          # Sidekiq.
+          transaction = Appsignal::Transaction.create(
+            SecureRandom.uuid, # Newly generated job id
+            Appsignal::Transaction::BACKGROUND_JOB,
+            Appsignal::Transaction::GenericRequest.new({})
+          )
+          transaction.set_action_if_nil("SidekiqInternal")
+          transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
+          transaction.params = { :jobstr => sidekiq_context[:jobstr] }
+        end
+
+        transaction.set_error(exception)
+        Appsignal::Transaction.complete_current!
+      end
+    end
+
     # @api private
     class SidekiqMiddleware # rubocop:disable Metrics/ClassLength
       include Appsignal::Hooks::Helpers
@@ -24,14 +51,11 @@ module Appsignal
         )
 
         Appsignal.instrument "perform_job.sidekiq" do
-          begin
-            yield
-          rescue Exception => exception # rubocop:disable Lint/RescueException
-            job_status = :failed
-            transaction.set_error(exception)
-            raise exception
-          end
+          yield
         end
+      rescue Exception => exception # rubocop:disable Lint/RescueException
+        job_status = :failed
+        raise exception
       ensure
         if transaction
           transaction.set_action_if_nil(formatted_action_name(item))
@@ -43,7 +67,8 @@ module Appsignal
             transaction.set_metadata key, value
           end
           transaction.set_http_or_background_queue_start
-          Appsignal::Transaction.complete_current!
+          Appsignal::Transaction.complete_current! unless exception
+
           queue = item["queue"] || "unknown"
           if job_status
             increment_counter "queue_job_count", 1,

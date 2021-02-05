@@ -1,5 +1,49 @@
 require "appsignal/integrations/sidekiq"
 
+describe Appsignal::Integrations::SidekiqErrorHandler do
+  let(:log) { StringIO.new }
+  before do
+    start_agent
+    Appsignal.logger = test_logger(log)
+  end
+  around { |example| keep_transactions { example.run } }
+
+  context "without a current transction" do
+    let(:exception) do
+      begin
+        raise ExampleStandardError, "uh oh"
+      rescue => error
+        error
+      end
+    end
+    let(:job_context) do
+      {
+        :context => "Sidekiq internal error!",
+        :jobstr => "{ bad json }"
+      }
+    end
+
+    it "tracks error on a new transaction" do
+      described_class.new.call(exception, job_context)
+
+      transaction_hash = last_transaction.to_h
+      expect(transaction_hash["error"]).to include(
+        "name" => "ExampleStandardError",
+        "message" => "uh oh",
+        "backtrace" => kind_of(String)
+      )
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => {
+          "jobstr" => "{ bad json }"
+        }
+      )
+      expect(transaction_hash["metadata"]).to include(
+        "sidekiq_error" => "Sidekiq internal error!"
+      )
+    end
+  end
+end
+
 describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => false do
   class DelayedTestClass; end
 
@@ -257,8 +301,17 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   def perform_job
     Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
-      plugin.call(worker, item, queue) do
-        yield if block_given?
+      begin
+        exception = nil
+        plugin.call(worker, item, queue) do
+          yield if block_given?
+        end
+      rescue Exception => exception # rubocop:disable Lint/RescueException
+        raise exception
+      ensure
+        if exception
+          Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item)
+        end
       end
     end
   end
@@ -445,10 +498,18 @@ if DependencyHelper.active_job_present?
 
     def perform_sidekiq
       Timecop.freeze(time) do
-        yield
-        # Combined with Sidekiq::Testing.fake! and drain_all we get a
-        # enqueue_at in the job data.
-        Sidekiq::Worker.drain_all
+        begin
+          yield
+          # Combined with Sidekiq::Testing.fake! and drain_all we get a
+          # enqueue_at in the job data.
+          Sidekiq::Worker.drain_all
+        rescue Exception => exception # rubocop:disable Lint/RescueException
+          raise exception
+        ensure
+          if exception
+            Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, {})
+          end
+        end
       end
     end
 

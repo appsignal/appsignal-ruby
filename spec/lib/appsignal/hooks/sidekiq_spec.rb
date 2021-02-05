@@ -51,6 +51,10 @@ describe Appsignal::Hooks::SidekiqHook do
         yield middlewares if block_given?
         middlewares
       end
+
+      def self.error_handlers
+        @error_handlers ||= []
+      end
     end
 
     def add_middleware(middleware)
@@ -62,6 +66,12 @@ describe Appsignal::Hooks::SidekiqHook do
     before do
       Appsignal.config = project_fixture_config
       stub_const "Sidekiq", SidekiqMock
+    end
+
+    it "adds error handler" do
+      Sidekiq.middleware_mock = SidekiqMiddlewareMockWithPrepend
+      described_class.new.install
+      expect(Sidekiq.error_handlers).to include(Appsignal::Integrations::SidekiqErrorHandler)
     end
 
     context "when Sidekiq middleware responds to prepend method" do # Sidekiq 3.3.0 and newer

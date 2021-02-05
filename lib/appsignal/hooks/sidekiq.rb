@@ -14,6 +14,9 @@ module Appsignal
         Appsignal::Minutely.probes.register :sidekiq, Appsignal::Probes::SidekiqProbe
 
         ::Sidekiq.configure_server do |config|
+          config.error_handlers << \
+            Appsignal::Integrations::SidekiqErrorHandler.new
+
           config.server_middleware do |chain|
             if chain.respond_to? :prepend
               chain.prepend Appsignal::Integrations::SidekiqMiddleware
