@@ -58,7 +58,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - name: Validate CI setup
           env_vars:
             - name: RUBY_VERSION
-              value: 2.6.5
+              value: 2.6.6
             - name: GEMSET
               value: no_dependencies
             - name: BUNDLE_GEMFILE
@@ -72,7 +72,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - name: RuboCop
           env_vars:
             - name: RUBY_VERSION
-              value: 2.6.5
+              value: 2.6.6
             - name: GEMSET
               value: no_dependencies
             - name: BUNDLE_GEMFILE
@@ -107,12 +107,12 @@ matrix:
       gems: "none"
     - ruby: "2.3.8"
       gems: "none"
-    - ruby: "2.4.9"
+    - ruby: "2.4.10"
       gems: "none"
-    - ruby: "2.5.7"
+    - ruby: "2.5.8"
       gems: "minimal"
-    - ruby: "2.6.5"
-    - ruby: "2.7.1"
+    - ruby: "2.6.6"
+    - ruby: "2.7.2"
     - ruby: "3.0.0"
     - ruby: "jruby-9.1.17.0"
       gems: "minimal"
@@ -134,15 +134,15 @@ matrix:
       bundler: "1.17.3"
       exclude:
         ruby:
-          - "2.6.5"
-          - "2.7.1"
+          - "2.6.6"
+          - "2.7.2"
           - "3.0.0"
     - gem: "rails-4.2"
       bundler: "1.17.3"
       exclude:
         ruby:
-          - "2.6.5"
-          - "2.7.1"
+          - "2.6.6"
+          - "2.7.2"
           - "3.0.0"
     - gem: "rails-5.0"
       exclude:
@@ -166,7 +166,7 @@ matrix:
           - "2.1.10"
           - "2.2.10"
           - "2.3.8"
-          - "2.4.9"
+          - "2.4.10"
           - "jruby-9.1.17.0"
     - gem: "resque-1"
       bundler: "1.17.3"
