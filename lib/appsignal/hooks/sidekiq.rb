@@ -16,7 +16,11 @@ module Appsignal
 
         ::Sidekiq.configure_server do |config|
           config.server_middleware do |chain|
-            chain.add Appsignal::Hooks::SidekiqPlugin
+            if chain.respond_to? :prepend
+              chain.prepend Appsignal::Hooks::SidekiqPlugin
+            else
+              chain.add Appsignal::Hooks::SidekiqPlugin
+            end
           end
         end
       end

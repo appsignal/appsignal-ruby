@@ -6,6 +6,10 @@
   other gems that provide instrumentation for gems. PR #683
 - Remove deprecated integrations, classes, methods and arguments. PR #685
 
+# 2.11.6
+- Prepend Sidekiq middleware to wrap all Sidekiq middleware. Catches more
+  errors and provide more complete performance measurements. PR #698
+
 # 2.11.5
 - Add more detailed logging to finish_event calls when the event is unknown, so
   we know what event is being tried to finish. Commit
