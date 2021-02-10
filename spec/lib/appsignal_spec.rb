@@ -876,8 +876,9 @@ describe Appsignal do
     end
 
     describe ".set_error" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
       let(:error) { RuntimeError.new("I am an exception") }
+      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      around { |example| keep_transactions { example.run } }
 
       context "when there is an active transaction" do
         it "adds the error to the active transaction" do
@@ -925,6 +926,30 @@ describe Appsignal do
             expect(transaction).to receive(:set_namespace).with(namespace)
 
             Appsignal.set_error(error, nil, namespace)
+          end
+        end
+
+        context "when given a block" do
+          it "yields the transaction and allows additional metadata to be set" do
+            captured_transaction = nil
+            keep_transactions do
+              Appsignal.set_error(StandardError.new("my_error")) do |transaction|
+                captured_transaction = transaction
+                transaction.set_action("my_action")
+                transaction.set_namespace("my_namespace")
+              end
+            end
+
+            expect(transaction).to eql(captured_transaction)
+            expect(captured_transaction.to_h).to include(
+              "namespace" => "my_namespace",
+              "action" => "my_action",
+              "error" => {
+                "name" => "StandardError",
+                "message" => "my_error",
+                "backtrace" => kind_of(String)
+              }
+            )
           end
         end
       end
