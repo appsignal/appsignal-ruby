@@ -802,46 +802,75 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
+      around { |example| keep_transactions { example.run } }
+
       it "records the error and re-raise it" do
-        expect(Appsignal).to receive(:send_error).with(
-          kind_of(ExampleException),
-          nil,
-          Appsignal::Transaction::HTTP_REQUEST
-        )
         expect do
-          Appsignal.listen_for_error do
-            raise ExampleException, "I am an exception"
-          end
-        end.to raise_error(ExampleException, "I am an exception")
+          expect do
+            Appsignal.listen_for_error do
+              raise ExampleException, "I am an exception"
+            end
+          end.to raise_error(ExampleException, "I am an exception")
+        end.to change { created_transactions.count }.by(1)
+
+        expect(last_transaction.to_h).to include(
+          "error" => {
+            "name" => "ExampleException",
+            "message" => "I am an exception",
+            "backtrace" => kind_of(String)
+          },
+          "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
+          "sample_data" => hash_including(
+            "tags" => {}
+          )
+        )
       end
 
       context "with tags" do
         it "adds tags to the transaction" do
-          expect(Appsignal).to receive(:send_error).with(
-            kind_of(ExampleException),
-            { "foo" => "bar" },
-            Appsignal::Transaction::HTTP_REQUEST
-          )
           expect do
-            Appsignal.listen_for_error("foo" => "bar") do
-              raise ExampleException, "I am an exception"
-            end
-          end.to raise_error(ExampleException, "I am an exception")
+            expect do
+              Appsignal.listen_for_error("foo" => "bar") do
+                raise ExampleException, "I am an exception"
+              end
+            end.to raise_error(ExampleException, "I am an exception")
+          end.to change { created_transactions.count }.by(1)
+
+          expect(last_transaction.to_h).to include(
+            "error" => {
+              "name" => "ExampleException",
+              "message" => "I am an exception",
+              "backtrace" => kind_of(String)
+            },
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
+            "sample_data" => hash_including(
+              "tags" => { "foo" => "bar" }
+            )
+          )
         end
       end
 
       context "with a custom namespace" do
         it "adds the namespace to the transaction" do
-          expect(Appsignal).to receive(:send_error).with(
-            kind_of(ExampleException),
-            nil,
-            "custom_namespace"
-          )
           expect do
-            Appsignal.listen_for_error(nil, "custom_namespace") do
-              raise ExampleException, "I am an exception"
-            end
-          end.to raise_error(ExampleException, "I am an exception")
+            expect do
+              Appsignal.listen_for_error(nil, "custom_namespace") do
+                raise ExampleException, "I am an exception"
+              end
+            end.to raise_error(ExampleException, "I am an exception")
+          end.to change { created_transactions.count }.by(1)
+
+          expect(last_transaction.to_h).to include(
+            "error" => {
+              "name" => "ExampleException",
+              "message" => "I am an exception",
+              "backtrace" => kind_of(String)
+            },
+            "namespace" => "custom_namespace",
+            "sample_data" => hash_including(
+              "tags" => {}
+            )
+          )
         end
       end
     end

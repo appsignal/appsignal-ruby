@@ -141,7 +141,10 @@ module Appsignal
       )
         yield
       rescue Exception => error # rubocop:disable Lint/RescueException
-        send_error(error, tags, namespace)
+        send_error(error) do |transaction|
+          transaction.set_tags(tags) if tags
+          transaction.set_namespace(namespace) if namespace
+        end
         raise error
       end
       alias :listen_for_exception :listen_for_error
