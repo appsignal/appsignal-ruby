@@ -4,9 +4,9 @@ require "json"
 require "securerandom"
 
 require "appsignal/logger"
+require "appsignal/utils/deprecation_message"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
-require "appsignal/utils/deprecation_message"
 
 # AppSignal for Ruby gem's main module.
 #
@@ -18,7 +18,6 @@ module Appsignal
   class << self
     include Helpers::Instrumentation
     include Helpers::Metrics
-    include Utils::DeprecationMessage
 
     # Accessor for the AppSignal configuration.
     # Return the current AppSignal configuration.

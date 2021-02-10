@@ -3,6 +3,8 @@
 module Appsignal
   module Helpers
     module Instrumentation # rubocop:disable Metrics/ModuleLength
+      include Appsignal::Utils::DeprecationMessage
+
       # Creates an AppSignal transaction for the given block.
       #
       # If AppSignal is not {.active?} it will still execute the block, but not
@@ -164,7 +166,7 @@ module Appsignal
       #     Appsignal.send_error(e)
       #   end
       #
-      # @example Send an exception with tags
+      # @example Send an exception with tags. Deprecated method.
       #   begin
       #     raise "oh no!"
       #   rescue => e
@@ -172,17 +174,20 @@ module Appsignal
       #   end
       #
       # @example Add more metadata to transaction
-      #   Appsignal.send_error(e, :key => "value") do |transaction|
+      #   Appsignal.send_error(e) do |transaction|
       #     transaction.params(:search_query => params[:search_query])
       #     transaction.set_action("my_action_name")
+      #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
       #   end
       #
       # @param error [Exception] The error to send to AppSignal.
       # @param tags [Hash{String, Symbol => String, Symbol, Integer}]
       #   Additional tags to add to the error. See also {.tag_request}.
+      #   This parameter is deprecated. Use the block argument instead.
       # @param namespace [String] The namespace in which the error occurred.
       #   See also {.set_namespace}.
+      #   This parameter is deprecated. Use the block argument instead.
       # @yield [transaction] yields block to allow modification of the
       #   transaction before it's send.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -197,9 +202,30 @@ module Appsignal
       def send_error(
         error,
         tags = nil,
-        namespace = Appsignal::Transaction::HTTP_REQUEST
+        namespace = nil
       )
+        if tags
+          call_location = caller(1..1).first
+          deprecation_message \
+            "The tags argument for `Appsignal.send_error` is deprecated. " \
+            "Please use the block method to set tags instead.\n\n" \
+            "  Appsignal.send_error(error) do |transaction|\n" \
+            "    transaction.set_tags(#{tags})\n" \
+            "  end\n\n" \
+            "Appsignal.send_error called on location: #{call_location}"
+        end
+        if namespace
+          call_location = caller(1..1).first
+          deprecation_message \
+            "The namespace argument for `Appsignal.send_error` is deprecated. " \
+            "Please use the block method to set the namespace instead.\n\n" \
+            "  Appsignal.send_error(error) do |transaction|\n" \
+            "    transaction.namespace(#{namespace.inspect})\n" \
+            "  end\n\n" \
+            "Appsignal.send_error called on location: #{call_location}"
+        end
         return unless active?
+
         unless error.is_a?(Exception)
           logger.error "Appsignal.send_error: Cannot send error. The given " \
             "value is not an exception: #{error.inspect}"
@@ -207,7 +233,7 @@ module Appsignal
         end
         transaction = Appsignal::Transaction.new(
           SecureRandom.uuid,
-          namespace,
+          namespace || Appsignal::Transaction::HTTP_REQUEST,
           Appsignal::Transaction::GenericRequest.new({})
         )
         transaction.set_tags(tags) if tags
