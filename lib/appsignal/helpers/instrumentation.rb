@@ -285,8 +285,10 @@ module Appsignal
       #   transaction.
       # @param tags [Hash{String, Symbol => String, Symbol, Integer}]
       #   Additional tags to add to the error. See also {.tag_request}.
+      #   This parameter is deprecated. Use the block argument instead.
       # @param namespace [String] The namespace in which the error occurred.
       #   See also {.set_namespace}.
+      #   This parameter is deprecated. Use the block argument instead.
       # @yield [transaction] yields block to allow modification of the
       #   transaction.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -298,6 +300,26 @@ module Appsignal
       #   Exception handling guide
       # @since 0.6.6
       def set_error(exception, tags = nil, namespace = nil)
+        if tags
+          call_location = caller(1..1).first
+          deprecation_message \
+            "The tags argument for `Appsignal.set_error` is deprecated. " \
+            "Please use the block method to set tags instead.\n\n" \
+            "  Appsignal.set_error(error) do |transaction|\n" \
+            "    transaction.set_tags(#{tags})\n" \
+            "  end\n\n" \
+            "Appsignal.set_error called on location: #{call_location}"
+        end
+        if namespace
+          call_location = caller(1..1).first
+          deprecation_message \
+            "The namespace argument for `Appsignal.set_error` is deprecated. " \
+            "Please use the block method to set the namespace instead.\n\n" \
+            "  Appsignal.set_error(error) do |transaction|\n" \
+            "    transaction.namespace(#{namespace.inspect})\n" \
+            "  end\n\n" \
+            "Appsignal.set_error called on location: #{call_location}"
+        end
         unless exception.is_a?(Exception)
           logger.error "Appsignal.set_error: Cannot set error. The given " \
             "value is not an exception: #{exception.inspect}"
