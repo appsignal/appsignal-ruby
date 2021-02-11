@@ -686,6 +686,9 @@ describe Appsignal do
         )
       end
       let(:error) { ExampleException.new }
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      around { |example| keep_transactions { example.run } }
 
       it "sends the error to AppSignal" do
         expect(Appsignal::Transaction).to receive(:new).with(
@@ -719,30 +722,60 @@ describe Appsignal do
 
       context "with tags" do
         let(:tags) { { :a => "a", :b => "b" } }
-        before do
-          allow(Appsignal::Transaction).to receive(:new).and_return(transaction)
-        end
 
-        it "tags the request before sending it" do
-          expect(transaction).to receive(:set_tags).with(tags).and_call_original
-          expect(transaction).to receive(:complete)
+        it "prints a deprecation warning and tags the transaction" do
+          logs = capture_logs do
+            expect do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.send_error(error, tags)
+              end
+            end.to change { created_transactions.count }.by(1)
+          end
 
-          Appsignal.send_error(error, tags)
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "sample_data" => hash_including(
+              "tags" => { "a" => "a", "b" => "b" }
+            )
+          )
+
+          message = "The tags argument for `Appsignal.send_error` is deprecated. " \
+            "Please use the block method to set tags instead.\n\n" \
+            "  Appsignal.send_error(error) do |transaction|\n" \
+            "    transaction.set_tags(#{tags.inspect})\n" \
+            "  end\n\n" \
+            "Appsignal.send_error called on location: #{__FILE__}:"
+          expect(stderr).to include("appsignal WARNING: #{message}")
+          expect(logs).to include(message)
         end
       end
 
       context "with namespace" do
         let(:namespace) { "admin" }
 
-        it "sets the namespace on the transaction" do
-          expect(Appsignal::Transaction).to receive(:new).with(
-            kind_of(String),
-            "admin",
-            kind_of(Appsignal::Transaction::GenericRequest)
-          ).and_call_original
-        end
+        it "prints a deprecation warning and sets the namespace on the transaction" do
+          logs = capture_logs do
+            expect do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.send_error(error, nil, namespace)
+              end
+            end.to change { created_transactions.count }.by(1)
+          end
 
-        after { Appsignal.send_error(error, nil, namespace) }
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include("namespace" => namespace)
+
+          message = "The namespace argument for `Appsignal.send_error` is deprecated. " \
+            "Please use the block method to set the namespace instead.\n\n" \
+            "  Appsignal.send_error(error) do |transaction|\n" \
+            "    transaction.namespace(#{namespace.inspect})\n" \
+            "  end\n\n" \
+            "Appsignal.send_error called on location: #{__FILE__}:"
+          expect(stderr).to include("appsignal WARNING: #{message}")
+          expect(logs).to include(message)
+        end
       end
 
       context "when given a block" do
@@ -769,53 +802,85 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
+      around { |example| keep_transactions { example.run } }
+
       it "records the error and re-raise it" do
-        expect(Appsignal).to receive(:send_error).with(
-          kind_of(ExampleException),
-          nil,
-          Appsignal::Transaction::HTTP_REQUEST
-        )
         expect do
-          Appsignal.listen_for_error do
-            raise ExampleException, "I am an exception"
-          end
-        end.to raise_error(ExampleException, "I am an exception")
+          expect do
+            Appsignal.listen_for_error do
+              raise ExampleException, "I am an exception"
+            end
+          end.to raise_error(ExampleException, "I am an exception")
+        end.to change { created_transactions.count }.by(1)
+
+        expect(last_transaction.to_h).to include(
+          "error" => {
+            "name" => "ExampleException",
+            "message" => "I am an exception",
+            "backtrace" => kind_of(String)
+          },
+          "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
+          "sample_data" => hash_including(
+            "tags" => {}
+          )
+        )
       end
 
       context "with tags" do
         it "adds tags to the transaction" do
-          expect(Appsignal).to receive(:send_error).with(
-            kind_of(ExampleException),
-            { "foo" => "bar" },
-            Appsignal::Transaction::HTTP_REQUEST
-          )
           expect do
-            Appsignal.listen_for_error("foo" => "bar") do
-              raise ExampleException, "I am an exception"
-            end
-          end.to raise_error(ExampleException, "I am an exception")
+            expect do
+              Appsignal.listen_for_error("foo" => "bar") do
+                raise ExampleException, "I am an exception"
+              end
+            end.to raise_error(ExampleException, "I am an exception")
+          end.to change { created_transactions.count }.by(1)
+
+          expect(last_transaction.to_h).to include(
+            "error" => {
+              "name" => "ExampleException",
+              "message" => "I am an exception",
+              "backtrace" => kind_of(String)
+            },
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
+            "sample_data" => hash_including(
+              "tags" => { "foo" => "bar" }
+            )
+          )
         end
       end
 
       context "with a custom namespace" do
         it "adds the namespace to the transaction" do
-          expect(Appsignal).to receive(:send_error).with(
-            kind_of(ExampleException),
-            nil,
-            "custom_namespace"
-          )
           expect do
-            Appsignal.listen_for_error(nil, "custom_namespace") do
-              raise ExampleException, "I am an exception"
-            end
-          end.to raise_error(ExampleException, "I am an exception")
+            expect do
+              Appsignal.listen_for_error(nil, "custom_namespace") do
+                raise ExampleException, "I am an exception"
+              end
+            end.to raise_error(ExampleException, "I am an exception")
+          end.to change { created_transactions.count }.by(1)
+
+          expect(last_transaction.to_h).to include(
+            "error" => {
+              "name" => "ExampleException",
+              "message" => "I am an exception",
+              "backtrace" => kind_of(String)
+            },
+            "namespace" => "custom_namespace",
+            "sample_data" => hash_including(
+              "tags" => {}
+            )
+          )
         end
       end
     end
 
     describe ".set_error" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:error) { ExampleException.new("I am an exception") }
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
-      let(:error) { RuntimeError.new("I am an exception") }
+      around { |example| keep_transactions { example.run } }
 
       context "when there is an active transaction" do
         it "adds the error to the active transaction" do
@@ -845,24 +910,74 @@ describe Appsignal do
         context "with tags" do
           let(:tags) { { "foo" => "bar" } }
 
-          it "sets the tags on the transaction" do
+          it "prints a deprecation warning and tags the transaction" do
             expect(transaction).to receive(:set_error).with(error)
             expect(transaction).to receive(:set_tags).with(tags)
             expect(transaction).to_not receive(:set_namespace)
 
-            Appsignal.set_error(error, tags)
+            logs = capture_logs do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.set_error(error, tags)
+              end
+            end
+
+            message = "The tags argument for `Appsignal.set_error` is deprecated. " \
+              "Please use the block method to set tags instead.\n\n" \
+              "  Appsignal.set_error(error) do |transaction|\n" \
+              "    transaction.set_tags(#{tags.inspect})\n" \
+              "  end\n\n" \
+              "Appsignal.set_error called on location: #{__FILE__}:"
+            expect(stderr).to include("appsignal WARNING: #{message}")
+            expect(logs).to include(message)
           end
         end
 
         context "with namespace" do
           let(:namespace) { "admin" }
 
-          it "sets the namespace on the transaction" do
+          it "prints a deprecation warning andsets the namespace on the transaction" do
             expect(transaction).to receive(:set_error).with(error)
             expect(transaction).to_not receive(:set_tags)
             expect(transaction).to receive(:set_namespace).with(namespace)
 
-            Appsignal.set_error(error, nil, namespace)
+            logs = capture_logs do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.set_error(error, nil, namespace)
+              end
+            end
+
+            message = "The namespace argument for `Appsignal.set_error` is deprecated. " \
+              "Please use the block method to set the namespace instead.\n\n" \
+              "  Appsignal.set_error(error) do |transaction|\n" \
+              "    transaction.namespace(#{namespace.inspect})\n" \
+              "  end\n\n" \
+              "Appsignal.set_error called on location: #{__FILE__}:"
+            expect(stderr).to include("appsignal WARNING: #{message}")
+            expect(logs).to include(message)
+          end
+        end
+
+        context "when given a block" do
+          it "yields the transaction and allows additional metadata to be set" do
+            captured_transaction = nil
+            keep_transactions do
+              Appsignal.set_error(StandardError.new("my_error")) do |transaction|
+                captured_transaction = transaction
+                transaction.set_action("my_action")
+                transaction.set_namespace("my_namespace")
+              end
+            end
+
+            expect(transaction).to eql(captured_transaction)
+            expect(captured_transaction.to_h).to include(
+              "namespace" => "my_namespace",
+              "action" => "my_action",
+              "error" => {
+                "name" => "StandardError",
+                "message" => "my_error",
+                "backtrace" => kind_of(String)
+              }
+            )
           end
         end
       end
