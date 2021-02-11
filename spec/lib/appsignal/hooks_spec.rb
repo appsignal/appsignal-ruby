@@ -78,6 +78,47 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
     Appsignal::Hooks.hooks.delete(:mock_error_hook)
   end
+
+  describe "missing constants" do
+    let(:err_stream) { std_stream }
+    let(:stderr) { err_stream.read }
+    let(:log_stream) { std_stream }
+    let(:log) { log_contents(log_stream) }
+    before do
+      Appsignal.logger = test_logger(log_stream)
+    end
+
+    def call_constant(&block)
+      capture_std_streams(std_stream, err_stream, &block)
+    end
+
+    describe "SidekiqPlugin" do
+      it "logs a deprecation message and returns the new constant" do
+        constant = call_constant { Appsignal::Hooks::SidekiqPlugin }
+
+        expect(constant).to eql(Appsignal::Integrations::SidekiqMiddleware)
+        expect(constant.name).to eql("Appsignal::Integrations::SidekiqMiddleware")
+
+        deprecation_message =
+          "The constant Appsignal::Hooks::SidekiqPlugin has been deprecated. " \
+          "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
+          "in the following file to remove this message.\n#{__FILE__}:"
+        expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
+        expect(log).to contains_log :warn, deprecation_message
+      end
+    end
+
+    describe "other constant" do
+      it "raises a NameError like Ruby normally does" do
+        expect do
+          call_constant { Appsignal::Hooks::Unknown }
+        end.to raise_error(NameError)
+
+        expect(stderr).to be_empty
+        expect(log).to be_empty
+      end
+    end
+  end
 end
 
 describe Appsignal::Hooks::Helpers do

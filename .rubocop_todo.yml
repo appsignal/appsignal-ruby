@@ -62,7 +62,7 @@ Security/YAMLLoad:
     - 'ext/base.rb'
     - 'lib/appsignal/config.rb'
     - 'lib/appsignal/extension.rb'
-    - 'lib/appsignal/hooks/sidekiq.rb'
+    - 'lib/appsignal/integrations/sidekiq.rb'
 
 # Offense count: 20
 # Cop supports --auto-correct.
