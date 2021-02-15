@@ -56,7 +56,11 @@ module Appsignal
       def install_callbacks
         ActionCable::Channel::Base.set_callback :subscribe, :around, :prepend => true do |channel, inner|
           # The request is only the original websocket request
-          env = channel.connection.env
+          connection = channel.connection
+          # #env is not available on the Rails ConnectionStub class used in the
+          # Rails app test suite. If we call `#env` it causes an error to occur
+          # in apps' test suites.
+          env = connection.respond_to?(:env) ? connection.env : {}
           request = ActionDispatch::Request.new(env)
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
             request.request_id || SecureRandom.uuid
@@ -84,7 +88,11 @@ module Appsignal
 
         ActionCable::Channel::Base.set_callback :unsubscribe, :around, :prepend => true do |channel, inner|
           # The request is only the original websocket request
-          env = channel.connection.env
+          connection = channel.connection
+          # #env is not available on the Rails ConnectionStub class used in the
+          # Rails app test suite. If we call `#env` it causes an error to occur
+          # in apps' test suites.
+          env = connection.respond_to?(:env) ? connection.env : {}
           request = ActionDispatch::Request.new(env)
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
             request.request_id || SecureRandom.uuid
