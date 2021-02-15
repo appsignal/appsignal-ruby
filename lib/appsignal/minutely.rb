@@ -135,6 +135,10 @@ module Appsignal
       def start
         stop
         @thread = Thread.new do
+          # Advise multi-threaded app servers to ignore this thread
+          # for the purposes of fork safety warnings
+          Thread.current.thread_variable_set(:fork_safe, true)
+
           sleep initial_wait_time
           initialize_probes
           loop do
