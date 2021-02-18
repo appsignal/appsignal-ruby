@@ -11,6 +11,10 @@
 - Add Sidekiq error handler. Report more Sidekiq errors that happen around job
   execution. PR #699
 
+# 2.11.7
+- Fix ActionCable integration in test environment using `stub_connection`.
+  PR #705
+
 # 2.11.6
 - Prepend Sidekiq middleware to wrap all Sidekiq middleware. Catches more
   errors and provide more complete performance measurements. PR #698
