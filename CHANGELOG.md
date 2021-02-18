@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.11.8
+- Mark minutely probe thread as fork-safe by @pixeltrix. PR #704
+
 # 2.11.7
 - Fix ActionCable integration in test environment using `stub_connection`.
   PR #705
