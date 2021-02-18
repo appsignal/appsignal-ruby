@@ -23,6 +23,27 @@ RSpec.describe "Puma plugin" do
       def self.stats
       end
 
+      def self.run
+        # Capture threads running before application is preloaded
+        before = Thread.list.reject { |t| t.thread_variable_get(:fork_safe) }
+
+        # An abbreviated version of what happens in Puma::Cluster#run
+        launcher = MockPumaLauncher.new
+        plugin = Plugin.plugin.new
+        plugin.start(launcher)
+        launcher.events.on_booted.call
+
+        # Wait for minutely probe thread to finish starting
+        sleep 0.005
+
+        # Capture any new threads running after application is preloaded.
+        # Any threads created during the preloading phase will not be
+        # carried over into the forked workers. Puma warns about these
+        # but the minutely probe thread should only exist in the main process.
+        after = Thread.list.reject { |t| t.thread_variable_get(:fork_safe) }
+        $stdout.puts "! WARNING: Detected #{after.size - before.size} Thread(s) started in app boot" if after.size > before.size
+      end
+
       class Plugin
         class << self
           attr_reader :plugin
@@ -66,6 +87,13 @@ RSpec.describe "Puma plugin" do
 
     # Minutely probes started and called
     wait_for("enough probe calls") { probe.calls >= 2 }
+  end
+
+  it "marks the PumaProbe thread as fork-safe", :not_ruby19 do
+    out_stream = std_stream
+    capture_stdout(out_stream) { Puma.run }
+
+    expect(out_stream.read).not_to include("WARNING: Detected 1 Thread")
   end
 
   context "without Puma.stats" do
