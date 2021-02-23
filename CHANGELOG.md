@@ -11,6 +11,10 @@
 - Add Sidekiq error handler. Report more Sidekiq errors that happen around job
   execution. PR #699
 
+# 2.11.9
+- Fix and simplify Ruby method delegation for object method instrumentation in
+  the different Ruby versions. PR #706
+
 # 2.11.8
 - Mark minutely probe thread as fork-safe by @pixeltrix. PR #704
 
