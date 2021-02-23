@@ -30,12 +30,57 @@ describe Object do
         before do
           Appsignal.config = project_fixture_config
           expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+          expect(Appsignal.active?).to be_truthy
         end
         after { Appsignal.config = nil }
 
+        context "with different kind of arguments" do
+          let(:klass) do
+            Class.new do
+              def positional_arguments(param1, param2)
+                [param1, param2]
+              end
+              appsignal_instrument_method :positional_arguments
+
+              def positional_arguments_splat(*params)
+                params
+              end
+              appsignal_instrument_method :positional_arguments_splat
+
+              def keyword_arguments(a: nil, b: nil)
+                [a, b]
+              end
+              appsignal_instrument_method :keyword_arguments
+
+              def keyword_arguments_splat(**kwargs)
+                kwargs
+              end
+              appsignal_instrument_method :keyword_arguments_splat
+
+              def splat(*args, **kwargs)
+                [args, kwargs]
+              end
+              appsignal_instrument_method :splat
+            end
+          end
+
+          it "instruments the method and calls it" do
+            expect(instance.positional_arguments("abc", "def")).to eq(["abc", "def"])
+            expect(instance.positional_arguments_splat("abc", "def")).to eq(["abc", "def"])
+            expect(instance.keyword_arguments(:a => "a", :b => "b")).to eq(["a", "b"])
+            expect(instance.keyword_arguments_splat(:a => "a", :b => "b"))
+              .to eq(:a => "a", :b => "b")
+
+            expect(instance.splat).to eq([[], {}])
+            expect(instance.splat(:a => "a", :b => "b")).to eq([[], { :a => "a", :b => "b" }])
+            expect(instance.splat("abc", "def")).to eq([["abc", "def"], {}])
+            expect(instance.splat("abc", "def", :a => "a", :b => "b"))
+              .to eq([["abc", "def"], { :a => "a", :b => "b" }])
+          end
+        end
+
         context "with anonymous class" do
           it "instruments the method and calls it" do
-            expect(Appsignal.active?).to be_truthy
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "foo.AnonymousClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
@@ -56,7 +101,6 @@ describe Object do
           let(:klass) { NamedClass }
 
           it "instruments the method and calls it" do
-            expect(Appsignal.active?).to be_truthy
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "foo.NamedClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
@@ -81,7 +125,6 @@ describe Object do
           let(:klass) { MyModule::NestedModule::NamedClass }
 
           it "instruments the method and calls it" do
-            expect(Appsignal.active?).to be_truthy
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "bar.NamedClass.NestedModule.MyModule.other", nil, nil,
@@ -101,7 +144,6 @@ describe Object do
           end
 
           it "instruments with custom name" do
-            expect(Appsignal.active?).to be_truthy
             expect(transaction).to receive(:start_event)
             expect(transaction).to receive(:finish_event).with \
               "my_method.group", nil, nil, Appsignal::EventFormatter::DEFAULT
@@ -161,6 +203,51 @@ describe Object do
             .and_return(transaction)
         end
         after { Appsignal.config = nil }
+
+        context "with different kind of arguments" do
+          let(:klass) do
+            Class.new do
+              def self.positional_arguments(param1, param2)
+                [param1, param2]
+              end
+              appsignal_instrument_class_method :positional_arguments
+
+              def self.positional_arguments_splat(*params)
+                params
+              end
+              appsignal_instrument_class_method :positional_arguments_splat
+
+              def self.keyword_arguments(a: nil, b: nil)
+                [a, b]
+              end
+              appsignal_instrument_class_method :keyword_arguments
+
+              def self.keyword_arguments_splat(**kwargs)
+                kwargs
+              end
+              appsignal_instrument_class_method :keyword_arguments_splat
+
+              def self.splat(*args, **kwargs)
+                [args, kwargs]
+              end
+              appsignal_instrument_class_method :splat
+            end
+          end
+
+          it "instruments the method and calls it" do
+            expect(klass.positional_arguments("abc", "def")).to eq(["abc", "def"])
+            expect(klass.positional_arguments_splat("abc", "def")).to eq(["abc", "def"])
+            expect(klass.keyword_arguments(:a => "a", :b => "b")).to eq(["a", "b"])
+            expect(klass.keyword_arguments_splat(:a => "a", :b => "b"))
+              .to eq(:a => "a", :b => "b")
+
+            expect(klass.splat).to eq([[], {}])
+            expect(klass.splat(:a => "a", :b => "b")).to eq([[], { :a => "a", :b => "b" }])
+            expect(klass.splat("abc", "def")).to eq([["abc", "def"], {}])
+            expect(klass.splat("abc", "def", :a => "a", :b => "b"))
+              .to eq([["abc", "def"], { :a => "a", :b => "b" }])
+          end
+        end
 
         context "with anonymous class" do
           it "instruments the method and calls it" do
