@@ -1,11 +1,16 @@
 # Changelog
 
 # 3.0.0
+
+Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
+
+[upgrade3]: https://docs.appsignal.com/ruby/installation/upgrade-from-2-to-3.html
+
 - Drop Ruby 1.9 support. PR #683, #682, #688, #694
 - Require Ruby 2.0 or newer for gem. PR #701
 - Use Module.prepend for all gem integrations. Fixes #603 in combination with
   other gems that provide instrumentation for gems. PR #683
-- Remove deprecated integrations, classes, methods and arguments. PR #685
+- Remove deprecated integrations, classes, methods and arguments. PR #685, #686
 - Deprecate `set_error` and `send_error` error helpers `tags` and `namespace`
   arguments. PR #702
 - Add Sidekiq error handler. Report more Sidekiq errors that happen around job
