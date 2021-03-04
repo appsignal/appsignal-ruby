@@ -131,9 +131,69 @@ module Appsignal
           [:pointer],
           :appsignal_string
 
+        # Span methods
+        attach_function :appsignal_create_root_span,
+          [:appsignal_string],
+          :pointer
+        attach_function :appsignal_create_root_span_with_timestamp,
+          [:appsignal_string, :int64, :int64],
+          :pointer
+        attach_function :appsignal_create_child_span,
+          [:pointer],
+          :pointer
+        attach_function :appsignal_create_child_span_with_timestamp,
+          [:pointer, :int64, :int64],
+          :pointer
+        attach_function :appsignal_create_span_from_traceparent,
+          [:appsignal_string],
+          :pointer
+        attach_function :appsignal_span_id,
+          [:pointer],
+          :appsignal_string
+        attach_function :appsignal_span_to_json,
+          [:pointer],
+          :appsignal_string
+        attach_function :appsignal_set_span_name,
+          [:pointer, :appsignal_string],
+          :void
+        attach_function :appsignal_set_span_namespace,
+          [:pointer, :appsignal_string],
+          :void
+        attach_function :appsignal_add_span_error,
+          [:pointer, :appsignal_string, :appsignal_string, :pointer],
+          :void
+        attach_function :appsignal_set_span_sample_data,
+          [:pointer, :appsignal_string, :pointer],
+          :void
+        attach_function :appsignal_set_span_attribute_string,
+          [:pointer, :appsignal_string, :appsignal_string],
+          :void
+        attach_function :appsignal_set_span_attribute_sql_string,
+          [:pointer, :appsignal_string, :appsignal_string],
+          :void
+        attach_function :appsignal_set_span_attribute_int,
+          [:pointer, :appsignal_string, :int64],
+          :void
+        attach_function :appsignal_set_span_attribute_bool,
+          [:pointer, :appsignal_string, :bool],
+          :void
+        attach_function :appsignal_set_span_attribute_double,
+          [:pointer, :appsignal_string, :double],
+          :void
+        attach_function :appsignal_close_span,
+          [:pointer],
+          :void
+        attach_function :appsignal_close_span_with_timestamp,
+          [:pointer, :int64, :int64],
+          :void
+        attach_function :appsignal_free_span,
+          [:pointer],
+          :void
+
         # Data struct methods
         attach_function :appsignal_free_data, [], :void
         attach_function :appsignal_data_map_new, [], :pointer
+        attach_function :appsignal_data_filtered_map_new, [], :pointer
         attach_function :appsignal_data_array_new, [], :pointer
         attach_function :appsignal_data_map_set_string,
           [:pointer, :appsignal_string, :appsignal_string],
@@ -217,6 +277,10 @@ module Appsignal
       end
 
       def data_map_new
+        Data.new(appsignal_data_map_new)
+      end
+
+      def data_filtered_map_new
         Data.new(appsignal_data_map_new)
       end
 
@@ -372,6 +436,94 @@ module Appsignal
         def to_json
           json = Extension.appsignal_transaction_to_json(pointer)
           make_ruby_string(json) if json[:len] > 0
+        end
+      end
+
+      class Span
+        include StringHelpers
+        extend StringHelpers
+
+        attr_reader :pointer
+
+        def initialize(pointer)
+          @pointer = FFI::AutoPointer.new(
+            pointer,
+            Extension.method(:appsignal_free_span)
+          )
+        end
+
+        def self.root(namespace)
+          namespace = make_appsignal_string(namespace)
+          Span.new(Extension.appsignal_create_root_span(namespace))
+        end
+
+        def child
+          Span.new(Extension.appsignal_create_child_span(pointer))
+        end
+
+        def add_error(name, message, backtrace)
+          Extension.appsignal_add_span_error(
+            pointer,
+            make_appsignal_string(name),
+            make_appsignal_string(message),
+            backtrace.pointer
+          )
+        end
+
+        def set_sample_data(key, payload)
+          Extension.appsignal_set_span_sample_data(
+            pointer,
+            make_appsignal_string(key),
+            payload.pointer
+          )
+        end
+
+        def set_name(name) # rubocop:disable Naming/AccessorMethodName
+          Extension.appsignal_set_span_name(
+            pointer,
+            make_appsignal_string(name)
+          )
+        end
+
+        def set_attribute_string(key, value)
+          Extension.appsignal_set_span_attribute_string(
+            pointer,
+            make_appsignal_string(key),
+            make_appsignal_string(value)
+          )
+        end
+
+        def set_attribute_int(key, value)
+          Extension.appsignal_set_span_attribute_int(
+            pointer,
+            make_appsignal_string(key),
+            value
+          )
+        end
+
+        def set_attribute_bool(key, value)
+          Extension.appsignal_set_span_attribute_bool(
+            pointer,
+            make_appsignal_string(key),
+            value
+          )
+        end
+
+        def set_attribute_double(key, value)
+          Extension.appsignal_set_span_attribute_double(
+            pointer,
+            make_appsignal_string(key),
+            value
+          )
+        end
+
+        def to_json
+          json = Extension.appsignal_span_to_json(pointer)
+          make_ruby_string(json) if json[:len] > 0
+        end
+
+        def close
+          Extension.appsignal_close_span(pointer)
         end
       end
 

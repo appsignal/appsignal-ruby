@@ -38,6 +38,7 @@ module Appsignal
       :enable_minutely_probes         => true,
       :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers                    => [],
+      :filter_data_keys               => [],
       :files_world_accessible         => true,
       :transaction_debug_mode         => false
     }.freeze
@@ -75,6 +76,7 @@ module Appsignal
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
+      "APPSIGNAL_FILTER_DATA_KEYS"               => :filter_data_keys,
       "APP_REVISION"                             => :revision
     }.freeze
     # @api private
@@ -118,6 +120,7 @@ module Appsignal
       APPSIGNAL_IGNORE_ERRORS
       APPSIGNAL_IGNORE_NAMESPACES
       APPSIGNAL_REQUEST_HEADERS
+      APPSIGNAL_FILTER_DATA_KEYS
     ].freeze
 
     # @attribute [r] system_config
@@ -290,6 +293,7 @@ module Appsignal
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
       ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
+      ENV["_APPSIGNAL_FILTER_DATA_KEYS"]             = config_hash[:filter_data_keys].join(",")
       ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end
 

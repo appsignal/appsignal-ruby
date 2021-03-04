@@ -50,6 +50,11 @@ module Appsignal
       # Makes sure the generated docs aren't always overwritten with the JRuby
       # version.
       Transaction = Jruby::Transaction
+      # Reassign Span class for JRuby extension usage.
+      #
+      # Makes sure the generated docs aren't always overwritten with the JRuby
+      # version.
+      Span = Jruby::Span
       # Reassign Data class for JRuby extension usage.
       #
       # Makes sure the generated docs aren't always overwritten with the JRuby
