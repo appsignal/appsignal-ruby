@@ -158,6 +158,7 @@ describe Appsignal::Config do
         :ignore_namespaces              => [],
         :filter_parameters              => [],
         :filter_session_data            => [],
+        :filter_data_keys               => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
