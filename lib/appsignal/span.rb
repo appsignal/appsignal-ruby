@@ -65,8 +65,18 @@ module Appsignal
       JSON.parse(json)
     end
 
+    def instrument
+      yield self
+    ensure
+      close
+    end
+
     def close
       @ext.close
+    end
+
+    def closed?
+      to_h.nil?
     end
 
     private
