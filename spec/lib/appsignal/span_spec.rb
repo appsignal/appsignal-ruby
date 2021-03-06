@@ -68,6 +68,7 @@ describe Appsignal::Span do
 
   describe "#[]=" do
     let(:attributes) { root.to_h["attributes"] }
+
     it "sets a string attribute" do
       root["string"] = "attribute"
 
@@ -107,11 +108,34 @@ describe Appsignal::Span do
     end
   end
 
+  describe "#instrument" do
+    it "closes the span after yielding" do
+      root.instrument do
+        # Nothing happening
+      end
+      expect(root.closed?).to eq true
+    end
+
+    context "with an error raised in the passed block" do
+      it "closes the span after yielding" do
+        expect do
+          root.instrument do
+            raise ExampleException, "foo"
+          end
+        end.to raise_error(ExampleException, "foo")
+        expect(root.closed?).to eq true
+      end
+    end
+  end
+
   describe "#close" do
     it "closes a span" do
+      expect(root.closed?).to eq false
+
       root.close
 
       expect(root.to_h).to be_nil
+      expect(root.closed?).to eq true
     end
   end
 end
