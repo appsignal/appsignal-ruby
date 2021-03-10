@@ -374,6 +374,7 @@ describe Appsignal::Config do
         :active => true,
         :name => "App name",
         :debug => true,
+        :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :ignore_actions => %w[action1 action2],
         :ignore_errors => %w[ExampleStandardError AnotherError],
         :ignore_namespaces => %w[admin private_namespace],
@@ -393,6 +394,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_ACTIVE"]                  = "true"
       ENV["APPSIGNAL_APP_NAME"]                = "App name"
       ENV["APPSIGNAL_DEBUG"]                   = "true"
+      ENV["APPSIGNAL_DNS_SERVERS"]             = "8.8.8.8,8.8.4.4"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
       ENV["APPSIGNAL_IGNORE_ERRORS"]           = "ExampleStandardError,AnotherError"
       ENV["APPSIGNAL_IGNORE_NAMESPACES"]       = "admin,private_namespace"
