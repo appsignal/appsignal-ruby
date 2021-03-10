@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.0.1
+- Fix error occurring on APPSIGNAL_DNS_SERVER environment variable option
+  parsing. PR #709
+
 # 3.0.0
 
 Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
