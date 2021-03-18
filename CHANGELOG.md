@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.0.2
+- Fix error on Rails boot when `enable_frontend_error_catching` is `true`.
+  PR #711
+
 # 3.0.1
 - Fix error occurring on APPSIGNAL_DNS_SERVER environment variable option
   parsing. PR #709
