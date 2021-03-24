@@ -770,7 +770,7 @@ describe Appsignal do
           message = "The namespace argument for `Appsignal.send_error` is deprecated. " \
             "Please use the block method to set the namespace instead.\n\n" \
             "  Appsignal.send_error(error) do |transaction|\n" \
-            "    transaction.namespace(#{namespace.inspect})\n" \
+            "    transaction.set_namespace(#{namespace.inspect})\n" \
             "  end\n\n" \
             "Appsignal.send_error called on location: #{__FILE__}:"
           expect(stderr).to include("appsignal WARNING: #{message}")
@@ -949,7 +949,7 @@ describe Appsignal do
             message = "The namespace argument for `Appsignal.set_error` is deprecated. " \
               "Please use the block method to set the namespace instead.\n\n" \
               "  Appsignal.set_error(error) do |transaction|\n" \
-              "    transaction.namespace(#{namespace.inspect})\n" \
+              "    transaction.set_namespace(#{namespace.inspect})\n" \
               "  end\n\n" \
               "Appsignal.set_error called on location: #{__FILE__}:"
             expect(stderr).to include("appsignal WARNING: #{message}")
