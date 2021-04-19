@@ -385,10 +385,20 @@ begin
   end
 
   namespace :test do
-    desc "Run the Appsignal gem test in an extension failure scenario"
-    RSpec::Core::RakeTask.new :failure do |t|
+    RSpec::Core::RakeTask.new :rspec_failure do |t|
       t.rspec_opts = "#{exclude_pattern} --tag extension_installation_failure"
     end
+
+    desc "Intentionally fail the extension installation"
+    task :prepare_failure do
+      # ENV var to make sure installation fails on purpurse
+      ENV["_TEST_APPSIGNAL_EXTENSION_FAILURE"] = "true"
+      # Run extension installation with intentional failure
+      `rake extension:install`
+    end
+
+    desc "Run the Appsignal gem test in an extension failure scenario"
+    task :failure => [:prepare_failure, :rspec_failure]
   end
 rescue LoadError # rubocop:disable Lint/HandleExceptions
   # When running rake install, there is no RSpec yet.

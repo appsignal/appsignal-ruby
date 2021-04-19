@@ -117,6 +117,28 @@ RSpec.configure do |config|
     allow(Appsignal::Config).to receive(:system_tmp_dir).and_return(spec_system_tmp_dir)
   end
 
+  # These tests are not run by default. They require a failed extension
+  # installation. See the `rake test:failure` task. If a test with this tag was
+  # run, run `rake extension:install` again to fix the extension installation
+  # before running other tests.
+  config.before :extension_installation_failure => true do
+    next unless Appsignal.extension_loaded?
+
+    raise "Extension is loaded, please run the following task and rerun the test." \
+      "\n\n    rake test:prepare_failure"
+  end
+
+  # Check to see if the extension is loaded before running the specs. If the
+  # extension is not loaded it can result in unexpected behavior.
+  config.before do |example|
+    next if Appsignal.extension_loaded?
+    next if example.metadata[:extension_installation_failure]
+
+    puts "\nWARNING: The AppSignal extension is not loaded, please run the "\
+      "following task and rerun the test." \
+      "\n\n    rake extension:install\n"
+  end
+
   config.after do
     Appsignal::Testing.clear!
     clear_current_transaction!
