@@ -89,7 +89,7 @@ RSpec.describe "Puma plugin" do
     wait_for("enough probe calls") { probe.calls >= 2 }
   end
 
-  it "marks the PumaProbe thread as fork-safe", :not_ruby19 do
+  it "marks the PumaProbe thread as fork-safe" do
     out_stream = std_stream
     capture_stdout(out_stream) { Puma.run }
 

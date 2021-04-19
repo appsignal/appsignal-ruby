@@ -377,8 +377,6 @@ begin
   is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
   excludes = []
   excludes << "spec/lib/appsignal/extension/jruby_spec.rb" unless is_jruby
-  is_ruby19 = RUBY_VERSION < "2.0"
-  excludes << "spec/lib/appsignal/integrations/object_spec.rb" if is_ruby19
   exclude_pattern = "--exclude-pattern=#{excludes.join(",")}" if excludes.any?
 
   desc "Run the AppSignal gem test suite."
