@@ -246,6 +246,23 @@ describe Appsignal::Transaction do
         expect(transaction.ext).to_not be_nil
       end
 
+      context "when extension is not loaded", :extension_installation_failure do
+        around do |example|
+          Appsignal::Testing.without_testing { example.run }
+        end
+
+        it "does not error on missing extension method calls" do
+          expect(transaction.ext).to be_kind_of(Appsignal::Extension::MockTransaction)
+          transaction.start_event
+          transaction.finish_event(
+            "name",
+            "title",
+            "body",
+            Appsignal::EventFormatter::DEFAULT
+          )
+        end
+      end
+
       it "sets the transaction id" do
         expect(transaction.transaction_id).to eq "1"
       end
