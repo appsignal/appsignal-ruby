@@ -23,8 +23,10 @@ describe Appsignal::Utils::Data do
           }
         end
 
-        it { is_expected.to eq Appsignal::Utils::Data.generate(body) }
-        it { is_expected.to_not eq Appsignal::Utils::Data.generate({}) }
+        it "returns a valid Data object" do
+          is_expected.to eq Appsignal::Utils::Data.generate(body)
+          is_expected.to_not eq Appsignal::Utils::Data.generate({})
+        end
 
         describe "#to_s" do
           it "returns a serialized hash" do
@@ -61,8 +63,10 @@ describe Appsignal::Utils::Data do
           ]
         end
 
-        it { is_expected.to eq Appsignal::Utils::Data.generate(body) }
-        it { is_expected.to_not eq Appsignal::Utils::Data.generate({}) }
+        it "returns a valid Data object" do
+          is_expected.to eq Appsignal::Utils::Data.generate(body)
+          is_expected.to_not eq Appsignal::Utils::Data.generate({})
+        end
 
         describe "#to_s" do
           it "returns a serialized array" do
