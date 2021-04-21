@@ -119,22 +119,56 @@ describe Appsignal::Extension do
     end
   end
 
-  context "when the extension library cannot be loaded" do
-    subject { Appsignal::Extension }
+  context "when the extension library cannot be loaded", :extension_installation_failure do
+    let(:ext) { Appsignal::Extension }
 
-    before do
-      allow(Appsignal).to receive(:extension_loaded).and_return(false)
-      allow(Appsignal).to receive(:testing?).and_return(false)
+    around do |example|
+      Appsignal::Testing.without_testing { example.run }
     end
 
     it "should indicate that the extension is not loaded" do
       expect(Appsignal.extension_loaded?).to be_falsy
     end
 
-    it "should not raise errors when methods are called" do
-      expect do
-        subject.something
-      end.not_to raise_error
+    it "does not raise errors when methods are called" do
+      ext.appsignal_start
+      ext.something
+    end
+
+    describe Appsignal::Extension::MockData do
+      it "does not error on missing data_map_new extension method calls" do
+        map = ext.data_map_new
+        expect(map).to be_kind_of(Appsignal::Extension::MockData)
+        # Does not raise errors any arbitrary method call that does not exist
+        map.set_string("key", "value")
+        map.set_int("key", 123)
+        map.something
+      end
+
+      it "does not error on missing data_array_new extension method calls" do
+        array = ext.data_array_new
+        expect(array).to be_kind_of(Appsignal::Extension::MockData)
+        # Does not raise errors any arbitrary method call that does not exist
+        array.append_string("value")
+        array.append_int(123)
+        array.something
+      end
+    end
+
+    describe Appsignal::Extension::MockTransaction do
+      it "does not error on missing transaction extension method calls" do
+        transaction = described_class.new
+
+        transaction.start_event(0)
+        transaction.finish_event(
+          "name",
+          "title",
+          "body",
+          Appsignal::EventFormatter::DEFAULT,
+          0
+        )
+        transaction.something
+      end
     end
   end
 end
