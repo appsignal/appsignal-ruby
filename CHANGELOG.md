@@ -1,5 +1,12 @@
 # Changelog
 
+# 3.0.3
+- Fix deprecation message for set_error namespace argument. PR #712
+- Fix example code for Transaction#set_namespace method. PR #713
+- Fix extension fallbacks on extension installation failure, that caused
+- NoMethodErrors. PR #720
+- Bump agent to v-75e76ad. PR #721
+
 # 3.0.2
 - Fix error on Rails boot when `enable_frontend_error_catching` is `true`.
   PR #711
