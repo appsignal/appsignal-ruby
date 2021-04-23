@@ -88,6 +88,10 @@ matrix:
   gemsets: # By default all gems are tested
     none:
       - "no_dependencies"
+    old_rails:
+      - "no_dependencies"
+      - "rails-3.2"
+      - "rails-4.2"
     minimal:
       - "no_dependencies"
       - "rails-5.2"
@@ -97,6 +101,7 @@ matrix:
     - ruby: "2.0.0-p648"
       rubygems: "2.7.8"
       bundler: "1.17.3"
+      gems: "old_rails"
     - ruby: "2.1.10"
       rubygems: "2.7.8"
       bundler: "1.17.3"
@@ -122,14 +127,8 @@ matrix:
     - gem: "capistrano3"
     - gem: "grape"
     - gem: "padrino"
-      exclude:
-        ruby:
-          - "2.0.0-p648"
     - gem: "que"
     - gem: "que_beta"
-      exclude:
-        ruby:
-          - "2.0.0-p648"
     - gem: "rails-3.2"
       bundler: "1.17.3"
       exclude:
@@ -147,22 +146,18 @@ matrix:
     - gem: "rails-5.0"
       exclude:
         ruby:
-          - "2.0.0-p648"
           - "3.0.1"
     - gem: "rails-5.1"
       exclude:
         ruby:
-          - "2.0.0-p648"
           - "3.0.1"
     - gem: "rails-5.2"
       exclude:
         ruby:
-          - "2.0.0-p648"
           - "3.0.1"
     - gem: "rails-6.0"
       exclude:
         ruby:
-          - "2.0.0-p648"
           - "2.1.10"
           - "2.2.10"
           - "2.3.8"
@@ -174,9 +169,6 @@ matrix:
         ruby:
           - "3.0.1"
     - gem: "resque-2"
-      exclude:
-        ruby:
-          - "2.0.0-p648"
     - gem: "sequel"
     - gem: "sequel-435"
       exclude:
