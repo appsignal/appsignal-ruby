@@ -9,18 +9,22 @@ fi
 
 case "${_RUBYGEMS_VERSION-"latest"}" in
   "latest")
+    echo "Updating rubygems"
     gem update $gem_args --system
   ;;
   *)
+    echo "Updating rubygems to $_RUBYGEMS_VERSION}"
     gem update $gem_args --system $_RUBYGEMS_VERSION
   ;;
 esac
 
 case "${_BUNDLER_VERSION-"latest"}" in
   "latest")
+    echo "Updating bundler"
     gem update bundler $gem_args
   ;;
   *)
+    echo "Updating bundler to $_BUNDLER_VERSION"
     gem install bundler $gem_args --version $_BUNDLER_VERSION
   ;;
 esac
