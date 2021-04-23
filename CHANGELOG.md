@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.0.4 beta 1
+- Bump agent to 6caf6d0
+    - Add aarch64 (ARM 64-bit Linux) build.
+    - Replace curl HTTP client.
+    - Various other maintenance updates.
+
 # 3.0.3
 - Fix deprecation message for set_error namespace argument. PR #712
 - Fix example code for Transaction#set_namespace method. PR #713
