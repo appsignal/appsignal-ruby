@@ -110,66 +110,6 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.0.0-p648 for capistrano2
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: capistrano2
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/capistrano2.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for capistrano3
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: capistrano3
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/capistrano3.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for grape
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: grape
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/grape.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for que
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: que
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/que.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for rails-3.2
       env_vars:
       - name: RUBY_VERSION
@@ -193,81 +133,6 @@ blocks:
         value: rails-4.2
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-4.2.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for resque-1
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: resque-1
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/resque-1.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for sequel
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: sequel
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/sequel.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for sequel-435
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: sequel-435
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/sequel-435.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for sinatra
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: sinatra
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/sinatra.gemfile
-      - name: _RUBYGEMS_VERSION
-        value: 2.7.8
-      - name: _BUNDLER_VERSION
-        value: 1.17.3
-      commands:
-      - "./support/bundler_wrapper exec rake test"
-      - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.0.0-p648 for webmachine
-      env_vars:
-      - name: RUBY_VERSION
-        value: 2.0.0-p648
-      - name: GEMSET
-        value: webmachine
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
       - name: _RUBYGEMS_VERSION
         value: 2.7.8
       - name: _BUNDLER_VERSION
@@ -699,7 +564,7 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby 2.7.2
+- name: Ruby 2.7.3
   dependencies:
   - Validation
   task:
@@ -707,10 +572,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.7.2 for no_dependencies
+    - name: Ruby 2.7.3 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
@@ -722,18 +587,18 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby 2.7.2 - Gems
+- name: Ruby 2.7.3 - Gems
   dependencies:
-  - Ruby 2.7.2
+  - Ruby 2.7.3
   task:
     prologue:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 2.7.2 for capistrano2
+    - name: Ruby 2.7.3 for capistrano2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: capistrano2
       - name: BUNDLE_GEMFILE
@@ -745,10 +610,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for capistrano3
+    - name: Ruby 2.7.3 for capistrano3
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: capistrano3
       - name: BUNDLE_GEMFILE
@@ -760,10 +625,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for grape
+    - name: Ruby 2.7.3 for grape
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: grape
       - name: BUNDLE_GEMFILE
@@ -775,10 +640,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for padrino
+    - name: Ruby 2.7.3 for padrino
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: padrino
       - name: BUNDLE_GEMFILE
@@ -790,10 +655,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for que
+    - name: Ruby 2.7.3 for que
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: que
       - name: BUNDLE_GEMFILE
@@ -805,10 +670,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for que_beta
+    - name: Ruby 2.7.3 for que_beta
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: que_beta
       - name: BUNDLE_GEMFILE
@@ -820,10 +685,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for rails-5.0
+    - name: Ruby 2.7.3 for rails-5.0
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: rails-5.0
       - name: BUNDLE_GEMFILE
@@ -835,10 +700,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for rails-5.1
+    - name: Ruby 2.7.3 for rails-5.1
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: rails-5.1
       - name: BUNDLE_GEMFILE
@@ -850,10 +715,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for rails-5.2
+    - name: Ruby 2.7.3 for rails-5.2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: rails-5.2
       - name: BUNDLE_GEMFILE
@@ -865,10 +730,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for rails-6.0
+    - name: Ruby 2.7.3 for rails-6.0
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: rails-6.0
       - name: BUNDLE_GEMFILE
@@ -880,10 +745,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for resque-1
+    - name: Ruby 2.7.3 for resque-1
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: resque-1
       - name: BUNDLE_GEMFILE
@@ -895,10 +760,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for resque-2
+    - name: Ruby 2.7.3 for resque-2
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: resque-2
       - name: BUNDLE_GEMFILE
@@ -910,10 +775,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for sequel
+    - name: Ruby 2.7.3 for sequel
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: sequel
       - name: BUNDLE_GEMFILE
@@ -925,10 +790,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for sequel-435
+    - name: Ruby 2.7.3 for sequel-435
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: sequel-435
       - name: BUNDLE_GEMFILE
@@ -940,10 +805,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for sinatra
+    - name: Ruby 2.7.3 for sinatra
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: sinatra
       - name: BUNDLE_GEMFILE
@@ -955,10 +820,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 2.7.2 for webmachine
+    - name: Ruby 2.7.3 for webmachine
       env_vars:
       - name: RUBY_VERSION
-        value: 2.7.2
+        value: 2.7.3
       - name: GEMSET
         value: webmachine
       - name: BUNDLE_GEMFILE
@@ -970,7 +835,7 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby 3.0.0
+- name: Ruby 3.0.1
   dependencies:
   - Validation
   task:
@@ -978,10 +843,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 3.0.0 for no_dependencies
+    - name: Ruby 3.0.1 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
@@ -993,18 +858,18 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby 3.0.0 - Gems
+- name: Ruby 3.0.1 - Gems
   dependencies:
-  - Ruby 3.0.0
+  - Ruby 3.0.1
   task:
     prologue:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby 3.0.0 for capistrano2
+    - name: Ruby 3.0.1 for capistrano2
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: capistrano2
       - name: BUNDLE_GEMFILE
@@ -1016,10 +881,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for capistrano3
+    - name: Ruby 3.0.1 for capistrano3
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: capistrano3
       - name: BUNDLE_GEMFILE
@@ -1031,10 +896,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for grape
+    - name: Ruby 3.0.1 for grape
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: grape
       - name: BUNDLE_GEMFILE
@@ -1046,10 +911,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for padrino
+    - name: Ruby 3.0.1 for padrino
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: padrino
       - name: BUNDLE_GEMFILE
@@ -1061,10 +926,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for que
+    - name: Ruby 3.0.1 for que
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: que
       - name: BUNDLE_GEMFILE
@@ -1076,10 +941,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for que_beta
+    - name: Ruby 3.0.1 for que_beta
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: que_beta
       - name: BUNDLE_GEMFILE
@@ -1091,10 +956,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for rails-6.0
+    - name: Ruby 3.0.1 for rails-6.0
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: rails-6.0
       - name: BUNDLE_GEMFILE
@@ -1106,10 +971,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for resque-2
+    - name: Ruby 3.0.1 for resque-2
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: resque-2
       - name: BUNDLE_GEMFILE
@@ -1121,10 +986,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for sequel
+    - name: Ruby 3.0.1 for sequel
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: sequel
       - name: BUNDLE_GEMFILE
@@ -1136,10 +1001,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for sinatra
+    - name: Ruby 3.0.1 for sinatra
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: sinatra
       - name: BUNDLE_GEMFILE
@@ -1151,10 +1016,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-    - name: Ruby 3.0.0 for webmachine
+    - name: Ruby 3.0.1 for webmachine
       env_vars:
       - name: RUBY_VERSION
-        value: 3.0.0
+        value: 3.0.1
       - name: GEMSET
         value: webmachine
       - name: BUNDLE_GEMFILE
