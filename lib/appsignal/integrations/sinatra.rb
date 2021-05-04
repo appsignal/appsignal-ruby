@@ -3,7 +3,7 @@
 require "appsignal"
 require "appsignal/rack/sinatra_instrumentation"
 
-Appsignal.logger.info("Loading Sinatra (#{Sinatra::VERSION}) integration")
+Appsignal.logger.debug("Loading Sinatra (#{Sinatra::VERSION}) integration")
 
 app_settings = ::Sinatra::Application.settings
 Appsignal.config = Appsignal::Config.new(
