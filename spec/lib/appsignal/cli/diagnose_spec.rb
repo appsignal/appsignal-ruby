@@ -115,6 +115,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     it "logs to the log file" do
       run
       log_contents = File.read(config.log_file_path)
+      p log_contents
       expect(log_contents).to contains_log :info, "Starting AppSignal diagnose"
     end
 

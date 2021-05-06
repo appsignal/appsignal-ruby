@@ -68,7 +68,10 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
     expect(Appsignal.logger).to receive(:error).with("Error while installing mock_error_hook hook: error").once
-    expect(Appsignal.logger).to receive(:debug).once do |message|
+    expect(Appsignal.logger).to receive(:debug).ordered do |message|
+      expect(message).to eq("Installing mock_error_hook hook")
+    end
+    expect(Appsignal.logger).to receive(:debug).ordered do |message|
       # Start of the error backtrace as debug log
       expect(message).to start_with(File.expand_path("../../../../", __FILE__))
     end
