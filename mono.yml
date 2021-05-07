@@ -1,0 +1,16 @@
+---
+language: ruby
+repo: "https://github.com/appsignal/appsignal-ruby"
+bootstrap:
+  post:
+    - "rake extension:install"
+clean:
+  post:
+    - "bundle exec rake extension:clean"
+    - "rm -rf pkg"
+build:
+  command: "bundle exec rake build:all"
+publish:
+  gem_files_dir: pkg/
+test:
+  command: "bundle exec rake test"
