@@ -15,7 +15,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.homepage              = "https://github.com/appsignal/appsignal-ruby"
   gem.license               = "MIT"
 
-  gem.files                 = `git ls-files`.split($\) # rubocop:disable Style/SpecialGlobalVars
+  gem.files                 = `git ls-files`.split($\).reject { |f| f.start_with?(".changesets/") } # rubocop:disable Style/SpecialGlobalVars
   gem.executables           = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.test_files            = gem.files.grep(%r{^(test|spec|features)/})
   gem.name                  = "appsignal"
