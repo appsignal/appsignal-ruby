@@ -1,4 +1,4 @@
-# Changelog
+# AppSignal for Ruby gem Changelog
 
 ## 3.0.4
 
@@ -6,22 +6,22 @@
   these messages in debug mode. This should reduce the noise for users running
   AppSignal with the STDOUT logger, such as is the default on Heroku.
 
-# 3.0.3
+## 3.0.3
 - Fix deprecation message for set_error namespace argument. PR #712
 - Fix example code for Transaction#set_namespace method. PR #713
 - Fix extension fallbacks on extension installation failure, that caused
 - NoMethodErrors. PR #720
 - Bump agent to v-75e76ad. PR #721
 
-# 3.0.2
+## 3.0.2
 - Fix error on Rails boot when `enable_frontend_error_catching` is `true`.
   PR #711
 
-# 3.0.1
+## 3.0.1
 - Fix error occurring on APPSIGNAL_DNS_SERVER environment variable option
   parsing. PR #709
 
-# 3.0.0
+## 3.0.0
 
 Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
 
@@ -37,46 +37,46 @@ Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
 - Add Sidekiq error handler. Report more Sidekiq errors that happen around job
   execution. PR #699
 
-# 2.11.9
+## 2.11.9
 - Fix and simplify Ruby method delegation for object method instrumentation in
   the different Ruby versions. PR #706
 
-# 2.11.8
+## 2.11.8
 - Mark minutely probe thread as fork-safe by @pixeltrix. PR #704
 
-# 2.11.7
+## 2.11.7
 - Fix ActionCable integration in test environment using `stub_connection`.
   PR #705
 
-# 2.11.6
+## 2.11.6
 - Prepend Sidekiq middleware to wrap all Sidekiq middleware. Catches more
   errors and provide more complete performance measurements. PR #698
 
-# 2.11.5
+## 2.11.5
 - Add more detailed logging to finish_event calls when the event is unknown, so
   we know what event is being tried to finish. Commit
   c888a04d1b9ac947652b29c111c650fb5a5cf71c
 
-# 2.11.4
+## 2.11.4
 - Support Ruby 3.0 for Object method instrumentation with keyword arguments
   (https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html)
   PR #693
 
-# 2.11.3
+## 2.11.3
 - Support Shoryuken batch workers. PR #687
 
-# 2.11.2
+## 2.11.2
 - Support Ruby 3.0. PR #681
 - Support breadcrumbs. PR #666
 - Log Ruby errors on extension download. PR #679
 - Fix Ruby 1.9 build. PR #680
 
-# 2.11.1
+## 2.11.1
 - Support AS notifications instrumenters that use `start` and `finish`.
 - Updated agent with better logging and an IO stats fix.
 - ActionMailer magic dashboard
 
-# 2.11.0
+## 2.11.0
 - Track queue time regardless of namespace. Support custom namespaces. PR #602
 - Improve deprecation message from frontend error middleware. PR #620
 - Report Ruby environment metadata. PR #621, #627, #619, #618
@@ -103,20 +103,20 @@ Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
 - Update AuthCheck class to use DeprecationMessage helper. PR #649
 - Print extension load error when AppSignal is loaded. PR #651
 
-# 2.10.12
+## 2.10.12
 - Fix `working_directory_path` config option loaded from environment variables.
   PR #653
 
-# 2.10.11
+## 2.10.11
 - Fix extension install report status output in `appsignal diagnose`. PR #636
 - Support setting a specific configuration file to load with the
   `Appsignal::Config` initializer. PR #638
 
-# 2.10.10
+## 2.10.10
 - Bump agent to v-4548c88. PR #634
   - Fix issue with host metrics values being reported as "Infinity".
 
-# 2.10.9
+## 2.10.9
 - Use http proxy if configured when downloading agent. PR #606
 - Clear event details cache every 48 hours.
   Commit eb5e899db69fcd7cfa221567bfd6ac04f2654c9c
