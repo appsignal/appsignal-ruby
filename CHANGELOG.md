@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.4
+
+- [6338e822](https://github.com/appsignal/appsignal-ruby/commit/6338e8227c674ea7bbe6f55cdfde784fa9f5048f) patch - Drop logger level to debug. Reduce the output on the "info" level and only show
+  these messages in debug mode. This should reduce the noise for users running
+  AppSignal with the STDOUT logger, such as is the default on Heroku.
+
 # 3.0.3
 - Fix deprecation message for set_error namespace argument. PR #712
 - Fix example code for Transaction#set_namespace method. PR #713
