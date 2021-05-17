@@ -11,7 +11,7 @@ agent:
     os_image: ubuntu1804
 auto_cancel:
   running:
-    when: branch != 'main' AND branch != 'develop'
+    when: branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'
 global_job_config:
   env_vars:
   - name: _BUNDLER_CACHE
@@ -80,6 +80,25 @@ blocks:
         value: gemfiles/no_dependencies.gemfile
       commands:
       - "./support/bundler_wrapper exec rubocop"
+- name: Integration tests
+  dependencies:
+  - Validation
+  task:
+    prologue:
+      commands:
+      - git submodule init
+      - git submodule update
+    jobs:
+    - name: Diagnose
+      env_vars:
+      - name: RUBY_VERSION
+        value: 2.6.6
+      - name: GEMSET
+        value: no_dependencies
+      - name: LANGUAGE
+        value: ruby
+      commands:
+      - spec/integration/diagnose/bin/test
 - name: Ruby 2.0.0-p648
   dependencies:
   - Validation

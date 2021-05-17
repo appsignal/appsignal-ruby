@@ -11,7 +11,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   auto_cancel:
     running:
       # Ignore main AND develop branch as we want it to build all workflows
-      when: "branch != 'main' AND branch != 'develop'"
+      when: "branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'"
 
   global_job_config:
     env_vars:
@@ -80,6 +80,25 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
               value: gemfiles/no_dependencies.gemfile
           commands:
             - ./support/bundler_wrapper exec rubocop
+    - name: Integration tests
+      dependencies:
+      - Validation
+      task:
+        prologue:
+          commands:
+          - git submodule init
+          - git submodule update
+        jobs:
+        - name: Diagnose
+          env_vars:
+            - name: RUBY_VERSION
+              value: 2.6.6
+            - name: GEMSET
+              value: no_dependencies
+            - name: LANGUAGE
+              value: ruby
+          commands:
+            - spec/integration/diagnose/bin/test
 
 matrix:
   defaults:
