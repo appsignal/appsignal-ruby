@@ -36,13 +36,21 @@ describe Appsignal::Hooks::RedisHook do
               # Stub Redis::Client class so that it doesn't perform an actual
               # Redis query. This class will be included (prepended) with the
               # AppSignal Redis integration.
-              stub_const("Redis::Client", Class.new do
+              stub_const("Redis::Client", Class.new(Redis::Client) do
                 def id
                   :stub_id
                 end
 
-                def process(_commands)
-                  :stub_process
+                def write(_command)
+                  nil
+                end
+
+                def read
+                  "value"
+                end
+
+                def call(*args)
+                  super
                 end
               end)
               # Load the integration again for the stubbed Redis::Client class.
@@ -57,10 +65,26 @@ describe Appsignal::Hooks::RedisHook do
                 .at_least(:once)
               expect(Appsignal::Transaction.current).to receive(:finish_event)
                 .at_least(:once)
-                .with("query.redis", :stub_id, "get ?", 0)
+                .with("query.redis", :stub_id, "get", 0)
 
               client = Redis::Client.new
-              expect(client.process([[:get, "key"]])).to eql(:stub_process)
+              expect(client.call([:get, "key"])).to eql("value")
+            end
+
+            it "instrument a redis script call" do
+              script = "return redis.call('set',KEYS[1],ARGV[1])"
+              keys = ["foo"]
+              argv = ["bar"]
+
+              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+              expect(Appsignal::Transaction.current).to receive(:start_event)
+                .at_least(:once)
+              expect(Appsignal::Transaction.current).to receive(:finish_event)
+                .at_least(:once)
+                .with("query.redis", :stub_id, script, 0)
+
+              client = Redis::Client.new
+              expect(client.call([:eval, script, keys.size, keys, argv])).to eql("value")
             end
           end
         end
