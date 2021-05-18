@@ -95,6 +95,8 @@ blocks:
         value: 2.6.6
       - name: GEMSET
         value: no_dependencies
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
       - name: LANGUAGE
         value: ruby
       commands:
