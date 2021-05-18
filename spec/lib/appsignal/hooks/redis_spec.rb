@@ -57,7 +57,7 @@ describe Appsignal::Hooks::RedisHook do
                 .at_least(:once)
               expect(Appsignal::Transaction.current).to receive(:finish_event)
                 .at_least(:once)
-                .with("query.redis", :stub_id, "get", 0)
+                .with("query.redis", :stub_id, "get ?", 0)
 
               client = Redis::Client.new
               expect(client.write([:get, "key"])).to eql(:stub_write)
