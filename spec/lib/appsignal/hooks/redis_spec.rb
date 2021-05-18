@@ -41,8 +41,8 @@ describe Appsignal::Hooks::RedisHook do
                   :stub_id
                 end
 
-                def process(_commands)
-                  :stub_process
+                def write(_commands)
+                  :stub_write
                 end
               end)
               # Load the integration again for the stubbed Redis::Client class.
@@ -57,10 +57,26 @@ describe Appsignal::Hooks::RedisHook do
                 .at_least(:once)
               expect(Appsignal::Transaction.current).to receive(:finish_event)
                 .at_least(:once)
-                .with("query.redis", :stub_id, "get ?", 0)
+                .with("query.redis", :stub_id, "get", 0)
 
               client = Redis::Client.new
-              expect(client.process([[:get, "key"]])).to eql(:stub_process)
+              expect(client.write([:get, "key"])).to eql(:stub_write)
+            end
+
+            it "instrument a redis script call" do
+              script = "return redis.call('set',KEYS[1],ARGV[1])"
+              keys = ["foo"]
+              argv = ["bar"]
+
+              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+              expect(Appsignal::Transaction.current).to receive(:start_event)
+                .at_least(:once)
+              expect(Appsignal::Transaction.current).to receive(:finish_event)
+                .at_least(:once)
+                .with("query.redis", :stub_id, script, 0)
+
+              client = Redis::Client.new
+              expect(client.write([:eval, script, keys.size, keys, argv])).to eql(:stub_write)
             end
           end
         end
