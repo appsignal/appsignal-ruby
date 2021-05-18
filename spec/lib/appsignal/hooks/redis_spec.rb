@@ -36,21 +36,13 @@ describe Appsignal::Hooks::RedisHook do
               # Stub Redis::Client class so that it doesn't perform an actual
               # Redis query. This class will be included (prepended) with the
               # AppSignal Redis integration.
-              stub_const("Redis::Client", Class.new(Redis::Client) do
+              stub_const("Redis::Client", Class.new do
                 def id
                   :stub_id
                 end
 
-                def write(_command)
-                  nil
-                end
-
-                def read
-                  "value"
-                end
-
-                def call(*args)
-                  super
+                def write(_commands)
+                  :stub_write
                 end
               end)
               # Load the integration again for the stubbed Redis::Client class.
@@ -68,7 +60,7 @@ describe Appsignal::Hooks::RedisHook do
                 .with("query.redis", :stub_id, "get", 0)
 
               client = Redis::Client.new
-              expect(client.call([:get, "key"])).to eql("value")
+              expect(client.write([:get, "key"])).to eql(:stub_write)
             end
 
             it "instrument a redis script call" do
@@ -84,7 +76,7 @@ describe Appsignal::Hooks::RedisHook do
                 .with("query.redis", :stub_id, script, 0)
 
               client = Redis::Client.new
-              expect(client.call([:eval, script, keys.size, keys, argv])).to eql("value")
+              expect(client.write([:eval, script, keys.size, keys, argv])).to eql(:stub_write)
             end
           end
         end
