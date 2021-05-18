@@ -3,12 +3,10 @@
 module Appsignal
   module Integrations
     module RedisIntegration
-      def process(commands, &block)
-        sanitized_commands = commands.map do |command, *args|
-          "#{command}#{" ?" * args.size}"
-        end.join("\n")
+      def write(command)
+        sanitized_command = command[0] == :eval ? command[1] : "#{command[0]}#{" ?" * (command.size - 1)}"
 
-        Appsignal.instrument "query.redis", id, sanitized_commands do
+        Appsignal.instrument "query.redis", id, sanitized_command do
           super
         end
       end
