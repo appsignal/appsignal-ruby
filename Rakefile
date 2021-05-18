@@ -24,16 +24,17 @@ def env_map(key, value)
   }
 end
 
-def build_task(ruby_version, type = nil)
+def build_task(matrix, ruby_version, type = nil)
   {
     "name" => "Ruby #{ruby_version}#{type ? " - #{type}" : nil}",
     "dependencies" => ["Validation"],
     "task" => {
-      "prologue" => {
-        "commands" => [
+      "prologue" => matrix["prologue"].merge(
+        "commands" => matrix["prologue"]["commands"] + [
           "./support/bundler_wrapper exec rake extension:install"
         ]
-      },
+      ),
+      "epilogue" => matrix["epilogue"],
       "jobs" => []
     }
   }
@@ -54,14 +55,14 @@ namespace :build_matrix do
       builds = []
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
-        ruby_primary_block = build_task(ruby_version)
-        ruby_secondary_block = build_task(ruby_version, "Gems").tap do |t|
+        ruby_primary_block = build_task(matrix, ruby_version)
+        ruby_secondary_block = build_task(matrix, ruby_version, "Gems").tap do |t|
           t["dependencies"] = ["Ruby #{ruby_version}"]
         end
         gemset_for_ruby(ruby, matrix).each do |gem|
           next if excluded_for_ruby?(gem, ruby)
 
-          env = [
+          env = matrix["env_vars"] + [
             env_map("RUBY_VERSION", ruby_version),
             env_map("GEMSET", gem["gem"]),
             env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")
@@ -104,8 +105,8 @@ namespace :build_matrix do
     end
 
     task :validate => :generate do
-      `git status | grep .semaphore/semaphore.yml 2>&1`
-      if $?.exitstatus.zero? # rubocop:disable Style/SpecialGlobalVars
+      output = `git status`
+      if output.include? ".semaphore/semaphore.yml"
         puts "The `.semaphore/semaphore.yml` is modified. The changes were not committed."
         puts "Please run `rake build_matrix:semaphore:generate` and commit the changes."
         exit 1
@@ -181,7 +182,7 @@ end
 
 namespace :build do
   def base_gemspec
-    eval(File.read("appsignal.gemspec")) # rubocop:disable Security/Eval
+    eval(File.read("appsignal.gemspec"))
   end
 
   def modify_base_gemspec
@@ -400,7 +401,7 @@ begin
     desc "Run the Appsignal gem test in an extension failure scenario"
     task :failure => [:prepare_failure, :rspec_failure]
   end
-rescue LoadError # rubocop:disable Lint/HandleExceptions
+rescue LoadError
   # When running rake install, there is no RSpec yet.
 end
 

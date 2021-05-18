@@ -14,20 +14,12 @@ auto_cancel:
     when: branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'
 global_job_config:
   env_vars:
+  - name: RUNNING_IN_CI
+    value: 'true'
   - name: _BUNDLER_CACHE
     value: v2
   - name: _GEMS_CACHE
     value: v2
-  - name: BUNDLE_PATH
-    value: "../.bundle/"
-  - name: RUNNING_IN_CI
-    value: 'true'
-  - name: RAILS_ENV
-    value: test
-  - name: JRUBY_OPTS
-    value: ''
-  - name: COV
-    value: '1'
   prologue:
     commands:
     - checkout
@@ -35,26 +27,15 @@ global_job_config:
     - if [ -n "$_C_VERSION" ]; then sem-version c $_C_VERSION; fi
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
-    - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-    - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
-    - "./support/install_deps"
-    - bundle config set clean 'true'
-    - "./support/bundler_wrapper install --jobs=3 --retry=3"
-  epilogue:
-    on_pass:
-      commands:
-      - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-        .bundle
-      - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
-    on_fail:
-      commands:
-      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-        file found'"
-      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
 blocks:
 - name: Validation
   dependencies: []
   task:
+    prologue:
+      commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
     jobs:
     - name: Validate CI setup
       env_vars:
@@ -63,12 +44,24 @@ blocks:
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
-        value: gemfiles/no_dependencies.gemfile
+        value: Gemfile
       commands:
       - "./support/bundler_wrapper exec rake build_matrix:semaphore:validate"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+          .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+          $HOME/.gem
 - name: Linters
   dependencies: []
   task:
+    prologue:
+      commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
     jobs:
     - name: RuboCop
       env_vars:
@@ -77,15 +70,25 @@ blocks:
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
-        value: gemfiles/no_dependencies.gemfile
+        value: Gemfile
       commands:
       - "./support/bundler_wrapper exec rubocop"
+    epilogue:
+      on_pass:
+        commands:
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+          .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+          $HOME/.gem
 - name: Integration tests
   dependencies:
   - Validation
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - git submodule init
       - git submodule update
     jobs:
@@ -93,24 +96,56 @@ blocks:
       env_vars:
       - name: RUBY_VERSION
         value: 2.6.6
-      - name: GEMSET
-        value: no_dependencies
-      - name: BUNDLE_GEMFILE
-        value: gemfiles/no_dependencies.gemfile
       - name: LANGUAGE
         value: ruby
       commands:
       - spec/integration/diagnose/bin/test
+    epilogue:
+      on_pass:
+        commands:
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+          .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+          $HOME/.gem
 - name: Ruby 2.0.0-p648
   dependencies:
   - Validation
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: &1
+      on_pass:
+        commands:
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+          .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+          $HOME/.gem
+      on_fail:
+        commands:
+        - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+          file found'"
+        - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     jobs:
     - name: Ruby 2.0.0-p648 for no_dependencies
       env_vars:
+      - &2
+        name: BUNDLE_PATH
+        value: "../.bundle/"
+      - &3
+        name: RAILS_ENV
+        value: test
+      - &4
+        name: JRUBY_OPTS
+        value: ''
+      - &5
+        name: COV
+        value: '1'
       - name: RUBY_VERSION
         value: 2.0.0-p648
       - name: GEMSET
@@ -130,10 +165,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.0.0-p648 for rails-3.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.0.0-p648
       - name: GEMSET
@@ -149,6 +194,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.0.0-p648 for rails-4.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.0.0-p648
       - name: GEMSET
@@ -168,10 +217,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.1.10 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.1.10
       - name: GEMSET
@@ -191,10 +250,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.2.10 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.2.10
       - name: GEMSET
@@ -214,10 +283,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.3.8 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.3.8
       - name: GEMSET
@@ -237,10 +316,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.4.10 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.4.10
       - name: GEMSET
@@ -260,10 +349,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.5.8 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.5.8
       - name: GEMSET
@@ -283,10 +382,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.5.8 for rails-5.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.5.8
       - name: GEMSET
@@ -302,6 +411,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.5.8 for rails-6.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.5.8
       - name: GEMSET
@@ -321,10 +434,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.6.6 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -344,10 +467,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.6.6 for capistrano2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -363,6 +496,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for capistrano3
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -378,6 +515,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for grape
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -393,6 +534,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for padrino
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -408,6 +553,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for que
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -423,6 +572,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for que_beta
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -438,6 +591,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for rails-5.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -453,6 +610,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for rails-5.1
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -468,6 +629,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for rails-5.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -483,6 +648,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for rails-6.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -498,6 +667,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for resque-1
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -513,6 +686,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for resque-2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -528,6 +705,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for sequel
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -543,6 +724,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for sequel-435
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -558,6 +743,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for sinatra
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -573,6 +762,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.6.6 for webmachine
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.6.6
       - name: GEMSET
@@ -592,10 +785,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.7.3 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -615,10 +818,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 2.7.3 for capistrano2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -634,6 +847,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for capistrano3
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -649,6 +866,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for grape
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -664,6 +885,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for padrino
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -679,6 +904,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for que
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -694,6 +923,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for que_beta
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -709,6 +942,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for rails-5.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -724,6 +961,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for rails-5.1
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -739,6 +980,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for rails-5.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -754,6 +999,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for rails-6.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -769,6 +1018,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for resque-1
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -784,6 +1037,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for resque-2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -799,6 +1056,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for sequel
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -814,6 +1075,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for sequel-435
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -829,6 +1094,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for sinatra
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -844,6 +1113,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.3 for webmachine
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 2.7.3
       - name: GEMSET
@@ -863,10 +1136,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 3.0.1 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -886,10 +1169,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby 3.0.1 for capistrano2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -905,6 +1198,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for capistrano3
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -920,6 +1217,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for grape
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -935,6 +1236,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for padrino
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -950,6 +1255,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for que
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -965,6 +1274,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for que_beta
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -980,6 +1293,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for rails-6.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -995,6 +1312,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for resque-2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -1010,6 +1331,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for sequel
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -1025,6 +1350,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for sinatra
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -1040,6 +1369,10 @@ blocks:
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.1 for webmachine
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: 3.0.1
       - name: GEMSET
@@ -1059,10 +1392,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby jruby-9.2.19.0 for no_dependencies
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: jruby-9.2.19.0
       - name: GEMSET
@@ -1085,10 +1428,20 @@ blocks:
   task:
     prologue:
       commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
     jobs:
     - name: Ruby jruby-9.2.19.0 for rails-5.2
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: jruby-9.2.19.0
       - name: GEMSET
