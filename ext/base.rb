@@ -184,7 +184,18 @@ def store_download_version_on_report
 end
 
 def http_proxy
-  Gem.configuration[:http_proxy] || ENV["http_proxy"] || ENV["HTTP_PROXY"]
+  proxy = try_http_proxy_value(Gem.configuration[:http_proxy])
+  return proxy if proxy
+
+  proxy = try_http_proxy_value(ENV["http_proxy"])
+  return proxy if proxy
+
+  proxy = try_http_proxy_value(ENV["HTTP_PROXY"])
+  return proxy if proxy
+end
+
+def try_http_proxy_value(value)
+  value if value.respond_to?(:empty?) && !value.strip.empty?
 end
 
 # Fail the installation on purpose in a specific test environment.
