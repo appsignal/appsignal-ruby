@@ -211,7 +211,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before { run }
 
         it "outputs extension is loaded" do
-          expect(output).to include "Extension loaded: true"
+          expect(output).to include "Extension loaded: yes"
         end
 
         it "transmits extension_loaded: true in report" do
@@ -230,7 +230,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         after { Appsignal.extension_loaded = true }
 
         it "outputs extension is not loaded" do
-          expect(output).to include "Extension loaded: false"
+          expect(output).to include "Extension loaded: no"
           expect(output).to include "Extension is not loaded. No agent report created."
         end
 
