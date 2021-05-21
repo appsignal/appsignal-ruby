@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.5
+
+- [4bddac36](https://github.com/appsignal/appsignal-ruby/commit/4bddac3618ccea03c165eec53cee90e222b68cd6) patch - Skip empty HTTP proxy config. When any of the HTTP proxy config returns an
+  empty string, skip this config. This fixes installation issues where an empty
+  String is used as a HTTP proxy, causing a RuntimeError upon installation.
+
 ## 3.0.4
 
 - [6338e822](https://github.com/appsignal/appsignal-ruby/commit/6338e8227c674ea7bbe6f55cdfde784fa9f5048f) patch - Drop logger level to debug. Reduce the output on the "info" level and only show
