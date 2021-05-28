@@ -3,15 +3,16 @@
 module Appsignal
   module Integrations
     module ExconIntegration
-      def self.instrument(name, datum, &block)
+      def self.instrument(name, data, &block)
         namespace, *event = name.split(".")
         rails_name = [event, namespace].flatten.join(".")
 
-        title = if rails_name == "response.excon"
-                  datum[:host]
-                else
-                  "#{datum[:method].upcase} #{datum[:scheme]}://#{datum[:host]}"
-                end
+        title =
+          if rails_name == "response.excon"
+            data[:host]
+          else
+            "#{data[:method].upcase} #{data[:scheme]}://#{data[:host]}"
+          end
         Appsignal.instrument(rails_name, title, &block)
       end
     end

@@ -10,7 +10,6 @@ describe Appsignal::Hooks::ExconHook do
           @defaults ||= {}
         end
       end
-
       Appsignal::Hooks::ExconHook.new.install
     end
     after(:context) { Object.send(:remove_const, :Excon) }
@@ -21,34 +20,47 @@ describe Appsignal::Hooks::ExconHook do
       it { is_expected.to be_truthy }
     end
 
-    it "should instrument a http request" do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect(Appsignal::Transaction.current).to receive(:start_event)
-        .at_least(:once)
-      expect(Appsignal::Transaction.current).to receive(:finish_event)
-        .at_least(:once)
-        .with("request.excon", "GET http://www.google.com", nil, 0)
-
-      data = {
-        :host => "www.google.com",
-        :method => "get",
-        :scheme => "http"
-      }
-      Excon.defaults[:instrumentor].instrument("excon.request", data) {}
+    describe "#install" do
+      it "adds the AppSignal instrumentor to Excon" do
+        expect(Excon.defaults[:instrumentor]).to eql(Appsignal::Integrations::ExconIntegration)
+      end
     end
 
-    it "should instrument a http response" do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect(Appsignal::Transaction.current).to receive(:start_event)
-        .at_least(:once)
-      expect(Appsignal::Transaction.current).to receive(:finish_event)
-        .at_least(:once)
-        .with("response.excon", "www.google.com", nil, 0)
+    describe "instrumentation" do
+      let!(:transaction) do
+        Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+      end
+      around { |example| keep_transactions { example.run } }
 
-      data = {
-        :host => "www.google.com"
-      }
-      Excon.defaults[:instrumentor].instrument("excon.response", data) {}
+      it "instruments a http request" do
+        data = {
+          :host => "www.google.com",
+          :method => "get",
+          :scheme => "http"
+        }
+        Excon.defaults[:instrumentor].instrument("excon.request", data) {}
+
+        expect(transaction.to_h["events"]).to include(
+          hash_including(
+            "name" => "request.excon",
+            "title" => "GET http://www.google.com",
+            "body" => ""
+          )
+        )
+      end
+
+      it "instruments a http response" do
+        data = { :host => "www.google.com" }
+        Excon.defaults[:instrumentor].instrument("excon.response", data) {}
+
+        expect(transaction.to_h["events"]).to include(
+          hash_including(
+            "name" => "response.excon",
+            "title" => "www.google.com",
+            "body" => ""
+          )
+        )
+      end
     end
   end
 
