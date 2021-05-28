@@ -33,16 +33,17 @@ describe Appsignal::Hooks::RedisHook do
 
           context "instrumentation" do
             before do
+              start_agent
               # Stub Redis::Client class so that it doesn't perform an actual
               # Redis query. This class will be included (prepended) with the
               # AppSignal Redis integration.
               stub_const("Redis::Client", Class.new do
                 def id
-                  :stub_id
+                  "stub_id"
                 end
 
                 def write(_commands)
-                  :stub_write
+                  "stub_write"
                 end
               end)
               # Load the integration again for the stubbed Redis::Client class.
@@ -50,33 +51,40 @@ describe Appsignal::Hooks::RedisHook do
               # track if it was installed already or not.
               Appsignal::Hooks::RedisHook.new.install
             end
+            let!(:transaction) do
+              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+            end
+            around { |example| keep_transactions { example.run } }
 
             it "instrument a redis call" do
-              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-              expect(Appsignal::Transaction.current).to receive(:start_event)
-                .at_least(:once)
-              expect(Appsignal::Transaction.current).to receive(:finish_event)
-                .at_least(:once)
-                .with("query.redis", :stub_id, "get ?", 0)
-
               client = Redis::Client.new
-              expect(client.write([:get, "key"])).to eql(:stub_write)
+              expect(client.write([:get, "key"])).to eql("stub_write")
+
+              transaction_hash = transaction.to_h
+              expect(transaction_hash["events"]).to include(
+                hash_including(
+                  "name" => "query.redis",
+                  "body" => "get ?",
+                  "title" => "stub_id"
+                )
+              )
             end
 
             it "instrument a redis script call" do
+              client = Redis::Client.new
               script = "return redis.call('set',KEYS[1],ARGV[1])"
               keys = ["foo"]
               argv = ["bar"]
+              expect(client.write([:eval, script, keys.size, keys, argv])).to eql("stub_write")
 
-              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-              expect(Appsignal::Transaction.current).to receive(:start_event)
-                .at_least(:once)
-              expect(Appsignal::Transaction.current).to receive(:finish_event)
-                .at_least(:once)
-                .with("query.redis", :stub_id, script, 0)
-
-              client = Redis::Client.new
-              expect(client.write([:eval, script, keys.size, keys, argv])).to eql(:stub_write)
+              transaction_hash = transaction.to_h
+              expect(transaction_hash["events"]).to include(
+                hash_including(
+                  "name" => "query.redis",
+                  "body" => "#{script} ? ?",
+                  "title" => "stub_id"
+                )
+              )
             end
           end
         end

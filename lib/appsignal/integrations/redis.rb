@@ -4,7 +4,12 @@ module Appsignal
   module Integrations
     module RedisIntegration
       def write(command)
-        sanitized_command = command[0] == :eval ? command[1] : "#{command[0]}#{" ?" * (command.size - 1)}"
+        sanitized_command =
+          if command[0] == :eval
+            "#{command[1]}#{" ?" * (command.size - 3)}"
+          else
+            "#{command[0]}#{" ?" * (command.size - 1)}"
+          end
 
         Appsignal.instrument "query.redis", id, sanitized_command do
           super
