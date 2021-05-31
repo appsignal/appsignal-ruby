@@ -35,7 +35,7 @@ describe Appsignal::Hooks::ExconHook do
       it "instruments a http request" do
         data = {
           :host => "www.google.com",
-          :method => "get",
+          :method => :get,
           :scheme => "http"
         }
         Excon.defaults[:instrumentor].instrument("excon.request", data) {}

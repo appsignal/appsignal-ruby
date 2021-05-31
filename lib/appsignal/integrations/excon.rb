@@ -11,7 +11,7 @@ module Appsignal
           if rails_name == "response.excon"
             data[:host]
           else
-            "#{data[:method].upcase} #{data[:scheme]}://#{data[:host]}"
+            "#{data[:method].to_s.upcase} #{data[:scheme]}://#{data[:host]}"
           end
         Appsignal.instrument(rails_name, title, &block)
       end
