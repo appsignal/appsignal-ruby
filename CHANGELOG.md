@@ -1,5 +1,10 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.6
+
+- [d354d79b](https://github.com/appsignal/appsignal-ruby/commit/d354d79b293fd549e66cae60d805d1b1e9e9d2d8) patch - Add Excon integration. Track requests and responses from the Excon gem.
+- [4c32e818](https://github.com/appsignal/appsignal-ruby/commit/4c32e8180b797d7987c67b68720c6a5d22935333) patch - Support Redis eval statements better by showing the actual script that was performed. Instead of showing `eval ? ? ?` (for a script with 2 arguments), show `<script> ? ?`, where `<script>` is whatever script was sent to `Redis.new.eval("<script>")`.
+
 ## 3.0.5
 
 - [4bddac36](https://github.com/appsignal/appsignal-ruby/commit/4bddac3618ccea03c165eec53cee90e222b68cd6) patch - Skip empty HTTP proxy config. When any of the HTTP proxy config returns an
