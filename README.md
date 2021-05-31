@@ -161,9 +161,13 @@ systems][supported-systems] page.
 
 Following the process below to release a new version of the Ruby gem.
 
-1. Run: `rake publish`
-  1. Update the Ruby gem version number when prompted.
-  1. Update the `CHANGELOG` file with the changes since the last release.
+1. Make sure [mono](https://github.com/appsignal/mono/) is installed by
+   following the installation instructions.
+1. Run: `mono publish`
+   - Mono will automatically bump the version number based on the
+     `.changesets/`.
+   - Mono will automatically update the `CHANGELOG.md` file based on the
+     `.changesets/`.
 1. Confirm with your two-factor authentication token for Rubygems.org, _twice_.
 
 ## Development
@@ -176,6 +180,8 @@ install all possible dependencies.
 ```bash
 # Install Bundler
 gem install bundler
+# Bootstrap the project
+mono bootstrap
 # Install the AppSignal extension and _all_ gems we support.
 bundle exec rake install
 # Only install the AppSignal extension.
