@@ -177,11 +177,6 @@ module Appsignal
           puts "#{"  " * options[:level]}#{label}: #{value}"
         end
 
-        def puts_yes_or_no(label, value, options = {})
-          options[:level] ||= 1
-          puts "#{"  " * options[:level]}#{label}: #{value ? 'yes' : 'no'}"
-        end
-
         def configure_appsignal(options)
           current_path = Dir.pwd
           initial_config = {}
@@ -335,8 +330,7 @@ module Appsignal
             puts_value "Language", "Ruby"
             puts_and_save :package_version, "Gem version", Appsignal::VERSION
             puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
-            save :extension_loaded, Appsignal.extension_loaded
-            puts_yes_or_no "Extension loaded", Appsignal.extension_loaded
+            puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
           end
         end
 
