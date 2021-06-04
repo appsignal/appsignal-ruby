@@ -43,6 +43,14 @@ describe Appsignal::System do
       end
     end
 
+    context "when using the APPSIGNAL_BUILD_FOR_LINUX_ARM env var" do
+      it "returns the linux build" do
+        ENV["APPSIGNAL_BUILD_FOR_LINUX_ARM"] = "1"
+        is_expected.to eq("linux")
+        ENV.delete("APPSIGNAL_BUILD_FOR_LINUX_ARM")
+      end
+    end
+
     context "when on a musl system" do
       let(:ldd_output) { "musl libc (x86_64)\nVersion 1.1.16" }
 
@@ -90,6 +98,28 @@ describe Appsignal::System do
 
       it "returns the FreeBSD build" do
         is_expected.to eq("freebsd")
+      end
+    end
+  end
+
+  describe ".agent_architecture" do
+    let(:architecture) { "x86_64" }
+    let(:ldd_output) { "" }
+    before do
+      allow(RbConfig::CONFIG).to receive(:[])
+      allow(RbConfig::CONFIG).to receive(:[]).with("host_cpu").and_return(architecture)
+    end
+    subject { described_class.agent_architecture }
+
+    it "returns the host CPU value" do
+      is_expected.to eq(architecture)
+    end
+
+    context "when using the APPSIGNAL_BUILD_FOR_LINUX_ARM env var" do
+      it "returns ARM 64 bit" do
+        ENV["APPSIGNAL_BUILD_FOR_LINUX_ARM"] = "1"
+        is_expected.to eq("aarch64")
+        ENV.delete("APPSIGNAL_BUILD_FOR_LINUX_ARM")
       end
     end
   end

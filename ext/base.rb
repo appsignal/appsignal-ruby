@@ -11,8 +11,9 @@ EXT_PATH     = File.expand_path("..", __FILE__).freeze
 AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
-ARCH = "#{RbConfig::CONFIG["host_cpu"]}-#{AGENT_PLATFORM}".freeze
-ARCH_CONFIG = AGENT_CONFIG["triples"][ARCH].freeze
+AGENT_ARCHITECTURE = Appsignal::System.agent_architecture
+TARGET_TRIPLE = "#{AGENT_ARCHITECTURE}-#{AGENT_PLATFORM}".freeze
+ARCH_CONFIG = AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -38,9 +39,10 @@ def report
         "build" => {
           "time" => Time.now.utc,
           "package_path" => File.dirname(EXT_PATH),
-          "architecture" => rbconfig["host_cpu"],
+          "architecture" => AGENT_ARCHITECTURE,
           "target" => AGENT_PLATFORM,
           "musl_override" => Appsignal::System.force_musl_build?,
+          "linux_arm_override" => Appsignal::System.force_linux_arm_build?,
           "dependencies" => {},
           "flags" => {}
         },
@@ -94,11 +96,11 @@ def installation_succeeded?
 end
 
 def check_architecture
-  if AGENT_CONFIG["triples"].key?(ARCH)
+  if AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
     true
   else
     abort_installation(
-      "AppSignal currently does not support your system architecture (#{ARCH})." \
+      "AppSignal currently does not support your system architecture (#{TARGET_TRIPLE})." \
         "Please let us know at support@appsignal.com, we aim to support everything our customers run."
     )
   end
