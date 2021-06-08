@@ -1,6 +1,4 @@
 RSpec.describe "Puma plugin" do
-  include WaitForHelper
-
   class MockPumaLauncher
     def events
       return @events if defined?(@events)
@@ -10,110 +8,288 @@ RSpec.describe "Puma plugin" do
   end
 
   class MockPumaEvents
-    def on_booted(&block)
-      @on_booted = block if block_given?
-      @on_booted if defined?(@on_booted)
+    attr_reader :logs
+
+    def initialize
+      @logs = []
+    end
+
+    def log(message)
+      @logs << [:log, message]
+    end
+
+    def debug(message)
+      @logs << [:debug, message]
+    end
+
+    def error(message)
+      @logs << [:error, message]
+    end
+  end
+
+  # StatsD server used for these tests.
+  # Open a UDPSocket and listen for messages sent by the AppSignal Puma plugin.
+  class StatsdServer
+    def start
+      stop
+      @socket = UDPSocket.new
+      @socket.bind("127.0.0.1", 8125)
+
+      loop do
+        begin
+          # Listen for messages and track them on the messages Array.
+          packet = @socket.recvfrom(1024)
+          track_message packet.first
+        rescue Errno::EBADF # rubocop:disable Lint/HandleExceptions
+          # Ignore error for JRuby 9.1.17.0 specifically, it doesn't appear to
+          # happen on 9.2.18.0. It doesn't break the tests themselves, ignoring
+          # this error. It's probably a timing issue where it tries to read
+          # from the socket after it's closed.
+        end
+      end
+    end
+
+    def stop
+      @socket && @socket.close
+    ensure
+      @socket = nil
+    end
+
+    def messages
+      @messages ||= []
+    end
+
+    private
+
+    def track_message(message)
+      @messages_mutex ||= Mutex.new
+      @messages_mutex.synchronize { messages << message }
     end
   end
 
   let(:probe) { MockProbe.new }
   let(:launcher) { MockPumaLauncher.new }
+  let(:hostname) { Socket.gethostname }
+  let(:expected_default_tags) { { "hostname" => hostname } }
+  let(:stats_data) { { :backlog => 1 } }
   before do
     module Puma
       def self.stats
+        JSON.dump(@_stats_data)
       end
 
-      def self.run
-        # Capture threads running before application is preloaded
-        before = Thread.list.reject { |t| t.thread_variable_get(:fork_safe) }
+      def self.stats_hash
+        @_stats_data
+      end
 
-        # An abbreviated version of what happens in Puma::Cluster#run
-        launcher = MockPumaLauncher.new
-        plugin = Plugin.plugin.new
-        plugin.start(launcher)
-        launcher.events.on_booted.call
-
-        # Wait for minutely probe thread to finish starting
-        sleep 0.005
-
-        # Capture any new threads running after application is preloaded.
-        # Any threads created during the preloading phase will not be
-        # carried over into the forked workers. Puma warns about these
-        # but the minutely probe thread should only exist in the main process.
-        after = Thread.list.reject { |t| t.thread_variable_get(:fork_safe) }
-        $stdout.puts "! WARNING: Detected #{after.size - before.size} Thread(s) started in app boot" if after.size > before.size
+      def self._set_stats=(data)
+        @_stats_data = data
       end
 
       class Plugin
         class << self
-          attr_reader :plugin
+          attr_reader :appsignal_plugin
 
           def create(&block)
-            @plugin = Class.new(::Puma::Plugin)
-            @plugin.class_eval(&block)
+            @appsignal_plugin = Class.new(::Puma::Plugin)
+            @appsignal_plugin.class_eval(&block)
           end
+        end
+
+        attr_reader :in_background_block
+
+        def in_background(&block)
+          @in_background_block = block
         end
       end
     end
-
-    Appsignal::Minutely.probes.clear
-    ENV["APPSIGNAL_ENABLE_MINUTELY_PROBES"] = "true"
-    Appsignal.config = project_fixture_config
-    # Speed up test time
-    allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
-    allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
-
-    Appsignal::Minutely.probes.register :my_probe, probe
+    Puma._set_stats = stats_data
     load File.expand_path("../lib/puma/plugin/appsignal.rb", APPSIGNAL_SPEC_DIR)
+
+    @statsd = StatsdServer.new
+    @server_thread = Thread.new { @statsd.start }
+    @server_thread.abort_on_exception = true
   end
   after do
-    Appsignal.config = nil
-    Object.send :remove_const, :Puma
-    Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED
+    @statsd = nil
+
+    Object.send(:remove_const, :Puma)
+    Object.send(:remove_const, :AppsignalPumaPlugin)
   end
 
-  it "registers the PumaProbe" do
-    expect(Appsignal::Minutely.probes[:my_probe]).to eql(probe)
-    expect(Appsignal::Minutely.probes[:puma]).to be_nil
-    plugin = Puma::Plugin.plugin.new
-    expect(launcher.events.on_booted).to be_nil
+  def run(plugin)
+    @client_thread = Thread.new { start_plugin(plugin) }
+    @client_thread.abort_on_exception = true
+    sleep 0.03
+  ensure
+    stop_all
+  end
 
+  def appsignal_plugin
+    Puma::Plugin.appsignal_plugin
+  end
+
+  def start_plugin(plugin_class)
+    plugin = plugin_class.new
+    # Speed up test by not waiting for 60 seconds initial wait time and loop
+    # interval.
+    allow(plugin).to receive(:sleep_time).and_return(0.01)
     plugin.start(launcher)
-    expect(Appsignal::Minutely.probes[:puma]).to be_nil
-    expect(launcher.events.on_booted).to_not be_nil
-
-    launcher.events.on_booted.call
-    expect(Appsignal::Minutely.probes[:puma]).to eql(Appsignal::Probes::PumaProbe)
-
-    # Minutely probes started and called
-    wait_for("enough probe calls") { probe.calls >= 2 }
+    plugin.in_background_block.call
   end
 
-  it "marks the PumaProbe thread as fork-safe" do
-    out_stream = std_stream
-    capture_stdout(out_stream) { Puma.run }
-
-    expect(out_stream.read).not_to include("WARNING: Detected 1 Thread")
+  # Stop all threads in test and stop listening on the UDPSocket
+  def stop_all
+    @client_thread.kill if defined?(@client_thread) && @client_thread
+    @server_thread.kill if defined?(@server_thread) && @server_thread
+    @statsd.stop if defined?(@statsd) && @statsd
+    @client_thread = nil
+    @server_thread = nil
   end
 
-  context "without Puma.stats" do
-    before { Puma.singleton_class.send(:remove_method, :stats) }
+  def logs
+    launcher.events.logs
+  end
 
-    it "does not register the PumaProbe" do
-      expect(Appsignal::Minutely.probes[:my_probe]).to eql(probe)
-      expect(Appsignal::Minutely.probes[:puma]).to be_nil
-      plugin = Puma::Plugin.plugin.new
-      expect(launcher.events.on_booted).to be_nil
+  def messages
+    @statsd.messages.map do |message|
+      metric, type, tags_string = message.split("|")
+      metric_name, metric_value = metric.split(":")
+      tags = {}
+      tags_string[1..-1].split(",").each do |tag|
+        key, value = tag.split(":")
+        tags[key] = value
+      end
+      {
+        :name => metric_name,
+        :value => metric_value.to_i,
+        :type => type,
+        :tags => tags
+      }
+    end
+  end
 
-      plugin.start(launcher)
-      expect(Appsignal::Minutely.probes[:puma]).to be_nil
-      expect(launcher.events.on_booted).to_not be_nil
+  def expect_gauge(metric_name, metric_value, tags_hash = {})
+    expect(messages).to include(
+      :name => "puma_#{metric_name}",
+      :value => metric_value,
+      :type => "g",
+      :tags => expected_default_tags.merge(tags_hash)
+    )
+  end
 
-      launcher.events.on_booted.call
-      expect(Appsignal::Minutely.probes[:puma]).to be_nil
+  context "with multiple worker stats" do
+    let(:stats_data) do
+      {
+        :workers => 2,
+        :booted_workers => 2,
+        :old_workers => 0,
+        :worker_status => [
+          {
+            :last_status => {
+              :backlog => 0,
+              :running => 5,
+              :pool_capacity => 5,
+              :max_threads => 5
+            }
+          },
+          {
+            :last_status => {
+              :backlog => 0,
+              :running => 5,
+              :pool_capacity => 5,
+              :max_threads => 5
+            }
+          }
+        ]
+      }
+    end
 
-      # Minutely probes started and called
-      wait_for("enough probe calls") { probe.calls >= 2 }
+    it "collects puma stats as guage metrics with the (summed) worker metrics" do
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect_gauge(:workers, 2, "type" => "count")
+      expect_gauge(:workers, 2, "type" => "booted")
+      expect_gauge(:workers, 0, "type" => "old")
+      expect_gauge(:connection_backlog, 0)
+      expect_gauge(:pool_capacity, 10)
+      expect_gauge(:threads, 10, "type" => "running")
+      expect_gauge(:threads, 10, "type" => "max")
+    end
+  end
+
+  context "with single worker stats" do
+    let(:stats_data) do
+      {
+        :backlog => 0,
+        :running => 5,
+        :pool_capacity => 5,
+        :max_threads => 5
+      }
+    end
+
+    it "calls `puma_gauge` with the (summed) worker metrics" do
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect_gauge(:connection_backlog, 0)
+      expect_gauge(:pool_capacity, 5)
+      expect_gauge(:threads, 5, "type" => "running")
+      expect_gauge(:threads, 5, "type" => "max")
+    end
+  end
+
+  context "when using APPSIGNAL_HOSTNAME" do
+    let(:hostname) { "my-host-name" }
+    before { ENV["APPSIGNAL_HOSTNAME"] = hostname }
+    after { ENV.delete("APPSIGNAL_HOSTNAME") }
+
+    it "reports the APPSIGNAL_HOSTNAME as the hostname tag value" do
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect_gauge(:connection_backlog, 1)
+    end
+  end
+
+  context "without Puma.stats_hash" do
+    before do
+      Puma.singleton_class.send(:remove_method, :stats_hash)
+    end
+
+    it "fetches metrics from Puma.stats instead" do
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect(logs).to_not include([kind_of(Symbol), "AppSignal: No Puma stats to report."])
+      expect_gauge(:connection_backlog, 1)
+    end
+  end
+
+  context "without Puma.stats and Puma.stats_hash" do
+    before do
+      Puma.singleton_class.send(:remove_method, :stats)
+      Puma.singleton_class.send(:remove_method, :stats_hash)
+    end
+
+    it "does not fetch metrics" do
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect(logs).to include([:log, "AppSignal: No Puma stats to report."])
+      expect(messages).to be_empty
+    end
+  end
+
+  context "without running StatsD server" do
+    it "does nothing" do
+      Appsignal.stop
+      stop_all
+      run(appsignal_plugin)
+
+      expect(logs).to_not include([:error, kind_of(String)])
+      expect(messages).to be_empty
     end
   end
 end

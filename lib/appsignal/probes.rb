@@ -3,5 +3,4 @@ module Appsignal
   end
 end
 
-require "appsignal/probes/puma"
 require "appsignal/probes/sidekiq"
