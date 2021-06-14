@@ -1,27 +1,156 @@
-APPSIGNAL_PUMA_PLUGIN_LOADED = true
+# frozen_string_literal: true
+
+require "json"
 
 # AppSignal Puma plugin
 #
-# This plugin ensures the minutely probe thread is started with the Puma
-# minutely probe in the Puma master process.
-#
-# The constant {APPSIGNAL_PUMA_PLUGIN_LOADED} is here to mark the Plugin as
-# loaded by the rest of the AppSignal gem. This ensures that the Puma minutely
-# probe is not also started in every Puma workers, which was the old behavior.
-# See {Appsignal::Hooks::PumaHook#install} for more information.
+# This plugin ensures Puma metrics are sent to the AppSignal agent using StatsD.
 #
 # For even more information:
 # https://docs.appsignal.com/ruby/integrations/puma.html
-Puma::Plugin.create do
-  def start(launcher = nil)
-    launcher.events.on_booted do
-      require "appsignal"
-      if ::Puma.respond_to?(:stats)
-        require "appsignal/probes/puma"
-        Appsignal::Minutely.probes.register :puma, Appsignal::Probes::PumaProbe
+Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
+  def start(launcher)
+    @launcher = launcher
+    @launcher.events.debug "AppSignal: Puma plugin start."
+    in_background do
+      @launcher.events.debug "AppSignal: Start Puma stats collection loop."
+      plugin = AppsignalPumaPlugin.new
+
+      loop do
+        begin
+          # Implement similar behavior to minutely probes.
+          # Initial sleep to wait until the app is fully initalized.
+          # Then loop every 60 seconds and collect the Puma stats as AppSignal
+          # metrics.
+          sleep sleep_time
+
+          @launcher.events.debug "AppSignal: Collecting Puma stats."
+          stats = fetch_puma_stats
+          if stats
+            plugin.call(stats)
+          else
+            @launcher.events.log "AppSignal: No Puma stats to report."
+          end
+        rescue StandardError => error
+          log_error "Error while processing metrics.", error
+        end
       end
-      Appsignal.start
-      Appsignal.start_logger
+    end
+  end
+
+  private
+
+  def sleep_time
+    60 # seconds
+  end
+
+  def log_error(message, error)
+    @launcher.events.log "AppSignal: #{message}\n" \
+      "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+  end
+
+  def fetch_puma_stats
+    if Puma.respond_to? :stats_hash # Puma >= 5.0.0
+      Puma.stats_hash
+    elsif Puma.respond_to? :stats # Puma < 5.0.0
+      # Puma.stats_hash returns symbolized keys as well
+      JSON.parse Puma.stats, :symbolize_names => true
+    end
+  rescue StandardError => error
+    log_error "Error while parsing Puma stats.", error
+    nil
+  end
+end
+
+# AppsignalPumaPlugin
+#
+# Class to handle the logic of translating the Puma stats to AppSignal metrics.
+#
+# @api private
+class AppsignalPumaPlugin
+  def initialize
+    @hostname = fetch_hostname
+    @statsd = Statsd.new
+  end
+
+  def call(stats)
+    counts = {}
+    count_keys = [:backlog, :running, :pool_capacity, :max_threads]
+
+    if stats[:worker_status] # Clustered mode - Multiple workers
+      stats[:worker_status].each do |worker|
+        stat = worker[:last_status]
+        count_keys.each do |key|
+          count_if_present counts, key, stat
+        end
+      end
+
+      gauge(:workers, stats[:workers], :type => :count)
+      gauge(:workers, stats[:booted_workers], :type => :booted)
+      gauge(:workers, stats[:old_workers], :type => :old)
+    else # Single mode - Single worker
+      count_keys.each do |key|
+        count_if_present counts, key, stats
+      end
+    end
+
+    gauge(:connection_backlog, counts[:backlog]) if counts[:backlog]
+    gauge(:pool_capacity, counts[:pool_capacity]) if counts[:pool_capacity]
+    gauge(:threads, counts[:running], :type => :running) if counts[:running]
+    gauge(:threads, counts[:max_threads], :type => :max) if counts[:max_threads]
+  end
+
+  private
+
+  attr_reader :hostname
+
+  def fetch_hostname
+    # Configure hostname as reported for the Puma metrics with the
+    # APPSIGNAL_HOSTNAME environment variable.
+    env_hostname = ENV["APPSIGNAL_HOSTNAME"]
+    return env_hostname if env_hostname
+
+    # Auto detect hostname as fallback. May be inaccurate.
+    Socket.gethostname
+  end
+
+  def gauge(field, count, tags = {})
+    @statsd.gauge("puma_#{field}", count, tags.merge(:hostname => hostname))
+  end
+
+  def count_if_present(counts, key, stats)
+    stat_value = stats[key]
+    return unless stat_value
+
+    counts[key] ||= 0
+    counts[key] += stat_value
+  end
+
+  class Statsd
+    def initialize
+      # StatsD server location as configured in AppSignal agent StatsD server.
+      @host = "127.0.0.1"
+      @port = 8125
+    end
+
+    def gauge(metric_name, value, tags)
+      send_metric "g", metric_name, value, tags
+    end
+
+    private
+
+    attr_reader :host, :port
+
+    def send_metric(type, metric_name, metric_value, tags_hash)
+      tags = tags_hash.map { |key, value| "#{key}:#{value}" }.join(",")
+      data = "#{metric_name}:#{metric_value}|#{type}|##{tags}"
+
+      # Open (and close) a new socket every time because we don't know when the
+      # plugin will exit and when to cleanly close the socket connection.
+      socket = UDPSocket.new
+      socket.send(data, 0, host, port)
+    ensure
+      socket && socket.close
     end
   end
 end

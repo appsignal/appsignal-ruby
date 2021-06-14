@@ -35,29 +35,6 @@ describe Appsignal::Hooks::PumaHook do
           # Does not error on call
           Appsignal::Hooks::PumaHook.new.install
         end
-
-        context "with APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
-          before do
-            # Set in lib/puma/appsignal.rb
-            APPSIGNAL_PUMA_PLUGIN_LOADED = true
-          end
-          after { Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED }
-
-          it "does not add the Puma minutely probe" do
-            Appsignal::Hooks::PumaHook.new.install
-            expect(Appsignal::Minutely.probes[:puma]).to be_nil
-          end
-        end
-
-        context "without APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
-          it "adds the Puma minutely probe" do
-            expect(defined?(APPSIGNAL_PUMA_PLUGIN_LOADED)).to be_nil
-
-            Appsignal::Hooks::PumaHook.new.install
-            probe = Appsignal::Minutely.probes[:puma]
-            expect(probe).to eql(Appsignal::Probes::PumaProbe)
-          end
-        end
       end
 
       context "when in clustered mode" do
@@ -80,29 +57,6 @@ describe Appsignal::Hooks::PumaHook do
           expect(Appsignal).to receive(:stop).and_call_original
           cluster.stop_workers
           expect(cluster.instance_variable_get(:@called)).to be(true)
-        end
-
-        context "with APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
-          before do
-            # Set in lib/puma/appsignal.rb
-            APPSIGNAL_PUMA_PLUGIN_LOADED = true
-          end
-          after { Object.send :remove_const, :APPSIGNAL_PUMA_PLUGIN_LOADED }
-
-          it "does not add the Puma minutely probe" do
-            Appsignal::Hooks::PumaHook.new.install
-            expect(Appsignal::Minutely.probes[:puma]).to be_nil
-          end
-        end
-
-        context "without APPSIGNAL_PUMA_PLUGIN_LOADED defined" do
-          it "adds the Puma minutely probe" do
-            expect(defined?(APPSIGNAL_PUMA_PLUGIN_LOADED)).to be_nil
-
-            Appsignal::Hooks::PumaHook.new.install
-            probe = Appsignal::Minutely.probes[:puma]
-            expect(probe).to eql(Appsignal::Probes::PumaProbe)
-          end
         end
       end
     end
