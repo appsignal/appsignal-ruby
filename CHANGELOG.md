@@ -1,5 +1,16 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.7
+
+- [27f9b178](https://github.com/appsignal/appsignal-ruby/commit/27f9b178c20006ee15e69bdf878f3a0c9975b1f4) patch - Bump agent to 6caf6d0. Replaces curl HTTP client and includes various other maintenance updates.
+- [665d883a](https://github.com/appsignal/appsignal-ruby/commit/665d883a529e5c14b28e73eeb3ae6410deb3e182) patch - Improve Puma plugin stats collection. Instead of starting the AppSignal gem in the main process we send the stats to the AppSignal agent directly using StatsD. This should improve compatibility with phased restarts. If you use `prune_bundler`, you will need to add AppSignal to the extra `extra_runtime_dependencies` list.
+  
+  ```
+  # config/puma.rb
+  plugin :appsignal
+  extra_runtime_dependencies ["appsignal"]
+  ```
+
 ## 3.0.6
 
 - [d354d79b](https://github.com/appsignal/appsignal-ruby/commit/d354d79b293fd549e66cae60d805d1b1e9e9d2d8) patch - Add Excon integration. Track requests and responses from the Excon gem.
