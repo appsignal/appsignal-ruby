@@ -105,7 +105,6 @@ module Appsignal
           paths_report = Paths.new
           data[:paths] = paths_report.report
           print_paths_section(paths_report)
-          print_empty_line
 
           transmit_report_to_appsignal if send_report_to_appsignal?(options)
         end
@@ -575,9 +574,13 @@ module Appsignal
             "(file: #{ownership[:user]}:#{ownership[:uid]}, " \
             "process: #{process_user[:user]}:#{process_user[:uid]})"
           puts_value "Ownership?", owner, :level => 2
-          return unless path.key?(:content)
-          puts "    Contents (last 10 lines):"
-          puts path[:content].last(10)
+
+          if path.key?(:content)
+            puts "    Contents (last 10 lines):"
+            puts path[:content].last(10)
+          else
+            print_empty_line
+          end
         end
 
         def print_empty_line
