@@ -1,4 +1,6 @@
 RSpec.describe "Puma plugin" do
+  include WaitForHelper
+
   class MockPumaLauncher
     def events
       return @events if defined?(@events)
@@ -72,6 +74,9 @@ RSpec.describe "Puma plugin" do
   let(:hostname) { Socket.gethostname }
   let(:expected_default_tags) { { "hostname" => hostname } }
   let(:stats_data) { { :backlog => 1 } }
+  before :context do
+    Appsignal.stop
+  end
   before do
     module Puma
       def self.stats
@@ -117,10 +122,10 @@ RSpec.describe "Puma plugin" do
     Object.send(:remove_const, :AppsignalPumaPlugin)
   end
 
-  def run(plugin)
+  def run_plugin(plugin, &block)
     @client_thread = Thread.new { start_plugin(plugin) }
     @client_thread.abort_on_exception = true
-    sleep 0.03
+    wait_for(:puma_client_wait, &block)
   ensure
     stop_all
   end
@@ -206,16 +211,16 @@ RSpec.describe "Puma plugin" do
     end
 
     it "collects puma stats as guage metrics with the (summed) worker metrics" do
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect_gauge(:workers, 2, "type" => "count")
-      expect_gauge(:workers, 2, "type" => "booted")
-      expect_gauge(:workers, 0, "type" => "old")
-      expect_gauge(:connection_backlog, 0)
-      expect_gauge(:pool_capacity, 10)
-      expect_gauge(:threads, 10, "type" => "running")
-      expect_gauge(:threads, 10, "type" => "max")
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect_gauge(:workers, 2, "type" => "count")
+        expect_gauge(:workers, 2, "type" => "booted")
+        expect_gauge(:workers, 0, "type" => "old")
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 10)
+        expect_gauge(:threads, 10, "type" => "running")
+        expect_gauge(:threads, 10, "type" => "max")
+      end
     end
   end
 
@@ -230,13 +235,13 @@ RSpec.describe "Puma plugin" do
     end
 
     it "calls `puma_gauge` with the (summed) worker metrics" do
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect_gauge(:connection_backlog, 0)
-      expect_gauge(:pool_capacity, 5)
-      expect_gauge(:threads, 5, "type" => "running")
-      expect_gauge(:threads, 5, "type" => "max")
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect_gauge(:connection_backlog, 0)
+        expect_gauge(:pool_capacity, 5)
+        expect_gauge(:threads, 5, "type" => "running")
+        expect_gauge(:threads, 5, "type" => "max")
+      end
     end
   end
 
@@ -246,10 +251,10 @@ RSpec.describe "Puma plugin" do
     after { ENV.delete("APPSIGNAL_HOSTNAME") }
 
     it "reports the APPSIGNAL_HOSTNAME as the hostname tag value" do
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect_gauge(:connection_backlog, 1)
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect_gauge(:connection_backlog, 1)
+      end
     end
   end
 
@@ -259,11 +264,11 @@ RSpec.describe "Puma plugin" do
     end
 
     it "fetches metrics from Puma.stats instead" do
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect(logs).to_not include([kind_of(Symbol), "AppSignal: No Puma stats to report."])
-      expect_gauge(:connection_backlog, 1)
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect(logs).to_not include([kind_of(Symbol), "AppSignal: No Puma stats to report."])
+        expect_gauge(:connection_backlog, 1)
+      end
     end
   end
 
@@ -274,22 +279,21 @@ RSpec.describe "Puma plugin" do
     end
 
     it "does not fetch metrics" do
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect(logs).to include([:log, "AppSignal: No Puma stats to report."])
-      expect(messages).to be_empty
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect(logs).to include([:log, "AppSignal: No Puma stats to report."])
+        expect(messages).to be_empty
+      end
     end
   end
 
   context "without running StatsD server" do
     it "does nothing" do
-      Appsignal.stop
       stop_all
-      run(appsignal_plugin)
-
-      expect(logs).to_not include([:error, kind_of(String)])
-      expect(messages).to be_empty
+      run_plugin(appsignal_plugin) do
+        expect(logs).to_not include([:error, kind_of(String)])
+        expect(messages).to be_empty
+      end
     end
   end
 end

@@ -16,13 +16,25 @@ module WaitForHelper
   def wait_for(name)
     max_wait = 5_000
     i = 0
+    error = nil
     while i < max_wait
-      break if yield
-      i += 1
-      sleep 0.001
+      begin
+        result = yield
+        break if result
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        # Capture error so we know if it exited with an error
+        error = e
+      ensure
+        i += 1
+        sleep 0.001
+      end
     end
 
     return unless i >= max_wait
-    raise "Waited 5 seconds for #{name} condition, but was not met."
+    error_message =
+      if error
+        "\nError: #{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+      end
+    raise "Waited 5 seconds for #{name} condition, but was not met.#{error_message}"
   end
 end
