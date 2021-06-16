@@ -52,7 +52,7 @@ RSpec.describe "Puma plugin" do
     end
 
     def stop
-      @socket && @socket.close
+      defined?(@socket) && @socket && @socket.close
     ensure
       @socket = nil
     end
