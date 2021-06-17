@@ -399,6 +399,7 @@ module Appsignal
           puts "    Architecture: #{report["architecture"]}"
           puts "    Target: #{report["target"]}"
           puts "    Musl override: #{report["musl_override"]}"
+          puts "    Linux ARM override: #{report["linux_arm_override"]}"
           puts "    Library type: #{report["library_type"]}"
           puts "    Source: #{report["source"]}" if report["source"] != "remote"
           puts "    Dependencies: #{report["dependencies"]}"
@@ -416,7 +417,7 @@ module Appsignal
           rbconfig = RbConfig::CONFIG
           puts "Host information"
           data_section :host do
-            puts_and_save :architecture, "Architecture", rbconfig["host_cpu"]
+            puts_and_save :architecture, "Architecture", Appsignal::System.agent_architecture
 
             os_label = os = rbconfig["host_os"]
             os_label = "#{os} (Microsoft Windows is not supported.)" if Gem.win_platform?
