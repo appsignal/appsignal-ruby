@@ -1,5 +1,9 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.8
+
+- [5f94712d](https://github.com/appsignal/appsignal-ruby/commit/5f94712d3406898f58bea133b8bf3578d6fbbe22) patch - Add the `APPSIGNAL_BUILD_FOR_LINUX_ARM` flag to allow users to enable the experimental Linux ARM build for 64-bit hosts. Usage: `export APPSIGNAL_BUILD_FOR_LINUX_ARM=1 bundle install`. Please be aware this is an experimental build. Please report any issue you may encounter at our [support email](mailto:support@appsignal.com).
+
 ## 3.0.7
 
 - [27f9b178](https://github.com/appsignal/appsignal-ruby/commit/27f9b178c20006ee15e69bdf878f3a0c9975b1f4) patch - Bump agent to 6caf6d0. Replaces curl HTTP client and includes various other maintenance updates.
