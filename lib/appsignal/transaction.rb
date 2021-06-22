@@ -526,7 +526,7 @@ module Appsignal
     end
 
     def cleaned_backtrace(backtrace)
-      if defined?(::Rails) && backtrace
+      if defined?(::Rails) && Rails.respond_to?(:backtrace_cleaner) && backtrace
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
         backtrace

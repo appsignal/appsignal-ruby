@@ -1321,6 +1321,13 @@ describe Appsignal::Transaction do
         expect(subject).to eq ["line 1", "line 2"]
       end
 
+      context "with Rails module but without backtrace_cleaner method" do
+        it "returns the backtrace uncleaned" do
+          stub_const("Rails", Module.new)
+          expect(subject).to eq ["line 1", "line 2"]
+        end
+      end
+
       if rails_present?
         context "with rails" do
           it "cleans the backtrace with the Rails backtrace cleaner" do
