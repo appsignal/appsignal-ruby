@@ -1,5 +1,9 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.9
+
+- [44dd4bdc](https://github.com/appsignal/appsignal-ruby/commit/44dd4bdc824ec88337b75791c1870358a4aa274f) patch - Check Rails.backtrace_cleaner method before calling the method. This prevents a NoMethodError from being raised in some edge cases.
+
 ## 3.0.8
 
 - [5f94712d](https://github.com/appsignal/appsignal-ruby/commit/5f94712d3406898f58bea133b8bf3578d6fbbe22) patch - Add the `APPSIGNAL_BUILD_FOR_LINUX_ARM` flag to allow users to enable the experimental Linux ARM build for 64-bit hosts. Usage: `export APPSIGNAL_BUILD_FOR_LINUX_ARM=1 bundle install`. Please be aware this is an experimental build. Please report any issue you may encounter at our [support email](mailto:support@appsignal.com).
