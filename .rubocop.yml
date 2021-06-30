@@ -4,8 +4,8 @@ AllCops:
   TargetRubyVersion: 2.0
   Include:
     - "**/*.cap"
-    - "Gemfile"
-    - "Rakefile"
+    - "**/Gemfile"
+    - "**/Rakefile"
     - "appsignal.gemspec"
   Exclude:
     - "pkg/**/*"
