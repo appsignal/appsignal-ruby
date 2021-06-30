@@ -182,7 +182,7 @@ end
 
 namespace :build do
   def base_gemspec
-    eval(File.read("appsignal.gemspec"))
+    eval(File.read("appsignal.gemspec")) # rubocop:disable Security/Eval
   end
 
   def modify_base_gemspec
@@ -401,7 +401,7 @@ begin
     desc "Run the Appsignal gem test in an extension failure scenario"
     task :failure => [:prepare_failure, :rspec_failure]
   end
-rescue LoadError
+rescue LoadError # rubocop:disable Lint/HandleExceptions
   # When running rake install, there is no RSpec yet.
 end
 
