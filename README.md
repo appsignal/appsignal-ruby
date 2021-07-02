@@ -1,4 +1,4 @@
-# AppSignal for Ruby
+# AppSignal apm for Ruby
 
 AppSignal solves all your Ruby monitoring needs in a single tool. You and your
 team can focus on writing code and we'll provide the alerts if your app has any
@@ -291,22 +291,22 @@ the most out of using AppSignal.
 
 Also see our [SUPPORT.md file](SUPPORT.md).
 
-[appsignal]: https://appsignal.com
+[appsignal]: https://www.appsignal.com/ruby
 [appsignal-sign-up]: https://appsignal.com/users/sign_up
 [contact]: mailto:support@appsignal.com
 [coc]: https://docs.appsignal.com/appsignal/code-of-conduct.html
-[waffles-page]: https://appsignal.com/waffles
-[docs]: http://docs.appsignal.com
+[waffles-page]: https://www.appsignal.com/waffles
+[docs]: https://docs.appsignal.com
 [ruby-doc]: https://www.rubydoc.info/gems/appsignal
-[contributing-guide]: http://docs.appsignal.com/appsignal/contributing.html
-[supported-systems]: http://docs.appsignal.com/support/operating-systems.html
-[integrations]: http://docs.appsignal.com/ruby/integrations/index.html
-[custom-instrumentation]: http://docs.appsignal.com/ruby/instrumentation/
-[front-end-monitoring]: http://docs.appsignal.com/front-end/error-handling.html
-[exception-handling]: http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
-[tagging]: http://docs.appsignal.com/ruby/instrumentation/tagging.html
-[host-metrics]: http://docs.appsignal.com/metrics/host.html
-[custom-metrics]: http://docs.appsignal.com/metrics/custom.html
+[contributing-guide]: https://docs.appsignal.com/appsignal/contributing.html
+[supported-systems]: https://docs.appsignal.com/support/operating-systems.html
+[integrations]: https://docs.appsignal.com/ruby/integrations/index.html
+[custom-instrumentation]: https://docs.appsignal.com/ruby/instrumentation/
+[front-end-monitoring]: https://docs.appsignal.com/front-end/error-handling.html
+[exception-handling]: https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+[tagging]: https://docs.appsignal.com/ruby/instrumentation/tagging.html
+[host-metrics]: https://docs.appsignal.com/metrics/host.html
+[custom-metrics]: https://docs.appsignal.com/metrics/custom.html
 
 [semver]: http://semver.org/
 [rvm]: http://rvm.io/
