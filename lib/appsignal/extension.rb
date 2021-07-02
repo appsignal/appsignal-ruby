@@ -40,6 +40,16 @@ module Appsignal
       def method_missing(m, *args, &block)
         super if Appsignal.testing?
       end
+
+      unless Appsignal.extension_loaded?
+        def data_map_new
+          Appsignal::Extension::MockData.new
+        end
+
+        def data_array_new
+          Appsignal::Extension::MockData.new
+        end
+      end
     end
 
     if Appsignal::System.jruby?
@@ -60,6 +70,46 @@ module Appsignal
     class Data
       def inspect
         "#<#{self.class.name}:#{object_id} #{self}>"
+      end
+    end
+
+    # Mock of the {Data} class. This mock is used when the extension cannot be
+    # loaded. This mock listens to all method calls and does nothing, and
+    # prevents NoMethodErrors from being raised.
+    #
+    # Disabled in testing so we can make sure that we don't miss an extension
+    # function implementation.
+    #
+    # This class inherits from the {Data} class so that it passes type checks.
+    class MockData < Data
+      def initialize(*_args)
+        # JRuby extension requirement, as it sends a pointer to the Data object
+        # when creating it
+      end
+
+      def method_missing(_method, *_args, &_block)
+        super if Appsignal.testing?
+      end
+
+      def to_s
+        "{}"
+      end
+    end
+
+    # Mock of the {Transaction} class. This mock is used when the extension
+    # cannot be loaded. This mock listens to all method calls and does nothing,
+    # and prevents NoMethodErrors from being raised.
+    #
+    # Disabled in testing so we can make sure that we don't miss an extension
+    # function implementation.
+    class MockTransaction
+      def initialize(*_args)
+        # JRuby extension requirement, as it sends a pointer to the Transaction
+        # object when creating it
+      end
+
+      def method_missing(_method, *_args, &_block)
+        super if Appsignal.testing?
       end
     end
   end

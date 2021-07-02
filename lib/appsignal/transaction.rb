@@ -90,7 +90,7 @@ module Appsignal
         @transaction_id,
         @namespace,
         self.class.garbage_collection_profiler.total_time
-      )
+      ) || Appsignal::Extension::MockTransaction.new
     end
 
     def nil_transaction?
