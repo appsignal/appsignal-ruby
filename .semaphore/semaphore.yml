@@ -32,6 +32,7 @@ global_job_config:
     commands:
     - checkout
     - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
+    - if [ -n "$_C_VERSION" ]; then sem-version c $_C_VERSION; fi
     - sem-version ruby $RUBY_VERSION
     - "./support/check_versions"
     - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
@@ -1054,7 +1055,7 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby jruby-9.1.17.0
+- name: Ruby jruby-9.2.19.0
   dependencies:
   - Validation
   task:
@@ -1062,10 +1063,10 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby jruby-9.1.17.0 for no_dependencies
+    - name: Ruby jruby-9.2.19.0 for no_dependencies
       env_vars:
       - name: RUBY_VERSION
-        value: jruby-9.1.17.0
+        value: jruby-9.2.19.0
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
@@ -1074,21 +1075,24 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
+      - &1
+        name: _C_VERSION
+        value: '8'
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby jruby-9.1.17.0 - Gems
+- name: Ruby jruby-9.2.19.0 - Gems
   dependencies:
-  - Ruby jruby-9.1.17.0
+  - Ruby jruby-9.2.19.0
   task:
     prologue:
       commands:
       - "./support/bundler_wrapper exec rake extension:install"
     jobs:
-    - name: Ruby jruby-9.1.17.0 for rails-5.2
+    - name: Ruby jruby-9.2.19.0 for rails-5.2
       env_vars:
       - name: RUBY_VERSION
-        value: jruby-9.1.17.0
+        value: jruby-9.2.19.0
       - name: GEMSET
         value: rails-5.2
       - name: BUNDLE_GEMFILE
@@ -1097,6 +1101,23 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
+      - *1
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby jruby-9.2.19.0 for rails-6.0
+      env_vars:
+      - name: RUBY_VERSION
+        value: jruby-9.2.19.0
+      - name: GEMSET
+        value: rails-6.0
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      - *1
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
