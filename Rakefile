@@ -73,7 +73,7 @@ namespace :build_matrix do
 
           job = {
             "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
-            "env_vars" => env,
+            "env_vars" => env + ruby.fetch("env_vars", []),
             "commands" => [
               "./support/bundler_wrapper exec rake test",
               "./support/bundler_wrapper exec rake test:failure"
