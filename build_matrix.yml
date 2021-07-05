@@ -33,6 +33,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       commands:
         - checkout
         - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
+        - "if [ -n \"$_C_VERSION\" ]; then sem-version c $_C_VERSION; fi"
         - sem-version ruby $RUBY_VERSION
         - ./support/check_versions
         - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
@@ -119,8 +120,11 @@ matrix:
     - ruby: "2.6.6"
     - ruby: "2.7.3"
     - ruby: "3.0.1"
-    - ruby: "jruby-9.1.17.0"
+    - ruby: "jruby-9.2.19.0"
       gems: "minimal"
+      env_vars:
+        - name: "_C_VERSION"
+          value: "8"
   gems:
     - gem: "no_dependencies"
     - gem: "capistrano2"
@@ -162,7 +166,6 @@ matrix:
           - "2.2.10"
           - "2.3.8"
           - "2.4.10"
-          - "jruby-9.1.17.0"
     - gem: "resque-1"
       bundler: "1.17.3"
       exclude:
