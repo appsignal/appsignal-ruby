@@ -6,6 +6,5 @@ if RUBY_PLATFORM == "java"
 else
   gem 'sqlite3'
 end
-gem 'rack', '~> 1.6'
 
 gemspec :path => '../'

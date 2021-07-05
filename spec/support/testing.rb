@@ -1,16 +1,26 @@
 module Appsignal
   class << self
+    attr_writer :testing
     remove_method :testing?
 
     # @api private
     def testing?
-      true
+      @testing = true unless defined?(@testing)
+      @testing
     end
   end
 
   # @api private
   module Testing
     class << self
+      def without_testing
+        original_testing = Appsignal.testing?
+        Appsignal.testing = false
+        yield
+      ensure
+        Appsignal.testing = original_testing
+      end
+
       def transactions
         @transactions ||= []
       end
