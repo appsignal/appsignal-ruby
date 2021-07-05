@@ -1,5 +1,9 @@
 # Changelog
 
+# 2.11.10
+- Backport extension fallbacks on extension installation failure, that caused
+  NoMethodErrors. PR #736
+
 # 2.11.9
 - Fix and simplify Ruby method delegation for object method instrumentation in
   the different Ruby versions. PR #706
