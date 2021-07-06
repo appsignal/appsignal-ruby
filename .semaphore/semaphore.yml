@@ -1417,7 +1417,7 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - &1
+      - &6
         name: _C_VERSION
         value: '8'
       commands:
@@ -1453,12 +1453,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *1
+      - *6
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby jruby-9.2.19.0 for rails-6.0
       env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
       - name: RUBY_VERSION
         value: jruby-9.2.19.0
       - name: GEMSET
@@ -1469,7 +1473,7 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *1
+      - *6
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
