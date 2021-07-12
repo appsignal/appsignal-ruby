@@ -11,24 +11,16 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   auto_cancel:
     running:
       # Ignore main AND develop branch as we want it to build all workflows
-      when: "branch != 'main' AND branch != 'develop'"
+      when: "branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'"
 
   global_job_config:
     env_vars:
+      - name: RUNNING_IN_CI
+        value: "true"
       - name: _BUNDLER_CACHE
         value: "v2"
       - name: _GEMS_CACHE
         value: "v2"
-      - name: BUNDLE_PATH
-        value: "../.bundle/"
-      - name: RUNNING_IN_CI
-        value: "true"
-      - name: RAILS_ENV
-        value: "test"
-      - name: JRUBY_OPTS
-        value: ""
-      - name: COV
-        value: "1"
     prologue:
       commands:
         - checkout
@@ -36,25 +28,16 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - "if [ -n \"$_C_VERSION\" ]; then sem-version c $_C_VERSION; fi"
         - sem-version ruby $RUBY_VERSION
         - ./support/check_versions
-        - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-        - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
-        - ./support/install_deps
-        - bundle config set clean 'true'
-        - ./support/bundler_wrapper install --jobs=3 --retry=3
-    epilogue:
-      on_pass:
-        commands:
-          - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
-          - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
-      on_fail:
-        commands:
-          - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'"
-          - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
 
   blocks:
     - name: Validation
       dependencies: []
       task:
+        prologue:
+          commands:
+            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - ./support/bundler_wrapper install --jobs=3 --retry=3
         jobs:
         - name: Validate CI setup
           env_vars:
@@ -63,12 +46,22 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
             - name: GEMSET
               value: no_dependencies
             - name: BUNDLE_GEMFILE
-              value: gemfiles/no_dependencies.gemfile
+              value: Gemfile
           commands:
             - ./support/bundler_wrapper exec rake build_matrix:semaphore:validate
+        epilogue:
+          on_pass:
+            commands:
+              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
+              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
     - name: Linters
       dependencies: []
       task:
+        prologue:
+          commands:
+            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - ./support/bundler_wrapper install --jobs=3 --retry=3
         jobs:
         - name: RuboCop
           env_vars:
@@ -77,11 +70,68 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
             - name: GEMSET
               value: no_dependencies
             - name: BUNDLE_GEMFILE
-              value: gemfiles/no_dependencies.gemfile
+              value: Gemfile
           commands:
             - ./support/bundler_wrapper exec rubocop
+        epilogue:
+          on_pass:
+            commands:
+              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
+              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+    - name: Integration tests
+      dependencies:
+      - Validation
+      task:
+        prologue:
+          commands:
+            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile)
+            - ./support/bundler_wrapper install --jobs=3 --retry=3
+            - ./support/bundler_wrapper exec rake extension:install
+            - git submodule init
+            - git submodule update
+        jobs:
+        - name: Diagnose
+          env_vars:
+            - name: RUBY_VERSION
+              value: 2.6.6
+            - name: LANGUAGE
+              value: ruby
+          commands:
+            - spec/integration/diagnose/bin/test
+        epilogue:
+          on_pass:
+            commands:
+              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-diagnose-$(checksum Gemfile) .bundle
+              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile) $HOME/.gem
 
 matrix:
+  env_vars: # Shared for all jobs in the build matrix
+    - name: BUNDLE_PATH
+      value: "../.bundle/"
+    - name: RAILS_ENV
+      value: "test"
+    - name: JRUBY_OPTS
+      value: ""
+    - name: COV
+      value: "1"
+  prologue: # Shared for all jobs in the build matrix
+    commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - ./support/install_deps
+      - bundle config set clean 'true'
+      - ./support/bundler_wrapper install --jobs=3 --retry=3
+  epilogue: # Shared for all jobs in the build matrix
+    on_pass:
+      commands:
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+    on_fail:
+      commands:
+        - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'"
+        - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
+
   defaults:
     rubygems: "latest"
     bundler: "latest"
