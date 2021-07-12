@@ -24,9 +24,19 @@ global_job_config:
     commands:
     - checkout
     - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
-    - if [ -n "$_C_VERSION" ]; then sem-version c $_C_VERSION; fi
-    - sem-version ruby $RUBY_VERSION
-    - "./support/check_versions"
+    - |
+      if [ -n "$_C_VERSION" ]; then
+        sem-version c $_C_VERSION
+      else
+        echo Skipping C-lang install
+      fi
+    - |
+      if [ -n "$RUBY_VERSION" ]; then
+        sem-version ruby $RUBY_VERSION
+        ./support/check_versions
+      else
+        echo Skipping Ruby install
+      fi
 blocks:
 - name: Validation
   dependencies: []
