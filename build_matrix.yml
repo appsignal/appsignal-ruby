@@ -64,7 +64,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
             commands:
               - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
               - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
-    - name: Linters
+    - name: Ruby linters
       dependencies: []
       task:
         prologue:
@@ -88,6 +88,17 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
             commands:
               - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
               - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+    - name: Other linters
+      dependencies: []
+      task:
+        jobs:
+        - name: Git Lint (Lintje)
+          env_vars:
+            - name: LINTJE_VERSION
+              value: 0.2.0
+          commands:
+            - script/install_lintje
+            - $HOME/bin/lintje $SEMAPHORE_GIT_COMMIT_RANGE
     - name: Integration tests
       dependencies:
       - Validation
