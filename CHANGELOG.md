@@ -1,5 +1,9 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.10
+
+- [88f7d585](https://github.com/appsignal/appsignal-ruby/commit/88f7d5850f57777c98f56190dc35ff37eface542) patch - Bump agent to c2024bf with appsignal-agent diagnose timing issue fix when reading the report and improved filtering for HTTP request transmission logs.
+
 ## 3.0.9
 
 - [44dd4bdc](https://github.com/appsignal/appsignal-ruby/commit/44dd4bdc824ec88337b75791c1870358a4aa274f) patch - Check Rails.backtrace_cleaner method before calling the method. This prevents a NoMethodError from being raised in some edge cases.
