@@ -1,5 +1,9 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.11
+
+- [8e3ec789](https://github.com/appsignal/appsignal-ruby/commit/8e3ec78943acf7c533c3703c3961e19c49dcd5aa) patch - Bump agent to v-891c6b0. Add experimental Apple Silicon M1 ARM64 build.
+
 ## 3.0.10
 
 - [88f7d585](https://github.com/appsignal/appsignal-ruby/commit/88f7d5850f57777c98f56190dc35ff37eface542) patch - Bump agent to c2024bf with appsignal-agent diagnose timing issue fix when reading the report and improved filtering for HTTP request transmission logs.
