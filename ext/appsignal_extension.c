@@ -262,6 +262,34 @@ static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
+static VALUE add_transaction_fingerprint(VALUE self, VALUE fingerprint) {
+  appsignal_transaction_t* transaction;
+
+  Check_Type(fingerprint, T_STRING);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  appsignal_transaction_add_fingerprint(
+      transaction,
+      make_appsignal_string(fingerprint)
+  );
+  return Qnil;
+}
+
+static VALUE transaction_fingerprint(VALUE self) {
+  appsignal_transaction_t* transaction;
+  appsignal_string_t fingerprint;
+
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  fingerprint = appsignal_transaction_fingerprint(transaction);
+
+  if (fingerprint.len == 0) {
+    return Qnil;
+  } else {
+    return make_ruby_string(fingerprint);
+  }
+}
+
 static VALUE finish_transaction(VALUE self, VALUE gc_duration_ms) {
   appsignal_transaction_t* transaction;
   int sample;
@@ -863,6 +891,8 @@ void Init_appsignal_extension(void) {
   rb_define_method(Transaction, "set_namespace",   set_transaction_namespace,   1);
   rb_define_method(Transaction, "set_queue_start", set_transaction_queue_start, 1);
   rb_define_method(Transaction, "set_metadata",    set_transaction_metadata,    2);
+  rb_define_method(Transaction, "fingerprint",     transaction_fingerprint,     0);
+  rb_define_method(Transaction, "add_fingerprint", add_transaction_fingerprint, 1);
   rb_define_method(Transaction, "finish",          finish_transaction,          1);
   rb_define_method(Transaction, "complete",        complete_transaction,        0);
   rb_define_method(Transaction, "to_json",         transaction_to_json,         0);

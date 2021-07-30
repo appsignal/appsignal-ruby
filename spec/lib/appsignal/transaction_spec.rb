@@ -867,6 +867,24 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#add_fingerprint" do
+      it "adds a fingerprint" do
+        expect(transaction.ext).to receive(:add_fingerprint).with(
+          "fingerprint"
+        ).and_call_original
+
+        transaction.add_fingerprint("fingerprint")
+      end
+    end
+
+    describe "#fingerprint" do
+      it "returns a fingerprint" do
+        expect(transaction.ext).to receive(:fingerprint).and_call_original
+
+        expect(transaction.fingerprint).to eq "unknown"
+      end
+    end
+
     describe "#record_event" do
       let(:fake_gc_time) { 123 }
       before do

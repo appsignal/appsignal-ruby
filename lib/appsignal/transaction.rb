@@ -367,6 +367,15 @@ module Appsignal
       )
     end
 
+    def add_fingerprint(fingerprint)
+      return if paused?
+      @ext.add_fingerprint(fingerprint)
+    end
+
+    def fingerprint
+      @ext.fingerprint
+    end
+
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
       yield if block_given?

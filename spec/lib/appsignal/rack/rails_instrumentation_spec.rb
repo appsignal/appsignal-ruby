@@ -7,7 +7,7 @@ if DependencyHelper.rails_present?
       start_agent
     end
 
-    let(:app) { double(:call => true) }
+    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]]) }
     let(:env) do
       http_request_env_with_data("action_dispatch.request_id" => "1").tap do |request|
         request["action_controller.instance"] = double(
@@ -46,7 +46,7 @@ if DependencyHelper.rails_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring", :error => false do
+    describe "#call_with_appsignal_monitoring" do
       it "should create a transaction" do
         expect(Appsignal::Transaction).to receive(:create).with(
           "1",
@@ -62,13 +62,17 @@ if DependencyHelper.rails_present?
             :set_metadata => nil
           )
         )
+
+        middleware.call(env)
       end
 
       it "should call the app" do
         expect(app).to receive(:call).with(env)
+
+        middleware.call(env)
       end
 
-      context "with an exception", :error => true do
+      context "with an exception" do
         let(:error) { ExampleException }
         let(:app) do
           double.tap do |d|
@@ -78,20 +82,37 @@ if DependencyHelper.rails_present?
 
         it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+
+          expect { middleware.call(env) }.to raise_error(error)
         end
       end
 
       it "should set metadata" do
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
+
+        middleware.call(env)
       end
 
       it "should set the action and queue start" do
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("MockController#index")
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
+
+        middleware.call(env)
       end
 
-      after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
+      context "with service fingerprints enabled" do
+        before do
+          Appsignal.config[:enable_service_fingerprints] = true
+        end
+
+        it "should add the service fingerprint to the http headers" do
+          expect_any_instance_of(Appsignal::Transaction).to receive(:fingerprint).and_return("fingerprint")
+
+          middleware.call(env)
+
+          expect(app.call[1]["X-Appsignal-Fingerprint"]).to eq "fingerprint"
+        end
+      end
     end
 
     describe "#request_id" do

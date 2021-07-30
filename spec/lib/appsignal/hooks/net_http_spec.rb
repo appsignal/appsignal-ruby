@@ -38,6 +38,23 @@ describe Appsignal::Hooks::NetHttpHook do
       http.use_ssl = true
       http.get(uri.request_uri)
     end
+
+    it "should use the fingerprint header if present" do
+      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+      expect(Appsignal::Transaction.current).to receive(:start_event)
+        .at_least(:once)
+      expect(Appsignal::Transaction.current).to receive(:add_fingerprint)
+        .with("fingerprint")
+        .at_least(:once)
+      expect(Appsignal::Transaction.current).to receive(:finish_event)
+        .at_least(:once)
+        .with("request.net_http", "GET http://www.google.com", nil, 0)
+
+      stub_request(:any, "http://www.google.com/")
+        .to_return(:headers => { Appsignal::FINGERPRINT_HEADER => "fingerprint" })
+
+      Net::HTTP.get_response(URI.parse("http://www.google.com"))
+    end
   end
 
   context "with Net::HTTP instrumentation disabled" do

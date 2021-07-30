@@ -29,7 +29,7 @@ module Appsignal
           :params_method => :filtered_parameters
         )
         begin
-          @app.call(env)
+          _status, headers, _response = @app.call(env)
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
           raise error
@@ -41,6 +41,9 @@ module Appsignal
           transaction.set_http_or_background_queue_start
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
+          if Appsignal.config[:enable_service_fingerprints]
+            headers[Appsignal::FINGERPRINT_HEADER] = transaction.fingerprint
+          end
           Appsignal::Transaction.complete_current!
         end
       end

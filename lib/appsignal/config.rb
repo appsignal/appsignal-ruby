@@ -41,7 +41,8 @@ module Appsignal
       :dns_servers                    => [],
       :filter_data_keys               => [],
       :files_world_accessible         => true,
-      :transaction_debug_mode         => false
+      :transaction_debug_mode         => false,
+      :enable_service_fingerprints    => false
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -78,6 +79,7 @@ module Appsignal
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
+      "APPSIGNAL_ENABLE_SERVICE_FINGERPRINTS"    => :enable_service_fingerprints,
       "APPSIGNAL_FILTER_DATA_KEYS"               => :filter_data_keys,
       "APP_REVISION"                             => :revision
     }.freeze
@@ -113,6 +115,7 @@ module Appsignal
       APPSIGNAL_SEND_PARAMS
       APPSIGNAL_SKIP_SESSION_DATA
       APPSIGNAL_TRANSACTION_DEBUG_MODE
+      APPSIGNAL_ENABLE_SERVICE_FINGERPRINTS
     ].freeze
     # @api private
     ENV_ARRAY_KEYS = %w[

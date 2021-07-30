@@ -178,6 +178,7 @@ describe Appsignal::Config do
         :dns_servers                    => [],
         :files_world_accessible         => true,
         :transaction_debug_mode         => false,
+        :enable_service_fingerprints    => false,
         :revision                       => "v2.5.1",
         :request_headers                => []
       )

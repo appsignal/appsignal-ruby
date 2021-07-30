@@ -3,7 +3,7 @@ if DependencyHelper.sinatra_present?
 
   describe Appsignal::Rack::SinatraInstrumentation do
     let(:settings) { double(:raise_errors => false) }
-    let(:app) { double(:call => true, :settings => settings) }
+    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]], :settings => settings) }
     let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
@@ -36,7 +36,7 @@ if DependencyHelper.sinatra_present?
     end
 
     let(:settings) { double(:raise_errors => false) }
-    let(:app) { double(:call => true, :settings => settings) }
+    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]], :settings => settings) }
     let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
@@ -103,7 +103,7 @@ if DependencyHelper.sinatra_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring", :error => false do
+    describe "#call_with_appsignal_monitoring" do
       it "should create a transaction" do
         expect(Appsignal::Transaction).to receive(:create).with(
           kind_of(String),
@@ -111,13 +111,17 @@ if DependencyHelper.sinatra_present?
           kind_of(Sinatra::Request),
           kind_of(Hash)
         ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+
+        middleware.call(env)
       end
 
       it "should call the app" do
         expect(app).to receive(:call).with(env)
+
+        middleware.call(env)
       end
 
-      context "with an error", :error => true do
+      context "with an error" do
         let(:error) { ExampleException }
         let(:app) do
           double.tap do |d|
@@ -128,6 +132,8 @@ if DependencyHelper.sinatra_present?
 
         it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+
+          expect { middleware.call(env) }.to raise_error(error)
         end
       end
 
@@ -137,6 +143,8 @@ if DependencyHelper.sinatra_present?
 
         it "records the exception" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+
+          middleware.call(env)
         end
 
         context "when raise_errors is on" do
@@ -144,6 +152,8 @@ if DependencyHelper.sinatra_present?
 
           it "does not record the error" do
             expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
+
+            middleware.call(env)
           end
         end
 
@@ -152,6 +162,8 @@ if DependencyHelper.sinatra_present?
 
           it "does not record the error" do
             expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
+
+            middleware.call(env)
           end
         end
       end
@@ -159,6 +171,8 @@ if DependencyHelper.sinatra_present?
       describe "action name" do
         it "should set the action" do
           expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /")
+
+          middleware.call(env)
         end
 
         context "without 'sinatra.route' env" do
@@ -166,6 +180,8 @@ if DependencyHelper.sinatra_present?
 
           it "returns nil" do
             expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
+
+            middleware.call(env)
           end
         end
 
@@ -174,6 +190,8 @@ if DependencyHelper.sinatra_present?
 
           it "should call set_action with an application prefix path" do
             expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /api/")
+
+            middleware.call(env)
           end
 
           context "without 'sinatra.route' env" do
@@ -181,6 +199,8 @@ if DependencyHelper.sinatra_present?
 
             it "returns nil" do
               expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
+
+              middleware.call(env)
             end
           end
         end
@@ -188,10 +208,14 @@ if DependencyHelper.sinatra_present?
 
       it "should set metadata" do
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
+
+        middleware.call(env)
       end
 
       it "should set the queue start" do
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
+
+        middleware.call(env)
       end
 
       context "with overridden request class and params method" do
@@ -203,11 +227,24 @@ if DependencyHelper.sinatra_present?
             .with(env.merge(:params_method => :filtered_params))
             .at_least(:once)
             .and_return(request)
+
+          middleware.call(env)
         end
       end
 
-      after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
+      context "with service fingerprints enabled" do
+        before do
+          Appsignal.config[:enable_service_fingerprints] = true
+        end
+
+        it "should add the service fingerprint to the http headers" do
+          expect_any_instance_of(Appsignal::Transaction).to receive(:fingerprint).and_return("fingerprint")
+
+          middleware.call(env)
+
+          expect(app.call[1]["X-Appsignal-Fingerprint"]).to eq "fingerprint"
+        end
+      end
     end
   end
 end

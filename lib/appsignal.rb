@@ -15,6 +15,9 @@ require "appsignal/helpers/metrics"
 # {Appsignal::Helpers::Instrumentation}) and metrics helpers (from
 # {Appsignal::Helpers::Metrics}) for ease of use.
 module Appsignal
+  FINGERPRINT_HEADER = "X-Appsignal-Fingerprint".freeze
+  FINGERPRINT_HEADER_LOWERCASE = FINGERPRINT_HEADER.downcase.freeze
+
   class << self
     include Helpers::Instrumentation
     include Helpers::Metrics
