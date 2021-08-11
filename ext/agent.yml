@@ -32,6 +32,13 @@ triples:
     dynamic:
       checksum: 13c646d2a98719f0ef9bb15f4e06b5b58bd8b938f1efb6e6cdfd999fe2872a38
       filename: appsignal-aarch64-darwin-all-dynamic.tar.gz
+  arm-darwin:
+    static:
+      checksum: 70db73144a1ee9475636512e6f55b0c7189ee6d2d390341d33fcaaece10b5a13
+      filename: appsignal-aarch64-darwin-all-static.tar.gz
+    dynamic:
+      checksum: 13c646d2a98719f0ef9bb15f4e06b5b58bd8b938f1efb6e6cdfd999fe2872a38
+      filename: appsignal-aarch64-darwin-all-dynamic.tar.gz
   aarch64-linux:
     static:
       checksum: 0ff967bd1d2d117cdc5a988adfd6083352f0ff3e3a18d8e85360b998ed08997e
