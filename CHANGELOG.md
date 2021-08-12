@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.12
+
+- [7f3af841](https://github.com/appsignal/appsignal-ruby/commit/7f3af8418f830a7384c10b309e1aeb8ee32c5742) patch - Bump agent to 0f40689
+  
+  - Add Apple Darwin ARM alias.
+  - Improve appsignal.h documentation.
+  - Improve transaction debug log for errors.
+  - Fix agent zombie/defunct issue on containers without process reaping.
+
 ## 3.0.11
 
 - [8e3ec789](https://github.com/appsignal/appsignal-ruby/commit/8e3ec78943acf7c533c3703c3961e19c49dcd5aa) patch - Bump agent to v-891c6b0. Add experimental Apple Silicon M1 ARM64 build.
