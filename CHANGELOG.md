@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.13
+
+- [5c202185](https://github.com/appsignal/appsignal-ruby/commit/5c20218526e026ab436854508ccfe26ca55e8f15) patch - Bump agent to v-0318770.
+  
+  - Improve Dokku platform detection. Do not disable host metrics on
+    Dokku.
+  - Report CPU steal metric.
+
 ## 3.0.12
 
 - [7f3af841](https://github.com/appsignal/appsignal-ruby/commit/7f3af8418f830a7384c10b309e1aeb8ee32c5742) patch - Bump agent to 0f40689
