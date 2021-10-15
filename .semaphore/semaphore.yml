@@ -11,7 +11,7 @@ agent:
     os_image: ubuntu1804
 auto_cancel:
   running:
-    when: branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'
+    when: branch != 'main' AND branch != 'develop'
 global_job_config:
   env_vars:
   - name: RUNNING_IN_CI

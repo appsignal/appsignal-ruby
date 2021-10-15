@@ -11,7 +11,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   auto_cancel:
     running:
       # Ignore main AND develop branch as we want it to build all workflows
-      when: "branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'"
+      when: "branch != 'main' AND branch != 'develop'"
 
   global_job_config:
     env_vars:
