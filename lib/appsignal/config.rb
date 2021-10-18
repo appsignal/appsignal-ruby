@@ -36,6 +36,7 @@ module Appsignal
       :enable_gc_instrumentation      => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => true,
+      :enable_statsd                  => true,
       :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers                    => [],
       :filter_data_keys               => [],
@@ -70,6 +71,7 @@ module Appsignal
       "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
+      "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
       "APPSIGNAL_HOSTNAME"                       => :hostname,
       "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
       "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
@@ -101,6 +103,7 @@ module Appsignal
       APPSIGNAL_ENABLE_GC_INSTRUMENTATION
       APPSIGNAL_ENABLE_HOST_METRICS
       APPSIGNAL_ENABLE_MINUTELY_PROBES
+      APPSIGNAL_ENABLE_STATSD
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
       APPSIGNAL_INSTRUMENT_NET_HTTP
       APPSIGNAL_INSTRUMENT_REDIS
@@ -293,7 +296,7 @@ module Appsignal
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
       ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
-      ENV["_APPSIGNAL_ENABLE_STATSD"]                = "true"
+      ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
       ENV["_APPSIGNAL_FILTER_DATA_KEYS"]             = config_hash[:filter_data_keys].join(",")
       ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end

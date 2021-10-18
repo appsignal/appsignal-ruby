@@ -173,6 +173,7 @@ describe Appsignal::Config do
         :enable_gc_instrumentation      => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => true,
+        :enable_statsd                  => true,
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :files_world_accessible         => true,

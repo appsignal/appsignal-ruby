@@ -563,6 +563,7 @@ module Appsignal
 
           unless path[:exists]
             puts_value "Exists?", path[:exists], :level => 2
+            print_empty_line
             return
           end
 

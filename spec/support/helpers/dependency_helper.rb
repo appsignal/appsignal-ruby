@@ -5,6 +5,10 @@ module DependencyHelper
     Gem::Version.new(RUBY_VERSION)
   end
 
+  def running_ruby_2_0?
+    ruby_version.segments.take(2) == [2, 0]
+  end
+
   def running_jruby?
     defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
   end

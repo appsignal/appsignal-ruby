@@ -11,7 +11,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   auto_cancel:
     running:
       # Ignore main AND develop branch as we want it to build all workflows
-      when: "branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'"
+      when: "branch != 'main' AND branch != 'develop'"
 
   global_job_config:
     env_vars:
@@ -93,12 +93,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       task:
         jobs:
         - name: Git Lint (Lintje)
-          env_vars:
-            - name: LINTJE_VERSION
-              value: 0.3.0
           commands:
-            - script/install_lintje
-            - $HOME/bin/lintje $SEMAPHORE_GIT_COMMIT_RANGE
+            - script/lint_git
     - name: Integration tests
       dependencies:
       - Validation

@@ -1,5 +1,22 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.14
+
+- [c40f6d75](https://github.com/appsignal/appsignal-ruby/commit/c40f6d759e8d516cc47bd55cc83bfcb680fbd1ea) patch - Add minutely probe that collects metrics for :class_serial and :global_constant_state from RubyVM.
+- [7c18fb6d](https://github.com/appsignal/appsignal-ruby/commit/7c18fb6db0c72f32adb6803ccde957963977008a) patch - Bump agent to 7376537
+  
+  - Support JSON PostgreSQL operator in sql_lexer.
+  - Do not strip comments from SQL queries.
+- [8d7b80ea](https://github.com/appsignal/appsignal-ruby/commit/8d7b80eafc203c295db037f2547f74a2f217f93f) patch - Add configuration option for the AppSignal agent StatsD server. This is on by default, but you can disable it with `enable_statsd: false`.
+
+## 3.0.13
+
+- [5c202185](https://github.com/appsignal/appsignal-ruby/commit/5c20218526e026ab436854508ccfe26ca55e8f15) patch - Bump agent to v-0318770.
+  
+  - Improve Dokku platform detection. Do not disable host metrics on
+    Dokku.
+  - Report CPU steal metric.
+
 ## 3.0.12
 
 - [7f3af841](https://github.com/appsignal/appsignal-ruby/commit/7f3af8418f830a7384c10b309e1aeb8ee32c5742) patch - Bump agent to 0f40689

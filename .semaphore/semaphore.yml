@@ -11,7 +11,7 @@ agent:
     os_image: ubuntu1804
 auto_cancel:
   running:
-    when: branch != 'main' AND branch != 'develop' AND branch != 'diagnose-testing'
+    when: branch != 'main' AND branch != 'develop'
 global_job_config:
   env_vars:
   - name: RUNNING_IN_CI
@@ -95,12 +95,8 @@ blocks:
   task:
     jobs:
     - name: Git Lint (Lintje)
-      env_vars:
-      - name: LINTJE_VERSION
-        value: 0.3.0
       commands:
-      - script/install_lintje
-      - "$HOME/bin/lintje $SEMAPHORE_GIT_COMMIT_RANGE"
+      - script/lint_git
 - name: Integration tests
   dependencies:
   - Validation
