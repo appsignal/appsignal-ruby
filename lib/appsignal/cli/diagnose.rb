@@ -171,9 +171,16 @@ module Appsignal
           puts_value label, value
         end
 
+        # Prints values as given. Does no formatting on the value
         def puts_value(label, value, options = {})
           options[:level] ||= 1
           puts "#{"  " * options[:level]}#{label}: #{value}"
+        end
+
+        # Print values as inspected.
+        # Surrounds Strings in quotes.
+        def puts_format(label, value, options = {})
+          puts_value label, value.inspect, options
         end
 
         def configure_appsignal(options)
@@ -327,9 +334,18 @@ module Appsignal
           data_section :library do
             save :language, "ruby"
             puts_value "Language", "Ruby"
-            puts_and_save :package_version, "Gem version", Appsignal::VERSION
-            puts_and_save :agent_version, "Agent version", Appsignal::Extension.agent_version
-            puts_and_save :extension_loaded, "Extension loaded", Appsignal.extension_loaded
+
+            package_version = Appsignal::VERSION
+            save :package_version, package_version
+            puts_format "Gem version", package_version
+
+            agent_version = Appsignal::Extension.agent_version
+            save :agent_version, agent_version
+            puts_format "Agent version", agent_version
+
+            extension_loaded = Appsignal.extension_loaded
+            save :extension_loaded, extension_loaded
+            puts_format "Extension loaded", extension_loaded
           end
         end
 
@@ -381,29 +397,29 @@ module Appsignal
         def print_installation_language_report(report)
           report = report.fetch("language", {})
           puts "  Language details"
-          puts "    Implementation: #{report["implementation"]}"
-          puts "    Ruby version: #{report["version"]}"
+          puts_format "Implementation", report["implementation"], :level => 2
+          puts_format "Ruby version", report["version"], :level => 2
         end
 
         def print_installation_download_report(report)
           report = report.fetch("download", {})
           puts "  Download details"
-          puts "    Download URL: #{report["download_url"]}"
-          puts "    Checksum: #{report["checksum"]}"
+          puts_format "Download URL", report["download_url"], :level => 2
+          puts_format "Checksum", report["checksum"], :level => 2
         end
 
         def print_installation_build_report(report)
           report = report.fetch("build", {})
           puts "  Build details"
-          puts "    Install time: #{report["time"]}"
-          puts "    Architecture: #{report["architecture"]}"
-          puts "    Target: #{report["target"]}"
-          puts "    Musl override: #{report["musl_override"]}"
-          puts "    Linux ARM override: #{report["linux_arm_override"]}"
-          puts "    Library type: #{report["library_type"]}"
-          puts "    Source: #{report["source"]}" if report["source"] != "remote"
-          puts "    Dependencies: #{report["dependencies"]}"
-          puts "    Flags: #{report["flags"]}"
+          puts_format "Install time", report["time"].to_s, :level => 2
+          puts_format "Architecture", report["architecture"], :level => 2
+          puts_format "Target", report["target"], :level => 2
+          puts_format "Musl override", report["musl_override"], :level => 2
+          puts_format "Linux ARM override", report["linux_arm_override"], :level => 2
+          puts_format "Library type", report["library_type"], :level => 2
+          puts_format "Source", report["source"], :level => 2 if report["source"] != "remote"
+          puts_format "Dependencies", report["dependencies"], :level => 2
+          puts_format "Flags", report["flags"], :level => 2
         end
 
         def print_installation_host_report(report)
@@ -417,24 +433,31 @@ module Appsignal
           rbconfig = RbConfig::CONFIG
           puts "Host information"
           data_section :host do
-            puts_and_save :architecture, "Architecture", Appsignal::System.agent_architecture
+            agent_architecture = Appsignal::System.agent_architecture
+            save :architecture, agent_architecture
+            puts_format "Architecture", agent_architecture
 
-            os_label = os = rbconfig["host_os"]
-            os_label = "#{os} (Microsoft Windows is not supported.)" if Gem.win_platform?
+            os = rbconfig["host_os"]
+            os_label = os.inspect
+            os_label = "#{os_label} (Microsoft Windows is not supported.)" if Gem.win_platform?
             save :os, os
             puts_value "Operating System", os_label
 
-            puts_and_save :language_version, "Ruby version",
-              "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+            language_version = "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+            save :language_version, language_version
+            puts_format "Ruby version", language_version
 
-            puts_value "Heroku", "true" if Appsignal::System.heroku?
-            save :heroku, Appsignal::System.heroku?
+            heroku = Appsignal::System.heroku?
+            save :heroku, heroku
+            puts_format "Heroku", true if Appsignal::System.heroku?
 
-            save :root, Process.uid.zero?
-            puts_value "Root user",
-              Process.uid.zero? ? "true (not recommended)" : "false"
-            puts_and_save :running_in_container, "Running in container",
-              Appsignal::Extension.running_in_container?
+            root = Process.uid.zero?
+            save :root, root
+            puts_value "Root user", root ? "true (not recommended)" : "false"
+
+            running_in_container = Appsignal::Extension.running_in_container?
+            save :running_in_container, running_in_container
+            puts_format "Running in container", running_in_container
           end
         end
 

@@ -191,8 +191,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       it "outputs version numbers" do
         expect(output).to include \
-          "Gem version: #{Appsignal::VERSION}",
-          "Agent version: #{Appsignal::Extension.agent_version}"
+          "Gem version: \"#{Appsignal::VERSION}\"",
+          "Agent version: \"#{Appsignal::Extension.agent_version}\""
       end
 
       it "transmits version numbers in report" do
@@ -294,18 +294,18 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           "Installation result",
           "  Status: success",
           "Language details",
-          "  Implementation: #{jruby ? "jruby" : "ruby"}",
-          "  Ruby version: #{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}",
+          "  Implementation: \"#{jruby ? "jruby" : "ruby"}\"",
+          "  Ruby version: \"#{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}\"",
           "Download details",
-          "  Download URL: https://",
-          "  Checksum: verified",
+          "  Download URL: \"https://",
+          "  Checksum: \"verified\"",
           "Build details",
-          "  Install time: 20",
-          "  Architecture: #{Appsignal::System.agent_architecture}",
-          "  Target: #{Appsignal::System.agent_platform}",
+          "  Install time: \"20",
+          "  Architecture: \"#{Appsignal::System.agent_architecture}\"",
+          "  Target: \"#{Appsignal::System.agent_platform}\"",
           "  Musl override: false",
           "  Linux ARM override: false",
-          "  Library type: #{jruby ? "dynamic" : "static"}",
+          "  Library type: \"#{jruby ? "dynamic" : "static"}\"",
           "  Dependencies: {",
           "  Flags: {",
           "Host details",
@@ -610,9 +610,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         run
         expect(output).to include \
           "Host information",
-          "Architecture: #{rbconfig["host_cpu"]}",
-          "Operating System: #{rbconfig["host_os"]}",
-          "Ruby version: #{language_version}"
+          "Architecture: \"#{rbconfig["host_cpu"]}\"",
+          "Operating System: \"#{rbconfig["host_os"]}\"",
+          "Ruby version: \"#{language_version}\""
       end
 
       context "when on Microsoft Windows" do
