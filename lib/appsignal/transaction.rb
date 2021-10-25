@@ -331,9 +331,16 @@ module Appsignal
       return unless Appsignal.active?
 
       backtrace = cleaned_backtrace(error.backtrace)
+
+      if Appsignal.config[:send_error_message]
+        error_message = error.message.to_s
+      else
+        error_message = ''
+      end
+
       @ext.set_error(
         error.class.name,
-        error.message.to_s,
+        error_message,
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
     end
