@@ -143,7 +143,7 @@ module Appsignal
         def transmit_report_to_appsignal
           puts "  Transmitting diagnostics report"
           transmitter = Transmitter.new(
-            DIAGNOSE_ENDPOINT,
+            ENV.fetch("APPSIGNAL_DIAGNOSE_ENDPOINT", DIAGNOSE_ENDPOINT),
             Appsignal.config
           )
           response = transmitter.transmit(:diagnose => data)
