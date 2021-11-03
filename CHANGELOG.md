@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.15
+
+- [b40b3b4f](https://github.com/appsignal/appsignal-ruby/commit/b40b3b4f5264c6b69f9515b53806435258c73086) patch - Print String values in the diagnose report surrounded by quotes. Makes it more clear that it's a String value and not a label we print.
+- [fd6faf16](https://github.com/appsignal/appsignal-ruby/commit/fd6faf16d9feb73c3076c2e1283f6101dc4abf97) patch - Bump agent to 09308fb
+  
+  - Update sql_lexer dependency with support for reversed operators in queries.
+  - Add debug level logging to custom metrics in transaction_debug_mode.
+  - Add hostname config option to standalone agent.
+
 ## 3.0.14
 
 - [c40f6d75](https://github.com/appsignal/appsignal-ruby/commit/c40f6d759e8d516cc47bd55cc83bfcb680fbd1ea) patch - Add minutely probe that collects metrics for :class_serial and :global_constant_state from RubyVM.
