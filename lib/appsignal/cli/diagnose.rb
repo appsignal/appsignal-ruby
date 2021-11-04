@@ -566,7 +566,7 @@ module Appsignal
             when "401"
               ["invalid", :red]
             else
-              ["Failed with status #{status}\n#{error.inspect}", :red]
+              ["Failed to validate: status #{status}\n#{error.inspect}", :red]
             end
           data[:validation][:push_api_key] = result
           puts_value "Validating Push API key", colorize(result, color)
