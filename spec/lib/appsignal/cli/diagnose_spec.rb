@@ -1007,7 +1007,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs failure with status code" do
           expect(output).to include "Validation",
-            "Validating Push API key: Failed with status 500\n" +
+            "Validating Push API key: Failed to validate: status 500\n" +
             %("Could not confirm authorization: 500")
         end
 
@@ -1015,14 +1015,19 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           it "outputs error in color" do
             expect(output).to include "Validation",
               "Validating Push API key: " +
-              colorize(%(Failed with status 500\n"Could not confirm authorization: 500"), :red)
+              colorize(
+                "Failed to validate: status 500\n" +
+                %("Could not confirm authorization: 500"),
+                :red
+              )
           end
         end
 
         it "transmits validation in report" do
           expect(received_report).to include(
             "validation" => {
-              "push_api_key" => %(Failed with status 500\n\"Could not confirm authorization: 500")
+              "push_api_key" => "Failed to validate: status 500\n" +
+              %("Could not confirm authorization: 500")
             }
           )
         end

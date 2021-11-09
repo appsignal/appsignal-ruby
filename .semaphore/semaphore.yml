@@ -113,7 +113,7 @@ blocks:
     - name: Diagnose
       env_vars:
       - name: RUBY_VERSION
-        value: 2.6.6
+        value: 3.0.2
       - name: LANGUAGE
         value: ruby
       commands:
