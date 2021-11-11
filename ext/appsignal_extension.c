@@ -19,6 +19,7 @@ VALUE Appsignal;
 VALUE Extension;
 VALUE Transaction;
 VALUE Data;
+VALUE Span;
 
 static VALUE start(VALUE self) {
   appsignal_start();
@@ -308,6 +309,18 @@ static VALUE data_map_new(VALUE self) {
   }
 }
 
+static VALUE data_filtered_map_new(VALUE self) {
+  appsignal_data_t* data;
+
+  data = appsignal_data_filtered_map_new();
+
+  if (data) {
+    return Data_Wrap_Struct(Data, NULL, appsignal_free_data, data);
+  } else {
+    return Qnil;
+  }
+}
+
 static VALUE data_array_new(VALUE self) {
   appsignal_data_t* data;
 
@@ -545,6 +558,180 @@ static VALUE data_to_s(VALUE self) {
   }
 }
 
+static VALUE root_span_new(VALUE self, VALUE namespace) {
+  appsignal_span_t* span;
+
+  Check_Type(namespace, T_STRING);
+
+  span = appsignal_create_root_span(make_appsignal_string(namespace));
+
+  if (span) {
+    return Data_Wrap_Struct(Span, NULL, appsignal_free_span, span);
+  } else {
+    return Qnil;
+  }
+}
+
+static VALUE child_span_new(VALUE self) {
+  appsignal_span_t* parent;
+  appsignal_span_t* span;
+
+  Data_Get_Struct(self, appsignal_span_t, parent);
+
+  span = appsignal_create_child_span(parent);
+
+  if (span) {
+    return Data_Wrap_Struct(Span, NULL, appsignal_free_span, span);
+  } else {
+    return Qnil;
+  }
+}
+
+static VALUE set_span_name(VALUE self, VALUE name) {
+  appsignal_span_t* span;
+
+  Check_Type(name, T_STRING);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_set_span_name(span, make_appsignal_string(name));
+  return Qnil;
+}
+
+static VALUE add_span_error(VALUE self, VALUE name, VALUE message, VALUE backtrace) {
+  appsignal_span_t* span;
+  appsignal_data_t* backtrace_data;
+
+  Check_Type(name, T_STRING);
+  Check_Type(message, T_STRING);
+  Check_Type(backtrace, RUBY_T_DATA);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+  Data_Get_Struct(backtrace, appsignal_data_t, backtrace_data);
+
+  appsignal_add_span_error(
+      span,
+      make_appsignal_string(name),
+      make_appsignal_string(message),
+      backtrace_data
+  );
+  return Qnil;
+}
+
+static VALUE set_span_sample_data(VALUE self, VALUE key, VALUE payload) {
+  appsignal_span_t* span;
+  appsignal_data_t* payload_data;
+
+  Check_Type(key, T_STRING);
+  Check_Type(payload, RUBY_T_DATA);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+  Data_Get_Struct(payload, appsignal_data_t, payload_data);
+
+  appsignal_set_span_sample_data(
+      span,
+      make_appsignal_string(key),
+      payload_data
+  );
+  return Qnil;
+}
+
+static VALUE set_span_attribute_string(VALUE self, VALUE key, VALUE value) {
+  appsignal_span_t* span;
+
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_STRING);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_set_span_attribute_string(
+    span,
+    make_appsignal_string(key),
+    make_appsignal_string(value)
+  );
+
+  return Qnil;
+}
+
+static VALUE set_span_attribute_int(VALUE self, VALUE key, VALUE value) {
+  appsignal_span_t* span;
+  VALUE value_type = TYPE(value);
+
+  Check_Type(key, T_STRING);
+
+  if (value_type != T_FIXNUM && value_type != T_BIGNUM) {
+    rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
+  }
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_set_span_attribute_int(
+    span,
+    make_appsignal_string(key),
+    NUM2LONG(value)
+  );
+
+  return Qnil;
+}
+
+static VALUE set_span_attribute_bool(VALUE self, VALUE key, VALUE value) {
+  appsignal_span_t* span;
+
+  Check_Type(key, T_STRING);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_set_span_attribute_bool(
+    span,
+    make_appsignal_string(key),
+    RTEST(value)
+  );
+
+  return Qnil;
+}
+
+static VALUE set_span_attribute_double(VALUE self, VALUE key, VALUE value) {
+  appsignal_span_t* span;
+
+  Check_Type(key, T_STRING);
+  Check_Type(value, T_FLOAT);
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_set_span_attribute_double(
+    span,
+    make_appsignal_string(key),
+    NUM2DBL(value)
+  );
+
+  return Qnil;
+}
+
+static VALUE span_to_json(VALUE self) {
+  appsignal_span_t* span;
+  appsignal_string_t json;
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  json = appsignal_span_to_json(span);
+
+  if (json.len == 0) {
+    return Qnil;
+  } else {
+    return make_ruby_string(json);
+  }
+}
+
+static VALUE close_span(VALUE self) {
+  appsignal_span_t* span;
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  appsignal_close_span(span);
+
+  return Qnil;
+}
+
 static VALUE set_gauge(VALUE self, VALUE key, VALUE value, VALUE tags) {
   appsignal_data_t* tags_data;
 
@@ -652,6 +839,7 @@ void Init_appsignal_extension(void) {
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
   Transaction = rb_define_class_under(Extension, "Transaction", rb_cObject);
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
+  Span = rb_define_class_under(Extension, "Span", rb_cObject);
 
   // Starting and stopping
   rb_define_singleton_method(Extension, "start",    start,    0);
@@ -681,6 +869,7 @@ void Init_appsignal_extension(void) {
 
   // Create a data map or array
   rb_define_singleton_method(Extension, "data_map_new", data_map_new, 0);
+  rb_define_singleton_method(Extension, "data_filtered_map_new", data_filtered_map_new, 0);
   rb_define_singleton_method(Extension, "data_array_new", data_array_new, 0);
 
   // Add content to a data map
@@ -704,6 +893,31 @@ void Init_appsignal_extension(void) {
 
   // Get JSON content of a data
   rb_define_method(Data, "to_s", data_to_s, 0);
+
+  // Create a span
+  rb_define_singleton_method(Span, "root", root_span_new, 1);
+  rb_define_method(Span, "child", child_span_new, 0);
+
+  // Set span error
+  rb_define_method(Span, "add_error", add_span_error, 3);
+
+  // Set span sample data
+  rb_define_method(Span, "set_sample_data", set_span_sample_data, 2);
+
+  // Span name and namespace
+  rb_define_method(Span, "set_name", set_span_name, 1);
+
+  // Set attributes on a span
+  rb_define_method(Span, "set_attribute_string", set_span_attribute_string, 2);
+  rb_define_method(Span, "set_attribute_int",    set_span_attribute_int,    2);
+  rb_define_method(Span, "set_attribute_bool",   set_span_attribute_bool,   2);
+  rb_define_method(Span, "set_attribute_double", set_span_attribute_double, 2);
+
+  // Span to json
+  rb_define_method(Span, "to_json", span_to_json, 0);
+
+  // Close span
+  rb_define_method(Span, "close", close_span, 0);
 
   // Other helper methods
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
