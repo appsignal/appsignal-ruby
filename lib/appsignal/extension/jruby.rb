@@ -193,7 +193,6 @@ module Appsignal
         # Data struct methods
         attach_function :appsignal_free_data, [], :void
         attach_function :appsignal_data_map_new, [], :pointer
-        attach_function :appsignal_data_filtered_map_new, [], :pointer
         attach_function :appsignal_data_array_new, [], :pointer
         attach_function :appsignal_data_map_set_string,
           [:pointer, :appsignal_string, :appsignal_string],
@@ -277,10 +276,6 @@ module Appsignal
       end
 
       def data_map_new
-        Data.new(appsignal_data_map_new)
-      end
-
-      def data_filtered_map_new
         Data.new(appsignal_data_map_new)
       end
 
