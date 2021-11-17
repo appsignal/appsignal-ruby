@@ -822,6 +822,21 @@ static VALUE set_environment_metadata(VALUE self, VALUE key, VALUE value) {
   return Qnil;
 }
 
+static VALUE span_traceparent(VALUE self) {
+  appsignal_span_t* span;
+  appsignal_string_t traceparent;
+
+  Data_Get_Struct(self, appsignal_span_t, span);
+
+  traceparent = appsignal_span_traceparent(span);
+
+  if (traceparent.len == 0) {
+    return Qnil;
+  } else {
+    return make_ruby_string(traceparent);
+  }
+}
+
 void Init_appsignal_extension(void) {
   Appsignal = rb_define_module("Appsignal");
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
@@ -905,6 +920,9 @@ void Init_appsignal_extension(void) {
 
   // Close span
   rb_define_method(Span, "close", close_span, 0);
+
+  // Traceparent
+  rb_define_method(Span, "traceparent", span_traceparent, 0);
 
   // Other helper methods
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);

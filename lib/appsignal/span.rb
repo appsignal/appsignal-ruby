@@ -79,6 +79,10 @@ module Appsignal
       to_h.nil?
     end
 
+    def traceparent
+      @ext.traceparent
+    end
+
     private
 
     def cleaned_backtrace(backtrace)
