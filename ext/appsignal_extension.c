@@ -575,6 +575,19 @@ static VALUE child_span_new(VALUE self) {
   }
 }
 
+static VALUE span_from_traceparent(VALUE self, VALUE traceparent) {
+  appsignal_span_t* span;
+  Check_Type(traceparent, T_STRING);
+
+  span = appsignal_create_span_from_traceparent(make_appsignal_string(traceparent));
+
+  if (span) {
+    return Data_Wrap_Struct(Span, NULL, appsignal_free_span, span);
+  } else {
+    return Qnil;
+  }
+}
+
 static VALUE set_span_name(VALUE self, VALUE name) {
   appsignal_span_t* span;
 
@@ -899,6 +912,7 @@ void Init_appsignal_extension(void) {
   // Create a span
   rb_define_singleton_method(Span, "root", root_span_new, 1);
   rb_define_method(Span, "child", child_span_new, 0);
+  rb_define_method(Span, "from_traceparent", span_from_traceparent, 1);
 
   // Set span error
   rb_define_method(Span, "add_error", add_span_error, 3);

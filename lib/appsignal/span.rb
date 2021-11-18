@@ -12,6 +12,10 @@ module Appsignal
       Span.new(nil, @ext.child)
     end
 
+    def from_traceparent(traceparent)
+      Span.new(nil, @ext.from_traceparent(traceparent))
+    end
+
     def name=(value)
       @ext.set_name(value)
     end
