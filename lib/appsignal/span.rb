@@ -36,7 +36,7 @@ module Appsignal
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
       @ext.set_sample_data(
         key.to_s,
-        Appsignal::Utils::Data.generate(data, true)
+        Appsignal::Utils::Data.generate(data)
       )
     end
 

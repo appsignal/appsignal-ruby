@@ -309,18 +309,6 @@ static VALUE data_map_new(VALUE self) {
   }
 }
 
-static VALUE data_filtered_map_new(VALUE self) {
-  appsignal_data_t* data;
-
-  data = appsignal_data_filtered_map_new();
-
-  if (data) {
-    return Data_Wrap_Struct(Data, NULL, appsignal_free_data, data);
-  } else {
-    return Qnil;
-  }
-}
-
 static VALUE data_array_new(VALUE self) {
   appsignal_data_t* data;
 
@@ -869,7 +857,6 @@ void Init_appsignal_extension(void) {
 
   // Create a data map or array
   rb_define_singleton_method(Extension, "data_map_new", data_map_new, 0);
-  rb_define_singleton_method(Extension, "data_filtered_map_new", data_filtered_map_new, 0);
   rb_define_singleton_method(Extension, "data_array_new", data_array_new, 0);
 
   // Add content to a data map

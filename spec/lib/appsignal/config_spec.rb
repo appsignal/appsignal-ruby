@@ -158,7 +158,6 @@ describe Appsignal::Config do
         :ignore_namespaces              => [],
         :filter_parameters              => [],
         :filter_session_data            => [],
-        :filter_data_keys               => [],
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
@@ -503,6 +502,7 @@ describe Appsignal::Config do
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:filter_parameters] = %w[password confirm_password]
+      config[:filter_session_data] = %w[key1 key2]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config[:transaction_debug_mode] = true
@@ -536,6 +536,8 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]).to       eq "true"
       expect(ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]).to    eq "false"
+      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
+      expect(ENV["_APPSIGNAL_FILTER_SESSION_DATA"]).to          eq "key1,key2"
       expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
