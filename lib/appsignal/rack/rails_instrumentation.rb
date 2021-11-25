@@ -41,7 +41,7 @@ module Appsignal
           transaction.set_http_or_background_queue_start
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
-          if Appsignal.config[:enable_service_fingerprints]
+          if Appsignal.config[:enable_service_fingerprints] && headers
             headers[Appsignal::FINGERPRINT_HEADER] = transaction.fingerprint
           end
           Appsignal::Transaction.complete_current!

@@ -3,7 +3,8 @@ if DependencyHelper.sinatra_present?
 
   describe Appsignal::Rack::SinatraInstrumentation do
     let(:settings) { double(:raise_errors => false) }
-    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]], :settings => settings) }
+    let(:headers) { { "Content-Type" => "text/plain" } }
+    let(:app) { double(:call => [200, headers, ["OK"]], :settings => settings) }
     let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
@@ -36,7 +37,8 @@ if DependencyHelper.sinatra_present?
     end
 
     let(:settings) { double(:raise_errors => false) }
-    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]], :settings => settings) }
+    let(:headers) { { "Content-Type" => "text/plain" } }
+    let(:app) { double(:call => [200, headers, ["OK"]], :settings => settings) }
     let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
@@ -243,6 +245,16 @@ if DependencyHelper.sinatra_present?
           middleware.call(env)
 
           expect(app.call[1]["X-Appsignal-Fingerprint"]).to eq "fingerprint"
+        end
+
+        context "with nil headers" do
+          let(:headers) { nil }
+
+          it "should skip adding the fingerprint" do
+            middleware.call(env)
+
+            expect(app.call[1]).to be_nil
+          end
         end
       end
     end

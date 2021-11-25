@@ -7,7 +7,8 @@ if DependencyHelper.rails_present?
       start_agent
     end
 
-    let(:app) { double(:call => [200, { "Content-Type" => "text/plain" }, ["OK"]]) }
+    let(:headers) { { "Content-Type" => "text/plain" } }
+    let(:app) { double(:call => [200, headers, ["OK"]]) }
     let(:env) do
       http_request_env_with_data("action_dispatch.request_id" => "1").tap do |request|
         request["action_controller.instance"] = double(
@@ -111,6 +112,16 @@ if DependencyHelper.rails_present?
           middleware.call(env)
 
           expect(app.call[1]["X-Appsignal-Fingerprint"]).to eq "fingerprint"
+        end
+
+        context "with nil headers" do
+          let(:headers) { nil }
+
+          it "should skip adding the fingerprint" do
+            middleware.call(env)
+
+            expect(app.call[1]).to be_nil
+          end
         end
       end
     end
