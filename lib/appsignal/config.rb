@@ -11,15 +11,25 @@ module Appsignal
     include Appsignal::Utils::DeprecationMessage
 
     DEFAULT_CONFIG = {
+      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :debug                          => false,
-      :log                            => "file",
+      :dns_servers                    => [],
+      :enable_allocation_tracking     => true,
+      :enable_gc_instrumentation      => false,
+      :enable_host_metrics            => true,
+      :enable_minutely_probes         => true,
+      :enable_statsd                  => true,
+      :endpoint                       => "https://push.appsignal.com",
+      :files_world_accessible         => true,
+      :filter_parameters              => [],
+      :filter_session_data            => [],
       :ignore_actions                 => [],
       :ignore_errors                  => [],
       :ignore_namespaces              => [],
-      :filter_parameters              => [],
-      :filter_session_data            => [],
-      :send_environment_metadata      => true,
-      :send_params                    => true,
+      :instrument_net_http            => true,
+      :instrument_redis               => true,
+      :instrument_sequel              => true,
+      :log                            => "file",
       :request_headers                => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
@@ -27,56 +37,46 @@ module Appsignal
         REQUEST_METHOD REQUEST_URI SERVER_NAME SERVER_PORT
         SERVER_PROTOCOL
       ],
-      :endpoint                       => "https://push.appsignal.com",
-      :instrument_net_http            => true,
-      :instrument_redis               => true,
-      :instrument_sequel              => true,
+      :send_environment_metadata      => true,
+      :send_params                    => true,
       :skip_session_data              => false,
-      :enable_allocation_tracking     => true,
-      :enable_gc_instrumentation      => false,
-      :enable_host_metrics            => true,
-      :enable_minutely_probes         => true,
-      :enable_statsd                  => true,
-      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
-      :dns_servers                    => [],
-      :files_world_accessible         => true,
       :transaction_debug_mode         => false
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
       "APPSIGNAL_ACTIVE"                         => :active,
-      "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
       "APPSIGNAL_APP_NAME"                       => :name,
-      "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
+      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
       "APPSIGNAL_DEBUG"                          => :debug,
-      "APPSIGNAL_LOG"                            => :log,
-      "APPSIGNAL_LOG_PATH"                       => :log_path,
-      "APPSIGNAL_INSTRUMENT_NET_HTTP"            => :instrument_net_http,
-      "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
-      "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
-      "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
-      "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
-      "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
-      "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
-      "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
-      "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
-      "APPSIGNAL_SEND_ENVIRONMENT_METADATA"      => :send_environment_metadata,
-      "APPSIGNAL_SEND_PARAMS"                    => :send_params,
-      "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
+      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING"     => :enable_allocation_tracking,
       "APPSIGNAL_ENABLE_GC_INSTRUMENTATION"      => :enable_gc_instrumentation,
-      "APPSIGNAL_RUNNING_IN_CONTAINER"           => :running_in_container,
-      "APPSIGNAL_WORKING_DIR_PATH"               => :working_dir_path,
-      "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
-      "APPSIGNAL_HOSTNAME"                       => :hostname,
-      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
-      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
+      "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
+      "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
+      "APPSIGNAL_HOSTNAME"                       => :hostname,
+      "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
+      "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
+      "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
+      "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
+      "APPSIGNAL_INSTRUMENT_NET_HTTP"            => :instrument_net_http,
+      "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
+      "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
+      "APPSIGNAL_LOG"                            => :log,
+      "APPSIGNAL_LOG_PATH"                       => :log_path,
+      "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
+      "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
+      "APPSIGNAL_RUNNING_IN_CONTAINER"           => :running_in_container,
+      "APPSIGNAL_SEND_ENVIRONMENT_METADATA"      => :send_environment_metadata,
+      "APPSIGNAL_SEND_PARAMS"                    => :send_params,
+      "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
+      "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
+      "APPSIGNAL_WORKING_DIR_PATH"               => :working_dir_path,
       "APP_REVISION"                             => :revision
     }.freeze
     # @api private
@@ -268,34 +268,34 @@ module Appsignal
 
     def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
-      ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
-      ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
-      ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
-      ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
-      ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
-      ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
-      ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
-      ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
       ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
+      ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
+      ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+      ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
+      ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
+      ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
+      ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
+      ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
+      ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
+      ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
+      ENV["_APPSIGNAL_FILTER_SESSION_DATA"]          = config_hash[:filter_session_data].join(",")
+      ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
       ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
       ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
       ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
       ENV["_APPSIGNAL_IGNORE_NAMESPACES"]            = config_hash[:ignore_namespaces].join(",")
-      ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
-      ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
-      ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]       = config_hash[:working_directory_path] if config_hash[:working_directory_path]
-      ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
-      ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
+      ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
+      ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
+      ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
-      ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
-      ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
-      ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
-      ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
+      ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
+      ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
+      ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
-      ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
-      ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
-      ENV["_APPSIGNAL_FILTER_SESSION_DATA"]          = config_hash[:filter_session_data].join(",")
+      ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
+      ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]       = config_hash[:working_directory_path] if config_hash[:working_directory_path]
+      ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
       ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
     end
 
