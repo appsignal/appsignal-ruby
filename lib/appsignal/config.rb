@@ -30,6 +30,7 @@ module Appsignal
       :instrument_redis               => true,
       :instrument_sequel              => true,
       :log                            => "file",
+      :log_level                      => "info",
       :request_headers                => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
@@ -66,6 +67,7 @@ module Appsignal
       "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
       "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
       "APPSIGNAL_LOG"                            => :log,
+      "APPSIGNAL_LOG_LEVEL"                      => :log_level,
       "APPSIGNAL_LOG_PATH"                       => :log_path,
       "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
       "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
@@ -86,6 +88,7 @@ module Appsignal
       APPSIGNAL_HOSTNAME
       APPSIGNAL_HTTP_PROXY
       APPSIGNAL_LOG
+      APPSIGNAL_LOG_LEVEL
       APPSIGNAL_LOG_PATH
       APPSIGNAL_PUSH_API_ENDPOINT
       APPSIGNAL_PUSH_API_KEY
@@ -287,6 +290,7 @@ module Appsignal
       ENV["_APPSIGNAL_IGNORE_NAMESPACES"]            = config_hash[:ignore_namespaces].join(",")
       ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
       ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
+      ENV["_APPSIGNAL_LOG_LEVEL"]                    = config_hash[:log_level]
       ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
