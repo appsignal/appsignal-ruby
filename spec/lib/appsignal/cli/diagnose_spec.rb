@@ -750,13 +750,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         it "outputs a warning that no config is loaded" do
-          expect(output).to include "Environment: \"\"\n#{warning_message}"
+          expect(output).to include "environment: \"\"\n#{warning_message}"
           expect(output).to_not have_color_markers
         end
 
         context "with color", :color => true do
           it "outputs a warning that no config is loaded in color" do
-            expect(output).to include "Environment: \"\"\n"
+            expect(output).to include "environment: \"\"\n"
             expect(output).to have_colorized_text :red, warning_message
           end
         end
@@ -785,7 +785,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         describe "environment" do
           it "outputs environment" do
             run
-            expect(output).to include(%(Environment: "production"))
+            expect(output).to include(%(environment: "production"))
           end
 
           context "when the source is a single source" do
@@ -793,7 +793,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs the label source after the value" do
               expect(output).to include(
-                %(Environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
+                %(environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
               )
             end
           end
@@ -810,7 +810,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs a list of sources with their values" do
               expect(output).to include(
-                %(  Environment: "production"\n) +
+                %(  environment: "production"\n) +
                 %(    Sources:\n) +
                 %(      initial: "development"\n) +
                 %(      env:     "production"\n)
@@ -904,7 +904,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before { run_within_dir tmp_dir }
 
         it "outputs environment" do
-          expect(output).to include(%(Environment: "foobar"))
+          expect(output).to include(%(environment: "foobar"))
         end
 
         it "outputs config defaults" do

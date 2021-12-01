@@ -474,7 +474,6 @@ module Appsignal
               :env => config.env_config
             }
           }
-          print_environment(config)
           print_config_options(config)
         end
 
@@ -483,7 +482,7 @@ module Appsignal
           option = :env
           option_sources = sources_for_option(option)
           sources_label = config_sources_label(option, option_sources)
-          print "  Environment: #{format_config_option(env)}"
+          print "  environment: #{format_config_option(env)}"
 
           if env == ""
             message = "    Warning: No environment set, no config loaded!\n" \
@@ -497,10 +496,22 @@ module Appsignal
         end
 
         def print_config_options(config)
-          config.config_hash.each do |key, value|
+          # We add the nullified "environment" key to print it ordered
+          # instead of adding it at the top of the list.
+          ordered_config_options = config
+            .config_hash
+            .merge(:environment => nil)
+            .sort
+
+          ordered_config_options.each do |key, value|
             option_sources = sources_for_option(key)
             sources_label = config_sources_label(key, option_sources)
-            puts "  #{key}: #{format_config_option(value)}#{sources_label}"
+
+            if key == :environment
+              print_environment(config)
+            else
+              puts "  #{key}: #{format_config_option(value)}#{sources_label}"
+            end
           end
 
           puts "\nRead more about how the diagnose config output is rendered\n"\
