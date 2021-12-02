@@ -1341,6 +1341,31 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#cleaned_error_message" do
+    let(:error) { StandardError.new("Error message") }
+    subject { transaction.send(:cleaned_error_message, error) }
+
+    it "returns the error message" do
+      expect(subject).to eq "Error message"
+    end
+
+    context "with a PG::UniqueViolation" do
+      module PG
+        class UniqueViolation < StandardError; end
+      end
+
+      let(:error) do
+        PG::UniqueViolation.new(
+          "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
+        )
+      end
+
+      it "returns a sanizited error message" do
+        expect(subject).to eq "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+    end
+  end
+
   describe ".to_hash / .to_h" do
     subject { transaction.to_hash }
 

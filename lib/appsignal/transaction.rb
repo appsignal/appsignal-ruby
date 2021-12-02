@@ -333,7 +333,7 @@ module Appsignal
       backtrace = cleaned_backtrace(error.backtrace)
       @ext.set_error(
         error.class.name,
-        error.message.to_s,
+        cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
     end
@@ -530,6 +530,17 @@ module Appsignal
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
         backtrace
+      end
+    end
+
+    # Clean error messages that are known to potentially contain user data.
+    # Returns an unchanged message otherwise.
+    def cleaned_error_message(error)
+      case error.class.to_s
+      when "PG::UniqueViolation"
+        error.message.to_s.gsub(/\)=\(.*\)/, ")=(?)")
+      else
+        error.message.to_s
       end
     end
 
