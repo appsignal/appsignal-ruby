@@ -171,6 +171,7 @@ describe Appsignal::Config do
         :instrument_redis               => true,
         :instrument_sequel              => true,
         :log                            => "file",
+        :log_level                      => "info",
         :name                           => "TestApp",
         :push_api_key                   => "abc",
         :request_headers                => [],
@@ -319,13 +320,15 @@ describe Appsignal::Config do
           "non-existing-path",
           "production",
           :running_in_container => true,
-          :debug => true
+          :debug => true,
+          :log_level => "debug"
         )
       end
 
       it "overrides system detected and defaults config" do
         expect(config[:running_in_container]).to be_truthy
         expect(config[:debug]).to be_truthy
+        expect(config[:log_level]).to eq("debug")
       end
     end
 
