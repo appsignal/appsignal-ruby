@@ -3,4 +3,4 @@ bump: "patch"
 type: "add"
 ---
 
-Clean up error messages in PG index violation errors
+Clean up index values in error messages from PG index violation errors.
