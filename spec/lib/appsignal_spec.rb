@@ -1236,7 +1236,7 @@ describe Appsignal do
           before do
             capture_stdout(out_stream) do
               initialize_config
-              Appsignal.config[:debug] = true
+              Appsignal.config[:log_level] = "debug"
               Appsignal.start_logger
             end
           end

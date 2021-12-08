@@ -30,7 +30,6 @@ module Appsignal
       :instrument_redis               => true,
       :instrument_sequel              => true,
       :log                            => "file",
-      :log_level                      => "info",
       :request_headers                => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
@@ -42,6 +41,20 @@ module Appsignal
       :send_params                    => true,
       :skip_session_data              => false,
       :transaction_debug_mode         => false
+    }.freeze
+
+    # @api private
+    DEFAULT_LOG_LEVEL = Logger::INFO
+    # Map from the `log_level` config option to Ruby's Logger level value.
+    #
+    # The trace level doesn't exist in the Ruby logger so it's mapped to debug.
+    # @api private
+    LOG_LEVEL_MAP = {
+      "error" => Logger::ERROR,
+      "warn" => Logger::WARN,
+      "info" => Logger::INFO,
+      "debug" => Logger::DEBUG,
+      "trace" => Logger::DEBUG
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -240,6 +253,18 @@ module Appsignal
 
     def []=(key, value)
       config_hash[key] = value
+    end
+
+    def log_level
+      if config_hash[:debug] || config_hash[:transaction_debug_mode]
+        level = Logger::DEBUG
+      end
+      option = config_hash[:log_level]
+      if option
+        log_level_option = LOG_LEVEL_MAP[option]
+        level = log_level_option if log_level_option
+      end
+      level.nil? ? Appsignal::Config::DEFAULT_LOG_LEVEL : level
     end
 
     def log_file_path
