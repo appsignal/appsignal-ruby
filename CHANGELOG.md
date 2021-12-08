@@ -1,5 +1,40 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.16
+
+### Added
+
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Add experimental Span API. This is not loaded by default and we do not recommend using it yet.
+- [84b1ba18](https://github.com/appsignal/appsignal-ruby/commit/84b1ba18e50440e5c71d27319e560c5df180d0df) patch - Add "log_level" config option. This new option allows you to define the kind of messages
+  AppSignal's will log and up. The "debug" option will log all "debug", "info", "warning" and
+  "error" log messages. The default value is: "info"
+  
+  The allowed values are:
+  - error
+  - warning
+  - info
+  - debug
+- [6b2ecca2](https://github.com/appsignal/appsignal-ruby/commit/6b2ecca24603061f1b35800f60b0ee6e9f314998) patch - Clean up index values in error messages from PG index violation errors.
+
+### Changed
+
+- [25bde454](https://github.com/appsignal/appsignal-ruby/commit/25bde454f82776f8d2ea1fd4dbb00a73e414076e) patch - Order the config options alphabetically in diagnose report output.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Use the `filter_parameters` and `filter_session_data` options to filter out specific parameter keys or session data keys for the experimental Span API. Previously only the (undocumented) `filter_data_keys` config option was available to filter out all kinds of app data.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Standardize diagnose validation failure message. Explain the diagnose request failed and why.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Bump agent to v-5b63505
+  
+  - Only filter parameters with the `filter_parameters` config option.
+  - Only filter session data with the `filter_session_data` config option.
+- [3ad95ea5](https://github.com/appsignal/appsignal-ruby/commit/3ad95ea5dd8a9488d293a652231950bd4a721e6c) patch - Bump agent to v-0db01c2
+  
+  - Add `log_level` config option in extension.
+  - Deprecate `debug` and `transaction_debug_mode` option in extension.
+
+### Deprecated
+
+- [84b1ba18](https://github.com/appsignal/appsignal-ruby/commit/84b1ba18e50440e5c71d27319e560c5df180d0df) patch - Deprecate "debug" and "transaction_debug_mode" config options in favor of the new "log_level"
+  config option.
+
 ## 3.0.15
 
 - [b40b3b4f](https://github.com/appsignal/appsignal-ruby/commit/b40b3b4f5264c6b69f9515b53806435258c73086) patch - Print String values in the diagnose report surrounded by quotes. Makes it more clear that it's a String value and not a label we print.
