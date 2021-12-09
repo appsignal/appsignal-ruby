@@ -171,7 +171,6 @@ describe Appsignal::Config do
         :instrument_redis               => true,
         :instrument_sequel              => true,
         :log                            => "file",
-        :log_level                      => "info",
         :name                           => "TestApp",
         :push_api_key                   => "abc",
         :request_headers                => [],
@@ -783,6 +782,85 @@ describe Appsignal::Config do
 
         it "sets valid to true" do
           is_expected.to eq(true)
+        end
+      end
+    end
+  end
+
+  describe "#log_level" do
+    let(:options) { {} }
+    let(:config) { described_class.new("", nil, options) }
+    subject { config.log_level }
+
+    context "without any config" do
+      it "returns info by default" do
+        is_expected.to eq(Logger::INFO)
+      end
+    end
+
+    context "with debug set to true" do
+      let(:options) { { :debug => true } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with transaction_debug_mode set to true" do
+      let(:options) { { :transaction_debug_mode => true } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with log_level set to error" do
+      let(:options) { { :log_level => "error" } }
+      it { is_expected.to eq(Logger::ERROR) }
+    end
+
+    context "with log_level set to warn" do
+      let(:options) { { :log_level => "warn" } }
+      it { is_expected.to eq(Logger::WARN) }
+    end
+
+    context "with log_level set to info" do
+      let(:options) { { :log_level => "info" } }
+      it { is_expected.to eq(Logger::INFO) }
+    end
+
+    context "with log_level set to debug" do
+      let(:options) { { :log_level => "debug" } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with log_level set to trace" do
+      let(:options) { { :log_level => "trace" } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with debug and log_level set" do
+      let(:options) { { :log_level => "error", :debug => true } }
+
+      it "the log_level option is leading" do
+        is_expected.to eq(Logger::ERROR)
+      end
+    end
+
+    context "with transaction_debug_mode and log_level set" do
+      let(:options) { { :log_level => "error", :transaction_debug_mode => true } }
+
+      it "the log_level option is leading" do
+        is_expected.to eq(Logger::ERROR)
+      end
+    end
+
+    context "with log level set to an unknown value" do
+      let(:options) { { :log_level => "fatal" } }
+
+      it "prints a warning and doesn't use the log_level" do
+        is_expected.to eql(Logger::INFO)
+      end
+
+      context "with debug option set to true" do
+        let(:options) { { :log_level => "fatal", :debug => true } }
+
+        it "prints a warning and sets it to debug" do
+          is_expected.to eql(Logger::DEBUG)
         end
       end
     end

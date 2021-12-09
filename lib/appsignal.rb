@@ -116,12 +116,7 @@ module Appsignal
       )
 
       if config.valid?
-        logger.level =
-          if config[:debug]
-            Logger::DEBUG
-          else
-            Logger::INFO
-          end
+        logger.level = config.log_level
         if config.active?
           logger.info "Starting AppSignal #{Appsignal::VERSION} "\
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
@@ -230,12 +225,11 @@ module Appsignal
       end
 
       logger.level =
-        if config && config[:debug]
-          Logger::DEBUG
+        if config
+          config.log_level
         else
-          Logger::INFO
+          Appsignal::Config::DEFAULT_LOG_LEVEL
         end
-
       logger << @in_memory_log.string if @in_memory_log
     end
 
