@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.17
+
+### Fixed
+
+- [f9d57752](https://github.com/appsignal/appsignal-ruby/commit/f9d5775217400c59a70d98e9aa96e3dcd06cb1f9) patch - Use the `log_level` option for the Ruby gem logger. Previously it only configured the extension and agent loggers. Also fixes the `debug` and `transaction_debug_mode` option if no `log_level` is configured by the app.
+
 ## 3.0.16
 
 ### Added
