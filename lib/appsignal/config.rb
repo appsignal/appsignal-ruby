@@ -370,7 +370,8 @@ module Appsignal
     def load_from_disk
       return if !config_file || !File.exist?(config_file)
 
-      configurations = YAML.load(ERB.new(IO.read(config_file)).result)
+      read_options = RUBY_VERSION >= "3.1.0" : { aliases: true } : {}
+      configurations = YAML.load(ERB.new(IO.read(config_file)).result, **read_options)
       config_for_this_env = configurations[env]
       if config_for_this_env
         config_for_this_env =
