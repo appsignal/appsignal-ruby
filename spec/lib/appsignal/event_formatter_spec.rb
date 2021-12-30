@@ -28,7 +28,7 @@ end
 
 class MockDependentFormatter < Appsignal::EventFormatter
   def initialize
-    NonsenseDependency.something
+    raise "There is an error"
   end
 
   def format(_payload)
@@ -72,7 +72,7 @@ describe Appsignal::EventFormatter do
         end
         expect(klass.registered?("mock.dependent")).to be_falsy
         expect(logs).to contains_log :error, \
-          "'uninitialized constant MockDependentFormatter::NonsenseDependency' " \
+          "'There is an error' " \
           "when initializing mock.dependent event formatter"
       end
     end
