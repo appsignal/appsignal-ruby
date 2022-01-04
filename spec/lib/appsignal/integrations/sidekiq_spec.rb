@@ -366,12 +366,29 @@ if DependencyHelper.active_job_present?
         }
       ]
     end
+    let(:expected_wrapped_args) do
+      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
+        [{
+          "_aj_ruby2_keywords" => ["args"],
+          "args" => expected_args
+        }]
+      else
+        expected_args
+      end
+    end
     let(:expected_tags) do
       {}.tap do |hash|
         hash["active_job_id"] = kind_of(String)
         if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
           hash["provider_job_id"] = kind_of(String)
         end
+      end
+    end
+    let(:expected_perform_events) do
+      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
+        ["perform_job.sidekiq", "perform.active_job", "perform_start.active_job"]
+      else
+        ["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"]
       end
     end
     before do
@@ -434,8 +451,8 @@ if DependencyHelper.active_job_present?
       events = transaction_hash["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
-      expect(events)
-        .to eq(["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"])
+
+      expect(events).to eq(expected_perform_events)
     end
 
     context "with error" do
@@ -467,8 +484,8 @@ if DependencyHelper.active_job_present?
         events = transaction_hash["events"]
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-        expect(events)
-          .to eq(["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"])
+
+        expect(events).to eq(expected_perform_events)
       end
     end
 
@@ -490,7 +507,7 @@ if DependencyHelper.active_job_present?
         expect(transaction_hash).to include(
           "action" => "ActionMailerSidekiqTestJob#welcome",
           "sample_data" => hash_including(
-            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_args
+            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
           )
         )
       end
