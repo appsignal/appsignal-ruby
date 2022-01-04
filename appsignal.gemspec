@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
 Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength

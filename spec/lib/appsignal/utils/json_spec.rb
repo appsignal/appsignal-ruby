@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 describe Appsignal::Utils::JSON do
   describe ".generate" do
     subject { Appsignal::Utils::JSON.generate(body) }

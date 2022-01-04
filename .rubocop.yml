@@ -59,9 +59,6 @@ Style/MethodMissing:
 Style/TrailingUnderscoreVariable:
   Enabled: false
 
-Style/Encoding: # For Ruby 1.9 as it doesn't default to UTF-8
-  Enabled: false
-
 Style/Lambda:
   EnforcedStyle: lambda
 
