@@ -188,6 +188,7 @@ matrix:
     - ruby: "2.6.9"
     - ruby: "2.7.5"
     - ruby: "3.0.3"
+    - ruby: "3.1.0"
     - ruby: "jruby-9.2.19.0"
       gems: "minimal"
       env_vars:
@@ -208,6 +209,7 @@ matrix:
           - "2.6.9"
           - "2.7.5"
           - "3.0.3"
+          - "3.1.0"
     - gem: "rails-4.2"
       bundler: "1.17.3"
       exclude:
@@ -215,18 +217,22 @@ matrix:
           - "2.6.9"
           - "2.7.5"
           - "3.0.3"
+          - "3.1.0"
     - gem: "rails-5.0"
       exclude:
         ruby:
           - "3.0.3"
+          - "3.1.0"
     - gem: "rails-5.1"
       exclude:
         ruby:
           - "3.0.3"
+          - "3.1.0"
     - gem: "rails-5.2"
       exclude:
         ruby:
           - "3.0.3"
+          - "3.1.0"
     - gem: "rails-6.0"
       exclude:
         ruby:
@@ -234,6 +240,7 @@ matrix:
           - "2.2.10"
           - "2.3.8"
           - "2.4.10"
+          - "3.1.0"
     - gem: "rails-7.0"
       exclude:
         ruby:
@@ -243,17 +250,20 @@ matrix:
           - "2.4.10"
           - "2.5.8"
           - "2.6.9"
+          - "3.1.0"
           - "jruby-9.2.19.0"
     - gem: "resque-1"
       bundler: "1.17.3"
       exclude:
         ruby:
           - "3.0.3"
+          - "3.1.0"
     - gem: "resque-2"
     - gem: "sequel"
     - gem: "sequel-435"
       exclude:
         ruby:
           - "3.0.3"
+          - "3.1.0"
     - gem: "sinatra"
     - gem: "webmachine"
