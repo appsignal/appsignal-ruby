@@ -2,6 +2,7 @@ require "digest"
 require "fileutils"
 require "open-uri"
 require "zlib"
+require "json"
 require "yaml"
 require "rubygems/package"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
@@ -60,7 +61,7 @@ end
 
 def write_report
   File.open(File.join(EXT_PATH, "install.report"), "w") do |file|
-    file.write YAML.dump(report)
+    file.write JSON.generate(report)
   end
 end
 

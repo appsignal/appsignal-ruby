@@ -32,20 +32,6 @@ module Appsignal
 
           IO.binread(path, length, offset)
         end
-
-        def self.parse_yaml(contents)
-          if YAML.respond_to? :safe_load
-            if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
-              # Use keyword params for Ruby 2.6 and up
-              YAML.safe_load(contents, :permitted_classes => [Time])
-            else
-              YAML.safe_load(contents, [Time])
-            end
-          else
-            # Support for Ruby versions without YAML.safe_load
-            YAML.load(contents) # rubocop:disable Security/YAMLLoad
-          end
-        end
       end
     end
   end
