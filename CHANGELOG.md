@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.18
+
+### Added
+
+- [d7bfcdf1](https://github.com/appsignal/appsignal-ruby/commit/d7bfcdf11a66df1ec5f54ac9342e5566062013b5) patch - Add Ruby 3.1.0 support. There was an issue with `YAML.load` arguments when parsing the `appsignal.yml` config file.
+
 ## 3.0.17
 
 ### Fixed
