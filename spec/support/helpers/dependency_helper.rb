@@ -10,7 +10,7 @@ module DependencyHelper
   end
 
   def running_jruby?
-    defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
+    Appsignal::System.jruby?
   end
 
   def rails_present?
