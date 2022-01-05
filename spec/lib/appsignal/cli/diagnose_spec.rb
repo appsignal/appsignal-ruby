@@ -251,7 +251,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       it "adds the installation report to the diagnostics report" do
         run
-        jruby = DependencyHelper.running_jruby?
+        jruby = Appsignal::System.jruby?
         expect(received_report["installation"]).to match(
           "result" => {
             "status" => "success"

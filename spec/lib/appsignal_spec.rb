@@ -86,8 +86,7 @@ describe Appsignal do
           expect_environment_metadata("ruby_gc_instrumentation_enabled", "true")
         end
 
-        unless Appsignal::System.jruby?
-
+        unless DependencyHelper.running_jruby?
           it "installs the allocation event hook" do
             expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
               .and_call_original
