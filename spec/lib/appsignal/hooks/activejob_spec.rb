@@ -30,6 +30,7 @@ if DependencyHelper.active_job_present?
   end
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
+    include ActiveJobHelpers
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }
@@ -65,7 +66,7 @@ if DependencyHelper.active_job_present?
       ]
     end
     let(:expected_perform_events) do
-      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
+      if DependencyHelper.rails7_present?
         ["perform.active_job", "perform_start.active_job"]
       else
         ["perform_start.active_job", "perform.active_job"]
@@ -595,24 +596,6 @@ if DependencyHelper.active_job_present?
         "_aj_ruby2_keywords"
       else
         "_aj_symbol_keys"
-      end
-    end
-
-    def active_job_args_wrapper(args: [], params: nil)
-      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
-        wrapped_args = {
-          "_aj_ruby2_keywords" => ["args"],
-          "args" => args
-        }
-
-        unless params.nil?
-          wrapped_args["params"] = params
-          wrapped_args["_aj_ruby2_keywords"] = ["params", "args"]
-        end
-
-        [wrapped_args]
-      else
-        params.nil? ? args : args + [params]
       end
     end
   end

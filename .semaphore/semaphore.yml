@@ -446,6 +446,25 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 2.5.8 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.5.8
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
 - name: Ruby 2.6.9
   dependencies:
   - Validation
@@ -676,6 +695,25 @@ blocks:
         value: rails-6.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 2.6.9 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.6.9
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1034,6 +1072,25 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 2.7.5 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.7.5
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 2.7.5 for rails-7.0
       env_vars:
       - *2
@@ -1347,6 +1404,25 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.0.3 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.3
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.3 for rails-7.0
       env_vars:
       - *2
@@ -1603,6 +1679,25 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.1.0 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.0
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.1.0 for resque-2
       env_vars:
       - *2
@@ -1761,6 +1856,26 @@ blocks:
         value: rails-6.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-6.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      - *6
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby jruby-9.2.19.0 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: jruby-9.2.19.0
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION

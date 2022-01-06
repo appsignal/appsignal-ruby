@@ -9,6 +9,10 @@ module DependencyHelper
     ruby_version.segments.take(2) == [2, 0]
   end
 
+  def ruby_3_1_or_newer?
+    ruby_version >= Gem::Version.new("3.1.0")
+  end
+
   def running_jruby?
     Appsignal::System.jruby?
   end
@@ -19,6 +23,14 @@ module DependencyHelper
 
   def rails6_present?
     rails_present? && rails_version >= Gem::Version.new("6.0.0")
+  end
+
+  def rails6_1_present?
+    rails_present? && rails_version >= Gem::Version.new("6.1.0")
+  end
+
+  def rails7_present?
+    rails_present? && rails_version >= Gem::Version.new("7.0.0")
   end
 
   def rails_version

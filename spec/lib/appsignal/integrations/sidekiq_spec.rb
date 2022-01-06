@@ -339,6 +339,7 @@ if DependencyHelper.active_job_present?
   require "sidekiq/testing"
 
   describe "Sidekiq ActiveJob integration" do
+    include ActiveJobHelpers
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:log) { StringIO.new }
@@ -367,7 +368,7 @@ if DependencyHelper.active_job_present?
       ]
     end
     let(:expected_wrapped_args) do
-      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
+      if (DependencyHelper.rails6_1_present? && DependencyHelper.ruby_3_1_or_newer?) || DependencyHelper.rails7_present?
         [{
           "_aj_ruby2_keywords" => ["args"],
           "args" => expected_args
@@ -385,7 +386,7 @@ if DependencyHelper.active_job_present?
       end
     end
     let(:expected_perform_events) do
-      if DependencyHelper.rails_version >= Gem::Version.new("7.0.0")
+      if DependencyHelper.rails7_present?
         ["perform_job.sidekiq", "perform.active_job", "perform_start.active_job"]
       else
         ["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"]
