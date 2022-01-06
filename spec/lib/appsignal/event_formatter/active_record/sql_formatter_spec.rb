@@ -1,5 +1,5 @@
-describe Appsignal::EventFormatter::ActiveRecord::InstantiationFormatter do
-  let(:klass)     { Appsignal::EventFormatter::ActiveRecord::SqlFormatter }
+describe Appsignal::EventFormatter::ActiveRecord::SqlFormatter do
+  let(:klass)     { described_class }
   let(:formatter) { klass.new }
 
   it "should register sql.active_record" do
