@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.19
+
+### Changed
+
+- [2587eae3](https://github.com/appsignal/appsignal-ruby/commit/2587eae30f17e0f0b5e27cb61982301220cc77b1) patch - Store the extension install report as JSON, instead of YAML. Reduces internal complexity.
+
+### Fixed
+
+- [243c1ed4](https://github.com/appsignal/appsignal-ruby/commit/243c1ed444f3351ca158200a47836673f851cb31) patch - Improve compatibility with the sequel-rails gem by tracking the performed SQL query in instrumentation events.
+
 ## 3.0.18
 
 ### Added
