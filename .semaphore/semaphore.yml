@@ -1698,6 +1698,25 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.1.0 for rails-7.0
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.0
+      - name: GEMSET
+        value: rails-7.0
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-7.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.1.0 for resque-2
       env_vars:
       - *2
