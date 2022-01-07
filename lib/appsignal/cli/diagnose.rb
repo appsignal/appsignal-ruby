@@ -352,8 +352,8 @@ module Appsignal
         def fetch_installation_report
           path = File.expand_path("../../../../ext/install.report", __FILE__)
           raw_report = File.read(path)
-          Utils.parse_yaml(raw_report)
-        rescue StandardError, Psych::SyntaxError => e # rubocop:disable Lint/ShadowedException
+          JSON.parse(raw_report)
+        rescue StandardError, JSON::ParserError => e # rubocop:disable Lint/ShadowedException
           {
             "parsing_error" => {
               "error" => "#{e.class}: #{e}",
@@ -411,7 +411,7 @@ module Appsignal
         def print_installation_build_report(report)
           report = report.fetch("build", {})
           puts "  Build details"
-          puts_format "Install time", report["time"].to_s, :level => 2
+          puts_format "Install time", report["time"], :level => 2
           puts_format "Architecture", report["architecture"], :level => 2
           puts_format "Target", report["target"], :level => 2
           puts_format "Musl override", report["musl_override"], :level => 2

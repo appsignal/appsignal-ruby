@@ -321,7 +321,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           expect(File).to receive(:read)
             .with(File.expand_path("../../../../../ext/install.report", __FILE__))
             .and_return(
-              YAML.dump(
+              JSON.generate(
                 "result" => {
                   "status" => "error",
                   "error" => "RuntimeError: some error",
@@ -384,8 +384,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
       end
 
-      context "when report is invalid YAML" do
-        let(:raw_report) { "foo:\nbar" }
+      context "when report is invalid JSON" do
+        let(:raw_report) { "{}-" }
         before do
           allow(File).to receive(:read).and_call_original
           expect(File).to receive(:read)
