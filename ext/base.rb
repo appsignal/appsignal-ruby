@@ -31,7 +31,7 @@ def report
         },
         "language" => {
           "name" => "ruby",
-          "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+          "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
         },
         "download" => {
           "checksum" => "unverified",

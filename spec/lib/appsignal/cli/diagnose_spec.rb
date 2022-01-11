@@ -258,7 +258,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           },
           "language" => {
             "name" => "ruby",
-            "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}",
+            "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}",
             "implementation" => jruby ? "jruby" : "ruby"
           },
           "download" => {
@@ -295,7 +295,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           "  Status: success",
           "Language details",
           "  Implementation: \"#{jruby ? "jruby" : "ruby"}\"",
-          "  Ruby version: \"#{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}\"",
+          "  Ruby version: \"#{"#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"}\"",
           "Download details",
           "  Download URL: \"https://",
           "  Checksum: \"verified\"",
@@ -604,7 +604,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
     describe "host information" do
       let(:rbconfig) { RbConfig::CONFIG }
-      let(:language_version) { "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}" }
+      let(:language_version) { "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}" }
 
       it "outputs host information" do
         run
