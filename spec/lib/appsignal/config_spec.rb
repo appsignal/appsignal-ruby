@@ -69,8 +69,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => "abc")
-            expect(config.system_config).to eq(:active => true)
+            expect(config.env_config).to include(:push_api_key => "abc")
+            expect(config.system_config).to include(:active => true)
           end
         end
 
@@ -82,8 +82,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => "")
-            expect(config.system_config).to be_empty
+            expect(config.env_config).to include(:push_api_key => "")
+            expect(config.system_config).to_not have_key(:active)
           end
         end
 
@@ -95,8 +95,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => " ")
-            expect(config.system_config).to be_empty
+            expect(config.env_config).to include(:push_api_key => " ")
+            expect(config.system_config).to_not have_key(:active)
           end
         end
       end
@@ -119,7 +119,7 @@ describe Appsignal::Config do
         end
 
         it "sets the log as loaded through the system" do
-          expect(config.system_config).to eq(:log => "stdout")
+          expect(config.system_config).to include(:log => "stdout")
         end
       end
 
@@ -129,7 +129,7 @@ describe Appsignal::Config do
         end
 
         it "does not set log as loaded through the system" do
-          expect(config.system_config).to eq({})
+          expect(config.system_config).to_not have_key(:log)
         end
       end
     end
@@ -177,7 +177,7 @@ describe Appsignal::Config do
         :revision                       => "v2.5.1",
         :send_environment_metadata      => true,
         :send_params                    => true,
-        :skip_session_data              => false,
+        :send_session_data              => true,
         :transaction_debug_mode         => false
       )
     end
@@ -739,6 +739,87 @@ describe Appsignal::Config do
 
       it "returns the system's tmp dir" do
         expect(described_class.system_tmp_dir).to eq(Dir.tmpdir)
+      end
+    end
+  end
+
+  describe "#maintain_backwards_compatibility" do
+    let(:log_stream) { StringIO.new }
+    let(:logger) { test_logger(log_stream) }
+    let(:logs) { log_contents(log_stream) }
+    let(:config) do
+      described_class.new(Dir.pwd, "production", config_options, logger)
+    end
+
+    describe "skip_session_data" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:deprecation_message) do
+        "The `skip_session_data` config option is deprecated. Please use " \
+          "`send_session_data` instead."
+      end
+      before do
+        capture_std_streams(std_stream, err_stream) { config }
+      end
+
+      context "when not set" do
+        let(:config_options) { {} }
+
+        it "sets the default send_session_data value" do
+          expect(config[:skip_session_data]).to be_nil
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.system_config[:send_session_data]).to eq(true)
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to_not include(deprecation_message)
+        end
+      end
+
+      context "when set to true" do
+        let(:config_options) { { :skip_session_data => true } }
+
+        it "sets send_session_data if send_session_data is not set by the user" do
+          expect(config[:skip_session_data]).to eq(true)
+          expect(config[:send_session_data]).to eq(false)
+          expect(config.system_config[:send_session_data]).to eq(false)
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+
+      context "when set to false" do
+        let(:config_options) { { :skip_session_data => false } }
+
+        it "sets send_session_data if send_session_data is not set by the user" do
+          expect(config[:skip_session_data]).to eq(false)
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.system_config[:send_session_data]).to eq(true)
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+
+      context "when skip_session_data and send_session_data are both set" do
+        let(:config_options) { { :skip_session_data => true, :send_session_data => true } }
+
+        it "does not overwrite the send_session_data value" do
+          expect(config[:skip_session_data]).to eq(true)
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.system_config[:send_session_data]).to be_nil
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
       end
     end
   end

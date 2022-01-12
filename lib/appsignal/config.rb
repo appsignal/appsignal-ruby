@@ -39,7 +39,6 @@ module Appsignal
       ],
       :send_environment_metadata      => true,
       :send_params                    => true,
-      :skip_session_data              => false,
       :transaction_debug_mode         => false
     }.freeze
 
@@ -88,6 +87,7 @@ module Appsignal
       "APPSIGNAL_RUNNING_IN_CONTAINER"           => :running_in_container,
       "APPSIGNAL_SEND_ENVIRONMENT_METADATA"      => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS"                    => :send_params,
+      "APPSIGNAL_SEND_SESSION_DATA"              => :send_session_data,
       "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
       "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
@@ -125,6 +125,7 @@ module Appsignal
       APPSIGNAL_RUNNING_IN_CONTAINER
       APPSIGNAL_SEND_ENVIRONMENT_METADATA
       APPSIGNAL_SEND_PARAMS
+      APPSIGNAL_SEND_SESSION_DATA
       APPSIGNAL_SKIP_SESSION_DATA
       APPSIGNAL_TRANSACTION_DEBUG_MODE
     ].freeze
@@ -230,6 +231,8 @@ module Appsignal
       # Load config from environment variables
       @env_config = load_from_environment
       merge(env_config)
+      # Handle deprecated config options
+      maintain_backwards_compatibility
       # Validate that we have a correct config
       validate
       # Track origin of env
@@ -379,7 +382,7 @@ module Appsignal
             hash[key.to_sym] = value # convert keys to symbols
           end
 
-        maintain_backwards_compatibility(config_for_this_env)
+        maintain_file_config_backwards_compatibility(config_for_this_env)
       else
         logger.error "Not loading from config file: config for '#{env}' not found"
         nil
@@ -398,7 +401,11 @@ module Appsignal
     # versions of the gem
     #
     # Used by {#load_from_disk}. No compatibility for env variables or initial config currently.
-    def maintain_backwards_compatibility(configuration)
+    #
+    # @todo This is incomplete and only considers the file source as the only
+    #   valid config source. This should be moved to
+    #   {maintain_backwards_compatibility}.
+    def maintain_file_config_backwards_compatibility(configuration)
       configuration.tap do |config|
         if config.include?(:working_dir_path)
           deprecation_message \
@@ -407,6 +414,33 @@ module Appsignal
             "full path to the working directory",
             logger
         end
+      end
+    end
+
+    # Maintain backwards compatibility with deprecated config options.
+    #
+    # Add deprecated config options here with the behavior of setting its
+    # replacement, if the replacement option is not configured by the user.
+    #
+    # Make sure to remove the contents of this method in the next major
+    # version, but the method itself with an empty body can stick around as a
+    # structure for future deprecations.
+    def maintain_backwards_compatibility
+      skip_session_data = config_hash[:skip_session_data]
+      send_session_data = config_hash[:send_session_data]
+      if skip_session_data.nil? # Deprecated option is not set
+        if send_session_data.nil? # Not configured by user
+          @system_config[:send_session_data] = true
+          merge(:send_session_data => true) # Set default value
+        end
+      else
+        if send_session_data.nil? # Not configured by user
+          @system_config[:send_session_data] = !skip_session_data
+          merge(:send_session_data => !skip_session_data)
+        end
+        deprecation_message "The `skip_session_data` config option is " \
+          "deprecated. Please use `send_session_data` instead.",
+          logger
       end
     end
 
