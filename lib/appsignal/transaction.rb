@@ -476,12 +476,12 @@ module Appsignal
     #
     # The session data is sanitized by the {Appsignal::Utils::HashSanitizer}.
     #
-    # @return [nil] if `:skip_session_data` config is set to `true`.
+    # @return [nil] if `:send_session_data` config is set to `false`.
     # @return [nil] if the {#request} object doesn't respond to `#session`.
     # @return [nil] if the {#request} session data is `nil`.
     # @return [Hash<String, Object>]
     def sanitized_session_data
-      return if Appsignal.config[:skip_session_data] ||
+      return if !Appsignal.config[:send_session_data] ||
           !request.respond_to?(:session)
       session = request.session
       return unless session

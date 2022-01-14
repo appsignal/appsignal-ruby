@@ -1282,8 +1282,8 @@ describe Appsignal::Transaction do
           end
         end
 
-        context "when skipping session data" do
-          before { Appsignal.config[:skip_session_data] = true }
+        context "when not sending session data" do
+          before { Appsignal.config[:send_session_data] = false }
 
           it "does not set any session data on the transaction" do
             expect(subject).to be_nil
