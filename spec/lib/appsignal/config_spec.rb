@@ -751,6 +751,45 @@ describe Appsignal::Config do
       described_class.new(Dir.pwd, "production", config_options, logger)
     end
 
+    describe "working_dir_path" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:deprecation_message) do
+        "The `working_dir_path` option is deprecated, please use " \
+          "`working_directory_path` instead and specify the " \
+          "full path to the working directory"
+      end
+      before do
+        capture_std_streams(std_stream, err_stream) { config }
+      end
+
+      context "when not set" do
+        let(:config_options) { {} }
+
+        it "sets the default working_dir_path value" do
+          expect(config[:working_dir_path]).to be_nil
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to_not include(deprecation_message)
+        end
+      end
+
+      context "when set" do
+        let(:config_options) { { :working_dir_path => "/tmp/appsignal2" } }
+
+        it "sets the default working_dir_path value" do
+          expect(config[:working_dir_path]).to eq("/tmp/appsignal2")
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+    end
+
     describe "skip_session_data" do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
