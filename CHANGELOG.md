@@ -1,5 +1,20 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.20
+
+### Added
+
+- [35bd83b8](https://github.com/appsignal/appsignal-ruby/commit/35bd83b84fd30f0188d9f134cfd249360b6e281d) patch - Add `send_session_data` option to configure if session data is automatically included transactions. By default this is turned on. It can be disabled by configuring `send_session_data` to `false`.
+
+### Deprecated
+
+- [35bd83b8](https://github.com/appsignal/appsignal-ruby/commit/35bd83b84fd30f0188d9f134cfd249360b6e281d) patch - Deprecate `skip_session_data` option in favor of the newly introduced `send_session_data` option. If it is configured it will print a warning on AppSignal load, but will also retain its functionality until the config option is fully removed in the next major release.
+- [e51a8fb6](https://github.com/appsignal/appsignal-ruby/commit/e51a8fb653fccc5a6b72ac7af9c9417e6827e2e9) patch - Warn about the deprecated `working_dir_path` option from all config sources. It previously only printed a warning when it was configured in the `config/appsignal.yml` file, but now also prints the warning if it's set via the Config class initialize options and environment variables. Please use the `working_directory_path` option instead.
+
+### Fixed
+
+- [c9000eee](https://github.com/appsignal/appsignal-ruby/commit/c9000eeefec722cb940b2e14f37d31a7827986d6) patch - Fix reported Ruby version in diagnose report. It would report only the first major release of the series, e.g. 2.6.0 for 2.6.1.
+
 ## 3.0.19
 
 ### Changed
