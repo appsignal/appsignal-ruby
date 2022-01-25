@@ -25,6 +25,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.extensions            = %w[ext/extconf.rb]
 
   gem.metadata = {
+    "rubygems_mfa_required" => "true",
     "bug_tracker_uri"   => "https://github.com/appsignal/appsignal-ruby/issues",
     "changelog_uri"     =>
       "https://github.com/appsignal/appsignal-ruby/blob/main/CHANGELOG.md",
