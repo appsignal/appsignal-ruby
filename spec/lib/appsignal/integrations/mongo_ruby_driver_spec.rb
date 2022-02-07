@@ -17,8 +17,12 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       end
 
       it "should sanitize command" do
+        # TODO: additional curly brackets required for issue
+        # https://github.com/rspec/rspec-mocks/issues/1460
+        # rubocop:disable Style/BracesAroundHashParameters
         expect(Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter)
-          .to receive(:format).with("find", "foo" => "bar")
+          .to receive(:format).with("find", { "foo" => "bar" })
+        # rubocop:enable Style/BracesAroundHashParameters
 
         subscriber.started(event)
       end

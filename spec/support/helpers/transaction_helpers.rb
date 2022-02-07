@@ -56,6 +56,16 @@ module TransactionHelpers
     Thread.current[:appsignal_transaction] = nil
   end
 
+  # Set the current for the duration of the given block.
+  #
+  # Helper for {set_current_transaction} and {clear_current_transaction!}
+  def with_current_transaction(transaction)
+    set_current_transaction transaction
+    yield
+  ensure
+    clear_current_transaction!
+  end
+
   # Track the AppSignal transaction JSON when a transaction gets completed
   # ({Appsignal::Transaction.complete}).
   #

@@ -427,49 +427,89 @@ describe Appsignal do
     end
 
     describe ".monitor_single_transaction" do
+      around { |example| keep_transactions { example.run } }
+
       context "with a successful call" do
-        it "should call monitor_transaction and stop" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.something",
-            :key => :value
-          ).and_yield
+        it "calls monitor_transaction and Appsignal.stop" do
           expect(Appsignal).to receive(:stop)
 
-          Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
+          Appsignal.monitor_single_transaction(
+            "perform_job.something",
+            :controller => :my_controller,
+            :action => :my_action
+          ) do
             # nothing
           end
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "my_controller#my_action"
+          )
+          expect(transaction_hash["events"]).to match([
+            hash_including(
+              "name" => "perform_job.something",
+              "title" => "",
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT
+            )
+          ])
         end
       end
 
       context "with an erroring call" do
         let(:error) { ExampleException.new }
 
-        it "should call monitor_transaction and stop and then raise the error" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.something",
-            :key => :value
-          ).and_yield
+        it "calls monitor_transaction and stop and re-raises the error" do
           expect(Appsignal).to receive(:stop)
 
           expect do
-            Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
+            Appsignal.monitor_single_transaction(
+              "perform_job.something",
+              :controller => :my_controller,
+              :action => :my_action
+            ) do
               raise error
             end
           end.to raise_error(error)
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "my_controller#my_action"
+          )
+          expect(transaction_hash["events"]).to match([
+            hash_including(
+              "name" => "perform_job.something",
+              "title" => "",
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT
+            )
+          ])
         end
       end
     end
 
     describe ".tag_request" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      let(:transaction) { http_request_transaction }
+      around do |example|
+        start_agent
+        with_current_transaction transaction do
+          keep_transactions { example.run }
+        end
+      end
 
       context "with transaction" do
-        let(:transaction) { double }
-        it "should call set_tags on transaction" do
-          expect(transaction).to receive(:set_tags).with("a" => "b")
-        end
+        it "calls set_tags on the current transaction" do
+          Appsignal.tag_request("a" => "b")
+          transaction.complete # Manually trigger transaction sampling
 
-        after { Appsignal.tag_request("a" => "b") }
+          expect(transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "tags" => { "a" => "b" }
+            )
+          )
+        end
       end
 
       context "without transaction" do

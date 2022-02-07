@@ -228,10 +228,14 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     let(:error) { ExampleException }
 
     it "creates a transaction and adds the error" do
+      # TODO: additional curly brackets required for issue
+      # https://github.com/rspec/rspec-mocks/issues/1460
+      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :failed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :processed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+      # rubocop:enable Style/BracesAroundHashParameters
 
       expect do
         perform_job { raise error, "uh oh" }
@@ -267,8 +271,12 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   context "without an error" do
     it "creates a transaction with events" do
+      # TODO: additional curly brackets required for issue
+      # https://github.com/rspec/rspec-mocks/issues/1460
+      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :processed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+      # rubocop:enable Style/BracesAroundHashParameters
 
       perform_job
 

@@ -11,8 +11,12 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
     end
 
     it "should apply a strategy for each key" do
+      # TODO: additional curly brackets required for issue
+      # https://github.com/rspec/rspec-mocks/issues/1460
+      # rubocop:disable Style/BracesAroundHashParameters
       expect(formatter).to receive(:apply_strategy)
-        .with(:sanitize_document, "_id" => 1)
+        .with(:sanitize_document, { "_id" => 1 })
+      # rubocop:enable Style/BracesAroundHashParameters
 
       expect(formatter).to receive(:apply_strategy)
         .with(:allow, "users")
