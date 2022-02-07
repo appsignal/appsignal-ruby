@@ -59,20 +59,6 @@ module Appsignal
     attr_writer :logger
 
     # @api private
-    def extensions
-      @extensions ||= []
-    end
-
-    # @api private
-    def initialize_extensions
-      Appsignal.logger.debug("Initializing extensions")
-      extensions.each do |extension|
-        Appsignal.logger.debug("Initializing #{extension}")
-        extension.initializer
-      end
-    end
-
-    # @api private
     def testing?
       false
     end
@@ -123,7 +109,6 @@ module Appsignal
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
-          initialize_extensions
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook

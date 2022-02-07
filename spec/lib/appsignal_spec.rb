@@ -5,7 +5,6 @@ describe Appsignal do
     # Make sure we have a clean state because we want to test
     # initialization here.
     Appsignal.config = nil
-    Appsignal.extensions.clear
   end
 
   let(:transaction) { http_request_transaction }
@@ -17,14 +16,6 @@ describe Appsignal do
 
       Appsignal.config = config
       expect(Appsignal.config).to eq config
-    end
-  end
-
-  describe ".extensions" do
-    it "should keep a list of extensions" do
-      expect(Appsignal.extensions).to be_empty
-      Appsignal.extensions << Appsignal::MockExtension
-      expect(Appsignal.extensions.size).to eq(1)
     end
   end
 
@@ -61,15 +52,6 @@ describe Appsignal do
       it "should start native" do
         expect(Appsignal::Extension).to receive(:start)
         Appsignal.start
-      end
-
-      context "with an extension" do
-        before { Appsignal.extensions << Appsignal::MockExtension }
-
-        it "should call the extension's initializer" do
-          expect(Appsignal::MockExtension).to receive(:initializer)
-          Appsignal.start
-        end
       end
 
       context "when allocation tracking and gc instrumentation have been enabled" do
