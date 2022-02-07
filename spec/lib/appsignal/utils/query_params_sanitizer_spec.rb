@@ -117,7 +117,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is an array" do
         let(:value) { %w[foo bar] }
 
-        it "should sanitize all hash values with a single questionmark" do
+        it "should sanitize all hash values with a single question mark" do
           expect(subject).to eq(["?"])
         end
       end
@@ -125,7 +125,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is a mixed array" do
         let(:value) { [nil, "foo", "bar"] }
 
-        it "should sanitize all hash values with a single questionmark" do
+        it "should sanitize all hash values with a single question mark" do
           expect(subject).to eq(["?"])
         end
       end
