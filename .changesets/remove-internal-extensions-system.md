@@ -3,4 +3,4 @@ bump: "patch"
 type: "remove"
 ---
 
-Remove internal `Appsigna.extensions` system. It was unused.
+Remove internal `Appsignal.extensions` system. It was unused.
