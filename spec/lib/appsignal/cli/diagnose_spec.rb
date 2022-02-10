@@ -772,10 +772,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => default_config.merge("env" => "", "send_session_data" => true),
             "sources" => {
               "default" => default_config,
-              "system" => { "send_session_data" => true },
+              "system" => {},
               "initial" => { "env" => "" },
               "file" => {},
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end
@@ -890,10 +891,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
-              "system" => { "send_session_data" => true },
+              "system" => {},
               "initial" => hash_with_string_keys(config.initial_config.merge(additional_initial_config)),
               "file" => hash_with_string_keys(config.file_config),
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end
@@ -917,10 +919,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
-              "system" => { "send_session_data" => true },
+              "system" => {},
               "initial" => hash_with_string_keys(config.initial_config),
               "file" => hash_with_string_keys(config.file_config),
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end

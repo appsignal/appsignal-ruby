@@ -471,7 +471,8 @@ module Appsignal
               :system => config.system_config,
               :initial => config.initial_config,
               :file => config.file_config,
-              :env => config.env_config
+              :env => config.env_config,
+              :override => config.override_config
             }
           }
           print_config_options(config)
