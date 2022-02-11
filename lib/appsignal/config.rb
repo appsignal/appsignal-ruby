@@ -170,7 +170,7 @@ module Appsignal
     #   @return [Hash]
 
     attr_reader :root_path, :env, :config_hash, :system_config,
-      :initial_config, :file_config, :env_config
+      :initial_config, :file_config, :env_config, :override_config
     attr_accessor :logger
 
     # Initialize a new configuration object for AppSignal.
@@ -231,6 +231,9 @@ module Appsignal
       # Load config from environment variables
       @env_config = load_from_environment
       merge(env_config)
+      # Load config overrides
+      @override_config = determine_overrides
+      merge(override_config)
       # Handle deprecated config options
       maintain_backwards_compatibility
       # Validate that we have a correct config
@@ -396,37 +399,23 @@ module Appsignal
 
     # Maintain backwards compatibility with deprecated config options.
     #
-    # Add deprecated config options here with the behavior of setting its
-    # replacement, if the replacement option is not configured by the user.
+    # Add warnings for deprecated config options here if they have no
+    # replacement, or should be non-functional.
+    #
+    # Add them to {determine_overrides} if replacement config options should be
+    # set instead.
     #
     # Make sure to remove the contents of this method in the next major
     # version, but the method itself with an empty body can stick around as a
     # structure for future deprecations.
     def maintain_backwards_compatibility
-      skip_session_data = config_hash[:skip_session_data]
-      send_session_data = config_hash[:send_session_data]
-      if skip_session_data.nil? # Deprecated option is not set
-        if send_session_data.nil? # Not configured by user
-          @system_config[:send_session_data] = true
-          merge(:send_session_data => true) # Set default value
-        end
-      else
-        if send_session_data.nil? # Not configured by user
-          @system_config[:send_session_data] = !skip_session_data
-          merge(:send_session_data => !skip_session_data)
-        end
-        deprecation_message "The `skip_session_data` config option is " \
-          "deprecated. Please use `send_session_data` instead.",
-          logger
-      end
+      return unless config_hash.key?(:working_dir_path)
 
-      if config_hash.key?(:working_dir_path) # rubocop:disable Style/GuardClause
-        deprecation_message \
-          "The `working_dir_path` option is deprecated, please use " \
-          "`working_directory_path` instead and specify the " \
-          "full path to the working directory",
-          logger
-      end
+      deprecation_message \
+        "The `working_dir_path` option is deprecated, please use " \
+        "`working_directory_path` instead and specify the " \
+        "full path to the working directory",
+        logger
     end
 
     def load_from_environment
@@ -451,6 +440,31 @@ module Appsignal
         env_var = ENV[var]
         next unless env_var
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
+      end
+
+      config
+    end
+
+    # Set config options based on the final user config. Fix any conflicting
+    # config or set new config options based on deprecated config options.
+    #
+    # Make sure to remove behavior for deprecated config options in this method
+    # in the next major version, but the method itself with an empty body can
+    # stick around as a structure for future deprecations.
+    def determine_overrides
+      config = {}
+      skip_session_data = config_hash[:skip_session_data]
+      send_session_data = config_hash[:send_session_data]
+      if skip_session_data.nil? # Deprecated option is not set
+        if send_session_data.nil? # Not configured by user
+          config[:send_session_data] = true # Set default value
+        end
+      else
+        deprecation_message "The `skip_session_data` config option is " \
+          "deprecated. Please use `send_session_data` instead.",
+          logger
+        # Not configured by user
+        config[:send_session_data] = !skip_session_data if send_session_data.nil?
       end
 
       config
