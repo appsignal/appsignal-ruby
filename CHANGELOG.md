@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.21
+
+### Changed
+
+- [548dd6f4](https://github.com/appsignal/appsignal-ruby/commit/548dd6f4c61ae3be24995a200dc3e5bea1a5f58c) patch - Add config override source. Track final decisions made by the Ruby gem in the configuration in the `override` config source. This will help us track new config options which are being set by their deprecated predecessors in the diagnose report.
+
+### Removed
+
+- [3f503ade](https://github.com/appsignal/appsignal-ruby/commit/3f503ade83f22f4b0d86d76ea00e5f4dd3c56b6f) patch - Remove internal `Appsignal.extensions` system. It was unused.
+
 ## 3.0.21.alpha.1
 
 ### Changed
