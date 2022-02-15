@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.21.alpha.1
+
+### Changed
+
+- [f19d9dcc](https://github.com/appsignal/appsignal-ruby/commit/f19d9dcc1c00103f5dc92951481becf4d4ade39e) patch - The MongoDB query sanitization now shows all the attributes in the query at all levels.
+  Only the actual values are filtered with a `?` character. Less MongoDB queries are now marked
+  as N+1 queries when they weren't the exact same query. This increases the number of unique events
+  AppSignal tracks for MongoDB queries.
+
 ## 3.0.20
 
 ### Added

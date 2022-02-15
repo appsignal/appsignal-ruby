@@ -21,28 +21,28 @@ module Appsignal
           },
           "insert" => {
             "insert"    => :allow,
-            "documents" => :deny_array,
+            "documents" => :sanitize_document,
             "ordered"   => :allow
           },
           "update" => {
             "update"  => :allow,
-            "updates" => :sanitize_bulk,
+            "updates" => :sanitize_document,
             "ordered" => :allow
           },
           "findandmodify" => {
             "findandmodify" => :allow,
             "query"         => :sanitize_document,
-            "update"        => :deny_array,
+            "update"        => :sanitize_document,
             "new"           => :allow
           },
           "delete" => {
             "delete" => :allow,
-            "deletes" => :sanitize_bulk,
+            "deletes" => :sanitize_document,
             "ordered" => :allow
           },
           "bulk" => {
             "q"      => :sanitize_document,
-            "u"      => :deny_array,
+            "u"      => :sanitize_document,
             "limit"  => :allow,
             "multi"  => :allow,
             "upsert" => :allow
@@ -68,20 +68,9 @@ module Appsignal
         # Applies strategy on hash values based on keys
         def self.apply_strategy(strategy, val)
           case strategy
-          when :allow      then val
-          when :deny       then "?"
-          when :deny_array then "[?]"
+          when :allow then val
           when :sanitize_document
-            Appsignal::Utils::QueryParamsSanitizer.sanitize(val, true, :mongodb)
-          when :sanitize_bulk
-            if val.length > 1
-              [
-                format(:bulk, val.first),
-                "[...]"
-              ]
-            else
-              val.map { |v| format(:bulk, v) }
-            end
+            Appsignal::Utils::QueryParamsSanitizer.sanitize(val, false, :mongodb)
           else "?"
           end
         end
