@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.22
+
+### Changed
+
+- [9762e79d](https://github.com/appsignal/appsignal-ruby/commit/9762e79d4545e50c8f3540deff825b10d77e59a5) patch - Bump agent to v-bbc830a
+  
+  - Support batched statsd messages
+  - Set start times for spans with traceparents
+  - Check duration in transactions for negative and too high value
+
 ## 3.0.21
 
 ### Changed
