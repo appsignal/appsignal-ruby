@@ -11,8 +11,10 @@ module Appsignal
       end
 
       def install
-        ::ActiveJob::Base
-          .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+        ActiveSupport.on_load(:active_job) do
+          ::ActiveJob::Base
+            .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+        end
       end
 
       module ActiveJobClassInstrumentation
