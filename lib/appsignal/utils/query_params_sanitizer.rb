@@ -35,7 +35,7 @@ module Appsignal
 
         def sanitize_array(array, only_top_level, key_sanitizer)
           if only_top_level
-            sanitize(array[0], only_top_level, key_sanitizer)
+            [sanitize(array[0], only_top_level, key_sanitizer)]
           else
             array.map do |value|
               sanitize(value, only_top_level, key_sanitizer)

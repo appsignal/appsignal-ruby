@@ -76,7 +76,7 @@ describe Appsignal::EventFormatter::Moped::QueryFormatter do
         )
       end
 
-      it { is_expected.to eq ["Insert", '{:database=>"database.collection", :documents=>{"_id"=>"?", "events"=>"?"}, :count=>2, :flags=>[]}'] }
+      it { is_expected.to eq ["Insert", '{:database=>"database.collection", :documents=>[{"_id"=>"?", "events"=>"?"}], :count=>2, :flags=>[]}'] }
     end
 
     context "Moped::Protocol::Update" do
