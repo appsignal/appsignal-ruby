@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.23
+
+### Fixed
+
+- [d73905d3](https://github.com/appsignal/appsignal-ruby/commit/d73905d3b28404638a8aa1e8de3909eff0b8cfb6) patch - Fix sanitized values wrapped in Arrays. When a value like `[{ "foo" => "bar" }]` was sanitized it would be stored as `{ "foo" => "?" }`, omitting the parent value's Array square brackets. Now values will appear with the same structure as they were originally sanitized. This only applies to certain integrations like MongoDB, moped and ElasticSearch.
+- [096d3cdf](https://github.com/appsignal/appsignal-ruby/commit/096d3cdfd8f452f13b2dbf7de6b763c8a96973b3) patch - Fix the ActiveJob `default_queue_name` config option issue being reset to "default". When ActiveJob `default_queue_name` was set in a Rails initializer it would reset on load to `default`. Now the `default_queue_name` can be set in an initializer as well.
+
 ## 3.0.22
 
 ### Changed
