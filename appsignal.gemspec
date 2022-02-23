@@ -36,7 +36,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
 
   gem.add_dependency "rack"
 
-  gem.add_development_dependency "rake", "~> 11"
+  gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"
   gem.add_development_dependency "timecop"
   gem.add_development_dependency "webmock"
