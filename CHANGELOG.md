@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.24
+
+### Changed
+
+- [964861f7](https://github.com/appsignal/appsignal-ruby/commit/964861f76ea7ff71f01497f116def14190bcd404) patch - Bump agent to v-f57e6cb
+  
+  - Enable process metrics on Heroku and Dokku
+
 ## 3.0.23
 
 ### Fixed
