@@ -1350,8 +1350,8 @@ describe Appsignal::Transaction do
     end
 
     context "with a PG::UniqueViolation" do
-      module PG
-        class UniqueViolation < StandardError; end
+      before do
+        stub_const("PG::UniqueViolation", Class.new(StandardError))
       end
 
       let(:error) do
