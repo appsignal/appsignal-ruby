@@ -1350,8 +1350,8 @@ describe Appsignal::Transaction do
     end
 
     context "with a PG::UniqueViolation" do
-      module PG
-        class UniqueViolation < StandardError; end
+      before do
+        stub_const("PG::UniqueViolation", Class.new(StandardError))
       end
 
       let(:error) do
@@ -1362,6 +1362,25 @@ describe Appsignal::Transaction do
 
       it "returns a sanizited error message" do
         expect(subject).to eq "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+    end
+
+    context "with a ActiveRecord::RecordNotUnique" do
+      before do
+        stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError))
+      end
+
+      let(:error) do
+        ActiveRecord::RecordNotUnique.new(
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
+          "DETAIL: Key (email)=(foo@example.com) already exists."
+        )
+      end
+
+      it "returns a sanizited error message" do
+        expect(subject).to eq \
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
+          "DETAIL: Key (email)=(?) already exists."
       end
     end
   end

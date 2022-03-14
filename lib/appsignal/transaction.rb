@@ -537,7 +537,7 @@ module Appsignal
     # Returns an unchanged message otherwise.
     def cleaned_error_message(error)
       case error.class.to_s
-      when "PG::UniqueViolation"
+      when "PG::UniqueViolation", "ActiveRecord::RecordNotUnique"
         error.message.to_s.gsub(/\)=\(.*\)/, ")=(?)")
       else
         error.message.to_s
