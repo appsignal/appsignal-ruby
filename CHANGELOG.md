@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.25
+
+### Added
+
+- [399cf790](https://github.com/appsignal/appsignal-ruby/commit/399cf79044e7c8936ab72dce420d91af4cb71d16) patch - Sanitize `ActiveRecord::RecordNotUnique` error messages to not include any database values that is not unique in the database. This ensures no personal information is sent to AppSignal through error messages from this error.
+
 ## 3.0.24
 
 ### Changed
