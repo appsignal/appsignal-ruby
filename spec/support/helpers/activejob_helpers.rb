@@ -1,6 +1,6 @@
 module ActiveJobHelpers
   def active_job_args_wrapper(args: [], params: nil)
-    if (DependencyHelper.rails6_1_present? && DependencyHelper.ruby_3_1_or_newer?) || DependencyHelper.rails7_present?
+    if DependencyHelper.active_job_wraps_args?
       wrapped_args = {}
 
       if params

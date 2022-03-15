@@ -376,7 +376,7 @@ if DependencyHelper.active_job_present?
       ]
     end
     let(:expected_wrapped_args) do
-      if (DependencyHelper.rails6_1_present? && DependencyHelper.ruby_3_1_or_newer?) || DependencyHelper.rails7_present?
+      if DependencyHelper.active_job_wraps_args?
         [{
           "_aj_ruby2_keywords" => ["args"],
           "args" => expected_args
