@@ -33,7 +33,16 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
           fi
         - |
           if [ -n "$RUBY_VERSION" ]; then
-            sem-version ruby $RUBY_VERSION
+            if ! (sem-version ruby "$RUBY_VERSION"); then
+              ruby_key="rbenv-ruby-$RUBY_VERSION"
+              echo "Attempting to build Ruby $RUBY_VERSION from source"
+              git -C "$HOME/.rbenv/plugins/ruby-build" pull
+              cache restore "$ruby_key"
+              sem-version ruby "$RUBY_VERSION"
+              if ! cache has_key "$ruby_key"; then
+                cache store "$ruby_key" "$HOME/.rbenv/versions/$RUBY_VERSION"
+              fi
+            fi
             ./support/check_versions
           else
             echo Skipping Ruby install
@@ -190,6 +199,7 @@ matrix:
     - ruby: "2.7.5"
     - ruby: "3.0.3"
     - ruby: "3.1.1"
+    - ruby: "3.2.0-preview1"
     - ruby: "jruby-9.2.19.0"
       gems: "minimal"
       env_vars:
@@ -206,11 +216,13 @@ matrix:
         ruby:
           - "3.0.3"
           - "3.1.1"
+          - "3.2.0-preview1"
     - gem: "psych-4"
       only:
         ruby:
           - "3.0.3"
           - "3.1.1"
+          - "3.2.0-preview1"
     - gem: "que"
     - gem: "que_beta"
     - gem: "rails-3.2"
@@ -283,6 +295,7 @@ matrix:
           - "2.7.5"
           - "3.0.3"
           - "3.1.1"
+          - "3.2.0-preview1"
           - "jruby-9.2.19.0"
     - gem: "rails-7.0"
       only:
@@ -290,6 +303,7 @@ matrix:
           - "2.7.5"
           - "3.0.3"
           - "3.1.1"
+          - "3.2.0-preview1"
     - gem: "resque-1"
       bundler: "1.17.3"
       only:
