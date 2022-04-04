@@ -258,7 +258,7 @@ module Appsignal
       #   begin
       #     raise "oh no!"
       #   rescue => e
-      #     Appsignal.set_error(error)
+      #     Appsignal.set_error(e)
       #   end
       #   # Manually completing the transaction here.
       #   # Manually stopping AppSignal here
