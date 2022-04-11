@@ -61,7 +61,7 @@ namespace :build_matrix do
           t["dependencies"] = ["Ruby #{ruby_version}"]
         end
         gemset_for_ruby(ruby, matrix).each do |gem|
-          next if excluded_for_ruby?(gem, ruby)
+          next unless included_for_ruby?(gem, ruby)
 
           env = matrix["env_vars"] + [
             env_map("RUBY_VERSION", ruby_version),
@@ -135,7 +135,8 @@ namespace :build_matrix do
           out << "./support/bundler_wrapper exec rake extension:install"
           out << "rm -f gemfiles/*.gemfile.lock"
           gemset_for_ruby(ruby, matrix).each do |gem|
-            next if excluded_for_ruby?(gem, ruby)
+            next unless included_for_ruby?(gem, ruby)
+
             gemfile = gem["gem"]
             out << "echo 'Bundling #{gemfile} in #{ruby_version}'"
             rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
@@ -176,8 +177,21 @@ namespace :build_matrix do
     end
   end
 
-  def excluded_for_ruby?(gem, ruby)
-    (gem.dig("exclude", "ruby") || []).include?(ruby["ruby"])
+  def included_for_ruby?(gem, ruby)
+    included_rubies = gem.dig("only", "ruby")
+    excluded_rubies = gem.dig("exclude", "ruby")
+    if included_rubies && excluded_rubies
+      raise "Both `only` and `exclude` config options for gem `#{gem["gem"]}` are configured. " \
+        "Only use one of the two config options."
+    end
+
+    if included_rubies
+      # If this gem only runs on these specific Ruby version
+      return true if included_rubies.include?(ruby["ruby"])
+    else
+      # If this gem is excluded from running on this Ruby version
+      return true unless (excluded_rubies || []).include?(ruby["ruby"])
+    end
   end
 end
 
