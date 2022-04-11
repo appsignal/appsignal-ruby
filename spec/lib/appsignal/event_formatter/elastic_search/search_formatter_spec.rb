@@ -2,7 +2,7 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
   let(:klass)     { Appsignal::EventFormatter::ElasticSearch::SearchFormatter }
   let(:formatter) { klass.new }
 
-  it "should register query.moped" do
+  it "should register search.elasticsearch" do
     expect(
       Appsignal::EventFormatter.registered?("search.elasticsearch", klass)
     ).to be_truthy
