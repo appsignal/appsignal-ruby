@@ -1,6 +1,7 @@
 require "bundler"
 require "rubygems/package_task"
 require "fileutils"
+require "yaml"
 
 VERSION_MANAGERS = {
   :chruby => {
