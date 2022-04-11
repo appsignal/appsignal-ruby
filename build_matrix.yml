@@ -201,6 +201,16 @@ matrix:
     - gem: "capistrano3"
     - gem: "grape"
     - gem: "padrino"
+    - gem: "psych-3"
+      only:
+        ruby:
+          - "3.0.3"
+          - "3.1.1"
+    - gem: "psych-4"
+      only:
+        ruby:
+          - "3.0.3"
+          - "3.1.1"
     - gem: "que"
     - gem: "que_beta"
     - gem: "rails-3.2"
