@@ -158,7 +158,7 @@ module Appsignal
 
       # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L403-L412
       def safe_load(content, default)
-        if RUBY_VERSION >= "3.1.0"
+        if YAML::VERSION >= "4.0.0"
           yield(*YAML.unsafe_load(content))
         else
           yield(*YAML.load(content))

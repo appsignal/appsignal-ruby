@@ -1347,6 +1347,44 @@ blocks:
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.0.3 for psych-3
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.3
+      - name: GEMSET
+        value: psych-3
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/psych-3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.0.3 for psych-4
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.3
+      - name: GEMSET
+        value: psych-4
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/psych-4.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
     - name: Ruby 3.0.3 for que
       env_vars:
       - *2
@@ -1634,6 +1672,44 @@ blocks:
         value: padrino
       - name: BUNDLE_GEMFILE
         value: gemfiles/padrino.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.1.1 for psych-3
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.1
+      - name: GEMSET
+        value: psych-3
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/psych-3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+    - name: Ruby 3.1.1 for psych-4
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.1
+      - name: GEMSET
+        value: psych-4
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/psych-4.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
