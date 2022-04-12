@@ -1,6 +1,7 @@
 require "bundler"
 require "rubygems/package_task"
 require "fileutils"
+require "yaml"
 
 VERSION_MANAGERS = {
   :chruby => {
@@ -60,7 +61,7 @@ namespace :build_matrix do
           t["dependencies"] = ["Ruby #{ruby_version}"]
         end
         gemset_for_ruby(ruby, matrix).each do |gem|
-          next if excluded_for_ruby?(gem, ruby)
+          next unless included_for_ruby?(matrix, gem, ruby)
 
           env = matrix["env_vars"] + [
             env_map("RUBY_VERSION", ruby_version),
@@ -134,7 +135,8 @@ namespace :build_matrix do
           out << "./support/bundler_wrapper exec rake extension:install"
           out << "rm -f gemfiles/*.gemfile.lock"
           gemset_for_ruby(ruby, matrix).each do |gem|
-            next if excluded_for_ruby?(gem, ruby)
+            next unless included_for_ruby?(matrix, gem, ruby)
+
             gemfile = gem["gem"]
             out << "echo 'Bundling #{gemfile} in #{ruby_version}'"
             rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
@@ -175,8 +177,29 @@ namespace :build_matrix do
     end
   end
 
-  def excluded_for_ruby?(gem, ruby)
-    (gem.dig("exclude", "ruby") || []).include?(ruby["ruby"])
+  def included_for_ruby?(matrix, gem, ruby)
+    included_rubies = gem.dig("only", "ruby") || []
+    excluded_rubies = gem.dig("exclude", "ruby") || []
+    if included_rubies.any? && excluded_rubies.any?
+      raise "Both `only` and `exclude` config options for gem `#{gem["gem"]}` are configured. " \
+        "Only use one of the two config options."
+    end
+
+    if included_rubies.any?
+      # If this gem only runs on these specific Ruby version
+      included_rubies.each { |version| check_if_ruby_version_exists!(matrix, version) }
+      return true if included_rubies.include?(ruby["ruby"])
+    else
+      # If this gem is excluded from running on this Ruby version
+      excluded_rubies.each { |version| check_if_ruby_version_exists!(matrix, version) }
+      return true unless excluded_rubies.include?(ruby["ruby"])
+    end
+  end
+
+  def check_if_ruby_version_exists!(matrix, ruby_version)
+    return if matrix["ruby"].find { |ruby| ruby["ruby"] == ruby_version }
+
+    raise "Ruby version `#{ruby_version}` is not known by the build matrix."
   end
 end
 
