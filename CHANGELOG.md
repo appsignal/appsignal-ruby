@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.26
+
+### Removed
+
+- [56ec42ae](https://github.com/appsignal/appsignal-ruby/commit/56ec42ae634c5675b1769963688a8f3f22715e0e) patch - Remove Moped support as it is no longer the official Ruby Mongo driver and it's been unmaintained for 7 years.
+
+### Fixed
+
+- [991ca18d](https://github.com/appsignal/appsignal-ruby/commit/991ca18dfc5b05cf34841f84c17d821a17bf7a84) patch - Fix runtime errors on YAML load with older psych versions (`< 4`) used in combination with newer Ruby version (`3.x`).
+
 ## 3.0.25
 
 ### Added
