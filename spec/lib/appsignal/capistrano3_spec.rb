@@ -42,7 +42,7 @@ if DependencyHelper.capistrano3_present?
     describe "appsignal:deploy task" do
       before do
         ENV["USER"] = "batman"
-        ENV["PWD"] = project_fixture_path
+        allow(Dir).to receive(:pwd).and_return(project_fixture_path)
       end
 
       context "config" do
