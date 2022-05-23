@@ -5,7 +5,7 @@ namespace :appsignal do
     revision = fetch(:appsignal_revision, fetch(:current_revision))
 
     appsignal_config = Appsignal::Config.new(
-      ENV["PWD"],
+      Dir.pwd,
       appsignal_env,
       {},
       Logger.new(StringIO.new)
