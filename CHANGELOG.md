@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.0.27
+
+### Fixed
+
+- [7032dc4b](https://github.com/appsignal/appsignal-ruby/commit/7032dc4b45c150c58a7a97c44b17e1092934c1ec) patch - Use `Dir.pwd` to determine the current directory in the Capistrano 3 integration. It previously relied on `ENV["pwd"]` which returned `nil` in some scenarios.
+
 ## 3.0.26
 
 ### Removed
