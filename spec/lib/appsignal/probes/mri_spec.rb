@@ -21,11 +21,24 @@ describe Appsignal::Probes::MriProbe do
 
         probe.call
       end
+
+      it "tracks thread counts" do
+        expect_gauge_value(:thread_count)
+
+        probe.call
+      end
     end
 
     def expect_distribution_value(metric)
       expect(Appsignal).to receive(:add_distribution_value)
         .with("ruby_vm", kind_of(Numeric), :metric => metric)
+        .and_call_original
+        .once
+    end
+
+    def expect_gauge_value(metric)
+      expect(Appsignal).to receive(:set_gauge)
+        .with("thread_count", kind_of(Numeric))
         .and_call_original
         .once
     end

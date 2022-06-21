@@ -20,6 +20,8 @@ module Appsignal
             :metric => metric
           )
         end
+
+        Appsignal.set_gauge("thread_count", Thread.list.size)
       end
     end
   end
