@@ -1,5 +1,23 @@
+class AppsignalMock
+  attr_reader :distribution_values, :gauges
+
+  def initialize
+    @distribution_values = []
+    @gauges = []
+  end
+
+  def add_distribution_value(*args)
+    @distribution_values << args
+  end
+
+  def set_gauge(*args)
+    @gauges << args
+  end
+end
+
 describe Appsignal::Probes::MriProbe do
-  let(:probe) { described_class.new }
+  let(:appsignal_mock) { AppsignalMock.new }
+  let(:probe) { described_class.new(appsignal_mock) }
 
   describe ".dependencies_present?" do
     if DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
@@ -16,31 +34,33 @@ describe Appsignal::Probes::MriProbe do
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
       it "should track vm metrics" do
+        probe.call
+
         expect_distribution_value(:class_serial)
         expect_distribution_value(:global_constant_state)
-
-        probe.call
       end
 
       it "tracks thread counts" do
-        expect_gauge_value(:thread_count)
-
         probe.call
+
+        expect_gauge_value(:thread_count)
       end
     end
+  end
 
-    def expect_distribution_value(metric)
-      expect(Appsignal).to receive(:add_distribution_value)
-        .with("ruby_vm", kind_of(Numeric), :metric => metric)
-        .and_call_original
-        .once
+  def expect_distribution_value(metric)
+    expect(appsignal_mock.distribution_values).to satisfy do |distribution_values|
+      distribution_values.any? do |distribution_value|
+        distribution_value.last == {:metric => metric}
+      end
     end
+  end
 
-    def expect_gauge_value(metric)
-      expect(Appsignal).to receive(:set_gauge)
-        .with("thread_count", kind_of(Numeric))
-        .and_call_original
-        .once
+  def expect_gauge_value(key)
+    expect(appsignal_mock.gauges).to satisfy do |distribution_values|
+      distribution_values.any? do |distribution_value|
+        distribution_value.first == key.to_s
+      end
     end
   end
 end
