@@ -36,36 +36,37 @@ describe Appsignal::Probes::MriProbe do
       it "should track vm metrics" do
         probe.call
 
-        expect_distribution_value(:class_serial)
-        expect_distribution_value(:global_constant_state)
+        expect_distribution_value("ruby_vm", :class_serial)
+        expect_distribution_value("ruby_vm", :global_constant_state)
       end
 
       it "tracks thread counts" do
         probe.call
 
-        expect_gauge_value(:thread_count)
+        expect_gauge_value("thread_count")
       end
 
       it "tracks GC runs" do
         probe.call
 
-        expect_gauge_value(:gc_runs)
+        expect_gauge_value("gc_runs")
       end
     end
   end
 
-  def expect_distribution_value(metric)
+  def expect_distribution_value(expected_key, metric)
     expect(appsignal_mock.distribution_values).to satisfy do |distribution_values|
       distribution_values.any? do |distribution_value|
-        distribution_value.last == {:metric => metric}
+        key, value, metadata = distribution_value
+        key == expected_key && !value.nil? && metadata == {:metric => metric}
       end
     end
   end
 
   def expect_gauge_value(key)
-    expect(appsignal_mock.gauges).to satisfy do |distribution_values|
-      distribution_values.any? do |distribution_value|
-        distribution_value.first == key.to_s
+    expect(appsignal_mock.gauges).to satisfy do |gauges|
+      gauges.any? do |gauge|
+        gauge.first == key && !gauge.last.nil?
       end
     end
   end
