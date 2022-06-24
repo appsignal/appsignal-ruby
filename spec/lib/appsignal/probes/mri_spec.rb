@@ -46,14 +46,18 @@ describe Appsignal::Probes::MriProbe do
         expect_gauge_value("thread_count")
       end
 
+      it "tracks GC total time" do
+        expect_gauge_value("gc_total_time")
+      end
+
       it "tracks GC runs" do
-        expect_gauge_value("gc_runs")
+        expect_distribution_value("gc_count", :gc_count)
+        expect_distribution_value("gc_count", :major_gc_count)
+        expect_distribution_value("gc_count", :minor_gc_count)
       end
 
       it "tracks GC stats" do
         expect_gauge_value("total_allocated_objects")
-        expect_distribution_value("gc_count", :major_gc_count)
-        expect_distribution_value("gc_count", :minor_gc_count)
         expect_distribution_value("heap_slots", :heap_live)
         expect_distribution_value("heap_slots", :heap_free)
       end
