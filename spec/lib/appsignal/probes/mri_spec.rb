@@ -10,7 +10,7 @@ class AppsignalMock
     @distribution_values << args
   end
 
-  def set_gauge(*args)
+  def set_gauge(*args) # rubocop:disable Naming/AccessorMethodName
     @gauges << args
   end
 end
@@ -68,7 +68,7 @@ describe Appsignal::Probes::MriProbe do
     expect(appsignal_mock.distribution_values).to satisfy do |distribution_values|
       distribution_values.any? do |distribution_value|
         key, value, metadata = distribution_value
-        key == expected_key && !value.nil? && metadata == {:metric => metric}
+        key == expected_key && !value.nil? && metadata == { :metric => metric }
       end
     end
   end
