@@ -51,11 +51,11 @@ describe Appsignal::Probes::MriProbe do
       end
 
       it "tracks GC stats" do
-        expect_distribution_value("gc_stats", :total_allocated_objects)
-        expect_distribution_value("gc_stats", :major_gc_count)
-        expect_distribution_value("gc_stats", :minor_gc_count)
-        expect_distribution_value("gc_stats", :heap_live)
-        expect_distribution_value("gc_stats", :heap_free)
+        expect_gauge_value("total_allocated_objects")
+        expect_distribution_value("gc_count", :major_gc_count)
+        expect_distribution_value("gc_count", :minor_gc_count)
+        expect_distribution_value("heap_slots", :heap_live)
+        expect_distribution_value("heap_slots", :heap_free)
       end
     end
   end
