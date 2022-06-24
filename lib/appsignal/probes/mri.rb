@@ -18,13 +18,18 @@ module Appsignal
       # @api private
       def call
         stat = RubyVM.stat
-        [:class_serial, :global_constant_state].each do |metric|
-          @appsignal.add_distribution_value(
-            "ruby_vm",
-            stat[metric],
-            :metric => metric
-          )
-        end
+
+        @appsignal.add_distribution_value(
+          "ruby_vm",
+          stat[:class_serial],
+          :metric => :class_serial
+        )
+
+        @appsignal.add_distribution_value(
+          "ruby_vm",
+          stat[:constant_cache] ? stat[:constant_cache].values.sum : stat[:global_constant_state],
+          :metric => :global_constant_state
+        )
 
         @appsignal.set_gauge("thread_count", Thread.list.size)
         @appsignal.set_gauge("gc_total_time", MriProbe.garbage_collection_profiler.total_time)
