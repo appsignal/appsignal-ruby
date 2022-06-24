@@ -36,8 +36,8 @@ module Appsignal
         @appsignal.add_distribution_value("gc_count", gc_stats[:minor_gc_count], :metric => :minor_gc_count)
         @appsignal.add_distribution_value("gc_count", gc_stats[:major_gc_count], :metric => :major_gc_count)
 
-        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_live_slots], :metric => :heap_live)
-        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_free_slots], :metric => :heap_free)
+        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
+        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
       end
     end
   end
