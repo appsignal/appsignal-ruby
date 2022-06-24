@@ -33,22 +33,20 @@ describe Appsignal::Probes::MriProbe do
 
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
-      it "should track vm metrics" do
+      before do
         probe.call
+      end
 
+      it "should track vm metrics" do
         expect_distribution_value("ruby_vm", :class_serial)
         expect_distribution_value("ruby_vm", :global_constant_state)
       end
 
       it "tracks thread counts" do
-        probe.call
-
         expect_gauge_value("thread_count")
       end
 
       it "tracks GC runs" do
-        probe.call
-
         expect_gauge_value("gc_runs")
       end
     end
