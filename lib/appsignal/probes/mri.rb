@@ -24,6 +24,18 @@ module Appsignal
 
         @appsignal.set_gauge("thread_count", Thread.list.size)
         @appsignal.set_gauge("gc_runs", GC.count)
+
+        gc_stats = GC.stat
+
+        {
+          :total_allocated_objects => gc_stats[:total_allocated_objects],
+          :major_gc_count => gc_stats[:major_gc_count],
+          :minor_gc_count => gc_stats[:minor_gc_count],
+          :heap_live => gc_stats[:heap_live_slots],
+          :heap_free => gc_stats[:heap_free_slots]
+        }.each do |metric, value|
+          @appsignal.add_distribution_value("gc_stats", value, :metric => metric)
+        end
       end
     end
   end
