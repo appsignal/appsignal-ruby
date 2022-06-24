@@ -23,6 +23,7 @@ module Appsignal
         end
 
         @appsignal.set_gauge("thread_count", Thread.list.size)
+        @appsignal.set_gauge("gc_runs", GC.count)
       end
     end
   end

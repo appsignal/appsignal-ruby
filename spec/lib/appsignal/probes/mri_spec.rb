@@ -45,6 +45,12 @@ describe Appsignal::Probes::MriProbe do
 
         expect_gauge_value(:thread_count)
       end
+
+      it "tracks GC runs" do
+        probe.call
+
+        expect_gauge_value(:gc_runs)
+      end
     end
   end
 
