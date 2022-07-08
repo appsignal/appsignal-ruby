@@ -83,7 +83,7 @@ module Appsignal
 
         # Transaction methods
         attach_function :appsignal_free_transaction,
-          [],
+          [:pointer],
           :void
         attach_function :appsignal_start_transaction,
           [:appsignal_string, :appsignal_string, :long],
@@ -191,7 +191,7 @@ module Appsignal
           :void
 
         # Data struct methods
-        attach_function :appsignal_free_data, [], :void
+        attach_function :appsignal_free_data, [:pointer], :void
         attach_function :appsignal_data_map_new, [], :pointer
         attach_function :appsignal_data_array_new, [], :pointer
         attach_function :appsignal_data_map_set_string,
