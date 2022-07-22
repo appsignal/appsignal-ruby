@@ -77,11 +77,12 @@ namespace :build_matrix do
             "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
             "env_vars" => env + ruby.fetch("env_vars", []),
             "commands" => [
-              "./support/bundler_wrapper exec rake test",
-              "./support/bundler_wrapper exec rake test:failure"
+              "./support/bundler_wrapper exec rake test"
             ]
           }
           if gem["gem"] == "no_dependencies"
+            # Only test the failure scenarios once per Ruby version
+            job["commands"] << "./support/bundler_wrapper exec rake test:failure"
             ruby_primary_block["task"]["jobs"] << job
           else
             ruby_secondary_block["task"]["jobs"] << job
