@@ -1,6 +1,8 @@
 module Appsignal
   module Probes
     class SidekiqProbe
+      include Helpers
+
       # @api private
       attr_reader :config
 
@@ -42,11 +44,15 @@ module Appsignal
 
         gauge "worker_count", stats.workers_size
         gauge "process_count", stats.processes_size
-        gauge_delta :jobs_processed, "job_count", stats.processed,
-          :status => :processed
-        gauge_delta :jobs_failed, "job_count", stats.failed, :status => :failed
+        jobs_processed = gauge_delta :jobs_processed, stats.processed
+        if jobs_processed
+          gauge "job_count", jobs_processed, :status => :processed
+        end
+        jobs_failed = gauge_delta :jobs_failed, stats.failed
+        gauge "job_count", jobs_failed, :status => :failed if jobs_failed
         gauge "job_count", stats.retry_size, :status => :retry_queue
-        gauge_delta :jobs_dead, "job_count", stats.dead_size, :status => :died
+        jobs_dead = gauge_delta :jobs_dead, stats.dead_size
+        gauge "job_count", jobs_dead, :status => :died if jobs_dead
         gauge "job_count", stats.scheduled_size, :status => :scheduled
         gauge "job_count", stats.enqueued, :status => :enqueued
       end
@@ -63,25 +69,6 @@ module Appsignal
       def gauge(key, value, tags = {})
         tags[:hostname] = hostname if hostname
         Appsignal.set_gauge "sidekiq_#{key}", value, tags
-      end
-
-      # Track the delta of two values for a gauge metric
-      #
-      # First call will store the data for the metric and the second call will
-      # set a gauge metric with the difference. This is used for absolute
-      # counter values which we want to track as gauges.
-      #
-      # @example
-      #   gauge_delta :my_cache_key, "my_gauge", 10
-      #   gauge_delta :my_cache_key, "my_gauge", 15
-      #   # Creates a gauge with the value `5`
-      # @see #gauge
-      def gauge_delta(cache_key, key, value, tags = {})
-        previous_value = cache[cache_key]
-        cache[cache_key] = value
-        return unless previous_value
-        new_value = value - previous_value
-        gauge key, new_value, tags
       end
 
       def hostname
