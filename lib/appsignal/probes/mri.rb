@@ -1,6 +1,8 @@
 module Appsignal
   module Probes
     class MriProbe
+      include Helpers
+
       # @api private
       def self.dependencies_present?
         defined?(::RubyVM) && ::RubyVM.respond_to?(:stat)
@@ -35,7 +37,14 @@ module Appsignal
         @appsignal.set_gauge("gc_total_time", MriProbe.garbage_collection_profiler.total_time)
 
         gc_stats = GC.stat
-        @appsignal.set_gauge("total_allocated_objects", gc_stats[:total_allocated_objects] || gc_stats[:total_allocated_object])
+        allocated_objects =
+          gauge_delta(
+            :allocated_objects,
+            gc_stats[:total_allocated_objects] || gc_stats[:total_allocated_object]
+          )
+        if allocated_objects
+          @appsignal.set_gauge("allocated_objects", allocated_objects)
+        end
 
         @appsignal.add_distribution_value("gc_count", GC.count, :metric => :gc_count)
         @appsignal.add_distribution_value("gc_count", gc_stats[:minor_gc_count], :metric => :minor_gc_count)
