@@ -2215,3 +2215,68 @@ blocks:
       - *6
       commands:
       - "./support/bundler_wrapper exec rake test"
+- name: Ruby jruby-9.3.6.0
+  dependencies:
+  - Validation
+  task:
+    prologue:
+      commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
+    jobs:
+    - name: Ruby jruby-9.3.6.0 for no_dependencies
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: jruby-9.3.6.0
+      - name: GEMSET
+        value: no_dependencies
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/no_dependencies.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+      - "./support/bundler_wrapper exec rake test:failure"
+- name: Ruby jruby-9.3.6.0 - Gems
+  dependencies:
+  - Ruby jruby-9.3.6.0
+  task:
+    prologue:
+      commands:
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - "./support/install_deps"
+      - bundle config set clean 'true'
+      - "./support/bundler_wrapper install --jobs=3 --retry=3"
+      - "./support/bundler_wrapper exec rake extension:install"
+    epilogue: *1
+    jobs:
+    - name: Ruby jruby-9.3.6.0 for rails-6.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: jruby-9.3.6.0
+      - name: GEMSET
+        value: rails-6.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-6.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
