@@ -2,9 +2,9 @@
 
 set -eu
 
-LINTJE_VERSION="0.6.1"
+LINTJE_VERSION="0.7.1"
 
-mkdir -p $HOME/bin
+mkdir -p "$HOME/bin"
 cache_key=v1-lintje-$LINTJE_VERSION
 cache restore $cache_key
 
@@ -15,8 +15,8 @@ else
   echo "Downloading Lintje $LINTJE_VERSION"
   curl -L \
     https://github.com/tombruijn/lintje/releases/download/v$LINTJE_VERSION/x86_64-unknown-linux-gnu.tar.gz | \
-    tar -xz --directory $HOME/bin
-  cache store $cache_key $HOME/bin/lintje
+    tar -xz --directory "$HOME/bin"
+  cache store $cache_key "$HOME/bin/lintje"
 fi
 
-$HOME/bin/lintje $SEMAPHORE_GIT_COMMIT_RANGE
+"$HOME/bin/lintje" "$SEMAPHORE_GIT_COMMIT_RANGE"
