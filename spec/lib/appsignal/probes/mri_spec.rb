@@ -49,11 +49,17 @@ describe Appsignal::Probes::MriProbe do
         expect_gauge_value("gc_total_time")
       end
 
-      it "tracks GC runs" do
+      it "tracks GC run count" do
+        expect(GC).to receive(:count).and_return(10, 15)
+        expect(GC).to receive(:stat).and_return(
+          { :minor_gc_count => 10, :major_gc_count => 10 },
+          :minor_gc_count => 16, :major_gc_count => 17
+        )
         probe.call
-        expect_distribution_value("gc_count", :gc_count)
-        expect_distribution_value("gc_count", :major_gc_count)
-        expect_distribution_value("gc_count", :minor_gc_count)
+        probe.call
+        expect_distribution_value("gc_count", :gc_count, 5)
+        expect_distribution_value("gc_count", :minor_gc_count, 6)
+        expect_distribution_value("gc_count", :major_gc_count, 7)
       end
 
       it "tracks object allocation" do
@@ -75,11 +81,15 @@ describe Appsignal::Probes::MriProbe do
     end
   end
 
-  def expect_distribution_value(expected_key, metric)
+  def expect_distribution_value(expected_key, metric, expected_value = nil)
     expect(appsignal_mock.distribution_values).to satisfy do |distribution_values|
       distribution_values.any? do |distribution_value|
         key, value, metadata = distribution_value
-        key == expected_key && !value.nil? && metadata == { :metric => metric }
+        next unless key == expected_key
+        next unless expected_value ? expected_value == value : !value.nil?
+        next unless metadata == { :metric => metric }
+
+        true
       end
     end
   end

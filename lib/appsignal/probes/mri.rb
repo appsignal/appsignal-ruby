@@ -46,9 +46,18 @@ module Appsignal
           @appsignal.set_gauge("allocated_objects", allocated_objects)
         end
 
-        @appsignal.add_distribution_value("gc_count", GC.count, :metric => :gc_count)
-        @appsignal.add_distribution_value("gc_count", gc_stats[:minor_gc_count], :metric => :minor_gc_count)
-        @appsignal.add_distribution_value("gc_count", gc_stats[:major_gc_count], :metric => :major_gc_count)
+        gc_count = gauge_delta(:gc_count, GC.count)
+        if gc_count
+          @appsignal.add_distribution_value("gc_count", gc_count, :metric => :gc_count)
+        end
+        minor_gc_count = gauge_delta(:minor_gc_count, gc_stats[:minor_gc_count])
+        if minor_gc_count
+          @appsignal.add_distribution_value("gc_count", minor_gc_count, :metric => :minor_gc_count)
+        end
+        major_gc_count = gauge_delta(:major_gc_count, gc_stats[:major_gc_count])
+        if major_gc_count
+          @appsignal.add_distribution_value("gc_count", major_gc_count, :metric => :major_gc_count)
+        end
 
         @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
         @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
