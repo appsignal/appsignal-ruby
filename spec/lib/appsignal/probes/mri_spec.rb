@@ -33,31 +33,42 @@ describe Appsignal::Probes::MriProbe do
 
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
-      before do
-        probe.call
-      end
-
       it "should track vm metrics" do
+        probe.call
         expect_distribution_value("ruby_vm", :class_serial)
         expect_distribution_value("ruby_vm", :global_constant_state)
       end
 
       it "tracks thread counts" do
+        probe.call
         expect_gauge_value("thread_count")
       end
 
       it "tracks GC total time" do
+        probe.call
         expect_gauge_value("gc_total_time")
       end
 
       it "tracks GC runs" do
+        probe.call
         expect_distribution_value("gc_count", :gc_count)
         expect_distribution_value("gc_count", :major_gc_count)
         expect_distribution_value("gc_count", :minor_gc_count)
       end
 
-      it "tracks GC stats" do
-        expect_gauge_value("total_allocated_objects")
+      it "tracks object allocation" do
+        expect(GC).to receive(:stat).and_return(
+          { :total_allocated_objects => 10 },
+          :total_allocated_objects => 15
+        )
+        # Only tracks delta value so the needs to be called twice
+        probe.call
+        probe.call
+        expect_gauge_value("allocated_objects", 5)
+      end
+
+      it "tracks heap slots" do
+        probe.call
         expect_distribution_value("heap_slots", :heap_live)
         expect_distribution_value("heap_slots", :heap_free)
       end
@@ -73,10 +84,10 @@ describe Appsignal::Probes::MriProbe do
     end
   end
 
-  def expect_gauge_value(key)
+  def expect_gauge_value(expected_key, expected_value = nil)
     expect(appsignal_mock.gauges).to satisfy do |gauges|
-      gauges.any? do |gauge|
-        gauge.first == key && !gauge.last.nil?
+      gauges.any? do |(key, value)|
+        expected_key == key && expected_value ? expected_value == value : !value.nil?
       end
     end
   end
