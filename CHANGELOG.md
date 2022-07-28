@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.1
+
+### Changed
+
+- [e225c798](https://github.com/appsignal/appsignal-ruby/commit/e225c798c65aef6085bb689597b7f3359fe138f7) patch - Report all Ruby VM metrics as gauges. We previously reported some metrics as distributions, but all fields for those distributions would report the same values.
+
+### Fixed
+
+- [31fd19c6](https://github.com/appsignal/appsignal-ruby/commit/31fd19c6019db2c68b359f1fc4ed3d5e4843e349) patch - Add hostname tag for Ruby VM metrics. This allows us to graph every host separately and multiple hosts won't overwrite each other metrics.
+
 ## 3.1.0
 
 ### Added
