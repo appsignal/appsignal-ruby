@@ -1,13 +1,8 @@
 class AppsignalMock
-  attr_reader :distribution_values, :gauges
+  attr_reader :gauges
 
   def initialize
-    @distribution_values = []
     @gauges = []
-  end
-
-  def add_distribution_value(*args)
-    @distribution_values << args
   end
 
   def set_gauge(*args) # rubocop:disable Naming/AccessorMethodName
@@ -35,8 +30,8 @@ describe Appsignal::Probes::MriProbe do
     describe "#call" do
       it "should track vm metrics" do
         probe.call
-        expect_distribution_value("ruby_vm", :class_serial)
-        expect_distribution_value("ruby_vm", :global_constant_state)
+        expect_gauge_value("ruby_vm", :tags => { :metric => :class_serial })
+        expect_gauge_value("ruby_vm", :tags => { :metric => :global_constant_state })
       end
 
       it "tracks thread counts" do
@@ -57,9 +52,9 @@ describe Appsignal::Probes::MriProbe do
         )
         probe.call
         probe.call
-        expect_distribution_value("gc_count", :gc_count, 5)
-        expect_distribution_value("gc_count", :minor_gc_count, 6)
-        expect_distribution_value("gc_count", :major_gc_count, 7)
+        expect_gauge_value("gc_count", 5, :tags => { :metric => :gc_count })
+        expect_gauge_value("gc_count", 6, :tags => { :metric => :minor_gc_count })
+        expect_gauge_value("gc_count", 7, :tags => { :metric => :major_gc_count })
       end
 
       it "tracks object allocation" do
@@ -75,29 +70,22 @@ describe Appsignal::Probes::MriProbe do
 
       it "tracks heap slots" do
         probe.call
-        expect_distribution_value("heap_slots", :heap_live)
-        expect_distribution_value("heap_slots", :heap_free)
+        expect_gauge_value("heap_slots", :tags => { :metric => :heap_live })
+        expect_gauge_value("heap_slots", :tags => { :metric => :heap_free })
       end
     end
   end
 
-  def expect_distribution_value(expected_key, metric, expected_value = nil)
-    expect(appsignal_mock.distribution_values).to satisfy do |distribution_values|
-      distribution_values.any? do |distribution_value|
-        key, value, metadata = distribution_value
+  def expect_gauge_value(expected_key, expected_value = nil, tags: nil)
+    expected_tags = tags
+    expect(appsignal_mock.gauges).to satisfy do |gauges|
+      gauges.any? do |distribution_value|
+        key, value, tags = distribution_value
         next unless key == expected_key
         next unless expected_value ? expected_value == value : !value.nil?
-        next unless metadata == { :metric => metric }
+        next if tags && tags != expected_tags
 
         true
-      end
-    end
-  end
-
-  def expect_gauge_value(expected_key, expected_value = nil)
-    expect(appsignal_mock.gauges).to satisfy do |gauges|
-      gauges.any? do |(key, value)|
-        expected_key == key && expected_value ? expected_value == value : !value.nil?
       end
     end
   end
