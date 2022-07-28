@@ -21,20 +21,20 @@ module Appsignal
       def call
         stat = RubyVM.stat
 
-        @appsignal.add_distribution_value(
+        set_gauge(
           "ruby_vm",
           stat[:class_serial],
           :metric => :class_serial
         )
 
-        @appsignal.add_distribution_value(
+        set_gauge(
           "ruby_vm",
           stat[:constant_cache] ? stat[:constant_cache].values.sum : stat[:global_constant_state],
           :metric => :global_constant_state
         )
 
-        @appsignal.set_gauge("thread_count", Thread.list.size)
-        @appsignal.set_gauge("gc_total_time", MriProbe.garbage_collection_profiler.total_time)
+        set_gauge("thread_count", Thread.list.size)
+        set_gauge("gc_total_time", MriProbe.garbage_collection_profiler.total_time)
 
         gc_stats = GC.stat
         allocated_objects =
@@ -42,25 +42,44 @@ module Appsignal
             :allocated_objects,
             gc_stats[:total_allocated_objects] || gc_stats[:total_allocated_object]
           )
-        if allocated_objects
-          @appsignal.set_gauge("allocated_objects", allocated_objects)
-        end
+        set_gauge("allocated_objects", allocated_objects) if allocated_objects
 
         gc_count = gauge_delta(:gc_count, GC.count)
-        if gc_count
-          @appsignal.add_distribution_value("gc_count", gc_count, :metric => :gc_count)
-        end
+        set_gauge("gc_count", gc_count, :metric => :gc_count) if gc_count
         minor_gc_count = gauge_delta(:minor_gc_count, gc_stats[:minor_gc_count])
         if minor_gc_count
-          @appsignal.add_distribution_value("gc_count", minor_gc_count, :metric => :minor_gc_count)
+          set_gauge("gc_count", minor_gc_count, :metric => :minor_gc_count)
         end
         major_gc_count = gauge_delta(:major_gc_count, gc_stats[:major_gc_count])
         if major_gc_count
-          @appsignal.add_distribution_value("gc_count", major_gc_count, :metric => :major_gc_count)
+          set_gauge("gc_count", major_gc_count, :metric => :major_gc_count)
         end
 
-        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
-        @appsignal.add_distribution_value("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
+        set_gauge("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
+        set_gauge("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
+      end
+
+      private
+
+      def set_gauge(metric, value, tags = {})
+        @appsignal.set_gauge(metric, value, { :hostname => hostname }.merge(tags))
+      end
+
+      def hostname
+        return @hostname if defined?(@hostname)
+
+        config = @appsignal.config
+        @hostname =
+          if config[:hostname]
+            config[:hostname]
+          else
+            # Auto detect hostname as fallback. May be inaccurate.
+            Socket.gethostname
+          end
+        Appsignal.logger.debug "MRI probe: Using hostname config " \
+          "option '#{@hostname.inspect}' as hostname"
+
+        @hostname
       end
     end
   end
