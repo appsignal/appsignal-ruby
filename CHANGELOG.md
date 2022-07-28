@@ -1,5 +1,25 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.0
+
+### Added
+
+- [d10c3f32](https://github.com/appsignal/appsignal-ruby/commit/d10c3f32facbf399d7afe1d2ddbb5764fb57b008) minor - Add tracking of thread counts, garbage collection runs, heap slots and other garbage collection stats to the default MRI probe. These metrics will be shown in AppSignal.com in a new Ruby VM Magic Dashboard.
+
+### Changed
+
+- [114fe4f9](https://github.com/appsignal/appsignal-ruby/commit/114fe4f92e621bc2e771bb0fb608b5c6189f2933) patch - Bump agent to v-d573c9b
+  
+  - Display unsupported OpenTelemetry spans in limited form.
+  - Clean up payload storage before sending. Should fix issues with locally queued payloads blocking data from being sent.
+  - Add `appsignal_create_opentelemetry_span` function to create spans for further modification, rather than only import them.
+- [dd803449](https://github.com/appsignal/appsignal-ruby/commit/dd803449bd3990ba020c0bec4429166977071c02) patch - Report gauge delta value for allocated objects. This reports a more user friendly metric we can graph with a more stable continuous value in apps with stable memory allocation.
+- [547f925e](https://github.com/appsignal/appsignal-ruby/commit/547f925e392bb9f4f10ba95f371e42ddfe0de5de) patch - Report gauge delta value for Garbage Collection counts. This reports a more user friendly metric that doesn't always goes up until the app restarts or gets a new deploy.
+
+### Fixed
+
+- [e555a81a](https://github.com/appsignal/appsignal-ruby/commit/e555a81ab65cc951383f54d0e9a6c57d8cc2ac51) patch - Fix FFI function calls missing arguments for `appsignal_free_transaction` and `appsignal_free_data` extension functions. This fixes a high CPU issue when these function calls would be retried indefinitely.
+
 ## 3.0.27
 
 ### Fixed
