@@ -19,7 +19,8 @@ end
 
 describe Appsignal::Probes::MriProbe do
   let(:appsignal_mock) { AppsignalMock.new(:hostname => hostname) }
-  let(:probe) { described_class.new(appsignal_mock) }
+  let(:gc_profiler_mock) { instance_double("Appsignal::GarbageCollectionProfiler") }
+  let(:probe) { described_class.new(:appsignal => appsignal_mock, :gc_profiler => gc_profiler_mock) }
 
   describe ".dependencies_present?" do
     if DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
@@ -36,6 +37,9 @@ describe Appsignal::Probes::MriProbe do
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
       let(:hostname) { nil }
+      before do
+        allow(gc_profiler_mock).to receive(:total_time)
+      end
 
       it "should track vm metrics" do
         probe.call
@@ -49,8 +53,10 @@ describe Appsignal::Probes::MriProbe do
       end
 
       it "tracks GC total time" do
+        expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
         probe.call
-        expect_gauge_value("gc_total_time")
+        probe.call
+        expect_gauge_value("gc_total_time", 5)
       end
 
       it "tracks GC run count" do

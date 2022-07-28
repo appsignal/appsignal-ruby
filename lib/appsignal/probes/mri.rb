@@ -8,13 +8,10 @@ module Appsignal
         defined?(::RubyVM) && ::RubyVM.respond_to?(:stat)
       end
 
-      def self.garbage_collection_profiler
-        @garbage_collection_profiler ||= Appsignal::GarbageCollectionProfiler.new
-      end
-
-      def initialize(appsignal = Appsignal)
+      def initialize(appsignal: Appsignal, gc_profiler: Appsignal::GarbageCollectionProfiler.new)
         Appsignal.logger.debug("Initializing VM probe")
         @appsignal = appsignal
+        @gc_profiler = gc_profiler
       end
 
       # @api private
@@ -34,7 +31,8 @@ module Appsignal
         )
 
         set_gauge("thread_count", Thread.list.size)
-        set_gauge("gc_total_time", MriProbe.garbage_collection_profiler.total_time)
+        total_time = gauge_delta(:gc_total_time, @gc_profiler.total_time)
+        set_gauge("gc_total_time", total_time) if total_time
 
         gc_stats = GC.stat
         allocated_objects =
