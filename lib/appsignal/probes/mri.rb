@@ -62,7 +62,24 @@ module Appsignal
       private
 
       def set_gauge(metric, value, tags = {})
-        @appsignal.set_gauge(metric, value, tags)
+        @appsignal.set_gauge(metric, value, { :hostname => hostname }.merge(tags))
+      end
+
+      def hostname
+        return @hostname if defined?(@hostname)
+
+        config = @appsignal.config
+        @hostname =
+          if config[:hostname]
+            config[:hostname]
+          else
+            # Auto detect hostname as fallback. May be inaccurate.
+            Socket.gethostname
+          end
+        Appsignal.logger.debug "MRI probe: Using hostname config " \
+          "option '#{@hostname.inspect}' as hostname"
+
+        @hostname
       end
     end
   end

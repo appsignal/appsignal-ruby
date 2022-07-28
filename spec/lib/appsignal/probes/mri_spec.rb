@@ -1,8 +1,15 @@
 class AppsignalMock
   attr_reader :gauges
 
-  def initialize
+  def initialize(hostname: nil)
+    @hostname = hostname
     @gauges = []
+  end
+
+  def config
+    ConfigHelpers.project_fixture_config.tap do |conf|
+      conf[:hostname] = @hostname if @hostname
+    end
   end
 
   def set_gauge(*args) # rubocop:disable Naming/AccessorMethodName
@@ -11,7 +18,7 @@ class AppsignalMock
 end
 
 describe Appsignal::Probes::MriProbe do
-  let(:appsignal_mock) { AppsignalMock.new }
+  let(:appsignal_mock) { AppsignalMock.new(:hostname => hostname) }
   let(:probe) { described_class.new(appsignal_mock) }
 
   describe ".dependencies_present?" do
@@ -28,6 +35,8 @@ describe Appsignal::Probes::MriProbe do
 
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
+      let(:hostname) { nil }
+
       it "should track vm metrics" do
         probe.call
         expect_gauge_value("ruby_vm", :tags => { :metric => :class_serial })
@@ -73,17 +82,26 @@ describe Appsignal::Probes::MriProbe do
         expect_gauge_value("heap_slots", :tags => { :metric => :heap_live })
         expect_gauge_value("heap_slots", :tags => { :metric => :heap_free })
       end
+
+      context "with custom hostname" do
+        let(:hostname) { "my hostname" }
+
+        it "reports custom hostname tag value" do
+          probe.call
+          expect_gauge_value("heap_slots", :tags => { :metric => :heap_live, :hostname => hostname })
+        end
+      end
     end
   end
 
-  def expect_gauge_value(expected_key, expected_value = nil, tags: nil)
-    expected_tags = tags
+  def expect_gauge_value(expected_key, expected_value = nil, tags: {})
+    expected_tags = { :hostname => Socket.gethostname }.merge(tags)
     expect(appsignal_mock.gauges).to satisfy do |gauges|
       gauges.any? do |distribution_value|
         key, value, tags = distribution_value
         next unless key == expected_key
         next unless expected_value ? expected_value == value : !value.nil?
-        next if tags && tags != expected_tags
+        next unless tags == expected_tags
 
         true
       end
