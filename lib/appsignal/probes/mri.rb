@@ -32,7 +32,7 @@ module Appsignal
 
         set_gauge("thread_count", Thread.list.size)
         total_time = gauge_delta(:gc_total_time, @gc_profiler.total_time)
-        set_gauge("gc_total_time", total_time) if total_time
+        set_gauge("gc_total_time", total_time) if total_time && total_time > 0
 
         gc_stats = GC.stat
         allocated_objects =

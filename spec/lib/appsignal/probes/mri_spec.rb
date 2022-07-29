@@ -59,6 +59,17 @@ describe Appsignal::Probes::MriProbe do
         expect_gauge_value("gc_total_time", 5)
       end
 
+      context "when GC total time overflows" do
+        it "skips one report" do
+          expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15, 0, 10)
+          probe.call # Normal call, create a cache
+          probe.call # Report delta value based on cached value
+          probe.call # The value overflows and reports no value. Then stores 0 in the cache
+          probe.call # Report new value based on cache of 0
+          expect_gauges([["gc_total_time", 5], ["gc_total_time", 10]])
+        end
+      end
+
       it "tracks GC run count" do
         expect(GC).to receive(:count).and_return(10, 15)
         expect(GC).to receive(:stat).and_return(
@@ -112,5 +123,16 @@ describe Appsignal::Probes::MriProbe do
         true
       end
     end
+  end
+
+  def expect_gauges(expected_metrics)
+    default_tags = { :hostname => Socket.gethostname }
+    keys = expected_metrics.map { |(key)| key }
+    metrics = expected_metrics.map do |metric|
+      key, value, tags = metric
+      [key, value, default_tags.merge(tags || {})]
+    end
+    found_gauges = appsignal_mock.gauges.select { |(key)| keys.include? key }
+    expect(found_gauges).to eq(metrics)
   end
 end
