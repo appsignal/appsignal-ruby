@@ -19,7 +19,8 @@ end
 
 describe Appsignal::Probes::MriProbe do
   let(:appsignal_mock) { AppsignalMock.new(:hostname => hostname) }
-  let(:probe) { described_class.new(appsignal_mock) }
+  let(:gc_profiler_mock) { instance_double("Appsignal::GarbageCollectionProfiler") }
+  let(:probe) { described_class.new(:appsignal => appsignal_mock, :gc_profiler => gc_profiler_mock) }
 
   describe ".dependencies_present?" do
     if DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
@@ -36,6 +37,9 @@ describe Appsignal::Probes::MriProbe do
   unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
     describe "#call" do
       let(:hostname) { nil }
+      before do
+        allow(gc_profiler_mock).to receive(:total_time)
+      end
 
       it "should track vm metrics" do
         probe.call
@@ -49,8 +53,21 @@ describe Appsignal::Probes::MriProbe do
       end
 
       it "tracks GC total time" do
+        expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
         probe.call
-        expect_gauge_value("gc_total_time")
+        probe.call
+        expect_gauge_value("gc_total_time", 5)
+      end
+
+      context "when GC total time overflows" do
+        it "skips one report" do
+          expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15, 0, 10)
+          probe.call # Normal call, create a cache
+          probe.call # Report delta value based on cached value
+          probe.call # The value overflows and reports no value. Then stores 0 in the cache
+          probe.call # Report new value based on cache of 0
+          expect_gauges([["gc_total_time", 5], ["gc_total_time", 10]])
+        end
       end
 
       it "tracks GC run count" do
@@ -106,5 +123,16 @@ describe Appsignal::Probes::MriProbe do
         true
       end
     end
+  end
+
+  def expect_gauges(expected_metrics)
+    default_tags = { :hostname => Socket.gethostname }
+    keys = expected_metrics.map { |(key)| key }
+    metrics = expected_metrics.map do |metric|
+      key, value, tags = metric
+      [key, value, default_tags.merge(tags || {})]
+    end
+    found_gauges = appsignal_mock.gauges.select { |(key)| keys.include? key }
+    expect(found_gauges).to eq(metrics)
   end
 end
