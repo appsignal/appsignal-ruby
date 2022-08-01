@@ -44,15 +44,16 @@ module Appsignal
 
         gauge "worker_count", stats.workers_size
         gauge "process_count", stats.processes_size
-        jobs_processed = gauge_delta :jobs_processed, stats.processed
-        if jobs_processed
+        gauge_delta :jobs_processed, stats.processed do |jobs_processed|
           gauge "job_count", jobs_processed, :status => :processed
         end
-        jobs_failed = gauge_delta :jobs_failed, stats.failed
-        gauge "job_count", jobs_failed, :status => :failed if jobs_failed
+        gauge_delta :jobs_failed, stats.failed do |jobs_failed|
+          gauge "job_count", jobs_failed, :status => :failed
+        end
         gauge "job_count", stats.retry_size, :status => :retry_queue
-        jobs_dead = gauge_delta :jobs_dead, stats.dead_size
-        gauge "job_count", jobs_dead, :status => :died if jobs_dead
+        gauge_delta :jobs_dead, stats.dead_size do |jobs_dead|
+          gauge "job_count", jobs_dead, :status => :died
+        end
         gauge "job_count", stats.scheduled_size, :status => :scheduled
         gauge "job_count", stats.enqueued, :status => :enqueued
       end
