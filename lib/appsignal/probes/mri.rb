@@ -31,25 +31,25 @@ module Appsignal
         )
 
         set_gauge("thread_count", Thread.list.size)
-        total_time = gauge_delta(:gc_total_time, @gc_profiler.total_time)
-        set_gauge("gc_total_time", total_time) if total_time && total_time > 0
+        gauge_delta(:gc_total_time, @gc_profiler.total_time) do |total_time|
+          set_gauge("gc_total_time", total_time) if total_time > 0
+        end
 
         gc_stats = GC.stat
-        allocated_objects =
-          gauge_delta(
-            :allocated_objects,
-            gc_stats[:total_allocated_objects] || gc_stats[:total_allocated_object]
-          )
-        set_gauge("allocated_objects", allocated_objects) if allocated_objects
+        gauge_delta(
+          :allocated_objects,
+          gc_stats[:total_allocated_objects] || gc_stats[:total_allocated_object]
+        ) do |allocated_objects|
+          set_gauge("allocated_objects", allocated_objects)
+        end
 
-        gc_count = gauge_delta(:gc_count, GC.count)
-        set_gauge("gc_count", gc_count, :metric => :gc_count) if gc_count
-        minor_gc_count = gauge_delta(:minor_gc_count, gc_stats[:minor_gc_count])
-        if minor_gc_count
+        gauge_delta(:gc_count, GC.count) do |gc_count|
+          set_gauge("gc_count", gc_count, :metric => :gc_count)
+        end
+        gauge_delta(:minor_gc_count, gc_stats[:minor_gc_count]) do |minor_gc_count|
           set_gauge("gc_count", minor_gc_count, :metric => :minor_gc_count)
         end
-        major_gc_count = gauge_delta(:major_gc_count, gc_stats[:major_gc_count])
-        if major_gc_count
+        gauge_delta(:major_gc_count, gc_stats[:major_gc_count]) do |major_gc_count|
           set_gauge("gc_count", major_gc_count, :metric => :major_gc_count)
         end
 
