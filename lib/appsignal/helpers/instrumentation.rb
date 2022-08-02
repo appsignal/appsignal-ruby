@@ -439,7 +439,8 @@ module Appsignal
       def tag_request(tags = {})
         return unless active?
         transaction = Appsignal::Transaction.current
-        return false unless transaction
+        return unless transaction
+
         transaction.set_tags(tags)
       end
       alias :tag_job :tag_request
@@ -472,7 +473,8 @@ module Appsignal
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
         return unless active?
         transaction = Appsignal::Transaction.current
-        return false unless transaction
+        return unless transaction
+
         transaction.add_breadcrumb(category, action, message, metadata, time)
       end
 
