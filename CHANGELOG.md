@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.2
+
+### Changed
+
+- [1b95bb4c](https://github.com/appsignal/appsignal-ruby/commit/1b95bb4c8df08128cfa2db0d918ffcb909e5ee4c) patch - Report Garbage Collection total time metric as the delta between measurements. This reports a more user friendly metric that doesn't always goes up until the app restarts or gets a new deploy. This metric is reported 0 by default without `GC::Profiler.enable` having been called.
+- [61a78fb0](https://github.com/appsignal/appsignal-ruby/commit/61a78fb028b04ae6f0a4ca1fc469d744f23c5029) patch - Bump agent to 06391fb
+  
+  - Accept "warning" value for the `log_level` config option.
+  - Add aarch64 Linux musl build.
+  - Improve debug logging from the extension.
+  - Fix high CPU issue for appsignal-agent when nothing could be read from the socket.
+
 ## 3.1.1
 
 ### Changed
