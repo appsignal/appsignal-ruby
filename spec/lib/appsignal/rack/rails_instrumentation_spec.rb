@@ -20,6 +20,7 @@ if DependencyHelper.rails_present?
     let(:env) do
       http_request_env_with_data(
         :params => params,
+        :with_queue_start => true,
         "action_dispatch.request_id" => "1",
         "action_dispatch.parameter_filter" => [:my_custom_param, :password],
         "action_controller.instance" => double(
@@ -81,6 +82,9 @@ if DependencyHelper.rails_present?
             "method" => "GET",
             "path" => "/blog"
           )
+        )
+        expect(last_transaction.ext.queue_start).to eq(
+          fixed_time * 1_000.0
         )
       end
 

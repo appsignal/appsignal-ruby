@@ -50,6 +50,17 @@ module Appsignal
 
   class Extension
     class Transaction
+      if Appsignal.extension_loaded?
+        attr_reader :queue_start
+        alias original_set_queue_start set_queue_start
+        # Temporary helper until the extension returns this information
+        # https://github.com/appsignal/appsignal-agent/issues/293
+        def set_queue_start(start) # rubocop:disable Naming/AccessorMethodName
+          @queue_start = start
+          original_set_queue_start(start)
+        end
+      end
+
       alias original_finish finish if method_defined? :finish
 
       # Override default {Extension::Transaction#finish} behavior to always
