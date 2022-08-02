@@ -3,8 +3,10 @@ if DependencyHelper.rails_present?
   end
 
   describe Appsignal::Rack::RailsInstrumentation do
-    before :context do
+    let(:log) { StringIO.new }
+    before do
       start_agent
+      Appsignal.logger = test_logger(log)
     end
 
     let(:params) do
@@ -16,9 +18,10 @@ if DependencyHelper.rails_present?
         "password" => "super secret"
       }
     end
+    let(:env_extra) { {} }
     let(:app) { double(:call => true) }
     let(:env) do
-      http_request_env_with_data(
+      http_request_env_with_data({
         :params => params,
         :with_queue_start => true,
         "action_dispatch.request_id" => "1",
@@ -27,7 +30,7 @@ if DependencyHelper.rails_present?
           :class => MockController,
           :action_name => "index"
         )
-      )
+      }.merge(env_extra))
     end
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
     around { |example| keep_transactions { example.run } }
@@ -100,6 +103,18 @@ if DependencyHelper.rails_present?
             )
           )
         )
+      end
+
+      context "with an invalid HTTP request method" do
+        let(:env_extra) { { :request_method => "FOO", "REQUEST_METHOD" => "FOO" } }
+
+        it "does not store the HTTP request method" do
+          run
+
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash["metadata"]).to_not have_key("method")
+          expect(log_contents(log)).to contains_log(:error, "Unable to report HTTP request method: '")
+        end
       end
 
       context "with an exception" do

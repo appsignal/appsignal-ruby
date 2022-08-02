@@ -40,7 +40,11 @@ module Appsignal
           end
           transaction.set_http_or_background_queue_start
           transaction.set_metadata("path", request.path)
-          transaction.set_metadata("method", request.request_method)
+          begin
+            transaction.set_metadata("method", request.request_method)
+          rescue => error
+            Appsignal.logger.error("Unable to report HTTP request method: '#{error}'")
+          end
           Appsignal::Transaction.complete_current!
         end
       end
