@@ -85,7 +85,9 @@ describe Appsignal::Transaction do
     end
 
     describe ".current" do
-      subject { Appsignal::Transaction.current }
+      def current_transaction
+        Appsignal::Transaction.current
+      end
 
       context "when there is a current transaction" do
         let!(:transaction) do
@@ -93,13 +95,17 @@ describe Appsignal::Transaction do
         end
 
         it "reads :appsignal_transaction from the current Thread" do
-          expect(subject).to eq Thread.current[:appsignal_transaction]
-          expect(subject).to eq transaction
+          expect(current_transaction).to eq Thread.current[:appsignal_transaction]
+          expect(current_transaction).to eq transaction
         end
 
         it "is not a NilTransaction" do
-          expect(subject.nil_transaction?).to eq false
-          expect(subject).to be_a Appsignal::Transaction
+          expect(current_transaction.nil_transaction?).to eq false
+          expect(current_transaction).to be_a Appsignal::Transaction
+        end
+
+        it "returns true for current?" do
+          expect(Appsignal::Transaction.current?).to be(true)
         end
       end
 
@@ -109,8 +115,12 @@ describe Appsignal::Transaction do
         end
 
         it "returns a NilTransaction stub" do
-          expect(subject.nil_transaction?).to eq true
-          expect(subject).to be_a Appsignal::Transaction::NilTransaction
+          expect(current_transaction.nil_transaction?).to eq true
+          expect(current_transaction).to be_a Appsignal::Transaction::NilTransaction
+        end
+
+        it "returns false for current?" do
+          expect(Appsignal::Transaction.current?).to be(false)
         end
       end
     end

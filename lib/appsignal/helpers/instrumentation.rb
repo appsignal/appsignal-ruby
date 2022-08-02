@@ -325,7 +325,8 @@ module Appsignal
             "value is not an exception: #{exception.inspect}"
           return
         end
-        return if !active? || Appsignal::Transaction.current.nil?
+        return if !active? || !Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
         transaction.set_error(exception)
         transaction.set_tags(tags) if tags
@@ -359,7 +360,7 @@ module Appsignal
       # @since 2.2.0
       def set_action(action)
         return if !active? ||
-            Appsignal::Transaction.current.nil? ||
+            !Appsignal::Transaction.current? ||
             action.nil?
         Appsignal::Transaction.current.set_action(action)
       end
@@ -398,7 +399,7 @@ module Appsignal
       # @since 2.2.0
       def set_namespace(namespace)
         return if !active? ||
-            Appsignal::Transaction.current.nil? ||
+            !Appsignal::Transaction.current? ||
             namespace.nil?
         Appsignal::Transaction.current.set_namespace(namespace)
       end
@@ -438,9 +439,9 @@ module Appsignal
       #   Tagging guide
       def tag_request(tags = {})
         return unless active?
-        transaction = Appsignal::Transaction.current
-        return unless transaction
+        return unless Appsignal::Transaction.current?
 
+        transaction = Appsignal::Transaction.current
         transaction.set_tags(tags)
       end
       alias :tag_job :tag_request
@@ -472,9 +473,9 @@ module Appsignal
       # @since 2.12.0
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
         return unless active?
-        transaction = Appsignal::Transaction.current
-        return unless transaction
+        return unless Appsignal::Transaction.current?
 
+        transaction = Appsignal::Transaction.current
         transaction.add_breadcrumb(category, action, message, metadata, time)
       end
 

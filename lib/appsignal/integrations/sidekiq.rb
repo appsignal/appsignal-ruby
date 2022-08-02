@@ -10,21 +10,24 @@ module Appsignal
     # @api private
     class SidekiqErrorHandler
       def call(exception, sidekiq_context)
-        transaction = Appsignal::Transaction.current
-
-        if transaction.nil_transaction?
-          # Sidekiq error outside of the middleware scope.
-          # Can be a job JSON parse error or some other error happening in
-          # Sidekiq.
-          transaction = Appsignal::Transaction.create(
-            SecureRandom.uuid, # Newly generated job id
-            Appsignal::Transaction::BACKGROUND_JOB,
-            Appsignal::Transaction::GenericRequest.new({})
-          )
-          transaction.set_action_if_nil("SidekiqInternal")
-          transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
-          transaction.params = { :jobstr => sidekiq_context[:jobstr] }
-        end
+        transaction =
+          if Appsignal::Transaction.current?
+            Appsignal::Transaction.current
+          else
+            # Sidekiq error outside of the middleware scope.
+            # Can be a job JSON parse error or some other error happening in
+            # Sidekiq.
+            transaction =
+              Appsignal::Transaction.create(
+                SecureRandom.uuid, # Newly generated job id
+                Appsignal::Transaction::BACKGROUND_JOB,
+                Appsignal::Transaction::GenericRequest.new({})
+              )
+            transaction.set_action_if_nil("SidekiqInternal")
+            transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
+            transaction.params = { :jobstr => sidekiq_context[:jobstr] }
+            transaction
+          end
 
         transaction.set_error(exception)
         Appsignal::Transaction.complete_current!

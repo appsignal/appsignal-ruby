@@ -511,7 +511,14 @@ describe Appsignal do
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       context "with transaction" do
-        let(:transaction) { double }
+        let(:transaction) { http_request_transaction }
+        around do |example|
+          Appsignal.config = project_fixture_config
+          set_current_transaction transaction do
+            example.run
+          end
+        end
+
         it "should call add_breadcrumb on transaction" do
           expect(transaction).to receive(:add_breadcrumb)
             .with("Network", "http", "User made network request", { :response => 200 }, fixed_time)
