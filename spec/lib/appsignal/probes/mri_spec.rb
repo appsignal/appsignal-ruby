@@ -52,11 +52,11 @@ describe Appsignal::Probes::MriProbe do
         expect_gauge_value("thread_count")
       end
 
-      it "tracks GC total time" do
+      it "tracks GC time between measurements" do
         expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
         probe.call
         probe.call
-        expect_gauge_value("gc_total_time", 5)
+        expect_gauge_value("gc_time", 5)
       end
 
       context "when GC total time overflows" do
@@ -66,7 +66,7 @@ describe Appsignal::Probes::MriProbe do
           probe.call # Report delta value based on cached value
           probe.call # The value overflows and reports no value. Then stores 0 in the cache
           probe.call # Report new value based on cache of 0
-          expect_gauges([["gc_total_time", 5], ["gc_total_time", 10]])
+          expect_gauges([["gc_time", 5], ["gc_time", 10]])
         end
       end
 
