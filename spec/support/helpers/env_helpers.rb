@@ -1,7 +1,8 @@
 module EnvHelpers
   def http_request_env_with_data(args = {})
+    with_queue_start = args.delete(:with_queue_start)
     path = args.delete(:path) || "/blog"
-    Rack::MockRequest.env_for(
+    request = Rack::MockRequest.env_for(
       path,
       :params => args[:params] || {
         "controller" => "blog_posts",
@@ -18,6 +19,13 @@ module EnvHelpers
       :db_runtime => 500,
       :metadata => { :key => "value" }
     ).merge(args)
+
+    # Set default queue value
+    if with_queue_start
+      request["HTTP_X_QUEUE_START"] = "t=#{(fixed_time * 1_000).to_i}" # in milliseconds
+    end
+
+    request
   end
 
   def background_env_with_data(args = {})

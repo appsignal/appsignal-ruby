@@ -7,16 +7,30 @@ if DependencyHelper.rails_present?
       start_agent
     end
 
+    let(:params) do
+      {
+        "controller" => "blog_posts",
+        "action" => "show",
+        "id" => "1",
+        "my_custom_param" => "my custom secret",
+        "password" => "super secret"
+      }
+    end
     let(:app) { double(:call => true) }
     let(:env) do
-      http_request_env_with_data("action_dispatch.request_id" => "1").tap do |request|
-        request["action_controller.instance"] = double(
+      http_request_env_with_data(
+        :params => params,
+        :with_queue_start => true,
+        "action_dispatch.request_id" => "1",
+        "action_dispatch.parameter_filter" => [:my_custom_param, :password],
+        "action_controller.instance" => double(
           :class => MockController,
           :action_name => "index"
         )
-      end
+      )
     end
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
+    around { |example| keep_transactions { example.run } }
 
     describe "#call" do
       before do
@@ -46,30 +60,50 @@ if DependencyHelper.rails_present?
       after { middleware.call(env) }
     end
 
-    describe "#call_with_appsignal_monitoring", :error => false do
-      it "should create a transaction" do
-        expect(Appsignal::Transaction).to receive(:create).with(
-          "1",
-          Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(ActionDispatch::Request),
-          :params_method => :filtered_parameters
-        ).and_return(
-          instance_double(
-            "Appsignal::Transaction",
-            :set_action => nil,
-            :set_action_if_nil => nil,
-            :set_http_or_background_queue_start => nil,
-            :set_metadata => nil
+    describe "#call_with_appsignal_monitoring" do
+      def run
+        middleware.call(env)
+      end
+
+      it "calls the wrapped app" do
+        run
+        expect(app).to have_received(:call).with(env)
+      end
+
+      it "creates one transaction with metadata" do
+        run
+
+        expect(created_transactions.length).to eq(1)
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash).to include(
+          "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+          "action" => "MockController#index",
+          "metadata" => hash_including(
+            "method" => "GET",
+            "path" => "/blog"
+          )
+        )
+        expect(last_transaction.ext.queue_start).to eq(
+          fixed_time * 1_000.0
+        )
+      end
+
+      it "filter parameters in Rails" do
+        run
+
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash).to include(
+          "sample_data" => hash_including(
+            "params" => params.merge(
+              "my_custom_param" => "[FILTERED]",
+              "password" => "[FILTERED]"
+            )
           )
         )
       end
 
-      it "should call the app" do
-        expect(app).to receive(:call).with(env)
-      end
-
-      context "with an exception", :error => true do
-        let(:error) { ExampleException }
+      context "with an exception" do
+        let(:error) { ExampleException.new("ExampleException message") }
         let(:app) do
           double.tap do |d|
             allow(d).to receive(:call).and_raise(error)
@@ -77,21 +111,16 @@ if DependencyHelper.rails_present?
         end
 
         it "records the exception" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+          expect { run }.to raise_error(error)
+
+          transaction_hash = last_transaction.to_h
+          expect(transaction_hash["error"]).to include(
+            "name" => "ExampleException",
+            "message" => "ExampleException message",
+            "backtrace" => kind_of(String)
+          )
         end
       end
-
-      it "should set metadata" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
-      end
-
-      it "should set the action and queue start" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("MockController#index")
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
-      end
-
-      after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
     end
 
     describe "#request_id" do
