@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.3
+
+### Added
+
+- [811a1082](https://github.com/appsignal/appsignal-ruby/commit/811a10825043ed584f23d870e3a420ee409eb151) patch - Add the `Transaction.current?` helper to determine if any Transaction is currently active or not. AppSignal `NilTransaction`s are not considered active transactions.
+
+### Changed
+
+- [dc50d889](https://github.com/appsignal/appsignal-ruby/commit/dc50d8892699bf17b2399865ead8b27ce45b60ed) patch - Rename the (so far privately reported) `gc_total_time` metric to `gc_time`. It no longer reports the total time of Garbage Collection measured, but only the time between two (minutely) measurements.
+
+### Fixed
+
+- [7cfed987](https://github.com/appsignal/appsignal-ruby/commit/7cfed98761cf81d475261c553486b24843460cf3) patch - Fix error on unknown HTTP request method. When a request is made with an unknown request method, triggering and `ActionController::UnknownHttpMethod`, it will no longer break the AppSignal instrumentation but omit the request method in the sample data.
+
 ## 3.1.2
 
 ### Changed
