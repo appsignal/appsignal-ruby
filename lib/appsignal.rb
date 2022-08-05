@@ -298,7 +298,7 @@ require "appsignal/hooks"
 require "appsignal/probes"
 require "appsignal/marker"
 require "appsignal/minutely"
-require "appsignal/garbage_collection_profiler"
+require "appsignal/garbage_collection"
 require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"
 require "appsignal/version"
