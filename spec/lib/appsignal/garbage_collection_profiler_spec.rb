@@ -3,9 +3,7 @@ describe Appsignal::GarbageCollectionProfiler do
   let(:profiler) { described_class.new }
 
   before do
-    allow_any_instance_of(described_class)
-      .to receive(:internal_profiler)
-      .and_return(internal_profiler)
+    stub_const("GC::Profiler", internal_profiler)
   end
 
   context "on initialization" do
