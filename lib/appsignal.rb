@@ -116,7 +116,6 @@ module Appsignal
           end
 
           if config[:enable_gc_instrumentation]
-            GC::Profiler.enable
             Appsignal::Environment.report_enabled("gc_instrumentation")
           end
 

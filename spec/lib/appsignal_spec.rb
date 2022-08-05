@@ -62,8 +62,7 @@ describe Appsignal do
           capture_environment_metadata_report_calls
         end
 
-        it "should enable Ruby's GC::Profiler" do
-          expect(GC::Profiler).to receive(:enable)
+        it "reports GC instrumentation was enabled" do
           Appsignal.start
           expect_environment_metadata("ruby_gc_instrumentation_enabled", "true")
         end
