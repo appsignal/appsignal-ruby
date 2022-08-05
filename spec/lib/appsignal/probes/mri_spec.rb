@@ -39,6 +39,7 @@ describe Appsignal::Probes::MriProbe do
       let(:hostname) { nil }
       before do
         allow(gc_profiler_mock).to receive(:total_time)
+        allow(GC::Profiler).to receive(:enabled?).and_return(true)
       end
 
       it "should track vm metrics" do
@@ -66,6 +67,40 @@ describe Appsignal::Probes::MriProbe do
           probe.call # Report delta value based on cached value
           probe.call # The value overflows and reports no value. Then stores 0 in the cache
           probe.call # Report new value based on cache of 0
+          expect_gauges([["gc_time", 5], ["gc_time", 10]])
+        end
+      end
+
+      context "when GC profiling is disabled" do
+        it "does not report a gc_time metric" do
+          allow(GC::Profiler).to receive(:enabled?).and_return(false)
+          expect(gc_profiler_mock).to_not receive(:total_time)
+          probe.call # Normal call, create a cache
+          probe.call # Report delta value based on cached value
+          metrics = appsignal_mock.gauges.map { |(key)| key }
+          expect(metrics).to_not include("gc_time")
+        end
+
+        it "does not report a gc_time metric while disable" do
+          # While enabled
+          allow(GC::Profiler).to receive(:enabled?).and_return(true)
+          expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
+          probe.call # Normal call, create a cache
+          probe.call # Report delta value based on cached value
+          expect_gauges([["gc_time", 5]])
+
+          # While disabled
+          allow(GC::Profiler).to receive(:enabled?).and_return(false)
+          probe.call # Call twice to make sure any caches resets wouldn't mess up the assertion
+          probe.call
+          # Does not include any newly reported metrics
+          expect_gauges([["gc_time", 5]])
+
+          # When enabled after being disabled for a while, it only reports the
+          # newly reported time since it was renabled
+          allow(GC::Profiler).to receive(:enabled?).and_return(true)
+          expect(gc_profiler_mock).to receive(:total_time).and_return(25)
+          probe.call
           expect_gauges([["gc_time", 5], ["gc_time", 10]])
         end
       end
