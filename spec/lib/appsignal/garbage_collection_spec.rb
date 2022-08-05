@@ -1,4 +1,34 @@
-describe Appsignal::GarbageCollectionProfiler do
+describe Appsignal::GarbageCollection do
+  describe ".profiler" do
+    let(:appsignal) { class_double("Appsignal") }
+    before do
+      # Unset the internal memoized variable to avoid state leaking
+      described_class.clear_profiler!
+    end
+
+    context "when GC instrumentation is disabled" do
+      let(:config) { Appsignal::Config.new("production", Dir.pwd, :enable_gc_instrumentation => false) }
+
+      it "returns the NilProfiler" do
+        allow(appsignal).to receive(:config).and_return(config)
+
+        expect(described_class.profiler(appsignal)).to be_a(Appsignal::GarbageCollection::NilProfiler)
+      end
+    end
+
+    context "when GC profiling is enabled" do
+      let(:config) { Appsignal::Config.new("production", Dir.pwd, :enable_gc_instrumentation => true) }
+
+      it "returns the Profiler" do
+        allow(appsignal).to receive(:config).and_return(config)
+
+        expect(described_class.profiler(appsignal)).to be_a(Appsignal::GarbageCollection::Profiler)
+      end
+    end
+  end
+end
+
+describe Appsignal::GarbageCollection::Profiler do
   let(:internal_profiler) { FakeGCProfiler.new }
   let(:profiler) { described_class.new }
 
@@ -52,7 +82,7 @@ describe Appsignal::GarbageCollectionProfiler do
 
       2.times do
         threads << Thread.new do
-          profiler = Appsignal::GarbageCollectionProfiler.new
+          profiler = Appsignal::GarbageCollection::Profiler.new
           results << profiler.total_time
         end
       end
@@ -63,7 +93,7 @@ describe Appsignal::GarbageCollectionProfiler do
   end
 end
 
-describe Appsignal::NilGarbageCollectionProfiler do
+describe Appsignal::GarbageCollection::NilProfiler do
   let(:profiler) { described_class.new }
 
   describe "#total_time" do

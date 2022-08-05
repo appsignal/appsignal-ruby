@@ -8,7 +8,7 @@ module Appsignal
         defined?(::RubyVM) && ::RubyVM.respond_to?(:stat)
       end
 
-      def initialize(appsignal: Appsignal, gc_profiler: Appsignal::GarbageCollectionProfiler.new)
+      def initialize(appsignal: Appsignal, gc_profiler: Appsignal::GarbageCollection.profiler)
         Appsignal.logger.debug("Initializing VM probe")
         @appsignal = appsignal
         @gc_profiler = gc_profiler
