@@ -31,8 +31,10 @@ module Appsignal
         )
 
         set_gauge("thread_count", Thread.list.size)
-        gauge_delta(:gc_time, @gc_profiler.total_time) do |gc_time|
-          set_gauge("gc_time", gc_time) if gc_time > 0
+        if GC::Profiler.enabled?
+          gauge_delta(:gc_time, @gc_profiler.total_time) do |gc_time|
+            set_gauge("gc_time", gc_time) if gc_time > 0
+          end
         end
 
         gc_stats = GC.stat
