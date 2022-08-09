@@ -15,7 +15,6 @@ module Appsignal
       :debug                          => false,
       :dns_servers                    => [],
       :enable_allocation_tracking     => true,
-      :enable_gc_instrumentation      => false,
       :enable_host_metrics            => true,
       :enable_minutely_probes         => true,
       :enable_statsd                  => true,
@@ -63,7 +62,6 @@ module Appsignal
       "APPSIGNAL_DEBUG"                          => :debug,
       "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING"     => :enable_allocation_tracking,
-      "APPSIGNAL_ENABLE_GC_INSTRUMENTATION"      => :enable_gc_instrumentation,
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
@@ -114,7 +112,6 @@ module Appsignal
       APPSIGNAL_ACTIVE
       APPSIGNAL_DEBUG
       APPSIGNAL_ENABLE_ALLOCATION_TRACKING
-      APPSIGNAL_ENABLE_GC_INSTRUMENTATION
       APPSIGNAL_ENABLE_HOST_METRICS
       APPSIGNAL_ENABLE_MINUTELY_PROBES
       APPSIGNAL_ENABLE_STATSD

@@ -115,10 +115,6 @@ module Appsignal
             Appsignal::Environment.report_enabled("allocation_tracking")
           end
 
-          if config[:enable_gc_instrumentation]
-            Appsignal::Environment.report_enabled("gc_instrumentation")
-          end
-
           Appsignal::Minutely.start if config[:enable_minutely_probes]
 
           collect_environment_metadata
