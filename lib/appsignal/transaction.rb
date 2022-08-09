@@ -66,10 +66,6 @@ module Appsignal
       def clear_current_transaction!
         Thread.current[:appsignal_transaction] = nil
       end
-
-      def garbage_collection_profiler
-        Appsignal::GarbageCollection.profiler
-      end
     end
 
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded, :breadcrumbs
@@ -102,7 +98,7 @@ module Appsignal
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
         @namespace,
-        self.class.garbage_collection_profiler.total_time
+        0
       ) || Appsignal::Extension::MockTransaction.new
     end
 
@@ -116,9 +112,7 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      if @ext.finish(self.class.garbage_collection_profiler.total_time)
-        sample_data
-      end
+      sample_data if @ext.finish(0)
       @ext.complete
     end
 
@@ -354,7 +348,7 @@ module Appsignal
 
     def start_event
       return if paused?
-      @ext.start_event(self.class.garbage_collection_profiler.total_time)
+      @ext.start_event(0)
     end
 
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
@@ -364,7 +358,7 @@ module Appsignal
         title || BLANK,
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
-        self.class.garbage_collection_profiler.total_time
+        0
       )
     end
 
@@ -376,7 +370,7 @@ module Appsignal
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
-        self.class.garbage_collection_profiler.total_time
+        0
       )
     end
 
