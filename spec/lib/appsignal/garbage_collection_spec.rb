@@ -12,8 +12,11 @@ describe Appsignal::GarbageCollection do
     end
 
     context "when GC profiling is enabled" do
+      before { GC::Profiler.enable }
+      after { GC::Profiler.disable }
+
       it "returns the Profiler" do
-        expect(described_class.profiler).to be_a(Appsignal::GarbageCollection::NilProfiler)
+        expect(described_class.profiler).to be_a(Appsignal::GarbageCollection::Profiler)
       end
     end
   end

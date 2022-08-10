@@ -81,7 +81,7 @@ describe Appsignal::Probes::MriProbe do
           expect(metrics).to_not include("gc_time")
         end
 
-        it "does not report a gc_time metric while disable" do
+        it "does not report a gc_time metric while temporarily disabled" do
           # While enabled
           allow(GC::Profiler).to receive(:enabled?).and_return(true)
           expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
