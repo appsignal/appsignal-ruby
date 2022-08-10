@@ -810,11 +810,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#finish_event" do
-      let(:fake_gc_time) { 123 }
-      before do
-        expect(described_class.garbage_collection_profiler)
-          .to receive(:total_time).at_least(:once).and_return(fake_gc_time)
-      end
+      let(:fake_gc_time) { 0 }
 
       it "should finish the event in the extension" do
         expect(transaction.ext).to receive(:finish_event).with(
@@ -861,11 +857,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#record_event" do
-      let(:fake_gc_time) { 123 }
-      before do
-        expect(described_class.garbage_collection_profiler)
-          .to receive(:total_time).at_least(:once).and_return(fake_gc_time)
-      end
+      let(:fake_gc_time) { 0 }
 
       it "should record the event in the extension" do
         expect(transaction.ext).to receive(:record_event).with(

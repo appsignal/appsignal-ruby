@@ -1,28 +1,19 @@
 describe Appsignal::GarbageCollection do
   describe ".profiler" do
-    let(:appsignal) { class_double("Appsignal") }
     before do
       # Unset the internal memoized variable to avoid state leaking
       described_class.clear_profiler!
     end
 
     context "when GC instrumentation is disabled" do
-      let(:config) { Appsignal::Config.new("production", Dir.pwd, :enable_gc_instrumentation => false) }
-
       it "returns the NilProfiler" do
-        allow(appsignal).to receive(:config).and_return(config)
-
-        expect(described_class.profiler(appsignal)).to be_a(Appsignal::GarbageCollection::NilProfiler)
+        expect(described_class.profiler).to be_a(Appsignal::GarbageCollection::NilProfiler)
       end
     end
 
     context "when GC profiling is enabled" do
-      let(:config) { Appsignal::Config.new("production", Dir.pwd, :enable_gc_instrumentation => true) }
-
       it "returns the Profiler" do
-        allow(appsignal).to receive(:config).and_return(config)
-
-        expect(described_class.profiler(appsignal)).to be_a(Appsignal::GarbageCollection::Profiler)
+        expect(described_class.profiler).to be_a(Appsignal::GarbageCollection::NilProfiler)
       end
     end
   end

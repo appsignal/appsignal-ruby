@@ -5,18 +5,12 @@ module Appsignal
   module GarbageCollection
     # Return the GC profiler wrapper.
     #
-    # Returns {Profiler} if `enable_gc_instrumentation` is enabled and
-    # {NilProfiler} if it is disabled.
+    # Temporarily always returns the {NilProfiler}.
     #
     # GC profiling is disabled by default due to the overhead it causes. Do not
     # enable this in production for long periods of time.
-    def self.profiler(appsignal = Appsignal)
-      @profiler ||=
-        if appsignal.config[:enable_gc_instrumentation]
-          Profiler.new
-        else
-          NilProfiler.new
-        end
+    def self.profiler
+      @profiler ||= NilProfiler.new
     end
 
     # Unset the currently cached profiler

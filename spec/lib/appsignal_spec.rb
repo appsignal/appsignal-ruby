@@ -54,17 +54,10 @@ describe Appsignal do
         Appsignal.start
       end
 
-      context "when allocation tracking and gc instrumentation have been enabled" do
+      context "when allocation tracking has been enabled" do
         before do
-          allow(GC::Profiler).to receive(:enable)
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
-          Appsignal.config.config_hash[:enable_gc_instrumentation] = true
           capture_environment_metadata_report_calls
-        end
-
-        it "reports GC instrumentation was enabled" do
-          Appsignal.start
-          expect_environment_metadata("ruby_gc_instrumentation_enabled", "true")
         end
 
         unless DependencyHelper.running_jruby?
@@ -77,28 +70,16 @@ describe Appsignal do
         end
       end
 
-      context "when allocation tracking and gc instrumentation have been disabled" do
+      context "when allocation tracking has been disabled" do
         before do
           Appsignal.config.config_hash[:enable_allocation_tracking] = false
-          Appsignal.config.config_hash[:enable_gc_instrumentation] = false
           capture_environment_metadata_report_calls
-        end
-
-        it "should not enable Ruby's GC::Profiler" do
-          expect(GC::Profiler).not_to receive(:enable)
-          Appsignal.start
         end
 
         it "should not install the allocation event hook" do
           expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
           Appsignal.start
           expect_not_environment_metadata("ruby_allocation_tracking_enabled")
-        end
-
-        it "should not add the gc probe to minutely" do
-          expect(Appsignal::Minutely).not_to receive(:register_garbage_collection_probe)
-          Appsignal.start
-          expect_not_environment_metadata("ruby_gc_instrumentation_enabled")
         end
       end
 
