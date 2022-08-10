@@ -5,19 +5,34 @@ module Appsignal
   module GarbageCollection
     # Return the GC profiler wrapper.
     #
-    # Temporarily always returns the {NilProfiler}.
+    # Returns {Profiler} if the Ruby Garbage Collection profiler is enabled.
+    # This is checked by calling `GC::Profiler.enabled?`.
     #
     # GC profiling is disabled by default due to the overhead it causes. Do not
     # enable this in production for long periods of time.
     def self.profiler
-      @profiler ||= NilProfiler.new
+      # Cached instances so it doesn't create a new object every time this
+      # method is called. Especially necessary for the {Profiler} because a new
+      # instance will have a new internal time counter.
+      @real_profiler ||= Profiler.new
+      @nil_profiler ||= NilProfiler.new
+
+      enabled? ? @real_profiler : @nil_profiler
     end
 
-    # Unset the currently cached profiler
+    # Check if Garbage Collection is enabled at the moment.
+    #
+    # @return [Boolean]
+    def self.enabled?
+      GC::Profiler.enabled?
+    end
+
+    # Unset the currently cached profilers.
     #
     # @return [void]
     def self.clear_profiler!
-      @profiler = nil
+      @real_profiler = nil
+      @nil_profiler = nil
     end
 
     # A wrapper around Ruby's `GC::Profiler` that tracks garbage collection
