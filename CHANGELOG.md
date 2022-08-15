@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.4
+
+### Added
+
+- [ffe49cfe](https://github.com/appsignal/appsignal-ruby/commit/ffe49cfe94f5269e59d6f168a73114f7a3914f79) patch - Support temporarily disabling GC profiling without reporting inaccurate `gc_time` metric durations. The MRI probe's `gc_time` will not report any value when the `GC::Profiler.enabled?` returns `false`.
+
+### Changed
+
+- [af7e666c](https://github.com/appsignal/appsignal-ruby/commit/af7e666cf173ec1f42e9cf3fce2ab6c8e658440c) patch - Listen if the Ruby Garbage Collection profiler is enabled and collect how long the GC is running for the Ruby VM magic dashboard. An app will need to call `GC::Profiler.enable` to enable the GC profiler. Do not enable this in production environments, or at least not for long, because this can negatively impact performance of apps.
+
+### Fixed
+
+- [b3a163be](https://github.com/appsignal/appsignal-ruby/commit/b3a163be154796e1f358c5061eaee99845c960ee) patch - Fix the MRI probe using the Garbage Collection profiler instead of the NilProfiler when garbage collection instrumentation is not enabled for MRI probe. This caused unnecessary overhead.
+
 ## 3.1.3
 
 ### Added
