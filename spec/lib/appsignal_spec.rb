@@ -77,7 +77,7 @@ describe Appsignal do
         end
 
         it "should not install the allocation event hook" do
-          expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
+          expect(Appsignal::Extension).not_to receive(:install_allocation_event_hook)
           Appsignal.start
           expect_not_environment_metadata("ruby_allocation_tracking_enabled")
         end
