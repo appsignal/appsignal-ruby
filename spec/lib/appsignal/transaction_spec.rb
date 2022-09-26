@@ -683,43 +683,36 @@ describe Appsignal::Transaction do
     end
 
     describe "#sample_data" do
-      it "should sample data" do
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "environment",
-          Appsignal::Utils::Data.generate(
-            "CONTENT_LENGTH" => "0",
-            "REQUEST_METHOD" => "GET",
-            "SERVER_NAME" => "example.org",
-            "SERVER_PORT" => "80",
-            "PATH_INFO" => "/blog"
-          )
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "session_data",
-          Appsignal::Utils::Data.generate({})
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "params",
-          Appsignal::Utils::Data.generate(
-            "controller" => "blog_posts",
-            "action" => "show",
-            "id" => "1"
-          )
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "metadata",
-          Appsignal::Utils::Data.generate("key" => "value")
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "tags",
-          Appsignal::Utils::Data.generate({})
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "breadcrumbs",
-          Appsignal::Utils::Data.generate([])
-        ).once
+      let(:env) { { "rack.session" => { "session" => "value" } } }
 
+      it "sets sample data" do
+        transaction.set_tags "tag" => "value"
+        transaction.add_breadcrumb "category", "action", "message", "key" => "value"
         transaction.sample_data
+
+        sample_data = transaction.to_h["sample_data"]
+        expect(sample_data["environment"]).to include(
+          "CONTENT_LENGTH" => "0",
+          "REQUEST_METHOD" => "GET",
+          "SERVER_NAME" => "example.org",
+          "SERVER_PORT" => "80",
+          "PATH_INFO" => "/blog"
+        )
+        expect(sample_data["session_data"]).to eq("session" => "value")
+        expect(sample_data["params"]).to eq(
+          "controller" => "blog_posts",
+          "action" => "show",
+          "id" => "1"
+        )
+        expect(sample_data["metadata"]).to eq("key" => "value")
+        expect(sample_data["tags"]).to eq("tag" => "value")
+        expect(sample_data["breadcrumbs"]).to contain_exactly(
+          "action" => "action",
+          "category" => "category",
+          "message" => "message",
+          "metadata" => { "key" => "value" },
+          "time" => kind_of(Integer)
+        )
       end
     end
 
