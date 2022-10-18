@@ -2,14 +2,14 @@ RSpec.describe "Puma plugin" do
   include WaitForHelper
 
   class MockPumaLauncher
-    def events
-      return @events if defined?(@events)
+    def log_writer
+      return @log_writer if defined?(@log_writer)
 
-      @events = MockPumaEvents.new
+      @log_writer = MockPumaLogWriter.new
     end
   end
 
-  class MockPumaEvents
+  class MockPumaLogWriter
     attr_reader :logs
 
     def initialize
@@ -153,7 +153,7 @@ RSpec.describe "Puma plugin" do
   end
 
   def logs
-    launcher.events.logs
+    launcher.log_writer.logs
   end
 
   def messages
@@ -281,7 +281,7 @@ RSpec.describe "Puma plugin" do
     it "does not fetch metrics" do
       run_plugin(appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
-        expect(logs).to include([:log, "AppSignal: No Puma stats to report."])
+        expect(logs).to include([:debug, "AppSignal: No Puma stats to report."])
         expect(messages).to be_empty
       end
     end
@@ -293,6 +293,45 @@ RSpec.describe "Puma plugin" do
       run_plugin(appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect(messages).to be_empty
+      end
+    end
+  end
+
+  context "with Puma < 6 Events class" do
+    class MockPumaEvents
+      attr_reader :logs
+
+      def initialize
+        @logs = []
+      end
+
+      def log(message)
+        @logs << [:log, message]
+      end
+
+      def debug(message)
+        @logs << [:debug, message]
+      end
+
+      def error(message)
+        @logs << [:error, message]
+      end
+    end
+
+    let(:launcher) do
+      Class.new do
+        def events
+          return @events if defined?(@events)
+
+          @events = MockPumaEvents.new
+        end
+      end.new
+    end
+    let(:stats_data) { { :max_threads => 5 } }
+
+    it "logs messages to the events class" do
+      run_plugin(appsignal_plugin) do
+        expect(launcher.events.logs).to_not be_empty
       end
     end
   end

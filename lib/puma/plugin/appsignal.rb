@@ -11,9 +11,9 @@ require "json"
 Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
   def start(launcher)
     @launcher = launcher
-    @launcher.events.debug "AppSignal: Puma plugin start."
+    log_debug "AppSignal: Puma plugin start."
     in_background do
-      @launcher.events.debug "AppSignal: Start Puma stats collection loop."
+      log_debug "AppSignal: Start Puma stats collection loop."
       plugin = AppsignalPumaPlugin.new
 
       loop do
@@ -24,12 +24,12 @@ Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
           # metrics.
           sleep sleep_time
 
-          @launcher.events.debug "AppSignal: Collecting Puma stats."
+          log_debug "AppSignal: Collecting Puma stats."
           stats = fetch_puma_stats
           if stats
             plugin.call(stats)
           else
-            @launcher.events.log "AppSignal: No Puma stats to report."
+            log_debug "AppSignal: No Puma stats to report."
           end
         rescue StandardError => error
           log_error "Error while processing metrics.", error
@@ -44,8 +44,20 @@ Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
     60 # seconds
   end
 
+  def logger
+    if @launcher.respond_to? :log_writer
+      @launcher.log_writer
+    else
+      @launcher.events
+    end
+  end
+
+  def log_debug(message)
+    logger.debug message
+  end
+
   def log_error(message, error)
-    @launcher.events.log "AppSignal: #{message}\n" \
+    logger.error "AppSignal: #{message}\n" \
       "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
   end
 
