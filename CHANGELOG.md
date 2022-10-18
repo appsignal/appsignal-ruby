@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.5
+
+### Changed
+
+- [4035c3c2](https://github.com/appsignal/appsignal-ruby/commit/4035c3c2d5c0b002119054014daddd193bd820f0) patch - Bump agent to version 813a59b
+  
+  - Fix http proxy config option parsing for port 80.
+  - Fix the return value for appsignal_import_opentelemetry_span extension
+    function in `appsignal.h`.
+
+### Fixed
+
+- [feb60fb8](https://github.com/appsignal/appsignal-ruby/commit/feb60fb877a2b264e587fe3d5d546e40d86c9c38) patch - Fix NoMethodError for AppSignal Puma plugin for Puma 6. Puma 5 is also still supported.
+
 ## 3.1.4
 
 ### Added
