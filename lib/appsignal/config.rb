@@ -25,6 +25,7 @@ module Appsignal
       :ignore_actions                 => [],
       :ignore_errors                  => [],
       :ignore_namespaces              => [],
+      :instrument_http_rb             => true,
       :instrument_net_http            => true,
       :instrument_redis               => true,
       :instrument_sequel              => true,
@@ -73,6 +74,7 @@ module Appsignal
       "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
       "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
       "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
+      "APPSIGNAL_INSTRUMENT_HTTP_RB"             => :instrument_http_rb,
       "APPSIGNAL_INSTRUMENT_NET_HTTP"            => :instrument_net_http,
       "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
       "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
@@ -116,6 +118,7 @@ module Appsignal
       APPSIGNAL_ENABLE_MINUTELY_PROBES
       APPSIGNAL_ENABLE_STATSD
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
+      APPSIGNAL_INSTRUMENT_HTTP_RB
       APPSIGNAL_INSTRUMENT_NET_HTTP
       APPSIGNAL_INSTRUMENT_REDIS
       APPSIGNAL_INSTRUMENT_SEQUEL
