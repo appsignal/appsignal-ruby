@@ -166,6 +166,7 @@ describe Appsignal::Config do
         :ignore_actions                 => [],
         :ignore_errors                  => [],
         :ignore_namespaces              => [],
+        :instrument_http_rb             => true,
         :instrument_net_http            => true,
         :instrument_redis               => true,
         :instrument_sequel              => true,
