@@ -6,8 +6,15 @@ module Appsignal
       # @api private
       attr_reader :config
 
+      def self.sidekiq7_and_greater?
+        Gem::Version.new(::Sidekiq::VERSION) >= Gem::Version.new("7.0.0")
+      end
+
       # @api private
       def self.dependencies_present?
+        return true if sidekiq7_and_greater?
+        return unless defined?(::Redis::VERSION) # Sidekiq <= 6
+
         Gem::Version.new(::Redis::VERSION) >= Gem::Version.new("3.3.5")
       end
 
@@ -31,8 +38,15 @@ module Appsignal
       attr_reader :cache
 
       def track_redis_info
-        return unless ::Sidekiq.respond_to?(:redis_info)
-        redis_info = ::Sidekiq.redis_info
+        redis_info = nil
+        if self.class.sidekiq7_and_greater?
+          # Sidekiq >= 7 using the redis-client gem
+          ::Sidekiq.redis { |c| redis_info = c.info }
+        elsif ::Sidekiq.respond_to?(:redis_info)
+          # Sidekiq <= 6 using the redis gem
+          redis_info = ::Sidekiq.redis_info
+        end
+        return unless redis_info
 
         gauge "connection_count", redis_info.fetch("connected_clients")
         gauge "memory_usage", redis_info.fetch("used_memory")
@@ -82,7 +96,14 @@ module Appsignal
         end
 
         host = nil
-        ::Sidekiq.redis { |c| host = c.connection[:host] }
+        ::Sidekiq.redis do |c|
+          host =
+            if c.respond_to? :connection
+              c.connection[:host] # Sidekiq <= 6
+            else
+              c.config.host # Sidekiq >= 7
+            end
+        end
         Appsignal.logger.debug "Sidekiq probe: Using Redis server hostname " \
           "#{host.inspect} as hostname"
         @hostname = host
