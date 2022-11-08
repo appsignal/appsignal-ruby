@@ -1,0 +1,5 @@
+---
+bump: "minor"
+---
+
+Logging support

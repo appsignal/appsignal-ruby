@@ -42,17 +42,17 @@ module Appsignal
     }.freeze
 
     # @api private
-    DEFAULT_LOG_LEVEL = Logger::INFO
+    DEFAULT_LOG_LEVEL = ::Logger::INFO
     # Map from the `log_level` config option to Ruby's Logger level value.
     #
     # The trace level doesn't exist in the Ruby logger so it's mapped to debug.
     # @api private
     LOG_LEVEL_MAP = {
-      "error" => Logger::ERROR,
-      "warn" => Logger::WARN,
-      "info" => Logger::INFO,
-      "debug" => Logger::DEBUG,
-      "trace" => Logger::DEBUG
+      "error" => ::Logger::ERROR,
+      "warn" => ::Logger::WARN,
+      "info" => ::Logger::INFO,
+      "debug" => ::Logger::DEBUG,
+      "trace" => ::Logger::DEBUG
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
@@ -79,6 +79,7 @@ module Appsignal
       "APPSIGNAL_LOG"                            => :log,
       "APPSIGNAL_LOG_LEVEL"                      => :log_level,
       "APPSIGNAL_LOG_PATH"                       => :log_path,
+      "APPSIGNAL_LOGGING_ENDPOINT"               => :logging_endpoint,
       "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
       "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
       "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
@@ -101,6 +102,7 @@ module Appsignal
       APPSIGNAL_LOG
       APPSIGNAL_LOG_LEVEL
       APPSIGNAL_LOG_PATH
+      APPSIGNAL_LOGGING_ENDPOINT
       APPSIGNAL_PUSH_API_ENDPOINT
       APPSIGNAL_PUSH_API_KEY
       APPSIGNAL_WORKING_DIRECTORY_PATH
@@ -260,7 +262,7 @@ module Appsignal
 
     def log_level
       if config_hash[:debug] || config_hash[:transaction_debug_mode]
-        level = Logger::DEBUG
+        level = ::Logger::DEBUG
       end
       option = config_hash[:log_level]
       if option
@@ -320,6 +322,7 @@ module Appsignal
       ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
       ENV["_APPSIGNAL_LOG_LEVEL"]                    = config_hash[:log_level]
       ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
+      ENV["_APPSIGNAL_LOGGING_ENDPOINT"]             = config_hash[:logging_endpoint]
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
       ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]

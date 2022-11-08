@@ -175,8 +175,8 @@ module Appsignal
     end
 
     def logger
-      @logger ||= Appsignal::Logger.new(in_memory_log).tap do |l|
-        l.level = Logger::INFO
+      @logger ||= Appsignal::Utils::IntegrationLogger.new(in_memory_log).tap do |l|
+        l.level = ::Logger::INFO
         l.formatter = log_formatter("appsignal")
       end
     end
@@ -254,12 +254,12 @@ module Appsignal
     private
 
     def start_stdout_logger
-      @logger = Appsignal::Logger.new($stdout)
+      @logger = Appsignal::Utils::IntegrationLogger.new($stdout)
       logger.formatter = log_formatter("appsignal")
     end
 
     def start_file_logger(path)
-      @logger = Appsignal::Logger.new(path)
+      @logger = Appsignal::Utils::IntegrationLogger.new(path)
       logger.formatter = log_formatter
     rescue SystemCallError => error
       start_stdout_logger
