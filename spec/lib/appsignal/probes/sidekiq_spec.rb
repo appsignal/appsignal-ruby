@@ -136,6 +136,8 @@ describe Appsignal::Probes::SidekiqProbe do
     def with_sidekiq7!
       stub_const("Sidekiq", Sidekiq7Mock)
     end
+    # Version not relevant, but requires any version for tests
+    alias_method :with_sidekiq!, :with_sidekiq7!
 
     def with_sidekiq6!
       stub_const("Sidekiq", Sidekiq6Mock)
@@ -175,7 +177,7 @@ describe Appsignal::Probes::SidekiqProbe do
     end
 
     it "loads Sidekiq::API" do
-      with_sidekiq7! # Version irrelevant, but requires any version
+      with_sidekiq!
       # Hide the Sidekiq constant if it was already loaded. It will be
       # redefined by loading "sidekiq/api" in the probe.
       hide_const "Sidekiq::Stats"
@@ -186,7 +188,7 @@ describe Appsignal::Probes::SidekiqProbe do
     end
 
     it "logs config on initialize" do
-      with_sidekiq7! # Version irrelevant, but requires any version
+      with_sidekiq!
       log = capture_logs { probe }
       expect(log).to contains_log(:debug, "Initializing Sidekiq probe\n")
     end
@@ -281,7 +283,7 @@ describe Appsignal::Probes::SidekiqProbe do
       let(:probe) { described_class.new(:hostname => redis_hostname) }
 
       it "uses the redis hostname for the hostname tag" do
-        with_sidekiq7! # Version irrelevant, but requires any version
+        with_sidekiq!
 
         allow(Appsignal).to receive(:set_gauge).and_call_original
         log = capture_logs { probe }
