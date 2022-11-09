@@ -3,17 +3,59 @@ module Appsignal
     class SidekiqProbe
       include Helpers
 
+      class Sidekiq7Adapter
+        def self.redis_info
+          redis_info = nil
+          ::Sidekiq.redis { |c| redis_info = c.info }
+          redis_info
+        end
+
+        def self.hostname
+          host = nil
+          ::Sidekiq.redis do |c|
+            host = c.config.host
+          end
+          host
+        end
+      end
+
+      class Sidekiq6Adapter
+        def self.redis_info
+          return unless ::Sidekiq.respond_to?(:redis_info)
+
+          ::Sidekiq.redis_info
+        end
+
+        def self.hostname
+          host = nil
+          ::Sidekiq.redis do |c|
+            host = c.connection[:host] if c.respond_to? :connection
+          end
+          host
+        end
+      end
+
       # @api private
       attr_reader :config
 
+      def self.sidekiq7_and_greater?
+        Gem::Version.new(::Sidekiq::VERSION) >= Gem::Version.new("7.0.0")
+      end
+
       # @api private
       def self.dependencies_present?
+        return true if sidekiq7_and_greater?
+        return unless defined?(::Redis::VERSION) # Sidekiq <= 6
+
         Gem::Version.new(::Redis::VERSION) >= Gem::Version.new("3.3.5")
       end
 
       def initialize(config = {})
         @config = config
         @cache = {}
+        is_sidekiq7 = self.class.sidekiq7_and_greater?
+        @adapter = is_sidekiq7 ? Sidekiq7Adapter : Sidekiq6Adapter
+
         config_string = " with config: #{config}" unless config.empty?
         Appsignal.logger.debug("Initializing Sidekiq probe#{config_string}")
         require "sidekiq/api"
@@ -28,11 +70,11 @@ module Appsignal
 
       private
 
-      attr_reader :cache
+      attr_reader :adapter, :cache
 
       def track_redis_info
-        return unless ::Sidekiq.respond_to?(:redis_info)
-        redis_info = ::Sidekiq.redis_info
+        redis_info = adapter.redis_info
+        return unless redis_info
 
         gauge "connection_count", redis_info.fetch("connected_clients")
         gauge "memory_usage", redis_info.fetch("used_memory")
@@ -81,8 +123,7 @@ module Appsignal
           return @hostname
         end
 
-        host = nil
-        ::Sidekiq.redis { |c| host = c.connection[:host] }
+        host = adapter.hostname
         Appsignal.logger.debug "Sidekiq probe: Using Redis server hostname " \
           "#{host.inspect} as hostname"
         @hostname = host
