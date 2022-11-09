@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.1.6
+
+### Fixed
+
+- [a03b7246](https://github.com/appsignal/appsignal-ruby/commit/a03b72461f5f3b047ca81368cf2bdbeadf078e08) patch - Support Sidekiq 7 in the Sidekiq minutely probe. It will now report metrics to Sidekiq magic dashboard for Sidekiq version 7 and newer.
+
 ## 3.1.5
 
 ### Changed
