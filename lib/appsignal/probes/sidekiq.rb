@@ -3,6 +3,38 @@ module Appsignal
     class SidekiqProbe
       include Helpers
 
+      class Sidekiq7Adapter
+        def self.redis_info
+          redis_info = nil
+          ::Sidekiq.redis { |c| redis_info = c.info }
+          redis_info
+        end
+
+        def self.hostname
+          host = nil
+          ::Sidekiq.redis do |c|
+            host = c.config.host
+          end
+          host
+        end
+      end
+
+      class Sidekiq6Adapter
+        def self.redis_info
+          return unless ::Sidekiq.respond_to?(:redis_info)
+
+          ::Sidekiq.redis_info
+        end
+
+        def self.hostname
+          host = nil
+          ::Sidekiq.redis do |c|
+            host = c.connection[:host] if c.respond_to? :connection
+          end
+          host
+        end
+      end
+
       # @api private
       attr_reader :config
 
@@ -21,6 +53,9 @@ module Appsignal
       def initialize(config = {})
         @config = config
         @cache = {}
+        is_sidekiq7 = self.class.sidekiq7_and_greater?
+        @adapter = is_sidekiq7 ? Sidekiq7Adapter : Sidekiq6Adapter
+
         config_string = " with config: #{config}" unless config.empty?
         Appsignal.logger.debug("Initializing Sidekiq probe#{config_string}")
         require "sidekiq/api"
@@ -35,17 +70,10 @@ module Appsignal
 
       private
 
-      attr_reader :cache
+      attr_reader :adapter, :cache
 
       def track_redis_info
-        redis_info = nil
-        if self.class.sidekiq7_and_greater?
-          # Sidekiq >= 7 using the redis-client gem
-          ::Sidekiq.redis { |c| redis_info = c.info }
-        elsif ::Sidekiq.respond_to?(:redis_info)
-          # Sidekiq <= 6 using the redis gem
-          redis_info = ::Sidekiq.redis_info
-        end
+        redis_info = adapter.redis_info
         return unless redis_info
 
         gauge "connection_count", redis_info.fetch("connected_clients")
@@ -95,15 +123,7 @@ module Appsignal
           return @hostname
         end
 
-        host = nil
-        ::Sidekiq.redis do |c|
-          host =
-            if c.respond_to? :connection
-              c.connection[:host] # Sidekiq <= 6
-            else
-              c.config.host # Sidekiq >= 7
-            end
-        end
+        host = adapter.hostname
         Appsignal.logger.debug "Sidekiq probe: Using Redis server hostname " \
           "#{host.inspect} as hostname"
         @hostname = host
