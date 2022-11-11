@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "http/client"
-
 module Appsignal
   class Hooks
     # @api private
