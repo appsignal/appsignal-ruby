@@ -9,7 +9,7 @@ module Appsignal
       register :http_rb
 
       def dependencies_present?
-        Appsignal.config && Appsignal.config[:instrument_http_rb]
+        defined?(HTTP::Client) && Appsignal.config && Appsignal.config[:instrument_http_rb]
       end
 
       def install
