@@ -4,8 +4,16 @@ module Appsignal
   module Integrations
     module HttpIntegration
       def request(verb, uri, opts = {})
-        Appsignal.instrument("request.http_rb", "#{verb.upcase} #{uri}") do
-          super
+        parsed_request_uri = URI.parse(uri)
+        request_uri = "#{parsed_request_uri.scheme}://#{parsed_request_uri.host}"
+
+        begin
+          Appsignal.instrument("request.http_rb", "#{verb.upcase} #{request_uri}") do
+            super
+          end
+        rescue Exception => error # rubocop:disable Lint/RescueException
+          Appsignal.set_error(error)
+          raise error
         end
       end
     end

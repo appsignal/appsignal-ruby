@@ -1,46 +1,34 @@
+# frozen_string_literal: true
+
 describe Appsignal::Hooks::HttpHook do
   before :context do
     start_agent
   end
 
-  context "with HTTP instrumentation enabled" do
-    describe "#dependencies_present?" do
-      subject { described_class.new.dependencies_present? }
+  if DependencyHelper.http_present?
+    context "with instrument_http_rb set to true" do
+      describe "#dependencies_present?" do
+        subject { described_class.new.dependencies_present? }
 
-      it { is_expected.to be_truthy }
+        it { is_expected.to be_truthy }
+      end
     end
 
-    it "should instrument a http request" do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect(Appsignal::Transaction.current).to receive(:start_event)
-        .at_least(:once)
-      expect(Appsignal::Transaction.current).to receive(:finish_event)
-        .at_least(:once)
-        .with("request.http_rb", "GET http://www.google.com", nil, 0)
+    context "with instrument_http_rb set to false" do
+      describe "#dependencies_present?" do
+        before { Appsignal.config.config_hash[:instrument_http_rb] = false }
+        after { Appsignal.config.config_hash[:instrument_http_rb] = true }
+        subject { described_class.new.dependencies_present? }
 
-      stub_request(:any, "http://www.google.com/")
-
-      HTTP.get("http://www.google.com")
+        it { is_expected.to be_falsy }
+      end
     end
 
-    it "should instrument a https request" do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      expect(Appsignal::Transaction.current).to receive(:start_event)
-        .at_least(:once)
-      expect(Appsignal::Transaction.current).to receive(:finish_event)
-        .at_least(:once)
-        .with("request.http_rb", "GET https://www.google.com", nil, 0)
-
-      stub_request(:any, "https://www.google.com/")
-
-      HTTP.get("https://www.google.com")
+    it "installs the HTTP plugin" do
+      expect(HTTP::Client.included_modules)
+        .to include(Appsignal::Integrations::HttpIntegration)
     end
-  end
-
-  context "with HTTP instrumentation disabled" do
-    before { Appsignal.config.config_hash[:instrument_http_rb] = false }
-    after { Appsignal.config.config_hash[:instrument_http_rb] = true }
-
+  else
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
