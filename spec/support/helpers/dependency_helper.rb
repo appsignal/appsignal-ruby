@@ -103,6 +103,10 @@ module DependencyHelper
       Gem.loaded_specs["capistrano"].version >= Gem::Version.new("3.0")
   end
 
+  def http_present?
+    dependency_present? "http"
+  end
+
   def que_present?
     dependency_present? "que"
   end
