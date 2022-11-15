@@ -570,6 +570,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.9 for http5
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.6.9
+      - name: GEMSET
+        value: http5
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/http5.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 2.6.9 for padrino
       env_vars:
       - *2
@@ -917,6 +935,24 @@ blocks:
         value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.5 for http5
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.7.5
+      - name: GEMSET
+        value: http5
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/http5.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1294,6 +1330,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.3 for http5
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.3
+      - name: GEMSET
+        value: http5
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/http5.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.0.3 for padrino
       env_vars:
       - *2
@@ -1611,6 +1665,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.1 for http5
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.1
+      - name: GEMSET
+        value: http5
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/http5.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.1.1 for padrino
       env_vars:
       - *2
@@ -1904,6 +1976,24 @@ blocks:
         value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.0-preview1 for http5
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.2.0-preview1
+      - name: GEMSET
+        value: http5
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/http5.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
