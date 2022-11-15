@@ -52,7 +52,7 @@ if DependencyHelper.http_present?
       it "does not include the query parameters in the title" do
         stub_request(:get, "https://www.google.com?q=Appsignal")
 
-        HTTP.get("https://www.google.com", params: { q: "Appsignal" })
+        HTTP.get("https://www.google.com", params: { :q => "Appsignal" })
 
         expect(transaction.to_h["events"].first).to include(
           "title" => "GET https://www.google.com"
@@ -63,7 +63,7 @@ if DependencyHelper.http_present?
         stub_request(:post, "https://www.google.com")
           .with(body: { q: "Appsignal" }.to_json)
 
-        HTTP.post("https://www.google.com", json: { q: "Appsignal" })
+        HTTP.post("https://www.google.com", json: { :q => "Appsignal" })
 
         expect(transaction.to_h["events"].first).to include(
           "title" => "POST https://www.google.com"
