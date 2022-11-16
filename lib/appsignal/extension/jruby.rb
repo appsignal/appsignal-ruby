@@ -81,6 +81,11 @@ module Appsignal
           [:appsignal_string, :double, :pointer],
           :void
 
+        # Logging methods
+        attach_function :appsignal_log,
+          [:appsignal_string, :int32, :appsignal_string, :pointer],
+          :void
+
         # Transaction methods
         attach_function :appsignal_free_transaction,
           [:pointer],
@@ -262,6 +267,15 @@ module Appsignal
       def get_server_state(key)
         state = appsignal_get_server_state(make_appsignal_string(key))
         make_ruby_string state if state[:len] > 0
+      end
+
+      def log(group, level, message, attributes)
+        appsignal_log(
+          make_appsignal_string(group),
+          level,
+          make_appsignal_string(message),
+          attributes.pointer
+        )
       end
 
       def start_transaction(transaction_id, namespace, gc_duration_ms)

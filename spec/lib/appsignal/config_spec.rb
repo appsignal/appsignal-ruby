@@ -536,6 +536,18 @@ describe Appsignal::Config do
         end
       end
     end
+
+    describe ":logging_endpoint" do
+      subject { config[:logging_endpoint] }
+
+      context "with a non-standard port" do
+        let(:config) { project_fixture_config("production", :logging_endpoint => "http://localhost:4567") }
+
+        it "keeps the port" do
+          expect(subject).to eq "http://localhost:4567"
+        end
+      end
+    end
   end
 
   describe "#[]" do
@@ -577,6 +589,7 @@ describe Appsignal::Config do
   describe "#write_to_environment" do
     let(:config) { project_fixture_config(:production) }
     before do
+      config[:logging_endpoint] = "http://localhost:123"
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w[action1 action2]
       config[:ignore_errors] = %w[ExampleStandardError AnotherError]
@@ -600,6 +613,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
       expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
       expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
+      expect(ENV["_APPSIGNAL_LOGGING_ENDPOINT"]).to             eq "http://localhost:123"
       expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
       expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
       expect(ENV["_APPSIGNAL_APP_NAME"]).to                     eq "TestApp"

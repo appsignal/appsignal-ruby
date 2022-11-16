@@ -1127,7 +1127,7 @@ describe Appsignal do
             Appsignal.start_logger
             Appsignal.logger.error("Log to file")
           end
-          expect(Appsignal.logger).to be_a(Appsignal::Logger)
+          expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
         end
 
         it "logs to file" do
@@ -1150,7 +1150,7 @@ describe Appsignal do
             initialize_config
             Appsignal.start_logger
             Appsignal.logger.error("Log to not writable log file")
-            expect(Appsignal.logger).to be_a(Appsignal::Logger)
+            expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
           end
         end
 
@@ -1181,7 +1181,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to not writable log path")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
+        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       after do
         FileUtils.chmod 0o755, Appsignal::Config.system_tmp_dir
@@ -1210,7 +1210,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to stdout")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
+        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       around { |example| recognize_as_heroku { example.run } }
 

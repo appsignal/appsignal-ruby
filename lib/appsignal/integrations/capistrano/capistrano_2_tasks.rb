@@ -19,7 +19,7 @@ module Appsignal
               ENV["PWD"],
               env,
               {},
-              Logger.new(StringIO.new)
+              Appsignal::Utils::IntegrationLogger.new(StringIO.new)
             ).tap do |c|
               fetch(:appsignal_config, {}).each do |key, value|
                 c[key] = value
