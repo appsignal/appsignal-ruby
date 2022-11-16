@@ -55,6 +55,7 @@ if DependencyHelper.http_present?
         HTTP.get("https://www.google.com", :params => { :q => "Appsignal" })
 
         expect(transaction.to_h["events"].first).to include(
+          "body" => "",
           "title" => "GET https://www.google.com"
         )
       end
@@ -66,6 +67,7 @@ if DependencyHelper.http_present?
         HTTP.post("https://www.google.com", :json => { :q => "Appsignal" })
 
         expect(transaction.to_h["events"].first).to include(
+          "body" => "",
           "title" => "POST https://www.google.com"
         )
       end
