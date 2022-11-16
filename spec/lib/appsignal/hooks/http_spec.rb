@@ -6,10 +6,22 @@ describe Appsignal::Hooks::HttpHook do
   end
 
   if DependencyHelper.http_present?
-    describe "#dependencies_present?" do
-      subject { described_class.new.dependencies_present? }
+    context "with instrument_http_rb set to true" do
+      describe "#dependencies_present?" do
+        subject { described_class.new.dependencies_present? }
 
-      it { is_expected.to be_truthy }
+        it { is_expected.to be_truthy }
+      end
+    end
+
+    context "with instrument_http_rb set to false" do
+      describe "#dependencies_present?" do
+        before { Appsignal.config.config_hash[:instrument_http_rb] = false }
+        after { Appsignal.config.config_hash[:instrument_http_rb] = true }
+        subject { described_class.new.dependencies_present? }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     it "installs the HTTP plugin" do
