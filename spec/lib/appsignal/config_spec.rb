@@ -170,6 +170,7 @@ describe Appsignal::Config do
         :instrument_redis               => true,
         :instrument_sequel              => true,
         :log                            => "file",
+        :logging_endpoint               => "https://appsignal-endpoint.net",
         :name                           => "TestApp",
         :push_api_key                   => "abc",
         :request_headers                => [],
