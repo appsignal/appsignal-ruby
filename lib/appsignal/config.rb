@@ -29,6 +29,7 @@ module Appsignal
       :instrument_redis               => true,
       :instrument_sequel              => true,
       :log                            => "file",
+      :logging_endpoint               => "https://appsignal-endpoint.net",
       :request_headers                => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
