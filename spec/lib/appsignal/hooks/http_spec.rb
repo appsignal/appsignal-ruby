@@ -12,21 +12,22 @@ describe Appsignal::Hooks::HttpHook do
 
         it { is_expected.to be_truthy }
       end
+
+      it "installs the HTTP plugin" do
+        expect(HTTP::Client.included_modules)
+          .to include(Appsignal::Integrations::HttpIntegration)
+      end
     end
 
     context "with instrument_http_rb set to false" do
+      before { Appsignal.config.config_hash[:instrument_http_rb] = false }
+      after { Appsignal.config.config_hash[:instrument_http_rb] = true }
+
       describe "#dependencies_present?" do
-        before { Appsignal.config.config_hash[:instrument_http_rb] = false }
-        after { Appsignal.config.config_hash[:instrument_http_rb] = true }
         subject { described_class.new.dependencies_present? }
 
         it { is_expected.to be_falsy }
       end
-    end
-
-    it "installs the HTTP plugin" do
-      expect(HTTP::Client.included_modules)
-        .to include(Appsignal::Integrations::HttpIntegration)
     end
   else
     describe "#dependencies_present?" do

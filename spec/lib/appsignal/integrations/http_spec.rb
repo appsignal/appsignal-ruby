@@ -10,15 +10,15 @@ if DependencyHelper.http_present?
       keep_transactions { example.run }
     end
 
-    before do
-      set_current_transaction(transaction)
-    end
-
     before :context do
       start_agent
     end
 
-    it "should instrument a HTTP request" do
+    before do
+      set_current_transaction(transaction)
+    end
+
+    it "instruments a HTTP request" do
       stub_request(:get, "http://www.google.com")
 
       HTTP.get("http://www.google.com")
@@ -33,7 +33,7 @@ if DependencyHelper.http_present?
       )
     end
 
-    it "should instrument a HTTPS request" do
+    it "instruments a HTTPS request" do
       stub_request(:get, "https://www.google.com")
 
       HTTP.get("https://www.google.com")
