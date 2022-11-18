@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.2.0
+
+### Added
+
+- [199d05c0](https://github.com/appsignal/appsignal-ruby/commit/199d05c0f95be7f2496ddcd05613eb816e9ad4e4) minor - Support the http.rb gem. Any outgoing requests will be tracked as events on the incident event timeline. This instrumentation is activated automatically, but can be disable by setting the `instrumentation_http_rb` option to `false`.
+- [9bcd107d](https://github.com/appsignal/appsignal-ruby/commit/9bcd107de955e557744434fc9f953588a9c7bc49) minor - Support log collection from Ruby apps using the new AppSignal Logging feature. Learn more about [AppSignal's Logging on our docs](https://docs.appsignal.com/logging/platforms/integrations/ruby.html).
+
 ## 3.1.6
 
 ### Fixed
