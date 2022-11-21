@@ -99,5 +99,46 @@ if DependencyHelper.http_present?
         )
       end
     end
+
+    context "with various URI objects" do
+      it "parses an object responding to #to_s" do
+        request_uri = Struct.new(:uri) do
+          def to_s
+            uri.to_s
+          end
+        end
+
+        stub_request(:get, "http://www.google.com")
+
+        HTTP.get(request_uri.new("http://www.google.com"))
+
+        expect(transaction.to_h["events"].first).to include(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.google.com"
+        )
+      end
+
+      it "parses an URI object" do
+        stub_request(:get, "http://www.google.com")
+
+        HTTP.get(URI("http://www.google.com"))
+
+        expect(transaction.to_h["events"].first).to include(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.google.com"
+        )
+      end
+
+      it "parses a String object" do
+        stub_request(:get, "http://www.google.com")
+
+        HTTP.get("http://www.google.com")
+
+        expect(transaction.to_h["events"].first).to include(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.google.com"
+        )
+      end
+    end
   end
 end
