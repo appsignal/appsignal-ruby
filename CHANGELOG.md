@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.2.1
+
+### Fixed
+
+- [5e87aa34](https://github.com/appsignal/appsignal-ruby/commit/5e87aa34878d84cd07717671e770a0a356ad8430) patch - Support the http.rb gem's URI argument using objects with the `#to_s` method. A Ruby URI object is no longer required.
+
 ## 3.2.0
 
 ### Added
