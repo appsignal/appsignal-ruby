@@ -42,6 +42,20 @@ describe Appsignal::Logger do
         logger.add(::Logger::DEBUG, "Log message")
       end
     end
+
+    context "with a formatter set" do
+      before do
+        logger.formatter = proc do |_level, _timestamp, _appname, message|
+          "formatted: '#{message}'"
+        end
+      end
+
+      it "should log with a level, message and group" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("other_group", 3, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+        logger.add(::Logger::INFO, "Log message", "other_group")
+      end
+    end
   end
 
   [
@@ -87,6 +101,20 @@ describe Appsignal::Logger do
             expect(Appsignal::Extension).not_to receive(:log)
             logger.send(method[0], "Log message")
           end
+        end
+      end
+
+      context "with a formatter set" do
+        before do
+          logger.formatter = proc do |_level, _timestamp, _appname, message|
+            "formatted: '#{message}'"
+          end
+        end
+
+        it "should log with a level, message and group" do
+          expect(Appsignal::Extension).to receive(:log)
+            .with("group", method[1], "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+          logger.send(method[0], "Log message")
         end
       end
     end
