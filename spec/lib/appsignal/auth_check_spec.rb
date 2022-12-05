@@ -20,12 +20,7 @@ describe Appsignal::AuthCheck do
   end
 
   def build_uri_query_string(hash)
-    hash.map do |k, v|
-      k.to_s.tap do |s|
-        next unless v
-        s << "=#{v}"
-      end
-    end.join("&")
+    URI.encode_www_form(hash)
   end
 
   describe "#perform" do
