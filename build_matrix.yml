@@ -54,8 +54,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       task:
         prologue:
           commands:
-            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
+            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
             - ./support/bundler_wrapper install --jobs=3 --retry=3
         jobs:
         - name: Validate CI setup
@@ -71,15 +71,15 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         epilogue:
           on_pass:
             commands:
-              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
-              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) .bundle
+              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) $HOME/.gem
     - name: Ruby linters
       dependencies: []
       task:
         prologue:
           commands:
-            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+            - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
+            - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
             - ./support/bundler_wrapper install --jobs=3 --retry=3
         jobs:
         - name: RuboCop
@@ -95,8 +95,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         epilogue:
           on_pass:
             commands:
-              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
-              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+              - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) .bundle
+              - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) $HOME/.gem
     - name: Other linters
       dependencies: []
       task:
@@ -143,16 +143,16 @@ matrix:
       value: "1"
   prologue: # Shared for all jobs in the build matrix
     commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec)
       - ./support/install_deps
       - bundle config set clean 'true'
       - ./support/bundler_wrapper install --jobs=3 --retry=3
   epilogue: # Shared for all jobs in the build matrix
     on_pass:
       commands:
-        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE) .bundle
-        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE) $HOME/.gem
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) $HOME/.gem
     on_fail:
       commands:
         - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'"
@@ -200,12 +200,9 @@ matrix:
     - ruby: "3.0.4"
     - ruby: "3.1.2"
     - ruby: "3.2.0-preview1"
-    - ruby: "jruby-9.2.19.0"
+    - ruby: "jruby-9.3.9.0"
       gems: "minimal"
-      env_vars:
-        - name: "_C_VERSION"
-          value: "8"
-    - ruby: "jruby-9.3.6.0"
+    - ruby: "jruby-9.4.0.0"
       gems: "minimal"
   gems:
     - gem: "no_dependencies"
@@ -281,7 +278,7 @@ matrix:
           - "2.5.8"
           - "2.6.9"
           - "2.7.7"
-          - "jruby-9.2.19.0"
+          - "jruby-9.3.9.0"
     - gem: "rails-6.0"
       only:
         ruby:
@@ -289,7 +286,7 @@ matrix:
           - "2.6.9"
           - "2.7.7"
           - "3.0.4"
-          - "jruby-9.2.19.0"
+          - "jruby-9.4.0.0"
     - gem: "rails-6.1"
       only:
         ruby:
@@ -299,8 +296,7 @@ matrix:
           - "3.0.4"
           - "3.1.2"
           - "3.2.0-preview1"
-          - "jruby-9.2.19.0"
-          - "jruby-9.3.6.0"
+          - "jruby-9.4.0.0"
     - gem: "rails-7.0"
       only:
         ruby:
@@ -308,6 +304,7 @@ matrix:
           - "3.0.4"
           - "3.1.2"
           - "3.2.0-preview1"
+          - "jruby-9.4.0.0"
     - gem: "resque-1"
       bundler: "1.17.3"
       only:
