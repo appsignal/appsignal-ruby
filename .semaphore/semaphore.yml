@@ -52,8 +52,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
     jobs:
     - name: Validate CI setup
@@ -69,17 +71,19 @@ blocks:
     epilogue:
       on_pass:
         commands:
-        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-          .bundle
-        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-          $HOME/.gem
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) $HOME/.gem
 - name: Ruby linters
   dependencies: []
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
     jobs:
     - name: RuboCop
@@ -95,10 +99,10 @@ blocks:
     epilogue:
       on_pass:
         commands:
-        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-          .bundle
-        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-          $HOME/.gem
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) $HOME/.gem
 - name: Other linters
   dependencies: []
   task:
@@ -140,8 +144,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -149,10 +155,10 @@ blocks:
     epilogue: &1
       on_pass:
         commands:
-        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-          .bundle
-        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
-          $HOME/.gem
+        - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) .bundle
+        - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+          appsignal.gemspec) $HOME/.gem
       on_fail:
         commands:
         - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
@@ -192,8 +198,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -242,8 +250,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -275,8 +285,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -308,8 +320,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -341,8 +355,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -374,8 +390,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -407,8 +425,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -475,8 +495,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -508,8 +530,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -846,8 +870,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -879,8 +905,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1235,8 +1263,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1268,8 +1298,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1570,8 +1602,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1603,8 +1637,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1887,8 +1923,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -1920,8 +1958,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -2204,8 +2244,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -2240,8 +2282,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -2311,8 +2355,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
@@ -2344,8 +2390,10 @@ blocks:
   task:
     prologue:
       commands:
-      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)
-      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)
+      - cache restore $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
+      - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
+        appsignal.gemspec)
       - "./support/install_deps"
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
