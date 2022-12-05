@@ -200,12 +200,9 @@ matrix:
     - ruby: "3.0.4"
     - ruby: "3.1.2"
     - ruby: "3.2.0-preview1"
-    - ruby: "jruby-9.2.19.0"
+    - ruby: "jruby-9.3.9.0"
       gems: "minimal"
-      env_vars:
-        - name: "_C_VERSION"
-          value: "8"
-    - ruby: "jruby-9.3.6.0"
+    - ruby: "jruby-9.4.0.0"
       gems: "minimal"
   gems:
     - gem: "no_dependencies"
@@ -281,7 +278,7 @@ matrix:
           - "2.5.8"
           - "2.6.9"
           - "2.7.7"
-          - "jruby-9.2.19.0"
+          - "jruby-9.3.9.0"
     - gem: "rails-6.0"
       only:
         ruby:
@@ -289,7 +286,7 @@ matrix:
           - "2.6.9"
           - "2.7.7"
           - "3.0.4"
-          - "jruby-9.2.19.0"
+          - "jruby-9.4.0.0"
     - gem: "rails-6.1"
       only:
         ruby:
@@ -299,8 +296,7 @@ matrix:
           - "3.0.4"
           - "3.1.2"
           - "3.2.0-preview1"
-          - "jruby-9.2.19.0"
-          - "jruby-9.3.6.0"
+          - "jruby-9.4.0.0"
     - gem: "rails-7.0"
       only:
         ruby:
@@ -308,6 +304,7 @@ matrix:
           - "3.0.4"
           - "3.1.2"
           - "3.2.0-preview1"
+          - "jruby-9.4.0.0"
     - gem: "resque-1"
       bundler: "1.17.3"
       only:
