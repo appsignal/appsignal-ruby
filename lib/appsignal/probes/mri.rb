@@ -18,17 +18,38 @@ module Appsignal
       def call
         stat = RubyVM.stat
 
-        set_gauge(
-          "ruby_vm",
-          stat[:class_serial],
-          :metric => :class_serial
-        )
+        constant_cache_invalidations = stat[:constant_cache_invalidations]
+        if constant_cache_invalidations
+          set_gauge(
+            "ruby_vm",
+            constant_cache_invalidations,
+            :metric => :constant_cache_invalidations
+          )
+        end
 
-        set_gauge(
-          "ruby_vm",
-          stat[:constant_cache] ? stat[:constant_cache].values.sum : stat[:global_constant_state],
-          :metric => :global_constant_state
-        )
+        constant_cache_misses = stat[:constant_cache_misses]
+        if constant_cache_misses
+          set_gauge(
+            "ruby_vm",
+            constant_cache_misses,
+            :metric => :constant_cache_misses
+          )
+        end
+
+        class_serial = stat[:class_serial]
+        if class_serial
+          set_gauge("ruby_vm", class_serial, :metric => :class_serial)
+        end
+
+        global_constant_state =
+          stat[:constant_cache] ? stat[:constant_cache].values.sum : stat[:global_constant_state]
+        if global_constant_state
+          set_gauge(
+            "ruby_vm",
+            global_constant_state,
+            :metric => :global_constant_state
+          )
+        end
 
         set_gauge("thread_count", Thread.list.size)
         if Appsignal::GarbageCollection.enabled?

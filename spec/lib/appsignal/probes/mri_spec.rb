@@ -42,10 +42,15 @@ describe Appsignal::Probes::MriProbe do
         allow(GC::Profiler).to receive(:enabled?).and_return(true)
       end
 
-      it "should track vm metrics" do
+      it "should track vm cache metrics" do
         probe.call
-        expect_gauge_value("ruby_vm", :tags => { :metric => :class_serial })
-        expect_gauge_value("ruby_vm", :tags => { :metric => :global_constant_state })
+        if DependencyHelper.ruby_3_2_or_newer?
+          expect_gauge_value("ruby_vm", :tags => { :metric => :constant_cache_invalidations })
+          expect_gauge_value("ruby_vm", :tags => { :metric => :constant_cache_misses })
+        else
+          expect_gauge_value("ruby_vm", :tags => { :metric => :class_serial })
+          expect_gauge_value("ruby_vm", :tags => { :metric => :global_constant_state })
+        end
       end
 
       it "tracks thread counts" do
