@@ -26,6 +26,12 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - checkout
         - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
         - |
+          if [ -n "$_LIBYAML" ]; then
+            install-package --update libyaml-dev
+          else
+            echo Skipping libyaml-dev install
+          fi
+        - |
           if [ -n "$_C_VERSION" ]; then
             sem-version c $_C_VERSION
           else
@@ -199,7 +205,10 @@ matrix:
     - ruby: "2.7.7"
     - ruby: "3.0.4"
     - ruby: "3.1.2"
-    - ruby: "3.2.0-preview1"
+    - ruby: "3.2.0-preview3"
+      env_vars:
+        - name: "_LIBYAML"
+          value: "1"
     - ruby: "jruby-9.3.9.0"
       gems: "minimal"
     - ruby: "jruby-9.4.0.0"
@@ -216,13 +225,13 @@ matrix:
         ruby:
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-preview1"
+          - "3.2.0-preview3"
     - gem: "psych-4"
       only:
         ruby:
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-preview1"
+          - "3.2.0-preview3"
     - gem: "que"
     - gem: "que_beta"
     - gem: "rails-3.2"
@@ -295,7 +304,7 @@ matrix:
           - "2.7.7"
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-preview1"
+          - "3.2.0-preview3"
           - "jruby-9.4.0.0"
     - gem: "rails-7.0"
       only:
@@ -303,7 +312,7 @@ matrix:
           - "2.7.7"
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-preview1"
+          - "3.2.0-preview3"
           - "jruby-9.4.0.0"
     - gem: "resque-1"
       bundler: "1.17.3"
