@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.2.2
+
+### Changed
+
+- [2b1964d9](https://github.com/appsignal/appsignal-ruby/commit/2b1964d94eee0b20c12f5c602c427643057e787b) patch - Track new Ruby 3.2 VM cache metrics. In Ruby 3.2 the `class_serial` and `global_constant_state` metrics are no longer reported for the "Ruby (VM) metrics" magic dashboard, because Ruby 3.2 removed these metrics. Instead we will now report the new `constant_cache_invalidations` and `constant_cache_misses` metrics reported by Ruby 3.2.
+- [6804e898](https://github.com/appsignal/appsignal-ruby/commit/6804e89817234c88105d2376687b5574bfc8e8c9) patch - Use log formatter if set in logger
+
 ## 3.2.1
 
 ### Fixed
