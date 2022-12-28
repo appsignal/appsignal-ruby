@@ -50,7 +50,12 @@ module Appsignal
       end
 
       begin
-        ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{lib_extension}")
+        begin
+          # RubyGems will install the extension in the gem's lib directory.
+          ffi_lib File.join(File.dirname(__FILE__), "../../../lib/libappsignal.#{lib_extension}")
+        rescue
+          ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{lib_extension}")
+        end
         typedef AppsignalString.by_value, :appsignal_string
 
         attach_function :appsignal_start, [], :void
