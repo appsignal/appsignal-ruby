@@ -349,9 +349,9 @@ blocks:
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
-        value: latest
+        value: 3.3.26
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 2.3.26
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
