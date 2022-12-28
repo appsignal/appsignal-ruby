@@ -191,6 +191,8 @@ matrix:
       gems: "none"
     - ruby: "2.3.8"
       gems: "none"
+      rubygems: "3.3.26"
+      bundler: "2.3.26"
     - ruby: "2.4.10"
       gems: "none"
     - ruby: "2.5.8"
