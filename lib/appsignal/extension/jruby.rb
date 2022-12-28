@@ -41,20 +41,12 @@ module Appsignal
       end
       include StringHelpers
 
-      def self.lib_extension
-        if Appsignal::System.agent_platform.include?("darwin")
-          "dylib"
-        else
-          "so"
-        end
-      end
-
       begin
         begin
           # RubyGems will install the extension in the gem's lib directory.
-          ffi_lib File.join(File.dirname(__FILE__), "../../../lib/libappsignal.#{lib_extension}")
+          ffi_lib File.join(File.dirname(__FILE__), "../../../lib/libappsignal.#{RbConfig::CONFIG['DLEXT']}")
         rescue
-          ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{lib_extension}")
+          ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{RbConfig::CONFIG['DLEXT']}")
         end
         typedef AppsignalString.by_value, :appsignal_string
 
