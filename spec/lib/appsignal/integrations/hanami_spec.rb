@@ -75,7 +75,9 @@ if DependencyHelper.hanami2_present?
         end
 
         it "sets the metadata" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("status", "200")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("path", "/books")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("method", "GET")
         end
 
         it "sets the queue start" do
@@ -87,6 +89,11 @@ if DependencyHelper.hanami2_present?
 
           it "records the exception" do
             expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+          end
+
+          it "sets the status to 500" do
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("status", "500")
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
           end
         end
 

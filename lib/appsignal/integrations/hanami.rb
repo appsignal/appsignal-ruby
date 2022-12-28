@@ -40,10 +40,13 @@ module Appsignal::Integrations::HanamiIntegration
 
     begin
       Appsignal.instrument("process_action.hanami") do
-        super
+        super.tap do |response|
+          transaction.set_metadata("status", response.status.to_s)
+        end
       end
     rescue Exception => error # rubocop:disable Lint/RescueException
       transaction.set_error(error)
+      transaction.set_metadata("status", "500")
       raise error
     ensure
       transaction.params = request.params.to_h
