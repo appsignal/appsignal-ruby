@@ -61,6 +61,8 @@ module Appsignal
             install_for_padrino(config)
           elsif installed_frameworks.include?(:grape)
             install_for_grape(config)
+          elsif installed_frameworks.include?(:hanami)
+            install_for_hanami(config)
           elsif installed_frameworks.include?(:sinatra)
             install_for_sinatra(config)
           else
@@ -162,6 +164,24 @@ module Appsignal
           done_notice
         end
 
+        def install_for_hanami(config)
+          puts "Installing for Hanami"
+          config[:name] = required_input("  Enter application name: ")
+          puts
+          configure(config, %w[development production staging], true)
+
+          puts "Finish Hanami installation"
+          puts "  Hanami requires some manual configuration."
+          puts "  After installing the gem, add the following line to config.ru:"
+          puts
+          puts "  require 'appsignal/integrations/hanami'"
+          puts
+          puts "  You can find more information in the documentation:"
+          puts "  http://docs.appsignal.com/ruby/integrations/hanami.html"
+          press_any_key
+          done_notice
+        end
+
         def install_for_capistrano
           capfile = File.join(Dir.pwd, "Capfile")
           return unless File.exist?(capfile)
@@ -256,6 +276,7 @@ module Appsignal
             out << :sinatra if framework_available? "sinatra"
             out << :padrino if framework_available? "padrino"
             out << :grape if framework_available? "grape"
+            out << :hanami if framework_available? "hanami"
           end
         end
 

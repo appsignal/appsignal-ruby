@@ -1368,6 +1368,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.4 for hanami
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.4
+      - name: GEMSET
+        value: hanami
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/hanami.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.0.4 for http5
       env_vars:
       - *2
@@ -1707,6 +1725,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.2 for hanami
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.2
+      - name: GEMSET
+        value: hanami
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/hanami.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.1.2 for http5
       env_vars:
       - *2
@@ -2032,6 +2068,26 @@ blocks:
         value: grape
       - name: BUNDLE_GEMFILE
         value: gemfiles/grape.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      - *6
+      - *7
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.0-rc1 for hanami
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.2.0-rc1
+      - name: GEMSET
+        value: hanami
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/hanami.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION

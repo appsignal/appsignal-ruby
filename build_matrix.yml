@@ -220,6 +220,12 @@ matrix:
     - gem: "capistrano2"
     - gem: "capistrano3"
     - gem: "grape"
+    - gem: "hanami"
+      only:
+        ruby:
+          - "3.0.4"
+          - "3.1.2"
+          - "3.2.0-rc1"
     - gem: "http5"
     - gem: "padrino"
     - gem: "psych-3"

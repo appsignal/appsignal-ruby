@@ -88,6 +88,7 @@ Style/Alias:
 Style/ClassAndModuleChildren:
   Exclude:
     - 'lib/appsignal/integrations/padrino.rb'
+    - 'lib/appsignal/integrations/hanami.rb'
 
 # Offense count: 1
 Style/DoubleNegation:
