@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.0
+
+### Added
+
+- [e4314b5b](https://github.com/appsignal/appsignal-ruby/commit/e4314b5b2d3fdf7865555535b2324094ec620349) minor - Hanami 2 is now supported. Requests will now appear as performance measurements.
+
 ## 3.2.2
 
 ### Changed
