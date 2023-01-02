@@ -636,9 +636,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         run
         host_report = received_report["host"]
         host_report.delete("running_in_container") # Tested elsewhere
+        distribution_file = "/etc/os-release"
+        os_distribution = File.exist?(distribution_file) ? File.read(distribution_file) : ""
         expect(host_report).to eq(
           "architecture" => rbconfig["host_cpu"],
           "os" => rbconfig["host_os"],
+          "os_distribution" => os_distribution,
           "language_version" => language_version,
           "heroku" => false,
           "root" => false

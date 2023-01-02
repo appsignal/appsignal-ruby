@@ -443,6 +443,9 @@ module Appsignal
             save :os, os
             puts_value "Operating System", os_label
 
+            distribution_file = "/etc/os-release"
+            save :os_distribution, File.exist?(distribution_file) ? File.read(distribution_file) : ""
+
             language_version = "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
             save :language_version, language_version
             puts_format "Ruby version", language_version
