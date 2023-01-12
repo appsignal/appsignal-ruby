@@ -25,12 +25,6 @@ global_job_config:
     - checkout
     - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
     - |
-      if [ -n "$_LIBYAML" ]; then
-        install-package --update libyaml-dev
-      else
-        echo Skipping libyaml-dev install
-      fi
-    - |
       if [ -n "$_C_VERSION" ]; then
         sem-version c $_C_VERSION
       else
@@ -349,9 +343,9 @@ blocks:
       - name: BUNDLE_GEMFILE
         value: gemfiles/no_dependencies.gemfile
       - name: _RUBYGEMS_VERSION
-        value: latest
+        value: 3.3.26
       - name: _BUNDLER_VERSION
-        value: latest
+        value: 2.3.26
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
@@ -1959,7 +1953,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-- name: Ruby 3.2.0-rc1
+- name: Ruby 3.2.0
   dependencies:
   - Validation
   task:
@@ -1975,14 +1969,14 @@ blocks:
       - "./support/bundler_wrapper exec rake extension:install"
     epilogue: *1
     jobs:
-    - name: Ruby 3.2.0-rc1 for no_dependencies
+    - name: Ruby 3.2.0 for no_dependencies
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: no_dependencies
       - name: BUNDLE_GEMFILE
@@ -1991,18 +1985,12 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - &6
-        name: _LIBYAML
-        value: '1'
-      - &7
-        name: RUBY_CFLAGS
-        value: "-std=gnu99"
       commands:
       - "./support/bundler_wrapper exec rake test"
       - "./support/bundler_wrapper exec rake test:failure"
-- name: Ruby 3.2.0-rc1 - Gems
+- name: Ruby 3.2.0 - Gems
   dependencies:
-  - Ruby 3.2.0-rc1
+  - Ruby 3.2.0
   task:
     prologue:
       commands:
@@ -2016,14 +2004,14 @@ blocks:
       - "./support/bundler_wrapper exec rake extension:install"
     epilogue: *1
     jobs:
-    - name: Ruby 3.2.0-rc1 for capistrano2
+    - name: Ruby 3.2.0 for capistrano2
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: capistrano2
       - name: BUNDLE_GEMFILE
@@ -2032,18 +2020,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for capistrano3
+    - name: Ruby 3.2.0 for capistrano3
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: capistrano3
       - name: BUNDLE_GEMFILE
@@ -2052,18 +2038,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for grape
+    - name: Ruby 3.2.0 for grape
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: grape
       - name: BUNDLE_GEMFILE
@@ -2072,18 +2056,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for hanami
+    - name: Ruby 3.2.0 for hanami
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: hanami
       - name: BUNDLE_GEMFILE
@@ -2092,18 +2074,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for http5
+    - name: Ruby 3.2.0 for http5
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: http5
       - name: BUNDLE_GEMFILE
@@ -2112,18 +2092,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for padrino
+    - name: Ruby 3.2.0 for padrino
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: padrino
       - name: BUNDLE_GEMFILE
@@ -2132,18 +2110,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for psych-3
+    - name: Ruby 3.2.0 for psych-3
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: psych-3
       - name: BUNDLE_GEMFILE
@@ -2152,18 +2128,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for psych-4
+    - name: Ruby 3.2.0 for psych-4
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: psych-4
       - name: BUNDLE_GEMFILE
@@ -2172,18 +2146,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for que
+    - name: Ruby 3.2.0 for que
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: que
       - name: BUNDLE_GEMFILE
@@ -2192,18 +2164,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for que_beta
+    - name: Ruby 3.2.0 for que_beta
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: que_beta
       - name: BUNDLE_GEMFILE
@@ -2212,18 +2182,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for rails-6.1
+    - name: Ruby 3.2.0 for rails-6.1
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: rails-6.1
       - name: BUNDLE_GEMFILE
@@ -2232,18 +2200,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for rails-7.0
+    - name: Ruby 3.2.0 for rails-7.0
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: rails-7.0
       - name: BUNDLE_GEMFILE
@@ -2252,18 +2218,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for resque-2
+    - name: Ruby 3.2.0 for resque-2
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: resque-2
       - name: BUNDLE_GEMFILE
@@ -2272,18 +2236,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for sequel
+    - name: Ruby 3.2.0 for sequel
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: sequel
       - name: BUNDLE_GEMFILE
@@ -2292,18 +2254,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for sinatra
+    - name: Ruby 3.2.0 for sinatra
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: sinatra
       - name: BUNDLE_GEMFILE
@@ -2312,18 +2272,16 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.0-rc1 for webmachine
+    - name: Ruby 3.2.0 for webmachine
       env_vars:
       - *2
       - *3
       - *4
       - *5
       - name: RUBY_VERSION
-        value: 3.2.0-rc1
+        value: 3.2.0
       - name: GEMSET
         value: webmachine
       - name: BUNDLE_GEMFILE
@@ -2332,8 +2290,6 @@ blocks:
         value: latest
       - name: _BUNDLER_VERSION
         value: latest
-      - *6
-      - *7
       commands:
       - "./support/bundler_wrapper exec rake test"
 - name: Ruby jruby-9.3.9.0

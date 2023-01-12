@@ -26,12 +26,6 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - checkout
         - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
         - |
-          if [ -n "$_LIBYAML" ]; then
-            install-package --update libyaml-dev
-          else
-            echo Skipping libyaml-dev install
-          fi
-        - |
           if [ -n "$_C_VERSION" ]; then
             sem-version c $_C_VERSION
           else
@@ -197,6 +191,8 @@ matrix:
       gems: "none"
     - ruby: "2.3.8"
       gems: "none"
+      rubygems: "3.3.26"
+      bundler: "2.3.26"
     - ruby: "2.4.10"
       gems: "none"
     - ruby: "2.5.8"
@@ -205,12 +201,7 @@ matrix:
     - ruby: "2.7.7"
     - ruby: "3.0.4"
     - ruby: "3.1.2"
-    - ruby: "3.2.0-rc1"
-      env_vars:
-        - name: "_LIBYAML"
-          value: "1"
-        - name: "RUBY_CFLAGS"
-          value: "-std=gnu99"
+    - ruby: "3.2.0"
     - ruby: "jruby-9.3.9.0"
       gems: "minimal"
     - ruby: "jruby-9.4.0.0"
@@ -225,7 +216,7 @@ matrix:
         ruby:
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-rc1"
+          - "3.2.0"
     - gem: "http5"
     - gem: "padrino"
     - gem: "psych-3"
@@ -233,13 +224,13 @@ matrix:
         ruby:
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-rc1"
+          - "3.2.0"
     - gem: "psych-4"
       only:
         ruby:
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-rc1"
+          - "3.2.0"
     - gem: "que"
     - gem: "que_beta"
     - gem: "rails-3.2"
@@ -312,7 +303,7 @@ matrix:
           - "2.7.7"
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-rc1"
+          - "3.2.0"
           - "jruby-9.4.0.0"
     - gem: "rails-7.0"
       only:
@@ -320,7 +311,7 @@ matrix:
           - "2.7.7"
           - "3.0.4"
           - "3.1.2"
-          - "3.2.0-rc1"
+          - "3.2.0"
           - "jruby-9.4.0.0"
     - gem: "resque-1"
       bundler: "1.17.3"
