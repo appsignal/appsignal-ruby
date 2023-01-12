@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.1
+
+### Added
+
+- [7f62ada8](https://github.com/appsignal/appsignal-ruby/commit/7f62ada8deb67a2b7d355ec0c1bc2ad1d1e2d8d1) patch - Track the Operating System release/distro in the diagnose report. This helps us with debugging what exact version of Linux an app is running on, for example.
+
+### Fixed
+
+- [1443e05f](https://github.com/appsignal/appsignal-ruby/commit/1443e05f0fa5bf6af69c40753b2d135f082871de) patch - Attempt to load C extension from lib/ directory. Fixes an issue where JRuby would fail to load
+  the extension from the ext/ directory, as the directory is cleaned after installation when using
+  RubyGems 3.4.0.
+
 ## 3.3.0
 
 ### Added
