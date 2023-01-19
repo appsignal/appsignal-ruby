@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "yaml"
-
 begin
   if Appsignal::System.jruby?
     require "appsignal/extension/jruby"
@@ -24,9 +22,8 @@ module Appsignal
   class Extension
     class << self
       def agent_config
-        @agent_config ||= YAML.load(
-          File.read(File.join(File.dirname(__FILE__), "../../ext/agent.yml"))
-        )
+        require_relative "../../ext/agent"
+        ::APPSIGNAL_AGENT_CONFIG
       end
 
       def agent_version
