@@ -113,8 +113,8 @@ def download_archive(type)
   unless ARCH_CONFIG.key?(type)
     abort_installation(
       "AppSignal currently does not support your system. " \
-        "Expected config for architecture '#{arch}' and package type '#{type}', but none found. " \
-        "For a full list of supported systems visit: " \
+        "Expected config for architecture '#{TARGET_TRIPLE}' and package type '#{type}', " \
+        "but none found. For a full list of supported systems visit: " \
         "https://docs.appsignal.com/support/operating-systems.html"
     )
     return
