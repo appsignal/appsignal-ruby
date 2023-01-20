@@ -3,18 +3,17 @@ require "fileutils"
 require "open-uri"
 require "zlib"
 require "json"
-require "yaml"
 require "rubygems/package"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
 require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
+require_relative "./agent"
 
-EXT_PATH     = File.expand_path("..", __FILE__).freeze
-AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
+EXT_PATH = File.expand_path("..", __FILE__).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
 AGENT_ARCHITECTURE = Appsignal::System.agent_architecture
 TARGET_TRIPLE = "#{AGENT_ARCHITECTURE}-#{AGENT_PLATFORM}".freeze
-ARCH_CONFIG = AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
+ARCH_CONFIG = APPSIGNAL_AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -97,7 +96,7 @@ def installation_succeeded?
 end
 
 def check_architecture
-  if AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
+  if APPSIGNAL_AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
     true
   else
     abort_installation(
@@ -113,18 +112,18 @@ def download_archive(type)
   unless ARCH_CONFIG.key?(type)
     abort_installation(
       "AppSignal currently does not support your system. " \
-        "Expected config for architecture '#{arch}' and package type '#{type}', but none found. " \
-        "For a full list of supported systems visit: " \
+        "Expected config for architecture '#{TARGET_TRIPLE}' and package type '#{type}', " \
+        "but none found. For a full list of supported systems visit: " \
         "https://docs.appsignal.com/support/operating-systems.html"
     )
     return
   end
 
-  version = AGENT_CONFIG["version"]
+  version = APPSIGNAL_AGENT_CONFIG["version"]
   filename = ARCH_CONFIG[type]["filename"]
   download_errors = []
 
-  AGENT_CONFIG["mirrors"].each do |mirror|
+  APPSIGNAL_AGENT_CONFIG["mirrors"].each do |mirror|
     download_url = [mirror, version, filename].join("/")
     report["download"]["download_url"] = download_url
 

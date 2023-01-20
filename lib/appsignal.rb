@@ -2,6 +2,7 @@
 
 require "json"
 require "securerandom"
+require "stringio"
 
 require "appsignal/logger"
 require "appsignal/utils/deprecation_message"
