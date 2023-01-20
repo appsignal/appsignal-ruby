@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.2
+
+### Changed
+
+- [d1b960f0](https://github.com/appsignal/appsignal-ruby/commit/d1b960f0350b55962621d740e6a92922b334ab49) patch - Reduce our dependency on YAML during installation. Instead of a YAML file with details about the extension download location, use a pure Ruby file. This is a partial fix for the installation issue involving psych version 5.
+
+### Fixed
+
+- [e1e598ae](https://github.com/appsignal/appsignal-ruby/commit/e1e598ae51512a51486446e5751e504d4fc90ef0) patch - Skip the `.gemrc` config during installation if it raises an error loading it. This can be caused when the psych gem version 5 is installed on Ruby < 3.2. Use the `HTTP_PROXY` environment variable instead to configure the HTTP proxy that should be used during installation.
+
 ## 3.3.1
 
 ### Added
