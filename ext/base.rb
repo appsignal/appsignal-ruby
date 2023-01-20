@@ -33,8 +33,7 @@ def report
           "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
         },
         "download" => {
-          "checksum" => "unverified",
-          "http_proxy" => http_proxy
+          "checksum" => "unverified"
         },
         "build" => {
           "time" => Time.now.utc,
@@ -54,7 +53,11 @@ def report
             d["libc"] = ldd_version if ldd_version
           end
         }
-      }
+      }.tap do |r|
+        proxy, error = http_proxy
+        r["download"]["http_proxy"] = proxy
+        r["download"]["http_proxy_error"] = error if error
+      end
     end
 end
 
@@ -128,10 +131,11 @@ def download_archive(type)
     report["download"]["download_url"] = download_url
 
     begin
+      proxy, _error = http_proxy
       args = [
         download_url,
         :ssl_ca_cert => CA_CERT_PATH,
-        :proxy => http_proxy
+        :proxy => proxy
       ]
       if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
         return URI.open(*args)
@@ -186,14 +190,25 @@ def store_download_version_on_report
 end
 
 def http_proxy
-  proxy = try_http_proxy_value(Gem.configuration[:http_proxy])
-  return proxy if proxy
+  proxy, error =
+    begin
+      [try_http_proxy_value(Gem.configuration[:http_proxy]), nil]
+    rescue => error
+      # Ignore this setting if the `.gemrc` file can't be read. This raises an
+      # error on Rubies with psych 4 in the standard library, but also have
+      # psych 5 installed: Ruby < 3.2.
+      # https://github.com/appsignal/appsignal-ruby/issues/904
+      [nil, error]
+    end
+  return [proxy, error] if proxy
 
   proxy = try_http_proxy_value(ENV["http_proxy"])
-  return proxy if proxy
+  return [proxy, error] if proxy
 
   proxy = try_http_proxy_value(ENV["HTTP_PROXY"])
-  return proxy if proxy
+  return [proxy, error] if proxy
+
+  [nil, error]
 end
 
 def try_http_proxy_value(value)
