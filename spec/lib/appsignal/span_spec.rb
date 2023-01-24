@@ -47,7 +47,7 @@ describe Appsignal::Span do
       error = root.to_h["error"]
       expect(error["name"]).to eq "RuntimeError"
       expect(error["message"]).to eq "Error"
-      expect(error["backtrace"]).not_to be_empty
+      expect(error["backtrace_json"]).not_to be_empty
     end
   end
 
