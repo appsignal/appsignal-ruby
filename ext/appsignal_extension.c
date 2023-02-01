@@ -845,9 +845,13 @@ static VALUE set_environment_metadata(VALUE self, VALUE key, VALUE value) {
 void Init_appsignal_extension(void) {
   Appsignal = rb_define_module("Appsignal");
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
+  rb_undef_alloc_func(Extension);
   Transaction = rb_define_class_under(Extension, "Transaction", rb_cObject);
+  rb_undef_alloc_func(Transaction);
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
+  rb_undef_alloc_func(Data);
   Span = rb_define_class_under(Extension, "Span", rb_cObject);
+  rb_undef_alloc_func(Span);
 
   // Starting and stopping
   rb_define_singleton_method(Extension, "start",    start,    0);
