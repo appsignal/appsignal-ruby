@@ -159,6 +159,7 @@ describe Appsignal::Config do
         :enable_host_metrics            => true,
         :enable_minutely_probes         => true,
         :enable_statsd                  => true,
+        :enable_nginx_metrics           => false,
         :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,
         :filter_parameters              => [],

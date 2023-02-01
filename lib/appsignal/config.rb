@@ -18,6 +18,7 @@ module Appsignal
       :enable_host_metrics            => true,
       :enable_minutely_probes         => true,
       :enable_statsd                  => true,
+      :enable_nginx_metrics           => false,
       :endpoint                       => "https://push.appsignal.com",
       :files_world_accessible         => true,
       :filter_parameters              => [],
@@ -67,6 +68,7 @@ module Appsignal
       "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
+      "APPSIGNAL_ENABLE_NGINX_METRICS"           => :enable_nginx_metrics,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
@@ -120,6 +122,7 @@ module Appsignal
       APPSIGNAL_ENABLE_HOST_METRICS
       APPSIGNAL_ENABLE_MINUTELY_PROBES
       APPSIGNAL_ENABLE_STATSD
+      APPSIGNAL_ENABLE_NGINX_METRICS
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
       APPSIGNAL_INSTRUMENT_HTTP_RB
       APPSIGNAL_INSTRUMENT_NET_HTTP
@@ -313,6 +316,7 @@ module Appsignal
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
       ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
+      ENV["_APPSIGNAL_ENABLE_NGINX_METRICS"]         = config_hash[:enable_nginx_metrics].to_s
       ENV["_APPSIGNAL_ENVIRONMENT"]                  = env
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
       ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
