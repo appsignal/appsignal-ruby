@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.3
+
+### Fixed
+
+- [b2f872bc](https://github.com/appsignal/appsignal-ruby/commit/b2f872bc599f45378639cc9465e64c5c4730ab79) patch - Fix the T_DATA warning originating from the AppSignal C extension on Ruby 3.2.
+
 ## 3.3.2
 
 ### Changed
