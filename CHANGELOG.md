@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.4
+
+### Added
+
+- [75e29895](https://github.com/appsignal/appsignal-ruby/commit/75e298951d4955871585194c6940992c3e081864) patch - Add NGINX metrics support. See [our documentation](https://docs.appsignal.com/metrics/nginx.html) for details.
+
 ## 3.3.3
 
 ### Fixed
