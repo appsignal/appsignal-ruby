@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.5
+
+### Changed
+
+- [fc85adde](https://github.com/appsignal/appsignal-ruby/commit/fc85adde11d7a35b1ca64c0f0714c6fcdd570590) patch - Bump agent to 0d593d5.
+  
+  - Report shared memory metric state.
+
 ## 3.3.4
 
 ### Added
