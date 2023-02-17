@@ -156,6 +156,8 @@ describe Appsignal::Config do
         :debug                          => false,
         :dns_servers                    => [],
         :enable_allocation_tracking     => true,
+        :enable_gvl_global_timer        => true,
+        :enable_gvl_waiting_threads     => true,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => true,
         :enable_statsd                  => true,
