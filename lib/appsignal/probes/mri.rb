@@ -79,29 +79,6 @@ module Appsignal
         set_gauge("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
         set_gauge("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
       end
-
-      private
-
-      def set_gauge(metric, value, tags = {})
-        @appsignal.set_gauge(metric, value, { :hostname => hostname }.merge(tags))
-      end
-
-      def hostname
-        return @hostname if defined?(@hostname)
-
-        config = @appsignal.config
-        @hostname =
-          if config[:hostname]
-            config[:hostname]
-          else
-            # Auto detect hostname as fallback. May be inaccurate.
-            Socket.gethostname
-          end
-        Appsignal.logger.debug "MRI probe: Using hostname config " \
-          "option '#{@hostname.inspect}' as hostname"
-
-        @hostname
-      end
     end
   end
 end

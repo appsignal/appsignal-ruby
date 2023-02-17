@@ -37,6 +37,27 @@ module Appsignal
 
         yield value - previous_value
       end
+
+      def hostname
+        return @hostname if defined?(@hostname)
+
+        config = @appsignal.config
+        @hostname =
+          if config[:hostname]
+            config[:hostname]
+          else
+            # Auto detect hostname as fallback. May be inaccurate.
+            Socket.gethostname
+          end
+        Appsignal.logger.debug "Probe helper: Using hostname config " \
+          "option '#{@hostname.inspect}' as hostname"
+
+        @hostname
+      end
+
+      def set_gauge(metric, value, tags = {})
+        @appsignal.set_gauge(metric, value, { :hostname => hostname }.merge(tags))
+      end
     end
   end
 end
