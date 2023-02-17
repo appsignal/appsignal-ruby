@@ -720,11 +720,12 @@ static VALUE close_span(VALUE self) {
   return Qnil;
 }
 
-static VALUE a_log(VALUE self, VALUE group, VALUE severity, VALUE message, VALUE attributes) {
+static VALUE a_log(VALUE self, VALUE group, VALUE severity, VALUE format, VALUE message, VALUE attributes) {
   appsignal_data_t* attributes_data;
 
   Check_Type(group, T_STRING);
   Check_Type(severity, T_FIXNUM);
+  Check_Type(format, T_FIXNUM);
   Check_Type(message, T_STRING);
   Check_Type(attributes, RUBY_T_DATA);
 
@@ -733,6 +734,7 @@ static VALUE a_log(VALUE self, VALUE group, VALUE severity, VALUE message, VALUE
   appsignal_log(
       make_appsignal_string(group),
       FIX2INT(severity),
+      FIX2INT(format),
       make_appsignal_string(message),
       attributes_data
    );
@@ -859,7 +861,7 @@ void Init_appsignal_extension(void) {
   // Diagnostics
   rb_define_singleton_method(Extension, "diagnose", diagnose, 0);
   // Logging
-  rb_define_singleton_method(Extension, "log", a_log, 4);
+  rb_define_singleton_method(Extension, "log", a_log, 5);
 
   // Server state
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);

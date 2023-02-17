@@ -1,23 +1,22 @@
 describe Appsignal::Logger do
-  let(:level) { ::Logger::DEBUG }
-  let(:logger) { Appsignal::Logger.new("group", level) }
+  let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::DEBUG) }
 
   it "should not create a logger with a nil group" do
     expect do
-      Appsignal::Logger.new(nil, level)
+      Appsignal::Logger.new(nil)
     end.to raise_error(TypeError)
   end
 
   describe "#add" do
     it "should log with a level and message" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message")
     end
 
     it "should log with a block" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO) do
         "Log message"
       end
@@ -25,7 +24,7 @@ describe Appsignal::Logger do
 
     it "should log with a level, message and group" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("other_group", 3, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("other_group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message", "other_group")
     end
 
@@ -34,12 +33,22 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, nil)
     end
 
-    context "with debug log level" do
-      let(:level) { ::Logger::INFO }
+    context "with info log level" do
+      let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
 
       it "should skip logging if the level is too low" do
         expect(Appsignal::Extension).not_to receive(:log)
         logger.add(::Logger::DEBUG, "Log message")
+      end
+    end
+
+    context "with a format set" do
+      let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::LOGFMT) }
+
+      it "should log and pass the format flag" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 1, "Log message", instance_of(Appsignal::Extension::Data))
+        logger.add(::Logger::INFO, "Log message")
       end
     end
 
@@ -52,7 +61,7 @@ describe Appsignal::Logger do
 
       it "should log with a level, message and group" do
         expect(Appsignal::Extension).to receive(:log)
-          .with("other_group", 3, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+          .with("other_group", 3, 0, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
         logger.add(::Logger::INFO, "Log message", "other_group")
       end
     end
@@ -71,7 +80,7 @@ describe Appsignal::Logger do
           .with({})
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", method[1], "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
 
         logger.send(method[0], "Log message")
       end
@@ -81,7 +90,7 @@ describe Appsignal::Logger do
           .with({})
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", method[1], "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
 
         logger.send(method[0]) do
           "Log message"
@@ -95,7 +104,7 @@ describe Appsignal::Logger do
 
       if method[2]
         context "with a lower log level" do
-          let(:level) { method[2] }
+          let(:logger) { Appsignal::Logger.new("group", :level => method[2]) }
 
           it "should skip logging if the level is too low" do
             expect(Appsignal::Extension).not_to receive(:log)
@@ -113,7 +122,7 @@ describe Appsignal::Logger do
 
         it "should log with a level, message and group" do
           expect(Appsignal::Extension).to receive(:log)
-            .with("group", method[1], "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+            .with("group", method[1], 0, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
           logger.send(method[0], "Log message")
         end
       end
