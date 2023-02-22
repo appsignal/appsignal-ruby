@@ -197,9 +197,9 @@ module Appsignal
       #   used to send the error.
       # @return [void]
       #
-      # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       # @since 0.6.0
       def send_error(
@@ -296,7 +296,7 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction#set_error
-      # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @since 0.6.6
       def set_error(exception, tags = nil, namespace = nil)
@@ -434,7 +434,7 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction.set_tags
-      # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       def tag_request(tags = {})
         return unless active?
@@ -466,7 +466,7 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction#add_breadcrumb
-      # @see http://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
       #   Breadcrumb reference
       # @since 2.12.0
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
@@ -510,9 +510,9 @@ module Appsignal
       #
       # @see Appsignal::Transaction#instrument
       # @see .instrument_sql
-      # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/instrumentation.html
       #   AppSignal custom instrumentation guide
-      # @see http://docs.appsignal.com/api/event-names.html
+      # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
       # @since 1.3.0
       def instrument(
@@ -554,9 +554,9 @@ module Appsignal
       # @return [Object] Returns the block's return value.
       #
       # @see .instrument
-      # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/instrumentation.html
       #   AppSignal custom instrumentation guide
-      # @see http://docs.appsignal.com/api/event-names.html
+      # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
       # @since 2.0.0
       def instrument_sql(name, title = nil, body = nil, &block)
