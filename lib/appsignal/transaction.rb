@@ -159,7 +159,7 @@ module Appsignal
     # @return [void]
     #
     # @see Appsignal.tag_request
-    # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+    # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
     #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
@@ -177,7 +177,7 @@ module Appsignal
     # @return [void]
     #
     # @see Appsignal.add_breadcrumb
-    # @see http://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
+    # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
     #   Breadcrumb reference
     def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
       @breadcrumbs.push(
