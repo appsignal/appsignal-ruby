@@ -35,9 +35,9 @@ module Appsignal
     # @since 2.0.0
     # @see Appsignal::Demo
     # @see Appsignal::CLI::Install
-    # @see http://docs.appsignal.com/ruby/command-line/demo.html
+    # @see https://docs.appsignal.com/ruby/command-line/demo.html
     #   AppSignal demo documentation
-    # @see http://docs.appsignal.com/support/debugging.html
+    # @see https://docs.appsignal.com/support/debugging.html
     #   Debugging AppSignal guide
     # @api private
     class Demo
