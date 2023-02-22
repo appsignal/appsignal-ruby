@@ -251,14 +251,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       it "adds the installation report to the diagnostics report" do
         run
-        jruby = DependencyHelper.running_jruby?
+        jruby = Appsignal::System.jruby?
         expect(received_report["installation"]).to match(
           "result" => {
             "status" => "success"
           },
           "language" => {
             "name" => "ruby",
-            "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}",
+            "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}",
             "implementation" => jruby ? "jruby" : "ruby"
           },
           "download" => {
@@ -295,7 +295,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           "  Status: success",
           "Language details",
           "  Implementation: \"#{jruby ? "jruby" : "ruby"}\"",
-          "  Ruby version: \"#{"#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"}\"",
+          "  Ruby version: \"#{"#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"}\"",
           "Download details",
           "  Download URL: \"https://",
           "  Checksum: \"verified\"",
@@ -321,7 +321,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           expect(File).to receive(:read)
             .with(File.expand_path("../../../../../ext/install.report", __FILE__))
             .and_return(
-              YAML.dump(
+              JSON.generate(
                 "result" => {
                   "status" => "error",
                   "error" => "RuntimeError: some error",
@@ -384,8 +384,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
       end
 
-      context "when report is invalid YAML" do
-        let(:raw_report) { "foo:\nbar" }
+      context "when report is invalid JSON" do
+        let(:raw_report) { "{}-" }
         before do
           allow(File).to receive(:read).and_call_original
           expect(File).to receive(:read)
@@ -604,7 +604,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
     describe "host information" do
       let(:rbconfig) { RbConfig::CONFIG }
-      let(:language_version) { "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}" }
+      let(:language_version) { "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}" }
 
       it "outputs host information" do
         run
@@ -636,9 +636,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         run
         host_report = received_report["host"]
         host_report.delete("running_in_container") # Tested elsewhere
+        distribution_file = "/etc/os-release"
+        os_distribution = File.exist?(distribution_file) ? File.read(distribution_file) : ""
         expect(host_report).to eq(
           "architecture" => rbconfig["host_cpu"],
           "os" => rbconfig["host_os"],
+          "os_distribution" => os_distribution,
           "language_version" => language_version,
           "heroku" => false,
           "root" => false
@@ -750,13 +753,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         it "outputs a warning that no config is loaded" do
-          expect(output).to include "Environment: \"\"\n#{warning_message}"
+          expect(output).to include "environment: \"\"\n#{warning_message}"
           expect(output).to_not have_color_markers
         end
 
         context "with color", :color => true do
           it "outputs a warning that no config is loaded in color" do
-            expect(output).to include "Environment: \"\"\n"
+            expect(output).to include "environment: \"\"\n"
             expect(output).to have_colorized_text :red, warning_message
           end
         end
@@ -769,13 +772,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "transmits validation in report" do
           default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
           expect(received_report["config"]).to eq(
-            "options" => default_config.merge("env" => ""),
+            "options" => default_config.merge("env" => "", "send_session_data" => true),
             "sources" => {
               "default" => default_config,
               "system" => {},
               "initial" => { "env" => "" },
               "file" => {},
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end
@@ -785,7 +789,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         describe "environment" do
           it "outputs environment" do
             run
-            expect(output).to include(%(Environment: "production"))
+            expect(output).to include(%(environment: "production"))
           end
 
           context "when the source is a single source" do
@@ -793,7 +797,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs the label source after the value" do
               expect(output).to include(
-                %(Environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
+                %(environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
               )
             end
           end
@@ -810,7 +814,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs a list of sources with their values" do
               expect(output).to include(
-                %(  Environment: "production"\n) +
+                %(  environment: "production"\n) +
                 %(    Sources:\n) +
                 %(      initial: "development"\n) +
                 %(      env:     "production"\n)
@@ -893,7 +897,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "system" => {},
               "initial" => hash_with_string_keys(config.initial_config.merge(additional_initial_config)),
               "file" => hash_with_string_keys(config.file_config),
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end
@@ -904,7 +909,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before { run_within_dir tmp_dir }
 
         it "outputs environment" do
-          expect(output).to include(%(Environment: "foobar"))
+          expect(output).to include(%(environment: "foobar"))
         end
 
         it "outputs config defaults" do
@@ -920,7 +925,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "system" => {},
               "initial" => hash_with_string_keys(config.initial_config),
               "file" => hash_with_string_keys(config.file_config),
-              "env" => {}
+              "env" => {},
+              "override" => { "send_session_data" => true }
             }
           )
         end

@@ -35,8 +35,22 @@ module Appsignal
         end
       end
 
+      # Returns currently active transaction or a {NilTransaction} if none is
+      # active.
+      #
+      # @see .current?
+      # @return [Boolean]
       def current
         Thread.current[:appsignal_transaction] || NilTransaction.new
+      end
+
+      # Returns if any transaction is currently active or not. A
+      # {NilTransaction} is not considered an active transaction.
+      #
+      # @see .current
+      # @return [Boolean]
+      def current?
+        current && !current.nil_transaction?
       end
 
       def complete_current!
@@ -51,11 +65,6 @@ module Appsignal
       # @api private
       def clear_current_transaction!
         Thread.current[:appsignal_transaction] = nil
-      end
-
-      def garbage_collection_profiler
-        @garbage_collection_profiler ||=
-          Appsignal.config[:enable_gc_instrumentation] ? Appsignal::GarbageCollectionProfiler.new : NilGarbageCollectionProfiler.new
       end
     end
 
@@ -89,7 +98,7 @@ module Appsignal
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
         @namespace,
-        self.class.garbage_collection_profiler.total_time
+        0
       ) || Appsignal::Extension::MockTransaction.new
     end
 
@@ -103,9 +112,7 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      if @ext.finish(self.class.garbage_collection_profiler.total_time)
-        sample_data
-      end
+      sample_data if @ext.finish(0)
       @ext.complete
     end
 
@@ -333,7 +340,7 @@ module Appsignal
       backtrace = cleaned_backtrace(error.backtrace)
       @ext.set_error(
         error.class.name,
-        error.message.to_s,
+        cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
     end
@@ -341,7 +348,7 @@ module Appsignal
 
     def start_event
       return if paused?
-      @ext.start_event(self.class.garbage_collection_profiler.total_time)
+      @ext.start_event(0)
     end
 
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
@@ -351,7 +358,7 @@ module Appsignal
         title || BLANK,
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
-        self.class.garbage_collection_profiler.total_time
+        0
       )
     end
 
@@ -363,7 +370,7 @@ module Appsignal
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
-        self.class.garbage_collection_profiler.total_time
+        0
       )
     end
 
@@ -476,12 +483,12 @@ module Appsignal
     #
     # The session data is sanitized by the {Appsignal::Utils::HashSanitizer}.
     #
-    # @return [nil] if `:skip_session_data` config is set to `true`.
+    # @return [nil] if `:send_session_data` config is set to `false`.
     # @return [nil] if the {#request} object doesn't respond to `#session`.
     # @return [nil] if the {#request} session data is `nil`.
     # @return [Hash<String, Object>]
     def sanitized_session_data
-      return if Appsignal.config[:skip_session_data] ||
+      return if !Appsignal.config[:send_session_data] ||
           !request.respond_to?(:session)
       session = request.session
       return unless session
@@ -530,6 +537,17 @@ module Appsignal
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
         backtrace
+      end
+    end
+
+    # Clean error messages that are known to potentially contain user data.
+    # Returns an unchanged message otherwise.
+    def cleaned_error_message(error)
+      case error.class.to_s
+      when "PG::UniqueViolation", "ActiveRecord::RecordNotUnique"
+        error.message.to_s.gsub(/\)=\(.*\)/, ")=(?)")
+      else
+        error.message.to_s
       end
     end
 

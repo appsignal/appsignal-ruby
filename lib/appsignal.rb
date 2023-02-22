@@ -2,6 +2,7 @@
 
 require "json"
 require "securerandom"
+require "stringio"
 
 require "appsignal/logger"
 require "appsignal/utils/deprecation_message"
@@ -59,20 +60,6 @@ module Appsignal
     attr_writer :logger
 
     # @api private
-    def extensions
-      @extensions ||= []
-    end
-
-    # @api private
-    def initialize_extensions
-      Appsignal.logger.debug("Initializing extensions")
-      extensions.each do |extension|
-        Appsignal.logger.debug("Initializing #{extension}")
-        extension.initializer
-      end
-    end
-
-    # @api private
     def testing?
       false
     end
@@ -116,28 +103,17 @@ module Appsignal
       )
 
       if config.valid?
-        logger.level =
-          if config[:debug]
-            Logger::DEBUG
-          else
-            Logger::INFO
-          end
+        logger.level = config.log_level
         if config.active?
           logger.info "Starting AppSignal #{Appsignal::VERSION} "\
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
-          initialize_extensions
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
             Appsignal::Environment.report_enabled("allocation_tracking")
-          end
-
-          if config[:enable_gc_instrumentation]
-            GC::Profiler.enable
-            Appsignal::Environment.report_enabled("gc_instrumentation")
           end
 
           Appsignal::Minutely.start if config[:enable_minutely_probes]
@@ -200,8 +176,8 @@ module Appsignal
     end
 
     def logger
-      @logger ||= Appsignal::Logger.new(in_memory_log).tap do |l|
-        l.level = Logger::INFO
+      @logger ||= Appsignal::Utils::IntegrationLogger.new(in_memory_log).tap do |l|
+        l.level = ::Logger::INFO
         l.formatter = log_formatter("appsignal")
       end
     end
@@ -230,12 +206,11 @@ module Appsignal
       end
 
       logger.level =
-        if config && config[:debug]
-          Logger::DEBUG
+        if config
+          config.log_level
         else
-          Logger::INFO
+          Appsignal::Config::DEFAULT_LOG_LEVEL
         end
-
       logger << @in_memory_log.string if @in_memory_log
     end
 
@@ -280,12 +255,12 @@ module Appsignal
     private
 
     def start_stdout_logger
-      @logger = Appsignal::Logger.new($stdout)
+      @logger = Appsignal::Utils::IntegrationLogger.new($stdout)
       logger.formatter = log_formatter("appsignal")
     end
 
     def start_file_logger(path)
-      @logger = Appsignal::Logger.new(path)
+      @logger = Appsignal::Utils::IntegrationLogger.new(path)
       logger.formatter = log_formatter
     rescue SystemCallError => error
       start_stdout_logger
@@ -319,7 +294,7 @@ require "appsignal/hooks"
 require "appsignal/probes"
 require "appsignal/marker"
 require "appsignal/minutely"
-require "appsignal/garbage_collection_profiler"
+require "appsignal/garbage_collection"
 require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"
 require "appsignal/version"

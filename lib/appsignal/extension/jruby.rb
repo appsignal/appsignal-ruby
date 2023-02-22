@@ -50,7 +50,12 @@ module Appsignal
       end
 
       begin
-        ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{lib_extension}")
+        begin
+          # RubyGems will install the extension in the gem's lib directory.
+          ffi_lib File.join(File.dirname(__FILE__), "../../../lib/libappsignal.#{lib_extension}")
+        rescue LoadError
+          ffi_lib File.join(File.dirname(__FILE__), "../../../ext/libappsignal.#{lib_extension}")
+        end
         typedef AppsignalString.by_value, :appsignal_string
 
         attach_function :appsignal_start, [], :void
@@ -81,9 +86,14 @@ module Appsignal
           [:appsignal_string, :double, :pointer],
           :void
 
+        # Logging methods
+        attach_function :appsignal_log,
+          [:appsignal_string, :int32, :appsignal_string, :pointer],
+          :void
+
         # Transaction methods
         attach_function :appsignal_free_transaction,
-          [],
+          [:pointer],
           :void
         attach_function :appsignal_start_transaction,
           [:appsignal_string, :appsignal_string, :long],
@@ -191,9 +201,8 @@ module Appsignal
           :void
 
         # Data struct methods
-        attach_function :appsignal_free_data, [], :void
+        attach_function :appsignal_free_data, [:pointer], :void
         attach_function :appsignal_data_map_new, [], :pointer
-        attach_function :appsignal_data_filtered_map_new, [], :pointer
         attach_function :appsignal_data_array_new, [], :pointer
         attach_function :appsignal_data_map_set_string,
           [:pointer, :appsignal_string, :appsignal_string],
@@ -265,6 +274,15 @@ module Appsignal
         make_ruby_string state if state[:len] > 0
       end
 
+      def log(group, level, message, attributes)
+        appsignal_log(
+          make_appsignal_string(group),
+          level,
+          make_appsignal_string(message),
+          attributes.pointer
+        )
+      end
+
       def start_transaction(transaction_id, namespace, gc_duration_ms)
         transaction = appsignal_start_transaction(
           make_appsignal_string(transaction_id),
@@ -277,10 +295,6 @@ module Appsignal
       end
 
       def data_map_new
-        Data.new(appsignal_data_map_new)
-      end
-
-      def data_filtered_map_new
         Data.new(appsignal_data_map_new)
       end
 

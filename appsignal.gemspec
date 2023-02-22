@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-
 require File.expand_path("../lib/appsignal/version", __FILE__)
 
 Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
@@ -27,6 +25,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.extensions            = %w[ext/extconf.rb]
 
   gem.metadata = {
+    "rubygems_mfa_required" => "true",
     "bug_tracker_uri"   => "https://github.com/appsignal/appsignal-ruby/issues",
     "changelog_uri"     =>
       "https://github.com/appsignal/appsignal-ruby/blob/main/CHANGELOG.md",
@@ -37,15 +36,19 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
 
   gem.add_dependency "rack"
 
-  gem.add_development_dependency "rake", "~> 11"
+  gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"
   gem.add_development_dependency "timecop"
-  gem.add_development_dependency "webmock"
   gem.add_development_dependency "yard", ">= 0.9.20"
   gem.add_development_dependency "pry"
 
   # Dependencies that need to be locked to a specific version in developement
   ruby_version = Gem::Version.new(RUBY_VERSION)
+  if ruby_version < Gem::Version.new("2.3.0")
+    gem.add_development_dependency "webmock", "3.14.0"
+  else
+    gem.add_development_dependency "webmock"
+  end
   if ruby_version > Gem::Version.new("2.5.0")
     # RuboCop dependency parallel depends on Ruby > 2.4
     gem.add_development_dependency "rubocop", "0.50.0"

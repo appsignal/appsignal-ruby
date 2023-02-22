@@ -85,7 +85,9 @@ describe Appsignal::Transaction do
     end
 
     describe ".current" do
-      subject { Appsignal::Transaction.current }
+      def current_transaction
+        Appsignal::Transaction.current
+      end
 
       context "when there is a current transaction" do
         let!(:transaction) do
@@ -93,13 +95,17 @@ describe Appsignal::Transaction do
         end
 
         it "reads :appsignal_transaction from the current Thread" do
-          expect(subject).to eq Thread.current[:appsignal_transaction]
-          expect(subject).to eq transaction
+          expect(current_transaction).to eq Thread.current[:appsignal_transaction]
+          expect(current_transaction).to eq transaction
         end
 
         it "is not a NilTransaction" do
-          expect(subject.nil_transaction?).to eq false
-          expect(subject).to be_a Appsignal::Transaction
+          expect(current_transaction.nil_transaction?).to eq false
+          expect(current_transaction).to be_a Appsignal::Transaction
+        end
+
+        it "returns true for current?" do
+          expect(Appsignal::Transaction.current?).to be(true)
         end
       end
 
@@ -109,8 +115,12 @@ describe Appsignal::Transaction do
         end
 
         it "returns a NilTransaction stub" do
-          expect(subject.nil_transaction?).to eq true
-          expect(subject).to be_a Appsignal::Transaction::NilTransaction
+          expect(current_transaction.nil_transaction?).to eq true
+          expect(current_transaction).to be_a Appsignal::Transaction::NilTransaction
+        end
+
+        it "returns false for current?" do
+          expect(Appsignal::Transaction.current?).to be(false)
         end
       end
     end
@@ -673,43 +683,36 @@ describe Appsignal::Transaction do
     end
 
     describe "#sample_data" do
-      it "should sample data" do
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "environment",
-          Appsignal::Utils::Data.generate(
-            "CONTENT_LENGTH" => "0",
-            "REQUEST_METHOD" => "GET",
-            "SERVER_NAME" => "example.org",
-            "SERVER_PORT" => "80",
-            "PATH_INFO" => "/blog"
-          )
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "session_data",
-          Appsignal::Utils::Data.generate({})
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "params",
-          Appsignal::Utils::Data.generate(
-            "controller" => "blog_posts",
-            "action" => "show",
-            "id" => "1"
-          )
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "metadata",
-          Appsignal::Utils::Data.generate("key" => "value")
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "tags",
-          Appsignal::Utils::Data.generate({})
-        ).once
-        expect(transaction.ext).to receive(:set_sample_data).with(
-          "breadcrumbs",
-          Appsignal::Utils::Data.generate([])
-        ).once
+      let(:env) { { "rack.session" => { "session" => "value" } } }
 
+      it "sets sample data" do
+        transaction.set_tags "tag" => "value"
+        transaction.add_breadcrumb "category", "action", "message", "key" => "value"
         transaction.sample_data
+
+        sample_data = transaction.to_h["sample_data"]
+        expect(sample_data["environment"]).to include(
+          "CONTENT_LENGTH" => "0",
+          "REQUEST_METHOD" => "GET",
+          "SERVER_NAME" => "example.org",
+          "SERVER_PORT" => "80",
+          "PATH_INFO" => "/blog"
+        )
+        expect(sample_data["session_data"]).to eq("session" => "value")
+        expect(sample_data["params"]).to eq(
+          "controller" => "blog_posts",
+          "action" => "show",
+          "id" => "1"
+        )
+        expect(sample_data["metadata"]).to eq("key" => "value")
+        expect(sample_data["tags"]).to eq("tag" => "value")
+        expect(sample_data["breadcrumbs"]).to contain_exactly(
+          "action" => "action",
+          "category" => "category",
+          "message" => "message",
+          "metadata" => { "key" => "value" },
+          "time" => kind_of(Integer)
+        )
       end
     end
 
@@ -782,23 +785,6 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#garbage_collection_profiler" do
-      before { Appsignal::Transaction.instance_variable_set(:@garbage_collection_profiler, nil) }
-
-      it "returns the NilGarbageCollectionProfiler" do
-        expect(Appsignal::Transaction.garbage_collection_profiler).to be_a(Appsignal::NilGarbageCollectionProfiler)
-      end
-
-      context "when gc profiling is enabled" do
-        before { Appsignal.config.config_hash[:enable_gc_instrumentation] = true }
-        after { Appsignal.config.config_hash[:enable_gc_instrumentation] = false }
-
-        it "returns the GarbageCollectionProfiler" do
-          expect(Appsignal::Transaction.garbage_collection_profiler).to be_a(Appsignal::GarbageCollectionProfiler)
-        end
-      end
-    end
-
     describe "#start_event" do
       it "starts the event in the extension" do
         expect(transaction.ext).to receive(:start_event).with(0).and_call_original
@@ -817,11 +803,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#finish_event" do
-      let(:fake_gc_time) { 123 }
-      before do
-        expect(described_class.garbage_collection_profiler)
-          .to receive(:total_time).at_least(:once).and_return(fake_gc_time)
-      end
+      let(:fake_gc_time) { 0 }
 
       it "should finish the event in the extension" do
         expect(transaction.ext).to receive(:finish_event).with(
@@ -868,11 +850,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#record_event" do
-      let(:fake_gc_time) { 123 }
-      before do
-        expect(described_class.garbage_collection_profiler)
-          .to receive(:total_time).at_least(:once).and_return(fake_gc_time)
-      end
+      let(:fake_gc_time) { 0 }
 
       it "should record the event in the extension" do
         expect(transaction.ext).to receive(:record_event).with(
@@ -1282,8 +1260,8 @@ describe Appsignal::Transaction do
           end
         end
 
-        context "when skipping session data" do
-          before { Appsignal.config[:skip_session_data] = true }
+        context "when not sending session data" do
+          before { Appsignal.config[:send_session_data] = false }
 
           it "does not set any session data on the transaction" do
             expect(subject).to be_nil
@@ -1337,6 +1315,50 @@ describe Appsignal::Transaction do
             expect(subject).to eq ["line 1", "line ?"]
           end
         end
+      end
+    end
+  end
+
+  describe "#cleaned_error_message" do
+    let(:error) { StandardError.new("Error message") }
+    subject { transaction.send(:cleaned_error_message, error) }
+
+    it "returns the error message" do
+      expect(subject).to eq "Error message"
+    end
+
+    context "with a PG::UniqueViolation" do
+      before do
+        stub_const("PG::UniqueViolation", Class.new(StandardError))
+      end
+
+      let(:error) do
+        PG::UniqueViolation.new(
+          "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
+        )
+      end
+
+      it "returns a sanizited error message" do
+        expect(subject).to eq "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+    end
+
+    context "with a ActiveRecord::RecordNotUnique" do
+      before do
+        stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError))
+      end
+
+      let(:error) do
+        ActiveRecord::RecordNotUnique.new(
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
+          "DETAIL: Key (email)=(foo@example.com) already exists."
+        )
+      end
+
+      it "returns a sanizited error message" do
+        expect(subject).to eq \
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
+          "DETAIL: Key (email)=(?) already exists."
       end
     end
   end

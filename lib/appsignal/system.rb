@@ -106,9 +106,5 @@ module Appsignal
     def self.jruby?
       RUBY_PLATFORM == "java"
     end
-
-    def self.ruby_2_7_or_newer?
-      RUBY_VERSION > "2.7"
-    end
   end
 end

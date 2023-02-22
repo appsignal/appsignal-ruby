@@ -6,8 +6,9 @@ module Appsignal
     class MongoMonitorSubscriber
       # Called by Mongo::Monitor when query starts
       def started(event)
+        return unless Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
-        return if transaction.nil_transaction?
         return if transaction.paused?
 
         # Format the command
@@ -36,8 +37,9 @@ module Appsignal
 
       # Finishes the event in the AppSignal extension
       def finish(result, event)
+        return unless Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
-        return if transaction.nil_transaction?
         return if transaction.paused?
 
         # Get the query from the transaction store

@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 describe Appsignal::Utils::Data do
   describe ".generate" do
     subject { Appsignal::Utils::Data.generate(body) }

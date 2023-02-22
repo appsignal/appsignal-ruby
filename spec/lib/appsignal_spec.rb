@@ -5,7 +5,6 @@ describe Appsignal do
     # Make sure we have a clean state because we want to test
     # initialization here.
     Appsignal.config = nil
-    Appsignal.extensions.clear
   end
 
   let(:transaction) { http_request_transaction }
@@ -17,14 +16,6 @@ describe Appsignal do
 
       Appsignal.config = config
       expect(Appsignal.config).to eq config
-    end
-  end
-
-  describe ".extensions" do
-    it "should keep a list of extensions" do
-      expect(Appsignal.extensions).to be_empty
-      Appsignal.extensions << Appsignal::MockExtension
-      expect(Appsignal.extensions.size).to eq(1)
     end
   end
 
@@ -63,31 +54,13 @@ describe Appsignal do
         Appsignal.start
       end
 
-      context "with an extension" do
-        before { Appsignal.extensions << Appsignal::MockExtension }
-
-        it "should call the extension's initializer" do
-          expect(Appsignal::MockExtension).to receive(:initializer)
-          Appsignal.start
-        end
-      end
-
-      context "when allocation tracking and gc instrumentation have been enabled" do
+      context "when allocation tracking has been enabled" do
         before do
-          allow(GC::Profiler).to receive(:enable)
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
-          Appsignal.config.config_hash[:enable_gc_instrumentation] = true
           capture_environment_metadata_report_calls
         end
 
-        it "should enable Ruby's GC::Profiler" do
-          expect(GC::Profiler).to receive(:enable)
-          Appsignal.start
-          expect_environment_metadata("ruby_gc_instrumentation_enabled", "true")
-        end
-
-        unless Appsignal::System.jruby?
-
+        unless DependencyHelper.running_jruby?
           it "installs the allocation event hook" do
             expect(Appsignal::Extension).to receive(:install_allocation_event_hook)
               .and_call_original
@@ -97,28 +70,16 @@ describe Appsignal do
         end
       end
 
-      context "when allocation tracking and gc instrumentation have been disabled" do
+      context "when allocation tracking has been disabled" do
         before do
           Appsignal.config.config_hash[:enable_allocation_tracking] = false
-          Appsignal.config.config_hash[:enable_gc_instrumentation] = false
           capture_environment_metadata_report_calls
         end
 
-        it "should not enable Ruby's GC::Profiler" do
-          expect(GC::Profiler).not_to receive(:enable)
-          Appsignal.start
-        end
-
         it "should not install the allocation event hook" do
-          expect(Appsignal::Minutely).not_to receive(:install_allocation_event_hook)
+          expect(Appsignal::Extension).not_to receive(:install_allocation_event_hook)
           Appsignal.start
           expect_not_environment_metadata("ruby_allocation_tracking_enabled")
-        end
-
-        it "should not add the gc probe to minutely" do
-          expect(Appsignal::Minutely).not_to receive(:register_garbage_collection_probe)
-          Appsignal.start
-          expect_not_environment_metadata("ruby_gc_instrumentation_enabled")
         end
       end
 
@@ -428,49 +389,89 @@ describe Appsignal do
     end
 
     describe ".monitor_single_transaction" do
+      around { |example| keep_transactions { example.run } }
+
       context "with a successful call" do
-        it "should call monitor_transaction and stop" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.something",
-            :key => :value
-          ).and_yield
+        it "calls monitor_transaction and Appsignal.stop" do
           expect(Appsignal).to receive(:stop)
 
-          Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
+          Appsignal.monitor_single_transaction(
+            "perform_job.something",
+            :controller => :my_controller,
+            :action => :my_action
+          ) do
             # nothing
           end
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "my_controller#my_action"
+          )
+          expect(transaction_hash["events"]).to match([
+            hash_including(
+              "name" => "perform_job.something",
+              "title" => "",
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT
+            )
+          ])
         end
       end
 
       context "with an erroring call" do
         let(:error) { ExampleException.new }
 
-        it "should call monitor_transaction and stop and then raise the error" do
-          expect(Appsignal).to receive(:monitor_transaction).with(
-            "perform_job.something",
-            :key => :value
-          ).and_yield
+        it "calls monitor_transaction and stop and re-raises the error" do
           expect(Appsignal).to receive(:stop)
 
           expect do
-            Appsignal.monitor_single_transaction("perform_job.something", :key => :value) do
+            Appsignal.monitor_single_transaction(
+              "perform_job.something",
+              :controller => :my_controller,
+              :action => :my_action
+            ) do
               raise error
             end
           end.to raise_error(error)
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "action" => "my_controller#my_action"
+          )
+          expect(transaction_hash["events"]).to match([
+            hash_including(
+              "name" => "perform_job.something",
+              "title" => "",
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT
+            )
+          ])
         end
       end
     end
 
     describe ".tag_request" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      let(:transaction) { http_request_transaction }
+      around do |example|
+        start_agent
+        with_current_transaction transaction do
+          keep_transactions { example.run }
+        end
+      end
 
       context "with transaction" do
-        let(:transaction) { double }
-        it "should call set_tags on transaction" do
-          expect(transaction).to receive(:set_tags).with("a" => "b")
-        end
+        it "calls set_tags on the current transaction" do
+          Appsignal.tag_request("a" => "b")
+          transaction.complete # Manually trigger transaction sampling
 
-        after { Appsignal.tag_request("a" => "b") }
+          expect(transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "tags" => { "a" => "b" }
+            )
+          )
+        end
       end
 
       context "without transaction" do
@@ -490,7 +491,14 @@ describe Appsignal do
       before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
       context "with transaction" do
-        let(:transaction) { double }
+        let(:transaction) { http_request_transaction }
+        around do |example|
+          Appsignal.config = project_fixture_config
+          set_current_transaction transaction do
+            example.run
+          end
+        end
+
         it "should call add_breadcrumb on transaction" do
           expect(transaction).to receive(:add_breadcrumb)
             .with("Network", "http", "User made network request", { :response => 200 }, fixed_time)
@@ -1119,7 +1127,7 @@ describe Appsignal do
             Appsignal.start_logger
             Appsignal.logger.error("Log to file")
           end
-          expect(Appsignal.logger).to be_a(Appsignal::Logger)
+          expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
         end
 
         it "logs to file" do
@@ -1142,7 +1150,7 @@ describe Appsignal do
             initialize_config
             Appsignal.start_logger
             Appsignal.logger.error("Log to not writable log file")
-            expect(Appsignal.logger).to be_a(Appsignal::Logger)
+            expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
           end
         end
 
@@ -1173,7 +1181,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to not writable log path")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
+        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       after do
         FileUtils.chmod 0o755, Appsignal::Config.system_tmp_dir
@@ -1202,7 +1210,7 @@ describe Appsignal do
           Appsignal.start_logger
           Appsignal.logger.error("Log to stdout")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Logger)
+        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       around { |example| recognize_as_heroku { example.run } }
 
@@ -1236,7 +1244,7 @@ describe Appsignal do
           before do
             capture_stdout(out_stream) do
               initialize_config
-              Appsignal.config[:debug] = true
+              Appsignal.config[:log_level] = "debug"
               Appsignal.start_logger
             end
           end

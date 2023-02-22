@@ -42,7 +42,11 @@ if DependencyHelper.capistrano3_present?
     describe "appsignal:deploy task" do
       before do
         ENV["USER"] = "batman"
-        ENV["PWD"] = project_fixture_path
+      end
+      around do |example|
+        Dir.chdir project_fixture_path do
+          example.run
+        end
       end
 
       context "config" do

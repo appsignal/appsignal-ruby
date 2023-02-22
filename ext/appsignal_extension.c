@@ -309,18 +309,6 @@ static VALUE data_map_new(VALUE self) {
   }
 }
 
-static VALUE data_filtered_map_new(VALUE self) {
-  appsignal_data_t* data;
-
-  data = appsignal_data_filtered_map_new();
-
-  if (data) {
-    return Data_Wrap_Struct(Data, NULL, appsignal_free_data, data);
-  } else {
-    return Qnil;
-  }
-}
-
 static VALUE data_array_new(VALUE self) {
   appsignal_data_t* data;
 
@@ -732,6 +720,28 @@ static VALUE close_span(VALUE self) {
   return Qnil;
 }
 
+static VALUE a_log(VALUE self, VALUE group, VALUE severity, VALUE format, VALUE message, VALUE attributes) {
+  appsignal_data_t* attributes_data;
+
+  Check_Type(group, T_STRING);
+  Check_Type(severity, T_FIXNUM);
+  Check_Type(format, T_FIXNUM);
+  Check_Type(message, T_STRING);
+  Check_Type(attributes, RUBY_T_DATA);
+
+  Data_Get_Struct(attributes, appsignal_data_t, attributes_data);
+
+  appsignal_log(
+      make_appsignal_string(group),
+      FIX2INT(severity),
+      FIX2INT(format),
+      make_appsignal_string(message),
+      attributes_data
+   );
+
+  return Qnil;
+}
+
 static VALUE set_gauge(VALUE self, VALUE key, VALUE value, VALUE tags) {
   appsignal_data_t* tags_data;
 
@@ -837,15 +847,21 @@ static VALUE set_environment_metadata(VALUE self, VALUE key, VALUE value) {
 void Init_appsignal_extension(void) {
   Appsignal = rb_define_module("Appsignal");
   Extension = rb_define_class_under(Appsignal, "Extension", rb_cObject);
+  rb_undef_alloc_func(Extension);
   Transaction = rb_define_class_under(Extension, "Transaction", rb_cObject);
+  rb_undef_alloc_func(Transaction);
   Data = rb_define_class_under(Extension, "Data", rb_cObject);
+  rb_undef_alloc_func(Data);
   Span = rb_define_class_under(Extension, "Span", rb_cObject);
+  rb_undef_alloc_func(Span);
 
   // Starting and stopping
   rb_define_singleton_method(Extension, "start",    start,    0);
   rb_define_singleton_method(Extension, "stop",     stop,     0);
   // Diagnostics
   rb_define_singleton_method(Extension, "diagnose", diagnose, 0);
+  // Logging
+  rb_define_singleton_method(Extension, "log", a_log, 5);
 
   // Server state
   rb_define_singleton_method(Extension, "get_server_state", get_server_state, 1);
@@ -869,7 +885,6 @@ void Init_appsignal_extension(void) {
 
   // Create a data map or array
   rb_define_singleton_method(Extension, "data_map_new", data_map_new, 0);
-  rb_define_singleton_method(Extension, "data_filtered_map_new", data_filtered_map_new, 0);
   rb_define_singleton_method(Extension, "data_array_new", data_array_new, 0);
 
   // Add content to a data map

@@ -1,7 +1,7 @@
 describe Appsignal::Hooks::SequelHook do
   if DependencyHelper.sequel_present?
     let(:db) do
-      if Appsignal::System.jruby?
+      if DependencyHelper.running_jruby?
         Sequel.connect("jdbc:sqlite::memory:")
       else
         Sequel.sqlite

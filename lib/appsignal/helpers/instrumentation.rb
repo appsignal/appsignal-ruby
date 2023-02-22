@@ -178,7 +178,7 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.send_error(e) do |transaction|
-      #     transaction.params(:search_query => params[:search_query])
+      #     transaction.params = { :search_query => params[:search_query] }
       #     transaction.set_action("my_action_name")
       #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
@@ -197,9 +197,9 @@ module Appsignal
       #   used to send the error.
       # @return [void]
       #
-      # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       # @since 0.6.0
       def send_error(
@@ -258,7 +258,7 @@ module Appsignal
       #   begin
       #     raise "oh no!"
       #   rescue => e
-      #     Appsignal.set_error(error)
+      #     Appsignal.set_error(e)
       #   end
       #   # Manually completing the transaction here.
       #   # Manually stopping AppSignal here
@@ -275,7 +275,7 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.set_error(e) do |transaction|
-      #     transaction.params(:search_query => params[:search_query])
+      #     transaction.params = { :search_query => params[:search_query] }
       #     transaction.set_action("my_action_name")
       #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
@@ -296,7 +296,7 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction#set_error
-      # @see http://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @since 0.6.6
       def set_error(exception, tags = nil, namespace = nil)
@@ -325,7 +325,8 @@ module Appsignal
             "value is not an exception: #{exception.inspect}"
           return
         end
-        return if !active? || Appsignal::Transaction.current.nil?
+        return if !active? || !Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
         transaction.set_error(exception)
         transaction.set_tags(tags) if tags
@@ -359,7 +360,7 @@ module Appsignal
       # @since 2.2.0
       def set_action(action)
         return if !active? ||
-            Appsignal::Transaction.current.nil? ||
+            !Appsignal::Transaction.current? ||
             action.nil?
         Appsignal::Transaction.current.set_action(action)
       end
@@ -398,7 +399,7 @@ module Appsignal
       # @since 2.2.0
       def set_namespace(namespace)
         return if !active? ||
-            Appsignal::Transaction.current.nil? ||
+            !Appsignal::Transaction.current? ||
             namespace.nil?
         Appsignal::Transaction.current.set_namespace(namespace)
       end
@@ -434,12 +435,13 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction.set_tags
-      # @see http://docs.appsignal.com/ruby/instrumentation/tagging.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       def tag_request(tags = {})
         return unless active?
+        return unless Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
-        return false unless transaction
         transaction.set_tags(tags)
       end
       alias :tag_job :tag_request
@@ -466,13 +468,14 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction#add_breadcrumb
-      # @see http://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
       #   Breadcrumb reference
       # @since 2.12.0
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
         return unless active?
+        return unless Appsignal::Transaction.current?
+
         transaction = Appsignal::Transaction.current
-        return false unless transaction
         transaction.add_breadcrumb(category, action, message, metadata, time)
       end
 
@@ -510,9 +513,9 @@ module Appsignal
       #
       # @see Appsignal::Transaction#instrument
       # @see .instrument_sql
-      # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/instrumentation.html
       #   AppSignal custom instrumentation guide
-      # @see http://docs.appsignal.com/api/event-names.html
+      # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
       # @since 1.3.0
       def instrument(
@@ -554,9 +557,9 @@ module Appsignal
       # @return [Object] Returns the block's return value.
       #
       # @see .instrument
-      # @see http://docs.appsignal.com/ruby/instrumentation/instrumentation.html
+      # @see https://docs.appsignal.com/ruby/instrumentation/instrumentation.html
       #   AppSignal custom instrumentation guide
-      # @see http://docs.appsignal.com/api/event-names.html
+      # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
       # @since 2.0.0
       def instrument_sql(name, title = nil, body = nil, &block)

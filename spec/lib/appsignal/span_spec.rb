@@ -15,7 +15,8 @@ describe Appsignal::Span do
       expect(root.to_h["span_id"].length).to eq 8
       expect(root.to_h["parent_span_id"]).to be_empty
       expect(root.to_h["name"]).to be_empty
-      expect(root.to_h["start_time"]).to be > 1_600_000_000
+      expect(root.to_h["start_time_seconds"]).to be > 1_600_000_000
+      expect(root.to_h["start_time_nanoseconds"]).to be_kind_of(Numeric)
       expect(root.to_h["closed"]).to be false
     end
   end
@@ -29,7 +30,8 @@ describe Appsignal::Span do
       expect(child.to_h["span_id"].length).to eq 8
       expect(child.to_h["parent_span_id"]).to eq root.to_h["span_id"]
       expect(child.to_h["name"]).to be_empty
-      expect(child.to_h["start_time"]).to be > 1_600_000_000
+      expect(root.to_h["start_time_seconds"]).to be > 1_600_000_000
+      expect(root.to_h["start_time_nanoseconds"]).to be_kind_of(Numeric)
       expect(child.to_h["closed"]).to be false
     end
   end
@@ -45,7 +47,7 @@ describe Appsignal::Span do
       error = root.to_h["error"]
       expect(error["name"]).to eq "RuntimeError"
       expect(error["message"]).to eq "Error"
-      expect(error["backtrace"]).not_to be_empty
+      expect(error["backtrace_json"]).not_to be_empty
     end
   end
 

@@ -98,7 +98,13 @@ if DependencyHelper.padrino_present?
         RSpec::Matchers.define :match_response do |expected_status, expected_content|
           match do |response|
             status, _headers, content = response
-            status == expected_status && content == [expected_content].compact
+            matches_content =
+              if expected_content.is_a?(Regexp)
+                content.join =~ expected_content
+              else
+                content == [expected_content].compact
+              end
+            status == expected_status && matches_content
           end
         end
 
@@ -142,7 +148,7 @@ if DependencyHelper.padrino_present?
               expect_a_transaction_to_be_created
               # Uses path for action name
               expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp#unknown")
-              expect(response).to match_response(404, "GET /404")
+              expect(response).to match_response(404, /^GET &#x2F;404/)
             end
           end
 

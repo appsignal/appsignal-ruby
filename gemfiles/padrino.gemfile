@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'padrino', "~> 0.15"
-gem 'rack'
+gem 'rack', "~> 2"
+gem 'sinatra', "~> 2"
 
 gemspec :path => '../'

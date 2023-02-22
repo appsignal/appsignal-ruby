@@ -228,10 +228,14 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     let(:error) { ExampleException }
 
     it "creates a transaction and adds the error" do
+      # TODO: additional curly brackets required for issue
+      # https://github.com/rspec/rspec-mocks/issues/1460
+      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :failed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :processed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+      # rubocop:enable Style/BracesAroundHashParameters
 
       expect do
         perform_job { raise error, "uh oh" }
@@ -267,8 +271,12 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   context "without an error" do
     it "creates a transaction with events" do
+      # TODO: additional curly brackets required for issue
+      # https://github.com/rspec/rspec-mocks/issues/1460
+      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
-        .with("sidekiq_queue_job_count", 1, :queue => "default", :status => :processed)
+        .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+      # rubocop:enable Style/BracesAroundHashParameters
 
       perform_job
 
@@ -339,6 +347,7 @@ if DependencyHelper.active_job_present?
   require "sidekiq/testing"
 
   describe "Sidekiq ActiveJob integration" do
+    include ActiveJobHelpers
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:log) { StringIO.new }
@@ -366,12 +375,29 @@ if DependencyHelper.active_job_present?
         }
       ]
     end
+    let(:expected_wrapped_args) do
+      if DependencyHelper.active_job_wraps_args?
+        [{
+          "_aj_ruby2_keywords" => ["args"],
+          "args" => expected_args
+        }]
+      else
+        expected_args
+      end
+    end
     let(:expected_tags) do
       {}.tap do |hash|
         hash["active_job_id"] = kind_of(String)
         if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
           hash["provider_job_id"] = kind_of(String)
         end
+      end
+    end
+    let(:expected_perform_events) do
+      if DependencyHelper.rails7_present?
+        ["perform_job.sidekiq", "perform.active_job", "perform_start.active_job"]
+      else
+        ["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"]
       end
     end
     before do
@@ -434,8 +460,8 @@ if DependencyHelper.active_job_present?
       events = transaction_hash["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
-      expect(events)
-        .to eq(["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"])
+
+      expect(events).to eq(expected_perform_events)
     end
 
     context "with error" do
@@ -467,8 +493,8 @@ if DependencyHelper.active_job_present?
         events = transaction_hash["events"]
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-        expect(events)
-          .to eq(["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"])
+
+        expect(events).to eq(expected_perform_events)
       end
     end
 
@@ -490,7 +516,7 @@ if DependencyHelper.active_job_present?
         expect(transaction_hash).to include(
           "action" => "ActionMailerSidekiqTestJob#welcome",
           "sample_data" => hash_including(
-            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_args
+            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
           )
         )
       end

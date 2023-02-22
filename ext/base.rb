@@ -2,18 +2,18 @@ require "digest"
 require "fileutils"
 require "open-uri"
 require "zlib"
-require "yaml"
+require "json"
 require "rubygems/package"
 require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
 require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
+require_relative "./agent"
 
-EXT_PATH     = File.expand_path("..", __FILE__).freeze
-AGENT_CONFIG = YAML.load(File.read(File.join(EXT_PATH, "agent.yml"))).freeze
+EXT_PATH = File.expand_path("..", __FILE__).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
 AGENT_ARCHITECTURE = Appsignal::System.agent_architecture
 TARGET_TRIPLE = "#{AGENT_ARCHITECTURE}-#{AGENT_PLATFORM}".freeze
-ARCH_CONFIG = AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
+ARCH_CONFIG = APPSIGNAL_AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 
 def ext_path(path)
@@ -30,11 +30,10 @@ def report
         },
         "language" => {
           "name" => "ruby",
-          "version" => "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+          "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
         },
         "download" => {
-          "checksum" => "unverified",
-          "http_proxy" => http_proxy
+          "checksum" => "unverified"
         },
         "build" => {
           "time" => Time.now.utc,
@@ -54,13 +53,17 @@ def report
             d["libc"] = ldd_version if ldd_version
           end
         }
-      }
+      }.tap do |r|
+        proxy, error = http_proxy
+        r["download"]["http_proxy"] = proxy
+        r["download"]["http_proxy_error"] = error if error
+      end
     end
 end
 
 def write_report
   File.open(File.join(EXT_PATH, "install.report"), "w") do |file|
-    file.write YAML.dump(report)
+    file.write JSON.generate(report)
   end
 end
 
@@ -96,7 +99,7 @@ def installation_succeeded?
 end
 
 def check_architecture
-  if AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
+  if APPSIGNAL_AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
     true
   else
     abort_installation(
@@ -112,26 +115,27 @@ def download_archive(type)
   unless ARCH_CONFIG.key?(type)
     abort_installation(
       "AppSignal currently does not support your system. " \
-        "Expected config for architecture '#{arch}' and package type '#{type}', but none found. " \
-        "For a full list of supported systems visit: " \
+        "Expected config for architecture '#{TARGET_TRIPLE}' and package type '#{type}', " \
+        "but none found. For a full list of supported systems visit: " \
         "https://docs.appsignal.com/support/operating-systems.html"
     )
     return
   end
 
-  version = AGENT_CONFIG["version"]
+  version = APPSIGNAL_AGENT_CONFIG["version"]
   filename = ARCH_CONFIG[type]["filename"]
   download_errors = []
 
-  AGENT_CONFIG["mirrors"].each do |mirror|
+  APPSIGNAL_AGENT_CONFIG["mirrors"].each do |mirror|
     download_url = [mirror, version, filename].join("/")
     report["download"]["download_url"] = download_url
 
     begin
+      proxy, _error = http_proxy
       args = [
         download_url,
         :ssl_ca_cert => CA_CERT_PATH,
-        :proxy => http_proxy
+        :proxy => proxy
       ]
       if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
         return URI.open(*args)
@@ -186,14 +190,25 @@ def store_download_version_on_report
 end
 
 def http_proxy
-  proxy = try_http_proxy_value(Gem.configuration[:http_proxy])
-  return proxy if proxy
+  proxy, error =
+    begin
+      [try_http_proxy_value(Gem.configuration[:http_proxy]), nil]
+    rescue => error
+      # Ignore this setting if the `.gemrc` file can't be read. This raises an
+      # error on Rubies with psych 4 in the standard library, but also have
+      # psych 5 installed: Ruby < 3.2.
+      # https://github.com/appsignal/appsignal-ruby/issues/904
+      [nil, error]
+    end
+  return [proxy, error] if proxy
 
   proxy = try_http_proxy_value(ENV["http_proxy"])
-  return proxy if proxy
+  return [proxy, error] if proxy
 
   proxy = try_http_proxy_value(ENV["HTTP_PROXY"])
-  return proxy if proxy
+  return [proxy, error] if proxy
+
+  [nil, error]
 end
 
 def try_http_proxy_value(value)

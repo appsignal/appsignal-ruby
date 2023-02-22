@@ -33,7 +33,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
         let(:value) { ["foo" => "bar"] }
 
         it "should sanitize all hash values with a questionmark" do
-          expect(subject).to eq("foo" => "?")
+          expect(subject).to eq(["foo" => "?"])
         end
 
         it "should not modify source value" do
@@ -45,8 +45,8 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is an array" do
         let(:value) { %w[foo bar] }
 
-        it "should only return the first level of the object" do
-          expect(subject).to eq("?")
+        it "sanitizes all array values" do
+          expect(subject).to eq(["?"])
         end
 
         it "should not modify source value" do
@@ -58,8 +58,8 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is a mixed array" do
         let(:value) { [nil, "foo", "bar"] }
 
-        it "should sanitize all hash values with a single questionmark" do
-          expect(subject).to eq("?")
+        it "should sanitize all array values with a single questionmark" do
+          expect(subject).to eq(["?"])
         end
       end
 
@@ -117,7 +117,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is an array" do
         let(:value) { %w[foo bar] }
 
-        it "should sanitize all hash values with a single questionmark" do
+        it "should sanitize all hash values with a single question mark" do
           expect(subject).to eq(["?"])
         end
       end
@@ -125,7 +125,7 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       context "when value is a mixed array" do
         let(:value) { [nil, "foo", "bar"] }
 
-        it "should sanitize all hash values with a single questionmark" do
+        it "should sanitize all hash values with a single question mark" do
           expect(subject).to eq(["?"])
         end
       end

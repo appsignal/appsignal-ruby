@@ -232,6 +232,8 @@ configurations you need to run the spec suite with a specific Gemfile.
 BUNDLE_GEMFILE=gemfiles/capistrano2.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/capistrano3.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/grape.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/hanami.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/http5.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/padrino.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/que.gemfile bundle exec rspec

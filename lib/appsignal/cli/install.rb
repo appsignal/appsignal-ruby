@@ -61,6 +61,8 @@ module Appsignal
             install_for_padrino(config)
           elsif installed_frameworks.include?(:grape)
             install_for_grape(config)
+          elsif installed_frameworks.include?(:hanami)
+            install_for_hanami(config)
           elsif installed_frameworks.include?(:sinatra)
             install_for_sinatra(config)
           else
@@ -124,7 +126,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/sinatra'"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/ruby/integrations/sinatra.html"
+          puts "  https://docs.appsignal.com/ruby/integrations/sinatra.html"
           press_any_key
           done_notice
         end
@@ -142,7 +144,7 @@ module Appsignal
           puts "  require 'appsignal/integrations/padrino"
           puts
           puts "  You can find more information in the documentation:"
-          puts "  http://docs.appsignal.com/ruby/integrations/padrino.html"
+          puts "  https://docs.appsignal.com/ruby/integrations/padrino.html"
           press_any_key
           done_notice
         end
@@ -157,7 +159,25 @@ module Appsignal
 
           puts "Manual Grape configuration needed"
           puts "  See the installation instructions at:"
-          puts "  http://docs.appsignal.com/ruby/integrations/grape.html"
+          puts "  https://docs.appsignal.com/ruby/integrations/grape.html"
+          press_any_key
+          done_notice
+        end
+
+        def install_for_hanami(config)
+          puts "Installing for Hanami"
+          config[:name] = required_input("  Enter application name: ")
+          puts
+          configure(config, %w[development production staging], true)
+
+          puts "Finish Hanami installation"
+          puts "  Hanami requires some manual configuration."
+          puts "  After installing the gem, add the following line to config.ru:"
+          puts
+          puts "  require 'appsignal/integrations/hanami'"
+          puts
+          puts "  You can find more information in the documentation:"
+          puts "  http://docs.appsignal.com/ruby/integrations/hanami.html"
           press_any_key
           done_notice
         end
@@ -214,7 +234,7 @@ module Appsignal
               end
               puts
               puts "  See the documentation for more configuration options:"
-              puts "  http://docs.appsignal.com/gem-settings/configuration.html"
+              puts "  https://docs.appsignal.com/gem-settings/configuration.html"
               press_any_key
               break
             end
@@ -256,6 +276,7 @@ module Appsignal
             out << :sinatra if framework_available? "sinatra"
             out << :padrino if framework_available? "padrino"
             out << :grape if framework_available? "grape"
+            out << :hanami if framework_available? "hanami"
           end
         end
 

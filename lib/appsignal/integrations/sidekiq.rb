@@ -10,21 +10,24 @@ module Appsignal
     # @api private
     class SidekiqErrorHandler
       def call(exception, sidekiq_context)
-        transaction = Appsignal::Transaction.current
-
-        if transaction.nil_transaction?
-          # Sidekiq error outside of the middleware scope.
-          # Can be a job JSON parse error or some other error happening in
-          # Sidekiq.
-          transaction = Appsignal::Transaction.create(
-            SecureRandom.uuid, # Newly generated job id
-            Appsignal::Transaction::BACKGROUND_JOB,
-            Appsignal::Transaction::GenericRequest.new({})
-          )
-          transaction.set_action_if_nil("SidekiqInternal")
-          transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
-          transaction.params = { :jobstr => sidekiq_context[:jobstr] }
-        end
+        transaction =
+          if Appsignal::Transaction.current?
+            Appsignal::Transaction.current
+          else
+            # Sidekiq error outside of the middleware scope.
+            # Can be a job JSON parse error or some other error happening in
+            # Sidekiq.
+            transaction =
+              Appsignal::Transaction.create(
+                SecureRandom.uuid, # Newly generated job id
+                Appsignal::Transaction::BACKGROUND_JOB,
+                Appsignal::Transaction::GenericRequest.new({})
+              )
+            transaction.set_action_if_nil("SidekiqInternal")
+            transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
+            transaction.params = { :jobstr => sidekiq_context[:jobstr] }
+            transaction
+          end
 
         transaction.set_error(exception)
         Appsignal::Transaction.complete_current!
@@ -158,7 +161,11 @@ module Appsignal
 
       # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L403-L412
       def safe_load(content, default)
-        yield(*YAML.load(content))
+        if YAML::VERSION >= "4.0.0"
+          yield(*YAML.unsafe_load(content))
+        else
+          yield(*YAML.load(content))
+        end
       rescue => error
         # Sidekiq issue #1761: in dev mode, it's possible to have jobs enqueued
         # which haven't been loaded into memory yet so the YAML can't be

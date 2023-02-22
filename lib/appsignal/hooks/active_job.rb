@@ -11,16 +11,20 @@ module Appsignal
       end
 
       def install
-        ::ActiveJob::Base
-          .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+        ActiveSupport.on_load(:active_job) do
+          ::ActiveJob::Base
+            .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+        end
       end
 
       module ActiveJobClassInstrumentation
         def execute(job)
           job_status = nil
-          current_transaction = Appsignal::Transaction.current
+          has_wrapper_transaction = Appsignal::Transaction.current?
           transaction =
-            if current_transaction.nil_transaction?
+            if has_wrapper_transaction
+              Appsignal::Transaction.current
+            else
               # No standalone integration started before ActiveJob integration.
               # We don't have a separate integration for this QueueAdapter like
               # we do for Sidekiq.
@@ -31,8 +35,6 @@ module Appsignal
                 Appsignal::Transaction::BACKGROUND_JOB,
                 Appsignal::Transaction::GenericRequest.new({})
               )
-            else
-              current_transaction
             end
 
           super
@@ -62,7 +64,7 @@ module Appsignal
               transaction.set_queue_start((Time.parse(enqueued_at).to_f * 1_000).to_i)
             end
 
-            if current_transaction.nil_transaction?
+            unless has_wrapper_transaction
               # Only complete transaction if ActiveJob is not wrapped in
               # another supported integration, such as Sidekiq.
               Appsignal::Transaction.complete_current!

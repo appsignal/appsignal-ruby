@@ -1,5 +1,309 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.6
+
+### Changed
+
+- [962d069c](https://github.com/appsignal/appsignal-ruby/commit/962d069ce46fd7bf404a2ce28343e1f650ce3b37) patch - Bump agent to 8d042e2.
+  
+  - Support multiple log formats.
+
+## 3.3.5
+
+### Changed
+
+- [fc85adde](https://github.com/appsignal/appsignal-ruby/commit/fc85adde11d7a35b1ca64c0f0714c6fcdd570590) patch - Bump agent to 0d593d5.
+  
+  - Report shared memory metric state.
+
+## 3.3.4
+
+### Added
+
+- [75e29895](https://github.com/appsignal/appsignal-ruby/commit/75e298951d4955871585194c6940992c3e081864) patch - Add NGINX metrics support. See [our documentation](https://docs.appsignal.com/metrics/nginx.html) for details.
+
+## 3.3.3
+
+### Fixed
+
+- [b2f872bc](https://github.com/appsignal/appsignal-ruby/commit/b2f872bc599f45378639cc9465e64c5c4730ab79) patch - Fix the T_DATA warning originating from the AppSignal C extension on Ruby 3.2.
+
+## 3.3.2
+
+### Changed
+
+- [d1b960f0](https://github.com/appsignal/appsignal-ruby/commit/d1b960f0350b55962621d740e6a92922b334ab49) patch - Reduce our dependency on YAML during installation. Instead of a YAML file with details about the extension download location, use a pure Ruby file. This is a partial fix for the installation issue involving psych version 5.
+
+### Fixed
+
+- [e1e598ae](https://github.com/appsignal/appsignal-ruby/commit/e1e598ae51512a51486446e5751e504d4fc90ef0) patch - Skip the `.gemrc` config during installation if it raises an error loading it. This can be caused when the psych gem version 5 is installed on Ruby < 3.2. Use the `HTTP_PROXY` environment variable instead to configure the HTTP proxy that should be used during installation.
+
+## 3.3.1
+
+### Added
+
+- [7f62ada8](https://github.com/appsignal/appsignal-ruby/commit/7f62ada8deb67a2b7d355ec0c1bc2ad1d1e2d8d1) patch - Track the Operating System release/distro in the diagnose report. This helps us with debugging what exact version of Linux an app is running on, for example.
+
+### Fixed
+
+- [1443e05f](https://github.com/appsignal/appsignal-ruby/commit/1443e05f0fa5bf6af69c40753b2d135f082871de) patch - Attempt to load C extension from lib/ directory. Fixes an issue where JRuby would fail to load
+  the extension from the ext/ directory, as the directory is cleaned after installation when using
+  RubyGems 3.4.0.
+
+## 3.3.0
+
+### Added
+
+- [e4314b5b](https://github.com/appsignal/appsignal-ruby/commit/e4314b5b2d3fdf7865555535b2324094ec620349) minor - Hanami 2 is now supported. Requests will now appear as performance measurements.
+
+## 3.2.2
+
+### Changed
+
+- [2b1964d9](https://github.com/appsignal/appsignal-ruby/commit/2b1964d94eee0b20c12f5c602c427643057e787b) patch - Track new Ruby 3.2 VM cache metrics. In Ruby 3.2 the `class_serial` and `global_constant_state` metrics are no longer reported for the "Ruby (VM) metrics" magic dashboard, because Ruby 3.2 removed these metrics. Instead we will now report the new `constant_cache_invalidations` and `constant_cache_misses` metrics reported by Ruby 3.2.
+- [6804e898](https://github.com/appsignal/appsignal-ruby/commit/6804e89817234c88105d2376687b5574bfc8e8c9) patch - Use log formatter if set in logger
+
+## 3.2.1
+
+### Fixed
+
+- [5e87aa34](https://github.com/appsignal/appsignal-ruby/commit/5e87aa34878d84cd07717671e770a0a356ad8430) patch - Support the http.rb gem's URI argument using objects with the `#to_s` method. A Ruby URI object is no longer required.
+
+## 3.2.0
+
+### Added
+
+- [199d05c0](https://github.com/appsignal/appsignal-ruby/commit/199d05c0f95be7f2496ddcd05613eb816e9ad4e4) minor - Support the http.rb gem. Any outgoing requests will be tracked as events on the incident event timeline. This instrumentation is activated automatically, but can be disable by setting the `instrumentation_http_rb` option to `false`.
+- [9bcd107d](https://github.com/appsignal/appsignal-ruby/commit/9bcd107de955e557744434fc9f953588a9c7bc49) minor - Support log collection from Ruby apps using the new AppSignal Logging feature. Learn more about [AppSignal's Logging on our docs](https://docs.appsignal.com/logging/platforms/integrations/ruby.html).
+
+## 3.1.6
+
+### Fixed
+
+- [a03b7246](https://github.com/appsignal/appsignal-ruby/commit/a03b72461f5f3b047ca81368cf2bdbeadf078e08) patch - Support Sidekiq 7 in the Sidekiq minutely probe. It will now report metrics to Sidekiq magic dashboard for Sidekiq version 7 and newer.
+
+## 3.1.5
+
+### Changed
+
+- [4035c3c2](https://github.com/appsignal/appsignal-ruby/commit/4035c3c2d5c0b002119054014daddd193bd820f0) patch - Bump agent to version 813a59b
+  
+  - Fix http proxy config option parsing for port 80.
+  - Fix the return value for appsignal_import_opentelemetry_span extension
+    function in `appsignal.h`.
+
+### Fixed
+
+- [feb60fb8](https://github.com/appsignal/appsignal-ruby/commit/feb60fb877a2b264e587fe3d5d546e40d86c9c38) patch - Fix NoMethodError for AppSignal Puma plugin for Puma 6. Puma 5 is also still supported.
+
+## 3.1.4
+
+### Added
+
+- [ffe49cfe](https://github.com/appsignal/appsignal-ruby/commit/ffe49cfe94f5269e59d6f168a73114f7a3914f79) patch - Support temporarily disabling GC profiling without reporting inaccurate `gc_time` metric durations. The MRI probe's `gc_time` will not report any value when the `GC::Profiler.enabled?` returns `false`.
+
+### Changed
+
+- [af7e666c](https://github.com/appsignal/appsignal-ruby/commit/af7e666cf173ec1f42e9cf3fce2ab6c8e658440c) patch - Listen if the Ruby Garbage Collection profiler is enabled and collect how long the GC is running for the Ruby VM magic dashboard. An app will need to call `GC::Profiler.enable` to enable the GC profiler. Do not enable this in production environments, or at least not for long, because this can negatively impact performance of apps.
+
+### Fixed
+
+- [b3a163be](https://github.com/appsignal/appsignal-ruby/commit/b3a163be154796e1f358c5061eaee99845c960ee) patch - Fix the MRI probe using the Garbage Collection profiler instead of the NilProfiler when garbage collection instrumentation is not enabled for MRI probe. This caused unnecessary overhead.
+
+## 3.1.3
+
+### Added
+
+- [811a1082](https://github.com/appsignal/appsignal-ruby/commit/811a10825043ed584f23d870e3a420ee409eb151) patch - Add the `Transaction.current?` helper to determine if any Transaction is currently active or not. AppSignal `NilTransaction`s are not considered active transactions.
+
+### Changed
+
+- [dc50d889](https://github.com/appsignal/appsignal-ruby/commit/dc50d8892699bf17b2399865ead8b27ce45b60ed) patch - Rename the (so far privately reported) `gc_total_time` metric to `gc_time`. It no longer reports the total time of Garbage Collection measured, but only the time between two (minutely) measurements.
+
+### Fixed
+
+- [7cfed987](https://github.com/appsignal/appsignal-ruby/commit/7cfed98761cf81d475261c553486b24843460cf3) patch - Fix error on unknown HTTP request method. When a request is made with an unknown request method, triggering and `ActionController::UnknownHttpMethod`, it will no longer break the AppSignal instrumentation but omit the request method in the sample data.
+
+## 3.1.2
+
+### Changed
+
+- [1b95bb4c](https://github.com/appsignal/appsignal-ruby/commit/1b95bb4c8df08128cfa2db0d918ffcb909e5ee4c) patch - Report Garbage Collection total time metric as the delta between measurements. This reports a more user friendly metric that doesn't always goes up until the app restarts or gets a new deploy. This metric is reported 0 by default without `GC::Profiler.enable` having been called.
+- [61a78fb0](https://github.com/appsignal/appsignal-ruby/commit/61a78fb028b04ae6f0a4ca1fc469d744f23c5029) patch - Bump agent to 06391fb
+  
+  - Accept "warning" value for the `log_level` config option.
+  - Add aarch64 Linux musl build.
+  - Improve debug logging from the extension.
+  - Fix high CPU issue for appsignal-agent when nothing could be read from the socket.
+
+## 3.1.1
+
+### Changed
+
+- [e225c798](https://github.com/appsignal/appsignal-ruby/commit/e225c798c65aef6085bb689597b7f3359fe138f7) patch - Report all Ruby VM metrics as gauges. We previously reported some metrics as distributions, but all fields for those distributions would report the same values.
+
+### Fixed
+
+- [31fd19c6](https://github.com/appsignal/appsignal-ruby/commit/31fd19c6019db2c68b359f1fc4ed3d5e4843e349) patch - Add hostname tag for Ruby VM metrics. This allows us to graph every host separately and multiple hosts won't overwrite each other metrics.
+
+## 3.1.0
+
+### Added
+
+- [d10c3f32](https://github.com/appsignal/appsignal-ruby/commit/d10c3f32facbf399d7afe1d2ddbb5764fb57b008) minor - Add tracking of thread counts, garbage collection runs, heap slots and other garbage collection stats to the default MRI probe. These metrics will be shown in AppSignal.com in a new Ruby VM Magic Dashboard.
+
+### Changed
+
+- [114fe4f9](https://github.com/appsignal/appsignal-ruby/commit/114fe4f92e621bc2e771bb0fb608b5c6189f2933) patch - Bump agent to v-d573c9b
+  
+  - Display unsupported OpenTelemetry spans in limited form.
+  - Clean up payload storage before sending. Should fix issues with locally queued payloads blocking data from being sent.
+  - Add `appsignal_create_opentelemetry_span` function to create spans for further modification, rather than only import them.
+- [dd803449](https://github.com/appsignal/appsignal-ruby/commit/dd803449bd3990ba020c0bec4429166977071c02) patch - Report gauge delta value for allocated objects. This reports a more user friendly metric we can graph with a more stable continuous value in apps with stable memory allocation.
+- [547f925e](https://github.com/appsignal/appsignal-ruby/commit/547f925e392bb9f4f10ba95f371e42ddfe0de5de) patch - Report gauge delta value for Garbage Collection counts. This reports a more user friendly metric that doesn't always goes up until the app restarts or gets a new deploy.
+
+### Fixed
+
+- [e555a81a](https://github.com/appsignal/appsignal-ruby/commit/e555a81ab65cc951383f54d0e9a6c57d8cc2ac51) patch - Fix FFI function calls missing arguments for `appsignal_free_transaction` and `appsignal_free_data` extension functions. This fixes a high CPU issue when these function calls would be retried indefinitely.
+
+## 3.0.27
+
+### Fixed
+
+- [7032dc4b](https://github.com/appsignal/appsignal-ruby/commit/7032dc4b45c150c58a7a97c44b17e1092934c1ec) patch - Use `Dir.pwd` to determine the current directory in the Capistrano 3 integration. It previously relied on `ENV["pwd"]` which returned `nil` in some scenarios.
+
+## 3.0.26
+
+### Removed
+
+- [56ec42ae](https://github.com/appsignal/appsignal-ruby/commit/56ec42ae634c5675b1769963688a8f3f22715e0e) patch - Remove Moped support as it is no longer the official Ruby Mongo driver and it's been unmaintained for 7 years.
+
+### Fixed
+
+- [991ca18d](https://github.com/appsignal/appsignal-ruby/commit/991ca18dfc5b05cf34841f84c17d821a17bf7a84) patch - Fix runtime errors on YAML load with older psych versions (`< 4`) used in combination with newer Ruby version (`3.x`).
+
+## 3.0.25
+
+### Added
+
+- [399cf790](https://github.com/appsignal/appsignal-ruby/commit/399cf79044e7c8936ab72dce420d91af4cb71d16) patch - Sanitize `ActiveRecord::RecordNotUnique` error messages to not include any database values that is not unique in the database. This ensures no personal information is sent to AppSignal through error messages from this error.
+
+## 3.0.24
+
+### Changed
+
+- [964861f7](https://github.com/appsignal/appsignal-ruby/commit/964861f76ea7ff71f01497f116def14190bcd404) patch - Bump agent to v-f57e6cb
+  
+  - Enable process metrics on Heroku and Dokku
+
+## 3.0.23
+
+### Fixed
+
+- [d73905d3](https://github.com/appsignal/appsignal-ruby/commit/d73905d3b28404638a8aa1e8de3909eff0b8cfb6) patch - Fix sanitized values wrapped in Arrays. When a value like `[{ "foo" => "bar" }]` was sanitized it would be stored as `{ "foo" => "?" }`, omitting the parent value's Array square brackets. Now values will appear with the same structure as they were originally sanitized. This only applies to certain integrations like MongoDB, moped and ElasticSearch.
+- [096d3cdf](https://github.com/appsignal/appsignal-ruby/commit/096d3cdfd8f452f13b2dbf7de6b763c8a96973b3) patch - Fix the ActiveJob `default_queue_name` config option issue being reset to "default". When ActiveJob `default_queue_name` was set in a Rails initializer it would reset on load to `default`. Now the `default_queue_name` can be set in an initializer as well.
+
+## 3.0.22
+
+### Changed
+
+- [9762e79d](https://github.com/appsignal/appsignal-ruby/commit/9762e79d4545e50c8f3540deff825b10d77e59a5) patch - Bump agent to v-bbc830a
+  
+  - Support batched statsd messages
+  - Set start times for spans with traceparents
+  - Check duration in transactions for negative and too high value
+
+## 3.0.21
+
+### Changed
+
+- [548dd6f4](https://github.com/appsignal/appsignal-ruby/commit/548dd6f4c61ae3be24995a200dc3e5bea1a5f58c) patch - Add config override source. Track final decisions made by the Ruby gem in the configuration in the `override` config source. This will help us track new config options which are being set by their deprecated predecessors in the diagnose report.
+
+### Removed
+
+- [3f503ade](https://github.com/appsignal/appsignal-ruby/commit/3f503ade83f22f4b0d86d76ea00e5f4dd3c56b6f) patch - Remove internal `Appsignal.extensions` system. It was unused.
+
+## 3.0.21.alpha.1
+
+### Changed
+
+- [f19d9dcc](https://github.com/appsignal/appsignal-ruby/commit/f19d9dcc1c00103f5dc92951481becf4d4ade39e) patch - The MongoDB query sanitization now shows all the attributes in the query at all levels.
+  Only the actual values are filtered with a `?` character. Less MongoDB queries are now marked
+  as N+1 queries when they weren't the exact same query. This increases the number of unique events
+  AppSignal tracks for MongoDB queries.
+
+## 3.0.20
+
+### Added
+
+- [35bd83b8](https://github.com/appsignal/appsignal-ruby/commit/35bd83b84fd30f0188d9f134cfd249360b6e281d) patch - Add `send_session_data` option to configure if session data is automatically included transactions. By default this is turned on. It can be disabled by configuring `send_session_data` to `false`.
+
+### Deprecated
+
+- [35bd83b8](https://github.com/appsignal/appsignal-ruby/commit/35bd83b84fd30f0188d9f134cfd249360b6e281d) patch - Deprecate `skip_session_data` option in favor of the newly introduced `send_session_data` option. If it is configured it will print a warning on AppSignal load, but will also retain its functionality until the config option is fully removed in the next major release.
+- [e51a8fb6](https://github.com/appsignal/appsignal-ruby/commit/e51a8fb653fccc5a6b72ac7af9c9417e6827e2e9) patch - Warn about the deprecated `working_dir_path` option from all config sources. It previously only printed a warning when it was configured in the `config/appsignal.yml` file, but now also prints the warning if it's set via the Config class initialize options and environment variables. Please use the `working_directory_path` option instead.
+
+### Fixed
+
+- [c9000eee](https://github.com/appsignal/appsignal-ruby/commit/c9000eeefec722cb940b2e14f37d31a7827986d6) patch - Fix reported Ruby version in diagnose report. It would report only the first major release of the series, e.g. 2.6.0 for 2.6.1.
+
+## 3.0.19
+
+### Changed
+
+- [2587eae3](https://github.com/appsignal/appsignal-ruby/commit/2587eae30f17e0f0b5e27cb61982301220cc77b1) patch - Store the extension install report as JSON, instead of YAML. Reduces internal complexity.
+
+### Fixed
+
+- [243c1ed4](https://github.com/appsignal/appsignal-ruby/commit/243c1ed444f3351ca158200a47836673f851cb31) patch - Improve compatibility with the sequel-rails gem by tracking the performed SQL query in instrumentation events.
+
+## 3.0.18
+
+### Added
+
+- [d7bfcdf1](https://github.com/appsignal/appsignal-ruby/commit/d7bfcdf11a66df1ec5f54ac9342e5566062013b5) patch - Add Ruby 3.1.0 support. There was an issue with `YAML.load` arguments when parsing the `appsignal.yml` config file.
+
+## 3.0.17
+
+### Fixed
+
+- [f9d57752](https://github.com/appsignal/appsignal-ruby/commit/f9d5775217400c59a70d98e9aa96e3dcd06cb1f9) patch - Use the `log_level` option for the Ruby gem logger. Previously it only configured the extension and agent loggers. Also fixes the `debug` and `transaction_debug_mode` option if no `log_level` is configured by the app.
+
+## 3.0.16
+
+### Added
+
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Add experimental Span API. This is not loaded by default and we do not recommend using it yet.
+- [84b1ba18](https://github.com/appsignal/appsignal-ruby/commit/84b1ba18e50440e5c71d27319e560c5df180d0df) patch - Add "log_level" config option. This new option allows you to define the kind of messages
+  AppSignal's will log and up. The "debug" option will log all "debug", "info", "warning" and
+  "error" log messages. The default value is: "info"
+  
+  The allowed values are:
+  - error
+  - warning
+  - info
+  - debug
+- [6b2ecca2](https://github.com/appsignal/appsignal-ruby/commit/6b2ecca24603061f1b35800f60b0ee6e9f314998) patch - Clean up index values in error messages from PG index violation errors.
+
+### Changed
+
+- [25bde454](https://github.com/appsignal/appsignal-ruby/commit/25bde454f82776f8d2ea1fd4dbb00a73e414076e) patch - Order the config options alphabetically in diagnose report output.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Use the `filter_parameters` and `filter_session_data` options to filter out specific parameter keys or session data keys for the experimental Span API. Previously only the (undocumented) `filter_data_keys` config option was available to filter out all kinds of app data.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Standardize diagnose validation failure message. Explain the diagnose request failed and why.
+- [fe226e99](https://github.com/appsignal/appsignal-ruby/commit/fe226e99f262bfa46e7a7630defe2fe90f8a3a13) patch - Bump agent to v-5b63505
+  
+  - Only filter parameters with the `filter_parameters` config option.
+  - Only filter session data with the `filter_session_data` config option.
+- [3ad95ea5](https://github.com/appsignal/appsignal-ruby/commit/3ad95ea5dd8a9488d293a652231950bd4a721e6c) patch - Bump agent to v-0db01c2
+  
+  - Add `log_level` config option in extension.
+  - Deprecate `debug` and `transaction_debug_mode` option in extension.
+
+### Deprecated
+
+- [84b1ba18](https://github.com/appsignal/appsignal-ruby/commit/84b1ba18e50440e5c71d27319e560c5df180d0df) patch - Deprecate "debug" and "transaction_debug_mode" config options in favor of the new "log_level"
+  config option.
+
 ## 3.0.15
 
 - [b40b3b4f](https://github.com/appsignal/appsignal-ruby/commit/b40b3b4f5264c6b69f9515b53806435258c73086) patch - Print String values in the diagnose report surrounded by quotes. Makes it more clear that it's a String value and not a label we print.
@@ -109,6 +413,10 @@ Please read our [upgrade from version 2 to 3 guide][upgrade3] before upgrading.
   arguments. PR #702
 - Add Sidekiq error handler. Report more Sidekiq errors that happen around job
   execution. PR #699
+
+## 2.11.10
+- Backport extension fallbacks on extension installation failure, that caused
+  NoMethodErrors. PR #736
 
 ## 2.11.9
 - Fix and simplify Ruby method delegation for object method instrumentation in

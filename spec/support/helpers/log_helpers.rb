@@ -12,7 +12,7 @@ module LogHelpers
   end
 
   def test_logger(log)
-    Appsignal::Logger.new(log).tap do |logger|
+    Appsignal::Utils::IntegrationLogger.new(log).tap do |logger|
       logger.formatter = logger_formatter
     end
   end

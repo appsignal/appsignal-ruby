@@ -29,6 +29,11 @@ if DependencyHelper.rails_present?
     require f
   end
 end
+if DependencyHelper.hanami2_present?
+  Dir[File.join(DirectoryHelper.support_dir, "hanami", "*.rb")].each do |f|
+    require f
+  end
+end
 require "pry" if DependencyHelper.dependency_present?("pry")
 require "appsignal"
 # Include patches of AppSignal modules and classes to make test helpers

@@ -30,6 +30,7 @@ if DependencyHelper.active_job_present?
   end
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
+    include ActiveJobHelpers
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }
@@ -63,6 +64,13 @@ if DependencyHelper.active_job_present?
         "foo",
         parameterized_expected_args
       ]
+    end
+    let(:expected_perform_events) do
+      if DependencyHelper.rails7_present?
+        ["perform.active_job", "perform_start.active_job"]
+      else
+        ["perform_start.active_job", "perform.active_job"]
+      end
     end
     before do
       ActiveJob::Base.queue_adapter = :inline
@@ -119,7 +127,8 @@ if DependencyHelper.active_job_present?
       events = transaction_hash["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
-      expect(events).to eq(["perform_start.active_job", "perform.active_job"])
+
+      expect(events).to eq(expected_perform_events)
     end
 
     context "with custom queue" do
@@ -208,7 +217,8 @@ if DependencyHelper.active_job_present?
         events = transaction_hash["events"]
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-        expect(events).to eq(["perform_start.active_job", "perform.active_job"])
+
+        expect(events).to eq(expected_perform_events)
       end
 
       if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
@@ -286,7 +296,8 @@ if DependencyHelper.active_job_present?
           .reject { |e| e["name"] == "enqueue.active_job" }
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-        expect(events).to eq(["perform_start.active_job", "perform.active_job"])
+
+        expect(events).to eq(expected_perform_events)
       end
     end
 
@@ -414,7 +425,7 @@ if DependencyHelper.active_job_present?
           expect(transaction_hash).to include(
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"],
+              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper,
               "tags" => {
                 "active_job_id" => kind_of(String),
                 "queue" => "mailers"
@@ -433,7 +444,7 @@ if DependencyHelper.active_job_present?
           expect(transaction_hash).to include(
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + method_expected_args,
+              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper(:args => method_expected_args),
               "tags" => {
                 "active_job_id" => kind_of(String),
                 "queue" => "mailers"
@@ -453,7 +464,7 @@ if DependencyHelper.active_job_present?
             expect(transaction_hash).to include(
               "action" => "ActionMailerTestJob#welcome",
               "sample_data" => hash_including(
-                "params" => ["ActionMailerTestJob", "welcome", "deliver_now", parameterized_expected_args],
+                "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper(:params => parameterized_expected_args),
                 "tags" => {
                   "active_job_id" => kind_of(String),
                   "queue" => "mailers"

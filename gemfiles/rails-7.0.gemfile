@@ -1,0 +1,7 @@
+source 'https://rubygems.org'
+
+gem 'rails', "~> 7.0.1"
+gem "sidekiq"
+gem "rake", "> 12.2"
+
+gemspec :path => '../'

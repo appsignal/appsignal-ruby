@@ -660,7 +660,73 @@ describe Appsignal::CLI::Install do
     end
   end
 
-  if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present?
+  if hanami2_present?
+    context "with hanami" do
+      it_behaves_like "push_api_key validation"
+      it_behaves_like "requires an application name"
+
+      describe "hanami specific tests" do
+        let(:installation_instructions) do
+          [
+            "Installing for Hanami",
+            "Hanami requires some manual configuration.",
+            "http://docs.appsignal.com/ruby/integrations/hanami.html"
+          ]
+        end
+        let(:app_name) { "Test app" }
+        before { enter_app_name app_name }
+
+        describe "configuration with environment variables" do
+          before { choose_environment_config }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a configuration file" do
+          before { choose_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+      end
+    end
+  end
+
+  if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present? && !hanami2_present?
     context "with unknown framework" do
       let(:push_api_key) { "my_key" }
 

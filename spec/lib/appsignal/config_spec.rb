@@ -69,8 +69,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => "abc")
-            expect(config.system_config).to eq(:active => true)
+            expect(config.env_config).to include(:push_api_key => "abc")
+            expect(config.system_config).to include(:active => true)
           end
         end
 
@@ -82,8 +82,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => "")
-            expect(config.system_config).to be_empty
+            expect(config.env_config).to include(:push_api_key => "")
+            expect(config.system_config).to_not have_key(:active)
           end
         end
 
@@ -95,8 +95,8 @@ describe Appsignal::Config do
           end
 
           it "sets the push_api_key as loaded through the env_config" do
-            expect(config.env_config).to eq(:push_api_key => " ")
-            expect(config.system_config).to be_empty
+            expect(config.env_config).to include(:push_api_key => " ")
+            expect(config.system_config).to_not have_key(:active)
           end
         end
       end
@@ -119,7 +119,7 @@ describe Appsignal::Config do
         end
 
         it "sets the log as loaded through the system" do
-          expect(config.system_config).to eq(:log => "stdout")
+          expect(config.system_config).to include(:log => "stdout")
         end
       end
 
@@ -129,7 +129,7 @@ describe Appsignal::Config do
         end
 
         it "does not set log as loaded through the system" do
-          expect(config.system_config).to eq({})
+          expect(config.system_config).to_not have_key(:log)
         end
       end
     end
@@ -151,35 +151,36 @@ describe Appsignal::Config do
 
     it "merges with the default config" do
       expect(config.config_hash).to eq(
-        :debug                          => false,
-        :log                            => "file",
-        :ignore_actions                 => [],
-        :ignore_errors                  => [],
-        :ignore_namespaces              => [],
-        :filter_parameters              => [],
-        :filter_session_data            => [],
-        :filter_data_keys               => [],
-        :instrument_net_http            => true,
-        :instrument_redis               => true,
-        :instrument_sequel              => true,
-        :skip_session_data              => false,
-        :send_environment_metadata      => true,
-        :send_params                    => true,
-        :endpoint                       => "https://push.appsignal.com",
-        :push_api_key                   => "abc",
-        :name                           => "TestApp",
         :active                         => true,
+        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :debug                          => false,
+        :dns_servers                    => [],
         :enable_allocation_tracking     => true,
-        :enable_gc_instrumentation      => false,
         :enable_host_metrics            => true,
         :enable_minutely_probes         => true,
         :enable_statsd                  => true,
-        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
-        :dns_servers                    => [],
+        :enable_nginx_metrics           => false,
+        :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,
-        :transaction_debug_mode         => false,
+        :filter_parameters              => [],
+        :filter_session_data            => [],
+        :ignore_actions                 => [],
+        :ignore_errors                  => [],
+        :ignore_namespaces              => [],
+        :instrument_http_rb             => true,
+        :instrument_net_http            => true,
+        :instrument_redis               => true,
+        :instrument_sequel              => true,
+        :log                            => "file",
+        :logging_endpoint               => "https://appsignal-endpoint.net",
+        :name                           => "TestApp",
+        :push_api_key                   => "abc",
+        :request_headers                => [],
         :revision                       => "v2.5.1",
-        :request_headers                => []
+        :send_environment_metadata      => true,
+        :send_params                    => true,
+        :send_session_data              => true,
+        :transaction_debug_mode         => false
       )
     end
 
@@ -320,13 +321,15 @@ describe Appsignal::Config do
           "non-existing-path",
           "production",
           :running_in_container => true,
-          :debug => true
+          :debug => true,
+          :log_level => "debug"
         )
       end
 
       it "overrides system detected and defaults config" do
         expect(config[:running_in_container]).to be_truthy
         expect(config[:debug]).to be_truthy
+        expect(config[:log_level]).to eq("debug")
       end
     end
 
@@ -433,6 +436,87 @@ describe Appsignal::Config do
     end
   end
 
+  describe "with config based on overrides" do
+    let(:log_stream) { StringIO.new }
+    let(:logger) { test_logger(log_stream) }
+    let(:logs) { log_contents(log_stream) }
+    let(:config) do
+      described_class.new(Dir.pwd, "production", config_options, logger)
+    end
+
+    describe "skip_session_data" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:deprecation_message) do
+        "The `skip_session_data` config option is deprecated. Please use " \
+          "`send_session_data` instead."
+      end
+      before do
+        capture_std_streams(std_stream, err_stream) { config }
+      end
+
+      context "when not set" do
+        let(:config_options) { {} }
+
+        it "sets the default send_session_data value" do
+          expect(config[:skip_session_data]).to be_nil
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.override_config[:send_session_data]).to eq(true)
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to_not include(deprecation_message)
+        end
+      end
+
+      context "when set to true" do
+        let(:config_options) { { :skip_session_data => true } }
+
+        it "sets send_session_data if send_session_data is not set by the user" do
+          expect(config[:skip_session_data]).to eq(true)
+          expect(config[:send_session_data]).to eq(false)
+          expect(config.override_config[:send_session_data]).to eq(false)
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+
+      context "when set to false" do
+        let(:config_options) { { :skip_session_data => false } }
+
+        it "sets send_session_data if send_session_data is not set by the user" do
+          expect(config[:skip_session_data]).to eq(false)
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.override_config[:send_session_data]).to eq(true)
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+
+      context "when skip_session_data and send_session_data are both set" do
+        let(:config_options) { { :skip_session_data => true, :send_session_data => true } }
+
+        it "does not overwrite the send_session_data value" do
+          expect(config[:skip_session_data]).to eq(true)
+          expect(config[:send_session_data]).to eq(true)
+          expect(config.override_config[:send_session_data]).to be_nil
+        end
+
+        it "prints a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+    end
+  end
+
   describe "config keys" do
     describe ":endpoint" do
       subject { config[:endpoint] }
@@ -449,6 +533,18 @@ describe Appsignal::Config do
 
       context "with a non-standard port" do
         let(:config) { project_fixture_config("production", :endpoint => "http://localhost:4567") }
+
+        it "keeps the port" do
+          expect(subject).to eq "http://localhost:4567"
+        end
+      end
+    end
+
+    describe ":logging_endpoint" do
+      subject { config[:logging_endpoint] }
+
+      context "with a non-standard port" do
+        let(:config) { project_fixture_config("production", :logging_endpoint => "http://localhost:4567") }
 
         it "keeps the port" do
           expect(subject).to eq "http://localhost:4567"
@@ -496,6 +592,7 @@ describe Appsignal::Config do
   describe "#write_to_environment" do
     let(:config) { project_fixture_config(:production) }
     before do
+      config[:logging_endpoint] = "http://localhost:123"
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w[action1 action2]
       config[:ignore_errors] = %w[ExampleStandardError AnotherError]
@@ -503,6 +600,7 @@ describe Appsignal::Config do
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
       config[:filter_parameters] = %w[password confirm_password]
+      config[:filter_session_data] = %w[key1 key2]
       config[:running_in_container] = false
       config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
       config[:transaction_debug_mode] = true
@@ -518,6 +616,7 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
       expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
       expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
+      expect(ENV["_APPSIGNAL_LOGGING_ENDPOINT"]).to             eq "http://localhost:123"
       expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
       expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
       expect(ENV["_APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
@@ -536,6 +635,8 @@ describe Appsignal::Config do
       expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
       expect(ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]).to       eq "true"
       expect(ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]).to    eq "false"
+      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
+      expect(ENV["_APPSIGNAL_FILTER_SESSION_DATA"]).to          eq "key1,key2"
       expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
       expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
@@ -739,6 +840,54 @@ describe Appsignal::Config do
     end
   end
 
+  describe "#maintain_backwards_compatibility" do
+    let(:log_stream) { StringIO.new }
+    let(:logger) { test_logger(log_stream) }
+    let(:logs) { log_contents(log_stream) }
+    let(:config) do
+      described_class.new(Dir.pwd, "production", config_options, logger)
+    end
+
+    describe "working_dir_path" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:deprecation_message) do
+        "The `working_dir_path` option is deprecated, please use " \
+          "`working_directory_path` instead and specify the " \
+          "full path to the working directory"
+      end
+      before do
+        capture_std_streams(std_stream, err_stream) { config }
+      end
+
+      context "when not set" do
+        let(:config_options) { {} }
+
+        it "sets the default working_dir_path value" do
+          expect(config[:working_dir_path]).to be_nil
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to_not include(deprecation_message)
+        end
+      end
+
+      context "when set" do
+        let(:config_options) { { :working_dir_path => "/tmp/appsignal2" } }
+
+        it "sets the default working_dir_path value" do
+          expect(config[:working_dir_path]).to eq("/tmp/appsignal2")
+        end
+
+        it "does not print a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
+        end
+      end
+    end
+  end
+
   describe "#validate" do
     subject { config.valid? }
     let(:config) do
@@ -778,6 +927,85 @@ describe Appsignal::Config do
 
         it "sets valid to true" do
           is_expected.to eq(true)
+        end
+      end
+    end
+  end
+
+  describe "#log_level" do
+    let(:options) { {} }
+    let(:config) { described_class.new("", nil, options) }
+    subject { config.log_level }
+
+    context "without any config" do
+      it "returns info by default" do
+        is_expected.to eq(Logger::INFO)
+      end
+    end
+
+    context "with debug set to true" do
+      let(:options) { { :debug => true } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with transaction_debug_mode set to true" do
+      let(:options) { { :transaction_debug_mode => true } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with log_level set to error" do
+      let(:options) { { :log_level => "error" } }
+      it { is_expected.to eq(Logger::ERROR) }
+    end
+
+    context "with log_level set to warn" do
+      let(:options) { { :log_level => "warn" } }
+      it { is_expected.to eq(Logger::WARN) }
+    end
+
+    context "with log_level set to info" do
+      let(:options) { { :log_level => "info" } }
+      it { is_expected.to eq(Logger::INFO) }
+    end
+
+    context "with log_level set to debug" do
+      let(:options) { { :log_level => "debug" } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with log_level set to trace" do
+      let(:options) { { :log_level => "trace" } }
+      it { is_expected.to eq(Logger::DEBUG) }
+    end
+
+    context "with debug and log_level set" do
+      let(:options) { { :log_level => "error", :debug => true } }
+
+      it "the log_level option is leading" do
+        is_expected.to eq(Logger::ERROR)
+      end
+    end
+
+    context "with transaction_debug_mode and log_level set" do
+      let(:options) { { :log_level => "error", :transaction_debug_mode => true } }
+
+      it "the log_level option is leading" do
+        is_expected.to eq(Logger::ERROR)
+      end
+    end
+
+    context "with log level set to an unknown value" do
+      let(:options) { { :log_level => "fatal" } }
+
+      it "prints a warning and doesn't use the log_level" do
+        is_expected.to eql(Logger::INFO)
+      end
+
+      context "with debug option set to true" do
+        let(:options) { { :log_level => "fatal", :debug => true } }
+
+        it "prints a warning and sets it to debug" do
+          is_expected.to eql(Logger::DEBUG)
         end
       end
     end

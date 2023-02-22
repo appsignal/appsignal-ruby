@@ -352,8 +352,8 @@ module Appsignal
         def fetch_installation_report
           path = File.expand_path("../../../../ext/install.report", __FILE__)
           raw_report = File.read(path)
-          Utils.parse_yaml(raw_report)
-        rescue StandardError, Psych::SyntaxError => e # rubocop:disable Lint/ShadowedException
+          JSON.parse(raw_report)
+        rescue StandardError, JSON::ParserError => e # rubocop:disable Lint/ShadowedException
           {
             "parsing_error" => {
               "error" => "#{e.class}: #{e}",
@@ -411,7 +411,7 @@ module Appsignal
         def print_installation_build_report(report)
           report = report.fetch("build", {})
           puts "  Build details"
-          puts_format "Install time", report["time"].to_s, :level => 2
+          puts_format "Install time", report["time"], :level => 2
           puts_format "Architecture", report["architecture"], :level => 2
           puts_format "Target", report["target"], :level => 2
           puts_format "Musl override", report["musl_override"], :level => 2
@@ -443,7 +443,10 @@ module Appsignal
             save :os, os
             puts_value "Operating System", os_label
 
-            language_version = "#{rbconfig["ruby_version"]}-p#{rbconfig["PATCHLEVEL"]}"
+            distribution_file = "/etc/os-release"
+            save :os_distribution, File.exist?(distribution_file) ? File.read(distribution_file) : ""
+
+            language_version = "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
             save :language_version, language_version
             puts_format "Ruby version", language_version
 
@@ -471,10 +474,10 @@ module Appsignal
               :system => config.system_config,
               :initial => config.initial_config,
               :file => config.file_config,
-              :env => config.env_config
+              :env => config.env_config,
+              :override => config.override_config
             }
           }
-          print_environment(config)
           print_config_options(config)
         end
 
@@ -483,7 +486,7 @@ module Appsignal
           option = :env
           option_sources = sources_for_option(option)
           sources_label = config_sources_label(option, option_sources)
-          print "  Environment: #{format_config_option(env)}"
+          print "  environment: #{format_config_option(env)}"
 
           if env == ""
             message = "    Warning: No environment set, no config loaded!\n" \
@@ -497,10 +500,22 @@ module Appsignal
         end
 
         def print_config_options(config)
-          config.config_hash.each do |key, value|
+          # We add the nullified "environment" key to print it ordered
+          # instead of adding it at the top of the list.
+          ordered_config_options = config
+            .config_hash
+            .merge(:environment => nil)
+            .sort
+
+          ordered_config_options.each do |key, value|
             option_sources = sources_for_option(key)
             sources_label = config_sources_label(key, option_sources)
-            puts "  #{key}: #{format_config_option(value)}#{sources_label}"
+
+            if key == :environment
+              print_environment(config)
+            else
+              puts "  #{key}: #{format_config_option(value)}#{sources_label}"
+            end
           end
 
           puts "\nRead more about how the diagnose config output is rendered\n"\
