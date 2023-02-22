@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.6
+
+### Changed
+
+- [962d069c](https://github.com/appsignal/appsignal-ruby/commit/962d069ce46fd7bf404a2ce28343e1f650ce3b37) patch - Bump agent to 8d042e2.
+  
+  - Support multiple log formats.
+
 ## 3.3.5
 
 ### Changed
