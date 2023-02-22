@@ -6,15 +6,20 @@ require "set"
 module Appsignal
   # Logger that flushes logs to the AppSignal logging service
   class Logger < ::Logger # rubocop:disable Metrics/ClassLength
+    PLAINTEXT = 0
+    LOGFMT = 1
+    JSON = 2
+
     # Create a new logger instance
     #
     # @param group Name of the group for this logger.
     # @param level Log level to filter with
     # @return [void]
-    def initialize(group, level = INFO)
+    def initialize(group, level: INFO, format: PLAINTEXT)
       raise TypeError, "group must be a string" unless group.is_a? String
       @group = group
       @level = level
+      @format = format
     end
 
     # We support the various methods in the Ruby
@@ -51,6 +56,7 @@ module Appsignal
       Appsignal::Extension.log(
         group,
         severity_number,
+        @format,
         message,
         Appsignal::Utils::Data.generate({})
       )
@@ -69,6 +75,7 @@ module Appsignal
       Appsignal::Extension.log(
         @group,
         2,
+        @format,
         message,
         Appsignal::Utils::Data.generate(attributes)
       )
@@ -86,6 +93,7 @@ module Appsignal
       Appsignal::Extension.log(
         @group,
         3,
+        @format,
         message,
         Appsignal::Utils::Data.generate(attributes)
       )
@@ -103,6 +111,7 @@ module Appsignal
       Appsignal::Extension.log(
         @group,
         5,
+        @format,
         message,
         Appsignal::Utils::Data.generate(attributes)
       )
@@ -120,6 +129,7 @@ module Appsignal
       Appsignal::Extension.log(
         @group,
         6,
+        @format,
         message,
         Appsignal::Utils::Data.generate(attributes)
       )
@@ -137,6 +147,7 @@ module Appsignal
       Appsignal::Extension.log(
         @group,
         7,
+        @format,
         message,
         Appsignal::Utils::Data.generate(attributes)
       )
