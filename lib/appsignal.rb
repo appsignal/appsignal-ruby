@@ -74,8 +74,8 @@ module Appsignal
     # This is not required for the automatic integrations AppSignal offers, but
     # this is required for all non-automatic integrations and pure Ruby
     # applications. For more information, see our [integrations
-    # list](http://docs.appsignal.com/ruby/integrations/) and our [Integrating
-    # AppSignal](http://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html)
+    # list](https://docs.appsignal.com/ruby/integrations/) and our [Integrating
+    # AppSignal](https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html)
     # guide.
     #
     # To start the logger see {.start_logger}.
