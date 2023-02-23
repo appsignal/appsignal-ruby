@@ -469,7 +469,7 @@ describe Appsignal::CLI::Install do
             "Installing for Sinatra",
             "Sinatra requires some manual configuration.",
             "require 'appsignal/integrations/sinatra'",
-            "http://docs.appsignal.com/ruby/integrations/sinatra.html"
+            "https://docs.appsignal.com/ruby/integrations/sinatra.html"
           ]
         end
         let(:app_name) { "Test app" }
@@ -536,7 +536,7 @@ describe Appsignal::CLI::Install do
           [
             "Installing for Padrino",
             "Padrino requires some manual configuration.",
-            "http://docs.appsignal.com/ruby/integrations/padrino.html"
+            "https://docs.appsignal.com/ruby/integrations/padrino.html"
           ]
         end
         let(:app_name) { "Test app" }
@@ -603,7 +603,7 @@ describe Appsignal::CLI::Install do
           [
             "Installing for Grape",
             "Manual Grape configuration needed",
-            "http://docs.appsignal.com/ruby/integrations/grape.html"
+            "https://docs.appsignal.com/ruby/integrations/grape.html"
           ]
         end
         let(:app_name) { "Test app" }
@@ -670,7 +670,7 @@ describe Appsignal::CLI::Install do
           [
             "Installing for Hanami",
             "Hanami requires some manual configuration.",
-            "http://docs.appsignal.com/ruby/integrations/hanami.html"
+            "https://docs.appsignal.com/ruby/integrations/hanami.html"
           ]
         end
         let(:app_name) { "Test app" }

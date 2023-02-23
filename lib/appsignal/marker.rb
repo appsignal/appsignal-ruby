@@ -18,7 +18,7 @@ module Appsignal
   #     Set config does not override data set in {#marker_data}.
   #
   # @see Appsignal::CLI::NotifyOfDeploy
-  # @see http://docs.appsignal.com/appsignal/terminology.html#markers
+  # @see https://docs.appsignal.com/appsignal/terminology.html#markers
   #   Terminology: Deploy marker
   # @api private
   class Marker
