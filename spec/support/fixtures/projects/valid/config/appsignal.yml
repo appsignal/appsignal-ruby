@@ -52,3 +52,9 @@ old_config_mixed_with_new_config:
     "REQUEST_METHOD", "REQUEST_URI", "SERVER_NAME", "SERVER_PORT",
     "SERVER_PROTOCOL", "HTTP_USER_AGENT"
   ]
+
+rack_env:
+  <<: *defaults
+
+rails_env:
+  <<: *defaults
