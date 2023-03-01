@@ -196,7 +196,7 @@ module Appsignal
 
           Appsignal.config = Appsignal::Config.new(
             current_path,
-            options[:environment],
+            options.fetch(:environment, ENV.fetch("RACK_ENV", ENV.fetch("RAILS_ENV", nil))),
             initial_config
           )
           Appsignal.config.write_to_environment

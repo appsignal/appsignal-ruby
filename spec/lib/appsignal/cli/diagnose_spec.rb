@@ -802,6 +802,39 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             end
           end
 
+          context "when the source is the RACK_ENV env variable", :send_report => :no_cli_option do
+            let(:config) { project_fixture_config("rack_env") }
+            let(:options) { {} }
+            before do
+              ENV["RACK_ENV"] = "rack_env"
+              run
+            end
+            after { ENV.delete("RACK_ENV") }
+
+            it "outputs the RACK_ENV variable value" do
+              expect(output).to include(
+                %(environment: "rack_env" (Loaded from: initial)\n)
+              )
+            end
+          end
+
+          context "when the source is the RAILS_ENV env variable", :send_report => :no_cli_option do
+            let(:config) { project_fixture_config("rails_env") }
+            let(:options) { {} }
+            before do
+              ENV.delete("RACK_ENV")
+              ENV["RAILS_ENV"] = "rails_env"
+              run
+            end
+            after { ENV.delete("RAILS_ENV") }
+
+            it "outputs the RAILS_ENV variable value" do
+              expect(output).to include(
+                %(environment: "rails_env" (Loaded from: initial)\n)
+              )
+            end
+          end
+
           context "when the source is multiple sources" do
             let(:options) { { :environment => "development" } }
             before do
