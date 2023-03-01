@@ -210,6 +210,12 @@ matrix:
     - gem: "no_dependencies"
     - gem: "capistrano2"
     - gem: "capistrano3"
+    - gem: "dry-monitor"
+      only:
+        ruby:
+          - "3.0.5"
+          - "3.1.3"
+          - "3.2.1"
     - gem: "grape"
     - gem: "hanami"
       only:

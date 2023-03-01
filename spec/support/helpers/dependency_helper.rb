@@ -1,4 +1,4 @@
-module DependencyHelper
+module DependencyHelper # rubocop:disable Metrics/ModuleLength
   module_function
 
   def ruby_version
@@ -121,6 +121,10 @@ module DependencyHelper
 
   def hanami_present?
     dependency_present? "hanami"
+  end
+
+  def dry_monitor_present?
+    dependency_present? "dry-monitor"
   end
 
   def hanami2_present?
