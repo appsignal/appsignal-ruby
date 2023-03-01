@@ -583,6 +583,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.5 for dry-monitor
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.5
+      - name: GEMSET
+        value: dry-monitor
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/dry-monitor.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.0.5 for grape
       env_vars:
       - *2
@@ -940,6 +958,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.3 for dry-monitor
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.3
+      - name: GEMSET
+        value: dry-monitor
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/dry-monitor.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.1.3 for grape
       env_vars:
       - *2
@@ -1273,6 +1309,24 @@ blocks:
         value: capistrano3
       - name: BUNDLE_GEMFILE
         value: gemfiles/capistrano3.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.1 for dry-monitor
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.2.1
+      - name: GEMSET
+        value: dry-monitor
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/dry-monitor.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
