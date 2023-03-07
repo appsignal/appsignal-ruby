@@ -398,7 +398,7 @@ module Appsignal
     rescue => e
       message = "\n\nAn error occured while loading the AppSignal config file." \
         "File: #{config_file.inspect}\n\n\n"
-      Kernel.error "appsignal: #{message}"
+      Kernel.warn "appsignal: #{message}"
       raise
     end
 
