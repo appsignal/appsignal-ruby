@@ -396,13 +396,10 @@ module Appsignal
         nil
       end
     rescue => e
-      message = "An error occured while loading the AppSignal config file." \
-        " Skipping file config.\n" \
-        "File: #{config_file.inspect}\n" \
-        "#{e.class.name}: #{e}"
-      Kernel.warn "appsignal: #{message}"
-      logger.error "#{message}\n#{e.backtrace.join("\n")}"
-      nil
+      message = "\n\nAn error occured while loading the AppSignal config file." \
+        "File: #{config_file.inspect}\n\n\n"
+      Kernel.error "appsignal: #{message}"
+      raise
     end
 
     # Maintain backwards compatibility with deprecated config options.
