@@ -395,7 +395,7 @@ module Appsignal
         logger.error "Not loading from config file: config for '#{env}' not found"
         nil
       end
-    rescue => e
+    rescue
       message = "\n\nAn error occured while loading the AppSignal config file." \
         "File: #{config_file.inspect}\n\n\n"
       Kernel.warn "appsignal: #{message}"
