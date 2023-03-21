@@ -9,6 +9,7 @@
 ### Changed
 
 - [8e67159e](https://github.com/appsignal/appsignal-ruby/commit/8e67159e2a57d3b697a07fadd8eb0e0234db9124) patch - Configure AppSignal with the RACK_ENV or RAILS_ENV environment variable in diagnose CLI, if present. Makes it easier to run the diagnose CLI in production, without having to always specify the environment with the `--environment` CLI option.
+- [a815b298](https://github.com/appsignal/appsignal-ruby/commit/a815b29826a84f430384e7e735f79c8c312f1abf) patch - Allow transaction events to have a duration up to 48 hours before being discarded.
 
 ### Fixed
 
