@@ -328,11 +328,19 @@ module Appsignal
       end
     end
 
+    IGNORED_ERROR_LIST = Appsignal.config[:ignore_errors].map{|e| Kernel.const_get(e)}
     def set_error(error)
       unless error.is_a?(Exception)
         Appsignal.logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
           "The given value is not an exception: #{error.inspect}"
         return
+      end
+      IGNORED_ERROR_LIST.each do |e|
+        if error.is_a?(e)
+          Appsignal.logger.info "Appsignal::Transaction#set_error: Ignoring error from ignore_errors list. " \
+            "#{error.inspect}"
+          return
+        end
       end
       return unless error
       return unless Appsignal.active?
