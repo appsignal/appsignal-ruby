@@ -53,6 +53,7 @@ module Appsignal
     LOG_LEVEL_MAP = {
       "error" => ::Logger::ERROR,
       "warn" => ::Logger::WARN,
+      "warning" => ::Logger::WARN,
       "info" => ::Logger::INFO,
       "debug" => ::Logger::DEBUG,
       "trace" => ::Logger::DEBUG
