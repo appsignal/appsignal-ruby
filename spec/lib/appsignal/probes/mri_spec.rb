@@ -1,22 +1,3 @@
-class AppsignalMock
-  attr_reader :gauges
-
-  def initialize(hostname: nil)
-    @hostname = hostname
-    @gauges = []
-  end
-
-  def config
-    ConfigHelpers.project_fixture_config.tap do |conf|
-      conf[:hostname] = @hostname if @hostname
-    end
-  end
-
-  def set_gauge(*args) # rubocop:disable Naming/AccessorMethodName
-    @gauges << args
-  end
-end
-
 describe Appsignal::Probes::MriProbe do
   let(:appsignal_mock) { AppsignalMock.new(:hostname => hostname) }
   let(:gc_profiler_mock) { instance_double("Appsignal::GarbageCollectionProfiler") }
