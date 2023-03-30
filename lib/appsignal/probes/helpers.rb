@@ -55,7 +55,7 @@ module Appsignal
         @hostname
       end
 
-      def set_gauge(metric, value, tags = {})
+      def set_gauge_with_hostname(metric, value, tags = {})
         @appsignal.set_gauge(metric, value, { :hostname => hostname }.merge(tags))
       end
     end

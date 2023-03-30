@@ -35,12 +35,12 @@ module Appsignal
         monotonic_time_ns = @gvl_tools::GlobalTimer.monotonic_time
         gauge_delta :gvl_global_timer, monotonic_time_ns do |time_delta_ns|
           time_delta_ms = time_delta_ns / 1_000_000
-          set_gauge("gvl_global_timer", time_delta_ms)
+          set_gauge_with_hostname("gvl_global_timer", time_delta_ms)
         end
       end
 
       def probe_waiting_threads
-        set_gauge("gvl_waiting_threads", @gvl_tools::WaitingThreads.count)
+        set_gauge_with_hostname("gvl_waiting_threads", @gvl_tools::WaitingThreads.count)
       end
     end
   end
