@@ -4,5 +4,6 @@ module Appsignal
 end
 
 require "appsignal/probes/helpers"
+require "appsignal/probes/gvl"
 require "appsignal/probes/mri"
 require "appsignal/probes/sidekiq"

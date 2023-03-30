@@ -19,6 +19,8 @@ module Appsignal
       :enable_minutely_probes         => true,
       :enable_statsd                  => true,
       :enable_nginx_metrics           => false,
+      :enable_gvl_global_timer        => true,
+      :enable_gvl_waiting_threads     => true,
       :endpoint                       => "https://push.appsignal.com",
       :files_world_accessible         => true,
       :filter_parameters              => [],
@@ -70,6 +72,8 @@ module Appsignal
       "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
       "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
       "APPSIGNAL_ENABLE_NGINX_METRICS"           => :enable_nginx_metrics,
+      "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER"        => :enable_gvl_global_timer,
+      "APPSIGNAL_ENABLE_GVL_WAITING_THREADS"     => :enable_gvl_waiting_threads,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
@@ -124,6 +128,8 @@ module Appsignal
       APPSIGNAL_ENABLE_MINUTELY_PROBES
       APPSIGNAL_ENABLE_STATSD
       APPSIGNAL_ENABLE_NGINX_METRICS
+      APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER
+      APPSIGNAL_ENABLE_GVL_WAITING_THREADS
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
       APPSIGNAL_INSTRUMENT_HTTP_RB
       APPSIGNAL_INSTRUMENT_NET_HTTP
