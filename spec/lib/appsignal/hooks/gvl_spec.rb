@@ -39,9 +39,10 @@ describe Appsignal::Hooks::GvlHook do
 
       after(:context) { Object.send(:remove_const, :GVLTools) }
 
+      before(:each) { expect_gvltools_require }
+
       describe "#dependencies_present?" do
         it "is false" do
-          expect_gvltools_require
           expect(described_class.new.dependencies_present?).to be_falsy
         end
       end
@@ -66,9 +67,9 @@ describe Appsignal::Hooks::GvlHook do
 
       after(:context) { Object.send(:remove_const, :GVLTools) }
 
-      before(:each) { expect_gvltools_require }
-
       describe "#dependencies_present?" do
+        before(:each) { expect_gvltools_require }
+
         if DependencyHelper.ruby_3_2_or_newer?
           it "is true" do
             expect(described_class.new.dependencies_present?).to be_truthy
@@ -82,6 +83,8 @@ describe Appsignal::Hooks::GvlHook do
 
       if DependencyHelper.ruby_3_2_or_newer?
         describe "Appsignal::Hooks.load_hooks" do
+          before(:each) { expect_gvltools_require }
+
           # After installing a hook once, it is marked as already installed,
           # and subsequent calls to `load_hooks` silently do nothing.
           # Because of this, only one of the tests for the installation uses
