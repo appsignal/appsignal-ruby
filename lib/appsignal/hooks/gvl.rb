@@ -5,6 +5,7 @@ module Appsignal
       register :gvl
 
       def dependencies_present?
+        return false if Appsignal::System.jruby?
         require "gvltools"
         Appsignal.config && Appsignal::Probes::GvlProbe.dependencies_present?
       rescue LoadError
