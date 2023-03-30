@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.8
+
+### Added
+
+- [2fc6ba85](https://github.com/appsignal/appsignal-ruby/commit/2fc6ba85be1e0cabc2bb8fb26469ad47d1c60243) patch - Support "warning" value for `log_level` config option. This option was documented, but wasn't accepted and fell back on the "info" log level if used. Now it works to configure it to the "warn"/"warning" log level.
+- [c04f7783](https://github.com/appsignal/appsignal-ruby/commit/c04f778332048aeaad9f75c131247caa29e504fa) patch - Add global VM lock metrics. If the `gvltools` library is installed, AppSignal for Ruby will report metrics on the global VM lock and the number of waiting threads in your application.
+
 ## 3.3.7
 
 ### Added
