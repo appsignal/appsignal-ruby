@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.9
+
+### Fixed
+
+- [a6db61b9](https://github.com/appsignal/appsignal-ruby/commit/a6db61b9a14a5a3b4ba89c99d35229bcdee98f94) patch - Fixed an error when using our Logging feature with Ruby's default logger formatter.
+
 ## 3.3.8
 
 ### Added
