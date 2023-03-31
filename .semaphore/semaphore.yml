@@ -846,7 +846,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.6.9 for webmachine
+    - name: Ruby 2.6.9 for webmachine1
       env_vars:
       - *2
       - *3
@@ -855,9 +855,27 @@ blocks:
       - name: RUBY_VERSION
         value: 2.6.9
       - name: GEMSET
-        value: webmachine
+        value: webmachine1
       - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
+        value: gemfiles/webmachine1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.6.9 for webmachine2
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.6.9
+      - name: GEMSET
+        value: webmachine2
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine2.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1239,7 +1257,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 2.7.7 for webmachine
+    - name: Ruby 2.7.7 for webmachine1
       env_vars:
       - *2
       - *3
@@ -1248,9 +1266,27 @@ blocks:
       - name: RUBY_VERSION
         value: 2.7.7
       - name: GEMSET
-        value: webmachine
+        value: webmachine1
       - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
+        value: gemfiles/webmachine1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.7 for webmachine2
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 2.7.7
+      - name: GEMSET
+        value: webmachine2
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine2.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1596,7 +1632,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.0.5 for webmachine
+    - name: Ruby 3.0.5 for webmachine1
       env_vars:
       - *2
       - *3
@@ -1605,9 +1641,27 @@ blocks:
       - name: RUBY_VERSION
         value: 3.0.5
       - name: GEMSET
-        value: webmachine
+        value: webmachine1
       - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
+        value: gemfiles/webmachine1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.5 for webmachine2
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.5
+      - name: GEMSET
+        value: webmachine2
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine2.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1935,7 +1989,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.1.3 for webmachine
+    - name: Ruby 3.1.3 for webmachine1
       env_vars:
       - *2
       - *3
@@ -1944,9 +1998,27 @@ blocks:
       - name: RUBY_VERSION
         value: 3.1.3
       - name: GEMSET
-        value: webmachine
+        value: webmachine1
       - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
+        value: gemfiles/webmachine1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.3 for webmachine2
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.3
+      - name: GEMSET
+        value: webmachine2
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine2.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -2274,7 +2346,7 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
-    - name: Ruby 3.2.1 for webmachine
+    - name: Ruby 3.2.1 for webmachine1
       env_vars:
       - *2
       - *3
@@ -2283,9 +2355,27 @@ blocks:
       - name: RUBY_VERSION
         value: 3.2.1
       - name: GEMSET
-        value: webmachine
+        value: webmachine1
       - name: BUNDLE_GEMFILE
-        value: gemfiles/webmachine.gemfile
+        value: gemfiles/webmachine1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.1 for webmachine2
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.2.1
+      - name: GEMSET
+        value: webmachine2
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/webmachine2.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION

@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'webmachine'
+gem 'webmachine', '~> 1.6'
 gem 'webrick'
 
 gemspec :path => '../'
