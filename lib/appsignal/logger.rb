@@ -5,7 +5,7 @@ require "set"
 
 module Appsignal
   # Logger that flushes logs to the AppSignal logging service
-  class Logger < ::Logger # rubocop:disable Metrics/ClassLength
+  class Logger < ::Logger
     PLAINTEXT = 0
     LOGFMT = 1
     JSON = 2
@@ -32,7 +32,7 @@ module Appsignal
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @api private
-    def add(severity, message = nil, group = nil)
+    def add(severity, message = nil, group = nil, attributes = {})
       severity ||= UNKNOWN
       return true if severity < level
       group = @group if group.nil?
@@ -52,7 +52,7 @@ module Appsignal
         SEVERITY_MAP.fetch(severity, 0),
         @format,
         message,
-        Appsignal::Utils::Data.generate({})
+        Appsignal::Utils::Data.generate(attributes)
       )
     end
     alias log add
@@ -65,14 +65,7 @@ module Appsignal
       return if DEBUG < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(DEBUG, Time.now, @group, message) if formatter
-      Appsignal::Extension.log(
-        @group,
-        2,
-        @format,
-        message,
-        Appsignal::Utils::Data.generate(attributes)
-      )
+      add(DEBUG, message, @group, attributes)
     end
 
     # Log an info level message
@@ -83,14 +76,7 @@ module Appsignal
       return if INFO < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(INFO, Time.now, @group, message) if formatter
-      Appsignal::Extension.log(
-        @group,
-        3,
-        @format,
-        message,
-        Appsignal::Utils::Data.generate(attributes)
-      )
+      add(INFO, message, @group, attributes)
     end
 
     # Log a warn level message
@@ -101,14 +87,7 @@ module Appsignal
       return if WARN < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(WARN, Time.now, @group, message) if formatter
-      Appsignal::Extension.log(
-        @group,
-        5,
-        @format,
-        message,
-        Appsignal::Utils::Data.generate(attributes)
-      )
+      add(WARN, message, @group, attributes)
     end
 
     # Log an error level message
@@ -119,14 +98,7 @@ module Appsignal
       return if ERROR < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(ERROR, Time.now, @group, message) if formatter
-      Appsignal::Extension.log(
-        @group,
-        6,
-        @format,
-        message,
-        Appsignal::Utils::Data.generate(attributes)
-      )
+      add(ERROR, message, @group, attributes)
     end
 
     # Log a fatal level message
@@ -137,14 +109,7 @@ module Appsignal
       return if FATAL < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(FATAL, Time.now, @group, message) if formatter
-      Appsignal::Extension.log(
-        @group,
-        7,
-        @format,
-        message,
-        Appsignal::Utils::Data.generate(attributes)
-      )
+      add(FATAL, message, @group, attributes)
     end
   end
 end
