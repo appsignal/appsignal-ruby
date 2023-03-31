@@ -115,14 +115,29 @@ describe Appsignal::Logger do
 
       context "with a formatter set" do
         before do
-          logger.formatter = proc do |_level, _timestamp, _appname, message|
-            "formatted: '#{message}'"
+          Timecop.freeze(Time.local(2023))
+          logger.formatter = logger.formatter = proc do |_level, timestamp, _appname, message|
+            # This line replicates the behaviour of the Ruby default Logger::Formatter
+            # which expects a timestamp object as a second argument
+            # https://github.com/ruby/ruby/blob/master/lib/logger/formatter.rb#L15-L17
+            time = timestamp.strftime("%Y-%m-%dT%H:%M:%S.%6N")
+            "formatted: #{time} '#{message}'"
           end
+        end
+
+        after do
+          Timecop.return
         end
 
         it "should log with a level, message and group" do
           expect(Appsignal::Extension).to receive(:log)
-            .with("group", method[1], 0, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+            .with(
+              "group",
+              method[1],
+              0,
+              "formatted: 2023-01-01T00:00:00.000000 'Log message'",
+              instance_of(Appsignal::Extension::Data)
+            )
           logger.send(method[0], "Log message")
         end
       end
