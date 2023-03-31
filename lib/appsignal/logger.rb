@@ -9,6 +9,13 @@ module Appsignal
     PLAINTEXT = 0
     LOGFMT = 1
     JSON = 2
+    SEVERITY_MAP = {
+      DEBUG => 2,
+      INFO => 3,
+      WARN => 5,
+      ERROR => 6,
+      FATAL => 7
+    }.freeze
 
     # Create a new logger instance
     #
@@ -25,7 +32,7 @@ module Appsignal
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @api private
-    def add(severity, message = nil, group = nil) # rubocop:disable Metrics/CyclomaticComplexity
+    def add(severity, message = nil, group = nil)
       severity ||= UNKNOWN
       return true if severity < level
       group = @group if group.nil?
@@ -38,24 +45,11 @@ module Appsignal
         end
       end
       return if message.nil?
-      message = formatter.call(severity, 0, group, message) if formatter
-      severity_number = case severity
-                        when DEBUG
-                          2
-                        when INFO
-                          3
-                        when WARN
-                          5
-                        when ERROR
-                          6
-                        when FATAL
-                          7
-                        else
-                          0
-                        end
+      message = formatter.call(severity, Time.now, group, message) if formatter
+
       Appsignal::Extension.log(
         group,
-        severity_number,
+        SEVERITY_MAP.fetch(severity, 0),
         @format,
         message,
         Appsignal::Utils::Data.generate({})
@@ -71,7 +65,7 @@ module Appsignal
       return if DEBUG < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(DEBUG, 0, @group, message) if formatter
+      message = formatter.call(DEBUG, Time.now, @group, message) if formatter
       Appsignal::Extension.log(
         @group,
         2,
@@ -89,7 +83,7 @@ module Appsignal
       return if INFO < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(INFO, 0, @group, message) if formatter
+      message = formatter.call(INFO, Time.now, @group, message) if formatter
       Appsignal::Extension.log(
         @group,
         3,
@@ -107,7 +101,7 @@ module Appsignal
       return if WARN < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(WARN, 0, @group, message) if formatter
+      message = formatter.call(WARN, Time.now, @group, message) if formatter
       Appsignal::Extension.log(
         @group,
         5,
@@ -125,7 +119,7 @@ module Appsignal
       return if ERROR < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(ERROR, 0, @group, message) if formatter
+      message = formatter.call(ERROR, Time.now, @group, message) if formatter
       Appsignal::Extension.log(
         @group,
         6,
@@ -143,7 +137,7 @@ module Appsignal
       return if FATAL < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      message = formatter.call(FATAL, 0, @group, message) if formatter
+      message = formatter.call(FATAL, Time.now, @group, message) if formatter
       Appsignal::Extension.log(
         @group,
         7,
