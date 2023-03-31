@@ -339,4 +339,5 @@ matrix:
           - "2.6.9"
           - "2.7.7"
     - gem: "sinatra"
-    - gem: "webmachine"
+    - gem: "webmachine1"
+    - gem: "webmachine2"
