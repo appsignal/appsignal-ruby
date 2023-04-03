@@ -77,12 +77,12 @@ describe Appsignal::Logger do
     describe "##{method[0]}" do
       it "should log with a message" do
         expect(Appsignal::Utils::Data).to receive(:generate)
-          .with({})
+          .with(:attribute => "value")
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
           .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
 
-        logger.send(method[0], "Log message")
+        logger.send(method[0], "Log message", :attribute => "value")
       end
 
       it "should log with a block" do
