@@ -4,36 +4,84 @@ describe Appsignal::Probes::GvlProbe do
 
   let(:hostname) { "some-host" }
 
-  after(:each) { FakeGVLTools.reset }
+  def gauges_for(metric)
+    gauges = appsignal_mock.gauges.select do |gauge|
+      gauge[0] == metric
+    end
 
-  context "with global timer enabled" do
-    before(:each) { FakeGVLTools::GlobalTimer.enabled = true }
-
-    it "gauges the global timer delta" do
-      FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
-      probe.call
-
-      expect(appsignal_mock.gauges).to be_empty
-
-      FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
-      probe.call
-
-      expect(appsignal_mock.gauges).to eq [
-        ["gvl_global_timer", 200, { :hostname => hostname }]
-      ]
+    gauges.map do |gauge|
+      gauge.drop(1)
     end
   end
 
-  context "with waiting threads enabled" do
-    before(:each) { FakeGVLTools::WaitingThreads.enabled = true }
+  after(:each) { FakeGVLTools.reset }
+
+  it "gauges the global timer delta" do
+    FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
+    probe.call
+
+    expect(gauges_for("gvl_global_timer")).to be_empty
+
+    FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
+    probe.call
+
+    expect(gauges_for("gvl_global_timer")).to eq [
+      [200, { :hostname => hostname }]
+    ]
+  end
+
+  context "when the delta is negative" do
+    it "does not gauge the global timer delta" do
+      FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
+      probe.call
+
+      expect(gauges_for("gvl_global_timer")).to be_empty
+
+      FakeGVLTools::GlobalTimer.monotonic_time = 0
+      probe.call
+
+      expect(gauges_for("gvl_global_timer")).to be_empty
+    end
+  end
+
+  context "when the delta is zero" do
+    it "does not gauge the global timer delta" do
+      FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
+      probe.call
+
+      expect(gauges_for("gvl_global_timer")).to be_empty
+
+      probe.call
+
+      expect(gauges_for("gvl_global_timer")).to be_empty
+    end
+  end
+
+  context "when the waiting threads count is enabled" do
+    before(:each) do
+      FakeGVLTools::WaitingThreads.enabled = true
+    end
 
     it "gauges the waiting threads count" do
       FakeGVLTools::WaitingThreads.count = 3
       probe.call
 
-      expect(appsignal_mock.gauges).to eq [
-        ["gvl_waiting_threads", 3, { :hostname => hostname }]
+      expect(gauges_for("gvl_waiting_threads")).to eq [
+        [3, { :hostname => hostname }]
       ]
+    end
+  end
+
+  context "when the waiting threads count is disabled" do
+    before(:each) do
+      FakeGVLTools::WaitingThreads.enabled = false
+    end
+
+    it "does not gauge the waiting threads count" do
+      FakeGVLTools::WaitingThreads.count = 3
+      probe.call
+
+      expect(gauges_for("gvl_waiting_threads")).to be_empty
     end
   end
 end
