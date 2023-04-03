@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.3.10
+
+### Fixed
+
+- [48389475](https://github.com/appsignal/appsignal-ruby/commit/48389475f7739f5688e0251902227404e5f93b96) patch - The `Appsignal::Logger` is now compatible with `ActiveSupport::Logger.broadcast`.
+
 ## 3.3.9
 
 ### Fixed
