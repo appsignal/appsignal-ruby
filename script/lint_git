@@ -2,7 +2,7 @@
 
 set -eu
 
-LINTJE_VERSION="0.7.1"
+LINTJE_VERSION="0.11.3"
 
 mkdir -p "$HOME/bin"
 cache_key=v1-lintje-$LINTJE_VERSION
