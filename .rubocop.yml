@@ -1,7 +1,7 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 2.0
+  TargetRubyVersion: 3.0
   Include:
     - "**/*.cap"
     - "**/Gemfile"
@@ -18,7 +18,7 @@ AllCops:
   UseCache: true
   CacheRootDirectory: ./tmp
 
-Lint/RescueWithoutErrorClass:
+Style/RescueStandardError:
   Enabled: false
 
 Style/Documentation:
@@ -30,7 +30,7 @@ Style/StringLiterals:
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
-Layout/AlignParameters:
+Layout/ParameterAlignment:
   EnforcedStyle: with_fixed_indentation
 
 Layout/MultilineMethodCallIndentation:
@@ -42,16 +42,16 @@ Layout/MultilineOperationIndentation:
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
 
-Layout/AlignHash:
+Layout/HashAlignment:
   EnforcedLastArgumentHashStyle: ignore_implicit
 
-Layout/IndentArray:
+Layout/FirstArrayElementIndentation:
   EnforcedStyle: consistent
 
 Style/EmptyMethod:
   EnforcedStyle: expanded
 
-Style/MethodMissing:
+Style/MissingRespondToMissing:
   Exclude:
     - "lib/appsignal/extension.rb"
     - "lib/appsignal/transaction.rb"

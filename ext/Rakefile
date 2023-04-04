@@ -1,4 +1,6 @@
-require File.expand_path("../base.rb", __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path("base.rb", __dir__)
 
 def local_build?
   File.exist?(ext_path("appsignal-agent")) &&
@@ -10,27 +12,26 @@ def local_build?
 end
 
 task :default do
-  begin
-    fail_install_on_purpose_in_test!
+  fail_install_on_purpose_in_test!
 
-    library_type = "dynamic"
-    report["language"]["implementation"] = "jruby"
-    report["build"]["library_type"] = library_type
-    next unless check_architecture
+  library_type = "dynamic"
+  report["language"]["implementation"] = "jruby"
+  report["build"]["library_type"] = library_type
+  next unless check_architecture
 
-    if local_build?
-      report["build"]["source"] = "local"
-    else
-      archive = download_archive(library_type)
-      next unless archive
-      next unless verify_archive(archive, library_type)
-      unarchive(archive)
-    end
-    successful_installation
-  rescue => error
-    fail_installation_with_error(error)
-  ensure
-    create_dummy_makefile unless installation_succeeded?
-    write_report
+  if local_build?
+    report["build"]["source"] = "local"
+  else
+    archive = download_archive(library_type)
+    next unless archive
+    next unless verify_archive(archive, library_type)
+
+    unarchive(archive)
   end
+  successful_installation
+rescue => e
+  fail_installation_with_error(e)
+ensure
+  create_dummy_makefile unless installation_succeeded?
+  write_report
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bundler"
 require "rubygems/package_task"
 require "fileutils"
@@ -89,9 +91,7 @@ namespace :build_matrix do
           end
         end
         builds << ruby_primary_block
-        if ruby_secondary_block["task"]["jobs"].count.nonzero?
-          builds << ruby_secondary_block
-        end
+        builds << ruby_secondary_block if ruby_secondary_block["task"]["jobs"].count.nonzero?
       end
       semaphore["blocks"] += builds
 
@@ -209,20 +209,18 @@ namespace :build do
     eval(File.read("appsignal.gemspec")) # rubocop:disable Security/Eval
   end
 
-  def modify_base_gemspec
-    base_gemspec.tap do |s|
-      yield s
-    end
+  def modify_base_gemspec(&block)
+    base_gemspec.tap(&block)
   end
 
   def define_build_task(task_name, base_gemspec, &block)
     Gem::PackageTask.new(base_gemspec, &block)
-  rescue StandardError => error
+  rescue StandardError => e
     puts "Warning: An error occurred defining `build:#{task_name}:gem` Rake task."
     puts "This task will not be availble."
     if ENV["DEBUG"]
-      puts "#{error}: #{error.message}"
-      puts error.backtrace
+      puts "#{e}: #{e.message}"
+      puts e.backtrace
     else
       puts "For more information, run the same command with `DEBUG=true`."
     end
@@ -251,13 +249,15 @@ namespace :build do
 
   desc "Clean up all gem build artifacts"
   task :clean do
-    FileUtils.rm_rf File.expand_path("../pkg", __FILE__)
+    FileUtils.rm_rf File.expand_path("pkg", __dir__)
   end
 end
 
 namespace :publish do
-  VERSION_FILE = "lib/appsignal/version.rb".freeze
-  CHANGELOG_FILE = "CHANGELOG.md".freeze
+  # rubocop:disable Lint/ConstantDefinitionInBlock
+  VERSION_FILE = "lib/appsignal/version.rb"
+  CHANGELOG_FILE = "CHANGELOG.md"
+  # rubocop:enable Lint/ConstantDefinitionInBlock
 
   def changes
     git_status_to_array(`git status -s -u`)
@@ -350,9 +350,7 @@ task :spec_all_gemfiles do
   Bundler.with_clean_env do
     gems_with_gemfiles.each do |gemfile|
       puts "Running tests for #{gemfile}"
-      unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
-        raise "Not successful"
-      end
+      raise "Not successful" unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
     end
   end
 end
@@ -425,7 +423,7 @@ begin
     desc "Run the Appsignal gem test in an extension failure scenario"
     task :failure => [:prepare_failure, :rspec_failure]
   end
-rescue LoadError # rubocop:disable Lint/HandleExceptions
+rescue LoadError
   # When running rake install, there is no RSpec yet.
 end
 
