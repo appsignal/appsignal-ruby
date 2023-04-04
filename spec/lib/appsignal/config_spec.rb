@@ -162,6 +162,7 @@ describe Appsignal::Config do
         :enable_minutely_probes         => true,
         :enable_statsd                  => true,
         :enable_nginx_metrics           => false,
+        :enable_rails_error_reporter    => true,
         :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,
         :filter_parameters              => [],

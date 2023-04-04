@@ -21,6 +21,7 @@ module Appsignal
       :enable_nginx_metrics           => false,
       :enable_gvl_global_timer        => true,
       :enable_gvl_waiting_threads     => true,
+      :enable_rails_error_reporter    => true,
       :endpoint                       => "https://push.appsignal.com",
       :files_world_accessible         => true,
       :filter_parameters              => [],
@@ -74,6 +75,7 @@ module Appsignal
       "APPSIGNAL_ENABLE_NGINX_METRICS"           => :enable_nginx_metrics,
       "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER"        => :enable_gvl_global_timer,
       "APPSIGNAL_ENABLE_GVL_WAITING_THREADS"     => :enable_gvl_waiting_threads,
+      "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER"    => :enable_rails_error_reporter,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
       "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
@@ -130,6 +132,7 @@ module Appsignal
       APPSIGNAL_ENABLE_NGINX_METRICS
       APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER
       APPSIGNAL_ENABLE_GVL_WAITING_THREADS
+      APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
       APPSIGNAL_INSTRUMENT_HTTP_RB
       APPSIGNAL_INSTRUMENT_NET_HTTP
