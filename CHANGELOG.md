@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.0
+
+### Deprecated
+
+- [6f9b7a4d](https://github.com/appsignal/appsignal-ruby/commit/6f9b7a4d12c6ff3353359cb37c5c02af8bbc6ec6) minor - Remove support for Ruby versions in that are end of life, following our [maintenance policy](https://docs.appsignal.com/support/maintenance-policy.html). Please upgrade your Ruby version to a supported version before upgrading AppSignal.
+
+### Fixed
+
+- [5b7735ac](https://github.com/appsignal/appsignal-ruby/commit/5b7735ac5868b0fbf9727922a32ca4645d4e2fdd) patch - Fix Logger add method signature error
+
 ## 3.3.10
 
 ### Fixed
