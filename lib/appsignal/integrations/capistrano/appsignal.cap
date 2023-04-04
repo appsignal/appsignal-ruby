@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 namespace :appsignal do
   task :deploy do
     appsignal_env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
@@ -16,7 +18,7 @@ namespace :appsignal do
       c.validate
     end
 
-    if appsignal_config && appsignal_config.active?
+    if appsignal_config&.active?
       marker_data = {
         :revision => revision,
         :user => user
