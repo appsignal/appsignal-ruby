@@ -2,6 +2,7 @@
 
 require "logger"
 require "set"
+require "thread"
 
 module Appsignal
   # Logger that flushes logs to the AppSignal logging service
@@ -27,12 +28,13 @@ module Appsignal
       @group = group
       @level = level
       @format = format
+      @mutex = Mutex.new
     end
 
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @api private
-    def add(severity, message = nil, group = nil, attributes = {})
+    def add(severity, message = nil, group = nil)
       severity ||= UNKNOWN
       return true if severity < level
       group = @group if group.nil?
@@ -52,7 +54,7 @@ module Appsignal
         SEVERITY_MAP.fetch(severity, 0),
         @format,
         message,
-        Appsignal::Utils::Data.generate(attributes)
+        Appsignal::Utils::Data.generate(appsignal_attributes)
       )
     end
     alias log add
@@ -65,7 +67,7 @@ module Appsignal
       return if DEBUG < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      add(DEBUG, message, @group, attributes)
+      add_with_attributes(DEBUG, message, @group, attributes)
     end
 
     # Log an info level message
@@ -76,7 +78,7 @@ module Appsignal
       return if INFO < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      add(INFO, message, @group, attributes)
+      add_with_attributes(INFO, message, @group, attributes)
     end
 
     # Log a warn level message
@@ -87,7 +89,7 @@ module Appsignal
       return if WARN < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      add(WARN, message, @group, attributes)
+      add_with_attributes(WARN, message, @group, attributes)
     end
 
     # Log an error level message
@@ -98,7 +100,7 @@ module Appsignal
       return if ERROR < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      add(ERROR, message, @group, attributes)
+      add_with_attributes(ERROR, message, @group, attributes)
     end
 
     # Log a fatal level message
@@ -109,7 +111,20 @@ module Appsignal
       return if FATAL < level
       message = yield if message.nil? && block_given?
       return if message.nil?
-      add(FATAL, message, @group, attributes)
+      add_with_attributes(FATAL, message, @group, attributes)
+    end
+
+    private
+
+    def add_with_attributes(severity, message, group, attributes)
+      Thread.current[:appsignal_logger_attributes] = attributes
+      add(severity, message, group)
+    ensure
+      Thread.current[:appsignal_logger_attributes] = nil
+    end
+
+    def appsignal_attributes
+      Thread.current.fetch(:appsignal_logger_attributes, {})
     end
   end
 end
