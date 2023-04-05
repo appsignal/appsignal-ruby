@@ -10,11 +10,7 @@ if DependencyHelper.rails_present?
     end
 
     describe "#initialize_appsignal" do
-      let(:app) { MyApp::Application }
-      before do
-        allow(app.middleware).to receive(:insert_before)
-        allow(app.middleware).to receive(:insert_after)
-      end
+      let(:app) { MyApp::Application.new }
 
       describe ".logger" do
         before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
@@ -75,9 +71,8 @@ if DependencyHelper.rails_present?
             ActionDispatch::DebugExceptions,
             Appsignal::Rack::RailsInstrumentation
           )
+          Appsignal::Integrations::Railtie.initialize_appsignal(app)
         end
-
-        after { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
       end
     end
   end
