@@ -37,12 +37,6 @@ module Appsignal
               )
             end
 
-          super
-        rescue Exception => exception # rubocop:disable Lint/RescueException
-          job_status = :failed
-          transaction.set_error(exception)
-          raise exception
-        ensure
           if transaction
             transaction.params =
               Appsignal::Utils::HashSanitizer.sanitize(
@@ -59,6 +53,15 @@ module Appsignal
             transaction.set_tags(transaction_tags)
 
             transaction.set_action_if_nil(ActiveJobHelpers.action_name(job))
+          end
+
+          super
+        rescue Exception => exception # rubocop:disable Lint/RescueException
+          job_status = :failed
+          transaction.set_error(exception)
+          raise exception
+        ensure
+          if transaction
             enqueued_at = job["enqueued_at"]
             if enqueued_at # Present in Rails 6 and up
               transaction.set_queue_start((Time.parse(enqueued_at).to_f * 1_000).to_i)
