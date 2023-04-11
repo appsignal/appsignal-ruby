@@ -4,7 +4,7 @@ describe Appsignal::Probes::MriProbe do
   let(:probe) { described_class.new(:appsignal => appsignal_mock, :gc_profiler => gc_profiler_mock) }
 
   describe ".dependencies_present?" do
-    if DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
+    if DependencyHelper.running_jruby?
       it "should not be present" do
         expect(described_class.dependencies_present?).to be_falsy
       end
@@ -15,7 +15,7 @@ describe Appsignal::Probes::MriProbe do
     end
   end
 
-  unless DependencyHelper.running_jruby? || DependencyHelper.running_ruby_2_0?
+  unless DependencyHelper.running_jruby?
     describe "#call" do
       let(:hostname) { nil }
       before do
