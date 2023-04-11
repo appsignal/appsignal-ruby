@@ -5,10 +5,6 @@ module DependencyHelper
     Gem::Version.new(RUBY_VERSION)
   end
 
-  def running_ruby_2_0?
-    ruby_version.segments.take(2) == [2, 0]
-  end
-
   def ruby_3_0_or_newer?
     ruby_version >= Gem::Version.new("3.0.0")
   end
