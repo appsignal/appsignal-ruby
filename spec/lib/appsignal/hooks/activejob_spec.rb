@@ -504,7 +504,7 @@ if DependencyHelper.active_job_present?
                 "ActionMailerTestMailDeliveryJob",
                 "welcome",
                 "deliver_now",
-                { active_job_internal_key => ["args"], "args" => [] }
+                { "_aj_symbol_keys" => ["args"], "args" => [] }
               ],
               "tags" => {
                 "active_job_id" => kind_of(String),
@@ -528,7 +528,7 @@ if DependencyHelper.active_job_present?
                   "welcome",
                   "deliver_now",
                   {
-                    active_job_internal_key => ["args"],
+                    "_aj_symbol_keys" => ["args"],
                     "args" => method_expected_args
                   }
                 ],
@@ -555,7 +555,7 @@ if DependencyHelper.active_job_present?
                   "welcome",
                   "deliver_now",
                   {
-                    active_job_internal_key => ["params", "args"],
+                    "_aj_symbol_keys" => ["params", "args"],
                     "args" => [],
                     "params" => parameterized_expected_args
                   }
@@ -589,14 +589,6 @@ if DependencyHelper.active_job_present?
 
     def perform_mailer(mailer, method, args = nil)
       perform_active_job { perform_action_mailer(mailer, method, args) }
-    end
-
-    def active_job_internal_key
-      if DependencyHelper.ruby_version >= Gem::Version.new("2.7.0")
-        "_aj_ruby2_keywords"
-      else
-        "_aj_symbol_keys"
-      end
     end
   end
 end

@@ -16,10 +16,6 @@ module Appsignal
         :default => 0
       }.freeze
 
-      def ruby_2_6_or_up?
-        Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.6.0")
-      end
-
       def coloring=(value)
         @coloring = value
       end
