@@ -5,14 +5,6 @@ module DependencyHelper
     Gem::Version.new(RUBY_VERSION)
   end
 
-  def running_ruby_2_0?
-    ruby_version.segments.take(2) == [2, 0]
-  end
-
-  def ruby_3_0_or_newer?
-    ruby_version >= Gem::Version.new("3.0.0")
-  end
-
   def ruby_3_1_or_newer?
     ruby_version >= Gem::Version.new("3.1.0")
   end
@@ -124,7 +116,7 @@ module DependencyHelper
   end
 
   def hanami2_present?
-    ruby_3_0_or_newer? && hanami_present? && Gem.loaded_specs["hanami"].version >= Gem::Version.new("2.0")
+    hanami_present? && Gem.loaded_specs["hanami"].version >= Gem::Version.new("2.0")
   end
 
   def dependency_present?(dependency_file)
