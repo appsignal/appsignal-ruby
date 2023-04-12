@@ -31,7 +31,7 @@ module Appsignal
           path = request.path # Path without namespaces
           endpoint = env["api.endpoint"]
 
-          if endpoint && endpoint.options
+          if endpoint&.options
             options = endpoint.options
             request_method = options[:method].first.to_s.upcase
             klass = options[:for]

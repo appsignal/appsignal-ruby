@@ -135,13 +135,11 @@ module Appsignal
             logger = Appsignal.logger
             logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
             probe_instances.each do |name, probe|
-              begin
-                logger.debug("Gathering minutely metrics with '#{name}' probe")
-                probe.call
-              rescue => ex
-                logger.error "Error in minutely probe '#{name}': #{ex}"
-                logger.debug ex.backtrace.join("\n")
-              end
+              logger.debug("Gathering minutely metrics with '#{name}' probe")
+              probe.call
+            rescue => ex
+              logger.error "Error in minutely probe '#{name}': #{ex}"
+              logger.debug ex.backtrace.join("\n")
             end
             sleep wait_time
           end
@@ -164,6 +162,7 @@ module Appsignal
       def initial_wait_time
         remaining_seconds = 60 - Time.now.sec
         return remaining_seconds if remaining_seconds > 30
+
         remaining_seconds + 60
       end
 
@@ -195,6 +194,7 @@ module Appsignal
 
       def dependencies_present?(probe)
         return true unless probe.respond_to? :dependencies_present?
+
         probe.dependencies_present?
       end
 

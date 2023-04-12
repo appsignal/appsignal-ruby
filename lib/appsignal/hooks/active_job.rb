@@ -47,9 +47,7 @@ module Appsignal
             transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
             transaction_tags["active_job_id"] = job["job_id"]
             provider_job_id = job["provider_job_id"]
-            if provider_job_id
-              transaction_tags[:provider_job_id] = provider_job_id
-            end
+            transaction_tags[:provider_job_id] = provider_job_id if provider_job_id
             transaction.set_tags(transaction_tags)
 
             transaction.set_action_if_nil(ActiveJobHelpers.action_name(job))

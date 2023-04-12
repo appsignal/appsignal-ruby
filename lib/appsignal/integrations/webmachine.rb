@@ -25,12 +25,10 @@ module Appsignal
 
       def handle_exceptions
         super do
-          begin
-            yield
-          rescue Exception => e # rubocop:disable Lint/RescueException
-            Appsignal.set_error(e)
-            raise e
-          end
+          yield
+        rescue Exception => e # rubocop:disable Lint/RescueException
+          Appsignal.set_error(e)
+          raise e
         end
       end
     end

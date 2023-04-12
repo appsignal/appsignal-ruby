@@ -1,7 +1,9 @@
 describe Appsignal::Probes::MriProbe do
   let(:appsignal_mock) { AppsignalMock.new(:hostname => hostname) }
   let(:gc_profiler_mock) { instance_double("Appsignal::GarbageCollectionProfiler") }
-  let(:probe) { described_class.new(:appsignal => appsignal_mock, :gc_profiler => gc_profiler_mock) }
+  let(:probe) do
+    described_class.new(:appsignal => appsignal_mock, :gc_profiler => gc_profiler_mock)
+  end
 
   describe ".dependencies_present?" do
     if DependencyHelper.running_jruby?
@@ -126,7 +128,8 @@ describe Appsignal::Probes::MriProbe do
 
         it "reports custom hostname tag value" do
           probe.call
-          expect_gauge_value("heap_slots", :tags => { :metric => :heap_live, :hostname => hostname })
+          expect_gauge_value("heap_slots",
+            :tags => { :metric => :heap_live, :hostname => hostname })
         end
       end
     end

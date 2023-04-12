@@ -12,7 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/resque"
-        Resque::Job.send(:prepend, Appsignal::Integrations::ResqueIntegration)
+        Resque::Job.prepend Appsignal::Integrations::ResqueIntegration
       end
     end
   end

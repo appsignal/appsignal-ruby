@@ -4,7 +4,7 @@ module Appsignal
   class Hooks
     # @api private
     class ShoryukenMiddleware
-      def call(worker_instance, queue, sqs_msg, body)
+      def call(worker_instance, queue, sqs_msg, body, &block)
         batch = sqs_msg.is_a?(Array)
         attributes =
           if batch
@@ -61,9 +61,7 @@ module Appsignal
           options[:queue_start] = Time.at(attributes["SentTimestamp"].to_i / 1000)
         end
 
-        Appsignal.monitor_transaction("perform_job.shoryuken", options) do
-          yield
-        end
+        Appsignal.monitor_transaction("perform_job.shoryuken", options, &block)
       end
     end
 

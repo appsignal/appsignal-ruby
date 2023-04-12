@@ -110,7 +110,8 @@ if DependencyHelper.sinatra_present?
           Appsignal::Transaction::HTTP_REQUEST,
           kind_of(Sinatra::Request),
           kind_of(Hash)
-        ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+        ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil,
+          :set_metadata => nil))
       end
 
       it "should call the app" do
@@ -158,7 +159,8 @@ if DependencyHelper.sinatra_present?
 
       describe "action name" do
         it "should set the action" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /")
+          expect_any_instance_of(Appsignal::Transaction)
+            .to receive(:set_action_if_nil).with("GET /")
         end
 
         context "without 'sinatra.route' env" do
@@ -173,14 +175,16 @@ if DependencyHelper.sinatra_present?
           before { env["SCRIPT_NAME"] = "/api" }
 
           it "should call set_action with an application prefix path" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("GET /api/")
+            expect_any_instance_of(Appsignal::Transaction)
+              .to receive(:set_action_if_nil).with("GET /api/")
           end
 
           context "without 'sinatra.route' env" do
             let(:env) { { :path => "/", :method => "GET" } }
 
             it "returns nil" do
-              expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
+              expect_any_instance_of(Appsignal::Transaction)
+                .to receive(:set_action_if_nil).with(nil)
             end
           end
         end
@@ -191,7 +195,8 @@ if DependencyHelper.sinatra_present?
       end
 
       it "should set the queue start" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
+        expect_any_instance_of(Appsignal::Transaction)
+          .to receive(:set_http_or_background_queue_start)
       end
 
       context "with overridden request class and params method" do

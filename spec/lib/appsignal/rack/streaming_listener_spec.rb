@@ -4,10 +4,10 @@ describe Appsignal::Rack::StreamingListener do
   let(:headers) { {} }
   let(:env) do
     {
-      "rack.input"     => StringIO.new,
+      "rack.input" => StringIO.new,
       "REQUEST_METHOD" => "GET",
-      "PATH_INFO"      => "/homepage",
-      "QUERY_STRING"   => "param=something"
+      "PATH_INFO" => "/homepage",
+      "QUERY_STRING" => "param=something"
     }
   end
   let(:app)      { double(:call => [200, headers, "body"]) }
@@ -114,8 +114,10 @@ end
 
 describe Appsignal::StreamWrapper do
   let(:stream)      { double }
-  let(:transaction) { Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {}) }
-  let(:wrapper)     { Appsignal::StreamWrapper.new(stream, transaction) }
+  let(:transaction) do
+    Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {})
+  end
+  let(:wrapper) { Appsignal::StreamWrapper.new(stream, transaction) }
 
   describe "#each" do
     it "calls the original stream" do

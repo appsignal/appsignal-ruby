@@ -27,8 +27,8 @@ module Appsignal
       def register(name, formatter = nil)
         if registered?(name, formatter)
           logger.warn(
-            "Formatter for '#{name}' already registered, not registering "\
-            "'#{formatter.name}'"
+            "Formatter for '#{name}' already registered, not registering " \
+              "'#{formatter.name}'"
           )
           return
         end
@@ -53,7 +53,7 @@ module Appsignal
 
       def format(name, payload)
         formatter = formatters[name]
-        formatter.format(payload) unless formatter.nil?
+        formatter&.format(payload)
       end
 
       private
@@ -63,6 +63,7 @@ module Appsignal
         if !format_method || format_method.arity != 1
           raise "#{formatter} does not have a format(payload) method"
         end
+
         formatter_classes[name] = formatter
         formatters[name] = formatter.new
       rescue => ex
@@ -83,6 +84,6 @@ module Appsignal
   end
 end
 
-Dir.glob(File.expand_path("../event_formatter/**/*.rb", __FILE__)).each do |file|
+Dir.glob(File.expand_path("event_formatter/**/*.rb", __dir__)).each do |file|
   require file
 end

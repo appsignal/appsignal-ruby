@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   class CLI
     class Diagnose
@@ -5,15 +7,17 @@ module Appsignal
         def self.username_for_uid(uid)
           passwd_struct = Etc.getpwuid(uid)
           return unless passwd_struct
+
           passwd_struct.name
-        rescue ArgumentError # rubocop:disable Lint/HandleExceptions
+        rescue ArgumentError # rubocop:disable Lint/SuppressedException
         end
 
         def self.group_for_gid(gid)
           passwd_struct = Etc.getgrgid(gid)
           return unless passwd_struct
+
           passwd_struct.name
-        rescue ArgumentError # rubocop:disable Lint/HandleExceptions
+        rescue ArgumentError # rubocop:disable Lint/SuppressedException
         end
 
         def self.read_file_content(path, bytes_to_read)
@@ -30,7 +34,7 @@ module Appsignal
             offset = file_size - bytes_to_read
           end
 
-          IO.binread(path, length, offset)
+          File.binread(path, length, offset)
         end
       end
     end

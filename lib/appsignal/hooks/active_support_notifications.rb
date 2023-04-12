@@ -30,10 +30,9 @@ module Appsignal
           install_module(parent_integration_module::InstrumentIntegration)
         end
 
-        # rubocop:disable Style/GuardClause
-        if instrumenter.method_defined?(:finish_with_state)
-          install_module(parent_integration_module::FinishStateIntegration)
-        end
+        return unless instrumenter.method_defined?(:finish_with_state)
+
+        install_module(parent_integration_module::FinishStateIntegration)
       end
 
       def install_module(mod)

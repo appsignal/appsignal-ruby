@@ -12,7 +12,7 @@ class AppsignalMock
     end
   end
 
-  def set_gauge(*args) # rubocop:disable Naming/AccessorMethodName
+  def set_gauge(*args)
     @gauges << args
   end
 end

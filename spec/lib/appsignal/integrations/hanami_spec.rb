@@ -20,14 +20,16 @@ if DependencyHelper.hanami2_present?
       end
 
       it "prepends the integration to Hanami" do
-        expect(::Hanami::Action).to receive(:send).with(:prepend, Appsignal::Integrations::HanamiIntegration)
+        expect(::Hanami::Action).to receive(:prepend)
+          .with(Appsignal::Integrations::HanamiIntegration)
       end
 
       context "when not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "does not prepend the integration" do
-          expect(::Hanami::Action).to_not receive(:send).with(:prepend, Appsignal::Integrations::HanamiIntegration)
+          expect(::Hanami::Action).to_not receive(:prepend)
+            .with(Appsignal::Integrations::HanamiIntegration)
         end
       end
 
@@ -71,17 +73,22 @@ if DependencyHelper.hanami2_present?
         end
 
         it "sets the action name" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with("HanamiApp::Actions::Books::Index")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil)
+            .with("HanamiApp::Actions::Books::Index")
         end
 
         it "sets the metadata" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("status", "200")
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("path", "/books")
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("method", "GET")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
+            .with("status", "200")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
+            .with("path", "/books")
+          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
+            .with("method", "GET")
         end
 
         it "sets the queue start" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_http_or_background_queue_start)
+          expect_any_instance_of(Appsignal::Transaction)
+            .to receive(:set_http_or_background_queue_start)
         end
 
         context "with error", :error => true do
@@ -92,7 +99,8 @@ if DependencyHelper.hanami2_present?
           end
 
           it "sets the status to 500" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).with("status", "500")
+            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
+              .with("status", "500")
             expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
           end
         end

@@ -13,8 +13,8 @@ module Appsignal
 
       def install
         require "appsignal/integrations/unicorn"
-        ::Unicorn::HttpServer.send(:prepend, Appsignal::Integrations::UnicornIntegration::Server)
-        ::Unicorn::Worker.send(:prepend, Appsignal::Integrations::UnicornIntegration::Worker)
+        ::Unicorn::HttpServer.prepend Appsignal::Integrations::UnicornIntegration::Server
+        ::Unicorn::Worker.prepend Appsignal::Integrations::UnicornIntegration::Worker
       end
     end
   end

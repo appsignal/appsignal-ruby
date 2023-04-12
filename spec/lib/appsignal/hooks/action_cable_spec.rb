@@ -52,8 +52,11 @@ describe Appsignal::Hooks::ActionCableHook do
           expect(Appsignal.active?).to be_truthy
           transaction
 
-          expect(Appsignal::Transaction).to receive(:create)
-            .with(transaction_id, Appsignal::Transaction::ACTION_CABLE, kind_of(ActionDispatch::Request))
+          expect(Appsignal::Transaction).to receive(:create).with(
+            transaction_id,
+            Appsignal::Transaction::ACTION_CABLE,
+            kind_of(ActionDispatch::Request)
+          )
             .and_return(transaction)
           allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
 

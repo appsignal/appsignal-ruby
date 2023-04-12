@@ -35,7 +35,7 @@ module Appsignal
     end
 
     # @api private
-    class SidekiqMiddleware # rubocop:disable Metrics/ClassLength
+    class SidekiqMiddleware
       include Appsignal::Hooks::Helpers
 
       EXCLUDED_JOB_KEYS = %w[
@@ -43,7 +43,7 @@ module Appsignal
         error_message failed_at jid retried_at retry wrapped
       ].freeze
 
-      def call(_worker, item, _queue)
+      def call(_worker, item, _queue, &block)
         job_status = nil
         transaction = Appsignal::Transaction.create(
           item["jid"],
@@ -53,9 +53,7 @@ module Appsignal
           )
         )
 
-        Appsignal.instrument "perform_job.sidekiq" do
-          yield
-        end
+        Appsignal.instrument "perform_job.sidekiq", &block
       rescue Exception => exception # rubocop:disable Lint/RescueException
         job_status = :failed
         raise exception
@@ -151,9 +149,9 @@ module Appsignal
         else
           # Sidekiq Enterprise argument encryption.
           # More information: https://github.com/mperham/sidekiq/wiki/Ent-Encryption
-          if job["encrypt".freeze]
+          if job["encrypt"]
             # No point in showing 150+ bytes of random garbage
-            args[-1] = "[encrypted data]".freeze
+            args[-1] = "[encrypted data]"
           end
           args
         end

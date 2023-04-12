@@ -113,7 +113,8 @@ if DependencyHelper.rails_present?
 
           transaction_hash = last_transaction.to_h
           expect(transaction_hash["metadata"]).to_not have_key("method")
-          expect(log_contents(log)).to contains_log(:error, "Unable to report HTTP request method: '")
+          expect(log_contents(log)).to contains_log(:error,
+            "Unable to report HTTP request method: '")
         end
       end
 

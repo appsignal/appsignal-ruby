@@ -283,7 +283,8 @@ if DependencyHelper.padrino_present?
 
                   it "sets the action with the app name, controller name and action name" do
                     expect_a_transaction_to_be_created
-                    expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp:my_controller#index")
+                    expect(transaction).to receive(:set_action_if_nil)
+                      .with("PadrinoTestApp:my_controller#index")
                   end
                 end
 
@@ -295,7 +296,8 @@ if DependencyHelper.padrino_present?
 
                   it "sets the action with the app name, controller name and action path" do
                     expect_a_transaction_to_be_created
-                    expect(transaction).to receive(:set_action_if_nil).with("PadrinoTestApp:/my_controller#index")
+                    expect(transaction).to receive(:set_action_if_nil)
+                      .with("PadrinoTestApp:/my_controller#index")
                   end
                 end
               end

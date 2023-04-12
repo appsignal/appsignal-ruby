@@ -14,7 +14,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/net_http"
-        Net::HTTP.send(:prepend, Appsignal::Integrations::NetHttpIntegration)
+        Net::HTTP.prepend Appsignal::Integrations::NetHttpIntegration
 
         Appsignal::Environment.report_enabled("net_http")
       end

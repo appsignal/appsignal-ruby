@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # DO NOT EDIT
 # This is a generated file by the `rake ship` family of tasks in the
 # appsignal-agent repository.

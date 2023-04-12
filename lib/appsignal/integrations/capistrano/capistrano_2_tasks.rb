@@ -11,12 +11,13 @@ module Appsignal
 
         namespace :appsignal do
           task :deploy do
-            env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
-            user = fetch(:appsignal_user, ENV["USER"] || ENV["USERNAME"])
+            env = fetch(:appsignal_env,
+              fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
+            user = fetch(:appsignal_user, ENV["USER"] || ENV.fetch("USERNAME", nil))
             revision = fetch(:appsignal_revision, fetch(:current_revision))
 
             appsignal_config = Appsignal::Config.new(
-              ENV["PWD"],
+              ENV.fetch("PWD", nil),
               env,
               {},
               Appsignal::Utils::IntegrationLogger.new(StringIO.new)
@@ -27,7 +28,7 @@ module Appsignal
               c.validate
             end
 
-            if appsignal_config && appsignal_config.active?
+            if appsignal_config&.active?
               marker_data = {
                 :revision => revision,
                 :user => user

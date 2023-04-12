@@ -10,11 +10,9 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
 
   context "without a current transction" do
     let(:exception) do
-      begin
-        raise ExampleStandardError, "uh oh"
-      rescue => error
-        error
-      end
+      raise ExampleStandardError, "uh oh"
+    rescue => error
+      error
     end
     let(:job_context) do
       {
@@ -74,14 +72,14 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
   let(:jid) { "b4a577edbccf1d805744efa9" }
   let(:item) do
     {
-      "jid"         => jid,
-      "class"       => job_class,
+      "jid" => jid,
+      "class" => job_class,
       "retry_count" => 0,
-      "queue"       => "default",
-      "created_at"  => Time.parse("2001-01-01 10:00:00UTC").to_f,
+      "queue" => "default",
+      "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
       "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-      "args"        => given_args,
-      "extra"       => "data"
+      "args" => given_args,
+      "extra" => "data"
     }
   end
   let(:plugin) { Appsignal::Integrations::SidekiqMiddleware.new }
@@ -230,13 +228,10 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "creates a transaction and adds the error" do
       # TODO: additional curly brackets required for issue
       # https://github.com/rspec/rspec-mocks/issues/1460
-      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
       expect(Appsignal).to receive(:increment_counter)
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
-      # rubocop:enable Style/BracesAroundHashParameters
-
       expect do
         perform_job { raise error, "uh oh" }
       end.to raise_error(error)
@@ -273,11 +268,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "creates a transaction with events" do
       # TODO: additional curly brackets required for issue
       # https://github.com/rspec/rspec-mocks/issues/1460
-      # rubocop:disable Style/BracesAroundHashParameters
       expect(Appsignal).to receive(:increment_counter)
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
-      # rubocop:enable Style/BracesAroundHashParameters
-
       perform_job
 
       transaction_hash = transaction.to_h
@@ -309,18 +301,14 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   def perform_job
     Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
-      begin
-        exception = nil
-        plugin.call(worker, item, queue) do
-          yield if block_given?
-        end
-      rescue Exception => exception # rubocop:disable Lint/RescueException
-        raise exception
-      ensure
-        if exception
-          Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item)
-        end
+      exception = nil
+      plugin.call(worker, item, queue) do
+        yield if block_given?
       end
+    rescue Exception => exception # rubocop:disable Lint/RescueException
+      raise exception
+    ensure
+      Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item) if exception
     end
   end
 
@@ -516,7 +504,8 @@ if DependencyHelper.active_job_present?
         expect(transaction_hash).to include(
           "action" => "ActionMailerSidekiqTestJob#welcome",
           "sample_data" => hash_including(
-            "params" => ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
+            "params" => ["ActionMailerSidekiqTestJob", "welcome",
+                         "deliver_now"] + expected_wrapped_args
           )
         )
       end
@@ -524,18 +513,14 @@ if DependencyHelper.active_job_present?
 
     def perform_sidekiq
       Timecop.freeze(time) do
-        begin
-          yield
-          # Combined with Sidekiq::Testing.fake! and drain_all we get a
-          # enqueue_at in the job data.
-          Sidekiq::Worker.drain_all
-        rescue Exception => exception # rubocop:disable Lint/RescueException
-          raise exception
-        ensure
-          if exception
-            Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, {})
-          end
-        end
+        yield
+        # Combined with Sidekiq::Testing.fake! and drain_all we get a
+        # enqueue_at in the job data.
+        Sidekiq::Worker.drain_all
+      rescue Exception => exception # rubocop:disable Lint/RescueException
+        raise exception
+      ensure
+        Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, {}) if exception
       end
     end
 

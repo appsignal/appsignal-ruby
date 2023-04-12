@@ -3,7 +3,9 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
 
   context "with mongo ruby driver" do
     let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
-    before { allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber) }
+    before do
+      allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber)
+    end
 
     before(:context) do
       module Mongo

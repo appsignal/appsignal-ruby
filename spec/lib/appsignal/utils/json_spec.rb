@@ -15,7 +15,8 @@ describe Appsignal::Utils::JSON do
       end
 
       it "returns a JSON string" do
-        is_expected.to eq %({"the":"payload","1":true,"":"test","foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}})
+        is_expected.to eq %({"the":"payload","1":true,"":"test",) +
+          %("foo":[1,2,"three"],"bar":null,"baz":{"foo":"bar"}})
       end
     end
 
@@ -35,7 +36,8 @@ describe Appsignal::Utils::JSON do
       end
 
       it "returns a JSON string with invalid UTF-8 content" do
-        is_expected.to eq %({"field_one":"aa","field_two":"aa�","field_three":["one","aa�"],"field_four":{"one":"aa�"}})
+        is_expected.to eq %({"field_one":"aa","field_two":"aa�",) +
+          %("field_three":["one","aa�"],"field_four":{"one":"aa�"}})
       end
     end
   end

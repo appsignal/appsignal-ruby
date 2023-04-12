@@ -48,7 +48,7 @@ shared_examples "activesupport instrument override" do
   end
 
   it "converts non-string names to strings" do
-    as.instrument(:not_a_string) {}
+    as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
     expect(transaction.to_h["events"]).to match([
       {
         "allocation_count" => kind_of(Integer),

@@ -23,9 +23,7 @@ module Appsignal
         end
 
         def make_appsignal_string(ruby_string)
-          unless ruby_string.is_a?(String)
-            raise ArgumentError, "argument is not a string"
-          end
+          raise ArgumentError, "argument is not a string" unless ruby_string.is_a?(String)
 
           AppsignalString.new.tap do |appsignal_string|
             appsignal_string[:len] = ruby_string.bytesize
@@ -102,16 +100,19 @@ module Appsignal
           [:pointer, :long],
           :void
         attach_function :appsignal_finish_event,
-          [:pointer, :appsignal_string, :appsignal_string, :appsignal_string, :int64, :long],
+          [:pointer, :appsignal_string, :appsignal_string, :appsignal_string, :int64,
+           :long],
           :void
         attach_function :appsignal_finish_event_data,
           [:pointer, :appsignal_string, :appsignal_string, :pointer, :int64, :long],
           :void
         attach_function :appsignal_record_event,
-          [:pointer, :appsignal_string, :appsignal_string, :appsignal_string, :int64, :long, :long],
+          [:pointer, :appsignal_string, :appsignal_string, :appsignal_string, :int64,
+           :long, :long],
           :void
         attach_function :appsignal_record_event_data,
-          [:pointer, :appsignal_string, :appsignal_string, :pointer, :int64, :long, :long],
+          [:pointer, :appsignal_string, :appsignal_string, :pointer, :int64, :long,
+           :long],
           :void
         attach_function :appsignal_set_transaction_error,
           [:pointer, :appsignal_string, :appsignal_string, :pointer],
@@ -271,7 +272,7 @@ module Appsignal
 
       def get_server_state(key)
         state = appsignal_get_server_state(make_appsignal_string(key))
-        make_ruby_string state if state[:len] > 0
+        make_ruby_string state if (state[:len]).positive?
       end
 
       def log(group, level, message, attributes)
@@ -291,6 +292,7 @@ module Appsignal
         )
 
         return if !transaction || transaction.null?
+
         Transaction.new(transaction)
       end
 
@@ -333,7 +335,7 @@ module Appsignal
         appsignal_add_distribution_value(make_appsignal_string(key), value, tags.pointer)
       end
 
-      class Transaction # rubocop:disable Metrics/ClassLength
+      class Transaction
         include StringHelpers
 
         attr_reader :pointer
@@ -447,9 +449,9 @@ module Appsignal
           Extension.appsignal_complete_transaction(pointer)
         end
 
-        def to_json
+        def to_json # rubocop:disable Lint/ToJSON
           json = Extension.appsignal_transaction_to_json(pointer)
-          make_ruby_string(json) if json[:len] > 0
+          make_ruby_string(json) if (json[:len]).positive?
         end
       end
 
@@ -531,9 +533,9 @@ module Appsignal
           )
         end
 
-        def to_json
+        def to_json # rubocop:disable Lint/ToJSON
           json = Extension.appsignal_span_to_json(pointer)
-          make_ruby_string(json) if json[:len] > 0
+          make_ruby_string(json) if (json[:len]).positive?
         end
 
         def close

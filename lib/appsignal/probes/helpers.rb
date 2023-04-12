@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   module Probes
     module Helpers
@@ -42,13 +44,9 @@ module Appsignal
         return @hostname if defined?(@hostname)
 
         config = @appsignal.config
+        # Auto detect hostname as fallback. May be inaccurate.
         @hostname =
-          if config[:hostname]
-            config[:hostname]
-          else
-            # Auto detect hostname as fallback. May be inaccurate.
-            Socket.gethostname
-          end
+          config[:hostname] || Socket.gethostname
         Appsignal.logger.debug "Probe helper: Using hostname config " \
           "option '#{@hostname.inspect}' as hostname"
 

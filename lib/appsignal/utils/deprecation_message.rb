@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   module Utils
     module DeprecationMessage

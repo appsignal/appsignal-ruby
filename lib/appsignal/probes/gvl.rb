@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   module Probes
     class GvlProbe
@@ -5,7 +7,8 @@ module Appsignal
 
       # @api private
       def self.dependencies_present?
-        defined?(::GVLTools) && gvltools_0_2_or_newer? && ruby_3_2_or_newer? && !Appsignal::System.jruby?
+        defined?(::GVLTools) && gvltools_0_2_or_newer? && ruby_3_2_or_newer? &&
+          !Appsignal::System.jruby?
       end
 
       # @api private

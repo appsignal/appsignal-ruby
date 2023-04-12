@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   class CLI
     class Diagnose
@@ -55,6 +57,7 @@ module Appsignal
             :exists => File.exist?(path)
           }.tap do |info|
             next unless info[:exists]
+
             stat = File.stat(path)
             info[:type] = stat.directory? ? "directory" : "file"
             info[:mode] = format("%o", stat.mode)
@@ -79,7 +82,7 @@ module Appsignal
         # Returns the AppSignal gem installation path. The root directory of
         # this gem.
         def gem_path
-          File.expand_path("../../../../../", __FILE__)
+          File.expand_path("../../../..", __dir__)
         end
       end
     end

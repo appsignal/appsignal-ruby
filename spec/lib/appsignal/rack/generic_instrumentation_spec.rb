@@ -42,7 +42,8 @@ describe Appsignal::Rack::GenericInstrumentation do
         kind_of(String),
         Appsignal::Transaction::HTTP_REQUEST,
         kind_of(Rack::Request)
-      ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil, :set_metadata => nil))
+      ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil,
+        :set_metadata => nil))
     end
 
     it "should call the app" do

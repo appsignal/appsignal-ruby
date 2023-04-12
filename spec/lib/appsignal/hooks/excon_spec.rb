@@ -38,7 +38,7 @@ describe Appsignal::Hooks::ExconHook do
           :method => :get,
           :scheme => "http"
         }
-        Excon.defaults[:instrumentor].instrument("excon.request", data) {}
+        Excon.defaults[:instrumentor].instrument("excon.request", data) {} # rubocop:disable Lint/EmptyBlock
 
         expect(transaction.to_h["events"]).to include(
           hash_including(
@@ -51,7 +51,7 @@ describe Appsignal::Hooks::ExconHook do
 
       it "instruments a http response" do
         data = { :host => "www.google.com" }
-        Excon.defaults[:instrumentor].instrument("excon.response", data) {}
+        Excon.defaults[:instrumentor].instrument("excon.response", data) {} # rubocop:disable Lint/EmptyBlock
 
         expect(transaction.to_h["events"]).to include(
           hash_including(

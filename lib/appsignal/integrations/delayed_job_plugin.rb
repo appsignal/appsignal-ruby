@@ -41,8 +41,8 @@ module Appsignal
           :class    => class_name,
           :method   => method_name,
           :metadata => {
-            :id       => extract_value(job, :id, nil, true),
-            :queue    => extract_value(job, :queue),
+            :id => extract_value(job, :id, nil, true),
+            :queue => extract_value(job, :queue),
             :priority => extract_value(job, :priority, 0),
             :attempts => extract_value(job, :attempts, 0)
           },
@@ -80,9 +80,7 @@ module Appsignal
         end
 
         # Attempt to read value from object
-        if value.nil? && object_or_hash.respond_to?(field)
-          value = object_or_hash.send(field)
-        end
+        value = object_or_hash.send(field) if value.nil? && object_or_hash.respond_to?(field)
 
         # Set default value if nothing was found
         value = default_value if value.nil?

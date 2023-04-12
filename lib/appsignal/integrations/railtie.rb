@@ -32,9 +32,8 @@ module Appsignal
 
         Appsignal.start
 
-        if Appsignal.config[:enable_rails_error_reporter] && Rails.respond_to?(:error)
-          Rails.error
-            .subscribe(Appsignal::Integrations::RailsErrorReporterSubscriber)
+        if Appsignal.config[:enable_rails_error_reporter] && Rails.respond_to?(:error) # rubocop:disable Style/GuardClause
+          Rails.error.subscribe(Appsignal::Integrations::RailsErrorReporterSubscriber)
         end
       end
     end

@@ -31,10 +31,9 @@ module WaitForHelper
     end
 
     return unless i >= max_wait
+
     error_message =
-      if error
-        "\nError: #{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
-      end
+      ("\nError: #{error.class}: #{error.message}\n#{error.backtrace.join("\n")}" if error)
     raise "Waited 5 seconds for #{name} condition, but was not met.#{error_message}"
   end
 end

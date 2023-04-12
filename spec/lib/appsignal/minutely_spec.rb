@@ -133,7 +133,7 @@ describe Appsignal::Minutely do
               "oh no initialize!"
           )
           # Start of the error backtrace as debug log
-          expect(log).to contains_log :debug, File.expand_path("../../../../", __FILE__)
+          expect(log).to contains_log :debug, File.expand_path("../../..", __dir__)
         end
       end
     end
@@ -166,7 +166,7 @@ describe Appsignal::Minutely do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'broken_probe' probe")
         expect(log).to contains_log(:error, "Error in minutely probe 'broken_probe': oh no!")
-        gem_path = File.expand_path("../../../../", __FILE__) # Start of backtrace
+        gem_path = File.expand_path("../../..", __dir__) # Start of backtrace
         expect(log).to contains_log(:debug, gem_path)
       end
     end
@@ -191,7 +191,7 @@ describe Appsignal::Minutely do
         # Fetch old thread
         thread = Appsignal::Minutely.instance_variable_get(:@thread)
         Appsignal::Minutely.start
-        thread && thread.join # Wait for old thread to exit
+        thread&.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
     end
   end

@@ -5,7 +5,7 @@ module Appsignal
     # @api private
     module ActionView
       class RenderFormatter
-        BLANK = "".freeze
+        BLANK = ""
 
         attr_reader :root_path
 
@@ -15,6 +15,7 @@ module Appsignal
 
         def format(payload)
           return nil unless payload[:identifier]
+
           [payload[:identifier].sub(root_path, BLANK), nil]
         end
       end

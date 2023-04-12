@@ -6,7 +6,7 @@ module Appsignal
     class ActionCableHook < Appsignal::Hooks::Hook
       register :action_cable
 
-      REQUEST_ID = "_appsignal_action_cable.request_id".freeze
+      REQUEST_ID = "_appsignal_action_cable.request_id"
 
       def dependencies_present?
         defined?(::ActiveSupport::Notifications::Instrumenter) &&
@@ -15,7 +15,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/action_cable"
-        ActionCable::Channel::Base.send(:prepend, Appsignal::Integrations::ActionCableIntegration)
+        ActionCable::Channel::Base.prepend Appsignal::Integrations::ActionCableIntegration
 
         install_callbacks
       end
@@ -23,7 +23,8 @@ module Appsignal
       private
 
       def install_callbacks
-        ActionCable::Channel::Base.set_callback :subscribe, :around, :prepend => true do |channel, inner|
+        ActionCable::Channel::Base.set_callback :subscribe, :around,
+          :prepend => true do |channel, inner|
           # The request is only the original websocket request
           connection = channel.connection
           # #env is not available on the Rails ConnectionStub class used in the
@@ -55,7 +56,8 @@ module Appsignal
           end
         end
 
-        ActionCable::Channel::Base.set_callback :unsubscribe, :around, :prepend => true do |channel, inner|
+        ActionCable::Channel::Base.set_callback :unsubscribe, :around,
+          :prepend => true do |channel, inner|
           # The request is only the original websocket request
           connection = channel.connection
           # #env is not available on the Rails ConnectionStub class used in the

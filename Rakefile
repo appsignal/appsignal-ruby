@@ -130,6 +130,7 @@ namespace :build_matrix do
         matrix["ruby"].each do |ruby|
           ruby_version = ruby["ruby"]
           out << "echo 'Switching to #{ruby_version}'"
+          # rubocop:disable Layout/LineLength
           out << "#{config[:switch_command].call(ruby_version)} || { echo 'Switching Ruby failed'; exit 1; }"
           out << "ruby -v"
           out << "echo 'Compiling extension'"
@@ -150,6 +151,7 @@ namespace :build_matrix do
             out << "echo 'Running #{gemfile} in #{ruby_version}'"
             out << "#{bundler_version} #{gemfile_env} ./support/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
           end
+          # rubocop:enable Layout/LineLength
           out << ""
         end
         out << "rm -f .ruby-version"
@@ -264,7 +266,9 @@ task :spec_all_gemfiles do
   Bundler.with_clean_env do
     gems_with_gemfiles.each do |gemfile|
       puts "Running tests for #{gemfile}"
-      raise "Not successful" unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+      unless system("env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile bundle exec rspec")
+        raise "Not successful"
+      end
     end
   end
 end

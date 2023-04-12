@@ -7,14 +7,14 @@ module Appsignal
   #
   # @api private
   module System
-    LINUX_TARGET = "linux".freeze
-    LINUX_ARM_ARCHITECTURE = "aarch64".freeze
-    MUSL_TARGET = "linux-musl".freeze
-    FREEBSD_TARGET = "freebsd".freeze
-    GEM_EXT_PATH = File.expand_path("../../../ext", __FILE__).freeze
+    LINUX_TARGET = "linux"
+    LINUX_ARM_ARCHITECTURE = "aarch64"
+    MUSL_TARGET = "linux-musl"
+    FREEBSD_TARGET = "freebsd"
+    GEM_EXT_PATH = File.expand_path("../../ext", __dir__).freeze
 
     def self.heroku?
-      ENV.key? "DYNO".freeze
+      ENV.key? "DYNO"
     end
 
     # Detect agent and extension platform build
@@ -48,10 +48,9 @@ module Appsignal
       if local_os =~ /linux/
         ldd_output = ldd_version_output
         return MUSL_TARGET if ldd_output.include? "musl"
+
         ldd_version = extract_ldd_version(ldd_output)
-        if ldd_version && versionify(ldd_version) < versionify("2.15")
-          return MUSL_TARGET
-        end
+        return MUSL_TARGET if ldd_version && versionify(ldd_version) < versionify("2.15")
       end
 
       local_os
@@ -77,14 +76,14 @@ module Appsignal
     #
     # @api private
     def self.force_musl_build?
-      %w[true 1].include?(ENV["APPSIGNAL_BUILD_FOR_MUSL"])
+      %w[true 1].include?(ENV.fetch("APPSIGNAL_BUILD_FOR_MUSL", nil))
     end
 
     # Returns whether or not the linux ARM build was selected by the user.
     #
     # @api private
     def self.force_linux_arm_build?
-      %w[true 1].include?(ENV["APPSIGNAL_BUILD_FOR_LINUX_ARM"])
+      %w[true 1].include?(ENV.fetch("APPSIGNAL_BUILD_FOR_LINUX_ARM", nil))
     end
 
     # @api private

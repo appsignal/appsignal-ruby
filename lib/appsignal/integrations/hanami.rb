@@ -17,7 +17,7 @@ module Appsignal
         Appsignal.start_logger
         Appsignal.start
 
-        ::Hanami::Action.send(:prepend, Appsignal::Integrations::HanamiIntegration) if Appsignal.active?
+        ::Hanami::Action.prepend Appsignal::Integrations::HanamiIntegration if Appsignal.active?
       end
     end
   end

@@ -99,7 +99,7 @@ describe Appsignal::CLI::Install do
 
   shared_examples "push_api_key validation" do
     context "without key" do
-      let(:push_api_key) {}
+      let(:push_api_key) { nil }
 
       it "does not install" do
         run
@@ -178,7 +178,7 @@ describe Appsignal::CLI::Install do
 
     context "with Capfile" do
       context "when already installed" do
-        before { File.open(capfile, "w") { |f| f.write("require 'appsignal/capistrano'") } }
+        before { File.write(capfile, "require 'appsignal/capistrano'") }
 
         it "does not add another require to Capfile" do
           run
@@ -432,9 +432,7 @@ describe Appsignal::CLI::Install do
 
       context "when failed to load the Rails application.rb file" do
         before do
-          File.open(File.join(config_dir, "application.rb"), "w") do |file|
-            file.write("I am invalid code")
-          end
+          File.write(File.join(config_dir, "application.rb"), "I am invalid code")
         end
 
         it "prompts the user to fill in an app name" do
@@ -726,7 +724,8 @@ describe Appsignal::CLI::Install do
     end
   end
 
-  if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present? && !hanami2_present?
+  if !rails_present? && !sinatra_present? && !padrino_present? && !grape_present? &&
+      !hanami2_present?
     context "with unknown framework" do
       let(:push_api_key) { "my_key" }
 

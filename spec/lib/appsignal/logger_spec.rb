@@ -60,8 +60,13 @@ describe Appsignal::Logger do
       end
 
       it "should log with a level, message and group" do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("other_group", 3, 0, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data))
+        expect(Appsignal::Extension).to receive(:log).with(
+          "other_group",
+          3,
+          0,
+          "formatted: 'Log message'",
+          instance_of(Appsignal::Extension::Data)
+        )
         logger.add(::Logger::INFO, "Log message", "other_group")
       end
     end
@@ -76,11 +81,9 @@ describe Appsignal::Logger do
   ].each do |method|
     describe "##{method[0]}" do
       it "should log with a message" do
-        # rubocop:disable Style/BracesAroundHashParameters
         expect(Appsignal::Utils::Data).to receive(:generate)
           .with({ :attribute => "value" })
           .and_call_original
-        # rubocop:enable Style/BracesAroundHashParameters
         expect(Appsignal::Extension).to receive(:log)
           .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
 

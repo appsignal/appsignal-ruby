@@ -59,9 +59,7 @@ module Appsignal::Integrations::PadrinoIntegration
     action_name = request.action if request.respond_to?(:action)
     action_name ||= ""
 
-    unless action_name.empty?
-      return "#{settings.name}:#{controller_name}##{action_name}"
-    end
+    return "#{settings.name}:#{controller_name}##{action_name}" unless action_name.empty?
 
     # Older versions of Padrino work with a route object
     if request.respond_to?(:route_obj) && request.route_obj
@@ -74,7 +72,7 @@ module Appsignal::Integrations::PadrinoIntegration
   end
 end
 
-Padrino::Application.send(:prepend, Appsignal::Integrations::PadrinoIntegration)
+Padrino::Application.prepend Appsignal::Integrations::PadrinoIntegration
 
 Padrino.after_load do
   Appsignal::Integrations::PadrinoPlugin.init

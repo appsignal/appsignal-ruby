@@ -1,7 +1,7 @@
 shared_examples "activesupport start finish override" do
   let(:instrumenter) { as.instrumenter }
 
-  it "instruments an ActiveSupport::Notifications.start/finish event with payload on start ignores payload" do
+  it "instruments start/finish events with payload on start ignores payload" do
     instrumenter.start("sql.active_record", :sql => "SQL")
     instrumenter.finish("sql.active_record", {})
 

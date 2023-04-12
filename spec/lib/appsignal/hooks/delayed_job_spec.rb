@@ -39,13 +39,13 @@ describe Appsignal::Hooks::DelayedJobHook do
       let(:payload_object) { double(:args => args) }
       let(:job_data) do
         {
-          :id             => 123,
-          :name           => "TestClass#perform",
-          :priority       => 1,
-          :attempts       => 1,
-          :queue          => "default",
-          :created_at     => created_at,
-          :run_at         => run_at,
+          :id => 123,
+          :name => "TestClass#perform",
+          :priority => 1,
+          :attempts => 1,
+          :queue => "default",
+          :created_at => created_at,
+          :run_at => run_at,
           :payload_object => payload_object
         }
       end
@@ -76,8 +76,8 @@ describe Appsignal::Hooks::DelayedJobHook do
             "metadata" => {
               "priority" => 1,
               "attempts" => 1,
-              "queue"    => "default",
-              "id"       => "123"
+              "queue" => "default",
+              "id" => "123"
             },
             "params" => ["argument"]
           )
@@ -204,7 +204,7 @@ describe Appsignal::Hooks::DelayedJobHook do
               end
             end
 
-            context "with payload_object being acting like a Hash and returning a non-String value" do
+            context "with payload_object acting like a Hash and returning a non-String value" do
               class ClassActingAsHash
                 def self.[](_key)
                   Object.new
@@ -279,8 +279,8 @@ describe Appsignal::Hooks::DelayedJobHook do
                 "metadata" => {
                   "priority" => 1,
                   "attempts" => 1,
-                  "queue"    => "default",
-                  "id"       => "123"
+                  "queue" => "default",
+                  "id" => "123"
                 },
                 "params" => ["activejob_argument"]
               )

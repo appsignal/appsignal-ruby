@@ -57,14 +57,14 @@ module Appsignal
       #   re-raised by this method.
       # @return [Object] the value of the given block is returned.
       # @since 0.10.0
-      def monitor_transaction(name, env = {})
+      def monitor_transaction(name, env = {}, &block)
         # Always verify input, even when Appsignal is not active.
         # This makes it more likely invalid arguments get flagged in test/dev
         # environments.
-        if name.start_with?("perform_job".freeze)
+        if name.start_with?("perform_job")
           namespace = Appsignal::Transaction::BACKGROUND_JOB
           request   = Appsignal::Transaction::GenericRequest.new(env)
-        elsif name.start_with?("process_action".freeze)
+        elsif name.start_with?("process_action")
           namespace = Appsignal::Transaction::HTTP_REQUEST
           request   = ::Rack::Request.new(env)
         else
@@ -82,9 +82,7 @@ module Appsignal
           request
         )
         begin
-          Appsignal.instrument(name) do
-            yield
-          end
+          Appsignal.instrument(name, &block)
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
           raise error
@@ -211,21 +209,21 @@ module Appsignal
           call_location = caller(1..1).first
           deprecation_message \
             "The tags argument for `Appsignal.send_error` is deprecated. " \
-            "Please use the block method to set tags instead.\n\n" \
-            "  Appsignal.send_error(error) do |transaction|\n" \
-            "    transaction.set_tags(#{tags})\n" \
-            "  end\n\n" \
-            "Appsignal.send_error called on location: #{call_location}"
+              "Please use the block method to set tags instead.\n\n" \
+              "  Appsignal.send_error(error) do |transaction|\n" \
+              "    transaction.set_tags(#{tags})\n" \
+              "  end\n\n" \
+              "Appsignal.send_error called on location: #{call_location}"
         end
         if namespace
           call_location = caller(1..1).first
           deprecation_message \
             "The namespace argument for `Appsignal.send_error` is deprecated. " \
-            "Please use the block method to set the namespace instead.\n\n" \
-            "  Appsignal.send_error(error) do |transaction|\n" \
-            "    transaction.set_namespace(#{namespace.inspect})\n" \
-            "  end\n\n" \
-            "Appsignal.send_error called on location: #{call_location}"
+              "Please use the block method to set the namespace instead.\n\n" \
+              "  Appsignal.send_error(error) do |transaction|\n" \
+              "    transaction.set_namespace(#{namespace.inspect})\n" \
+              "  end\n\n" \
+              "Appsignal.send_error called on location: #{call_location}"
         end
         return unless active?
 
@@ -304,21 +302,21 @@ module Appsignal
           call_location = caller(1..1).first
           deprecation_message \
             "The tags argument for `Appsignal.set_error` is deprecated. " \
-            "Please use the block method to set tags instead.\n\n" \
-            "  Appsignal.set_error(error) do |transaction|\n" \
-            "    transaction.set_tags(#{tags})\n" \
-            "  end\n\n" \
-            "Appsignal.set_error called on location: #{call_location}"
+              "Please use the block method to set tags instead.\n\n" \
+              "  Appsignal.set_error(error) do |transaction|\n" \
+              "    transaction.set_tags(#{tags})\n" \
+              "  end\n\n" \
+              "Appsignal.set_error called on location: #{call_location}"
         end
         if namespace
           call_location = caller(1..1).first
           deprecation_message \
             "The namespace argument for `Appsignal.set_error` is deprecated. " \
-            "Please use the block method to set the namespace instead.\n\n" \
-            "  Appsignal.set_error(error) do |transaction|\n" \
-            "    transaction.set_namespace(#{namespace.inspect})\n" \
-            "  end\n\n" \
-            "Appsignal.set_error called on location: #{call_location}"
+              "Please use the block method to set the namespace instead.\n\n" \
+              "  Appsignal.set_error(error) do |transaction|\n" \
+              "    transaction.set_namespace(#{namespace.inspect})\n" \
+              "  end\n\n" \
+              "Appsignal.set_error called on location: #{call_location}"
         end
         unless exception.is_a?(Exception)
           logger.error "Appsignal.set_error: Cannot set error. The given " \
@@ -360,8 +358,9 @@ module Appsignal
       # @since 2.2.0
       def set_action(action)
         return if !active? ||
-            !Appsignal::Transaction.current? ||
-            action.nil?
+          !Appsignal::Transaction.current? ||
+          action.nil?
+
         Appsignal::Transaction.current.set_action(action)
       end
 
@@ -399,8 +398,9 @@ module Appsignal
       # @since 2.2.0
       def set_namespace(namespace)
         return if !active? ||
-            !Appsignal::Transaction.current? ||
-            namespace.nil?
+          !Appsignal::Transaction.current? ||
+          namespace.nil?
+
         Appsignal::Transaction.current.set_namespace(namespace)
       end
 
@@ -454,9 +454,24 @@ module Appsignal
       # Only the last 20 added breadcrumbs will be saved.
       #
       # @example
-      #   Appsignal.add_breadcrumb("Navigation", "http://blablabla.com", "", { :response => 200 }, Time.now.utc)
-      #   Appsignal.add_breadcrumb("Network", "[GET] http://blablabla.com", "", { :response => 500 })
-      #   Appsignal.add_breadcrumb("UI", "closed modal(change_password)", "User closed modal without actions")
+      #   Appsignal.add_breadcrumb(
+      #     "Navigation",
+      #     "http://blablabla.com",
+      #     "",
+      #     { :response => 200 },
+      #     Time.now.utc
+      #   )
+      #   Appsignal.add_breadcrumb(
+      #     "Network",
+      #     "[GET] http://blablabla.com",
+      #     "",
+      #     { :response => 500 }
+      #   )
+      #   Appsignal.add_breadcrumb(
+      #     "UI",
+      #     "closed modal(change_password)",
+      #     "User closed modal without actions"
+      #   )
       #
       # @param category [String] category of breadcrumb
       #   e.g. "UI", "Network", "Navigation", "Console".
@@ -583,10 +598,10 @@ module Appsignal
       # @return [Object] Returns the return value of the block.
       # @since 0.8.7
       def without_instrumentation
-        Appsignal::Transaction.current.pause! if Appsignal::Transaction.current
+        Appsignal::Transaction.current&.pause!
         yield
       ensure
-        Appsignal::Transaction.current.resume! if Appsignal::Transaction.current
+        Appsignal::Transaction.current&.resume!
       end
     end
   end

@@ -22,6 +22,7 @@ module Appsignal
 
       def coloring?
         return true unless defined?(@coloring)
+
         @coloring
       end
 

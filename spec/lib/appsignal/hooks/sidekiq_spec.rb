@@ -21,7 +21,8 @@ describe Appsignal::Hooks::SidekiqHook do
       alias exists? include?
 
       unless method_defined? :prepend
-        def prepend(middleware) # For Ruby < 2.5
+        # For Ruby < 2.5
+        def prepend(middleware)
           insert(0, middleware)
         end
       end

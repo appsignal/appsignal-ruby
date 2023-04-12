@@ -67,8 +67,8 @@ module Appsignal
             install_for_sinatra(config)
           else
             print colorize "Warning:", :red
-            puts " We could not detect which framework you are using. "\
-              "We'd be very grateful if you email us on support@appsignal.com "\
+            puts " We could not detect which framework you are using. " \
+              "We'd be very grateful if you email us on support@appsignal.com " \
               "with information about your setup."
             puts
             done_notice
@@ -229,9 +229,7 @@ module Appsignal
               puts
               puts "Add the following environment variables to configure AppSignal:"
               puts "  export APPSIGNAL_PUSH_API_KEY=#{config[:push_api_key]}"
-              if name_overwritten
-                puts "  export APPSIGNAL_APP_NAME=#{config[:name]}"
-              end
+              puts "  export APPSIGNAL_APP_NAME=#{config[:name]}" if name_overwritten
               puts
               puts "  See the documentation for more configuration options:"
               puts "  https://docs.appsignal.com/gem-settings/configuration.html"

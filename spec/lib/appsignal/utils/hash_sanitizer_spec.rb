@@ -2,23 +2,23 @@ describe Appsignal::Utils::HashSanitizer do
   let(:file) { uploaded_file }
   let(:params) do
     {
-      :text       => "string",
-      "string"    => "string key value",
-      :file       => file,
-      :float      => 0.0,
-      :bool_true  => true,
+      :text => "string",
+      "string" => "string key value",
+      :file => file,
+      :float => 0.0,
+      :bool_true => true,
       :bool_false => false,
-      :nil        => nil,
-      :int        => 1, # Fixnum
-      :int64      => 1 << 64, # Bignum
-      :hash       => {
-        :nested_text  => "string",
+      :nil => nil,
+      :int => 1, # Fixnum
+      :int64 => 1 << 64, # Bignum
+      :hash => {
+        :nested_text => "string",
         :nested_array => [
           "something",
           "else",
           file,
           {
-            :key  => "value",
+            :key => "value",
             :file => file
           }
         ]

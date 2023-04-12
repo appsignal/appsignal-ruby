@@ -9,8 +9,10 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
       before { allow(Rails.root).to receive(:to_s).and_return("/var/www/app/20130101") }
 
       it "registers render_partial.action_view and render_template.action_view" do
-        expect(Appsignal::EventFormatter.registered?("render_partial.action_view", klass)).to be_truthy
-        expect(Appsignal::EventFormatter.registered?("render_template.action_view", klass)).to be_truthy
+        expect(Appsignal::EventFormatter.registered?("render_partial.action_view",
+          klass)).to be_truthy
+        expect(Appsignal::EventFormatter.registered?("render_template.action_view",
+          klass)).to be_truthy
       end
 
       describe "#root_path" do
@@ -31,7 +33,9 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
         end
 
         context "with a frozen identifier" do
-          let(:payload) { { :identifier => "/var/www/app/20130101/app/views/home/index/html.erb".freeze } }
+          let(:payload) do
+            { :identifier => "/var/www/app/20130101/app/views/home/index/html.erb".freeze }
+          end
 
           it { is_expected.to eq ["app/views/home/index/html.erb", nil] }
         end
@@ -46,8 +50,10 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
   else
     context "when not in a Rails app" do
       it "does not register the event formatter" do
-        expect(Appsignal::EventFormatter.registered?("render_partial.action_view", klass)).to be_falsy
-        expect(Appsignal::EventFormatter.registered?("render_template.action_view", klass)).to be_falsy
+        expect(Appsignal::EventFormatter.registered?("render_partial.action_view",
+          klass)).to be_falsy
+        expect(Appsignal::EventFormatter.registered?("render_template.action_view",
+          klass)).to be_falsy
       end
     end
   end

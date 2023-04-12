@@ -11,40 +11,40 @@ module Appsignal
     include Appsignal::Utils::DeprecationMessage
 
     DEFAULT_CONFIG = {
-      :ca_file_path                   => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
-      :debug                          => false,
-      :dns_servers                    => [],
-      :enable_allocation_tracking     => true,
-      :enable_host_metrics            => true,
-      :enable_minutely_probes         => true,
-      :enable_statsd                  => true,
-      :enable_nginx_metrics           => false,
-      :enable_gvl_global_timer        => true,
-      :enable_gvl_waiting_threads     => true,
-      :enable_rails_error_reporter    => true,
-      :endpoint                       => "https://push.appsignal.com",
-      :files_world_accessible         => true,
-      :filter_parameters              => [],
-      :filter_session_data            => [],
-      :ignore_actions                 => [],
-      :ignore_errors                  => [],
-      :ignore_namespaces              => [],
-      :instrument_http_rb             => true,
-      :instrument_net_http            => true,
-      :instrument_redis               => true,
-      :instrument_sequel              => true,
-      :log                            => "file",
-      :logging_endpoint               => "https://appsignal-endpoint.net",
-      :request_headers                => %w[
+      :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
+      :debug => false,
+      :dns_servers => [],
+      :enable_allocation_tracking => true,
+      :enable_host_metrics => true,
+      :enable_minutely_probes => true,
+      :enable_statsd => true,
+      :enable_nginx_metrics => false,
+      :enable_gvl_global_timer => true,
+      :enable_gvl_waiting_threads => true,
+      :enable_rails_error_reporter => true,
+      :endpoint => "https://push.appsignal.com",
+      :files_world_accessible => true,
+      :filter_parameters => [],
+      :filter_session_data => [],
+      :ignore_actions => [],
+      :ignore_errors => [],
+      :ignore_namespaces => [],
+      :instrument_http_rb => true,
+      :instrument_net_http => true,
+      :instrument_redis => true,
+      :instrument_sequel => true,
+      :log => "file",
+      :logging_endpoint => "https://appsignal-endpoint.net",
+      :request_headers => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
         CONTENT_LENGTH PATH_INFO HTTP_RANGE
         REQUEST_METHOD REQUEST_URI SERVER_NAME SERVER_PORT
         SERVER_PROTOCOL
       ],
-      :send_environment_metadata      => true,
-      :send_params                    => true,
-      :transaction_debug_mode         => false
+      :send_environment_metadata => true,
+      :send_params => true,
+      :transaction_debug_mode => false
     }.freeze
 
     # @api private
@@ -63,47 +63,47 @@ module Appsignal
     }.freeze
 
     ENV_TO_KEY_MAPPING = {
-      "APPSIGNAL_ACTIVE"                         => :active,
-      "APPSIGNAL_APP_NAME"                       => :name,
-      "APPSIGNAL_CA_FILE_PATH"                   => :ca_file_path,
-      "APPSIGNAL_DEBUG"                          => :debug,
-      "APPSIGNAL_DNS_SERVERS"                    => :dns_servers,
-      "APPSIGNAL_ENABLE_ALLOCATION_TRACKING"     => :enable_allocation_tracking,
-      "APPSIGNAL_ENABLE_HOST_METRICS"            => :enable_host_metrics,
-      "APPSIGNAL_ENABLE_MINUTELY_PROBES"         => :enable_minutely_probes,
-      "APPSIGNAL_ENABLE_STATSD"                  => :enable_statsd,
-      "APPSIGNAL_ENABLE_NGINX_METRICS"           => :enable_nginx_metrics,
-      "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER"        => :enable_gvl_global_timer,
-      "APPSIGNAL_ENABLE_GVL_WAITING_THREADS"     => :enable_gvl_waiting_threads,
-      "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER"    => :enable_rails_error_reporter,
-      "APPSIGNAL_FILES_WORLD_ACCESSIBLE"         => :files_world_accessible,
-      "APPSIGNAL_FILTER_PARAMETERS"              => :filter_parameters,
-      "APPSIGNAL_FILTER_SESSION_DATA"            => :filter_session_data,
-      "APPSIGNAL_HOSTNAME"                       => :hostname,
-      "APPSIGNAL_HTTP_PROXY"                     => :http_proxy,
-      "APPSIGNAL_IGNORE_ACTIONS"                 => :ignore_actions,
-      "APPSIGNAL_IGNORE_ERRORS"                  => :ignore_errors,
-      "APPSIGNAL_IGNORE_NAMESPACES"              => :ignore_namespaces,
-      "APPSIGNAL_INSTRUMENT_HTTP_RB"             => :instrument_http_rb,
-      "APPSIGNAL_INSTRUMENT_NET_HTTP"            => :instrument_net_http,
-      "APPSIGNAL_INSTRUMENT_REDIS"               => :instrument_redis,
-      "APPSIGNAL_INSTRUMENT_SEQUEL"              => :instrument_sequel,
-      "APPSIGNAL_LOG"                            => :log,
-      "APPSIGNAL_LOG_LEVEL"                      => :log_level,
-      "APPSIGNAL_LOG_PATH"                       => :log_path,
-      "APPSIGNAL_LOGGING_ENDPOINT"               => :logging_endpoint,
-      "APPSIGNAL_PUSH_API_ENDPOINT"              => :endpoint,
-      "APPSIGNAL_PUSH_API_KEY"                   => :push_api_key,
-      "APPSIGNAL_REQUEST_HEADERS"                => :request_headers,
-      "APPSIGNAL_RUNNING_IN_CONTAINER"           => :running_in_container,
-      "APPSIGNAL_SEND_ENVIRONMENT_METADATA"      => :send_environment_metadata,
-      "APPSIGNAL_SEND_PARAMS"                    => :send_params,
-      "APPSIGNAL_SEND_SESSION_DATA"              => :send_session_data,
-      "APPSIGNAL_SKIP_SESSION_DATA"              => :skip_session_data,
-      "APPSIGNAL_TRANSACTION_DEBUG_MODE"         => :transaction_debug_mode,
-      "APPSIGNAL_WORKING_DIRECTORY_PATH"         => :working_directory_path,
-      "APPSIGNAL_WORKING_DIR_PATH"               => :working_dir_path,
-      "APP_REVISION"                             => :revision
+      "APPSIGNAL_ACTIVE" => :active,
+      "APPSIGNAL_APP_NAME" => :name,
+      "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
+      "APPSIGNAL_DEBUG" => :debug,
+      "APPSIGNAL_DNS_SERVERS" => :dns_servers,
+      "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
+      "APPSIGNAL_ENABLE_HOST_METRICS" => :enable_host_metrics,
+      "APPSIGNAL_ENABLE_MINUTELY_PROBES" => :enable_minutely_probes,
+      "APPSIGNAL_ENABLE_STATSD" => :enable_statsd,
+      "APPSIGNAL_ENABLE_NGINX_METRICS" => :enable_nginx_metrics,
+      "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => :enable_gvl_global_timer,
+      "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => :enable_gvl_waiting_threads,
+      "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER" => :enable_rails_error_reporter,
+      "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => :files_world_accessible,
+      "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
+      "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
+      "APPSIGNAL_HOSTNAME" => :hostname,
+      "APPSIGNAL_HTTP_PROXY" => :http_proxy,
+      "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
+      "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
+      "APPSIGNAL_IGNORE_NAMESPACES" => :ignore_namespaces,
+      "APPSIGNAL_INSTRUMENT_HTTP_RB" => :instrument_http_rb,
+      "APPSIGNAL_INSTRUMENT_NET_HTTP" => :instrument_net_http,
+      "APPSIGNAL_INSTRUMENT_REDIS" => :instrument_redis,
+      "APPSIGNAL_INSTRUMENT_SEQUEL" => :instrument_sequel,
+      "APPSIGNAL_LOG" => :log,
+      "APPSIGNAL_LOG_LEVEL" => :log_level,
+      "APPSIGNAL_LOG_PATH" => :log_path,
+      "APPSIGNAL_LOGGING_ENDPOINT" => :logging_endpoint,
+      "APPSIGNAL_PUSH_API_ENDPOINT" => :endpoint,
+      "APPSIGNAL_PUSH_API_KEY" => :push_api_key,
+      "APPSIGNAL_REQUEST_HEADERS" => :request_headers,
+      "APPSIGNAL_RUNNING_IN_CONTAINER" => :running_in_container,
+      "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
+      "APPSIGNAL_SEND_PARAMS" => :send_params,
+      "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
+      "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
+      "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode,
+      "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
+      "APPSIGNAL_WORKING_DIR_PATH" => :working_dir_path,
+      "APP_REVISION" => :revision
     }.freeze
     # @api private
     ENV_STRING_KEYS = %w[
@@ -221,16 +221,17 @@ module Appsignal
     #   Configuration load order
     # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
     #   How to integrate AppSignal manually
-    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger, config_file = nil)
-      @root_path      = root_path
-      @config_file    = config_file
-      @logger         = logger
-      @valid          = false
-      @config_hash    = Hash[DEFAULT_CONFIG]
+    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger,
+      config_file = nil)
+      @root_path = root_path
+      @config_file = config_file
+      @logger = logger
+      @valid = false
+      @config_hash = DEFAULT_CONFIG.dup
       env_loaded_from_initial = env.to_s
       @env =
-        if ENV.key?("APPSIGNAL_APP_ENV".freeze)
-          env_loaded_from_env = ENV["APPSIGNAL_APP_ENV".freeze]
+        if ENV.key?("APPSIGNAL_APP_ENV")
+          env_loaded_from_env = ENV["APPSIGNAL_APP_ENV"]
         else
           env_loaded_from_initial
         end
@@ -278,9 +279,7 @@ module Appsignal
     end
 
     def log_level
-      if config_hash[:debug] || config_hash[:transaction_debug_mode]
-        level = ::Logger::DEBUG
-      end
+      level = ::Logger::DEBUG if config_hash[:debug] || config_hash[:transaction_debug_mode]
       option = config_hash[:log_level]
       if option
         log_level_option = LOG_LEVEL_MAP[option]
@@ -290,20 +289,18 @@ module Appsignal
     end
 
     def log_file_path
-      path = config_hash[:log_path] || root_path && File.join(root_path, "log")
-      if path && File.writable?(path)
-        return File.join(File.realpath(path), "appsignal.log")
-      end
+      path = config_hash[:log_path] || (root_path && File.join(root_path, "log"))
+      return File.join(File.realpath(path), "appsignal.log") if path && File.writable?(path)
 
       system_tmp_dir = self.class.system_tmp_dir
       if File.writable? system_tmp_dir
-        $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to "\
-          "'#{system_tmp_dir}' instead. Please check the "\
+        $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to " \
+          "'#{system_tmp_dir}' instead. Please check the " \
           "permissions for the application's (log) directory."
         File.join(system_tmp_dir, "appsignal.log")
       else
-        $stdout.puts "appsignal: Unable to log to '#{path}' or the "\
-          "'#{system_tmp_dir}' fallback. Please check the permissions "\
+        $stdout.puts "appsignal: Unable to log to '#{path}' or the " \
+          "'#{system_tmp_dir}' fallback. Please check the permissions " \
           "for the application's (log) directory."
       end
     end
@@ -318,7 +315,7 @@ module Appsignal
 
     def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
-      ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../../ext", __FILE__).to_s
+      ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
       ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
       ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
@@ -347,9 +344,13 @@ module Appsignal
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
       ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
-      ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]       = config_hash[:working_directory_path] if config_hash[:working_directory_path]
-      ENV["_APPSIGNAL_WORKING_DIR_PATH"]             = config_hash[:working_dir_path] if config_hash[:working_dir_path]
-      ENV["_APP_REVISION"]                           = config_hash[:revision].to_s
+      if config_hash[:working_directory_path]
+        ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"] = config_hash[:working_directory_path]
+      end
+      if config_hash[:working_dir_path]
+        ENV["_APPSIGNAL_WORKING_DIR_PATH"] = config_hash[:working_dir_path]
+      end
+      ENV["_APP_REVISION"] = config_hash[:revision].to_s
     end
 
     def validate
@@ -395,12 +396,10 @@ module Appsignal
       return if !config_file || !File.exist?(config_file)
 
       read_options = YAML::VERSION >= "4.0.0" ? { :aliases => true } : {}
-      configurations = YAML.load(ERB.new(IO.read(config_file)).result, **read_options)
+      configurations = YAML.load(ERB.new(File.read(config_file)).result, **read_options)
       config_for_this_env = configurations[env]
       if config_for_this_env
-        config_for_this_env.each_with_object({}) do |(key, value), hash|
-          hash[key.to_sym] = value # convert keys to symbols
-        end
+        config_for_this_env.transform_keys(&:to_sym)
       else
         logger.error "Not loading from config file: config for '#{env}' not found"
         nil
@@ -431,8 +430,8 @@ module Appsignal
 
       deprecation_message \
         "The `working_dir_path` option is deprecated, please use " \
-        "`working_directory_path` instead and specify the " \
-        "full path to the working directory",
+          "`working_directory_path` instead and specify the " \
+          "full path to the working directory",
         logger
     end
 
@@ -441,22 +440,25 @@ module Appsignal
 
       # Configuration with string type
       ENV_STRING_KEYS.each do |var|
-        env_var = ENV[var]
+        env_var = ENV.fetch(var, nil)
         next unless env_var
+
         config[ENV_TO_KEY_MAPPING[var]] = env_var
       end
 
       # Configuration with boolean type
       ENV_BOOLEAN_KEYS.each do |var|
-        env_var = ENV[var]
+        env_var = ENV.fetch(var, nil)
         next unless env_var
+
         config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?
       end
 
       # Configuration with array of strings type
       ENV_ARRAY_KEYS.each do |var|
-        env_var = ENV[var]
+        env_var = ENV.fetch(var, nil)
         next unless env_var
+
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
       end
 
@@ -490,9 +492,7 @@ module Appsignal
 
     def merge(new_config)
       new_config.each do |key, value|
-        unless config_hash[key].nil?
-          @logger.debug("Config key '#{key}' is being overwritten")
-        end
+        @logger.debug("Config key '#{key}' is being overwritten") unless config_hash[key].nil?
         config_hash[key] = value
       end
     end

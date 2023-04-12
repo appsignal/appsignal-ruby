@@ -76,9 +76,7 @@ module StdStreamsHelper
     capture_std_streams(stream, stream, &block)
   ensure
     output = filter_allowed_errors(stream.read, options.fetch(:allowed, []))
-    if output =~ /(ERR|Error|error)/
-      raise "Error found in silenced output:\n#{output}"
-    end
+    raise "Error found in silenced output:\n#{output}" if output =~ /(ERR|Error|error)/
   end
 
   def filter_allowed_errors(output, allowed_errors)

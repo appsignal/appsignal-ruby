@@ -1,11 +1,9 @@
+# frozen_string_literal: true
+
 module Appsignal
   class Span
     def initialize(namespace = nil, ext = nil)
-      @ext = if ext
-               ext
-             else
-               Appsignal::Extension::Span.root(namespace || "")
-             end
+      @ext = ext || Appsignal::Extension::Span.root(namespace || "")
     end
 
     def child
@@ -34,6 +32,7 @@ module Appsignal
 
     def set_sample_data(key, data)
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
+
       @ext.set_sample_data(
         key.to_s,
         Appsignal::Utils::Data.generate(data)
@@ -62,6 +61,7 @@ module Appsignal
     def to_h
       json = @ext.to_json
       return unless json
+
       JSON.parse(json)
     end
 

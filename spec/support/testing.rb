@@ -1,6 +1,7 @@
 module Appsignal
   class << self
     attr_writer :testing
+
     remove_method :testing?
 
     # @api private
@@ -29,13 +30,13 @@ module Appsignal
         transactions.clear
       end
 
-      attr_writer :keep_transactions
+      attr_writer :keep_transactions, :sample_transactions
+
       # @see TransactionHelpers#keep_transactions
       def keep_transactions?
         defined?(@keep_transactions) ? @keep_transactions : nil
       end
 
-      attr_writer :sample_transactions
       # @see TransactionHelpers#keep_transactions
       def sample_transactions?
         sample = defined?(@sample_transactions) ? @sample_transactions : nil
@@ -106,7 +107,7 @@ module Appsignal
       # completed.
       #
       # @see TransactionHelpers#keep_transactions
-      def to_json
+      def to_json # rubocop:disable Lint/ToJSON
         if defined? @transaction_json
           @transaction_json
         else
