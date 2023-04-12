@@ -21,7 +21,7 @@ development:
 test:
   <<: *defaults
   endpoint: "http://localhost:3000"
-  debug: true
+  log_level: debug
   active: true
 
 old_config:
