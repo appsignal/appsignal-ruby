@@ -52,6 +52,11 @@ module Appsignal
             :queue_start => item["enqueued_at"]
           )
         )
+        transaction.set_action_if_nil(formatted_action_name(item))
+
+        formatted_metadata(item).each do |key, value|
+          transaction.set_metadata key, value
+        end
 
         Appsignal.instrument "perform_job.sidekiq", &block
       rescue Exception => exception # rubocop:disable Lint/RescueException
@@ -59,14 +64,9 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          transaction.set_action_if_nil(formatted_action_name(item))
-
           params = filtered_arguments(item)
           transaction.params = params if params
 
-          formatted_metadata(item).each do |key, value|
-            transaction.set_metadata key, value
-          end
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current! unless exception
 

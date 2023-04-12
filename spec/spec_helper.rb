@@ -120,6 +120,17 @@ RSpec.configure do |config|
 
     # Stub system_tmp_dir to something in the project dir for specs
     allow(Appsignal::Config).to receive(:system_tmp_dir).and_return(spec_system_tmp_dir)
+
+    # Unsubscribe Rails error reporter if present to avoid it reporting errors
+    # multiple times through multiple subscriptions.
+    if defined?(Rails) && Rails.respond_to?(:error)
+      if Rails.error.respond_to?(:unsubscribe) # Future Rails version after 7.0.4.3
+        Rails.error.unsubscribe(Appsignal::Integrations::RailsErrorReporterSubscriber)
+      else
+        Rails.error.instance_variable_get(:@subscribers)
+          .delete(Appsignal::Integrations::RailsErrorReporterSubscriber)
+      end
+    end
   end
 
   # These tests are not run by default. They require a failed extension
