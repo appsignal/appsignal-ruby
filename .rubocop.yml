@@ -2,6 +2,7 @@ inherit_from: .rubocop_todo.yml
 
 AllCops:
   TargetRubyVersion: 3.0
+  NewCops: enable
   Include:
     - "**/*.cap"
     - "**/Gemfile"
@@ -48,6 +49,9 @@ Layout/HashAlignment:
 Layout/FirstArrayElementIndentation:
   EnforcedStyle: consistent
 
+Layout/LineEndStringConcatenationIndentation:
+  EnforcedStyle: indented
+
 Style/EmptyMethod:
   EnforcedStyle: expanded
 
@@ -78,6 +82,9 @@ Style/FrozenStringLiteralComment:
 
 Style/SymbolArray:
   EnforcedStyle: brackets
+
+Gemspec/DevelopmentDependencies:
+  Enabled: false
 
 # Metrics/LineLength:
 #   Max: 80

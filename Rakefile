@@ -157,9 +157,7 @@ namespace :build_matrix do
 
         script = "bundle_and_spec_all_#{version_manager}"
         FileUtils.rm_f(script)
-        File.open(script, "w") do |file|
-          file.write out.join("\n")
-        end
+        File.write(script, out.join("\n"))
         File.chmod(0o775, script)
         puts "Generated #{script}"
       end
@@ -229,7 +227,7 @@ namespace :build do
 
   namespace :ruby do
     # Extension default set in `appsignal.gemspec`
-    define_build_task(:ruby, base_gemspec) { |_pkg| }
+    define_build_task(:ruby, base_gemspec) { |_pkg| } # rubocop:disable Lint/EmptyBlock
   end
 
   namespace :jruby do
@@ -241,7 +239,7 @@ namespace :build do
       s.add_dependency "ffi"
     end
 
-    define_build_task(:jruby, spec) { |_pkg| }
+    define_build_task(:jruby, spec) { |_pkg| } # rubocop:disable Lint/EmptyBlock
   end
 
   desc "Build all gem versions"
