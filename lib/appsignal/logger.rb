@@ -126,6 +126,19 @@ module Appsignal
       add_with_attributes(FATAL, message, @group, attributes)
     end
 
+    # When using ActiveSupport::TaggedLogging without the broadcast feature,
+    # the passed logger is required to respond to the `silence` method.
+    # In our case it behaves as the broadcast feature of the Rails logger, but
+    # we don't have to check if the parent logger has the `silence` method defined
+    # as our logger directly inherits from Ruby base logger.
+    #
+    # Links:
+    # https://github.com/rails/rails/blob/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/activesupport/lib/active_support/logger.rb#L60-L76
+    # https://github.com/rails/rails/blob/main/activesupport/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/active_support/logger_silence.rb
+    def silence(_severity = ERROR, &block)
+      block.call
+    end
+
     private
 
     def add_with_attributes(severity, message, group, attributes)
