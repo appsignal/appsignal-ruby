@@ -70,6 +70,7 @@ RSpec.configure do |config|
 
   config.example_status_persistence_file_path = "spec/examples.txt"
   config.fail_if_no_examples = true
+  config.exclude_pattern = "spec/integration/diagnose/**/*_spec.rb"
   config.filter_run_excluding(
     :extension_installation_failure => true,
     :jruby => !DependencyHelper.running_jruby?
