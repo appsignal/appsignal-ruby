@@ -80,7 +80,8 @@ if DependencyHelper.rails_present?
               it "subscribes to the error reporter" do
                 Appsignal::Integrations::Railtie.initialize_appsignal(app)
 
-                expect(error_reporter.subscribers).to eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
+                expect(error_reporter.subscribers)
+                  .to eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
               end
             end
 
@@ -89,7 +90,8 @@ if DependencyHelper.rails_present?
                 ENV["APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER"] = "false"
                 Appsignal::Integrations::Railtie.initialize_appsignal(app)
 
-                expect(error_reporter.subscribers).to_not eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
+                expect(error_reporter.subscribers)
+                  .to_not eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
               end
             end
           end
@@ -178,7 +180,7 @@ if DependencyHelper.rails_present?
 
                 with_current_transaction current_transaction do
                   given_context = { :tag1 => "value1", :tag2 => "value2" }
-                  Rails.error.handle(context: given_context) { raise ExampleStandardError }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
                   transaction = last_transaction
                   transaction_hash = transaction.to_h
@@ -203,7 +205,7 @@ if DependencyHelper.rails_present?
                   given_context = {
                     :appsignal => { :namespace => "context", :action => "ContextAction" }
                   }
-                  Rails.error.handle(context: given_context) { raise ExampleStandardError }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
                   transaction = last_transaction
                   transaction_hash = transaction.to_h
@@ -238,7 +240,7 @@ if DependencyHelper.rails_present?
               it "fetches the action from the controller in the context" do
                 # The controller key is set by Rails when raised in a controller
                 given_context = { :controller => ExampleRailsControllerMock.new }
-                Rails.error.handle(context: given_context) { raise ExampleStandardError }
+                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
                 transaction = last_transaction
                 transaction_hash = transaction.to_h
@@ -267,7 +269,7 @@ if DependencyHelper.rails_present?
                 :tag1 => "value1",
                 :tag2 => "value2"
               }
-              Rails.error.handle(context: given_context) { raise ExampleStandardError }
+              Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
               transaction = last_transaction
               transaction_hash = transaction.to_h

@@ -2,7 +2,8 @@ require "bundler/cli"
 require "bundler/cli/common"
 require "appsignal/cli"
 
-describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input, :color => false do
+describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_input,
+  :color => false do
   include CLIHelpers
 
   class DiagnosticsReportEndpoint
@@ -268,7 +269,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           },
           "build" => {
             "time" => kind_of(String),
-            "package_path" => File.expand_path("../../../../../", __FILE__),
+            "package_path" => File.expand_path("../../../..", __dir__),
             "architecture" => Appsignal::System.agent_architecture,
             "target" => Appsignal::System.agent_platform,
             "musl_override" => false,
@@ -319,7 +320,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before do
           allow(File).to receive(:read).and_call_original
           expect(File).to receive(:read)
-            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .with(File.expand_path("../../../../ext/install.report", __dir__))
             .and_return(
               JSON.generate(
                 "result" => {
@@ -359,7 +360,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before do
           allow(File).to receive(:read).and_call_original
           expect(File).to receive(:read)
-            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .with(File.expand_path("../../../../ext/install.report", __dir__))
             .and_raise(error)
         end
 
@@ -389,7 +390,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         before do
           allow(File).to receive(:read).and_call_original
           expect(File).to receive(:read)
-            .with(File.expand_path("../../../../../ext/install.report", __FILE__))
+            .with(File.expand_path("../../../../ext/install.report", __dir__))
             .and_return(raw_report)
         end
 
@@ -839,7 +840,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             let(:options) { { :environment => "development" } }
             before do
               ENV["APPSIGNAL_APP_ENV"] = "production"
-              config.instance_variable_set(:@env, ENV["APPSIGNAL_APP_ENV"])
+              config.instance_variable_set(:@env, ENV.fetch("APPSIGNAL_APP_ENV", nil))
               stub_api_request(config, "auth").to_return(:status => 200)
               capture_diagnatics_report_request
               run
@@ -847,10 +848,10 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs a list of sources with their values" do
               expect(output).to include(
-                %(  environment: "production"\n) +
-                %(    Sources:\n) +
-                %(      initial: "development"\n) +
-                %(      env:     "production"\n)
+                "  environment: \"production\"\n" \
+                  "    Sources:\n" \
+                  "      initial: \"development\"\n" \
+                  "      env:     \"production\"\n"
               )
             end
           end
@@ -882,7 +883,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           context "when the source is multiple sources" do
             before do
               ENV["APPSIGNAL_APP_NAME"] = "MyApp"
-              config[:name] = ENV["APPSIGNAL_APP_NAME"]
+              config[:name] = ENV.fetch("APPSIGNAL_APP_NAME", nil)
               stub_api_request(config, "auth").to_return(:status => 200)
               capture_diagnatics_report_request
               run
@@ -891,20 +892,20 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             if DependencyHelper.rails_present?
               it "outputs a list of sources with their values" do
                 expect(output).to include(
-                  %(  name: "MyApp"\n) +
-                  %(    Sources:\n) +
-                  %(      initial: "MyApp"\n) +
-                  %(      file:    "TestApp"\n) +
-                  %(      env:     "MyApp"\n)
+                  "  name: \"MyApp\"\n" \
+                    "    Sources:\n" \
+                    "      initial: \"MyApp\"\n" \
+                    "      file:    \"TestApp\"\n" \
+                    "      env:     \"MyApp\"\n"
                 )
               end
             else
               it "outputs a list of sources with their values" do
                 expect(output).to include(
-                  %(  name: "MyApp"\n) +
-                  %(    Sources:\n) +
-                  %(      file: "TestApp"\n) +
-                  %(      env:  "MyApp"\n)
+                  "  name: \"MyApp\"\n" \
+                    "    Sources:\n" \
+                    "      file: \"TestApp\"\n" \
+                    "      env:  \"MyApp\"\n"
                 )
               end
             end
@@ -928,7 +929,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
-              "initial" => hash_with_string_keys(config.initial_config.merge(additional_initial_config)),
+              "initial" => hash_with_string_keys(
+                config.initial_config.merge(additional_initial_config)
+              ),
               "file" => hash_with_string_keys(config.file_config),
               "env" => {},
               "override" => { "send_session_data" => true }
@@ -1047,18 +1050,16 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "outputs failure with status code" do
           expect(output).to include "Validation",
             "Validating Push API key: Failed to validate: status 500\n" +
-            %("Could not confirm authorization: 500")
+              %("Could not confirm authorization: 500")
         end
 
         context "with color", :color => true do
           it "outputs error in color" do
             expect(output).to include "Validation",
-              "Validating Push API key: " +
-              colorize(
-                "Failed to validate: status 500\n" +
-                %("Could not confirm authorization: 500"),
+              "Validating Push API key: #{colorize(
+                %(Failed to validate: status 500\n"Could not confirm authorization: 500"),
                 :red
-              )
+              )}"
           end
         end
 
@@ -1280,7 +1281,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           it "outputs ownership" do
             expect(output).to include \
               %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    ) \
-                "Ownership?: true (file: #{process_user}:#{Process.uid}, "\
+                "Ownership?: true (file: #{process_user}:#{Process.uid}, " \
                 "process: #{process_user}:#{Process.uid})"
           end
 
@@ -1414,7 +1415,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           let(:filename) { "appsignal.log" }
           before do
             ENV["APPSIGNAL_LOG"] = "stdout"
-            expect_any_instance_of(Appsignal::Config).to receive(:log_file_path).at_least(:once).and_return(file_path)
+            expect_any_instance_of(Appsignal::Config).to receive(:log_file_path)
+              .at_least(:once)
+              .and_return(file_path)
           end
         end
 
@@ -1442,6 +1445,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
   end
 
   def hash_with_string_keys(hash)
-    Hash[hash.map { |key, value| [key.to_s, value] }]
+    hash.transform_keys(&:to_s)
   end
 end

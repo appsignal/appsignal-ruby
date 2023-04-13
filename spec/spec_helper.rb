@@ -139,7 +139,7 @@ RSpec.configure do |config|
     next if Appsignal.extension_loaded?
     next if example.metadata[:extension_installation_failure]
 
-    puts "\nWARNING: The AppSignal extension is not loaded, please run the "\
+    puts "\nWARNING: The AppSignal extension is not loaded, please run the " \
       "following task and rerun the test." \
       "\n\n    rake extension:install\n"
   end
@@ -164,6 +164,6 @@ RSpec.configure do |config|
         nil
       end
     Appsignal::Minutely.stop
-    thread && thread.join # Wait for old thread to exit
+    thread&.join # Wait for old thread to exit
   end
 end

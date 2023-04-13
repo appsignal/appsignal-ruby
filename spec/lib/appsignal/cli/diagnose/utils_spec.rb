@@ -46,9 +46,7 @@ describe Appsignal::CLI::Diagnose::Utils do
     let(:bytes_to_read) { 100 }
     subject { described_class.read_file_content(path, bytes_to_read) }
     before do
-      File.open path, "w+" do |f|
-        f.write file_contents
-      end
+      File.write(path, file_contents)
     end
 
     context "when file is bigger than read size" do

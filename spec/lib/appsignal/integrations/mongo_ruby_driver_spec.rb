@@ -19,11 +19,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       it "should sanitize command" do
         # TODO: additional curly brackets required for issue
         # https://github.com/rspec/rspec-mocks/issues/1460
-        # rubocop:disable Style/BracesAroundHashParameters
         expect(Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter)
           .to receive(:format).with("find", { "foo" => "bar" })
-        # rubocop:enable Style/BracesAroundHashParameters
-
         subscriber.started(event)
       end
 
@@ -107,7 +104,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
 
   context "without transaction" do
     before do
-      allow(Appsignal::Transaction).to receive(:current).and_return(Appsignal::Transaction::NilTransaction.new)
+      allow(Appsignal::Transaction).to receive(:current)
+        .and_return(Appsignal::Transaction::NilTransaction.new)
     end
 
     it "should not attempt to start an event" do

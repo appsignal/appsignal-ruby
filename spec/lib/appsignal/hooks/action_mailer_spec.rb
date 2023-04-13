@@ -8,7 +8,8 @@ describe Appsignal::Hooks::ActionMailerHook do
         default :from => "test@example.com"
 
         def welcome
-          mail(:to => "test@example.com", :subject => "ActionMailer test", :content_type => "text/html") do |format|
+          mail(:to => "test@example.com", :subject => "ActionMailer test",
+            :content_type => "text/html") do |format|
             format.html { render :html => "This is a test" }
           end
         end

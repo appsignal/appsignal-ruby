@@ -14,7 +14,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/redis"
-        ::Redis::Client.send(:prepend, Appsignal::Integrations::RedisIntegration)
+        ::Redis::Client.prepend Appsignal::Integrations::RedisIntegration
 
         Appsignal::Environment.report_enabled("redis")
       end

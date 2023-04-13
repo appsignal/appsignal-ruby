@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   module Probes
     class MriProbe
@@ -37,9 +39,7 @@ module Appsignal
         end
 
         class_serial = stat[:class_serial]
-        if class_serial
-          set_gauge_with_hostname("ruby_vm", class_serial, :metric => :class_serial)
-        end
+        set_gauge_with_hostname("ruby_vm", class_serial, :metric => :class_serial) if class_serial
 
         global_constant_state =
           stat[:constant_cache] ? stat[:constant_cache].values.sum : stat[:global_constant_state]
@@ -54,7 +54,7 @@ module Appsignal
         set_gauge_with_hostname("thread_count", Thread.list.size)
         if Appsignal::GarbageCollection.enabled?
           gauge_delta(:gc_time, @gc_profiler.total_time) do |gc_time|
-            set_gauge_with_hostname("gc_time", gc_time) if gc_time > 0
+            set_gauge_with_hostname("gc_time", gc_time) if gc_time.positive?
           end
         end
 
@@ -76,8 +76,10 @@ module Appsignal
           set_gauge_with_hostname("gc_count", major_gc_count, :metric => :major_gc_count)
         end
 
-        set_gauge_with_hostname("heap_slots", gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
-        set_gauge_with_hostname("heap_slots", gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
+        set_gauge_with_hostname("heap_slots",
+          gc_stats[:heap_live_slots] || gc_stats[:heap_live_slot], :metric => :heap_live)
+        set_gauge_with_hostname("heap_slots",
+          gc_stats[:heap_free_slots] || gc_stats[:heap_free_slot], :metric => :heap_free)
       end
     end
   end

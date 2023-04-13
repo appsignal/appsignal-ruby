@@ -65,7 +65,8 @@ module Appsignal
           Appsignal::Transaction::HTTP_REQUEST,
           rack_request
         )
-        Appsignal.instrument "action_view.render", "Render hello.html.erb", "<h1>Hello world!</h1>" do
+        Appsignal.instrument "action_view.render", "Render hello.html.erb",
+          "<h1>Hello world!</h1>" do
           sleep 2
         end
         transaction.set_http_or_background_queue_start

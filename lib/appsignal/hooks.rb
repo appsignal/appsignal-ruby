@@ -78,8 +78,8 @@ module Appsignal
         callers = caller
         Appsignal::Utils::DeprecationMessage.message \
           "The constant Appsignal::Hooks::SidekiqPlugin has been deprecated. " \
-          "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
-          "in the following file to remove this message.\n#{callers.first}"
+            "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
+            "in the following file to remove this message.\n#{callers.first}"
         Appsignal::Integrations::SidekiqMiddleware
       else
         super

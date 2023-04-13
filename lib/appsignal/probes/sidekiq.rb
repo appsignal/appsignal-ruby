@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Appsignal
   module Probes
     class SidekiqProbe
@@ -116,6 +118,7 @@ module Appsignal
 
       def hostname
         return @hostname if defined?(@hostname)
+
         if config.key?(:hostname)
           @hostname = config[:hostname]
           Appsignal.logger.debug "Sidekiq probe: Using hostname config " \

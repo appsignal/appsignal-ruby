@@ -12,7 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/webmachine"
-        ::Webmachine::Decision::FSM.send(:prepend, Appsignal::Integrations::WebmachineIntegration)
+        ::Webmachine::Decision::FSM.prepend Appsignal::Integrations::WebmachineIntegration
       end
     end
   end

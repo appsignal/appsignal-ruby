@@ -12,7 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/que"
-        ::Que::Job.send(:prepend, Appsignal::Integrations::QuePlugin)
+        ::Que::Job.prepend Appsignal::Integrations::QuePlugin
 
         ::Que.error_notifier = proc do |error, _job|
           Appsignal::Transaction.current.set_error(error)

@@ -9,7 +9,7 @@ require "json"
 module Appsignal
   # @api private
   class Transmitter
-    CONTENT_TYPE = "application/json; charset=UTF-8".freeze
+    CONTENT_TYPE = "application/json; charset=UTF-8"
 
     HTTP_ERRORS = [
       EOFError,
@@ -84,7 +84,7 @@ module Appsignal
           if ca_file && File.exist?(ca_file) && File.readable?(ca_file)
             http.ca_file = ca_file
           else
-            config.logger.warn "Ignoring non-existing or unreadable "\
+            config.logger.warn "Ignoring non-existing or unreadable " \
               "`ca_file_path`: #{ca_file}"
           end
         end
@@ -97,11 +97,13 @@ module Appsignal
 
     def proxy_addr
       return unless config[:http_proxy]
+
       proxy_uri.host
     end
 
     def proxy_port
       return unless config[:http_proxy]
+
       proxy_uri.port
     end
   end

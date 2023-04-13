@@ -31,17 +31,15 @@ module Appsignal
         # Instrument a `process_action`, to set params/action name
         status, headers, body =
           Appsignal.instrument("process_action.rack") do
-            begin
-              @app.call(env)
-            rescue Exception => e # rubocop:disable Lint/RescueException
-              transaction.set_error(e)
-              raise e
-            ensure
-              transaction.set_action_if_nil(env["appsignal.action"])
-              transaction.set_metadata("path", request.path)
-              transaction.set_metadata("method", request.request_method)
-              transaction.set_http_or_background_queue_start
-            end
+            @app.call(env)
+          rescue Exception => e # rubocop:disable Lint/RescueException
+            transaction.set_error(e)
+            raise e
+          ensure
+            transaction.set_action_if_nil(env["appsignal.action"])
+            transaction.set_metadata("path", request.path)
+            transaction.set_metadata("method", request.request_method)
+            transaction.set_http_or_background_queue_start
           end
 
         # Wrap the result body with our StreamWrapper
@@ -56,8 +54,8 @@ module Appsignal
       @transaction = transaction
     end
 
-    def each
-      @stream.each { |c| yield(c) }
+    def each(&block)
+      @stream.each(&block)
     rescue Exception => e # rubocop:disable Lint/RescueException
       @transaction.set_error(e)
       raise e

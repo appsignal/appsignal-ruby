@@ -4,7 +4,7 @@ module Appsignal
   module Utils
     # @api private
     class HashSanitizer
-      FILTERED = "[FILTERED]".freeze
+      FILTERED = "[FILTERED]"
 
       class << self
         def sanitize(value, filter_keys = [])

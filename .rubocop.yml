@@ -4,6 +4,7 @@ AllCops:
   TargetRubyVersion: 3.0
   NewCops: enable
   Include:
+    - "**/*.rb"
     - "**/*.cap"
     - "**/Gemfile"
     - "**/Rakefile"
@@ -11,7 +12,6 @@ AllCops:
   Exclude:
     - "pkg/**/*"
     - "tmp/**/*"
-    - "gemfiles/vendor/**/*"
     - "vendor/**/*"
     - "benchmark.rake"
     - "spec/integration/diagnose/**/*"
@@ -31,26 +31,8 @@ Style/StringLiterals:
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
 
-Layout/ParameterAlignment:
-  EnforcedStyle: with_fixed_indentation
-
-Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: indented
-
-Layout/MultilineOperationIndentation:
-  EnforcedStyle: indented
-
 Style/HashSyntax:
   EnforcedStyle: hash_rockets
-
-Layout/HashAlignment:
-  EnforcedLastArgumentHashStyle: ignore_implicit
-
-Layout/FirstArrayElementIndentation:
-  EnforcedStyle: consistent
-
-Layout/LineEndStringConcatenationIndentation:
-  EnforcedStyle: indented
 
 Style/EmptyMethod:
   EnforcedStyle: expanded
@@ -69,9 +51,54 @@ Style/Lambda:
 Style/WordArray:
   Enabled: false
 
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - "spec/**/*.rb"
+
+Lint/EmptyClass:
+  Exclude:
+    - "spec/**/*.rb"
+
+Layout/HashAlignment:
+  EnforcedLastArgumentHashStyle: ignore_implicit
+
+Layout/ArgumentAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Layout/LineContinuationLeadingSpace:
+  Enabled: false
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/LineEndStringConcatenationIndentation:
+  EnforcedStyle: indented
+
+Layout/ParameterAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/MultilineOperationIndentation:
+  EnforcedStyle: indented
+
+Lint/EmptyFile:
+  Exclude:
+    - "spec/**/*.rb"
+
 Naming/FileName:
   Exclude:
     - "ext/Rakefile"
+
+Naming/RescuedExceptionsVariableName:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+Metrics/ClassLength:
+  Enabled: false
 
 Metrics/BlockLength:
   Exclude:
@@ -79,12 +106,17 @@ Metrics/BlockLength:
 
 Style/FrozenStringLiteralComment:
   Enabled: true
+  Exclude:
+    - "spec/**/*.rb"
 
 Style/SymbolArray:
   EnforcedStyle: brackets
 
+Style/RedundantConstantBase:
+  Enabled: false
+
 Gemspec/DevelopmentDependencies:
   Enabled: false
 
-# Metrics/LineLength:
-#   Max: 80
+Layout/LineLength:
+  Max: 100

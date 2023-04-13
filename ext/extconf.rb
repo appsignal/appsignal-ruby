@@ -1,4 +1,6 @@
-require File.expand_path("../base.rb", __FILE__)
+# frozen_string_literal: true
+
+require File.expand_path("base.rb", __dir__)
 
 def local_build?
   File.exist?(ext_path("appsignal-agent")) &&
@@ -20,6 +22,7 @@ def install
     archive = download_archive(library_type)
     return unless archive
     return unless verify_archive(archive, library_type)
+
     unarchive(archive)
   end
 

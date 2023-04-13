@@ -264,7 +264,8 @@ describe Appsignal::Config do
 
     context "with an overriden config file" do
       let(:config) do
-        project_fixture_config("production", {}, Appsignal.logger, File.join(project_fixture_path, "config", "appsignal.yml"))
+        project_fixture_config("production", {}, Appsignal.logger,
+          File.join(project_fixture_path, "config", "appsignal.yml"))
       end
 
       it "is valid and active" do
@@ -274,7 +275,8 @@ describe Appsignal::Config do
 
       context "with an invalid overriden config file" do
         let(:config) do
-          project_fixture_config("production", {}, Appsignal.logger, File.join(project_fixture_path, "config", "missing.yml"))
+          project_fixture_config("production", {}, Appsignal.logger,
+            File.join(project_fixture_path, "config", "missing.yml"))
         end
 
         it "is not valid" do
@@ -613,36 +615,39 @@ describe Appsignal::Config do
     end
 
     it "writes the current config to environment variables" do
-      expect(ENV["_APPSIGNAL_ACTIVE"]).to                       eq "true"
-      expect(ENV["_APPSIGNAL_APP_PATH"]).to                     end_with("spec/support/fixtures/projects/valid")
-      expect(ENV["_APPSIGNAL_AGENT_PATH"]).to                   end_with("/ext")
-      expect(ENV["_APPSIGNAL_DEBUG_LOGGING"]).to                eq "false"
-      expect(ENV["_APPSIGNAL_LOG"]).to                          eq "stdout"
-      expect(ENV["_APPSIGNAL_LOG_FILE_PATH"]).to                end_with("/tmp/appsignal.log")
-      expect(ENV["_APPSIGNAL_LOGGING_ENDPOINT"]).to             eq "http://localhost:123"
-      expect(ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]).to            eq "https://push.appsignal.com"
-      expect(ENV["_APPSIGNAL_PUSH_API_KEY"]).to                 eq "abc"
-      expect(ENV["_APPSIGNAL_APP_NAME"]).to                     eq "TestApp"
-      expect(ENV["_APPSIGNAL_ENVIRONMENT"]).to                  eq "production"
-      expect(ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"]).to eq "ruby-#{Appsignal::VERSION}"
-      expect(ENV["_APPSIGNAL_HTTP_PROXY"]).to                   eq "http://localhost"
-      expect(ENV["_APPSIGNAL_IGNORE_ACTIONS"]).to               eq "action1,action2"
-      expect(ENV["_APPSIGNAL_IGNORE_ERRORS"]).to                eq "ExampleStandardError,AnotherError"
-      expect(ENV["_APPSIGNAL_IGNORE_NAMESPACES"]).to            eq "admin,private_namespace"
-      expect(ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]).to         eq "false"
-      expect(ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]).to          eq "true"
-      expect(ENV["_APPSIGNAL_HOSTNAME"]).to                     eq ""
-      expect(ENV["_APPSIGNAL_PROCESS_NAME"]).to                 include "rspec"
-      expect(ENV["_APPSIGNAL_CA_FILE_PATH"]).to                 eq File.join(resources_dir, "cacert.pem")
-      expect(ENV["_APPSIGNAL_DNS_SERVERS"]).to                  eq "8.8.8.8,8.8.4.4"
-      expect(ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]).to       eq "true"
-      expect(ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]).to       eq "true"
-      expect(ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]).to    eq "false"
-      expect(ENV["_APPSIGNAL_FILTER_PARAMETERS"]).to            eq "password,confirm_password"
-      expect(ENV["_APPSIGNAL_FILTER_SESSION_DATA"]).to          eq "key1,key2"
-      expect(ENV["_APP_REVISION"]).to                           eq "v2.5.1"
-      expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIR_PATH")
-      expect(ENV).to_not                                        have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
+      expect(ENV.fetch("_APPSIGNAL_ACTIVE", nil)).to eq "true"
+      expect(ENV.fetch("_APPSIGNAL_APP_PATH", nil))
+        .to end_with("spec/support/fixtures/projects/valid")
+      expect(ENV.fetch("_APPSIGNAL_AGENT_PATH", nil)).to end_with("/ext")
+      expect(ENV.fetch("_APPSIGNAL_DEBUG_LOGGING", nil)).to eq "false"
+      expect(ENV.fetch("_APPSIGNAL_LOG", nil)).to eq "stdout"
+      expect(ENV.fetch("_APPSIGNAL_LOG_FILE_PATH", nil)).to end_with("/tmp/appsignal.log")
+      expect(ENV.fetch("_APPSIGNAL_LOGGING_ENDPOINT", nil)).to eq "http://localhost:123"
+      expect(ENV.fetch("_APPSIGNAL_PUSH_API_ENDPOINT", nil)).to eq "https://push.appsignal.com"
+      expect(ENV.fetch("_APPSIGNAL_PUSH_API_KEY", nil)).to eq "abc"
+      expect(ENV.fetch("_APPSIGNAL_APP_NAME", nil)).to eq "TestApp"
+      expect(ENV.fetch("_APPSIGNAL_ENVIRONMENT", nil)).to eq "production"
+      expect(ENV.fetch("_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION", nil))
+        .to eq "ruby-#{Appsignal::VERSION}"
+      expect(ENV.fetch("_APPSIGNAL_HTTP_PROXY", nil)).to eq "http://localhost"
+      expect(ENV.fetch("_APPSIGNAL_IGNORE_ACTIONS", nil)).to eq "action1,action2"
+      expect(ENV.fetch("_APPSIGNAL_IGNORE_ERRORS", nil)).to eq "ExampleStandardError,AnotherError"
+      expect(ENV.fetch("_APPSIGNAL_IGNORE_NAMESPACES", nil)).to eq "admin,private_namespace"
+      expect(ENV.fetch("_APPSIGNAL_RUNNING_IN_CONTAINER", nil)).to eq "false"
+      expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
+      expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_PROCESS_NAME", nil)).to include "rspec"
+      expect(ENV.fetch("_APPSIGNAL_CA_FILE_PATH", nil))
+        .to eq File.join(resources_dir, "cacert.pem")
+      expect(ENV.fetch("_APPSIGNAL_DNS_SERVERS", nil)).to eq "8.8.8.8,8.8.4.4"
+      expect(ENV.fetch("_APPSIGNAL_FILES_WORLD_ACCESSIBLE", nil)).to eq "true"
+      expect(ENV.fetch("_APPSIGNAL_TRANSACTION_DEBUG_MODE", nil)).to eq "true"
+      expect(ENV.fetch("_APPSIGNAL_SEND_ENVIRONMENT_METADATA", nil)).to eq "false"
+      expect(ENV.fetch("_APPSIGNAL_FILTER_PARAMETERS", nil)).to eq "password,confirm_password"
+      expect(ENV.fetch("_APPSIGNAL_FILTER_SESSION_DATA", nil)).to eq "key1,key2"
+      expect(ENV.fetch("_APP_REVISION", nil)).to eq "v2.5.1"
+      expect(ENV).to_not have_key("_APPSIGNAL_WORKING_DIR_PATH")
+      expect(ENV).to_not have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
     end
 
     context "with :hostname" do
@@ -652,7 +657,7 @@ describe Appsignal::Config do
       end
 
       it "sets the modified :hostname" do
-        expect(ENV["_APPSIGNAL_HOSTNAME"]).to eq "Alices-MBP.example.com"
+        expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq "Alices-MBP.example.com"
       end
     end
 
@@ -663,7 +668,7 @@ describe Appsignal::Config do
       end
 
       it "sets the modified :working_dir_path" do
-        expect(ENV["_APPSIGNAL_WORKING_DIR_PATH"]).to eq "/tmp/appsignal2"
+        expect(ENV.fetch("_APPSIGNAL_WORKING_DIR_PATH", nil)).to eq "/tmp/appsignal2"
       end
     end
 
@@ -674,7 +679,7 @@ describe Appsignal::Config do
       end
 
       it "sets the modified :working_directory_path" do
-        expect(ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"]).to eq "/tmp/appsignal2"
+        expect(ENV.fetch("_APPSIGNAL_WORKING_DIRECTORY_PATH", nil)).to eq "/tmp/appsignal2"
       end
     end
   end
@@ -714,7 +719,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(output).to include "appsignal: Unable to log to '#{log_path}'. "\
+          expect(output).to include "appsignal: Unable to log to '#{log_path}'. " \
             "Logging to '#{system_tmp_dir}' instead."
         end
       end
@@ -728,7 +733,7 @@ describe Appsignal::Config do
 
         it "prints a warning" do
           subject
-          expect(output).to include "appsignal: Unable to log to '#{log_path}' "\
+          expect(output).to include "appsignal: Unable to log to '#{log_path}' " \
             "or the '#{system_tmp_dir}' fallback."
         end
       end

@@ -167,7 +167,8 @@ if DependencyHelper.active_job_present?
           expect(Appsignal).to receive(:increment_counter)
             .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
           expect(Appsignal).to receive(:increment_counter)
-            .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :processed))
+            .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
+              :status => :processed))
 
           perform_job(ActiveJobPriorityTestJob)
 
@@ -243,9 +244,11 @@ if DependencyHelper.active_job_present?
             expect(Appsignal).to receive(:increment_counter)
               .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
             expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :processed))
+              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
+                :status => :processed))
             expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10, :status => :failed))
+              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
+                :status => :failed))
 
             expect do
               perform_job(ActiveJobErrorPriorityTestJob)
@@ -323,7 +326,8 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    context "with provider_job_id", :skip => DependencyHelper.rails_version < Gem::Version.new("5.0.0") do
+    context "with provider_job_id",
+      :skip => DependencyHelper.rails_version < Gem::Version.new("5.0.0") do
       before do
         module ActiveJob
           module QueueAdapters
@@ -363,7 +367,8 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    context "with enqueued_at", :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
+    context "with enqueued_at",
+      :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
       before do
         module ActiveJob
           module QueueAdapters
@@ -425,7 +430,8 @@ if DependencyHelper.active_job_present?
           expect(transaction_hash).to include(
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper,
+              "params" => ["ActionMailerTestJob", "welcome",
+                           "deliver_now"] + active_job_args_wrapper,
               "tags" => {
                 "active_job_id" => kind_of(String),
                 "queue" => "mailers"
@@ -444,7 +450,8 @@ if DependencyHelper.active_job_present?
           expect(transaction_hash).to include(
             "action" => "ActionMailerTestJob#welcome",
             "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper(:args => method_expected_args),
+              "params" => ["ActionMailerTestJob", "welcome",
+                           "deliver_now"] + active_job_args_wrapper(:args => method_expected_args),
               "tags" => {
                 "active_job_id" => kind_of(String),
                 "queue" => "mailers"
@@ -464,7 +471,11 @@ if DependencyHelper.active_job_present?
             expect(transaction_hash).to include(
               "action" => "ActionMailerTestJob#welcome",
               "sample_data" => hash_including(
-                "params" => ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper(:params => parameterized_expected_args),
+                "params" => [
+                  "ActionMailerTestJob",
+                  "welcome",
+                  "deliver_now"
+                ] + active_job_args_wrapper(:params => parameterized_expected_args),
                 "tags" => {
                   "active_job_id" => kind_of(String),
                   "queue" => "mailers"
@@ -571,10 +582,8 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    def perform_active_job
-      Timecop.freeze(time) do
-        yield
-      end
+    def perform_active_job(&block)
+      Timecop.freeze(time, &block)
     end
 
     def perform_job(job_class, args = nil)

@@ -2,7 +2,8 @@
 
 namespace :appsignal do
   task :deploy do
-    appsignal_env = fetch(:appsignal_env, fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
+    appsignal_env = fetch(:appsignal_env,
+      fetch(:stage, fetch(:rails_env, fetch(:rack_env, "production"))))
     user = fetch(:appsignal_user, ENV["USER"] || ENV.fetch("USERNAME", nil))
     revision = fetch(:appsignal_revision, fetch(:current_revision))
 

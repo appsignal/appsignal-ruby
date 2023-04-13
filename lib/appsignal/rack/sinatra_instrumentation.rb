@@ -15,7 +15,7 @@ module Appsignal
       def initialize(app, options = {})
         @app = app
         @options = options
-        Appsignal.logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation "\
+        Appsignal.logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation " \
           "from your Sinatra::Base class. This is no longer needed."
       end
 
@@ -47,9 +47,7 @@ module Appsignal
       end
 
       def call_with_appsignal_monitoring(env)
-        if @options[:params_method]
-          env[:params_method] = @options[:params_method]
-        end
+        env[:params_method] = @options[:params_method] if @options[:params_method]
         request = @options.fetch(:request_class, Sinatra::Request).new(env)
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
@@ -82,7 +80,7 @@ module Appsignal
         return unless env["sinatra.route"]
 
         if env["SCRIPT_NAME"]
-          method, route = env["sinatra.route"].split(" ")
+          method, route = env["sinatra.route"].split
           "#{method} #{env["SCRIPT_NAME"]}#{route}"
         else
           env["sinatra.route"]

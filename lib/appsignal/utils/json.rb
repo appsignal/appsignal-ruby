@@ -30,7 +30,7 @@ module Appsignal
 
         def encode_utf8(value)
           value.encode(
-            "utf-8".freeze,
+            "utf-8",
             :invalid => :replace,
             :undef   => :replace
           )

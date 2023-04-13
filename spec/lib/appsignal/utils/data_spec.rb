@@ -47,6 +47,7 @@ describe Appsignal::Utils::Data do
 
         describe "#to_s" do
           it "returns a serialized hash" do
+            # rubocop:disable Style/StringConcatenation
             expect(subject.to_s).to eq %({"":"test",) +
               %("1":true,) +
               %("bar":null,) +
@@ -59,6 +60,7 @@ describe Appsignal::Utils::Data do
               %("int63":"bigint:#{1 << 63}",) +
               %("int64":"bigint:#{1 << 64}",) +
               %("the":"payload"})
+            # rubocop:enable Style/StringConcatenation
           end
         end
       end
@@ -73,6 +75,7 @@ describe Appsignal::Utils::Data do
 
         describe "#to_s" do
           it "returns a serialized array" do
+            # rubocop:disable Style/StringConcatenation, Style/RedundantStringEscape
             expect(subject.to_s).to eq %([null,) +
               %(true,) +
               %(false,) +
@@ -84,6 +87,7 @@ describe Appsignal::Utils::Data do
               %("bigint:#{1 << 63}",) +
               %("bigint:#{1 << 64}",) +
               %({\"arr\":[1,2,\"three\"],\"foo\":\"bʊr\"}])
+            # rubocop:enable Style/StringConcatenation, Style/RedundantStringEscape
           end
         end
       end
@@ -105,7 +109,12 @@ describe Appsignal::Utils::Data do
 
         describe "#to_s" do
           it "returns a JSON representation in a String" do
-            expect(subject.to_s).to eq %({"field_four":{"one":"aa�"},"field_one":"aa","field_three":["one","aa�"],"field_two":"aa�"})
+            # rubocop:disable Style/StringConcatenation
+            expect(subject.to_s).to eq %({"field_four":{"one":"aa�"},) +
+              %("field_one":"aa",) +
+              %("field_three":["one","aa�"],) +
+              %("field_two":"aa�"})
+            # rubocop:enable Style/StringConcatenation
           end
         end
       end

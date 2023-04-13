@@ -6,12 +6,12 @@ module Appsignal
       def _run(*)
         local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
         env = {
-          :metadata    => {
-            :id        => local_attrs[:job_id] || local_attrs[:id],
-            :queue     => local_attrs[:queue],
-            :run_at    => local_attrs[:run_at].to_s,
-            :priority  => local_attrs[:priority],
-            :attempts  => local_attrs[:error_count].to_i
+          :metadata => {
+            :id => local_attrs[:job_id] || local_attrs[:id],
+            :queue => local_attrs[:queue],
+            :run_at => local_attrs[:run_at].to_s,
+            :priority => local_attrs[:priority],
+            :attempts => local_attrs[:error_count].to_i
           },
           :params => local_attrs[:args]
         }

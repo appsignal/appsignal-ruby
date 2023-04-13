@@ -38,16 +38,14 @@ RSpec.describe "Puma plugin" do
       @socket.bind("127.0.0.1", 8125)
 
       loop do
-        begin
-          # Listen for messages and track them on the messages Array.
-          packet = @socket.recvfrom(1024)
-          track_message packet.first
-        rescue Errno::EBADF # rubocop:disable Lint/HandleExceptions
-          # Ignore error for JRuby 9.1.17.0 specifically, it doesn't appear to
-          # happen on 9.2.18.0. It doesn't break the tests themselves, ignoring
-          # this error. It's probably a timing issue where it tries to read
-          # from the socket after it's closed.
-        end
+        # Listen for messages and track them on the messages Array.
+        packet = @socket.recvfrom(1024)
+        track_message packet.first
+      rescue Errno::EBADF
+        # Ignore error for JRuby 9.1.17.0 specifically, it doesn't appear to
+        # happen on 9.2.18.0. It doesn't break the tests themselves, ignoring
+        # this error. It's probably a timing issue where it tries to read
+        # from the socket after it's closed.
       end
     end
 
@@ -161,7 +159,7 @@ RSpec.describe "Puma plugin" do
       metric, type, tags_string = message.split("|")
       metric_name, metric_value = metric.split(":")
       tags = {}
-      tags_string[1..-1].split(",").each do |tag|
+      tags_string[1..].split(",").each do |tag|
         key, value = tag.split(":")
         tags[key] = value
       end

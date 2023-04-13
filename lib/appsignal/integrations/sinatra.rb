@@ -14,6 +14,4 @@ Appsignal.config = Appsignal::Config.new(
 Appsignal.start_logger
 Appsignal.start
 
-if Appsignal.active?
-  ::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation)
-end
+::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation) if Appsignal.active?

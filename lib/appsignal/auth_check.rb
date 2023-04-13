@@ -18,7 +18,7 @@ module Appsignal
   class AuthCheck
     # Path used on the AppSignal Push API
     # https://push.appsignal.com/1/auth
-    ACTION = "auth".freeze
+    ACTION = "auth"
 
     attr_reader :config
 
@@ -55,8 +55,8 @@ module Appsignal
         end
       [status, result]
     rescue => e
-      result = "Something went wrong while trying to "\
-               "authenticate with AppSignal: #{e}"
+      result = "Something went wrong while trying to " \
+        "authenticate with AppSignal: #{e}"
       [nil, result]
     end
   end

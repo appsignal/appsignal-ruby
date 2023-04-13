@@ -153,7 +153,8 @@ if DependencyHelper.grape_present?
           end
 
           it "sets non-unique route_param path" do
-            expect(transaction).to receive(:set_action_if_nil).with("GET::GrapeExample::Api#/users/:id/")
+            expect(transaction).to receive(:set_action_if_nil)
+              .with("GET::GrapeExample::Api#/users/:id/")
             expect(transaction).to receive(:set_metadata).with("path", "/users/:id/")
             expect(transaction).to receive(:set_metadata).with("method", "GET")
           end
@@ -177,7 +178,8 @@ if DependencyHelper.grape_present?
             end
 
             it "sets namespaced path" do
-              expect(transaction).to receive(:set_action_if_nil).with("POST::GrapeExample::Api#/v1/beta/ping")
+              expect(transaction).to receive(:set_action_if_nil)
+                .with("POST::GrapeExample::Api#/v1/beta/ping")
               expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
               expect(transaction).to receive(:set_metadata).with("method", "POST")
             end
@@ -199,7 +201,8 @@ if DependencyHelper.grape_present?
               end
 
               it "sets namespaced path" do
-                expect(transaction).to receive(:set_action_if_nil).with("POST::GrapeExample::Api#/v1/beta/ping")
+                expect(transaction).to receive(:set_action_if_nil)
+                  .with("POST::GrapeExample::Api#/v1/beta/ping")
                 expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
                 expect(transaction).to receive(:set_metadata).with("method", "POST")
               end
@@ -220,7 +223,8 @@ if DependencyHelper.grape_present?
               end
 
               it "sets namespaced path" do
-                expect(transaction).to receive(:set_action_if_nil).with("POST::GrapeExample::Api#/v1/beta/ping")
+                expect(transaction).to receive(:set_action_if_nil)
+                  .with("POST::GrapeExample::Api#/v1/beta/ping")
                 expect(transaction).to receive(:set_metadata).with("path", "/v1/beta/ping")
                 expect(transaction).to receive(:set_metadata).with("method", "POST")
               end

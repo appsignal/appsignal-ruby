@@ -47,7 +47,7 @@ module Appsignal
     class Diagnose
       extend CLI::Helpers
 
-      DIAGNOSE_ENDPOINT = "https://appsignal.com/diag".freeze
+      DIAGNOSE_ENDPOINT = "https://appsignal.com/diag"
 
       module Data
         def data
@@ -149,7 +149,7 @@ module Appsignal
           response = transmitter.transmit(:diagnose => data)
 
           unless response.code == "200"
-            puts "  Error: Something went wrong while submitting the report "\
+            puts "  Error: Something went wrong while submitting the report " \
               "to AppSignal."
             puts "  Response code: #{response.code}"
             puts "  Response body:\n#{response.body}"
@@ -350,7 +350,7 @@ module Appsignal
         end
 
         def fetch_installation_report
-          path = File.expand_path("../../../../ext/install.report", __FILE__)
+          path = File.expand_path("../../../ext/install.report", __dir__)
           raw_report = File.read(path)
           JSON.parse(raw_report)
         rescue StandardError, JSON::ParserError => e # rubocop:disable Lint/ShadowedException
@@ -444,7 +444,8 @@ module Appsignal
             puts_value "Operating System", os_label
 
             distribution_file = "/etc/os-release"
-            save :os_distribution, File.exist?(distribution_file) ? File.read(distribution_file) : ""
+            save :os_distribution,
+              File.exist?(distribution_file) ? File.read(distribution_file) : ""
 
             language_version = "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
             save :language_version, language_version
@@ -518,7 +519,7 @@ module Appsignal
             end
           end
 
-          puts "\nRead more about how the diagnose config output is rendered\n"\
+          puts "\nRead more about how the diagnose config output is rendered\n" \
             "https://docs.appsignal.com/ruby/command-line/diagnose.html"
         end
 
@@ -533,6 +534,7 @@ module Appsignal
 
         def config_sources_label(option, sources)
           return if sources == [:default]
+
           if sources.length == 1
             " (Loaded from: #{sources.join(", ")})"
           elsif sources.any?

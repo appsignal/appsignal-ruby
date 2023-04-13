@@ -99,13 +99,13 @@ module Appsignal
 
       @config ||= Config.new(
         Dir.pwd,
-        ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV["RACK_ENV"]
+        ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV.fetch("RACK_ENV", nil)
       )
 
       if config.valid?
         logger.level = config.log_level
         if config.active?
-          logger.info "Starting AppSignal #{Appsignal::VERSION} "\
+          logger.info "Starting AppSignal #{Appsignal::VERSION} " \
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
@@ -152,6 +152,7 @@ module Appsignal
 
     def forked
       return unless active?
+
       Appsignal.start_logger
       logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
@@ -186,7 +187,7 @@ module Appsignal
     def log_formatter(prefix = nil)
       pre = "#{prefix}: " if prefix
       proc do |severity, datetime, _progname, msg|
-        "[#{datetime.strftime("%Y-%m-%dT%H:%M:%S")} (process) "\
+        "[#{datetime.strftime("%Y-%m-%dT%H:%M:%S")} (process) " \
           "##{Process.pid}][#{severity}] #{pre}#{msg}\n"
       end
     end
@@ -249,7 +250,7 @@ module Appsignal
     # @return [Boolean]
     # @since 0.2.7
     def active?
-      config && config.active? && extension_loaded?
+      config&.active? && extension_loaded?
     end
 
     private

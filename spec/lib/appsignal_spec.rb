@@ -22,12 +22,10 @@ describe Appsignal do
   describe ".start" do
     context "with no config set beforehand" do
       it "should do nothing when config is not set and there is no valid config in the env" do
-        expect(Appsignal.logger).to receive(:error).with(
-          "Push API key not set after loading config"
-        ).once
-        expect(Appsignal.logger).to receive(:error).with(
-          "Not starting, no valid config for this environment"
-        ).once
+        expect(Appsignal.logger).to receive(:error)
+          .with("Push API key not set after loading config").once
+        expect(Appsignal.logger).to receive(:error)
+          .with("Not starting, no valid config for this environment").once
         expect(Appsignal::Extension).to_not receive(:start)
         Appsignal.start
       end
@@ -249,7 +247,7 @@ describe Appsignal do
         end
 
         it "logs an error" do
-          Appsignal.monitor_transaction("unknown.sidekiq") {}
+          Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
           expect(log).to contains_log(
             :error,
             "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
@@ -317,9 +315,8 @@ describe Appsignal do
     describe ".monitor_transaction" do
       context "with a successful call" do
         it "should instrument and complete for a background job" do
-          expect(Appsignal).to receive(:instrument).with(
-            "perform_job.something"
-          ).and_yield
+          expect(Appsignal).to receive(:instrument)
+            .with("perform_job.something").and_yield
           expect(Appsignal::Transaction).to receive(:complete_current!)
           object = double
           expect(object).to receive(:some_method).and_return(1)
@@ -336,9 +333,8 @@ describe Appsignal do
         end
 
         it "should instrument and complete for a http request" do
-          expect(Appsignal).to receive(:instrument).with(
-            "process_action.something"
-          ).and_yield
+          expect(Appsignal).to receive(:instrument)
+            .with("process_action.something").and_yield
           expect(Appsignal::Transaction).to receive(:complete_current!)
           object = double
           expect(object).to receive(:some_method)
@@ -378,7 +374,7 @@ describe Appsignal do
         end
 
         it "logs an error" do
-          Appsignal.monitor_transaction("unknown.sidekiq") {}
+          Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
           expect(log).to contains_log(
             :error,
             "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
@@ -529,7 +525,8 @@ describe Appsignal do
 
       describe ".set_gauge" do
         it "should call set_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 0.1, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge("key", 0.1)
         end
 
@@ -540,12 +537,14 @@ describe Appsignal do
         end
 
         it "should call set_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 1.0, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10,
+            Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.logger).to receive(:warn).with("Gauge value 10 for key 'key' is too big")
           expect do
             Appsignal.set_gauge("key", 10)
@@ -565,8 +564,10 @@ describe Appsignal do
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 10).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn).with("Host gauge value 10 for key 'key' is too big")
+          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key",
+            10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn)
+            .with("Host gauge value 10 for key 'key' is too big")
           expect do
             Appsignal.set_host_gauge("key", 10)
           end.to_not raise_error
@@ -585,8 +586,10 @@ describe Appsignal do
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 10).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn).with("Process gauge value 10 for key 'key' is too big")
+          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key",
+            10).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn)
+            .with("Process gauge value 10 for key 'key' is too big")
           expect do
             Appsignal.set_process_gauge("key", 10)
           end.to_not raise_error
@@ -595,7 +598,8 @@ describe Appsignal do
 
       describe ".increment_counter" do
         it "should call increment_counter on the extension with a string key" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key")
         end
 
@@ -606,18 +610,22 @@ describe Appsignal do
         end
 
         it "should call increment_counter on the extension with a symbol key" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 1, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter(:key)
         end
 
         it "should call increment_counter on the extension with a count" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 5, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 5, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key", 5)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:increment_counter).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn).with("Counter value 10 for key 'key' is too big")
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn)
+            .with("Counter value 10 for key 'key' is too big")
           expect do
             Appsignal.increment_counter("key", 10)
           end.to_not raise_error
@@ -626,7 +634,8 @@ describe Appsignal do
 
       describe ".add_distribution_value" do
         it "should call add_distribution_value on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 0.1, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value("key", 0.1)
         end
 
@@ -637,13 +646,16 @@ describe Appsignal do
         end
 
         it "should call add_distribution_value on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 1.0, Appsignal::Extension.data_map_new)
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value(:key, 1)
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value).with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn).with("Distribution value 10 for key 'key' is too big")
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.logger).to receive(:warn)
+            .with("Distribution value 10 for key 'key' is too big")
           expect do
             Appsignal.add_distribution_value("key", 10)
           end.to_not raise_error
@@ -1053,14 +1065,16 @@ describe Appsignal do
       it_behaves_like "instrument helper" do
         let(:instrumenter) { Appsignal }
         before do
-          expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+          expect(Appsignal::Transaction).to receive(:current).at_least(:once)
+            .and_return(transaction)
         end
       end
     end
 
     describe ".instrument_sql" do
       before do
-        expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+        expect(Appsignal::Transaction).to receive(:current).at_least(:once)
+          .and_return(transaction)
       end
 
       it "creates an SQL event on the transaction" do
@@ -1119,7 +1133,7 @@ describe Appsignal do
 
     context "when the log path is writable" do
       context "when the log file is writable" do
-        let(:log_file_contents) { File.open(log_file).read }
+        let(:log_file_contents) { File.read(log_file) }
 
         before do
           capture_stdout(out_stream) do
@@ -1198,8 +1212,8 @@ describe Appsignal do
 
       it "outputs a warning" do
         expect(output).to include \
-          "appsignal: Unable to log to '#{log_path}' "\
-          "or the '#{Appsignal::Config.system_tmp_dir}' fallback."
+          "appsignal: Unable to log to '#{log_path}' " \
+            "or the '#{Appsignal::Config.system_tmp_dir}' fallback."
       end
     end
 

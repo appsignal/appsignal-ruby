@@ -67,13 +67,14 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook]).to be_instance_of(MockErrorHook)
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
-    expect(Appsignal.logger).to receive(:error).with("Error while installing mock_error_hook hook: error").once
+    expect(Appsignal.logger).to receive(:error)
+      .with("Error while installing mock_error_hook hook: error").once
     expect(Appsignal.logger).to receive(:debug).ordered do |message|
       expect(message).to eq("Installing mock_error_hook hook")
     end
     expect(Appsignal.logger).to receive(:debug).ordered do |message|
       # Start of the error backtrace as debug log
-      expect(message).to start_with(File.expand_path("../../../../", __FILE__))
+      expect(message).to start_with(File.expand_path("../../..", __dir__))
     end
 
     Appsignal::Hooks.load_hooks
@@ -104,8 +105,8 @@ describe Appsignal::Hooks do
 
         deprecation_message =
           "The constant Appsignal::Hooks::SidekiqPlugin has been deprecated. " \
-          "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
-          "in the following file to remove this message.\n#{__FILE__}:"
+            "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
+            "in the following file to remove this message.\n#{__FILE__}:"
         expect(stderr).to include "appsignal WARNING: #{deprecation_message}"
         expect(log).to contains_log :warn, deprecation_message
       end

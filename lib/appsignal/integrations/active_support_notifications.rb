@@ -3,7 +3,7 @@
 module Appsignal
   module Integrations
     module ActiveSupportNotificationsIntegration
-      BANG = "!".freeze
+      BANG = "!"
 
       module InstrumentIntegration
         def instrument(name, payload = {}, &block)

@@ -5,7 +5,8 @@ module ConfigHelpers
     )
   end
 
-  def project_fixture_config(env = "production", initial_config = {}, logger = Appsignal.logger, config_file = nil)
+  def project_fixture_config(env = "production", initial_config = {}, logger = Appsignal.logger, # rubocop:disable Metrics/ParameterLists
+    config_file = nil)
     Appsignal::Config.new(
       project_fixture_path,
       env,

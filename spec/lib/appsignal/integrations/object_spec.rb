@@ -25,7 +25,8 @@ describe Object do
         let(:transaction) { http_request_transaction }
         before do
           Appsignal.config = project_fixture_config
-          expect(Appsignal::Transaction).to receive(:current).at_least(:once).and_return(transaction)
+          expect(Appsignal::Transaction).to receive(:current)
+            .at_least(:once).and_return(transaction)
           expect(Appsignal.active?).to be_truthy
         end
         after { Appsignal.config = nil }
@@ -43,9 +44,11 @@ describe Object do
               end
               appsignal_instrument_method :positional_arguments_splat
 
+              # rubocop:disable Naming/MethodParameterName
               def keyword_arguments(a: nil, b: nil)
                 [a, b]
               end
+              # rubocop:enable Naming/MethodParameterName
               appsignal_instrument_method :keyword_arguments
 
               def keyword_arguments_splat(**kwargs)
@@ -213,9 +216,11 @@ describe Object do
               end
               appsignal_instrument_class_method :positional_arguments_splat
 
+              # rubocop:disable Naming/MethodParameterName
               def self.keyword_arguments(a: nil, b: nil)
                 [a, b]
               end
+              # rubocop:enable Naming/MethodParameterName
               appsignal_instrument_class_method :keyword_arguments
 
               def self.keyword_arguments_splat(**kwargs)

@@ -40,7 +40,7 @@ describe Appsignal::CLI do
       end
     end.to raise_error(SystemExit)
 
-    expect(output).to include "Command 'nonsense' does not exist, run "\
+    expect(output).to include "Command 'nonsense' does not exist, run " \
       "appsignal -h to see the help"
   end
 

@@ -4,11 +4,11 @@ require "json"
 
 module Appsignal
   class Transaction
-    HTTP_REQUEST   = "http_request".freeze
-    BACKGROUND_JOB = "background_job".freeze
-    ACTION_CABLE   = "action_cable".freeze
-    FRONTEND       = "frontend".freeze
-    BLANK          = "".freeze
+    HTTP_REQUEST   = "http_request"
+    BACKGROUND_JOB = "background_job"
+    ACTION_CABLE   = "action_cable"
+    FRONTEND       = "frontend"
+    BLANK          = ""
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
     ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
     BREADCRUMB_LIMIT = 20
@@ -16,19 +16,21 @@ module Appsignal
     class << self
       def create(id, namespace, request, options = {})
         # Allow middleware to force a new transaction
-        if options.include?(:force) && options[:force]
-          Thread.current[:appsignal_transaction] = nil
-        end
+        Thread.current[:appsignal_transaction] = nil if options.include?(:force) && options[:force]
 
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
-          Thread.current[:appsignal_transaction] = Appsignal::Transaction.new(id, namespace, request, options)
+          Thread.current[:appsignal_transaction] =
+            Appsignal::Transaction.new(id, namespace, request, options)
         else
           # Otherwise, log the issue about trying to start another transaction
-          Appsignal.logger.warn_once_then_debug :transaction_id, "Trying to start new transaction with id " \
-            "'#{id}', but a transaction with id '#{current.transaction_id}' " \
-            "is already running. Using transaction '#{current.transaction_id}'."
+          Appsignal.logger.warn_once_then_debug(
+            :transaction_id,
+            "Trying to start new transaction with id " \
+              "'#{id}', but a transaction with id '#{current.transaction_id}' " \
+              "is already running. Using transaction '#{current.transaction_id}'."
+          )
 
           # And return the current transaction instead
           current
@@ -56,7 +58,9 @@ module Appsignal
       def complete_current!
         current.complete
       rescue => e
-        Appsignal.logger.error("Failed to complete transaction ##{current.transaction_id}. #{e.message}")
+        Appsignal.logger.error(
+          "Failed to complete transaction ##{current.transaction_id}. #{e.message}"
+        )
       ensure
         clear_current_transaction!
       end
@@ -68,7 +72,8 @@ module Appsignal
       end
     end
 
-    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options, :discarded, :breadcrumbs
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
+      :discarded, :breadcrumbs
 
     # @!attribute params
     #   Attribute for parameters of the transaction.
@@ -146,6 +151,7 @@ module Appsignal
 
     def params
       return @params if defined?(@params)
+
       request_params
     end
 
@@ -202,6 +208,7 @@ module Appsignal
     # @since 2.2.0
     def set_action(action)
       return unless action
+
       @action = action
       @ext.set_action(action)
     end
@@ -222,6 +229,7 @@ module Appsignal
     # @since 2.2.0
     def set_action_if_nil(action)
       return if @action
+
       set_action(action)
     end
 
@@ -242,12 +250,14 @@ module Appsignal
     # @since 2.2.0
     def set_namespace(namespace)
       return unless namespace
+
       @namespace = namespace
       @ext.set_namespace(namespace)
     end
 
     def set_http_or_background_action(from = request.params)
       return unless from
+
       group_and_action = [
         from[:controller] || from[:class],
         from[:action] || from[:method]
@@ -267,6 +277,7 @@ module Appsignal
     # @return [void]
     def set_queue_start(start)
       return unless start
+
       @ext.set_queue_start(start)
     rescue RangeError
       Appsignal.logger.warn("Queue start value #{start} is too big")
@@ -297,11 +308,13 @@ module Appsignal
 
     def set_metadata(key, value)
       return unless key && value
+
       @ext.set_metadata(key, value)
     end
 
     def set_sample_data(key, data)
       return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
+
       @ext.set_sample_data(
         key.to_s,
         Appsignal::Utils::Data.generate(data)
@@ -309,20 +322,24 @@ module Appsignal
     rescue RuntimeError => e
       begin
         inspected_data = data.inspect
-        Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'")
+        Appsignal.logger.error(
+          "Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'"
+        )
       rescue => e
-        Appsignal.logger.error("Error generating data (#{e.class}: #{e.message}). Can't inspect data.")
+        Appsignal.logger.error(
+          "Error generating data (#{e.class}: #{e.message}). Can't inspect data."
+        )
       end
     end
 
     def sample_data
       {
-        :params       => sanitized_params,
-        :environment  => sanitized_environment,
+        :params => sanitized_params,
+        :environment => sanitized_environment,
         :session_data => sanitized_session_data,
-        :metadata     => metadata,
-        :tags         => sanitized_tags,
-        :breadcrumbs  => breadcrumbs
+        :metadata => metadata,
+        :tags => sanitized_tags,
+        :breadcrumbs => breadcrumbs
       }.each do |key, data|
         set_sample_data(key, data)
       end
@@ -348,11 +365,13 @@ module Appsignal
 
     def start_event
       return if paused?
+
       @ext.start_event(0)
     end
 
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
+
       @ext.finish_event(
         name,
         title || BLANK,
@@ -364,6 +383,7 @@ module Appsignal
 
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
+
       @ext.record_event(
         name,
         title || BLANK,
@@ -410,6 +430,7 @@ module Appsignal
     def background_queue_start
       env = environment
       return unless env
+
       queue_start = env[:queue_start]
       return unless queue_start
 
@@ -424,9 +445,11 @@ module Appsignal
     def http_queue_start
       env = environment
       return unless env
-      env_var = env["HTTP_X_QUEUE_START".freeze] || env["HTTP_X_REQUEST_START".freeze]
+
+      env_var = env["HTTP_X_QUEUE_START"] || env["HTTP_X_REQUEST_START"]
       return unless env_var
-      cleaned_value = env_var.tr("^0-9".freeze, "".freeze)
+
+      cleaned_value = env_var.tr("^0-9", "")
       return if cleaned_value.empty?
 
       value = cleaned_value.to_i
@@ -489,7 +512,8 @@ module Appsignal
     # @return [Hash<String, Object>]
     def sanitized_session_data
       return if !Appsignal.config[:send_session_data] ||
-          !request.respond_to?(:session)
+        !request.respond_to?(:session)
+
       session = request.session
       return unless session
 
@@ -555,7 +579,7 @@ module Appsignal
     # transaction, so that it's still safe to call methods on it if there is no
     # current transaction.
     class NilTransaction
-      def method_missing(m, *args, &block)
+      def method_missing(_method, *args, &block)
       end
 
       # Instrument should still yield

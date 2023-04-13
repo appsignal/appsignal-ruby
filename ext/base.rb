@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require "digest"
 require "fileutils"
 require "open-uri"
 require "zlib"
 require "json"
 require "rubygems/package"
-require File.expand_path("../../lib/appsignal/version.rb", __FILE__)
-require File.expand_path("../../lib/appsignal/system.rb", __FILE__)
+require File.expand_path("../lib/appsignal/version.rb", __dir__)
+require File.expand_path("../lib/appsignal/system.rb", __dir__)
 require_relative "./agent"
 
-EXT_PATH = File.expand_path("..", __FILE__).freeze
+EXT_PATH = File.expand_path(__dir__).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
 AGENT_ARCHITECTURE = Appsignal::System.agent_architecture
@@ -62,15 +64,11 @@ def report
 end
 
 def write_report
-  File.open(File.join(EXT_PATH, "install.report"), "w") do |file|
-    file.write JSON.generate(report)
-  end
+  File.write(File.join(EXT_PATH, "install.report"), JSON.generate(report))
 end
 
 def create_dummy_makefile
-  File.open(File.join(EXT_PATH, "Makefile"), "w") do |file|
-    file.write "default:\nclean:\ninstall:"
-  end
+  File.write(File.join(EXT_PATH, "Makefile"), "default:\nclean:\ninstall:")
 end
 
 def successful_installation
@@ -104,7 +102,8 @@ def check_architecture
   else
     abort_installation(
       "AppSignal currently does not support your system architecture (#{TARGET_TRIPLE})." \
-        "Please let us know at support@appsignal.com, we aim to support everything our customers run."
+        "Please let us know at support@appsignal.com, we aim to support everything " \
+        "our customers run."
     )
   end
 end
@@ -134,8 +133,8 @@ def download_archive(type)
       proxy, _error = http_proxy
       args = [
         download_url,
-        :ssl_ca_cert => CA_CERT_PATH,
-        :proxy => proxy
+        { :ssl_ca_cert => CA_CERT_PATH,
+          :proxy => proxy }
       ]
       if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
         return URI.open(*args)
@@ -175,9 +174,7 @@ def unarchive(archive)
     tar.each do |entry|
       next unless entry.file?
 
-      File.open(ext_path(entry.full_name), "wb") do |f|
-        f.write(entry.read)
-      end
+      File.binwrite(ext_path(entry.full_name), entry.read)
     end
   end
   store_download_version_on_report
@@ -202,10 +199,10 @@ def http_proxy
     end
   return [proxy, error] if proxy
 
-  proxy = try_http_proxy_value(ENV["http_proxy"])
+  proxy = try_http_proxy_value(ENV.fetch("http_proxy", nil))
   return [proxy, error] if proxy
 
-  proxy = try_http_proxy_value(ENV["HTTP_PROXY"])
+  proxy = try_http_proxy_value(ENV.fetch("HTTP_PROXY", nil))
   return [proxy, error] if proxy
 
   [nil, error]

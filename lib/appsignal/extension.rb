@@ -34,7 +34,7 @@ module Appsignal
       #
       # Disabled in testing so we can make sure that we don't miss a extension
       # function implementation.
-      def method_missing(m, *args, &block)
+      def method_missing(_method, *args, &block)
         super if Appsignal.testing?
       end
 

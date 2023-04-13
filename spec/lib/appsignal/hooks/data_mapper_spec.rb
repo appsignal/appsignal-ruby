@@ -3,6 +3,7 @@ describe Appsignal::Hooks::DataMapperHook do
     before :context do
       module DataMapper
       end
+
       module DataObjects
         class Connection
         end

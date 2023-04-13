@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-if defined?(Appsignal)
-  Appsignal::Environment.report_enabled("object_instrumentation")
-end
+Appsignal::Environment.report_enabled("object_instrumentation") if defined?(Appsignal)
 
 class Object
   def self.appsignal_instrument_class_method(method_name, options = {})
@@ -37,6 +35,7 @@ class Object
 
   def self.appsignal_reverse_class_name
     return "AnonymousClass" unless name
+
     name.split("::").reverse.join(".")
   end
 

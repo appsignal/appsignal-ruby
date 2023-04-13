@@ -12,7 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/http"
-        HTTP::Client.send(:prepend, Appsignal::Integrations::HttpIntegration)
+        HTTP::Client.prepend Appsignal::Integrations::HttpIntegration
 
         Appsignal::Environment.report_enabled("http_rb")
       end

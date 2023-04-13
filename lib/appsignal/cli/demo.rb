@@ -52,10 +52,13 @@ module Appsignal
           puts "Sending demonstration sample data..."
           if Appsignal::Demo.transmit
             puts "Demonstration sample data sent!"
-            puts "It may take about a minute for the data to appear on https://appsignal.com/accounts"
+            puts "It may take about a minute for the data to appear on " \
+              "https://appsignal.com/accounts"
           else
             puts "\nError: Unable to start the AppSignal agent and send data to AppSignal.com."
-            puts "Please use the diagnose command (https://docs.appsignal.com/ruby/command-line/diagnose.html) to debug your configuration:"
+            puts "Please use the diagnose command " \
+              "(https://docs.appsignal.com/ruby/command-line/diagnose.html) " \
+              "to debug your configuration:"
             puts
             puts "    bundle exec appsignal diagnose --environment=production"
             puts

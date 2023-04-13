@@ -12,7 +12,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/rake"
-        ::Rake::Task.send(:prepend, Appsignal::Integrations::RakeIntegration)
+        ::Rake::Task.prepend Appsignal::Integrations::RakeIntegration
       end
     end
   end

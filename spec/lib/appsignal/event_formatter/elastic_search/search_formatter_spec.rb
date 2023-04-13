@@ -11,8 +11,8 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
   describe "#format" do
     let(:payload) do
       {
-        :name   => "Search",
-        :klass  => "User",
+        :name => "Search",
+        :klass => "User",
         :search => { :index => "users", :type => "user", :q => "John Doe" }
       }
     end
@@ -29,8 +29,8 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     let(:search) do
       {
         :index => "users",
-        :type  => "user",
-        :q     => "John Doe",
+        :type => "user",
+        :q => "John Doe",
         :other => "Other"
       }
     end

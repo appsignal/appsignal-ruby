@@ -66,8 +66,8 @@ describe Appsignal::Transaction do
           create_transaction("2")
           expect(log_contents(log)).to contains_log :warn,
             "Trying to start new transaction with id '2', but a " \
-            "transaction with id '#{transaction_id}' is already " \
-            "running. Using transaction '#{transaction_id}'."
+              "transaction with id '#{transaction_id}' is already " \
+              "running. Using transaction '#{transaction_id}'."
         end
 
         context "with option :force => true" do
@@ -741,7 +741,7 @@ describe Appsignal::Transaction do
         it "does not add the error" do
           expect(Appsignal.logger).to receive(:error).with(
             "Appsignal::Transaction#set_error: Cannot set error. " \
-            "The given value is not an exception: #{error.inspect}"
+              "The given value is not an exception: #{error.inspect}"
           )
           expect(transaction.ext).to_not receive(:set_error)
 
@@ -1083,7 +1083,9 @@ describe Appsignal::Transaction do
 
       context "with an array" do
         let(:request) do
-          Appsignal::Transaction::GenericRequest.new(background_env_with_data(:params => %w[arg1 arg2]))
+          Appsignal::Transaction::GenericRequest.new(
+            background_env_with_data(:params => %w[arg1 arg2])
+          )
         end
 
         it { is_expected.to eq %w[arg1 arg2] }
@@ -1099,8 +1101,9 @@ describe Appsignal::Transaction do
       context "with env" do
         context "with sanitization" do
           let(:request) do
-            Appsignal::Transaction::GenericRequest.new \
+            Appsignal::Transaction::GenericRequest.new(
               http_request_env_with_data(:params => { :foo => :bar })
+            )
           end
 
           it "should call the params sanitizer" do
@@ -1110,8 +1113,9 @@ describe Appsignal::Transaction do
 
         context "with AppSignal filtering" do
           let(:request) do
-            Appsignal::Transaction::GenericRequest.new \
+            Appsignal::Transaction::GenericRequest.new(
               http_request_env_with_data(:params => { :foo => :bar, :baz => :bat })
+            )
           end
           before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
           after { Appsignal.config.config_hash[:filter_parameters] = [] }
@@ -1233,7 +1237,8 @@ describe Appsignal::Transaction do
                   true
                 end
               end.new
-              ActionDispatch::Request::Session.create(store, ActionDispatch::Request.new("rack.input" => StringIO.new), {})
+              ActionDispatch::Request::Session.create(store,
+                ActionDispatch::Request.new("rack.input" => StringIO.new), {})
             end
             before do
               expect(transaction).to respond_to(:request)
@@ -1334,12 +1339,14 @@ describe Appsignal::Transaction do
 
       let(:error) do
         PG::UniqueViolation.new(
-          "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
+          "ERROR: duplicate key value violates unique constraint " \
+            "\"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
         )
       end
 
       it "returns a sanizited error message" do
-        expect(subject).to eq "ERROR: duplicate key value violates unique constraint \"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+        expect(subject).to eq "ERROR: duplicate key value violates unique constraint " \
+          "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
       end
     end
 
@@ -1350,15 +1357,15 @@ describe Appsignal::Transaction do
 
       let(:error) do
         ActiveRecord::RecordNotUnique.new(
-          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
-          "DETAIL: Key (email)=(foo@example.com) already exists."
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
+            "\"example_constraint\"\nDETAIL: Key (email)=(foo@example.com) already exists."
         )
       end
 
       it "returns a sanizited error message" do
         expect(subject).to eq \
-          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint \"example_constraint\"\n" \
-          "DETAIL: Key (email)=(?) already exists."
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
+            "\"example_constraint\"\nDETAIL: Key (email)=(?) already exists."
       end
     end
   end

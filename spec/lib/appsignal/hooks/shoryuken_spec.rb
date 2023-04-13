@@ -146,7 +146,9 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       [
         double(
           :message_id => "msg2",
-          :attributes => { "SentTimestamp" => (Time.parse("1976-11-18 01:00:00UTC").to_i * 1000).to_s }
+          :attributes => {
+            "SentTimestamp" => (Time.parse("1976-11-18 01:00:00UTC").to_i * 1000).to_s
+          }
         ),
         double(
           :message_id => "msg1",
@@ -165,7 +167,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     it "creates a transaction for the batch" do
       allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
       expect do
-        perform_job {}
+        perform_job {} # rubocop:disable Lint/EmptyBlock
       end.to change { created_transactions.length }.by(1)
 
       transaction = last_transaction

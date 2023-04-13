@@ -7,7 +7,7 @@ module Appsignal
       class QueryFormatter
         ALLOWED = {
           "find" => {
-            "find"   => :allow,
+            "find" => :allow,
             "filter" => :sanitize_document
           },
           "count" => {
@@ -16,24 +16,24 @@ module Appsignal
           },
           "distinct" => {
             "distinct" => :allow,
-            "key"      => :allow,
-            "query"    => :sanitize_document
+            "key" => :allow,
+            "query" => :sanitize_document
           },
           "insert" => {
-            "insert"    => :allow,
+            "insert" => :allow,
             "documents" => :sanitize_document,
-            "ordered"   => :allow
+            "ordered" => :allow
           },
           "update" => {
-            "update"  => :allow,
+            "update" => :allow,
             "updates" => :sanitize_document,
             "ordered" => :allow
           },
           "findandmodify" => {
             "findandmodify" => :allow,
-            "query"         => :sanitize_document,
-            "update"        => :sanitize_document,
-            "new"           => :allow
+            "query" => :sanitize_document,
+            "update" => :sanitize_document,
+            "new" => :allow
           },
           "delete" => {
             "delete" => :allow,
@@ -41,10 +41,10 @@ module Appsignal
             "ordered" => :allow
           },
           "bulk" => {
-            "q"      => :sanitize_document,
-            "u"      => :sanitize_document,
-            "limit"  => :allow,
-            "multi"  => :allow,
+            "q" => :sanitize_document,
+            "u" => :sanitize_document,
+            "limit" => :allow,
+            "multi" => :allow,
             "upsert" => :allow
           }
         }.freeze

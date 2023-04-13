@@ -2,6 +2,7 @@ class MockFormatter < Appsignal::EventFormatter
   attr_reader :body
 
   def initialize
+    super
     @body = "some value"
   end
 
@@ -28,6 +29,7 @@ end
 
 class MockDependentFormatter < Appsignal::EventFormatter
   def initialize
+    super
     raise "There is an error"
   end
 
@@ -60,7 +62,7 @@ describe Appsignal::EventFormatter do
           klass.register("mock.twice", MockFormatter)
         end
         expect(klass.registered?("mock.twice")).to be_truthy
-        expect(logs).to contains_log :warn, \
+        expect(logs).to contains_log :warn,
           "Formatter for 'mock.twice' already registered, not registering 'MockFormatter'"
       end
     end
@@ -71,9 +73,9 @@ describe Appsignal::EventFormatter do
           described_class.register "mock.dependent", MockDependentFormatter
         end
         expect(klass.registered?("mock.dependent")).to be_falsy
-        expect(logs).to contains_log :error, \
+        expect(logs).to contains_log :error,
           "'There is an error' " \
-          "when initializing mock.dependent event formatter"
+            "when initializing mock.dependent event formatter"
       end
     end
 
@@ -84,9 +86,9 @@ describe Appsignal::EventFormatter do
             described_class.register "mock.missing", MissingFormatMockFormatter
           end
           expect(klass.registered?("mock.missing")).to be_falsy
-          expect(logs).to contains_log :error, \
+          expect(logs).to contains_log :error,
             "'MissingFormatMockFormatter does not have a format(payload) " \
-            "method' when initializing mock.missing event formatter"
+              "method' when initializing mock.missing event formatter"
         end
       end
 
@@ -96,9 +98,9 @@ describe Appsignal::EventFormatter do
             described_class.register "mock.incorrect", IncorrectFormatMockFormatter
           end
           expect(klass.registered?("mock.incorrect")).to be_falsy
-          expect(logs).to contains_log :error, \
+          expect(logs).to contains_log :error,
             "'IncorrectFormatMockFormatter does not have a format(payload) " \
-            "method' when initializing mock.incorrect event formatter"
+              "method' when initializing mock.incorrect event formatter"
         end
       end
 
@@ -108,9 +110,9 @@ describe Appsignal::EventFormatter do
             described_class.register "mock.incorrect", IncorrectFormatMock2Formatter
           end
           expect(klass.registered?("mock.incorrect")).to be_falsy
-          expect(logs).to contains_log :error, \
+          expect(logs).to contains_log :error,
             "'IncorrectFormatMock2Formatter does not have a format(payload) " \
-            "method' when initializing mock.incorrect event formatter"
+              "method' when initializing mock.incorrect event formatter"
         end
       end
     end

@@ -24,7 +24,7 @@ module Appsignal
   class Marker
     # Path used on the AppSignal Push API
     # https://push.appsignal.com/1/markers
-    ACTION = "markers".freeze
+    ACTION = "markers"
 
     attr_reader :marker_data, :config
 
@@ -49,13 +49,12 @@ module Appsignal
     # @return [void]
     def transmit
       transmitter = Transmitter.new(ACTION, config)
-      puts "Notifying AppSignal of deploy with: "\
+      puts "Notifying AppSignal of deploy with: " \
         "revision: #{marker_data[:revision]}, user: #{marker_data[:user]}"
 
       response = transmitter.transmit(marker_data)
-      unless response.code == "200"
-        raise "#{response.code} at #{transmitter.uri}"
-      end
+      raise "#{response.code} at #{transmitter.uri}" unless response.code == "200"
+
       puts "AppSignal has been notified of this deploy!"
     rescue => e
       puts "Something went wrong while trying to notify AppSignal: #{e}"

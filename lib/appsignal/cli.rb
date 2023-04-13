@@ -34,7 +34,7 @@ module Appsignal
               Appsignal::CLI::Install.run(argv.shift, options)
             end
           else
-            puts "Command '#{command}' does not exist, run appsignal -h to "\
+            puts "Command '#{command}' does not exist, run appsignal -h to " \
               "see the help"
             exit(1)
           end
@@ -79,7 +79,8 @@ module Appsignal
             o.on "--environment=<app_env>", "The environment to diagnose" do |arg|
               options[:environment] = arg
             end
-            o.on "--[no-]send-report", "Confirm sending the report to AppSignal automatically" do |arg|
+            o.on "--[no-]send-report",
+              "Confirm sending the report to AppSignal automatically" do |arg|
               options[:send_report] = arg
             end
             o.on "--[no-]color", "Colorize the output of the diagnose command" do |arg|

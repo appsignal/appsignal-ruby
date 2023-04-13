@@ -17,23 +17,21 @@ Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
       plugin = AppsignalPumaPlugin.new
 
       loop do
-        begin
-          # Implement similar behavior to minutely probes.
-          # Initial sleep to wait until the app is fully initalized.
-          # Then loop every 60 seconds and collect the Puma stats as AppSignal
-          # metrics.
-          sleep sleep_time
+        # Implement similar behavior to minutely probes.
+        # Initial sleep to wait until the app is fully initalized.
+        # Then loop every 60 seconds and collect the Puma stats as AppSignal
+        # metrics.
+        sleep sleep_time
 
-          log_debug "AppSignal: Collecting Puma stats."
-          stats = fetch_puma_stats
-          if stats
-            plugin.call(stats)
-          else
-            log_debug "AppSignal: No Puma stats to report."
-          end
-        rescue StandardError => error
-          log_error "Error while processing metrics.", error
+        log_debug "AppSignal: Collecting Puma stats."
+        stats = fetch_puma_stats
+        if stats
+          plugin.call(stats)
+        else
+          log_debug "AppSignal: No Puma stats to report."
         end
+      rescue StandardError => error
+        log_error "Error while processing metrics.", error
       end
     end
   end
@@ -119,7 +117,7 @@ class AppsignalPumaPlugin
   def fetch_hostname
     # Configure hostname as reported for the Puma metrics with the
     # APPSIGNAL_HOSTNAME environment variable.
-    env_hostname = ENV["APPSIGNAL_HOSTNAME"]
+    env_hostname = ENV.fetch("APPSIGNAL_HOSTNAME", nil)
     return env_hostname if env_hostname
 
     # Auto detect hostname as fallback. May be inaccurate.
@@ -162,7 +160,7 @@ class AppsignalPumaPlugin
       socket = UDPSocket.new
       socket.send(data, 0, host, port)
     ensure
-      socket && socket.close
+      socket&.close
     end
   end
 end

@@ -2,7 +2,6 @@
 
 require "logger"
 require "set"
-require "thread"
 
 module Appsignal
   # Logger that flushes logs to the AppSignal logging service
@@ -25,6 +24,7 @@ module Appsignal
     # @return [void]
     def initialize(group, level: INFO, format: PLAINTEXT)
       raise TypeError, "group must be a string" unless group.is_a? String
+
       @group = group
       @level = level
       @format = format
@@ -37,6 +37,7 @@ module Appsignal
     def add(severity, message = nil, group = nil)
       severity ||= UNKNOWN
       return true if severity < level
+
       group = @group if group.nil?
       if message.nil?
         if block_given?
@@ -47,6 +48,7 @@ module Appsignal
         end
       end
       return if message.nil?
+
       message = formatter.call(severity, Time.now, group, message) if formatter
 
       Appsignal::Extension.log(
@@ -64,9 +66,11 @@ module Appsignal
     # @param attributes Attributes to tag the log with
     # @return [void]
     def debug(message = nil, attributes = {})
-      return if DEBUG < level
+      return if level > DEBUG
+
       message = yield if message.nil? && block_given?
       return if message.nil?
+
       add_with_attributes(DEBUG, message, @group, attributes)
     end
 
@@ -75,9 +79,11 @@ module Appsignal
     # @param attributes Attributes to tag the log with
     # @return [void]
     def info(message = nil, attributes = {})
-      return if INFO < level
+      return if level > INFO
+
       message = yield if message.nil? && block_given?
       return if message.nil?
+
       add_with_attributes(INFO, message, @group, attributes)
     end
 
@@ -86,9 +92,11 @@ module Appsignal
     # @param attributes Attributes to tag the log with
     # @return [void]
     def warn(message = nil, attributes = {})
-      return if WARN < level
+      return if level > WARN
+
       message = yield if message.nil? && block_given?
       return if message.nil?
+
       add_with_attributes(WARN, message, @group, attributes)
     end
 
@@ -97,9 +105,11 @@ module Appsignal
     # @param attributes Attributes to tag the log with
     # @return [void]
     def error(message = nil, attributes = {})
-      return if ERROR < level
+      return if level > ERROR
+
       message = yield if message.nil? && block_given?
       return if message.nil?
+
       add_with_attributes(ERROR, message, @group, attributes)
     end
 
@@ -108,9 +118,11 @@ module Appsignal
     # @param attributes Attributes to tag the log with
     # @return [void]
     def fatal(message = nil, attributes = {})
-      return if FATAL < level
+      return if level > FATAL
+
       message = yield if message.nil? && block_given?
       return if message.nil?
+
       add_with_attributes(FATAL, message, @group, attributes)
     end
 
