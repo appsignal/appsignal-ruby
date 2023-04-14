@@ -72,6 +72,19 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#silence" do
+    it "calls the given block" do
+      num = 1
+
+      logger.silence do
+        num += 1
+      end
+
+      expect(num).to eq(2)
+      expect(Appsignal::Extension).not_to receive(:log)
+    end
+  end
+
   [
     ["debug", 2, ::Logger::INFO],
     ["info", 3, ::Logger::WARN],
