@@ -1,5 +1,42 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.1
+
+### Added
+
+- [77ce4e39](https://github.com/appsignal/appsignal-ruby/commit/77ce4e3997fc7525d71f705cb332c05765568dc6) patch - Add Rails [error reporter](https://guides.rubyonrails.org/error_reporting.html) support. Errors reported using `Rails.error.handle` are tracked as separate errors in AppSignal. We rely on our other Rails instrumentation to report the errors reported with `Rails.error.record`.
+  
+  The error is reported under the same controller/job name, on a best effort basis. It may not be 100% accurate. If `Rails.error.handle` is called within a Rails controller or Active Job job, it will copy the AppSignal transaction namespace, action name and tags from the current transaction to the transaction for the `Rails.error.handle` reported error. If you call `Appsignal.set_namespace`, `Appsignal.set_action` or `Appsignal.tag_request` after `Rails.error.handle`, those changes will not be reflected up in the already reported error.
+  
+  It is also possible to customize the AppSignal namespace and action name for the reported error using the `appsignal` context:
+  
+  ```ruby
+  Rails.error.handle(:context => { :appsignal => { :namespace => "context", :action => "ContextAction" } }) do
+    raise "Test"
+  end
+  ```
+  
+  All other key-values are reported as tags:
+  
+  ```ruby
+  Rails.error.handle(:context => { :tag_key => "tag value" }) do
+    raise "Test"
+  end
+  ```
+  
+  Integration with the Rails error reporter is enabled by default. Disable this feature by setting the `enable_rails_error_reporter` config option to `false`.
+- [b4f58afd](https://github.com/appsignal/appsignal-ruby/commit/b4f58afdeb80cd1eb336ec5bd7b5daf46a4ef0a8) patch - Support Sidekiq in Rails error reporter. Track errors reported using `Rails.error.handle` in Sidekiq jobs, in the correct action. Previously it would report no action name for the incident, now it will use the worker name by default.
+
+### Changed
+
+- [e0332791](https://github.com/appsignal/appsignal-ruby/commit/e03327913fdc19db68fc953308eb1e4f2441ba05) patch - Set the AppSignal transaction namespace, action name and some tags, before Active Job jobs are performed. This allows us to check what the namespace, action name and some tags are during the instrumentation itself.
+- [4a40699a](https://github.com/appsignal/appsignal-ruby/commit/4a40699a1655bc10b3fa6eb90135374a6b31b195) patch - The AppSignal gem requires Ruby 3 or higher to run. Remove unnecessary Ruby version checks that query Ruby 2.7 or lower.
+- [da7d1c76](https://github.com/appsignal/appsignal-ruby/commit/da7d1c762fa097080b884bccf7c083aa692803bc) patch - Internal refactor of Ruby code due to RuboCop upgrade. Use the public `prepend` method to prepend AppSignal instrumentation modules.
+
+### Fixed
+
+- [009d533f](https://github.com/appsignal/appsignal-ruby/commit/009d533f92b08663eca1460b990524d56322fb65) patch - Fix a bug when using ActiveSupport::TaggedLogging calling the `silence` method.
+
 ## 3.4.0
 
 ### Deprecated
