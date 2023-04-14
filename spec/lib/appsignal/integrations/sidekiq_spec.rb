@@ -264,6 +264,34 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
   end
 
+  if DependencyHelper.rails7_present?
+    context "with Rails error reporter" do
+      it "reports the worker name as the action, copies the namespace and tags" do
+        Appsignal::Integrations::Railtie.initialize_appsignal(MyApp::Application.new)
+        Appsignal.config = project_fixture_config("production")
+        perform_job do
+          Appsignal.tag_job("test_tag" => "value")
+          Rails.error.handle do
+            raise error, "uh oh"
+          end
+        end
+
+        expect(created_transactions.count).to eq(2)
+        expected_transaction = {
+          "namespace" => "background_job",
+          "action" => "TestClass#perform",
+          "sample_data" => hash_including(
+            "tags" => hash_including("test_tag" => "value")
+          )
+        }
+        sidekiq_transaction = created_transactions.first.to_h
+        error_reporter_transaction = created_transactions.last.to_h
+        expect(sidekiq_transaction).to include(expected_transaction)
+        expect(error_reporter_transaction).to include(expected_transaction)
+      end
+    end
+  end
+
   context "without an error" do
     it "creates a transaction with events" do
       # TODO: additional curly brackets required for issue
