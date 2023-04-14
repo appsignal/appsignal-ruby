@@ -54,7 +54,7 @@ module Appsignal
         set_gauge_with_hostname("thread_count", Thread.list.size)
         if Appsignal::GarbageCollection.enabled?
           gauge_delta(:gc_time, @gc_profiler.total_time) do |gc_time|
-            set_gauge_with_hostname("gc_time", gc_time) if gc_time.positive?
+            set_gauge_with_hostname("gc_time", gc_time) if gc_time > 0
           end
         end
 

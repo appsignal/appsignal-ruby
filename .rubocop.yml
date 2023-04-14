@@ -109,6 +109,9 @@ Style/FrozenStringLiteralComment:
   Exclude:
     - "spec/**/*.rb"
 
+Style/NumericPredicate:
+  Enabled: false
+
 Style/SymbolArray:
   EnforcedStyle: brackets
 
