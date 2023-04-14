@@ -272,7 +272,7 @@ module Appsignal
 
       def get_server_state(key)
         state = appsignal_get_server_state(make_appsignal_string(key))
-        make_ruby_string state if (state[:len]).positive?
+        make_ruby_string state if state[:len] > 0
       end
 
       def log(group, level, message, attributes)
@@ -451,7 +451,7 @@ module Appsignal
 
         def to_json # rubocop:disable Lint/ToJSON
           json = Extension.appsignal_transaction_to_json(pointer)
-          make_ruby_string(json) if (json[:len]).positive?
+          make_ruby_string(json) if json[:len] > 0
         end
       end
 
@@ -535,7 +535,7 @@ module Appsignal
 
         def to_json # rubocop:disable Lint/ToJSON
           json = Extension.appsignal_span_to_json(pointer)
-          make_ruby_string(json) if (json[:len]).positive?
+          make_ruby_string(json) if json[:len] > 0
         end
 
         def close
