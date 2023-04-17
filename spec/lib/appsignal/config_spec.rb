@@ -626,7 +626,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_PUSH_API_ENDPOINT", nil)).to eq "https://push.appsignal.com"
       expect(ENV.fetch("_APPSIGNAL_PUSH_API_KEY", nil)).to eq "abc"
       expect(ENV.fetch("_APPSIGNAL_APP_NAME", nil)).to eq "TestApp"
-      expect(ENV.fetch("_APPSIGNAL_ENVIRONMENT", nil)).to eq "production"
+      expect(ENV.fetch("_APPSIGNAL_APP_ENV", nil)).to eq "production"
       expect(ENV.fetch("_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION", nil))
         .to eq "ruby-#{Appsignal::VERSION}"
       expect(ENV.fetch("_APPSIGNAL_HTTP_PROXY", nil)).to eq "http://localhost"
