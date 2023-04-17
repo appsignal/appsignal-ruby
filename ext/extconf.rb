@@ -20,9 +20,11 @@ def install
     report["build"]["source"] = "local"
   else
     archive = download_archive(library_type)
+    abort "failed to download archive #{library_type}" unless archive
     return unless archive
-    return unless verify_archive(archive, library_type)
 
+    verify = verify_archive(archive, library_type)
+    abort "failed to verify archive" unless verify
     unarchive(archive)
   end
 
