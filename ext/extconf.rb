@@ -8,6 +8,8 @@ def local_build?
     File.exist?(ext_path("appsignal.h"))
 end
 
+# rubocop:disable Metrics/CyclomaticComplexity
+# rubocop:disable Metrics/PerceivedComplexity
 def install
   fail_install_on_purpose_in_test!
 
@@ -20,9 +22,11 @@ def install
     report["build"]["source"] = "local"
   else
     archive = download_archive(library_type)
+    abort "failed to download archive #{library_type}" unless archive
     return unless archive
-    return unless verify_archive(archive, library_type)
 
+    verify = verify_archive(archive, library_type)
+    abort "failed to verify archive" unless verify
     unarchive(archive)
   end
 
@@ -57,6 +61,8 @@ ensure
   create_dummy_makefile unless installation_succeeded?
   write_report
 end
+# rubocop:enable Metrics/CyclomaticComplexity
+# rubocop:enable Metrics/PerceivedComplexity
 
 # Ruby 2.6 requires us to statically link more libraries we use in our
 # extension library than previous versions. Needed for normal Linux libc
