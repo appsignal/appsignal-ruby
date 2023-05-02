@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.2
+
+### Changed
+
+- [645d749f](https://github.com/appsignal/appsignal-ruby/commit/645d749f67c2ead37e44b435a0525e7334d660a2) patch - Update agent to version 6f29190.
+  
+  - Log revision config in boot debug log.
+  - Update internal agent CLI start command.
+  - Rename internal `_APPSIGNAL_ENVIRONMENT` variable to `_APPSIGNAL_APP_ENV` to be consistent with the public version.
+
+### Fixed
+
+- [4cd1601e](https://github.com/appsignal/appsignal-ruby/commit/4cd1601ecb9ed417c14eaea964a8efa35bbb9f76) patch - Do not run minutely probes on Rails console
+
 ## 3.4.1
 
 ### Added
