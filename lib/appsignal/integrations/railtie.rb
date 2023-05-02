@@ -13,6 +13,10 @@ module Appsignal
         Appsignal::Integrations::Railtie.initialize_appsignal(app)
       end
 
+      console do
+        Appsignal::Minutely.stop
+      end
+
       def self.initialize_appsignal(app)
         # Load config
         Appsignal.config = Appsignal::Config.new(
