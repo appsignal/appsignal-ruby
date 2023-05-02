@@ -106,26 +106,31 @@ RSpec.describe "Puma plugin" do
         end
       end
     end
-    Puma._set_stats = stats_data
     load File.expand_path("../lib/puma/plugin/appsignal.rb", APPSIGNAL_SPEC_DIR)
-
-    @statsd = StatsdServer.new
-    @server_thread = Thread.new { @statsd.start }
-    @server_thread.abort_on_exception = true
   end
   after do
-    @statsd = nil
-
     Object.send(:remove_const, :Puma)
     Object.send(:remove_const, :AppsignalPumaPlugin)
   end
 
-  def run_plugin(plugin, &block)
+  def run_plugin(stats_data, plugin, &block)
+    Puma._set_stats = stats_data
+    @statsd = StatsdServer.new
+    @server_thread = Thread.new { @statsd.start }
+    @server_thread.abort_on_exception = true
     @client_thread = Thread.new { start_plugin(plugin) }
     @client_thread.abort_on_exception = true
     wait_for(:puma_client_wait, &block)
   ensure
-    stop_all
+    Puma._set_stats = nil
+    # Stop all threads in test and stop listening on the UDPSocket
+    @client_thread.kill if defined?(@client_thread) && @client_thread
+    @server_thread.kill if defined?(@server_thread) && @server_thread
+    @client_thread = nil
+    @server_thread = nil
+
+    @statsd.stop if defined?(@statsd) && @statsd
+    @statsd = nil
   end
 
   def appsignal_plugin
@@ -139,15 +144,6 @@ RSpec.describe "Puma plugin" do
     allow(plugin).to receive(:sleep_time).and_return(0.01)
     plugin.start(launcher)
     plugin.in_background_block.call
-  end
-
-  # Stop all threads in test and stop listening on the UDPSocket
-  def stop_all
-    @client_thread.kill if defined?(@client_thread) && @client_thread
-    @server_thread.kill if defined?(@server_thread) && @server_thread
-    @statsd.stop if defined?(@statsd) && @statsd
-    @client_thread = nil
-    @server_thread = nil
   end
 
   def logs
@@ -209,7 +205,7 @@ RSpec.describe "Puma plugin" do
     end
 
     it "collects puma stats as guage metrics with the (summed) worker metrics" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect_gauge(:workers, 2, "type" => "count")
         expect_gauge(:workers, 2, "type" => "booted")
@@ -233,7 +229,7 @@ RSpec.describe "Puma plugin" do
     end
 
     it "calls `puma_gauge` with the (summed) worker metrics" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect_gauge(:connection_backlog, 0)
         expect_gauge(:pool_capacity, 5)
@@ -249,7 +245,7 @@ RSpec.describe "Puma plugin" do
     after { ENV.delete("APPSIGNAL_HOSTNAME") }
 
     it "reports the APPSIGNAL_HOSTNAME as the hostname tag value" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect_gauge(:connection_backlog, 1)
       end
@@ -262,7 +258,7 @@ RSpec.describe "Puma plugin" do
     end
 
     it "fetches metrics from Puma.stats instead" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect(logs).to_not include([kind_of(Symbol), "AppSignal: No Puma stats to report."])
         expect_gauge(:connection_backlog, 1)
@@ -277,7 +273,7 @@ RSpec.describe "Puma plugin" do
     end
 
     it "does not fetch metrics" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect(logs).to include([:debug, "AppSignal: No Puma stats to report."])
         expect(messages).to be_empty
@@ -287,8 +283,7 @@ RSpec.describe "Puma plugin" do
 
   context "without running StatsD server" do
     it "does nothing" do
-      stop_all
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect(messages).to be_empty
       end
@@ -328,7 +323,7 @@ RSpec.describe "Puma plugin" do
     let(:stats_data) { { :max_threads => 5 } }
 
     it "logs messages to the events class" do
-      run_plugin(appsignal_plugin) do
+      run_plugin(stats_data, appsignal_plugin) do
         expect(launcher.events.logs).to_not be_empty
       end
     end
