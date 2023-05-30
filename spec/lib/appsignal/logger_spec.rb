@@ -33,6 +33,14 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, nil)
     end
 
+    # This is what the convenience methods in `Logger` do.
+    # See: https://github.com/ruby/logger/blob/v1.5.3/lib/logger.rb#L700-L702
+    it "should log when using `group` for the log message" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+      logger.add(::Logger::INFO, nil, "Log message")
+    end
+
     context "with info log level" do
       let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
 
