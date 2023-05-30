@@ -643,6 +643,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_FILES_WORLD_ACCESSIBLE", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_TRANSACTION_DEBUG_MODE", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_SEND_ENVIRONMENT_METADATA", nil)).to eq "false"
+      expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_FILTER_PARAMETERS", nil)).to eq "password,confirm_password"
       expect(ENV.fetch("_APPSIGNAL_FILTER_SESSION_DATA", nil)).to eq "key1,key2"
       expect(ENV.fetch("_APP_REVISION", nil)).to eq "v2.5.1"
@@ -680,6 +681,17 @@ describe Appsignal::Config do
 
       it "sets the modified :working_directory_path" do
         expect(ENV.fetch("_APPSIGNAL_WORKING_DIRECTORY_PATH", nil)).to eq "/tmp/appsignal2"
+      end
+    end
+
+    context "with :statsd_port" do
+      before do
+        config[:statsd_port] = "1000"
+        config.write_to_environment
+      end
+
+      it "sets the statsd_port env var" do
+        expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq "1000"
       end
     end
   end

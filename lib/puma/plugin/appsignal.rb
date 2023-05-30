@@ -140,7 +140,7 @@ class AppsignalPumaPlugin
     def initialize
       # StatsD server location as configured in AppSignal agent StatsD server.
       @host = "127.0.0.1"
-      @port = 8125
+      @port = ENV.fetch("APPSIGNAL_STATSD_PORT", 8125)
     end
 
     def gauge(metric_name, value, tags)
