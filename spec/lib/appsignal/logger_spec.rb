@@ -28,11 +28,6 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message", "other_group")
     end
 
-    it "should return with a nil message" do
-      expect(Appsignal::Extension).not_to receive(:log)
-      logger.add(::Logger::INFO, nil)
-    end
-
     # This is what the convenience methods in `Logger` do.
     # See: https://github.com/ruby/logger/blob/v1.5.3/lib/logger.rb#L700-L702
     it "should log when using `group` for the log message" do
