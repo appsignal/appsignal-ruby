@@ -28,9 +28,10 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message", "other_group")
     end
 
-    it "should return with a nil message" do
-      expect(Appsignal::Extension).not_to receive(:log)
-      logger.add(::Logger::INFO, nil)
+    it "should log when using `group` for the log message" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+      logger.add(::Logger::INFO, nil, "Log message")
     end
 
     context "with info log level" do
