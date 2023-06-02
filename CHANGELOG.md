@@ -1,5 +1,20 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.3
+
+### Added
+
+- [8e54a894](https://github.com/appsignal/appsignal-ruby/commit/8e54a8948b815a701277a5da7baf303656548d62) patch - Allow configuration of the agent's StatsD server port through the `statsd_port` option.
+
+### Changed
+
+- [b9a8effe](https://github.com/appsignal/appsignal-ruby/commit/b9a8effeb43644981fc32d6a69757aa4e816a0b0) patch - Update bundled trusted root certificates.
+- [d03735c7](https://github.com/appsignal/appsignal-ruby/commit/d03735c7b047d4e27e46dad0d61800ea20a3482f) patch - Bump agent to fd8ee9e.
+  
+  - Rely on APPSIGNAL_RUNNING_IN_CONTAINER config option value before other environment factors to determine if the app is running in a container.
+  - Fix container detection for hosts running Docker itself.
+  - Add APPSIGNAL_STATSD_PORT config option.
+
 ## 3.4.2
 
 ### Changed
