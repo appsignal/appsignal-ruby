@@ -100,6 +100,7 @@ module Appsignal
       "APPSIGNAL_SEND_PARAMS" => :send_params,
       "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
       "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
+      "APPSIGNAL_STATSD_PORT" => :statsd_port,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode,
       "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
       "APPSIGNAL_WORKING_DIR_PATH" => :working_dir_path,
@@ -117,6 +118,7 @@ module Appsignal
       APPSIGNAL_LOGGING_ENDPOINT
       APPSIGNAL_PUSH_API_ENDPOINT
       APPSIGNAL_PUSH_API_KEY
+      APPSIGNAL_STATSD_PORT
       APPSIGNAL_WORKING_DIRECTORY_PATH
       APPSIGNAL_WORKING_DIR_PATH
       APP_REVISION
@@ -343,6 +345,7 @@ module Appsignal
       ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
+      ENV["_APPSIGNAL_STATSD_PORT"]                  = config_hash[:statsd_port].to_s
       ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
       if config_hash[:working_directory_path]
         ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"] = config_hash[:working_directory_path]
