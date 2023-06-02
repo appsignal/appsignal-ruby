@@ -43,7 +43,7 @@ module Appsignal
         if block_given?
           message = yield
         else
-          message = progname
+          message = group
           group = @group
         end
       end
