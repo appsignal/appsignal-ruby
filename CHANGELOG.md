@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.4
+
+### Fixed
+
+- [17500724](https://github.com/appsignal/appsignal-ruby/commit/175007245a5506cf06e5447acad431014b461fff) patch - Fixed a bug that prevented log messages from getting to AppSignal when using the convenience methods as in:
+  
+  ```ruby
+  Rails.logger.warn("Warning message")
+  ```
+
 ## 3.4.3
 
 ### Added
