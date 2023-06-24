@@ -70,7 +70,13 @@ module Appsignal
             transaction.set_error(env["sinatra.error"])
           end
           transaction.set_action_if_nil(action_name(env))
-          transaction.set_metadata("path", request.path)
+          path =
+            if Appsignal.config[:sinatra_sanitized_routes]
+              sanitized_route(env)
+            else
+              request.path
+            end
+          transaction.set_metadata("path", path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current!
@@ -89,6 +95,13 @@ module Appsignal
       end
 
       private
+
+      def sanitized_route(env)
+        return unless env["sinatra.route"]
+
+        _method, route = env["sinatra.route"].split
+        route
+      end
 
       def raise_errors?(app)
         app.respond_to?(:settings) &&

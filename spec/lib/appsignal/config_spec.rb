@@ -183,6 +183,7 @@ describe Appsignal::Config do
         :send_environment_metadata      => true,
         :send_params                    => true,
         :send_session_data              => true,
+        :sinatra_sanitized_routes       => false,
         :transaction_debug_mode         => false
       )
     end

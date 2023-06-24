@@ -260,6 +260,24 @@ if DependencyHelper.sinatra_present?
             )
           )
         end
+
+        context "with sinatra_sanitized_routes=true" do
+          before { Appsignal.config[:sinatra_sanitized_routes] = true }
+          after { Appsignal.config[:sinatra_sanitized_routes] = false }
+          let(:env) { { "sinatra.route" => "GET /some/:path", "REQUEST_METHOD" => "GET" } }
+
+          it "sets the path as the sanitized defined route" do
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include(
+              "metadata" => {
+                "method" => "GET",
+                "path" => "/some/:path"
+              }
+            )
+          end
+        end
       end
 
       context "with queue start" do

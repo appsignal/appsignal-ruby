@@ -44,6 +44,7 @@ module Appsignal
       ],
       :send_environment_metadata => true,
       :send_params => true,
+      :sinatra_sanitized_routes => false,
       :transaction_debug_mode => false
     }.freeze
 
@@ -99,6 +100,7 @@ module Appsignal
       "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS" => :send_params,
       "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
+      "APPSIGNAL_SINATRA_SANITIZED_ROUTES" => :sinatra_sanitized_routes,
       "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
       "APPSIGNAL_STATSD_PORT" => :statsd_port,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode,
@@ -144,6 +146,7 @@ module Appsignal
       APPSIGNAL_SEND_ENVIRONMENT_METADATA
       APPSIGNAL_SEND_PARAMS
       APPSIGNAL_SEND_SESSION_DATA
+      APPSIGNAL_SINATRA_SANITIZED_ROUTES
       APPSIGNAL_SKIP_SESSION_DATA
       APPSIGNAL_TRANSACTION_DEBUG_MODE
     ].freeze
