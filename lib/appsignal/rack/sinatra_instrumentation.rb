@@ -47,13 +47,14 @@ module Appsignal
       end
 
       def call_with_appsignal_monitoring(env)
-        env[:params_method] = @options[:params_method] if @options[:params_method]
+        options = { :force => @options.include?(:force) && @options[:force] }
+        options.merge!(:params_method => @options[:params_method]) if @options[:params_method]
         request = @options.fetch(:request_class, Sinatra::Request).new(env)
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
           request,
-          :force => @options.include?(:force) && @options[:force]
+          options
         )
         begin
           Appsignal.instrument("process_action.sinatra") do
