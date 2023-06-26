@@ -165,6 +165,7 @@ describe Appsignal::Config do
         :enable_rails_error_reporter    => true,
         :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,
+        :filter_metadata                => [],
         :filter_parameters              => [],
         :filter_session_data            => [],
         :ignore_actions                 => [],

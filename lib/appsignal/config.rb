@@ -24,6 +24,7 @@ module Appsignal
       :enable_rails_error_reporter => true,
       :endpoint => "https://push.appsignal.com",
       :files_world_accessible => true,
+      :filter_metadata => [],
       :filter_parameters => [],
       :filter_session_data => [],
       :ignore_actions => [],
@@ -77,6 +78,7 @@ module Appsignal
       "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => :enable_gvl_waiting_threads,
       "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER" => :enable_rails_error_reporter,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => :files_world_accessible,
+      "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
       "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
       "APPSIGNAL_HOSTNAME" => :hostname,
@@ -150,6 +152,7 @@ module Appsignal
     # @api private
     ENV_ARRAY_KEYS = %w[
       APPSIGNAL_DNS_SERVERS
+      APPSIGNAL_FILTER_METADATA
       APPSIGNAL_FILTER_PARAMETERS
       APPSIGNAL_FILTER_SESSION_DATA
       APPSIGNAL_IGNORE_ACTIONS

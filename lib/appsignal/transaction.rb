@@ -308,6 +308,7 @@ module Appsignal
 
     def set_metadata(key, value)
       return unless key && value
+      return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
       @ext.set_metadata(key, value)
     end
@@ -337,7 +338,7 @@ module Appsignal
         :params => sanitized_params,
         :environment => sanitized_environment,
         :session_data => sanitized_session_data,
-        :metadata => metadata,
+        :metadata => sanitized_metadata,
         :tags => sanitized_tags,
         :breadcrumbs => breadcrumbs
       }.each do |key, data|
@@ -522,12 +523,17 @@ module Appsignal
       )
     end
 
-    # Returns metadata from the environment.
+    # Returns sanitized metadata set by {#set_metadata} and from the
+    # {#environment}.
     #
-    # @return [nil] if no `:metadata` key is present in the {#environment}.
     # @return [Hash<String, Object>]
-    def metadata
-      environment[:metadata]
+    def sanitized_metadata
+      metadata = environment[:metadata]
+      return unless metadata
+
+      metadata
+        .transform_keys(&:to_s)
+        .except(*Appsignal.config[:filter_metadata])
     end
 
     # Returns the environment for a transaction.
