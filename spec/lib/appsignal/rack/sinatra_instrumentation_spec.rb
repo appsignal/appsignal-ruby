@@ -1,39 +1,49 @@
 if DependencyHelper.sinatra_present?
   require "appsignal/integrations/sinatra"
 
+  module SinatraRequestHelpers
+    def make_request(env)
+      middleware.call(env)
+    end
+
+    def make_request_with_error(env, error)
+      expect { middleware.call(env) }.to raise_error(error)
+    end
+  end
+
   describe Appsignal::Rack::SinatraInstrumentation do
+    include SinatraRequestHelpers
+
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
     let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
+    before(:context) { start_agent }
+    around do |example|
+      keep_transactions { example.run }
+    end
+
     describe "#call" do
-      before do
-        start_agent
-        allow(middleware).to receive(:raw_payload).and_return({})
-        allow(Appsignal).to receive(:active?).and_return(true)
-      end
+      before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
-      it "should call without monitoring" do
-        expect(Appsignal::Transaction).to_not receive(:create)
+      it "doesn't instrument requests" do
+        make_request(env)
+        expect(created_transactions.count).to eq(0)
       end
-
-      after { middleware.call(env) }
     end
 
     describe ".settings" do
       subject { middleware.settings }
 
-      it "should return the app's settings" do
+      it "returns the app's settings" do
         expect(subject).to eq(app.settings)
       end
     end
   end
 
   describe Appsignal::Rack::SinatraBaseInstrumentation do
-    before :context do
-      start_agent
-    end
+    include SinatraRequestHelpers
 
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
@@ -41,11 +51,16 @@ if DependencyHelper.sinatra_present?
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
+    before(:context) { start_agent }
+    around do |example|
+      keep_transactions { example.run }
+    end
+
     describe "#initialize" do
       context "with no settings method in the Sinatra app" do
         let(:app) { double(:call => true) }
 
-        it "should not raise errors" do
+        it "does not raise errors" do
           expect(middleware.raise_errors_on).to be(false)
         end
       end
@@ -53,7 +68,7 @@ if DependencyHelper.sinatra_present?
       context "with no raise_errors setting in the Sinatra app" do
         let(:app) { double(:call => true, :settings => double) }
 
-        it "should not raise errors" do
+        it "does not raise errors" do
           expect(middleware.raise_errors_on).to be(false)
         end
       end
@@ -61,7 +76,7 @@ if DependencyHelper.sinatra_present?
       context "with raise_errors turned off in the Sinatra app" do
         let(:app) { double(:call => true, :settings => double(:raise_errors => false)) }
 
-        it "should raise errors" do
+        it "raises errors" do
           expect(middleware.raise_errors_on).to be(false)
         end
       end
@@ -69,21 +84,17 @@ if DependencyHelper.sinatra_present?
       context "with raise_errors turned on in the Sinatra app" do
         let(:app) { double(:call => true, :settings => double(:raise_errors => true)) }
 
-        it "should raise errors" do
+        it "raises errors" do
           expect(middleware.raise_errors_on).to be(true)
         end
       end
     end
 
     describe "#call" do
-      before do
-        allow(middleware).to receive(:raw_payload).and_return({})
-      end
+      before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
       context "when appsignal is active" do
-        before { allow(Appsignal).to receive(:active?).and_return(true) }
-
-        it "should call with monitoring" do
+        it "instruments requests" do
           expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
@@ -91,34 +102,36 @@ if DependencyHelper.sinatra_present?
       context "when appsignal is not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
-        it "should not call with monitoring" do
-          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
+        it "does not instrument requests" do
+          expect(created_transactions.count).to eq(0)
         end
 
-        it "should call the stack" do
+        it "calls the next middleware in the stack" do
           expect(app).to receive(:call).with(env)
         end
       end
 
-      after { middleware.call(env) }
+      after { make_request(env) }
     end
 
-    describe "#call_with_appsignal_monitoring", :error => false do
-      it "should create a transaction" do
-        expect(Appsignal::Transaction).to receive(:create).with(
-          kind_of(String),
-          Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(Sinatra::Request),
-          kind_of(Hash)
-        ).and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil,
-          :set_metadata => nil))
+    describe "#call_with_appsignal_monitoring" do
+      context "without an error" do
+        it "creates a transaction" do
+          expect(app).to receive(:call).with(env)
+
+          make_request(env)
+
+          expect(created_transactions.count).to eq(1)
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+            "action" => "GET /",
+            "error" => nil,
+            "metadata" => { "path" => "" }
+          )
+        end
       end
 
-      it "should call the app" do
-        expect(app).to receive(:call).with(env)
-      end
-
-      context "with an error", :error => true do
+      context "with an error" do
         let(:error) { ExampleException }
         let(:app) do
           double.tap do |d|
@@ -128,23 +141,48 @@ if DependencyHelper.sinatra_present?
         end
 
         it "records the exception" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+          make_request_with_error(env, error)
+
+          expect(created_transactions.count).to eq(1)
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+            "action" => "GET /",
+            "error" => hash_including(
+              "name" => "ExampleException",
+              "message" => "ExampleException"
+            )
+          )
         end
       end
 
       context "with an error in sinatra.error" do
-        let(:error) { ExampleException }
+        let(:error) { ExampleException.new }
         let(:env) { { "sinatra.error" => error } }
 
-        it "records the exception" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+        context "when raise_errors is off" do
+          let(:settings) { double(:raise_errors => false) }
+
+          it "record the error" do
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include(
+              "error" => hash_including(
+                "name" => "ExampleException",
+                "message" => "ExampleException"
+              )
+            )
+          end
         end
 
         context "when raise_errors is on" do
           let(:settings) { double(:raise_errors => true) }
 
           it "does not record the error" do
-            expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include("error" => nil)
           end
         end
 
@@ -152,22 +190,30 @@ if DependencyHelper.sinatra_present?
           let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
 
           it "does not record the error" do
-            expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_error)
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include("error" => nil)
           end
         end
       end
 
       describe "action name" do
-        it "should set the action" do
-          expect_any_instance_of(Appsignal::Transaction)
-            .to receive(:set_action_if_nil).with("GET /")
+        it "sets the action" do
+          make_request(env)
+
+          expect(created_transactions.count).to eq(1)
+          expect(last_transaction.to_h).to include("action" => "GET /")
         end
 
         context "without 'sinatra.route' env" do
           let(:env) { { :path => "/", :method => "GET" } }
 
-          it "returns nil" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil).with(nil)
+          it "doesn't set an action name" do
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include("action" => nil)
           end
         end
 
@@ -175,44 +221,90 @@ if DependencyHelper.sinatra_present?
           before { env["SCRIPT_NAME"] = "/api" }
 
           it "should call set_action with an application prefix path" do
-            expect_any_instance_of(Appsignal::Transaction)
-              .to receive(:set_action_if_nil).with("GET /api/")
+            make_request(env)
+
+            expect(created_transactions.count).to eq(1)
+            expect(last_transaction.to_h).to include("action" => "GET /api/")
           end
 
           context "without 'sinatra.route' env" do
             let(:env) { { :path => "/", :method => "GET" } }
 
-            it "returns nil" do
-              expect_any_instance_of(Appsignal::Transaction)
-                .to receive(:set_action_if_nil).with(nil)
+            it "doesn't set an action name" do
+              make_request(env)
+
+              expect(created_transactions.count).to eq(1)
+              expect(last_transaction.to_h).to include("action" => nil)
             end
           end
         end
       end
 
-      it "should set metadata" do
-        expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
-      end
+      context "metadata" do
+        let(:env) { { "PATH_INFO" => "/some/path", "REQUEST_METHOD" => "GET" } }
 
-      it "should set the queue start" do
-        expect_any_instance_of(Appsignal::Transaction)
-          .to receive(:set_http_or_background_queue_start)
-      end
+        it "sets metadata from the environment" do
+          make_request(env)
 
-      context "with overridden request class and params method" do
-        let(:options) { { :request_class => ::Rack::Request, :params_method => :filtered_params } }
-
-        it "should use the overridden request class and params method" do
-          request = ::Rack::Request.new(env)
-          expect(::Rack::Request).to receive(:new)
-            .with(env.merge(:params_method => :filtered_params))
-            .at_least(:once)
-            .and_return(request)
+          expect(created_transactions.count).to eq(1)
+          expect(last_transaction.to_h).to include(
+            "metadata" => {
+              "method" => "GET",
+              "path" => "/some/path"
+            },
+            "sample_data" => hash_including(
+              "environment" => hash_including(
+                "REQUEST_METHOD" => "GET",
+                "PATH_INFO" => "/some/path"
+              )
+            )
+          )
         end
       end
 
-      after(:error => false) { middleware.call(env) }
-      after(:error => true) { expect { middleware.call(env) }.to raise_error(error) }
+      context "with queue start" do
+        let(:queue_start_time) { fixed_time * 1_000 }
+        let(:env) do
+          { "HTTP_X_REQUEST_START" => "t=#{queue_start_time.to_i}" } # in milliseconds
+        end
+
+        it "sets the queue start" do
+          make_request(env)
+          expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+        end
+      end
+
+      class FilteredRequest
+        def initialize(_args) # rubocop:disable Style/RedundantInitialize
+        end
+
+        def path
+          "/static/path"
+        end
+
+        def request_method
+          "GET"
+        end
+
+        def filtered_params
+          { "abc" => "123" }
+        end
+      end
+
+      context "with overridden request class and params method" do
+        let(:options) { { :request_class => FilteredRequest, :params_method => :filtered_params } }
+
+        it "uses the overridden request class and params method to fetch params" do
+          make_request(env)
+
+          expect(created_transactions.count).to eq(1)
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "params" => { "abc" => "123" }
+            )
+          )
+        end
+      end
     end
   end
 end
