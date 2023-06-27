@@ -1,5 +1,25 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.5
+
+### Added
+
+- [e5e79d9a](https://github.com/appsignal/appsignal-ruby/commit/e5e79d9aa17006a6995e9ea18fabdc14a2356c82) patch - Add `filter_metadata` config option to filter metadata set on Transactions set by default. Metadata like `path`, (request)  `method`, `request_id`, `hostname`, etc. This can be useful if there's PII or other sensitive data in any of the app's metadata.
+
+### Fixed
+
+- [5a4797c8](https://github.com/appsignal/appsignal-ruby/commit/5a4797c8560c2d1e60b4f1a750136c906505746c) patch - Fix Sinatra request custom request parameters method. If the Sinatra option `params_method` is set, a different method than `params` will be called on the request object to fetch the request parameters. This can be used to add custom filtering to parameters recorded by AppSignal.
+- [9cdee8aa](https://github.com/appsignal/appsignal-ruby/commit/9cdee8aae3cb7b969583493440469ac0dfea764f) patch - Log error when the argument type of the breadcrumb metadata is invalid. This metadata argument should be a Hash, and other values are not supported. More information can be found in the [Ruby gem breadcrumb documentation](https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html).
+  
+  ```ruby
+  Appsignal.add_breadcrumb(
+    "breadcrumb category",
+    "breadcrumb action",
+    "some message",
+    { :metadata_key => "some value" } # This needs to be a Hash object
+  )
+  ```
+
 ## 3.4.4
 
 ### Fixed
