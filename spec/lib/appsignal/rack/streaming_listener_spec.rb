@@ -1,6 +1,7 @@
 require "appsignal/rack/streaming_listener"
 
 describe Appsignal::Rack::StreamingListener do
+  before(:context) { start_agent }
   let(:headers) { {} }
   let(:env) do
     {

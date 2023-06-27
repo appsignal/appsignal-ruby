@@ -623,6 +623,18 @@ describe Appsignal::Transaction do
         expect(transaction.to_h["metadata"]).to eq("request_method" => "GET")
       end
 
+      context "when filter_metadata includes metadata key" do
+        before { Appsignal.config[:filter_metadata] = ["filter_key"] }
+        after { Appsignal.config[:filter_metadata] = [] }
+
+        it "does not set the metadata on the transaction" do
+          transaction.set_metadata(:filter_key, "filtered value")
+          transaction.set_metadata("filter_key", "filtered value")
+
+          expect(transaction.to_h["metadata"].keys).to_not include("filter_key")
+        end
+      end
+
       context "when the key is nil" do
         it "does not update the metadata on the transaction" do
           transaction.set_metadata(nil, "GET")
@@ -1275,8 +1287,8 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "#metadata" do
-      subject { transaction.send(:metadata) }
+    describe "#sanitized_metadata" do
+      subject { transaction.send(:sanitized_metadata) }
 
       context "when request is nil" do
         let(:request) { nil }
@@ -1291,9 +1303,18 @@ describe Appsignal::Transaction do
       end
 
       context "when env is present" do
-        let(:env) { { :metadata => { :key => "value" } } }
+        let(:env) { { "key" => "value" } }
 
-        it { is_expected.to eq env[:metadata] }
+        it { is_expected.to eq("key" => "value") }
+
+        context "with filter_metadata option set" do
+          before { Appsignal.config[:filter_metadata] = ["key"] }
+          after { Appsignal.config[:filter_metadata] = [] }
+
+          it "filters out keys listed in the filter_metadata option" do
+            expect(subject.keys).to_not include("key")
+          end
+        end
       end
     end
 
