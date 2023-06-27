@@ -432,6 +432,19 @@ describe Appsignal::Transaction do
           expect(breadcrumb["metadata"]).to eq({})
         end
       end
+
+      context "with metadata argument that's not a Hash" do
+        it "does not add the breadcrumb and logs and error" do
+          transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
+          transaction.sample_data
+
+          expect(transaction.to_h["sample_data"]["breadcrumbs"]).to be_empty
+          expect(log_contents(log)).to contains_log(
+            :error,
+            "add_breadcrumb: Cannot add breadcrumb. The given metadata argument is not a Hash."
+          )
+        end
+      end
     end
 
     describe "#set_action" do

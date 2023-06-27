@@ -186,6 +186,12 @@ module Appsignal
     # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
     #   Breadcrumb reference
     def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
+      unless metadata.is_a? Hash
+        Appsignal.logger.error "add_breadcrumb: Cannot add breadcrumb. " \
+          "The given metadata argument is not a Hash."
+        return
+      end
+
       @breadcrumbs.push(
         :time => time.to_i,
         :category => category,
