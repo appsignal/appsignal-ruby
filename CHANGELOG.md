@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.6
+
+### Changed
+
+- [85c155a0](https://github.com/appsignal/appsignal-ruby/commit/85c155a0a4b2b618c04db52c34ee7f0adba8f3c5) patch - When sanitizing an array or hash, replace recursively nested values with a placeholder string. This fixes a SystemStackError issue when sanitising arrays and hashes.
+
 ## 3.4.5
 
 ### Added
