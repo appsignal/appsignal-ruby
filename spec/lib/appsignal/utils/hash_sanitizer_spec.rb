@@ -20,9 +20,20 @@ describe Appsignal::Utils::HashSanitizer do
           {
             :key => "value",
             :file => file
-          }
-        ]
-      }
+          }.tap do |hsh|
+            # Recursive hash-in-hash (should be [:nested_array][3][:recursive_hash])
+            hsh[:recursive_hash] = hsh
+          end
+        ].tap do |ary|
+          # Recursive array-in-array (should be [:nested_array][4])
+          ary << ary
+          # Recursive array-in-hash (should be [:nested_array][3][:recursive_array])
+          ary[3][:recursive_array] = ary
+        end
+      }.tap do |hsh|
+        # Recursive hash-in-array (should be [:nested_array][5])
+        hsh[:nested_array] << hsh
+      end
     }
   end
 
@@ -72,7 +83,7 @@ describe Appsignal::Utils::HashSanitizer do
           expect(subject[2]).to include "::UploadedFile"
         end
 
-        describe ":nested_hash key" do
+        describe "nested hash" do
           subject { sanitized_params[:hash][:nested_array][3] }
 
           it "returns a sanitized Hash" do
@@ -81,6 +92,24 @@ describe Appsignal::Utils::HashSanitizer do
             expect(subject[:key]).to eq("value")
             expect(subject[:file]).to be_instance_of String
             expect(subject[:file]).to include "::UploadedFile"
+          end
+
+          it "ignores a recursive array" do
+            expect(subject[:recursive_array]).to be_nil
+          end
+
+          it "ignores a recursive hash" do
+            expect(subject[:recursive_hash]).to be_nil
+          end
+        end
+
+        describe "nested array" do
+          it "ignores a recursive array" do
+            expect(sanitized_params[:hash][:nested_array][4]).to be_nil
+          end
+
+          it "ignores a recursive hash" do
+            expect(sanitized_params[:hash][:nested_array][5]).to be_nil
           end
         end
       end
