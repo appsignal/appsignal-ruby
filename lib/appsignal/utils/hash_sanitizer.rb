@@ -5,6 +5,7 @@ module Appsignal
     # @api private
     class HashSanitizer
       FILTERED = "[FILTERED]"
+      RECURSIVE = "[RECURSIVE VALUE]"
 
       class << self
         def sanitize(value, filter_keys = [])
@@ -31,10 +32,10 @@ module Appsignal
 
           {}.tap do |hash|
             source.each_pair do |key, value|
-              next if seen.include?(value.object_id)
-
               hash[key] =
-                if filter_keys.include?(key.to_s)
+                if seen.include?(value.object_id)
+                  RECURSIVE
+                elsif filter_keys.include?(key.to_s)
                   FILTERED
                 else
                   sanitize_value(value, filter_keys, seen)
@@ -48,9 +49,12 @@ module Appsignal
 
           [].tap do |array|
             source.each_with_index do |item, index|
-              next if seen.include?(item.object_id)
-
-              array[index] = sanitize_value(item, filter_keys, seen)
+              array[index] =
+                if seen.include?(item.object_id)
+                  RECURSIVE
+                else
+                  sanitize_value(item, filter_keys, seen)
+                end
             end
           end
         end

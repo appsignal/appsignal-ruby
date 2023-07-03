@@ -103,22 +103,22 @@ describe Appsignal::Utils::HashSanitizer do
             expect(subject[:file]).to include "::UploadedFile"
           end
 
-          it "ignores a recursive array" do
-            expect(subject[:recursive_array]).to be_nil
+          it "replaces a recursive array" do
+            expect(subject[:recursive_array]).to eq("[RECURSIVE VALUE]")
           end
 
-          it "ignores a recursive hash" do
-            expect(subject[:recursive_hash]).to be_nil
+          it "replaces a recursive hash" do
+            expect(subject[:recursive_hash]).to eq("[RECURSIVE VALUE]")
           end
         end
 
         describe "nested array" do
-          it "ignores a recursive array" do
-            expect(sanitized_params[:hash][:nested_array][4]).to be_nil
+          it "replaces a recursive array" do
+            expect(sanitized_params[:hash][:nested_array][4]).to eq("[RECURSIVE VALUE]")
           end
 
-          it "ignores a recursive hash" do
-            expect(sanitized_params[:hash][:nested_array][5]).to be_nil
+          it "replaces a recursive hash" do
+            expect(sanitized_params[:hash][:nested_array][5]).to eq("[RECURSIVE VALUE]")
           end
         end
       end
