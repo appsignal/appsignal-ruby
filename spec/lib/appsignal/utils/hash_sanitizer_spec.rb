@@ -1,5 +1,7 @@
 describe Appsignal::Utils::HashSanitizer do
   let(:file) { uploaded_file }
+  let(:some_array) { [1, 2, 3] }
+  let(:some_hash) { { :a => 1, :b => 2 } }
   let(:params) do
     {
       :text => "string",
@@ -8,6 +10,10 @@ describe Appsignal::Utils::HashSanitizer do
       :float => 0.0,
       :bool_true => true,
       :bool_false => false,
+      # Non-recursive appearances of the same array instance
+      :some_arrays => [some_array, some_array],
+      # Non-recursive appearances of the same hash instance
+      :some_hashes => { :a => some_hash, :b => some_hash },
       :nil => nil,
       :int => 1, # Fixnum
       :int64 => 1 << 64, # Bignum
@@ -20,9 +26,20 @@ describe Appsignal::Utils::HashSanitizer do
           {
             :key => "value",
             :file => file
-          }
-        ]
-      }
+          }.tap do |hsh|
+            # Recursive hash-in-hash (should be [:nested_array][3][:recursive_hash])
+            hsh[:recursive_hash] = hsh
+          end
+        ].tap do |ary|
+          # Recursive array-in-array (should be [:nested_array][4])
+          ary << ary
+          # Recursive array-in-hash (should be [:nested_array][3][:recursive_array])
+          ary[3][:recursive_array] = ary
+        end
+      }.tap do |hsh|
+        # Recursive hash-in-array (should be [:nested_array][5])
+        hsh[:nested_array] << hsh
+      end
     }
   end
 
@@ -43,6 +60,9 @@ describe Appsignal::Utils::HashSanitizer do
       expect(subject[:nil]).to be_nil
       expect(subject[:int]).to eq(1)
       expect(subject[:int64]).to eq(1 << 64)
+      expect(subject[:some_arrays]).to eq([[1, 2, 3], [1, 2, 3]])
+      expect(subject[:some_hashes]).to eq({ :a => { :a => 1, :b => 2 },
+:b => { :a => 1, :b => 2 } })
     end
 
     it "does not change the original params" do
@@ -72,7 +92,7 @@ describe Appsignal::Utils::HashSanitizer do
           expect(subject[2]).to include "::UploadedFile"
         end
 
-        describe ":nested_hash key" do
+        describe "nested hash" do
           subject { sanitized_params[:hash][:nested_array][3] }
 
           it "returns a sanitized Hash" do
@@ -81,6 +101,24 @@ describe Appsignal::Utils::HashSanitizer do
             expect(subject[:key]).to eq("value")
             expect(subject[:file]).to be_instance_of String
             expect(subject[:file]).to include "::UploadedFile"
+          end
+
+          it "replaces a recursive array" do
+            expect(subject[:recursive_array]).to eq("[RECURSIVE VALUE]")
+          end
+
+          it "replaces a recursive hash" do
+            expect(subject[:recursive_hash]).to eq("[RECURSIVE VALUE]")
+          end
+        end
+
+        describe "nested array" do
+          it "replaces a recursive array" do
+            expect(sanitized_params[:hash][:nested_array][4]).to eq("[RECURSIVE VALUE]")
+          end
+
+          it "replaces a recursive hash" do
+            expect(sanitized_params[:hash][:nested_array][5]).to eq("[RECURSIVE VALUE]")
           end
         end
       end
