@@ -27,24 +27,28 @@ module Appsignal
         end
 
         def sanitize_hash(source, filter_keys, seen)
-          seen << source
+          seen << source.object_id
           {}.tap do |hash|
             source.each_pair do |key, value|
+              next if seen.include?(value.object_id)
+
               hash[key] =
                 if filter_keys.include?(key.to_s)
                   FILTERED
                 else
                   sanitize_value(value, filter_keys, seen)
-                end unless seen.include?(value)
+                end
             end
           end
         end
 
         def sanitize_array(source, filter_keys, seen)
-          seen << source
+          seen << source.object_id
           [].tap do |array|
             source.each_with_index do |item, index|
-              array[index] = sanitize_value(item, filter_keys, seen) unless seen.include?(item)
+              next if seen.include?(item.object_id)
+
+              array[index] = sanitize_value(item, filter_keys, seen)
             end
           end
         end
