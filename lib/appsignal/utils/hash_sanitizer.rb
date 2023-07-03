@@ -27,7 +27,8 @@ module Appsignal
         end
 
         def sanitize_hash(source, filter_keys, seen)
-          seen << source.object_id
+          seen = seen.clone << source.object_id
+
           {}.tap do |hash|
             source.each_pair do |key, value|
               next if seen.include?(value.object_id)
@@ -43,7 +44,8 @@ module Appsignal
         end
 
         def sanitize_array(source, filter_keys, seen)
-          seen << source.object_id
+          seen = seen.clone << source.object_id
+
           [].tap do |array|
             source.each_with_index do |item, index|
               next if seen.include?(item.object_id)

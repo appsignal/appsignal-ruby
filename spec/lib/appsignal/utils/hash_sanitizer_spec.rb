@@ -1,5 +1,7 @@
 describe Appsignal::Utils::HashSanitizer do
   let(:file) { uploaded_file }
+  let(:some_array) { [1, 2, 3] }
+  let(:some_hash) { { :a => 1, :b => 2 } }
   let(:params) do
     {
       :text => "string",
@@ -8,6 +10,10 @@ describe Appsignal::Utils::HashSanitizer do
       :float => 0.0,
       :bool_true => true,
       :bool_false => false,
+      # Non-recursive appearances of the same array instance
+      :some_arrays => [some_array, some_array],
+      # Non-recursive appearances of the same hash instance
+      :some_hashes => { :a => some_hash, :b => some_hash },
       :nil => nil,
       :int => 1, # Fixnum
       :int64 => 1 << 64, # Bignum
@@ -54,6 +60,9 @@ describe Appsignal::Utils::HashSanitizer do
       expect(subject[:nil]).to be_nil
       expect(subject[:int]).to eq(1)
       expect(subject[:int64]).to eq(1 << 64)
+      expect(subject[:some_arrays]).to eq([[1, 2, 3], [1, 2, 3]])
+      expect(subject[:some_hashes]).to eq({ :a => { :a => 1, :b => 2 },
+:b => { :a => 1, :b => 2 } })
     end
 
     it "does not change the original params" do
