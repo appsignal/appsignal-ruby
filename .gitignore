@@ -24,6 +24,7 @@ gemfiles/*.lock
 bundle_and_spec_all_*
 ext/libappsignal.*
 ext/appsignal-agent
+ext/._appsignal-agent
 ext/appsignal.h
 ext/appsignal.version
 ext/Makefile
