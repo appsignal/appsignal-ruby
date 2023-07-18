@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.7
+
+### Added
+
+- [46735abb](https://github.com/appsignal/appsignal-ruby/commit/46735abb0d0c43df2c923b36f80549b8322ae4f6) patch - Use `RENDER_GIT_COMMIT` environment variable as revision if no revision is specified.
+
+### Changed
+
+- [86856aae](https://github.com/appsignal/appsignal-ruby/commit/86856aae7c16dc13854229d43c7369ec69ced18e) patch - Bump agent to 32590eb.
+  
+  - Only ignore disk metrics that start with "loop", not all mounted disks that end with a number to report metrics for more disks.
+
 ## 3.4.6
 
 ### Changed
