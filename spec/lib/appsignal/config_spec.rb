@@ -383,6 +383,7 @@ describe Appsignal::Config do
         :running_in_container => true,
         :push_api_key => "aaa-bbb-ccc",
         :active => true,
+        :bind_address => "0.0.0.0",
         :name => "App name",
         :debug => true,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
@@ -404,6 +405,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_PUSH_API_KEY"]            = "aaa-bbb-ccc"
       ENV["APPSIGNAL_ACTIVE"]                  = "true"
       ENV["APPSIGNAL_APP_NAME"]                = "App name"
+      ENV["APPSIGNAL_BIND_ADDRESS"]            = "0.0.0.0"
       ENV["APPSIGNAL_DEBUG"]                   = "true"
       ENV["APPSIGNAL_DNS_SERVERS"]             = "8.8.8.8,8.8.4.4"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
@@ -598,6 +600,7 @@ describe Appsignal::Config do
   describe "#write_to_environment" do
     let(:config) { project_fixture_config(:production) }
     before do
+      config[:bind_address] = "0.0.0.0"
       config[:logging_endpoint] = "http://localhost:123"
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w[action1 action2]
@@ -620,6 +623,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_APP_PATH", nil))
         .to end_with("spec/support/fixtures/projects/valid")
       expect(ENV.fetch("_APPSIGNAL_AGENT_PATH", nil)).to end_with("/ext")
+      expect(ENV.fetch("_APPSIGNAL_BIND_ADDRESS", nil)).to eq("0.0.0.0")
       expect(ENV.fetch("_APPSIGNAL_DEBUG_LOGGING", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_LOG", nil)).to eq "stdout"
       expect(ENV.fetch("_APPSIGNAL_LOG_FILE_PATH", nil)).to end_with("/tmp/appsignal.log")

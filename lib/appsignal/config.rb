@@ -66,6 +66,7 @@ module Appsignal
     ENV_TO_KEY_MAPPING = {
       "APPSIGNAL_ACTIVE" => :active,
       "APPSIGNAL_APP_NAME" => :name,
+      "APPSIGNAL_BIND_ADDRESS" => :bind_address,
       "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
       "APPSIGNAL_DEBUG" => :debug,
       "APPSIGNAL_DNS_SERVERS" => :dns_servers,
@@ -111,6 +112,7 @@ module Appsignal
     # @api private
     ENV_STRING_KEYS = %w[
       APPSIGNAL_APP_NAME
+      APPSIGNAL_BIND_ADDRESS
       APPSIGNAL_CA_FILE_PATH
       APPSIGNAL_HOSTNAME
       APPSIGNAL_HTTP_PROXY
@@ -323,6 +325,7 @@ module Appsignal
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
       ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
       ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
+      ENV["_APPSIGNAL_BIND_ADDRESS"]                 = config_hash[:bind_address].to_s
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
       ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
