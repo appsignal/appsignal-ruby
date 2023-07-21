@@ -61,7 +61,11 @@ module Appsignal
 
             tags[:severity] = severity
             tags[:source] = source.to_s if source
+
+            custom_data = tags.select { _2.is_a?(Array) || _2.is_a?(Hash) }
+
             transaction.set_tags(tags)
+            transaction.set_sample_data("custom_data", custom_data)
           end
         end
 
