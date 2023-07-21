@@ -55,12 +55,14 @@ module Appsignal
           return unless handled
 
           Appsignal.send_error(error) do |transaction|
-            namespace, action_name, tags = context_for(context.dup)
+            namespace, action_name, tags, custom_data = context_for(context.dup)
             transaction.set_namespace(namespace) if namespace
             transaction.set_action(action_name) if action_name
+            transaction.set_sample_data("custom_data", custom_data) if custom_data
 
             tags[:severity] = severity
             tags[:source] = source.to_s if source
+
             transaction.set_tags(tags)
           end
         end
@@ -69,6 +71,7 @@ module Appsignal
 
         def context_for(context)
           tags = {}
+          custom_data = nil
 
           appsignal_context = context.delete(:appsignal)
           # Fetch the namespace and action name based on the Rails execution
@@ -102,10 +105,13 @@ module Appsignal
 
             context_action_name = appsignal_context[:action]
             action_name = context_action_name if context_action_name
+
+            context_custom_data = appsignal_context[:custom_data]
+            custom_data = context_custom_data if context_custom_data
           end
           tags.merge!(context)
 
-          [namespace, action_name, tags]
+          [namespace, action_name, tags, custom_data]
         end
       end
     end
