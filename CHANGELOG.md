@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.8
+
+### Added
+
+- [5ddde58b](https://github.com/appsignal/appsignal-ruby/commit/5ddde58bb492984626d2dbddb292cecdfc225576) patch - Allow configuration of the agent's TCP and UDP servers using the `bind_address` config option. This is by default set to `127.0.0.1`, which only makes it accessible from the same host. If you want it to be accessible from other machines, use `0.0.0.0` or a specific IP address.
+- [74583d26](https://github.com/appsignal/appsignal-ruby/commit/74583d26147e3ec386cdefbd4653abbe805ded96) patch - Report total CPU usage host metric for VMs. This change adds another `state` tag value on the `cpu` metric called `total_usage`, which reports the VM's total CPU usage in percentages.
+
 ## 3.4.7
 
 ### Added
