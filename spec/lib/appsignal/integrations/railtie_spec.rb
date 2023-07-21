@@ -196,6 +196,27 @@ if DependencyHelper.rails_present?
                 end
               end
 
+              it "send hashes and arrays as custom data" do
+                current_transaction = http_request_transaction
+
+                with_current_transaction current_transaction do
+                  given_context = { :array => [1, 2], :hash => { :one => 1, :two => 2 } }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+
+                  transaction = last_transaction
+                  transaction_hash = transaction.to_h
+                  expect(transaction_hash).to include(
+                    "sample_data" => hash_including(
+                      "custom_data" => {
+                        "array" => [1, 2],
+                        "hash" => { "one" => 1, "two" => 2 },
+                        "severity" => "warning"
+                      }
+                    )
+                  )
+                end
+              end
+
               it "overwrites duplicated namespace and action with custom from context" do
                 current_transaction = http_request_transaction
                 current_transaction.set_namespace "custom"
