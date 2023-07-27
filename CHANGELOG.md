@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.9
+
+### Added
+
+- [d048c778](https://github.com/appsignal/appsignal-ruby/commit/d048c778e2718110609ba03f4d755953828bf4c5) patch - Allow passing custom data using the `appsignal` context via the Rails error reporter:
+  
+  ```ruby
+  custom_data = { :hash => { :one => 1, :two => 2 }, :array => [1, 2] }
+  Rails.error.handle(:context => { :appsignal => { :custom_data => custom_data } }) do
+    raise "Test"
+  end
+  ```
+
 ## 3.4.8
 
 ### Added
