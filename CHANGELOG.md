@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.10
+
+### Changed
+
+- [61e093b8](https://github.com/appsignal/appsignal-ruby/commit/61e093b8b89efd9914fe5252b6200a288348d394) patch - Bump agent to 6bec691.
+  
+  - Upgrade `sql_lexer` to v0.9.5. It adds sanitization support for the `THEN` and `ELSE` logical operators.
+
 ## 3.4.9
 
 ### Added
