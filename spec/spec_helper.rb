@@ -12,25 +12,25 @@ require "rspec"
 require "timecop"
 require "webmock/rspec"
 
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].each do |f|
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].sort.each do |f|
   require f
 end
-Dir[File.join(DirectoryHelper.support_dir, "mocks", "*.rb")].each do |f|
+Dir[File.join(DirectoryHelper.support_dir, "mocks", "*.rb")].sort.each do |f|
   require f
 end
-Dir[File.join(DirectoryHelper.support_dir, "matchers", "*.rb")].each do |f|
+Dir[File.join(DirectoryHelper.support_dir, "matchers", "*.rb")].sort.each do |f|
   require f
 end
-Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].each do |f|
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].sort.each do |f|
   require f
 end
 if DependencyHelper.rails_present?
-  Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].each do |f|
+  Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].sort.each do |f|
     require f
   end
 end
 if DependencyHelper.hanami2_present?
-  Dir[File.join(DirectoryHelper.support_dir, "hanami", "*.rb")].each do |f|
+  Dir[File.join(DirectoryHelper.support_dir, "hanami", "*.rb")].sort.each do |f|
     require f
   end
 end

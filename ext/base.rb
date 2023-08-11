@@ -14,7 +14,7 @@ EXT_PATH = File.expand_path(__dir__).freeze
 
 AGENT_PLATFORM = Appsignal::System.agent_platform
 AGENT_ARCHITECTURE = Appsignal::System.agent_architecture
-TARGET_TRIPLE = "#{AGENT_ARCHITECTURE}-#{AGENT_PLATFORM}".freeze
+TARGET_TRIPLE = "#{AGENT_ARCHITECTURE}-#{AGENT_PLATFORM}"
 ARCH_CONFIG = APPSIGNAL_AGENT_CONFIG["triples"][TARGET_TRIPLE].freeze
 CA_CERT_PATH = File.join(EXT_PATH, "../resources/cacert.pem").freeze
 

@@ -12,7 +12,7 @@ RSpec::Matchers.define :have_colorized_text do |color, text|
   attr_reader :expected
 end
 
-COLOR_TAG_MATCHER_REGEX = /\e\[(\d+)m/
+COLOR_TAG_MATCHER_REGEX = /\e\[(\d+)m/.freeze
 RSpec::Matchers.define :have_color_markers do
   match do |actual|
     actual =~ COLOR_TAG_MATCHER_REGEX
