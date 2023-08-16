@@ -22,6 +22,12 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
 
     it_behaves_like "activesupport instrument override"
 
+    if defined?(::ActiveSupport::Notifications::Fanout::Handle)
+      require_relative "./active_support_notifications/start_finish_shared_examples"
+
+      it_behaves_like "activesupport start finish override"
+    end
+
     if ::ActiveSupport::Notifications::Instrumenter.method_defined?(:start)
       require_relative "./active_support_notifications/start_finish_shared_examples"
 
