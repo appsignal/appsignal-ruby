@@ -54,6 +54,32 @@ module Appsignal
         end
       end
 
+      module StartFinishHandlerIntegration
+        def start
+          instrument_this = @name[0] != ActiveSupportNotificationsIntegration::BANG
+
+          Appsignal::Transaction.current.start_event if instrument_this
+          super
+        end
+
+        def finish_with_values(name, id, payload = {})
+          # Events that start with a bang are internal to Rails
+          instrument_this = name[0] != ActiveSupportNotificationsIntegration::BANG
+
+          if instrument_this
+            title, body, body_format = Appsignal::EventFormatter.format(name, payload)
+            Appsignal::Transaction.current.finish_event(
+              name.to_s,
+              title,
+              body,
+              body_format
+            )
+          end
+
+          super
+        end
+      end
+
       module FinishStateIntegration
         def finish_with_state(listeners_state, name, payload = {})
           # Events that start with a bang are internal to Rails
