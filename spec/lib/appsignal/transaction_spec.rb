@@ -355,7 +355,7 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_tags" do
-      let(:long_string) { "a" * 2001 }
+      let(:long_string) { "a" * 10_001 }
       before do
         transaction.set_tags(
           :valid_key => "valid_value",
@@ -377,7 +377,7 @@ describe Appsignal::Transaction do
           "valid_string_key" => "valid_value",
           "both_symbols" => "valid_value",
           "integer_value" => 1,
-          "too_long_value" => "#{"a" * 2000}...",
+          "too_long_value" => "#{"a" * 10_000}...",
           long_string => "too_long_key"
         )
       end
