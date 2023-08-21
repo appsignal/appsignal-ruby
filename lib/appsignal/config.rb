@@ -83,6 +83,7 @@ module Appsignal
       "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
       "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
       "APPSIGNAL_HOSTNAME" => :hostname,
+      "APPSIGNAL_HOST_ROLE" => :host_role,
       "APPSIGNAL_HTTP_PROXY" => :http_proxy,
       "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
       "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
@@ -115,6 +116,7 @@ module Appsignal
       APPSIGNAL_BIND_ADDRESS
       APPSIGNAL_CA_FILE_PATH
       APPSIGNAL_HOSTNAME
+      APPSIGNAL_HOST_ROLE
       APPSIGNAL_HTTP_PROXY
       APPSIGNAL_LOG
       APPSIGNAL_LOG_LEVEL
@@ -337,6 +339,7 @@ module Appsignal
       ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
       ENV["_APPSIGNAL_FILTER_SESSION_DATA"]          = config_hash[:filter_session_data].join(",")
       ENV["_APPSIGNAL_HOSTNAME"]                     = config_hash[:hostname].to_s
+      ENV["_APPSIGNAL_HOST_ROLE"]                    = config_hash[:host_role].to_s
       ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
       ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
       ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
