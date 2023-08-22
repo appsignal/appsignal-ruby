@@ -539,7 +539,7 @@ module Appsignal
 
       metadata
         .transform_keys(&:to_s)
-        .except(*Appsignal.config[:filter_metadata])
+        .reject { |key, _value| Appsignal.config[:filter_metadata].include?(key) }
     end
 
     # Returns the environment for a transaction.

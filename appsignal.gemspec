@@ -20,7 +20,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.name                  = "appsignal"
   gem.require_paths         = %w[lib ext]
   gem.version               = Appsignal::VERSION
-  gem.required_ruby_version = ">= 3.0"
+  gem.required_ruby_version = ">= 2.7"
   # Default extension installer. Overridden by JRuby gemspec as defined in
   # `Rakefile`.
   gem.extensions            = %w[ext/extconf.rb]
