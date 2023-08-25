@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.11
+
+### Added
+
+- [4722292d](https://github.com/appsignal/appsignal-ruby/commit/4722292d022fb7ff7f3403b964b24e82112e93bd) patch - Re-add support for Ruby 2.7.
+- [d782f9a6](https://github.com/appsignal/appsignal-ruby/commit/d782f9a6db0bd679f01c543900b39fc15124a25f) patch - Add the `host_role` config option. This config option can be set per host to generate some metrics automatically per host and possibly do things like grouping in the future.
+
+### Changed
+
+- [f61f4f68](https://github.com/appsignal/appsignal-ruby/commit/f61f4f68699f022d3d9dbb0fa5dc98881923a001) patch - Bump agent to version d789895.
+  
+  - Increase short data truncation from 2000 to 10000 characters.
+
 ## 3.4.10
 
 ### Changed
