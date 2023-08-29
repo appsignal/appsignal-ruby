@@ -320,7 +320,14 @@ module Appsignal
     end
 
     def set_sample_data(key, data)
-      return unless key && data && (data.is_a?(Array) || data.is_a?(Hash))
+      return unless key && data
+
+      if !data.is_a?(Array) && !data.is_a?(Hash)
+        Appsignal.logger.error(
+          "Invalid sample data for '#{key}'. Value is not an Array or Hash: '#{data.inspect}'"
+        )
+        return
+      end
 
       @ext.set_sample_data(
         key.to_s,

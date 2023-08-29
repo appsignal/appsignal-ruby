@@ -688,6 +688,8 @@ describe Appsignal::Transaction do
           transaction.set_sample_data("params", "string")
 
           expect(transaction.to_h["sample_data"]).to eq({})
+          expect(log_contents(log)).to contains_log :error,
+            %(Invalid sample data for 'params'. Value is not an Array or Hash: '"string"')
         end
       end
 
