@@ -11,6 +11,9 @@
 ### Changed
 
 - [a42da92b](https://github.com/appsignal/appsignal-ruby/commit/a42da92b1ff16c48eb40dc081d3b4fbd6480c7c0) patch - Log an error when sample data is of an invalid type. Accepted types are Array and Hash. If any other types are given, it will log an error to the `appsignal.log` file.
+
+### Fixed
+
 - [8e636323](https://github.com/appsignal/appsignal-ruby/commit/8e6363232dc7fabe5f1aeae5758802e4c8d6cbfa) patch - Bump agent to 6133900.
   
   - Fix `disk_inodes_usage` metric name format to not be interpreted as a JSON object.
