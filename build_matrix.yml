@@ -170,6 +170,7 @@ matrix:
       - "rails-6.0"
       - "rails-6.1"
       - "rails-7.0"
+      - "rails-edge"
 
   ruby:
     - ruby: "3.0.5"
@@ -217,6 +218,13 @@ matrix:
           - "3.2.1"
           - "jruby-9.4.1.0"
     - gem: "rails-7.0"
+      only:
+        ruby:
+          - "3.0.5"
+          - "3.1.3"
+          - "3.2.1"
+          - "jruby-9.4.1.0"
+    - gem: "rails-edge"
       only:
         ruby:
           - "3.0.5"
