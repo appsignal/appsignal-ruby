@@ -16,7 +16,7 @@
 
 - [8e636323](https://github.com/appsignal/appsignal-ruby/commit/8e6363232dc7fabe5f1aeae5758802e4c8d6cbfa) patch - Bump agent to 6133900.
   
-  - Fix `disk_inodes_usage` metric name format to not be interpreted as a JSON object.
+  - Fix `disk_inode_usage` metric name format to not be interpreted as a JSON object.
 
 ## 3.4.11
 
