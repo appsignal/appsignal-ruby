@@ -781,6 +781,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "file" => {},
               "env" => {},
               "override" => { "send_session_data" => true }
+            },
+            "modifiers" => {
+              "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""
             }
           )
         end
@@ -912,6 +915,28 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
         end
 
+        describe "modifiers" do
+          before do
+            ENV["APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR"] = "1"
+            run
+          end
+
+          it "outputs config modifiers" do
+            expect(output).to include(
+              "Configuration modifiers\n" \
+                "  APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR: \"1\""
+            )
+          end
+
+          it "transmits config modifiers in report" do
+            expect(received_report["config"]).to include(
+              "modifiers" => {
+                "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => "1"
+              }
+            )
+          end
+        end
+
         it "transmits config in report" do
           run
           additional_initial_config = {}
@@ -935,6 +960,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "file" => hash_with_string_keys(config.file_config),
               "env" => {},
               "override" => { "send_session_data" => true }
+            },
+            "modifiers" => {
+              "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""
             }
           )
         end
@@ -963,6 +991,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "file" => hash_with_string_keys(config.file_config),
               "env" => {},
               "override" => { "send_session_data" => true }
+            },
+            "modifiers" => {
+              "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""
             }
           )
         end

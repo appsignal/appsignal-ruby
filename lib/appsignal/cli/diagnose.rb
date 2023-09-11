@@ -477,6 +477,10 @@ module Appsignal
               :file => config.file_config,
               :env => config.env_config,
               :override => config.override_config
+            },
+            :modifiers => {
+              "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" =>
+                ENV.fetch("APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR", "")
             }
           }
           print_config_options(config)
@@ -518,6 +522,11 @@ module Appsignal
               puts "  #{key}: #{format_config_option(value)}#{sources_label}"
             end
           end
+
+          puts
+          puts "Configuration modifiers"
+          puts "  APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR: " \
+            "#{data[:config][:modifiers]["APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR"].inspect}"
 
           puts "\nRead more about how the diagnose config output is rendered\n" \
             "https://docs.appsignal.com/ruby/command-line/diagnose.html"
