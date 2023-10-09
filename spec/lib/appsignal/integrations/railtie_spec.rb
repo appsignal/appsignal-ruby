@@ -2,6 +2,10 @@ if DependencyHelper.rails_present?
   require "action_mailer"
 
   describe Appsignal::Integrations::Railtie do
+    include RailsHelper
+
+    after { clear_rails_error_reporter! }
+
     context "after initializing the app" do
       it "should call initialize_appsignal" do
         expect(Appsignal::Integrations::Railtie).to receive(:initialize_appsignal)
@@ -125,17 +129,16 @@ if DependencyHelper.rails_present?
 
       if Rails.respond_to?(:error)
         describe "Rails error reporter" do
-          before do
-            Appsignal::Integrations::Railtie.initialize_appsignal(app)
-            start_agent
-          end
+          before { start_agent }
           around { |example| keep_transactions { example.run } }
 
           context "when error is not handled (reraises the error)" do
             it "does nothing" do
-              expect do
-                Rails.error.record { raise ExampleStandardError }
-              end.to raise_error(ExampleStandardError)
+              with_rails_error_reporter do
+                expect do
+                  Rails.error.record { raise ExampleStandardError }
+                end.to raise_error(ExampleStandardError)
+              end
 
               expect(created_transactions).to be_empty
             end
@@ -151,26 +154,28 @@ if DependencyHelper.rails_present?
                   :duplicated_tag => "duplicated value"
                 )
 
-                with_current_transaction current_transaction do
-                  Rails.error.handle { raise ExampleStandardError }
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    Rails.error.handle { raise ExampleStandardError }
 
-                  transaction = last_transaction
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash).to include(
-                    "action" => "CustomAction",
-                    "namespace" => "custom",
-                    "error" => {
-                      "name" => "ExampleStandardError",
-                      "message" => "ExampleStandardError",
-                      "backtrace" => kind_of(String)
-                    },
-                    "sample_data" => hash_including(
-                      "tags" => {
-                        "duplicated_tag" => "duplicated value",
-                        "severity" => "warning"
-                      }
+                    transaction = last_transaction
+                    transaction_hash = transaction.to_h
+                    expect(transaction_hash).to include(
+                      "action" => "CustomAction",
+                      "namespace" => "custom",
+                      "error" => {
+                        "name" => "ExampleStandardError",
+                        "message" => "ExampleStandardError",
+                        "backtrace" => kind_of(String)
+                      },
+                      "sample_data" => hash_including(
+                        "tags" => hash_including(
+                          "duplicated_tag" => "duplicated value",
+                          "severity" => "warning"
+                        )
+                      )
                     )
-                  )
+                  end
                 end
               end
 
@@ -178,48 +183,52 @@ if DependencyHelper.rails_present?
                 current_transaction = http_request_transaction
                 current_transaction.set_tags(:tag1 => "duplicated value")
 
-                with_current_transaction current_transaction do
-                  given_context = { :tag1 => "value1", :tag2 => "value2" }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    given_context = { :tag1 => "value1", :tag2 => "value2" }
+                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
-                  transaction = last_transaction
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash).to include(
-                    "sample_data" => hash_including(
-                      "tags" => {
-                        "tag1" => "value1",
-                        "tag2" => "value2",
-                        "severity" => "warning"
-                      }
+                    transaction = last_transaction
+                    transaction_hash = transaction.to_h
+                    expect(transaction_hash).to include(
+                      "sample_data" => hash_including(
+                        "tags" => hash_including(
+                          "tag1" => "value1",
+                          "tag2" => "value2",
+                          "severity" => "warning"
+                        )
+                      )
                     )
-                  )
+                  end
                 end
               end
 
               it "sends tags stored in :appsignal -> :custom_data as custom data" do
                 current_transaction = http_request_transaction
 
-                with_current_transaction current_transaction do
-                  given_context = {
-                    :appsignal => {
-                      :custom_data => {
-                        :array => [1, 2],
-                        :hash => { :one => 1, :two => 2 }
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    given_context = {
+                      :appsignal => {
+                        :custom_data => {
+                          :array => [1, 2],
+                          :hash => { :one => 1, :two => 2 }
+                        }
                       }
                     }
-                  }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
-                  transaction = last_transaction
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash).to include(
-                    "sample_data" => hash_including(
-                      "custom_data" => {
-                        "array" => [1, 2],
-                        "hash" => { "one" => 1, "two" => 2 }
-                      }
+                    transaction = last_transaction
+                    transaction_hash = transaction.to_h
+                    expect(transaction_hash).to include(
+                      "sample_data" => hash_including(
+                        "custom_data" => {
+                          "array" => [1, 2],
+                          "hash" => { "one" => 1, "two" => 2 }
+                        }
+                      )
                     )
-                  )
+                  end
                 end
               end
 
@@ -228,18 +237,20 @@ if DependencyHelper.rails_present?
                 current_transaction.set_namespace "custom"
                 current_transaction.set_action "CustomAction"
 
-                with_current_transaction current_transaction do
-                  given_context = {
-                    :appsignal => { :namespace => "context", :action => "ContextAction" }
-                  }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    given_context = {
+                      :appsignal => { :namespace => "context", :action => "ContextAction" }
+                    }
+                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
-                  transaction = last_transaction
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash).to include(
-                    "namespace" => "context",
-                    "action" => "ContextAction"
-                  )
+                    transaction = last_transaction
+                    transaction_hash = transaction.to_h
+                    expect(transaction_hash).to include(
+                      "namespace" => "context",
+                      "action" => "ContextAction"
+                    )
+                  end
                 end
               end
             end
@@ -267,7 +278,9 @@ if DependencyHelper.rails_present?
               it "fetches the action from the controller in the context" do
                 # The controller key is set by Rails when raised in a controller
                 given_context = { :controller => ExampleRailsControllerMock.new }
-                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                with_rails_error_reporter do
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                end
 
                 transaction = last_transaction
                 transaction_hash = transaction.to_h
@@ -278,7 +291,9 @@ if DependencyHelper.rails_present?
 
               it "sets no action if no execution context is present" do
                 # The controller key is set by Rails when raised in a controller
-                Rails.error.handle { raise ExampleStandardError }
+                with_rails_error_reporter do
+                  Rails.error.handle { raise ExampleStandardError }
+                end
 
                 transaction = last_transaction
                 transaction_hash = transaction.to_h
@@ -296,17 +311,19 @@ if DependencyHelper.rails_present?
                 :tag1 => "value1",
                 :tag2 => "value2"
               }
-              Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+              with_rails_error_reporter do
+                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+              end
 
               transaction = last_transaction
               transaction_hash = transaction.to_h
               expect(transaction_hash).to include(
                 "sample_data" => hash_including(
-                  "tags" => {
+                  "tags" => hash_including(
                     "tag1" => "value1",
                     "tag2" => "value2",
                     "severity" => "warning"
-                  }
+                  )
                 )
               )
             end

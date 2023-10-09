@@ -799,6 +799,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.5 for rails-7.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.0.5
+      - name: GEMSET
+        value: rails-7.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-7.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.0.5 for sequel
       env_vars:
       - *2
@@ -1150,6 +1168,24 @@ blocks:
         value: rails-7.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-7.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.3 for rails-7.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.1.3
+      - name: GEMSET
+        value: rails-7.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-7.1.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION
@@ -1513,6 +1549,24 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.1 for rails-7.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: 3.2.1
+      - name: GEMSET
+        value: rails-7.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-7.1.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
     - name: Ruby 3.2.1 for sequel
       env_vars:
       - *2
@@ -1684,6 +1738,24 @@ blocks:
         value: rails-7.0
       - name: BUNDLE_GEMFILE
         value: gemfiles/rails-7.0.gemfile
+      - name: _RUBYGEMS_VERSION
+        value: latest
+      - name: _BUNDLER_VERSION
+        value: latest
+      commands:
+      - "./support/bundler_wrapper exec rake test"
+    - name: Ruby jruby-9.4.1.0 for rails-7.1
+      env_vars:
+      - *2
+      - *3
+      - *4
+      - *5
+      - name: RUBY_VERSION
+        value: jruby-9.4.1.0
+      - name: GEMSET
+        value: rails-7.1
+      - name: BUNDLE_GEMFILE
+        value: gemfiles/rails-7.1.gemfile
       - name: _RUBYGEMS_VERSION
         value: latest
       - name: _BUNDLER_VERSION

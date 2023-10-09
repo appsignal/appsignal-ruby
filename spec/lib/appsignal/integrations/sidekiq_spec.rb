@@ -266,13 +266,16 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   if DependencyHelper.rails7_present?
     context "with Rails error reporter" do
+      include RailsHelper
+
       it "reports the worker name as the action, copies the namespace and tags" do
-        Appsignal::Integrations::Railtie.initialize_appsignal(MyApp::Application.new)
         Appsignal.config = project_fixture_config("production")
-        perform_job do
-          Appsignal.tag_job("test_tag" => "value")
-          Rails.error.handle do
-            raise error, "uh oh"
+        with_rails_error_reporter do
+          perform_job do
+            Appsignal.tag_job("test_tag" => "value")
+            Rails.error.handle do
+              raise ExampleStandardError, "uh oh"
+            end
           end
         end
 
@@ -363,7 +366,9 @@ if DependencyHelper.active_job_present?
   require "sidekiq/testing"
 
   describe "Sidekiq ActiveJob integration" do
+    include RailsHelper
     include ActiveJobHelpers
+
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:log) { StringIO.new }
@@ -416,7 +421,7 @@ if DependencyHelper.active_job_present?
         ["perform_job.sidekiq", "perform_start.active_job", "perform.active_job"]
       end
     end
-    before do
+    around do |example|
       start_agent
       Appsignal.logger = test_logger(log)
       ActiveJob::Base.queue_adapter = :sidekiq
@@ -441,11 +446,11 @@ if DependencyHelper.active_job_present?
       Sidekiq::Testing.server_middleware do |chain|
         chain.add Appsignal::Integrations::SidekiqMiddleware
       end
-    end
-    around do |example|
-      keep_transactions do
-        Sidekiq::Testing.fake! do
-          example.run
+      with_rails_error_reporter do
+        keep_transactions do
+          Sidekiq::Testing.fake! do
+            example.run
+          end
         end
       end
     end
