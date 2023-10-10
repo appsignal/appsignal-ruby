@@ -1,5 +1,16 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.13
+
+### Added
+
+- [29970d93](https://github.com/appsignal/appsignal-ruby/commit/29970d93a63aa174fbc4a41b29eff996ef0ede5e) patch - Events from `dry-monitor` are now supported. There's also native support for `rom-sql` instrumentation events if they're configured.
+- [27656744](https://github.com/appsignal/appsignal-ruby/commit/27656744d5d5657d120b4fcd97857c17421d8dfd) patch - Support Rails 7.1 ActiveSupport Notifications handler.
+
+### Changed
+
+- [6932bb3f](https://github.com/appsignal/appsignal-ruby/commit/6932bb3f7eae75beeb86e29ddc16dc16f9da4428) patch - Add configuration load modifiers to diagnose report. Track if the `APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR` environment variable was set.
+
 ## 3.4.12
 
 ### Added
