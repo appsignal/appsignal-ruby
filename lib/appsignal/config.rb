@@ -284,6 +284,12 @@ module Appsignal
       config_hash[key]
     end
 
+    # Update the internal config hash.
+    #
+    # This method does not update the config in the extension and agent. It
+    # should not be used to update the config after AppSignal has started.
+    #
+    # @api private
     def []=(key, value)
       config_hash[key] = value
     end
