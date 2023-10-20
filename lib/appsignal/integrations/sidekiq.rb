@@ -9,7 +9,7 @@ module Appsignal
     #
     # @api private
     class SidekiqErrorHandler
-      def call(exception, sidekiq_context)
+      def call(exception, sidekiq_context, _sidekiq_config = nil)
         transaction =
           if Appsignal::Transaction.current?
             Appsignal::Transaction.current
