@@ -7,8 +7,8 @@ module Appsignal
 
       # Creates an AppSignal transaction for the given block.
       #
-      # If AppSignal is not {.active?} it will still execute the block, but not
-      # create a transaction for it.
+      # If AppSignal is not {Appsignal.active?} it will still execute the
+      # block, but not create a transaction for it.
       #
       # A event is created for this transaction with the name given in the
       # `name` argument. The event name must start with either `perform_job` or
@@ -112,7 +112,7 @@ module Appsignal
       # transaction. Does not add the error to the current transaction.
       #
       # Make sure that AppSignal is integrated in your application beforehand.
-      # AppSignal won't record errors unless {Config#active?} is `true`.
+      # AppSignal won't record errors unless {Appsignal.active?} is `true`.
       #
       # @example
       #   # my_app.rb
