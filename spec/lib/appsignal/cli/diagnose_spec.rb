@@ -436,7 +436,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "boot" => { "started" => { "result" => true } },
             "host" => {
               "uid" => { "result" => Process.uid },
-              "gid" => { "result" => Process.gid }
+              "gid" => { "result" => Process.gid },
+              "running_in_container" => { "result" => Appsignal::Extension.running_in_container? }
             },
             "config" => { "valid" => { "result" => true } },
             "logger" => { "started" => { "result" => true } },
