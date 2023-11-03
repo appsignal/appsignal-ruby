@@ -73,6 +73,20 @@ describe Appsignal::Probes::SidekiqProbe do
       module Sidekiq7Mock
         VERSION = "7.0.0".freeze
 
+        def self.redis_info_data=(info)
+          @redis_info_data = info
+        end
+
+        def self.redis_info_data
+          return @redis_info_data if defined?(@redis_info_data)
+
+          {
+            "connected_clients" => 2,
+            "used_memory" => 1024,
+            "used_memory_rss" => 512
+          }
+        end
+
         def self.redis
           yield Client.new
         end
@@ -83,11 +97,7 @@ describe Appsignal::Probes::SidekiqProbe do
           end
 
           def info
-            {
-              "connected_clients" => 2,
-              "used_memory" => 1024,
-              "used_memory_rss" => 512
-            }
+            Sidekiq7Mock.redis_info_data
           end
         end
 
@@ -227,6 +237,19 @@ describe Appsignal::Probes::SidekiqProbe do
         probe.call
         probe.call
       end
+
+      context "when redis info doesn't contain requested keys" do
+        before { Sidekiq7Mock.redis_info_data = {} }
+
+        it "doesn't create metrics for nil values" do
+          expect_gauge("connection_count").never
+          expect_gauge("memory_usage").never
+          expect_gauge("memory_usage_rss").never
+          # Call probe twice so we can calculate the delta for some gauge values
+          probe.call
+          probe.call
+        end
+      end
     end
 
     context "with Sidekiq 6" do
@@ -301,7 +324,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    def expect_gauge(key, value, tags = {})
+    def expect_gauge(key, value = anything, tags = {})
       expect(Appsignal).to receive(:set_gauge)
         .with("sidekiq_#{key}", value, expected_default_tags.merge(tags))
         .and_call_original
