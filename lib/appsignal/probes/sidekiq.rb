@@ -78,9 +78,9 @@ module Appsignal
         redis_info = adapter.redis_info
         return unless redis_info
 
-        gauge "connection_count", redis_info.fetch("connected_clients")
-        gauge "memory_usage", redis_info.fetch("used_memory")
-        gauge "memory_usage_rss", redis_info.fetch("used_memory_rss")
+        gauge "connection_count", redis_info["connected_clients"]
+        gauge "memory_usage", redis_info["used_memory"]
+        gauge "memory_usage_rss", redis_info["used_memory_rss"]
       end
 
       def track_stats
@@ -112,6 +112,8 @@ module Appsignal
 
       # Track a gauge metric with the `sidekiq_` prefix
       def gauge(key, value, tags = {})
+        return if value.nil?
+
         tags[:hostname] = hostname if hostname
         Appsignal.set_gauge "sidekiq_#{key}", value, tags
       end
