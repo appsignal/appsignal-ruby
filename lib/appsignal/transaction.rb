@@ -374,6 +374,24 @@ module Appsignal
         cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
+
+      causes = []
+      while error
+        error = error.cause
+        causes << error if error
+      end
+
+      return if causes.empty?
+
+      set_sample_data(
+        "error_causes",
+        causes.map do |e|
+          {
+            :name => e.class.name,
+            :message => cleaned_error_message(e)
+          }
+        end
+      )
     end
     alias_method :add_exception, :set_error
 

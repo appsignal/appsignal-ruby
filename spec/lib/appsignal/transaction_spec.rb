@@ -788,6 +788,44 @@ describe Appsignal::Transaction do
         end
       end
 
+      context "when the error has multiple causes" do
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e2 = RuntimeError.new("cause message")
+          e3 = StandardError.new("cause message 2")
+          allow(e).to receive(:backtrace).and_return(["line 1"])
+          allow(e).to receive(:cause).and_return(e2)
+          allow(e2).to receive(:cause).and_return(e3)
+          e
+        end
+
+        it "sends the causes information as metadata" do
+          expect(transaction.ext).to receive(:set_error).with(
+            "ExampleStandardError",
+            "test message",
+            Appsignal::Utils::Data.generate(["line 1"])
+          )
+
+          expect(transaction.ext).to receive(:set_sample_data).with(
+            "error_causes",
+            Appsignal::Utils::Data.generate(
+              [
+                {
+                  :name => "RuntimeError",
+                  :message => "cause message"
+                },
+                {
+                  :name => "StandardError",
+                  :message => "cause message 2"
+                }
+              ]
+            )
+          )
+
+          transaction.set_error(error)
+        end
+      end
+
       context "when error message is nil" do
         let(:error) do
           e = ExampleStandardError.new
