@@ -1,5 +1,24 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.4.16
+
+### Changed
+
+- [2149c064](https://github.com/appsignal/appsignal-ruby/commit/2149c064be917d2784c4e5571fdfbd0c2ade59ca) patch - Filter more disk mountpoints for disk usage and disk IO stats. This helps reduce noise in the host metrics by focussing on more important mountpoints.
+  
+  The following mountpoint are ignored. Any mountpoint containing:
+  
+  - `/etc/hostname`
+  - `/etc/hosts`
+  - `/etc/resolv.conf`
+  - `/snap/`
+  - `/proc/`
+
+### Fixed
+
+- [2149c064](https://github.com/appsignal/appsignal-ruby/commit/2149c064be917d2784c4e5571fdfbd0c2ade59ca) patch - - Support disk usage reporting (using `df`) on Alpine Linux. This host metric would report an error on Alpine Linux.
+  - When a disk mountpoint has no inodes usage percentage, skip the mountpoint, and report the inodes information successfully for the inodes that do have an inodes usage percentage.
+
 ## 3.4.15
 
 ### Changed
