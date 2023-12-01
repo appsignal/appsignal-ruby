@@ -12,6 +12,7 @@ module Appsignal
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
     ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
     BREADCRUMB_LIMIT = 20
+    ERROR_CAUSES_LIMIT = 10
 
     class << self
       def create(id, namespace, request, options = {})
@@ -375,22 +376,39 @@ module Appsignal
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
 
+      root_cause_missing = false
+
       causes = []
       while error
         error = error.cause
-        causes << error if error
+
+        break unless error
+
+        if causes.length >= ERROR_CAUSES_LIMIT
+          Appsignal.logger.debug "Appsignal::Transaction#set_error: Error has more " \
+            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
+            "will be reported."
+          root_cause_missing = true
+          break
+        end
+
+        causes << error
       end
 
       return if causes.empty?
 
+      causes_sample_data = causes.map do |e|
+        {
+          :name => e.class.name,
+          :message => cleaned_error_message(e)
+        }
+      end
+
+      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
+
       set_sample_data(
         "error_causes",
-        causes.map do |e|
-          {
-            :name => e.class.name,
-            :message => cleaned_error_message(e)
-          }
-        end
+        causes_sample_data
       )
     end
     alias_method :add_exception, :set_error
