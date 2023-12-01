@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [2149c064](https://github.com/appsignal/appsignal-ruby/commit/2149c064be917d2784c4e5571fdfbd0c2ade59ca) patch - Filter more disk mountpoints for disk usage and disk IO stats. This helps reduce noise in the host metrics by focussing on more important mountpoints.
+- [2149c064](https://github.com/appsignal/appsignal-ruby/commit/2149c064be917d2784c4e5571fdfbd0c2ade59ca) patch - Filter more disk mountpoints for disk usage and disk IO stats. This helps reduce noise in the host metrics by focusing on more important mountpoints.
   
   The following mountpoint are ignored. Any mountpoint containing:
   
