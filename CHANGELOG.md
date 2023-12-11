@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.0
+
+### Added
+
+- [cee1676f](https://github.com/appsignal/appsignal-ruby/commit/cee1676fc5539e380c58e8a824b5c59c3c927119) minor - Nested errors are now supported. The error causes are stored as sample data on the transaction so they can be displayed in the UI.
+
 ## 3.4.16
 
 ### Changed
