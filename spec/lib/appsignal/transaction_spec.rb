@@ -788,6 +788,99 @@ describe Appsignal::Transaction do
         end
       end
 
+      context "when the error has no causes" do
+        it "should not send the causes information as sample data" do
+          expect(transaction.ext).to_not receive(:set_sample_data)
+
+          transaction.set_error(error)
+        end
+      end
+
+      context "when the error has multiple causes" do
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e2 = RuntimeError.new("cause message")
+          e3 = StandardError.new("cause message 2")
+          allow(e).to receive(:backtrace).and_return(["line 1"])
+          allow(e).to receive(:cause).and_return(e2)
+          allow(e2).to receive(:cause).and_return(e3)
+          e
+        end
+
+        it "sends the causes information as sample data" do
+          expect(transaction.ext).to receive(:set_error).with(
+            "ExampleStandardError",
+            "test message",
+            Appsignal::Utils::Data.generate(["line 1"])
+          )
+
+          expect(transaction.ext).to receive(:set_sample_data).with(
+            "error_causes",
+            Appsignal::Utils::Data.generate(
+              [
+                {
+                  :name => "RuntimeError",
+                  :message => "cause message"
+                },
+                {
+                  :name => "StandardError",
+                  :message => "cause message 2"
+                }
+              ]
+            )
+          )
+
+          expect(Appsignal.logger).to_not receive(:debug)
+
+          transaction.set_error(error)
+        end
+      end
+
+      context "when the error has too many causes" do
+        let(:error) do
+          e = ExampleStandardError.new("root cause error")
+
+          11.times do |i|
+            next_e = ExampleStandardError.new("wrapper error #{i}")
+            allow(next_e).to receive(:cause).and_return(e)
+            e = next_e
+          end
+
+          allow(e).to receive(:backtrace).and_return(["line 1"])
+          e
+        end
+
+        it "sends only the first causes as sample data" do
+          expect(transaction.ext).to receive(:set_error).with(
+            "ExampleStandardError",
+            "wrapper error 10",
+            Appsignal::Utils::Data.generate(["line 1"])
+          )
+
+          expected_error_causes = Array.new(10) do |i|
+            {
+              :name => "ExampleStandardError",
+              :message => "wrapper error #{9 - i}"
+            }
+          end
+
+          expected_error_causes.last[:is_root_cause] = false
+
+          expect(transaction.ext).to receive(:set_sample_data).with(
+            "error_causes",
+            Appsignal::Utils::Data.generate(expected_error_causes)
+          )
+
+          expect(Appsignal.logger).to receive(:debug).with(
+            "Appsignal::Transaction#set_error: Error has more " \
+              "than 10 error causes. Only the first 10 " \
+              "will be reported."
+          )
+
+          transaction.set_error(error)
+        end
+      end
+
       context "when error message is nil" do
         let(:error) do
           e = ExampleStandardError.new
