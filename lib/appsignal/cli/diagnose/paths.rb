@@ -71,10 +71,14 @@ module Appsignal
               :group => Utils.group_for_gid(path_gid)
             }
             if info[:type] == "file"
-              info[:content] = Utils.read_file_content(
-                path,
-                BYTES_TO_READ_FOR_FILES
-              ).split("\n")
+              begin
+                info[:content] = Utils.read_file_content(
+                  path,
+                  BYTES_TO_READ_FOR_FILES
+                ).split("\n")
+              rescue => error
+                info[:read_error] = "#{error.class}: #{error.message}"
+              end
             end
           end
         end

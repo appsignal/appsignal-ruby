@@ -1424,6 +1424,26 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             )
           end
         end
+
+        context "when reading the file returns a illegal seek error" do
+          before do
+            File.write(file_path, "Some content")
+            allow(File).to receive(:binread).and_call_original
+            expect(File).to receive(:binread).with(file_path, anything,
+              anything).and_raise(Errno::ESPIPE)
+            run
+          end
+
+          it "outputs file does not exists" do
+            expect(output).to include %(Read error: Errno::ESPIPE: Illegal seek)
+          end
+
+          it "transmits file data in report" do
+            expect(received_report["paths"][filename]).to include(
+              "read_error" => "Errno::ESPIPE: Illegal seek"
+            )
+          end
+        end
       end
 
       describe "mkmf.log" do

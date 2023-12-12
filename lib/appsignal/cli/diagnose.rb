@@ -631,6 +631,11 @@ module Appsignal
           else
             print_empty_line
           end
+
+          return unless path.key?(:read_error)
+
+          puts "    Read error: #{path[:read_error]}"
+          print_empty_line
         end
 
         def print_empty_line
