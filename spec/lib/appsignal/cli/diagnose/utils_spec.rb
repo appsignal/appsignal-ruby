@@ -71,5 +71,16 @@ describe Appsignal::CLI::Diagnose::Utils do
         is_expected.to eq(file_contents)
       end
     end
+
+    context "when reading the file raises an illegal seek error" do
+      let(:file_contents) { "line 1\n" }
+      before do
+        expect(File).to receive(:binread).and_raise(Errno::ESPIPE)
+      end
+
+      it "returns the error as the content" do
+        expect { subject }.to raise_error(Errno::ESPIPE)
+      end
+    end
   end
 end
