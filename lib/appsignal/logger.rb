@@ -23,6 +23,7 @@ module Appsignal
     # @param level Log level to filter with
     # @return [void]
     def initialize(group, level: INFO, format: PLAINTEXT)
+      super(group, level: level)
       raise TypeError, "group must be a string" unless group.is_a? String
 
       @group = group
