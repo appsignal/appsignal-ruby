@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.2
+
+### Fixed
+
+- [a5963f65](https://github.com/appsignal/appsignal-ruby/commit/a5963f65cd06cdc0f6482be34917c365affc87dd) patch - Fix Ruby Logger 1.6.0 compatibility
+
 ## 3.5.1
 
 ### Fixed
