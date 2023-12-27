@@ -25,6 +25,8 @@ module Appsignal
     def initialize(group, level: INFO, format: PLAINTEXT)
       raise TypeError, "group must be a string" unless group.is_a? String
 
+      super(group, :level => level)
+
       @group = group
       @level = level
       @format = format
