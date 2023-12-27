@@ -17,6 +17,8 @@ module Appsignal
       FATAL => 7
     }.freeze
 
+    attr_reader :level
+
     # Create a new logger instance
     #
     # @param group Name of the group for this logger.
@@ -24,8 +26,6 @@ module Appsignal
     # @return [void]
     def initialize(group, level: INFO, format: PLAINTEXT)
       raise TypeError, "group must be a string" unless group.is_a? String
-
-      super(group, :level => level)
 
       @group = group
       @level = level
