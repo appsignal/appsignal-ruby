@@ -1,5 +1,12 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.1
+
+### Fixed
+
+- [2e93182b](https://github.com/appsignal/appsignal-ruby/commit/2e93182b6ae83b16fe9885558cd8f0bfce6a9a5f) patch - Fix an error in the diagnose report when reading a file's contents results in an "Invalid seek" error. This could happen when the log path is configured to `/dev/stdout`, which is not supported.
+- [ae0b779b](https://github.com/appsignal/appsignal-ruby/commit/ae0b779b3ec00cc46291bc0373d748d720231e74) patch - Fix logger compatibility with Ruby 3.3
+
 ## 3.5.0
 
 ### Added
