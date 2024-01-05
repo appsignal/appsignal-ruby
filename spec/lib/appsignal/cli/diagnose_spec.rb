@@ -1357,6 +1357,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       shared_examples "diagnose file" do |shared_example_options|
         let(:parent_directory) { File.join(tmp_dir, "diagnose_files") }
         let(:file_path) { File.join(parent_directory, filename) }
+        let(:path_key) { filename }
         before { FileUtils.mkdir_p File.dirname(file_path) }
         after { FileUtils.rm_rf parent_directory }
 
@@ -1387,7 +1388,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "transmits file data in report" do
-            expect(received_report["paths"][filename]).to match(
+            expect(received_report["paths"][path_key]).to match(
               "path" => file_path,
               "exists" => true,
               "type" => "file",
@@ -1418,7 +1419,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "transmits file data in report" do
-            expect(received_report["paths"][filename]).to eq(
+            expect(received_report["paths"][path_key]).to eq(
               "path" => file_path,
               "exists" => false
             )
@@ -1439,20 +1440,22 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "transmits file data in report" do
-            expect(received_report["paths"][filename]).to include(
+            expect(received_report["paths"][path_key]).to include(
               "read_error" => "Errno::ESPIPE: Illegal seek"
             )
           end
         end
       end
 
-      describe "mkmf.log" do
+      describe "ext/mkmf.log" do
         it_behaves_like "diagnose file" do
-          let(:filename) { File.join("ext", "mkmf.log") }
+          let(:filename) { "mkmf.log" }
+          let(:path_key) { "ext/mkmf.log" }
           before do
-            expect_any_instance_of(Appsignal::CLI::Diagnose::Paths).to receive(:gem_path)
+            expect_any_instance_of(Appsignal::CLI::Diagnose::Paths)
+              .to receive(:makefile_install_log_path)
               .at_least(:once)
-              .and_return(parent_directory)
+              .and_return(File.join(parent_directory, filename))
           end
         end
 
