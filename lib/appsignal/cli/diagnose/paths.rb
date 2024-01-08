@@ -100,8 +100,8 @@ module Appsignal
             File.join(gem_path, "ext", "mkmf.log")
           ]
           possible_locations.find do |location|
-            location if File.exist?(location)
-          end
+            File.exist?(location)
+          end || possible_locations.first
         end
 
         def gemspec
