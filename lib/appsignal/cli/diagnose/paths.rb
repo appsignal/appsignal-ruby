@@ -19,7 +19,6 @@ module Appsignal
             begin
               config = Appsignal.config
               log_file_path = config.log_file_path
-              makefile_log_path = File.join("ext", "mkmf.log")
               {
                 :package_install_path => {
                   :label => "AppSignal gem path",
@@ -37,9 +36,9 @@ module Appsignal
                   :label => "Log directory",
                   :path => log_file_path ? File.dirname(log_file_path) : ""
                 },
-                makefile_log_path => {
+                "ext/mkmf.log" => {
                   :label => "Makefile install log",
-                  :path => File.join(gem_path, makefile_log_path)
+                  :path => makefile_install_log_path
                 },
                 "appsignal.log" => {
                   :label => "AppSignal log",
@@ -54,8 +53,11 @@ module Appsignal
         def path_stat(path)
           {
             :path => path,
-            :exists => File.exist?(path)
+            :exists => false
           }.tap do |info|
+            next unless info[:path]
+
+            info[:exists] = File.exist?(path)
             next unless info[:exists]
 
             stat = File.stat(path)
@@ -84,9 +86,26 @@ module Appsignal
         end
 
         # Returns the AppSignal gem installation path. The root directory of
-        # this gem.
+        # this gem when installed.
         def gem_path
-          File.expand_path("../../../..", __dir__)
+          gemspec.full_gem_path
+        end
+
+        # Returns the AppSignal gem's Makefile log path, if it exists.
+        def makefile_install_log_path
+          possible_locations = [
+            # Installed gem location
+            File.join(gemspec.extension_dir, "mkmf.log"),
+            # Local development location
+            File.join(gem_path, "ext", "mkmf.log")
+          ]
+          possible_locations.find do |location|
+            File.exist?(location)
+          end || possible_locations.first
+        end
+
+        def gemspec
+          Gem.loaded_specs["appsignal"]
         end
       end
     end
