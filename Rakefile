@@ -34,7 +34,9 @@ def build_task(matrix, ruby_version, type = nil)
     "task" => {
       "prologue" => matrix["prologue"].merge(
         "commands" => matrix["prologue"]["commands"] + [
-          "./support/bundler_wrapper exec rake extension:install"
+          "./support/bundler_wrapper exec rake extension:install",
+          "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'", # rubocop:disable Metrics/LineLength
+          "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
         ]
       ),
       "epilogue" => matrix["epilogue"],

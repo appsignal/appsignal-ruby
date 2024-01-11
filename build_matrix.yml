@@ -114,6 +114,8 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
             - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile)
             - ./support/bundler_wrapper install --jobs=3 --retry=3
             - ./support/bundler_wrapper exec rake extension:install
+            - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'"
+            - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
             - git submodule init
             - git submodule update
         jobs:
@@ -153,10 +155,6 @@ matrix:
       commands:
         - cache store $_BUNDLER_CACHE-bundler-$RUBY_VERSION-$GEMSET-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) .bundle
         - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum appsignal.gemspec) $HOME/.gem
-    on_fail:
-      commands:
-        - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'"
-        - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
 
   defaults:
     rubygems: "latest"
