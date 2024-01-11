@@ -253,15 +253,17 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       it "adds the installation report to the diagnostics report" do
         run
         jruby = Appsignal::System.jruby?
+        language = {
+          "name" => "ruby",
+          "version" => "#{RUBY_VERSION}#{"-p#{rbconfig["PATCHLEVEL"]}" unless jruby}",
+          "implementation" => jruby ? "jruby" : "ruby"
+        }
+        language["implementation_version"] = JRUBY_VERSION if jruby
         expect(received_report["installation"]).to match(
           "result" => {
             "status" => "success"
           },
-          "language" => {
-            "name" => "ruby",
-            "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}",
-            "implementation" => jruby ? "jruby" : "ruby"
-          },
+          "language" => language,
           "download" => {
             "download_url" => kind_of(String),
             "checksum" => "verified",

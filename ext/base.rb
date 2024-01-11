@@ -26,13 +26,16 @@ def report
   @report ||=
     begin
       rbconfig = RbConfig::CONFIG
+      patchlevel = rbconfig["PATCHLEVEL"]
+      patchlevel_label = "-p#{patchlevel}" if patchlevel
+      ruby_version = "#{RUBY_VERSION}#{patchlevel_label}"
       {
         "result" => {
           "status" => "incomplete"
         },
         "language" => {
           "name" => "ruby",
-          "version" => "#{rbconfig["RUBY_PROGRAM_VERSION"]}-p#{rbconfig["PATCHLEVEL"]}"
+          "version" => ruby_version
         },
         "download" => {
           "checksum" => "unverified"

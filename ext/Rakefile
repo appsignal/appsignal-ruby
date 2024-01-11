@@ -16,6 +16,7 @@ task :default do
 
   library_type = "dynamic"
   report["language"]["implementation"] = "jruby"
+  report["language"]["implementation_version"] = JRUBY_VERSION
   report["build"]["library_type"] = library_type
   next unless check_architecture
 
