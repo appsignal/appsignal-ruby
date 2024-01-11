@@ -553,46 +553,46 @@ describe Appsignal do
       end
 
       describe ".set_host_gauge" do
-        it "should call set_host_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 0.1)
-          Appsignal.set_host_gauge("key", 0.1)
+        let(:err_stream) { std_stream }
+        let(:stderr) { err_stream.read }
+        let(:log_stream) { StringIO.new }
+        let(:logs) { log_contents(log_stream) }
+        let(:deprecation_message) do
+          "The `set_host_gauge` method has been deprecated. " \
+            "Calling this method has no effect. " \
+            "Please remove method call in the following file to remove " \
+            "this message."
+        end
+        before do
+          Appsignal.logger = test_logger(log_stream)
+          capture_std_streams(std_stream, err_stream) { Appsignal.set_host_gauge("key", 0.1) }
         end
 
-        it "should call set_host_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key", 1.0)
-          Appsignal.set_host_gauge(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_host_gauge).with("key",
-            10).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn)
-            .with("Host gauge value 10 for key 'key' is too big")
-          expect do
-            Appsignal.set_host_gauge("key", 10)
-          end.to_not raise_error
+        it "logs a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
         end
       end
 
       describe ".set_process_gauge" do
-        it "should call set_process_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 0.1)
-          Appsignal.set_process_gauge("key", 0.1)
+        let(:err_stream) { std_stream }
+        let(:stderr) { err_stream.read }
+        let(:log_stream) { StringIO.new }
+        let(:logs) { log_contents(log_stream) }
+        let(:deprecation_message) do
+          "The `set_process_gauge` method has been deprecated. " \
+            "Calling this method has no effect. " \
+            "Please remove method call in the following file to remove " \
+            "this message."
+        end
+        before do
+          Appsignal.logger = test_logger(log_stream)
+          capture_std_streams(std_stream, err_stream) { Appsignal.set_process_gauge("key", 0.1) }
         end
 
-        it "should call set_process_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key", 1.0)
-          Appsignal.set_process_gauge(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_process_gauge).with("key",
-            10).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn)
-            .with("Process gauge value 10 for key 'key' is too big")
-          expect do
-            Appsignal.set_process_gauge("key", 10)
-          end.to_not raise_error
+        it "logs a deprecation warning" do
+          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
+          expect(logs).to include(deprecation_message)
         end
       end
 
