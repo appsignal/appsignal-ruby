@@ -120,6 +120,9 @@ blocks:
       - cache restore $_GEMS_CACHE-gems-$RUBY_VERSION-diagnose-$(checksum Gemfile)
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
       - git submodule init
       - git submodule update
     jobs:
@@ -152,6 +155,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: &1
       on_pass:
         commands:
@@ -159,11 +165,6 @@ blocks:
           appsignal.gemspec) .bundle
         - cache store $_GEMS_CACHE-gems-$RUBY_VERSION-$(checksum $BUNDLE_GEMFILE)-$(checksum
           appsignal.gemspec) $HOME/.gem
-      on_fail:
-        commands:
-        - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-          file found'"
-        - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     jobs:
     - name: Ruby 2.7.8 for no_dependencies
       env_vars:
@@ -206,6 +207,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 2.7.8 for capistrano2
@@ -510,6 +514,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.0.5 for no_dependencies
@@ -545,6 +552,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.0.5 for capistrano2
@@ -903,6 +913,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.1.3 for no_dependencies
@@ -938,6 +951,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.1.3 for capistrano2
@@ -1278,6 +1294,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.2.1 for no_dependencies
@@ -1313,6 +1332,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby 3.2.1 for capistrano2
@@ -1653,6 +1675,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby jruby-9.4.1.0 for no_dependencies
@@ -1688,6 +1713,9 @@ blocks:
       - bundle config set clean 'true'
       - "./support/bundler_wrapper install --jobs=3 --retry=3"
       - "./support/bundler_wrapper exec rake extension:install"
+      - "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+      - "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
     epilogue: *1
     jobs:
     - name: Ruby jruby-9.4.1.0 for rails-6.0
