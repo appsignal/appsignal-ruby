@@ -71,12 +71,6 @@ module Appsignal
         attach_function :appsignal_set_gauge,
           [:appsignal_string, :double, :pointer],
           :void
-        attach_function :appsignal_set_host_gauge,
-          [:appsignal_string, :double],
-          :void
-        attach_function :appsignal_set_process_gauge,
-          [:appsignal_string, :double],
-          :void
         attach_function :appsignal_increment_counter,
           [:appsignal_string, :double, :pointer],
           :void
@@ -317,14 +311,6 @@ module Appsignal
 
       def set_gauge(key, value, tags)
         appsignal_set_gauge(make_appsignal_string(key), value, tags.pointer)
-      end
-
-      def set_host_gauge(key, value)
-        appsignal_set_host_gauge(make_appsignal_string(key), value)
-      end
-
-      def set_process_gauge(key, value)
-        appsignal_set_process_gauge(make_appsignal_string(key), value)
       end
 
       def increment_counter(key, value, tags)
