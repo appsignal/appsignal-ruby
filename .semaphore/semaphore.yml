@@ -500,6 +500,42 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.8 for redis-4
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 2.7.8
+        - name: GEMSET
+          value: redis-4
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-4.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 2.7.8 for redis-5
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 2.7.8
+        - name: GEMSET
+          value: redis-5
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-5.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
 - name: Ruby 3.0.5
   dependencies:
   - Validation
@@ -899,6 +935,42 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.5 for redis-4
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.0.5
+        - name: GEMSET
+          value: redis-4
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-4.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.0.5 for redis-5
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.0.5
+        - name: GEMSET
+          value: redis-5
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-5.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
 - name: Ruby 3.1.3
   dependencies:
   - Validation
@@ -1280,6 +1352,42 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.3 for redis-4
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.1.3
+        - name: GEMSET
+          value: redis-4
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-4.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.1.3 for redis-5
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.1.3
+        - name: GEMSET
+          value: redis-5
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-5.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
 - name: Ruby 3.2.1
   dependencies:
   - Validation
@@ -1661,6 +1769,42 @@ blocks:
         value: latest
       commands:
       - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.1 for redis-4
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.2.1
+        - name: GEMSET
+          value: redis-4
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-4.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
+    - name: Ruby 3.2.1 for redis-5
+      env_vars:
+        - *2
+        - *3
+        - *4
+        - *5
+        - name: RUBY_VERSION
+          value: 3.2.1
+        - name: GEMSET
+          value: redis-5
+        - name: BUNDLE_GEMFILE
+          value: gemfiles/redis-5.gemfile
+        - name: _RUBYGEMS_VERSION
+          value: latest
+        - name: _BUNDLER_VERSION
+          value: latest
+      commands:
+        - "./support/bundler_wrapper exec rake test"
 - name: Ruby jruby-9.4.1.0
   dependencies:
   - Validation

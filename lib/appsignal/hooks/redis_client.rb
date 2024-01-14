@@ -3,19 +3,18 @@
 module Appsignal
   class Hooks
     # @api private
-    class RedisHook < Appsignal::Hooks::Hook
-      register :redis
+    class RedisClientHook < Appsignal::Hooks::Hook
+      register :redis_client
 
       def dependencies_present?
-        defined?(::Redis) &&
-          !defined?(::RedisClient) &&
+        defined?(::RedisClient) &&
           Appsignal.config &&
           Appsignal.config[:instrument_redis]
       end
 
       def install
-        require "appsignal/integrations/redis"
-        ::Redis::Client.prepend Appsignal::Integrations::RedisIntegration
+        require "appsignal/integrations/redis_client"
+        ::RedisClient::RubyConnection.prepend Appsignal::Integrations::RedisClientIntegration
 
         Appsignal::Environment.report_enabled("redis")
       end
