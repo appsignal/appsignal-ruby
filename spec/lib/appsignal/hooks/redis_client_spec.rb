@@ -12,80 +12,164 @@ describe Appsignal::Hooks::RedisClientHook do
           it { is_expected.to be_truthy }
         end
 
-        describe "integration" do
-          before do
-            Appsignal.config.config_hash[:instrument_redis] = true
-          end
-
-          context "install" do
+        context "with ruby driver" do
+          describe "integration" do
             before do
-              Appsignal::Hooks.load_hooks
+              Appsignal.config.config_hash[:instrument_redis] = true
             end
 
-            it "does something" do
-              # Test if the last included module (prepended module) was our
-              # integration. That's not certain with the assertions below
-              # because we have to overwrite the `process` method for the test.
-              expect(RedisClient::RubyConnection.included_modules.first)
-                .to eql(Appsignal::Integrations::RedisClientIntegration)
+            context "install" do
+              before do
+                Appsignal::Hooks.load_hooks
+              end
+
+              it "includes the integration for the ruby connection" do
+                # Test if the last included module (prepended module) was our
+                # integration. That's not certain with the assertions below
+                # because we have to overwrite the `process` method for the test.
+                expect(RedisClient::RubyConnection.included_modules.first)
+                  .to eql(Appsignal::Integrations::RedisClientIntegration)
+              end
+            end
+
+            context "instrumentation" do
+              before do
+                start_agent
+                # Stub RedisClient::RubyConnection class so that it doesn't perform an actual
+                # Redis query. This class will be included (prepended) with the
+                # AppSignal Redis integration.
+                stub_const("RedisClient::RubyConnection", Class.new do
+                  def initialize(config)
+                    @config = config
+                  end
+
+                  def write(_commands)
+                    "stub_write"
+                  end
+                end)
+                # Load the integration again for the stubbed RedisClient::RubyConnection class.
+                # Call it directly because {Appsignal::Hooks.load_hooks} keeps
+                # track if it was installed already or not.
+                Appsignal::Hooks::RedisClientHook.new.install
+              end
+              let!(:transaction) do
+                Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+              end
+              let!(:client_config) { RedisClient::Config.new(:id => "stub_id") }
+              around { |example| keep_transactions { example.run } }
+
+              it "instrument a redis call" do
+                connection = RedisClient::RubyConnection.new client_config
+                expect(connection.write([:get, "key"])).to eql("stub_write")
+
+                transaction_hash = transaction.to_h
+                expect(transaction_hash["events"]).to include(
+                  hash_including(
+                    "name" => "query.redis",
+                    "body" => "get ?",
+                    "title" => "stub_id"
+                  )
+                )
+              end
+
+              it "instrument a redis script call" do
+                connection = ::RedisClient::RubyConnection.new client_config
+                script = "return redis.call('set',KEYS[1],ARGV[1])"
+                keys = ["foo"]
+                argv = ["bar"]
+                expect(connection.write([:eval, script, keys.size, keys,
+                                         argv])).to eql("stub_write")
+
+                transaction_hash = transaction.to_h
+                expect(transaction_hash["events"]).to include(
+                  hash_including(
+                    "name" => "query.redis",
+                    "body" => "#{script} ? ?",
+                    "title" => "stub_id"
+                  )
+                )
+              end
             end
           end
+        end
 
-          context "instrumentation" do
+        context "with hiredis driver" do
+          describe "integration" do
             before do
-              start_agent
-              # Stub RedisClient::RubyConnection class so that it doesn't perform an actual
-              # Redis query. This class will be included (prepended) with the
-              # AppSignal Redis integration.
-              stub_const("RedisClient::RubyConnection", Class.new do
-                def initialize(config)
-                  @config = config
-                end
-
-                def write(_commands)
-                  "stub_write"
-                end
-              end)
-              # Load the integration again for the stubbed RedisClient::RubyConnection class.
-              # Call it directly because {Appsignal::Hooks.load_hooks} keeps
-              # track if it was installed already or not.
-              Appsignal::Hooks::RedisClientHook.new.install
+              Appsignal.config.config_hash[:instrument_redis] = true
             end
-            let!(:transaction) do
-              Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+
+            context "install" do
+              before do
+                Appsignal::Hooks.load_hooks
+              end
+
+              it "includes the integration in the HiredisConnection class" do
+                # Test if the last included module (prepended module) was our
+                # integration. That's not certain with the assertions below
+                # because we have to overwrite the `process` method for the test.
+                expect(RedisClient::HiredisConnection.included_modules.first)
+                  .to eql(Appsignal::Integrations::RedisClientIntegration)
+              end
             end
-            let!(:client_config) { RedisClient::Config.new(:id => "stub_id") }
-            around { |example| keep_transactions { example.run } }
 
-            it "instrument a redis call" do
-              connection = RedisClient::RubyConnection.new client_config
-              expect(connection.write([:get, "key"])).to eql("stub_write")
+            context "instrumentation" do
+              before do
+                start_agent
+                # Stub RedisClient::HiredisConnection class so that it doesn't perform an actual
+                # Redis query. This class will be included (prepended) with the
+                # AppSignal Redis integration.
+                stub_const("RedisClient::HiredisConnection", Class.new do
+                  def initialize(config)
+                    @config = config
+                  end
 
-              transaction_hash = transaction.to_h
-              expect(transaction_hash["events"]).to include(
-                hash_including(
-                  "name" => "query.redis",
-                  "body" => "get ?",
-                  "title" => "stub_id"
+                  def write(_commands)
+                    "stub_write"
+                  end
+                end)
+                # Load the integration again for the stubbed RedisClient::RubyConnection class.
+                # Call it directly because {Appsignal::Hooks.load_hooks} keeps
+                # track if it was installed already or not.
+                Appsignal::Hooks::RedisClientHook.new.install
+              end
+              let!(:transaction) do
+                Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+              end
+              let!(:client_config) { RedisClient::Config.new(:id => "stub_id") }
+              around { |example| keep_transactions { example.run } }
+
+              it "instrument a redis call" do
+                connection = RedisClient::HiredisConnection.new client_config
+                expect(connection.write([:get, "key"])).to eql("stub_write")
+
+                transaction_hash = transaction.to_h
+                expect(transaction_hash["events"]).to include(
+                  hash_including(
+                    "name" => "query.redis",
+                    "body" => "get ?",
+                    "title" => "stub_id"
+                  )
                 )
-              )
-            end
+              end
 
-            it "instrument a redis script call" do
-              connection = ::RedisClient::RubyConnection.new client_config
-              script = "return redis.call('set',KEYS[1],ARGV[1])"
-              keys = ["foo"]
-              argv = ["bar"]
-              expect(connection.write([:eval, script, keys.size, keys, argv])).to eql("stub_write")
+              it "instrument a redis script call" do
+                connection = ::RedisClient::HiredisConnection.new client_config
+                script = "return redis.call('set',KEYS[1],ARGV[1])"
+                keys = ["foo"]
+                argv = ["bar"]
+                expect(connection.write([:eval, script, keys.size, keys,
+                                         argv])).to eql("stub_write")
 
-              transaction_hash = transaction.to_h
-              expect(transaction_hash["events"]).to include(
-                hash_including(
-                  "name" => "query.redis",
-                  "body" => "#{script} ? ?",
-                  "title" => "stub_id"
+                transaction_hash = transaction.to_h
+                expect(transaction_hash["events"]).to include(
+                  hash_including(
+                    "name" => "query.redis",
+                    "body" => "#{script} ? ?",
+                    "title" => "stub_id"
+                  )
                 )
-              )
+              end
             end
           end
         end

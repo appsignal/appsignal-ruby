@@ -16,6 +16,10 @@ module Appsignal
         require "appsignal/integrations/redis_client"
         ::RedisClient::RubyConnection.prepend Appsignal::Integrations::RedisClientIntegration
 
+        if defined?(::RedisClient::HiredisConnection)
+          ::RedisClient::HiredisConnection.prepend Appsignal::Integrations::RedisClientIntegration
+        end
+
         Appsignal::Environment.report_enabled("redis")
       end
     end
