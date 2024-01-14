@@ -253,6 +253,8 @@ BUNDLE_GEMFILE=gemfiles/sequel-435.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/sequel.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/sinatra.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/webmachine.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/redis-4.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/redis-5.gemfile bundle exec rspec
 ```
 
 If you have either [RVM][rvm], [rbenv][rbenv] or [chruby][chruby] installed you
