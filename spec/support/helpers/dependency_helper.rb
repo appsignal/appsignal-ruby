@@ -53,8 +53,12 @@ module DependencyHelper
     dependency_present? "resque"
   end
 
+  def redis_client_present?
+    dependency_present? "redis-client"
+  end
+
   def redis_present?
-    dependency_present? "redis"
+    dependency_present?("redis") && !redis_client_present?
   end
 
   def action_cable_present?
