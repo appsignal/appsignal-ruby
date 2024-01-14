@@ -8,6 +8,7 @@ module Appsignal
 
       def dependencies_present?
         defined?(::Redis) &&
+          !defined?(::RedisClient) &&
           Appsignal.config &&
           Appsignal.config[:instrument_redis]
       end
