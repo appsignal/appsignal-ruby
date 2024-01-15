@@ -1,5 +1,24 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.4
+
+### Changed
+
+- [1a863490](https://github.com/appsignal/appsignal-ruby/commit/1a863490046318b8cee5fff2ac341fb73065f252) patch - Fix disk usage returning a Vec with no entries on Alpine Linux when the `df --local` command fails.
+
+### Deprecated
+
+- [bb98744b](https://github.com/appsignal/appsignal-ruby/commit/bb98744b1b6d34db71b5f46279b1a9b26039bd0f) patch - Deprecate the `Appsignal.set_host_guage` and `Appsignal.set_process_gauge` helper methods in the Ruby gem. These methods would already log deprecation warnings in the `appsignal.log` file, but now also as a Ruby warning. These methods will be removed in the next major version. These methods already did not report any metrics, and still do not.
+
+### Removed
+
+- [1a863490](https://github.com/appsignal/appsignal-ruby/commit/1a863490046318b8cee5fff2ac341fb73065f252) patch - Remove the `appsignal_set_host_guage` and `appsignal_set_process_gauge` extension functions. These functions were already deprecated and did not report any metrics.
+
+### Fixed
+
+- [0637b71d](https://github.com/appsignal/appsignal-ruby/commit/0637b71dedde155a2494c56f69bf3217e87e851d) patch - Fix the Makefile log path inclusion in the diagnose report. The diagnose tool didn't look in the correct gem extension directory for this log file.
+- [fe71d78b](https://github.com/appsignal/appsignal-ruby/commit/fe71d78b2c897203bac5e6225bc1e21c6ba2c168) patch - Fix reporting of the Ruby syntax version and JRuby version in install report better.
+
 ## 3.5.3
 
 ### Changed
