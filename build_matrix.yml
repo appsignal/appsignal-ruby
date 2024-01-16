@@ -5,7 +5,7 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
   agent:
     machine:
       type: e1-standard-2
-      os_image: ubuntu1804
+      os_image: ubuntu2004
 
   # Cancel all running and queued workflows before this one
   auto_cancel:
@@ -18,9 +18,9 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
       - name: RUNNING_IN_CI
         value: "true"
       - name: _BUNDLER_CACHE
-        value: "v2"
+        value: "v3"
       - name: _GEMS_CACHE
-        value: "v2"
+        value: "v3"
     prologue:
       commands:
         - checkout

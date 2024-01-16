@@ -8,7 +8,7 @@ name: AppSignal Ruby Build and Tests
 agent:
   machine:
     type: e1-standard-2
-    os_image: ubuntu1804
+    os_image: ubuntu2004
 auto_cancel:
   running:
     when: branch != 'main' AND branch != 'develop'
@@ -17,9 +17,9 @@ global_job_config:
   - name: RUNNING_IN_CI
     value: 'true'
   - name: _BUNDLER_CACHE
-    value: v2
+    value: v3
   - name: _GEMS_CACHE
-    value: v2
+    value: v3
   prologue:
     commands:
     - checkout
