@@ -26,12 +26,6 @@ semaphore: # Default `.semaphore/semaphore.yml` contents
         - checkout
         - rm -f $HOME/.rbenv/plugins/rbenv-gem-rehash/etc/rbenv.d/exec/~gem-rehash.bash
         - |
-          if [ -n "$_C_VERSION" ]; then
-            sem-version c $_C_VERSION
-          else
-            echo Skipping C-lang install
-          fi
-        - |
           if [ -n "$RUBY_VERSION" ]; then
             if ! (sem-version ruby "$RUBY_VERSION"); then
               ruby_key="rbenv-ruby-$RUBY_VERSION"
