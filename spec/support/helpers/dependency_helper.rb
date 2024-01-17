@@ -1,4 +1,4 @@
-module DependencyHelper
+module DependencyHelper # rubocop:disable Metrics/ModuleLength
   module_function
 
   def ruby_version
@@ -51,6 +51,14 @@ module DependencyHelper
 
   def resque_present?
     dependency_present? "resque"
+  end
+
+  def redis_client_present?
+    dependency_present? "redis-client"
+  end
+
+  def hiredis_client_present?
+    dependency_present? "hiredis-client"
   end
 
   def redis_present?
