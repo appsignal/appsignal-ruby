@@ -242,14 +242,15 @@ module Appsignal
           [:pointer],
           :appsignal_string
 
-        Appsignal.extension_loaded = true
+        Appsignal.extension_loaded = true if Appsignal.respond_to? :extension_loaded=
       rescue LoadError => error
         error_message = "ERROR: AppSignal failed to load extension. " \
           "Please run `appsignal diagnose` and email us at support@appsignal.com\n" \
           "#{error.class}: #{error.message}"
-        Appsignal.logger.error(error_message)
+        Appsignal.logger.error(error_message) if Appsignal.respond_to? :logger
         Kernel.warn error_message
-        Appsignal.extension_loaded = false
+        Appsignal.extension_loaded = false if Appsignal.respond_to? :extension_loaded=
+        raise error if ENV["_APPSIGNAL_EXTENSION_INSTALL"] == "true"
       end
 
       def start
