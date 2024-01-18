@@ -29,8 +29,14 @@ task :default do
 
     unarchive(archive)
   end
+
+  # Have the extension loader raise the error if it encountes a problem
+  ENV["_APPSIGNAL_EXTENSION_INSTALL"] = "true"
+  # Load the extension to test if all functions can be "attached" with FFI
+  require File.expand_path("../lib/appsignal/extension/jruby.rb", __dir__)
+
   successful_installation
-rescue => e
+rescue StandardError, LoadError => e
   fail_installation_with_error(e)
 ensure
   create_dummy_makefile unless installation_succeeded?
