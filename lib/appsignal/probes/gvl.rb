@@ -22,7 +22,7 @@ module Appsignal
       end
 
       def initialize(appsignal: Appsignal, gvl_tools: ::GVLTools)
-        Appsignal.logger.debug("Initializing GVL probe")
+        Appsignal.internal_logger.debug("Initializing GVL probe")
         @appsignal = appsignal
         @gvl_tools = gvl_tools
       end

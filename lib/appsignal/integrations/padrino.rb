@@ -7,7 +7,7 @@ module Appsignal
     # @api private
     module PadrinoPlugin
       def self.init
-        Appsignal.logger.debug("Loading Padrino (#{Padrino::VERSION}) integration")
+        Appsignal.internal_logger.debug("Loading Padrino (#{Padrino::VERSION}) integration")
 
         root = Padrino.mounted_root
         Appsignal.config = Appsignal::Config.new(root, Padrino.env)

@@ -16,8 +16,8 @@ if DependencyHelper.sinatra_present?
     before { allow(Appsignal).to receive(:active?).and_return(true) }
     after { uninstall_sinatra_integration }
 
-    context "Appsignal.logger" do
-      subject { Appsignal.logger }
+    context "Appsignal.internal_logger" do
+      subject { Appsignal.internal_logger }
 
       it "sets a logger" do
         install_sinatra_integration

@@ -265,7 +265,7 @@ describe Appsignal::Config do
 
     context "with an overriden config file" do
       let(:config) do
-        project_fixture_config("production", {}, Appsignal.logger,
+        project_fixture_config("production", {}, Appsignal.internal_logger,
           File.join(project_fixture_path, "config", "appsignal.yml"))
       end
 
@@ -276,7 +276,7 @@ describe Appsignal::Config do
 
       context "with an invalid overriden config file" do
         let(:config) do
-          project_fixture_config("production", {}, Appsignal.logger,
+          project_fixture_config("production", {}, Appsignal.internal_logger,
             File.join(project_fixture_path, "config", "missing.yml"))
         end
 

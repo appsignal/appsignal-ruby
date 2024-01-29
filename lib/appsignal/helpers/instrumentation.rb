@@ -68,9 +68,9 @@ module Appsignal
           namespace = Appsignal::Transaction::HTTP_REQUEST
           request   = ::Rack::Request.new(env)
         else
-          logger.error "Unrecognized name '#{name}': names must start with " \
-            "either 'perform_job' (for jobs and tasks) or 'process_action' " \
-            "(for HTTP requests)"
+          internal_logger.error "Unrecognized name '#{name}': names must " \
+            "start with either 'perform_job' (for jobs and tasks) or " \
+            "'process_action' (for HTTP requests)"
           return yield
         end
 
@@ -228,8 +228,8 @@ module Appsignal
         return unless active?
 
         unless error.is_a?(Exception)
-          logger.error "Appsignal.send_error: Cannot send error. The given " \
-            "value is not an exception: #{error.inspect}"
+          internal_logger.error "Appsignal.send_error: Cannot send error. " \
+            "The given value is not an exception: #{error.inspect}"
           return
         end
         transaction = Appsignal::Transaction.new(
@@ -319,8 +319,8 @@ module Appsignal
               "Appsignal.set_error called on location: #{call_location}"
         end
         unless exception.is_a?(Exception)
-          logger.error "Appsignal.set_error: Cannot set error. The given " \
-            "value is not an exception: #{exception.inspect}"
+          internal_logger.error "Appsignal.set_error: Cannot set error. " \
+            "The given value is not an exception: #{exception.inspect}"
           return
         end
         return if !active? || !Appsignal::Transaction.current?

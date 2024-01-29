@@ -4,7 +4,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
   let(:log) { StringIO.new }
   before do
     start_agent
-    Appsignal.logger = test_logger(log)
+    Appsignal.internal_logger = test_logger(log)
   end
   around { |example| keep_transactions { example.run } }
 
@@ -86,7 +86,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
   let(:log) { StringIO.new }
   before do
     start_agent
-    Appsignal.logger = test_logger(log)
+    Appsignal.internal_logger = test_logger(log)
   end
   around { |example| keep_transactions { example.run } }
   after :with_yaml_parse_error => false do
@@ -423,7 +423,7 @@ if DependencyHelper.active_job_present?
     end
     around do |example|
       start_agent
-      Appsignal.logger = test_logger(log)
+      Appsignal.internal_logger = test_logger(log)
       ActiveJob::Base.queue_adapter = :sidekiq
 
       class ActiveJobSidekiqTestJob < ActiveJob::Base

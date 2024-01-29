@@ -73,7 +73,7 @@ module Appsignal
       end
 
       def logger
-        Appsignal.logger
+        Appsignal.internal_logger
       end
     end
 

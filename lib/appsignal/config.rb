@@ -219,8 +219,8 @@ module Appsignal
     #   use. This will be overwritten by the file config and environment
     #   variables config.
     # @param logger [Logger] The logger to use for the AppSignal gem. This is
-    #   used by the configuration class only. Default: {Appsignal.logger}. See
-    #   also {Appsignal.start_logger}.
+    #   used by the configuration class only. Default:
+    #   {Appsignal.internal_logger}. See also {Appsignal.start_logger}.
     # @param config_file [String] Custom config file location. Default
     #   `config/appsignal.yml`.
     #
@@ -230,8 +230,13 @@ module Appsignal
     #   Configuration load order
     # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
     #   How to integrate AppSignal manually
-    def initialize(root_path, env, initial_config = {}, logger = Appsignal.logger,
-      config_file = nil)
+    def initialize(
+      root_path,
+      env,
+      initial_config = {},
+      logger = Appsignal.internal_logger,
+      config_file = nil
+    )
       @config_file_error = false
       @root_path = root_path
       @config_file = config_file

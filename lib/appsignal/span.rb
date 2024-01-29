@@ -16,8 +16,8 @@ module Appsignal
 
     def add_error(error)
       unless error.is_a?(Exception)
-        Appsignal.logger.error "Appsignal::Span#add_error: Cannot add error. " \
-          "The given value is not an exception: #{error.inspect}"
+        Appsignal.internal_logger.error "Appsignal::Span#add_error: Cannot " \
+          "add error. The given value is not an exception: #{error.inspect}"
         return
       end
       return unless error

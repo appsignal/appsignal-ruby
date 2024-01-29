@@ -7,7 +7,7 @@ module Appsignal
   module Rack
     class RailsInstrumentation
       def initialize(app, options = {})
-        Appsignal.logger.debug "Initializing Appsignal::Rack::RailsInstrumentation"
+        Appsignal.internal_logger.debug "Initializing Appsignal::Rack::RailsInstrumentation"
         @app = app
         @options = options
       end
@@ -43,7 +43,7 @@ module Appsignal
           begin
             transaction.set_metadata("method", request.request_method)
           rescue => error
-            Appsignal.logger.error("Unable to report HTTP request method: '#{error}'")
+            Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
           end
           Appsignal::Transaction.complete_current!
         end

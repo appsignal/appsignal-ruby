@@ -168,7 +168,7 @@ module Appsignal
         # Sidekiq issue #1761: in dev mode, it's possible to have jobs enqueued
         # which haven't been loaded into memory yet so the YAML can't be
         # loaded.
-        Appsignal.logger.warn "Unable to load YAML: #{error.message}"
+        Appsignal.internal_logger.warn "Unable to load YAML: #{error.message}"
         default
       end
     end

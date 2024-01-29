@@ -47,7 +47,7 @@ module Appsignal
         # Auto detect hostname as fallback. May be inaccurate.
         @hostname =
           config[:hostname] || Socket.gethostname
-        Appsignal.logger.debug "Probe helper: Using hostname config " \
+        Appsignal.internal_logger.debug "Probe helper: Using hostname config " \
           "option '#{@hostname.inspect}' as hostname"
 
         @hostname

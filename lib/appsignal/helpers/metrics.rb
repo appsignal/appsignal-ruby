@@ -10,7 +10,7 @@ module Appsignal
           Appsignal::Utils::Data.generate(tags)
         )
       rescue RangeError
-        Appsignal.logger
+        Appsignal.internal_logger
           .warn("Gauge value #{value} for key '#{key}' is too big")
       end
 
@@ -37,7 +37,7 @@ module Appsignal
           Appsignal::Utils::Data.generate(tags)
         )
       rescue RangeError
-        Appsignal.logger
+        Appsignal.internal_logger
           .warn("Counter value #{value} for key '#{key}' is too big")
       end
 
@@ -48,7 +48,7 @@ module Appsignal
           Appsignal::Utils::Data.generate(tags)
         )
       rescue RangeError
-        Appsignal.logger
+        Appsignal.internal_logger
           .warn("Distribution value #{value} for key '#{key}' is too big")
       end
     end

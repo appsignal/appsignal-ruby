@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-Appsignal.logger.debug("Loading Rails (#{Rails.version}) integration")
+Appsignal.internal_logger.debug("Loading Rails (#{Rails.version}) integration")
 
 require "appsignal/utils/rails_helper"
 require "appsignal/rack/rails_instrumentation"

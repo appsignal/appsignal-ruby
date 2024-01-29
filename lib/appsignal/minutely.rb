@@ -108,7 +108,7 @@ module Appsignal
       attr_reader :probes
 
       def logger
-        Appsignal.logger
+        Appsignal.internal_logger
       end
     end
 
@@ -132,7 +132,7 @@ module Appsignal
           sleep initial_wait_time
           initialize_probes
           loop do
-            logger = Appsignal.logger
+            logger = Appsignal.internal_logger
             logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
             probe_instances.each do |name, probe|
               logger.debug("Gathering minutely metrics with '#{name}' probe")
@@ -181,13 +181,13 @@ module Appsignal
           klass = instance.class
         end
         unless dependencies_present?(klass)
-          Appsignal.logger.debug "Skipping '#{name}' probe, " \
+          Appsignal.internal_logger.debug "Skipping '#{name}' probe, " \
             "#{klass}.dependency_present? returned falsy"
           return
         end
         probe_instances[name] = instance
       rescue => error
-        logger = Appsignal.logger
+        logger = Appsignal.internal_logger
         logger.error "Error while initializing minutely probe '#{name}': #{error}"
         logger.debug error.backtrace.join("\n")
       end

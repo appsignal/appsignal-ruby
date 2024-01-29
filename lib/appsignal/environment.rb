@@ -10,9 +10,9 @@ module Appsignal
     #
     # The value of the environment metadata is given as a block that captures
     # errors that might be raised while fetching the value. It will not
-    # re-raise errors, but instead log them using the {Appsignal.logger}. This
-    # ensures AppSignal will not cause an error in the application when
-    # collecting this metadata.
+    # re-raise errors, but instead log them using the
+    # {Appsignal.internal_logger}. This ensures AppSignal will not cause an
+    # error in the application when collecting this metadata.
     #
     # @example Reporting a key and value
     #   Appsignal::Environment.report("ruby_version") { RUBY_VERSION }
@@ -34,8 +34,8 @@ module Appsignal
         when String
           key
         else
-          Appsignal.logger.error "Unable to report on environment metadata: " \
-            "Unsupported value type for #{key.inspect}"
+          Appsignal.internal_logger.error "Unable to report on environment " \
+            "metadata: Unsupported value type for #{key.inspect}"
           return
         end
 
@@ -43,7 +43,7 @@ module Appsignal
         begin
           yield
         rescue => e
-          Appsignal.logger.error \
+          Appsignal.internal_logger.error \
             "Unable to report on environment metadata #{key.inspect}:\n" \
               "#{e.class}: #{e}"
           return
@@ -56,16 +56,16 @@ module Appsignal
         when String
           yielded_value
         else
-          Appsignal.logger.error "Unable to report on environment metadata " \
-            "#{key.inspect}: Unsupported value type for " \
+          Appsignal.internal_logger.error "Unable to report on environment " \
+            "metadata #{key.inspect}: Unsupported value type for " \
             "#{yielded_value.inspect}"
           return
         end
 
       Appsignal::Extension.set_environment_metadata(key, value)
     rescue => e
-      Appsignal.logger.error "Unable to report on environment metadata:\n" \
-        "#{e.class}: #{e}"
+      Appsignal.internal_logger.error "Unable to report on environment " \
+        "metadata:\n#{e.class}: #{e}"
     end
 
     # @see report_supported_gems
@@ -114,15 +114,15 @@ module Appsignal
         report("ruby_#{gem_name}_version") { gem_spec.version.to_s }
       end
     rescue => e
-      Appsignal.logger.error "Unable to report supported gems:\n" \
+      Appsignal.internal_logger.error "Unable to report supported gems:\n" \
         "#{e.class}: #{e}"
     end
 
     def self.report_enabled(feature)
       Appsignal::Environment.report("ruby_#{feature}_enabled") { true }
     rescue => e
-      Appsignal.logger.error "Unable to report integration enabled:\n" \
-        "#{e.class}: #{e}"
+      Appsignal.internal_logger.error "Unable to report integration " \
+        "enabled:\n#{e.class}: #{e}"
     end
   end
 end

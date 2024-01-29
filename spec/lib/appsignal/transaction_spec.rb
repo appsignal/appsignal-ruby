@@ -580,7 +580,7 @@ describe Appsignal::Transaction do
       it "does not raise an error when the queue start is too big" do
         expect(transaction.ext).to receive(:set_queue_start).and_raise(RangeError)
 
-        expect(Appsignal.logger).to receive(:warn).with("Queue start value 10 is too big")
+        expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
 
         expect do
           transaction.set_queue_start(10)
@@ -766,7 +766,7 @@ describe Appsignal::Transaction do
         let(:error) { Object.new }
 
         it "does not add the error" do
-          expect(Appsignal.logger).to receive(:error).with(
+          expect(Appsignal.internal_logger).to receive(:error).with(
             "Appsignal::Transaction#set_error: Cannot set error. " \
               "The given value is not an exception: #{error.inspect}"
           )
@@ -830,7 +830,7 @@ describe Appsignal::Transaction do
             )
           )
 
-          expect(Appsignal.logger).to_not receive(:debug)
+          expect(Appsignal.internal_logger).to_not receive(:debug)
 
           transaction.set_error(error)
         end
@@ -871,7 +871,7 @@ describe Appsignal::Transaction do
             Appsignal::Utils::Data.generate(expected_error_causes)
           )
 
-          expect(Appsignal.logger).to receive(:debug).with(
+          expect(Appsignal.internal_logger).to receive(:debug).with(
             "Appsignal::Transaction#set_error: Error has more " \
               "than 10 error causes. Only the first 10 " \
               "will be reported."

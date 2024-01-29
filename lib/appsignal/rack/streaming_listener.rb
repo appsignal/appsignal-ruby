@@ -7,7 +7,7 @@ module Appsignal
     # @api private
     class StreamingListener
       def initialize(app, options = {})
-        Appsignal.logger.debug "Initializing Appsignal::Rack::StreamingListener"
+        Appsignal.internal_logger.debug "Initializing Appsignal::Rack::StreamingListener"
         @app = app
         @options = options
       end

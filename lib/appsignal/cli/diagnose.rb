@@ -201,7 +201,7 @@ module Appsignal
           )
           Appsignal.config.write_to_environment
           Appsignal.start_logger
-          Appsignal.logger.info("Starting AppSignal diagnose")
+          Appsignal.internal_logger.info("Starting AppSignal diagnose")
         end
 
         def run_agent_diagnose_mode
