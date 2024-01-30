@@ -18,9 +18,9 @@ if DependencyHelper.rails_present?
     describe "#initialize_appsignal" do
       let(:app) { MyApp::Application.new }
 
-      describe ".logger" do
+      describe ".internal_logger" do
         before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-        subject { Appsignal.logger }
+        subject { Appsignal.internal_logger }
 
         it { is_expected.to be_a Logger }
       end

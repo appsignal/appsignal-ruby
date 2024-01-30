@@ -76,7 +76,7 @@ if DependencyHelper.active_job_present?
       ActiveJob::Base.queue_adapter = :inline
 
       start_agent
-      Appsignal.logger = test_logger(log)
+      Appsignal.internal_logger = test_logger(log)
       class ActiveJobTestJob < ActiveJob::Base
         def perform(*_args)
         end

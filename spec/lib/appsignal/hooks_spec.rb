@@ -67,12 +67,12 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook]).to be_instance_of(MockErrorHook)
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
-    expect(Appsignal.logger).to receive(:error)
+    expect(Appsignal.internal_logger).to receive(:error)
       .with("Error while installing mock_error_hook hook: error").once
-    expect(Appsignal.logger).to receive(:debug).ordered do |message|
+    expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
       expect(message).to eq("Installing mock_error_hook hook")
     end
-    expect(Appsignal.logger).to receive(:debug).ordered do |message|
+    expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
       # Start of the error backtrace as debug log
       expect(message).to start_with(File.expand_path("../../..", __dir__))
     end
@@ -89,7 +89,7 @@ describe Appsignal::Hooks do
     let(:log_stream) { std_stream }
     let(:log) { log_contents(log_stream) }
     before do
-      Appsignal.logger = test_logger(log_stream)
+      Appsignal.internal_logger = test_logger(log_stream)
     end
 
     def call_constant(&block)

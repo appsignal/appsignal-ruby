@@ -7,7 +7,7 @@ module Appsignal
   module Rack
     class GenericInstrumentation
       def initialize(app, options = {})
-        Appsignal.logger.debug "Initializing Appsignal::Rack::GenericInstrumentation"
+        Appsignal.internal_logger.debug "Initializing Appsignal::Rack::GenericInstrumentation"
         @app = app
         @options = options
       end

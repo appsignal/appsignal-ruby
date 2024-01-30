@@ -59,7 +59,7 @@ module Appsignal
         @adapter = is_sidekiq7 ? Sidekiq7Adapter : Sidekiq6Adapter
 
         config_string = " with config: #{config}" unless config.empty?
-        Appsignal.logger.debug("Initializing Sidekiq probe#{config_string}")
+        Appsignal.internal_logger.debug("Initializing Sidekiq probe#{config_string}")
         require "sidekiq/api"
       end
 
@@ -123,14 +123,14 @@ module Appsignal
 
         if config.key?(:hostname)
           @hostname = config[:hostname]
-          Appsignal.logger.debug "Sidekiq probe: Using hostname config " \
-            "option #{@hostname.inspect} as hostname"
+          Appsignal.internal_logger.debug "Sidekiq probe: Using hostname " \
+            "config option #{@hostname.inspect} as hostname"
           return @hostname
         end
 
         host = adapter.hostname
-        Appsignal.logger.debug "Sidekiq probe: Using Redis server hostname " \
-          "#{host.inspect} as hostname"
+        Appsignal.internal_logger.debug "Sidekiq probe: Using Redis server " \
+          "hostname #{host.inspect} as hostname"
         @hostname = host
       end
     end

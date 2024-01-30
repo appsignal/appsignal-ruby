@@ -11,7 +11,7 @@ module Appsignal
       end
 
       def initialize(appsignal: Appsignal, gc_profiler: Appsignal::GarbageCollection.profiler)
-        Appsignal.logger.debug("Initializing VM probe")
+        Appsignal.internal_logger.debug("Initializing VM probe")
         @appsignal = appsignal
         @gc_profiler = gc_profiler
       end

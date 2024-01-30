@@ -165,7 +165,7 @@ RSpec.configure do |config|
   config.after :context do
     FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
     Appsignal.config = nil
-    Appsignal.logger = nil
+    Appsignal.internal_logger = nil
   end
 
   def stop_minutely_probes

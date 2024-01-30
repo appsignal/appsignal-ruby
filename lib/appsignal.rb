@@ -46,7 +46,11 @@ module Appsignal
     # @see extension_loaded?
     attr_accessor :extension_loaded
     # @!attribute [rw] logger
-    #   Accessor for the AppSignal logger.
+    #   Accessor for the internal AppSignal logger.
+    #
+    #   Not to be confused with our logging feature.
+    #   This is part of our private internal API. Do not call this method
+    #   directly.
     #
     #   If no logger has been set, it will return a "in memory logger", using
     #   `in_memory_log`. Once AppSignal is started (using {.start}) the
@@ -57,7 +61,7 @@ module Appsignal
     #   @api private
     #   @return [Logger]
     #   @see start_logger
-    attr_writer :logger
+    attr_writer :internal_logger
 
     # @api private
     def testing?
@@ -91,11 +95,11 @@ module Appsignal
     # @since 0.7.0
     def start
       unless extension_loaded?
-        logger.info("Not starting appsignal, extension is not loaded")
+        internal_logger.info("Not starting appsignal, extension is not loaded")
         return
       end
 
-      logger.debug("Starting appsignal")
+      internal_logger.debug("Starting appsignal")
 
       @config ||= Config.new(
         Dir.pwd,
@@ -103,9 +107,9 @@ module Appsignal
       )
 
       if config.valid?
-        logger.level = config.log_level
+        internal_logger.level = config.log_level
         if config.active?
-          logger.info "Starting AppSignal #{Appsignal::VERSION} " \
+          internal_logger.info "Starting AppSignal #{Appsignal::VERSION} " \
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
           Appsignal::Extension.start
@@ -120,10 +124,10 @@ module Appsignal
 
           collect_environment_metadata
         else
-          logger.info("Not starting, not active for #{config.env}")
+          internal_logger.info("Not starting, not active for #{config.env}")
         end
       else
-        logger.error("Not starting, no valid config for this environment")
+        internal_logger.error("Not starting, no valid config for this environment")
       end
     end
 
@@ -143,9 +147,9 @@ module Appsignal
     # @since 1.0.0
     def stop(called_by = nil)
       if called_by
-        logger.debug("Stopping appsignal (#{called_by})")
+        internal_logger.debug("Stopping appsignal (#{called_by})")
       else
-        logger.debug("Stopping appsignal")
+        internal_logger.debug("Stopping appsignal")
       end
       Appsignal::Extension.stop
     end
@@ -154,7 +158,7 @@ module Appsignal
       return unless active?
 
       Appsignal.start_logger
-      logger.debug("Forked process, resubscribing and restarting extension")
+      internal_logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
     end
 
@@ -162,7 +166,8 @@ module Appsignal
       Appsignal::Extension.get_server_state(key)
     end
 
-    # In memory logger used before any logger is started with {.start_logger}.
+    # In memory internal logger used before any internal logger is started with
+    # {.start_logger}.
     #
     # The contents of this logger are flushed to the logger in {.start_logger}.
     #
@@ -176,11 +181,12 @@ module Appsignal
       end
     end
 
-    def logger
-      @logger ||= Appsignal::Utils::IntegrationLogger.new(in_memory_log).tap do |l|
-        l.level = ::Logger::INFO
-        l.formatter = log_formatter("appsignal")
-      end
+    def internal_logger
+      @internal_logger ||=
+        Appsignal::Utils::IntegrationLogger.new(in_memory_log).tap do |l|
+          l.level = ::Logger::INFO
+          l.formatter = log_formatter("appsignal")
+        end
     end
 
     # @api private
@@ -192,7 +198,7 @@ module Appsignal
       end
     end
 
-    # Start the AppSignal logger.
+    # Start the AppSignal internal logger.
     #
     # Sets the log level and sets the logger. Uses a file-based logger or the
     # STDOUT-based logger. See the `:log` configuration option.
@@ -201,18 +207,18 @@ module Appsignal
     # @since 0.7.0
     def start_logger
       if config && config[:log] == "file" && config.log_file_path
-        start_file_logger(config.log_file_path)
+        start_internal_file_logger(config.log_file_path)
       else
-        start_stdout_logger
+        start_internal_stdout_logger
       end
 
-      logger.level =
+      internal_logger.level =
         if config
           config.log_level
         else
           Appsignal::Config::DEFAULT_LOG_LEVEL
         end
-      logger << @in_memory_log.string if @in_memory_log
+      internal_logger << @in_memory_log.string if @in_memory_log
     end
 
     # Returns if the C-extension was loaded properly.
@@ -255,18 +261,18 @@ module Appsignal
 
     private
 
-    def start_stdout_logger
-      @logger = Appsignal::Utils::IntegrationLogger.new($stdout)
-      logger.formatter = log_formatter("appsignal")
+    def start_internal_stdout_logger
+      @internal_logger = Appsignal::Utils::IntegrationLogger.new($stdout)
+      internal_logger.formatter = log_formatter("appsignal")
     end
 
-    def start_file_logger(path)
-      @logger = Appsignal::Utils::IntegrationLogger.new(path)
-      logger.formatter = log_formatter
+    def start_internal_file_logger(path)
+      @internal_logger = Appsignal::Utils::IntegrationLogger.new(path)
+      internal_logger.formatter = log_formatter
     rescue SystemCallError => error
-      start_stdout_logger
-      logger.warn "Unable to start logger with log path '#{path}'."
-      logger.warn error
+      start_internal_stdout_logger
+      internal_logger.warn "Unable to start internal logger with log path '#{path}'."
+      internal_logger.warn error
     end
 
     def collect_environment_metadata

@@ -15,7 +15,7 @@ module Appsignal
       def initialize(app, options = {})
         @app = app
         @options = options
-        Appsignal.logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation " \
+        Appsignal.internal_logger.warn "Please remove Appsignal::Rack::SinatraInstrumentation " \
           "from your Sinatra::Base class. This is no longer needed."
       end
 
@@ -32,7 +32,7 @@ module Appsignal
       attr_reader :raise_errors_on
 
       def initialize(app, options = {})
-        Appsignal.logger.debug "Initializing Appsignal::Rack::SinatraBaseInstrumentation"
+        Appsignal.internal_logger.debug "Initializing Appsignal::Rack::SinatraBaseInstrumentation"
         @app = app
         @options = options
         @raise_errors_on = raise_errors?(@app)

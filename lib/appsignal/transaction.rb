@@ -26,7 +26,7 @@ module Appsignal
             Appsignal::Transaction.new(id, namespace, request, options)
         else
           # Otherwise, log the issue about trying to start another transaction
-          Appsignal.logger.warn_once_then_debug(
+          Appsignal.internal_logger.warn_once_then_debug(
             :transaction_id,
             "Trying to start new transaction with id " \
               "'#{id}', but a transaction with id '#{current.transaction_id}' " \
@@ -59,7 +59,7 @@ module Appsignal
       def complete_current!
         current.complete
       rescue => e
-        Appsignal.logger.error(
+        Appsignal.internal_logger.error(
           "Failed to complete transaction ##{current.transaction_id}. #{e.message}"
         )
       ensure
@@ -114,7 +114,7 @@ module Appsignal
 
     def complete
       if discarded?
-        Appsignal.logger.debug "Skipping transaction '#{transaction_id}' " \
+        Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
           "because it was manually discarded."
         return
       end
@@ -188,7 +188,7 @@ module Appsignal
     #   Breadcrumb reference
     def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
       unless metadata.is_a? Hash
-        Appsignal.logger.error "add_breadcrumb: Cannot add breadcrumb. " \
+        Appsignal.internal_logger.error "add_breadcrumb: Cannot add breadcrumb. " \
           "The given metadata argument is not a Hash."
         return
       end
@@ -287,7 +287,7 @@ module Appsignal
 
       @ext.set_queue_start(start)
     rescue RangeError
-      Appsignal.logger.warn("Queue start value #{start} is too big")
+      Appsignal.internal_logger.warn("Queue start value #{start} is too big")
     end
 
     # Set the queue time based on the HTTP header or `:queue_start` env key
@@ -324,7 +324,7 @@ module Appsignal
       return unless key && data
 
       if !data.is_a?(Array) && !data.is_a?(Hash)
-        Appsignal.logger.error(
+        Appsignal.internal_logger.error(
           "Invalid sample data for '#{key}'. Value is not an Array or Hash: '#{data.inspect}'"
         )
         return
@@ -337,11 +337,11 @@ module Appsignal
     rescue RuntimeError => e
       begin
         inspected_data = data.inspect
-        Appsignal.logger.error(
+        Appsignal.internal_logger.error(
           "Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'"
         )
       rescue => e
-        Appsignal.logger.error(
+        Appsignal.internal_logger.error(
           "Error generating data (#{e.class}: #{e.message}). Can't inspect data."
         )
       end
@@ -362,7 +362,7 @@ module Appsignal
 
     def set_error(error)
       unless error.is_a?(Exception)
-        Appsignal.logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
+        Appsignal.internal_logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
           "The given value is not an exception: #{error.inspect}"
         return
       end
@@ -385,7 +385,7 @@ module Appsignal
         break unless error
 
         if causes.length >= ERROR_CAUSES_LIMIT
-          Appsignal.logger.debug "Appsignal::Transaction#set_error: Error has more " \
+          Appsignal.internal_logger.debug "Appsignal::Transaction#set_error: Error has more " \
             "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
             "will be reported."
           root_cause_missing = true
@@ -529,7 +529,7 @@ module Appsignal
         request.send options[:params_method]
       rescue => e
         # Getting params from the request has been know to fail.
-        Appsignal.logger.debug "Exception while getting params: #{e}"
+        Appsignal.internal_logger.debug "Exception while getting params: #{e}"
         nil
       end
     end

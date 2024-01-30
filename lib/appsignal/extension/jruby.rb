@@ -247,7 +247,7 @@ module Appsignal
         error_message = "ERROR: AppSignal failed to load extension. " \
           "Please run `appsignal diagnose` and email us at support@appsignal.com\n" \
           "#{error.class}: #{error.message}"
-        Appsignal.logger.error(error_message) if Appsignal.respond_to? :logger
+        Appsignal.internal_logger.error(error_message) if Appsignal.respond_to? :internal_logger
         Kernel.warn error_message
         Appsignal.extension_loaded = false if Appsignal.respond_to? :extension_loaded=
         raise error if ENV["_APPSIGNAL_EXTENSION_INSTALL"] == "true"

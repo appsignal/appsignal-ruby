@@ -6,9 +6,9 @@ module LogHelpers
   end
 
   def use_logger_with(log)
-    Appsignal.logger = test_logger(log)
+    Appsignal.internal_logger = test_logger(log)
     yield
-    Appsignal.logger = nil
+    Appsignal.internal_logger = nil
   end
 
   def test_logger(log)

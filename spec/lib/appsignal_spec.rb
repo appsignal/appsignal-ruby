@@ -12,7 +12,7 @@ describe Appsignal do
   describe ".config=" do
     it "should set the config" do
       config = project_fixture_config
-      expect(Appsignal.logger).to_not receive(:level=)
+      expect(Appsignal.internal_logger).to_not receive(:level=)
 
       Appsignal.config = config
       expect(Appsignal.config).to eq config
@@ -22,9 +22,9 @@ describe Appsignal do
   describe ".start" do
     context "with no config set beforehand" do
       it "should do nothing when config is not set and there is no valid config in the env" do
-        expect(Appsignal.logger).to receive(:error)
+        expect(Appsignal.internal_logger).to receive(:error)
           .with("Push API key not set after loading config").once
-        expect(Appsignal.logger).to receive(:error)
+        expect(Appsignal.internal_logger).to receive(:error)
           .with("Not starting, no valid config for this environment").once
         expect(Appsignal::Extension).to_not receive(:start)
         Appsignal.start
@@ -33,7 +33,7 @@ describe Appsignal do
       it "should create a config from the env" do
         ENV["APPSIGNAL_PUSH_API_KEY"] = "something"
         expect(Appsignal::Extension).to receive(:start)
-        expect(Appsignal.logger).not_to receive(:error)
+        expect(Appsignal.internal_logger).not_to receive(:error)
         silence { Appsignal.start }
         expect(Appsignal.config[:push_api_key]).to eq("something")
       end
@@ -44,7 +44,7 @@ describe Appsignal do
 
       it "should initialize logging" do
         Appsignal.start
-        expect(Appsignal.logger.level).to eq Logger::INFO
+        expect(Appsignal.internal_logger.level).to eq Logger::INFO
       end
 
       it "should start native" do
@@ -122,7 +122,7 @@ describe Appsignal do
 
       it "should change the log level" do
         Appsignal.start
-        expect(Appsignal.logger.level).to eq Logger::DEBUG
+        expect(Appsignal.internal_logger.level).to eq Logger::DEBUG
       end
     end
   end
@@ -152,7 +152,7 @@ describe Appsignal do
 
   describe ".stop" do
     it "should call stop on the extension" do
-      expect(Appsignal.logger).to receive(:debug).with("Stopping appsignal")
+      expect(Appsignal.internal_logger).to receive(:debug).with("Stopping appsignal")
       expect(Appsignal::Extension).to receive(:stop)
       Appsignal.stop
       expect(Appsignal.active?).to be_falsy
@@ -160,7 +160,7 @@ describe Appsignal do
 
     context "with context specified" do
       it "should log the context" do
-        expect(Appsignal.logger).to receive(:debug).with("Stopping appsignal (something)")
+        expect(Appsignal.internal_logger).to receive(:debug).with("Stopping appsignal (something)")
         expect(Appsignal::Extension).to receive(:stop)
         Appsignal.stop("something")
         expect(Appsignal.active?).to be_falsy
@@ -222,9 +222,9 @@ describe Appsignal do
         Appsignal.config = project_fixture_config("not_active")
         Appsignal.start
         Appsignal.start_logger
-        Appsignal.logger = test_logger(log_stream)
+        Appsignal.internal_logger = test_logger(log_stream)
       end
-      after { Appsignal.logger = nil }
+      after { Appsignal.internal_logger = nil }
 
       it "should do nothing but still yield the block" do
         expect(Appsignal::Transaction).to_not receive(:create)
@@ -308,9 +308,9 @@ describe Appsignal do
       Appsignal.config = project_fixture_config
       Appsignal.start
       Appsignal.start_logger
-      Appsignal.logger = test_logger(log_stream)
+      Appsignal.internal_logger = test_logger(log_stream)
     end
-    after { Appsignal.logger = nil }
+    after { Appsignal.internal_logger = nil }
 
     describe ".monitor_transaction" do
       context "with a successful call" do
@@ -545,7 +545,8 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10,
             Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn).with("Gauge value 10 for key 'key' is too big")
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("Gauge value 10 for key 'key' is too big")
           expect do
             Appsignal.set_gauge("key", 10)
           end.to_not raise_error
@@ -564,7 +565,7 @@ describe Appsignal do
             "this message."
         end
         before do
-          Appsignal.logger = test_logger(log_stream)
+          Appsignal.internal_logger = test_logger(log_stream)
           capture_std_streams(std_stream, err_stream) { Appsignal.set_host_gauge("key", 0.1) }
         end
 
@@ -586,7 +587,7 @@ describe Appsignal do
             "this message."
         end
         before do
-          Appsignal.logger = test_logger(log_stream)
+          Appsignal.internal_logger = test_logger(log_stream)
           capture_std_streams(std_stream, err_stream) { Appsignal.set_process_gauge("key", 0.1) }
         end
 
@@ -624,7 +625,7 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn)
+          expect(Appsignal.internal_logger).to receive(:warn)
             .with("Counter value 10 for key 'key' is too big")
           expect do
             Appsignal.increment_counter("key", 10)
@@ -654,7 +655,7 @@ describe Appsignal do
         it "should not raise an exception when out of range" do
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.logger).to receive(:warn)
+          expect(Appsignal.internal_logger).to receive(:warn)
             .with("Distribution value 10 for key 'key' is too big")
           expect do
             Appsignal.add_distribution_value("key", 10)
@@ -663,8 +664,8 @@ describe Appsignal do
       end
     end
 
-    describe ".logger" do
-      subject { Appsignal.logger }
+    describe ".internal_logger" do
+      subject { Appsignal.internal_logger }
 
       it { is_expected.to be_a Logger }
     end
@@ -727,7 +728,7 @@ describe Appsignal do
         let(:error) { double }
 
         it "logs an error message" do
-          expect(Appsignal.logger).to receive(:error).with(
+          expect(Appsignal.internal_logger).to receive(:error).with(
             "Appsignal.send_error: Cannot send error. " \
               "The given value is not an exception: #{error.inspect}"
           )
@@ -915,7 +916,7 @@ describe Appsignal do
           let(:error) { Object.new }
 
           it "logs an error" do
-            expect(Appsignal.logger).to receive(:error).with(
+            expect(Appsignal.internal_logger).to receive(:error).with(
               "Appsignal.set_error: Cannot set error. " \
                 "The given value is not an exception: #{error.inspect}"
             )
@@ -1128,7 +1129,7 @@ describe Appsignal do
         "production",
         :log_path => log_path
       )
-      Appsignal.logger.error("Log in memory")
+      Appsignal.internal_logger.error("Log in memory")
     end
 
     context "when the log path is writable" do
@@ -1139,9 +1140,9 @@ describe Appsignal do
           capture_stdout(out_stream) do
             initialize_config
             Appsignal.start_logger
-            Appsignal.logger.error("Log to file")
+            Appsignal.internal_logger.error("Log to file")
           end
-          expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
+          expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
         end
 
         it "logs to file" do
@@ -1163,8 +1164,8 @@ describe Appsignal do
           capture_stdout(out_stream) do
             initialize_config
             Appsignal.start_logger
-            Appsignal.logger.error("Log to not writable log file")
-            expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
+            Appsignal.internal_logger.error("Log to not writable log file")
+            expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
           end
         end
 
@@ -1178,8 +1179,9 @@ describe Appsignal do
         end
 
         it "outputs a warning" do
+          puts output
           expect(output).to include \
-            "[WARN] appsignal: Unable to start logger with log path '#{log_file}'.",
+            "[WARN] appsignal: Unable to start internal logger with log path '#{log_file}'.",
             "[WARN] appsignal: Permission denied"
         end
       end
@@ -1193,9 +1195,9 @@ describe Appsignal do
         capture_stdout(out_stream) do
           initialize_config
           Appsignal.start_logger
-          Appsignal.logger.error("Log to not writable log path")
+          Appsignal.internal_logger.error("Log to not writable log path")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
+        expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       after do
         FileUtils.chmod 0o755, Appsignal::Config.system_tmp_dir
@@ -1222,9 +1224,9 @@ describe Appsignal do
         capture_stdout(out_stream) do
           initialize_config
           Appsignal.start_logger
-          Appsignal.logger.error("Log to stdout")
+          Appsignal.internal_logger.error("Log to stdout")
         end
-        expect(Appsignal.logger).to be_a(Appsignal::Utils::IntegrationLogger)
+        expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
       end
       around { |example| recognize_as_heroku { example.run } }
 
@@ -1238,7 +1240,7 @@ describe Appsignal do
     end
 
     describe "#logger#level" do
-      subject { Appsignal.logger.level }
+      subject { Appsignal.internal_logger.level }
 
       context "when there is no config" do
         before do

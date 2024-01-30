@@ -6,7 +6,7 @@ module Appsignal
   module Integrations
     module HanamiPlugin
       def self.init
-        Appsignal.logger.debug("Loading Hanami integration")
+        Appsignal.internal_logger.debug("Loading Hanami integration")
 
         hanami_app_config = ::Hanami.app.config
         Appsignal.config = Appsignal::Config.new(

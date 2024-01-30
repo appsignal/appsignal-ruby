@@ -6,7 +6,7 @@ if DependencyHelper.rails_present?
     let(:log) { StringIO.new }
     before do
       start_agent
-      Appsignal.logger = test_logger(log)
+      Appsignal.internal_logger = test_logger(log)
     end
 
     let(:params) do

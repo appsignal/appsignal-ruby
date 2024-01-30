@@ -42,7 +42,7 @@ describe Appsignal::Minutely do
     let(:log_stream) { StringIO.new }
     let(:log) { log_contents(log_stream) }
     before do
-      Appsignal.logger = test_logger(log_stream)
+      Appsignal.internal_logger = test_logger(log_stream)
       # Speed up test time
       allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
       allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
@@ -287,7 +287,7 @@ describe Appsignal::Minutely do
     describe "#register" do
       let(:log_stream) { std_stream }
       let(:log) { log_contents(log_stream) }
-      before { Appsignal.logger = test_logger(log_stream) }
+      before { Appsignal.internal_logger = test_logger(log_stream) }
 
       it "adds the by key probe" do
         probe = lambda {}
