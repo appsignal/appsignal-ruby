@@ -71,11 +71,20 @@ module Appsignal
     # @see report_supported_gems
     SUPPORTED_GEMS = %w[
       actioncable
+      actionmailer
       activejob
+      activerecord
       capistrano
       celluloid
       data_mapper
       delayed_job
+      dry-monitor
+      elasticsearch
+      excon
+      faraday
+      gvltools
+      hanami
+      hiredis
       mongo_ruby_driver
       padrino
       passenger
@@ -85,7 +94,9 @@ module Appsignal
       rails
       rake
       redis
+      redis-client
       resque
+      rom
       sequel
       shoryuken
       sidekiq
