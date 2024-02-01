@@ -1,5 +1,22 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.5
+
+_Published on 2024-02-01._
+
+### Added
+
+- [d44f7092](https://github.com/appsignal/appsignal-ruby/commit/d44f7092a6a915ebe2825db7b0fe4e8e6eccd873) patch - Add support for the `redis-client` gem, which is used by the redis gem since version 5.
+
+### Changed
+
+- [6b9b814d](https://github.com/appsignal/appsignal-ruby/commit/6b9b814d958ca0a13f6da312746c11481bb46cfb) patch - Make the debug log message for OpenTelemetry spans from libraries we don't automatically recognize more clear. Mention the span id and the instrumentation library.
+- [6b9b814d](https://github.com/appsignal/appsignal-ruby/commit/6b9b814d958ca0a13f6da312746c11481bb46cfb) patch - Fix an issue where queries containing a MySQL leading type indicator would only be partially sanitised.
+
+### Fixed
+
+- [e0f7b0e5](https://github.com/appsignal/appsignal-ruby/commit/e0f7b0e52eb5ed886d0f72941bd1c3c8fe15c9c0) patch - Add more testing to JRuby extension installation to better report the installation result and any possible failures.
+
 ## 3.5.4
 
 ### Changed
