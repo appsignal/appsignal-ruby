@@ -7,9 +7,9 @@ module Appsignal
   module Rack
     class GenericInstrumentation
       class BodyWrapper
-        def initialize(appsignal_transaction, body)
-          @transaction = appsignal_transaction
+        def initialize(body, appsignal_transaction)
           @body = body
+          @transaction = appsignal_transaction
         end
 
         # This must be present in all Rack bodies and will be called by the serving adapter
@@ -55,6 +55,11 @@ module Appsignal
       # to be read eagerly. If the body supports that method, it takes precedence
       # over "each":
       # "Middleware may call to_ary directly on the Body and return a new Body in its place"
+      # One could "fold" both the to_ary API and the each() API into one Body object, but
+      # to_ary must also call "close" after it executes - and in the Rails implementation
+      # this pecularity was not handled properly.
+      #
+      # @api private
       class ArrayableBodyWrapper < EnumerableBodyWrapper
         def to_ary
           @body.to_ary
@@ -92,7 +97,7 @@ module Appsignal
           # Appsignal is off. Rack treats bodies in a special way which also
           # differs between Rack versions, so it is important to keep it consistent
           status, headers, obody = @app.call(env)
-          [status, headers, wrap_body(_transaction = nil, obody)]
+          [status, headers, wrap_body(obody, _transaction = nil)]
         end
       end
 
@@ -105,9 +110,9 @@ module Appsignal
         )
         begin
           transaction.set_http_or_background_queue_start
-          Appsignal.instrument("process_action.generic") do
+          Appsignal.instrument("process_action.rack") do
             status, headers, body = @app.call(env)
-            [status, headers, wrap_body(transaction, body)]
+            [status, headers, wrap_body(body, transaction)]
           end
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
@@ -119,20 +124,27 @@ module Appsignal
         end
       end
 
-      def wrap_body(transaction, obody)
+      def wrap_body(obody, transaction)
         # The logic of how Rack treats a response body differs based on which methods
         # the body responds to. This means that to support the Rack 3.x spec in full
         # we need to return a wrapper which matches the API of the wrapped body as closely
         # as possible. Pick the wrapper from the most specific to the least specific.
         # See https://github.com/rack/rack/blob/main/SPEC.rdoc#the-body-
+        #
+        # What is important is that our Body wrapper responds to the same methods Rack
+        # (or a webserver) would be checking and calling, and passes through that functionality
+        # to the original body. This can be done using delegation via i.e. SimpleDelegate
+        # but we also need "close" to get called correctly so that the Appsignal transaction
+        # gets completed - which will not happen, for example, when #to_ary gets called
+        # just on the delegated Rack body.
         if obody.respond_to?(:to_path)
-          PathableBodyWrapper.new(transaction, obody)
+          PathableBodyWrapper.new(obody, transaction)
         elsif obody.respond_to?(:to_ary)
-          ArrayableBodyWrapper.new(transaction, obody)
+          ArrayableBodyWrapper.new(obody, transaction)
         elsif !obody.respond_to?(:each) && obody.respond_to?(:call)
-          CallableBodyWrapper.new(transaction, obody)
+          CallableBodyWrapper.new(obody, transaction)
         else
-          EnumerableBodyWrapper.new(transaction, obody)
+          EnumerableBodyWrapper.new(obody, transaction)
         end
       end
     end
