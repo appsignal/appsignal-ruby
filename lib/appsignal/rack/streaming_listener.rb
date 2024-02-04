@@ -16,7 +16,8 @@ module Appsignal
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
-          @app.call(env)
+          status, headers, obody = @app.call(env)
+          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, _transaction = nil)]
         end
       end
 
@@ -43,31 +44,11 @@ module Appsignal
           end
 
         # Wrap the result body with our StreamWrapper
-        [status, headers, StreamWrapper.new(body, transaction)]
+        status, headers, obody = @app.call(env)
+        [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
       end
     end
   end
 
-  class StreamWrapper
-    def initialize(stream, transaction)
-      @stream = stream
-      @transaction = transaction
-    end
-
-    def each(&block)
-      @stream.each(&block)
-    rescue Exception => e # rubocop:disable Lint/RescueException
-      @transaction.set_error(e)
-      raise e
-    end
-
-    def close
-      @stream.close if @stream.respond_to?(:close)
-    rescue Exception => e # rubocop:disable Lint/RescueException
-      @transaction.set_error(e)
-      raise e
-    ensure
-      Appsignal::Transaction.complete_current!
-    end
-  end
+  StreamWrapper = Rack::EnumerableBodyWrapper
 end

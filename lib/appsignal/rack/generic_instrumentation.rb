@@ -16,7 +16,8 @@ module Appsignal
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
-          @app.call(env)
+          status, headers, obody = @app.call(env)
+          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, _transaction = nil)]
         end
       end
 
@@ -29,17 +30,18 @@ module Appsignal
         )
         begin
           Appsignal.instrument("process_action.generic") do
-            @app.call(env)
+            status, headers, obody = @app.call(env)
+            [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
           end
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_action_if_nil(env["appsignal.route"] || "unknown")
+          transaction.set_action_if_nil(env["appsignal.route"] || env["appsignal.action"] || "unknown")
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
-          Appsignal::Transaction.complete_current!
+          # Transaction gets completed when the body gets read out
         end
       end
     end
