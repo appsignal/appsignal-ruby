@@ -123,7 +123,7 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_action_if_nil(env["appsignal.route"] || "unknown")
+          transaction.set_action_if_nil(env["appsignal.route"] || env["appsignal.action"] || "unknown")
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
         end
