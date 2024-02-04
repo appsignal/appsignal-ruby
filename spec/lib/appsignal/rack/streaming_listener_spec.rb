@@ -101,14 +101,10 @@ describe Appsignal::Rack::StreamingListener do
       end
     end
 
-    it "should wrap the body in a wrapper" do
-      expect(Appsignal::StreamWrapper).to receive(:new)
-        .with("body", transaction)
-        .and_return(wrapper)
-
+    it "should wrap the response body in a wrapper" do
       body = listener.call_with_appsignal_monitoring(env)[2]
 
-      expect(body).to be_a(Appsignal::StreamWrapper)
+      expect(body).to be_kind_of(Appsignal::Rack::GenericInstrumentation::BodyWrapper)
     end
   end
 end

@@ -26,6 +26,8 @@ module Appsignal
       # The standard Rack body wrapper which exposes "each" for iterating
       # over the response body. This is supported across all 3 major Rack
       # versions.
+      #
+      # @api private
       class EnumerableBodyWrapper < BodyWrapper
         def each(&blk)
           return enum_for(:each) unless block_given?
@@ -39,9 +41,12 @@ module Appsignal
         end
       end
 
-      # The callable wrapper is a new Rack 3.x feature, and would not work
-      # with older Rack versions. Also, it must not respond to `each` because
-      # "If it responds to each, you must call each and not call".
+      # The callable response bodies are a new Rack 3.x feature, and would not work
+      # with older Rack versions. They must not respond to `each` because
+      # "If it responds to each, you must call each and not call". This is why
+      # it inherits from BodyWrapper directly and not from EnumerableBodyWrapper
+      #
+      # @api private
       class CallableBodyWrapper < BodyWrapper
         def call(_stream)
           @body.call(_stream)
@@ -92,9 +97,9 @@ module Appsignal
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
-          # Create the same body wrapping as when we are monitoring a transaction,
+          # Apply the same body wrapping as when we are monitoring a transaction,
           # so that the behavior of the Rack stack does not change just because
-          # Appsignal is off. Rack treats bodies in a special way which also
+          # Appsignal is active/inactive. Rack treats bodies in a special way which also
           # differs between Rack versions, so it is important to keep it consistent
           status, headers, obody = @app.call(env)
           [status, headers, wrap_body(obody, _transaction = nil)]
