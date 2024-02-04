@@ -114,7 +114,7 @@ describe Appsignal::Rack::StreamingListener do
 end
 
 describe Appsignal::StreamWrapper do
-  let(:stream)      { double }
+  let(:stream) { double }
   let(:transaction) do
     Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {})
   end
@@ -124,7 +124,8 @@ describe Appsignal::StreamWrapper do
     it "calls the original stream" do
       expect(stream).to receive(:each)
 
-      wrapper.each
+      # Needs to be called with a block, otherwise an Enumerator gets returned
+      wrapper.each {}
     end
 
     context "when #each raises an error" do
@@ -135,15 +136,20 @@ describe Appsignal::StreamWrapper do
 
         expect(transaction).to receive(:set_error).with(error)
 
-        expect { wrapper.send(:each) }.to raise_error(error)
+        expect { wrapper.each {} }.to raise_error(error)
       end
+    end
+
+    it "returns an Enumerator if no block is provided" do
+      expect(stream).not_to receive(:each)
+      expect(wrapper.each).to be_kind_of(Enumerator)
     end
   end
 
   describe "#close" do
     it "closes the original stream and completes the transaction" do
       expect(stream).to receive(:close)
-      expect(Appsignal::Transaction).to receive(:complete_current!)
+      expect(transaction).to receive(:complete)
 
       wrapper.close
     end
