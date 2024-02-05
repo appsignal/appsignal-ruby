@@ -32,6 +32,16 @@ describe Appsignal::Rack::BodyWrapper do
       expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
     end
 
+    it "returns an Enumerator if each() gets called without a block" do
+      fake_body = double()
+      expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
+
+      wrapped = described_class.wrap(fake_body, _txn = nil)
+      enum = wrapped.each
+      expect(enum).to be_kind_of(Enumerator)
+      expect { |b| enum.each(&b) }.to yield_successive_args("a", "b", "c")
+    end
+
     it "sets the exception raised inside each() into the Appsignal transaction" do
       fake_body = double()
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
@@ -40,7 +50,9 @@ describe Appsignal::Rack::BodyWrapper do
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
-      expect { |b| wrapped.each(&b) }.to raise_error(/Oops/)
+      expect {
+        expect { |b| wrapped.each(&b) }.to yield_control
+      }.to raise_error(/Oops/)
     end
 
     it "closes the body and the transaction when it gets closed" do
@@ -72,11 +84,8 @@ describe Appsignal::Rack::BodyWrapper do
   end
 
   describe "with a body supporting both to_ary and each" do
+    let(:fake_body) { double(each: nil, to_ary: []) }
     it "wraps with appropriate class" do
-      fake_body = double()
-      allow(fake_body).to receive(:each)
-      allow(fake_body).to receive(:to_ary)
-
       wrapped = described_class.wrap(fake_body, _txn = nil)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).to respond_to(:to_ary)
@@ -86,8 +95,6 @@ describe Appsignal::Rack::BodyWrapper do
     end
 
     it "reads out the body in full using each" do
-      fake_body = double()
-      allow(fake_body).to receive(:to_ary)
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
       wrapped = described_class.wrap(fake_body, _txn = nil)
@@ -95,19 +102,18 @@ describe Appsignal::Rack::BodyWrapper do
     end
 
     it "sets the exception raised inside each() into the Appsignal transaction" do
-      fake_body = double()
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
       txn = double("Appsignal transaction")
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
-      expect { |b| wrapped.each(&b) }.to raise_error(/Oops/)
+      expect {
+        expect { |b| wrapped.each(&b) }.to yield_control
+      }.to raise_error(/Oops/)
     end
 
     it "reads out the body in full using to_ary" do
-      fake_body = double()
-      allow(fake_body).to receive(:each)
       expect(fake_body).to receive(:to_ary).and_return(["one", "two", "three"])
 
       wrapped = described_class.wrap(fake_body, _txn = nil)
@@ -130,11 +136,9 @@ describe Appsignal::Rack::BodyWrapper do
   end
 
   describe "with a body supporting both to_path and each" do
-    it "wraps with appropriate class" do
-      fake_body = double()
-      allow(fake_body).to receive(:each)
-      allow(fake_body).to receive(:to_path)
+    let(:fake_body) { double(each: nil, to_path: nil) }
 
+    it "wraps with appropriate class" do
       wrapped = described_class.wrap(fake_body, _txn = nil)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
@@ -144,8 +148,6 @@ describe Appsignal::Rack::BodyWrapper do
     end
 
     it "reads out the body in full using each()" do
-      fake_body = double()
-      allow(fake_body).to receive(:to_path)
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
       wrapped = described_class.wrap(fake_body, _txn = nil)
@@ -153,19 +155,18 @@ describe Appsignal::Rack::BodyWrapper do
     end
 
     it "sets the exception raised inside each() into the Appsignal transaction" do
-      fake_body = double()
-      allow(fake_body).to receive(:to_path)
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
       txn = double("Appsignal transaction")
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
-      expect { |b| wrapped.each(&b) }.to raise_error(/Oops/)
+      expect {
+        expect { |b| wrapped.each(&b) }.to yield_control
+      }.to raise_error(/Oops/)
     end
 
-    it "exposes to_path to the sender" do
-      fake_body = double()
+    it "sets the exception raised inside to_path() into the Appsignal transaction" do
       allow(fake_body).to receive(:to_path).once.and_raise(Exception.new("Oops"))
 
       txn = double("Appsignal transaction")
@@ -176,8 +177,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect { wrapped.to_path }.to raise_error(/Oops/)
     end
 
-    it "sets the exception raised inside to_path() into the Appsignal transaction" do
-      fake_body = double()
+    it "exposes to_path to the sender" do
       allow(fake_body).to receive(:to_path).and_return("/tmp/file.bin")
 
       wrapped = described_class.wrap(fake_body, _txn = nil)
@@ -186,10 +186,8 @@ describe Appsignal::Rack::BodyWrapper do
   end
 
   describe "with a body only supporting call()" do
+    let(:fake_body) { double(call: nil) }
     it "wraps with appropriate class" do
-      fake_body = double()
-      allow(fake_body).to receive(:call)
-
       wrapped = described_class.wrap(fake_body, _txn = nil)
       expect(wrapped).not_to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
@@ -199,16 +197,14 @@ describe Appsignal::Rack::BodyWrapper do
     end
 
     it "passes the stream into the call() of the body" do
-      fake_body = double()
-      fake_rack_stream = double()
-      allow(fake_body).to receive(:call).with(fake_rack_stream)
+      fake_rack_stream = double("stream")
+      expect(fake_body).to receive(:call).with(fake_rack_stream)
 
       wrapped = described_class.wrap(fake_body, _txn = nil)
       expect { wrapped.call(fake_rack_stream) }.not_to raise_error
     end
 
     it "sets the exception raised inside call() into the Appsignal transaction" do
-      fake_body = double()
       fake_rack_stream = double()
       allow(fake_body).to receive(:call).with(fake_rack_stream).and_raise(Exception.new("Oopsie"))
 
