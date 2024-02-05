@@ -17,6 +17,9 @@ module Appsignal
         # but we also need "close" to get called correctly so that the Appsignal transaction
         # gets completed - which will not happen, for example, when #to_ary gets called
         # just on the delegated Rack body.
+        #
+        # This comment https://github.com/rails/rails/pull/49627#issuecomment-1769802573
+        # is of particular interest to understand why this has to be somewhat complicated.
         if original_body.respond_to?(:to_path)
           PathableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
         elsif original_body.respond_to?(:to_ary)
@@ -56,11 +59,15 @@ module Appsignal
     class EnumerableBodyWrapper < BodyWrapper
       def each(&blk)
         # This is a workaround for the Rails bug when there was a bit too much
-        # eagerness in implementing to_ary, see 
-        # return enum_for(:each) unless block_given?
-        @body.each do |bytes|
-          yield bytes
-        end
+        # eagerness in implementing to_ary, see:
+        # https://github.com/rails/rails/pull/44953
+        # https://github.com/rails/rails/pull/47092
+        # https://github.com/rails/rails/pull/49627
+        # https://github.com/rails/rails/issues/49588
+        # While the Rack SPEC does not mandate `each` to be callable
+        # in a blockless way it is still a good idea to have it in place.
+        return enum_for(:each) unless block_given?
+        @body.each(&blk)
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error) if @transaction
         raise error
