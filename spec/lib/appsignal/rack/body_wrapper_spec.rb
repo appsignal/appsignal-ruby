@@ -25,13 +25,24 @@ describe Appsignal::Rack::BodyWrapper do
         expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
         txn = double("Appsignal transaction")
-        expect(txn).to receive(:set_error).with(instance_of(Exception))
+        expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
         wrapped = described_class.wrap(fake_body, txn)
-        expect { |b| wrapped.each(&b) }.to raise_error
+        expect { |b| wrapped.each(&b) }.to raise_error(/Oops/)
       end
 
-      it "closes the body and the transaction when it gets closed"
+      it "closes the body and the transaction when it gets closed" do
+        fake_body = double()
+        expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
+
+        txn = double("Appsignal transaction")
+        expect(txn).to receive(:complete).once
+
+        wrapped = described_class.wrap(fake_body, txn)
+        expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
+        expect { wrapped.close }.not_to raise_error
+      end
+
       it "does not expose to_ary, call and to_path to the sender"
     end
 
@@ -73,6 +84,17 @@ describe Appsignal::Rack::BodyWrapper do
         expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
       end
 
+      it "sets the exception raised inside each() into the Appsignal transaction" do
+        fake_body = double()
+        expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
+
+        txn = double("Appsignal transaction")
+        expect(txn).to receive(:set_error).once.with(instance_of(Exception))
+
+        wrapped = described_class.wrap(fake_body, txn)
+        expect { |b| wrapped.each(&b) }.to raise_error(/Oops/)
+      end
+
       it "reads out the body in full using to_ary" do
         fake_body = double()
         allow(fake_body).to receive(:each)
@@ -82,8 +104,20 @@ describe Appsignal::Rack::BodyWrapper do
         expect(wrapped.to_ary).to eq(["one", "two", "three"])
       end
 
-      it "sets the exception raised inside each() into the Appsignal transaction"
-      it "sets the exception raised inside to_ary() into the Appsignal transaction"
+      it "sets the exception raised inside to_ary() into the Appsignal transaction and closes the transaction" do
+        fake_body = double()
+        allow(fake_body).to receive(:each)
+        expect(fake_body).to receive(:to_ary).once.and_raise(Exception.new("Oops"))
+        expect(fake_body).not_to receive(:close) # We expect the body to close itself inside its implementation of to_ary
+
+        txn = double("Appsignal transaction")
+        expect(txn).to receive(:set_error).once.with(instance_of(Exception))
+        expect(txn).to receive(:complete).once
+
+        wrapped = described_class.wrap(fake_body, txn)
+        expect { wrapped.to_ary }.to raise_error(/Oops/)
+      end
+
       it "closes the body and the transaction when it gets closed, but only once"
       it "exposes to_ary to the sender"
       it "closes itself and the transaction when to_ary is called"

@@ -58,7 +58,6 @@ module Appsignal
         # This is a workaround for the Rails bug when there was a bit too much
         # eagerness in implementing to_ary, see 
         # return enum_for(:each) unless block_given?
-
         @body.each do |bytes|
           yield bytes
         end
