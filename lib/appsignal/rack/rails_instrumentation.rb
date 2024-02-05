@@ -16,7 +16,8 @@ module Appsignal
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
-          @app.call(env)
+          status, headers, obody = @app.call(env)
+          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, _transaction = nil)]
         end
       end
 
@@ -29,7 +30,8 @@ module Appsignal
           :params_method => :filtered_parameters
         )
         begin
-          @app.call(env)
+          status, headers, obody = @app.call(env)
+          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
           raise error
@@ -45,7 +47,7 @@ module Appsignal
           rescue => error
             Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
           end
-          Appsignal::Transaction.complete_current!
+          # Transaction gets completed when the body gets read out
         end
       end
 
