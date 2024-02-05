@@ -104,63 +104,19 @@ describe Appsignal::Rack::StreamingListener do
     it "should wrap the response body in a wrapper" do
       body = listener.call_with_appsignal_monitoring(env)[2]
 
-      expect(body).to be_kind_of(Appsignal::Rack::GenericInstrumentation::BodyWrapper)
+      expect(body).to be_kind_of(Appsignal::Rack::BodyWrapper)
     end
   end
 end
 
 describe Appsignal::StreamWrapper do
-  let(:stream) { double }
-  let(:transaction) do
-    Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {})
-  end
-  let(:wrapper) { Appsignal::StreamWrapper.new(stream, transaction) }
-
-  describe "#each" do
-    it "calls the original stream" do
-      expect(stream).to receive(:each)
-
-      # Needs to be called with a block, otherwise an Enumerator gets returned
-      wrapper.each {}
-    end
-
-    context "when #each raises an error" do
-      let(:error) { ExampleException }
-
-      it "records the exception" do
-        allow(stream).to receive(:each).and_raise(error)
-
-        expect(transaction).to receive(:set_error).with(error)
-
-        expect { wrapper.each {} }.to raise_error(error)
-      end
-    end
-
-    it "returns an Enumerator if no block is provided" do
-      expect(stream).not_to receive(:each)
-      expect(wrapper.each).to be_kind_of(Enumerator)
-    end
-  end
-
-  describe "#close" do
-    it "closes the original stream and completes the transaction" do
-      expect(stream).to receive(:close)
-      expect(transaction).to receive(:complete)
-
-      wrapper.close
-    end
-
-    context "when #close raises an error" do
-      let(:error) { ExampleException }
-
-      it "records the exception and completes the transaction" do
-        allow(stream).to receive(:close).and_raise(error)
-
-        expect(transaction).to receive(:set_error).with(error)
-        expect(transaction).to receive(:complete)
-
-        expect { wrapper.send(:close) }.to raise_error(error)
-      end
+  describe ".new" do
+    it "returns an EnumerableWrapper" do
+      fake_body = double(each: nil)
+      fake_txn = double()
+      stream_wrapper = Appsignal::StreamWrapper.new(fake_body, fake_txn)
+      expect(stream_wrapper).to be_kind_of(Appsignal::Rack::EnumerableBodyWrapper)
     end
   end
 end
+
