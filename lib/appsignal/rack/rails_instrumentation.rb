@@ -5,20 +5,7 @@ require "rack"
 module Appsignal
   # @api private
   module Rack
-    class RailsInstrumentation
-      def initialize(app, options = {})
-        Appsignal.internal_logger.debug "Initializing Appsignal::Rack::RailsInstrumentation"
-        @app = app
-        @options = options
-      end
-
-      def call(env)
-        if Appsignal.active?
-          call_with_appsignal_monitoring(env)
-        else
-          @app.call(env)
-        end
-      end
+    class RailsInstrumentation < GenericInstrumentation
 
       def call_with_appsignal_monitoring(env)
         request = ActionDispatch::Request.new(env)
@@ -28,9 +15,16 @@ module Appsignal
           request,
           :params_method => :filtered_parameters
         )
+
+        # Record the start of the response serving before we call into the upstream app
+        transaction.set_http_or_background_queue_start
+
         begin
-          @app.call(env)
+          status, headers, obody = @app.call(env)
+          [status, headers, wrap_body(transaction, obody)]
         rescue Exception => error # rubocop:disable Lint/RescueException
+          # These exceptions come from the controller or one of the Rack middlewares
+          # upstream from this one, even before the body starts getting read
           transaction.set_error(error)
           raise error
         ensure
@@ -38,14 +32,12 @@ module Appsignal
           if controller
             transaction.set_action_if_nil("#{controller.class}##{controller.action_name}")
           end
-          transaction.set_http_or_background_queue_start
           transaction.set_metadata("path", request.path)
           begin
             transaction.set_metadata("method", request.request_method)
           rescue => error
             Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
           end
-          Appsignal::Transaction.complete_current!
         end
       end
 
