@@ -5,14 +5,13 @@ module Appsignal
   # output streaming. The class is kept for backwards compatibility.
   #
   # @api private
-  class StreamWrapper < Rack::GenericInstrumentation::EnumerableBodyWrapper
-  end
+  StreamWrapper = Rack::EnumerableBodyWrapper
 
   module Rack
-    # Appsignal module that tracks exceptions in Streaming rack responses.
+    # Used to be the module that tracks exceptions in streaming rack responses,
+    # but is in fact the same as the standard Rack instrumentation
     #
     # @api private
-    class StreamingListener < GenericInstrumentation
-    end
+    StreamingListener = GenericInstrumentation
   end
 end
