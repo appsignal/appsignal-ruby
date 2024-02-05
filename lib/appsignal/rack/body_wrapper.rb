@@ -39,8 +39,9 @@ module Appsignal
 
       # This must be present in all Rack bodies and will be called by the serving adapter
       def close
-        # This is needed so that if `to_ary` of the body has already closed itself
-        # (as prescribed) we do not attempt to close it twice
+        # The @body_already_closed check is needed so that if `to_ary`
+        # of the body has already closed itself (as prescribed) we do not
+        # attempt to close it twice
         @body.close if !@body_already_closed && @body.respond_to?(:close)
         @body_already_closed = true
       rescue Exception => error # rubocop:disable Lint/RescueException
