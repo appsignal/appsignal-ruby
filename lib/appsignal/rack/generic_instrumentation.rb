@@ -37,7 +37,8 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_action_if_nil(env["appsignal.route"] || env["appsignal.action"] || "unknown")
+          default_action = env["appsignal.route"] || env["appsignal.action"] || "unknown"
+          transaction.set_action_if_nil(default_action)
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start

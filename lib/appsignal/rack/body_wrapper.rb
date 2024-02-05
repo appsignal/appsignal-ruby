@@ -67,6 +67,7 @@ module Appsignal
         # While the Rack SPEC does not mandate `each` to be callable
         # in a blockless way it is still a good idea to have it in place.
         return enum_for(:each) unless block_given?
+
         @body.each(&blk)
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error) if @transaction

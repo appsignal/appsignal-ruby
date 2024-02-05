@@ -120,11 +120,11 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped.to_ary).to eq(["one", "two", "three"])
     end
 
-    it "sets the exception raised inside to_ary() into the Appsignal transaction and closes the transaction" do
+    it "sends the exception raised inside to_ary() into the Appsignal and closes txn" do
       fake_body = double()
       allow(fake_body).to receive(:each)
       expect(fake_body).to receive(:to_ary).once.and_raise(Exception.new("Oops"))
-      expect(fake_body).not_to receive(:close) # We expect the body to close itself inside its implementation of to_ary
+      expect(fake_body).not_to receive(:close) # Per spec we expect the body has closed itself
 
       txn = double("Appsignal transaction")
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
