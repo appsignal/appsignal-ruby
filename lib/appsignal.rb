@@ -305,5 +305,6 @@ require "appsignal/garbage_collection"
 require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"
 require "appsignal/version"
+require "appsignal/rack/body_wrapper"
 require "appsignal/rack/generic_instrumentation"
 require "appsignal/transmitter"
