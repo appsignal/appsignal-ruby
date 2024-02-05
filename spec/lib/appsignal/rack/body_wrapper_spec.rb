@@ -117,11 +117,6 @@ describe Appsignal::Rack::BodyWrapper do
         wrapped = described_class.wrap(fake_body, txn)
         expect { wrapped.to_ary }.to raise_error(/Oops/)
       end
-
-      it "closes the body and the transaction when it gets closed, but only once"
-      it "exposes to_ary to the sender"
-      it "closes itself and the transaction when to_ary is called"
-      it "does not try to close the contained body and the transaction when close is called after to_ary"
     end
 
     describe "with a body supporting both to_path and each" do
