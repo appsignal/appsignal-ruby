@@ -21,7 +21,6 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
-      expect(wrapped).not_to respond_to(:call)
       expect(wrapped).to respond_to(:close)
     end
 
