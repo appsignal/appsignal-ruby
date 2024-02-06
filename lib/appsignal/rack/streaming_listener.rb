@@ -44,8 +44,7 @@ module Appsignal
           end
 
         # Wrap the result body with our StreamWrapper
-        status, headers, obody = @app.call(env)
-        [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
+        [status, headers, Appsignal::Rack::BodyWrapper.wrap(body, transaction)]
       end
     end
   end

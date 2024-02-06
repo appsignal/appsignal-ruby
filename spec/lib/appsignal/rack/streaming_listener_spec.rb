@@ -111,8 +111,8 @@ end
 
 describe Appsignal::StreamWrapper do
   it ".new returns an EnumerableWrapper" do
-    fake_body = double(each: nil)
-    fake_txn = double()
+    fake_body = double(:each => nil)
+    fake_txn = double
     stream_wrapper = Appsignal::StreamWrapper.new(fake_body, fake_txn)
     expect(stream_wrapper).to be_kind_of(Appsignal::Rack::EnumerableBodyWrapper)
   end

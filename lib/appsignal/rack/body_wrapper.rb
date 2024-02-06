@@ -45,10 +45,10 @@ module Appsignal
         @body.close if !@body_already_closed && @body.respond_to?(:close)
         @body_already_closed = true
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error) if @transaction
+        @transaction&.set_error(error)
         raise error
       ensure
-        @transaction.complete if @transaction
+        @transaction&.complete
       end
     end
 
@@ -71,7 +71,7 @@ module Appsignal
 
         @body.each(&blk)
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error) if @transaction
+        @transaction&.set_error(error)
         raise error
       end
     end
@@ -83,10 +83,12 @@ module Appsignal
     #
     # @api private
     class CallableBodyWrapper < BodyWrapper
-      def call(_stream)
-        @body.call(_stream)
+      def call(stream)
+        # `stream` will be closed by the app we are calling, no need for us
+        # to close it ourselves
+        @body.call(stream)
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error) if @transaction
+        @transaction&.set_error(error)
         raise error
       end
     end
@@ -105,7 +107,7 @@ module Appsignal
         @body_already_closed = true
         @body.to_ary
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error) if @transaction
+        @transaction&.set_error(error)
         raise error
       ensure
         close
@@ -118,7 +120,7 @@ module Appsignal
       def to_path
         @body.to_path
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error) if @transaction
+        @transaction&.set_error(error)
         raise error
       end
     end
