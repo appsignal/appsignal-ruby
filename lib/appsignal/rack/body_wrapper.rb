@@ -48,7 +48,12 @@ module Appsignal
         @transaction&.set_error(error)
         raise error
       ensure
-        @transaction&.complete
+        # We need to call the Transaction class method and not
+        # @transaction.complete because the transaction is still
+        # thread-local and it needs to remove itself from the
+        # thread variables correctly, which does not happen on
+        # Transaction#complete.
+        Appsignal::Transaction.complete_current! if @transaction
       end
     end
 
@@ -110,7 +115,15 @@ module Appsignal
         @transaction&.set_error(error)
         raise error
       ensure
-        close
+        # We do not call "close" on ourselves as the only action
+        # we need to complete is completing the transaction.
+        #
+        # We need to call the Transaction class method and not
+        # @transaction.complete because the transaction is still
+        # thread-local and it needs to remove itself from the
+        # thread variables correctly, which does not happen on
+        # Transaction#complete.
+        Appsignal::Transaction.complete_current! if @transaction
       end
     end
 

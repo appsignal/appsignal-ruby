@@ -59,7 +59,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
       txn = double("Appsignal transaction")
-      expect(txn).to receive(:complete).once
+      expect(Appsignal::Transaction).to receive(:complete_current!).once
 
       wrapped = described_class.wrap(fake_body, txn)
       expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
@@ -127,7 +127,7 @@ describe Appsignal::Rack::BodyWrapper do
 
       txn = double("Appsignal transaction")
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
-      expect(txn).to receive(:complete).once
+      expect(Appsignal::Transaction).to receive(:complete_current!).once
 
       wrapped = described_class.wrap(fake_body, txn)
       expect { wrapped.to_ary }.to raise_error(/Oops/)
