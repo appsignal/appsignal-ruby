@@ -65,7 +65,8 @@ if DependencyHelper.rails_present?
 
     describe "#call_with_appsignal_monitoring" do
       def run
-        middleware.call(env)
+        _status, _headers, body = middleware.call(env)
+        body.close # Rack will always call close() on the body
       end
 
       it "calls the wrapped app" do
