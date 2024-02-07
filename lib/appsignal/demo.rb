@@ -93,7 +93,7 @@ module Appsignal
           "SERVER_NAME" => "localhost",
           "SERVER_PORT" => "80",
           "SERVER_PROTOCOL" => "HTTP/1.1",
-          "REQUEST_URI" => "/hello",
+          "REQUEST_PATH" => "/hello",
           "PATH_INFO" => "/hello",
           "HTTP_ACCEPT" => "text/html,application/xhtml+xml",
           "HTTP_ACCEPT_ENCODING" => "gzip, deflate, sdch",
