@@ -1,5 +1,11 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.5.6
+
+### Changed
+
+- [c76a3293](https://github.com/appsignal/appsignal-ruby/commit/c76a329389c7ce55f1a8307d67fca6c0824c7b6f) patch - Default headers don't contain `REQUEST_URI` anymore as query params are not filtered. Now `REQUEST_PATH` is sent instead to avoid any PII filtering.
+
 ## 3.5.5
 
 _Published on 2024-02-01._
