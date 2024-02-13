@@ -28,9 +28,11 @@ module Appsignal
           Appsignal::Transaction::HTTP_REQUEST,
           request
         )
+        body_read_will_complete = false
         begin
           Appsignal.instrument("process_action.generic") do
             status, headers, obody = @app.call(env)
+            body_read_will_complete = true
             [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
           end
         rescue Exception => error # rubocop:disable Lint/RescueException
@@ -42,7 +44,9 @@ module Appsignal
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
-          # Transaction gets completed when the body gets read out
+          # Transaction gets completed when the body gets read out, except in cases when
+          # the app failed before returning us the Rack response triplet.
+          Appsignal::Transaction.complete_current! unless body_read_will_complete
         end
       end
     end
