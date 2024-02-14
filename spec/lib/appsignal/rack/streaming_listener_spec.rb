@@ -90,10 +90,11 @@ describe Appsignal::Rack::StreamingListener do
     context "with an exception in the instrumentation call" do
       let(:error) { ExampleException }
 
-      it "should add the exception to the transaction" do
+      it "should add the exception to the transaction and complete the transaction" do
         allow(app).to receive(:call).and_raise(error)
 
         expect(transaction).to receive(:set_error).with(error)
+        expect(Appsignal::Transaction).to receive(:complete_current!).and_call_original
 
         expect do
           listener.call_with_appsignal_monitoring(env)

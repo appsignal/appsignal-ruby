@@ -127,7 +127,8 @@ if DependencyHelper.rails_present?
           end
         end
 
-        it "records the exception" do
+        it "records the exception and completes the transaction" do
+          expect(Appsignal::Transaction).to receive(:complete_current!)
           expect { run }.to raise_error(error)
 
           transaction_hash = last_transaction.to_h
