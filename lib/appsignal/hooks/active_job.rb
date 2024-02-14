@@ -56,7 +56,7 @@ module Appsignal
           super
         rescue Exception => exception # rubocop:disable Lint/RescueException
           job_status = :failed
-          transaction.set_error(exception)
+          appsignal_set_error(transaction, exception)
           raise exception
         ensure
           if transaction
@@ -81,6 +81,12 @@ module Appsignal
             ActiveJobHelpers.increment_counter metric_name, 1,
               tags.merge(:status => :processed)
           end
+        end
+
+        # sets the exception on the transaction, can be overridden by users
+        # to customize behavior. E.g. not sending the error on each occurrence.
+        def appsignal_set_error(transaction, exception)
+          transaction.set_error(exception)
         end
       end
 
