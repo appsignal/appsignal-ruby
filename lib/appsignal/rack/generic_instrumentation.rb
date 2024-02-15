@@ -28,7 +28,7 @@ module Appsignal
           Appsignal::Transaction::HTTP_REQUEST,
           request
         )
-        # We need to complete the transaction if there is an exception exception inside the `call`
+        # We need to complete the transaction if there is an exception inside the `call`
         # of the app. If there isn't one and the app returns us a Rack response triplet, we let
         # the BodyWrapper complete the transaction when #close gets called on it
         # (guaranteed by the webserver)
