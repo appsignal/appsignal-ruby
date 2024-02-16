@@ -43,7 +43,7 @@ module Appsignal
         # of the body has already closed itself (as prescribed) we do not
         # attempt to close it twice
         if !@body_already_closed && @body.respond_to?(:close)
-          Appsignal.instrument("process_action.response_body_close") { @body.close }
+          Appsignal.instrument("response_body_close.rack") { @body.close }
         end
         @body_already_closed = true
       rescue Exception => error # rubocop:disable Lint/RescueException
@@ -76,7 +76,7 @@ module Appsignal
         # in a blockless way it is still a good idea to have it in place.
         return enum_for(:each) unless block_given?
 
-        Appsignal.instrument("process_action.response_body_each") { @body.each(&blk) }
+        Appsignal.instrument("response_body_each.rack") { @body.each(&blk) }
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction&.set_error(error)
         raise error
@@ -93,7 +93,7 @@ module Appsignal
       def call(stream)
         # `stream` will be closed by the app we are calling, no need for us
         # to close it ourselves
-        Appsignal.instrument("process_action.response_body_call") { @body.call(stream) }
+        Appsignal.instrument("response_body_call.rack") { @body.call(stream) }
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction&.set_error(error)
         raise error
@@ -112,7 +112,7 @@ module Appsignal
     class ArrayableBodyWrapper < EnumerableBodyWrapper
       def to_ary
         @body_already_closed = true
-        Appsignal.instrument("process_action.response_body_to_ary") { @body.to_ary }
+        Appsignal.instrument("response_body_to_ary.rack") { @body.to_ary }
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction&.set_error(error)
         raise error
@@ -133,7 +133,7 @@ module Appsignal
     # pass that file to the downstream webserver for sending using X-Sendfile
     class PathableBodyWrapper < EnumerableBodyWrapper
       def to_path
-        Appsignal.instrument("process_action.response_body_to_path") { @body.to_path }
+        Appsignal.instrument("response_body_to_path.rack") { @body.to_path }
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction&.set_error(error)
         raise error
