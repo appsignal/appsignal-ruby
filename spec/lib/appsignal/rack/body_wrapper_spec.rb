@@ -1,10 +1,12 @@
 describe Appsignal::Rack::BodyWrapper do
+  let(:nil_txn) { Appsignal::Transaction::NilTransaction.new }
+
   describe "with a body that supports all possible features" do
     it "reduces the supported methods to just each()" do
       # which is the safest thing to do, since the body is likely broken
       fake_body = double(:each => nil, :call => nil, :to_ary => [], :to_path => "/tmp/foo.bin",
         :close => nil)
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
@@ -17,7 +19,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       allow(fake_body).to receive(:each)
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
@@ -27,7 +29,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "reads out the body in full using each" do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
     end
 
@@ -35,7 +37,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       enum = wrapped.each
       expect(enum).to be_kind_of(Enumerator)
       expect { |b| enum.each(&b) }.to yield_successive_args("a", "b", "c")
@@ -45,7 +47,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -58,7 +60,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(Appsignal::Transaction).to receive(:complete_current!).once
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -73,7 +75,7 @@ describe Appsignal::Rack::BodyWrapper do
       allow(fake_body).to receive(:each)
       allow(fake_body).to receive(:call)
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
@@ -85,7 +87,7 @@ describe Appsignal::Rack::BodyWrapper do
   describe "with a body supporting both to_ary and each" do
     let(:fake_body) { double(:each => nil, :to_ary => []) }
     it "wraps with appropriate class" do
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
@@ -96,14 +98,14 @@ describe Appsignal::Rack::BodyWrapper do
     it "reads out the body in full using each" do
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
     end
 
     it "sets the exception raised inside each() into the Appsignal transaction" do
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -115,7 +117,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "reads out the body in full using to_ary" do
       expect(fake_body).to receive(:to_ary).and_return(["one", "two", "three"])
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped.to_ary).to eq(["one", "two", "three"])
     end
 
@@ -125,7 +127,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(fake_body).to receive(:to_ary).once.and_raise(Exception.new("Oops"))
       expect(fake_body).not_to receive(:close) # Per spec we expect the body has closed itself
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(Appsignal::Transaction).to receive(:complete_current!).once
 
@@ -138,7 +140,7 @@ describe Appsignal::Rack::BodyWrapper do
     let(:fake_body) { double(:each => nil, :to_path => nil) }
 
     it "wraps with appropriate class" do
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).not_to respond_to(:call)
@@ -149,14 +151,14 @@ describe Appsignal::Rack::BodyWrapper do
     it "reads out the body in full using each()" do
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect { |b| wrapped.each(&b) }.to yield_successive_args("a", "b", "c")
     end
 
     it "sets the exception raised inside each() into the Appsignal transaction" do
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -168,7 +170,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "sets the exception raised inside to_path() into the Appsignal transaction" do
       allow(fake_body).to receive(:to_path).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(txn).not_to receive(:complete) # gets called by the caller via close()
 
@@ -179,7 +181,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "exposes to_path to the sender" do
       allow(fake_body).to receive(:to_path).and_return("/tmp/file.bin")
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped.to_path).to eq("/tmp/file.bin")
     end
   end
@@ -187,7 +189,7 @@ describe Appsignal::Rack::BodyWrapper do
   describe "with a body only supporting call()" do
     let(:fake_body) { double(:call => nil) }
     it "wraps with appropriate class" do
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect(wrapped).not_to respond_to(:each)
       expect(wrapped).not_to respond_to(:to_ary)
       expect(wrapped).to respond_to(:call)
@@ -199,7 +201,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_rack_stream = double("stream")
       expect(fake_body).to receive(:call).with(fake_rack_stream)
 
-      wrapped = described_class.wrap(fake_body, _txn = nil)
+      wrapped = described_class.wrap(fake_body, nil_txn)
       expect { wrapped.call(fake_rack_stream) }.not_to raise_error
     end
 
@@ -207,7 +209,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_rack_stream = double
       allow(fake_body).to receive(:call).with(fake_rack_stream).and_raise(Exception.new("Oopsie"))
 
-      txn = double("Appsignal transaction")
+      txn = double("Appsignal transaction", nil_transaction?: false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(txn).not_to receive(:complete) # gets called by the caller via close()
       wrapped = described_class.wrap(fake_body, txn)

@@ -4,7 +4,7 @@ module Appsignal
   # @api private
   module Rack
     class BodyWrapper
-      def self.wrap(original_body, appsignal_transaction_or_nil)
+      def self.wrap(original_body, appsignal_transaction)
         # The logic of how Rack treats a response body differs based on which methods
         # the body responds to. This means that to support the Rack 3.x spec in full
         # we need to return a wrapper which matches the API of the wrapped body as closely
@@ -21,13 +21,13 @@ module Appsignal
         # This comment https://github.com/rails/rails/pull/49627#issuecomment-1769802573
         # is of particular interest to understand why this has to be somewhat complicated.
         if original_body.respond_to?(:to_path)
-          PathableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
+          PathableBodyWrapper.new(original_body, appsignal_transaction)
         elsif original_body.respond_to?(:to_ary)
-          ArrayableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
+          ArrayableBodyWrapper.new(original_body, appsignal_transaction)
         elsif !original_body.respond_to?(:each) && original_body.respond_to?(:call)
-          CallableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
+          CallableBodyWrapper.new(original_body, appsignal_transaction)
         else
-          EnumerableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
+          EnumerableBodyWrapper.new(original_body, appsignal_transaction)
         end
       end
 
@@ -47,15 +47,19 @@ module Appsignal
         end
         @body_already_closed = true
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction&.set_error(error)
+        @transaction.set_error(error)
         raise error
       ensure
+        complete_transaction!
+      end
+
+      def complete_transaction!
         # We need to call the Transaction class method and not
         # @transaction.complete because the transaction is still
         # thread-local and it needs to remove itself from the
         # thread variables correctly, which does not happen on
         # Transaction#complete.
-        Appsignal::Transaction.complete_current! if @transaction
+        Appsignal::Transaction.complete_current! unless @transaction.nil_transaction?
       end
     end
 
@@ -78,7 +82,7 @@ module Appsignal
 
         Appsignal.instrument("response_body_each.rack") { @body.each(&blk) }
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction&.set_error(error)
+        @transaction.set_error(error)
         raise error
       end
     end
@@ -95,7 +99,7 @@ module Appsignal
         # to close it ourselves
         Appsignal.instrument("response_body_call.rack") { @body.call(stream) }
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction&.set_error(error)
+        @transaction.set_error(error)
         raise error
       end
     end
@@ -114,18 +118,12 @@ module Appsignal
         @body_already_closed = true
         Appsignal.instrument("response_body_to_ary.rack") { @body.to_ary }
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction&.set_error(error)
+        @transaction.set_error(error)
         raise error
       ensure
         # We do not call "close" on ourselves as the only action
         # we need to complete is completing the transaction.
-        #
-        # We need to call the Transaction class method and not
-        # @transaction.complete because the transaction is still
-        # thread-local and it needs to remove itself from the
-        # thread variables correctly, which does not happen on
-        # Transaction#complete.
-        Appsignal::Transaction.complete_current! if @transaction
+        complete_transaction!
       end
     end
 
@@ -135,7 +133,7 @@ module Appsignal
       def to_path
         Appsignal.instrument("response_body_to_path.rack") { @body.to_path }
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction&.set_error(error)
+        @transaction.set_error(error)
         raise error
       end
     end

@@ -42,8 +42,9 @@ module Appsignal
         if Appsignal.active?
           call_with_appsignal_monitoring(env)
         else
+          nil_transaction = Appsignal::Transaction::NilTransaction.new
           status, headers, obody = @app.call(env)
-          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, _transaction = nil)]
+          [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, nil_transaction)]
         end
       end
 
