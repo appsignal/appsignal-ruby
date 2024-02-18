@@ -47,7 +47,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -60,7 +60,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_body = double
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(Appsignal::Transaction).to receive(:complete_current!).once
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -105,7 +105,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "sets the exception raised inside each() into the Appsignal transaction" do
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -127,7 +127,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(fake_body).to receive(:to_ary).once.and_raise(Exception.new("Oops"))
       expect(fake_body).not_to receive(:close) # Per spec we expect the body has closed itself
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(Appsignal::Transaction).to receive(:complete_current!).once
 
@@ -158,7 +158,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "sets the exception raised inside each() into the Appsignal transaction" do
       expect(fake_body).to receive(:each).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
 
       wrapped = described_class.wrap(fake_body, txn)
@@ -170,7 +170,7 @@ describe Appsignal::Rack::BodyWrapper do
     it "sets the exception raised inside to_path() into the Appsignal transaction" do
       allow(fake_body).to receive(:to_path).once.and_raise(Exception.new("Oops"))
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(txn).not_to receive(:complete) # gets called by the caller via close()
 
@@ -209,7 +209,7 @@ describe Appsignal::Rack::BodyWrapper do
       fake_rack_stream = double
       allow(fake_body).to receive(:call).with(fake_rack_stream).and_raise(Exception.new("Oopsie"))
 
-      txn = double("Appsignal transaction", nil_transaction?: false)
+      txn = double("Appsignal transaction", "nil_transaction?" =>  false)
       expect(txn).to receive(:set_error).once.with(instance_of(Exception))
       expect(txn).not_to receive(:complete) # gets called by the caller via close()
       wrapped = described_class.wrap(fake_body, txn)
