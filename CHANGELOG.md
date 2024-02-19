@@ -31,11 +31,11 @@ _Published on 2024-02-01._
 
 ### Deprecated
 
-- [bb98744b](https://github.com/appsignal/appsignal-ruby/commit/bb98744b1b6d34db71b5f46279b1a9b26039bd0f) patch - Deprecate the `Appsignal.set_host_guage` and `Appsignal.set_process_gauge` helper methods in the Ruby gem. These methods would already log deprecation warnings in the `appsignal.log` file, but now also as a Ruby warning. These methods will be removed in the next major version. These methods already did not report any metrics, and still do not.
+- [bb98744b](https://github.com/appsignal/appsignal-ruby/commit/bb98744b1b6d34db71b5f46279b1a9b26039bd0f) patch - Deprecate the `Appsignal.set_host_gauge` and `Appsignal.set_process_gauge` helper methods in the Ruby gem. These methods would already log deprecation warnings in the `appsignal.log` file, but now also as a Ruby warning. These methods will be removed in the next major version. These methods already did not report any metrics, and still do not.
 
 ### Removed
 
-- [1a863490](https://github.com/appsignal/appsignal-ruby/commit/1a863490046318b8cee5fff2ac341fb73065f252) patch - Remove the `appsignal_set_host_guage` and `appsignal_set_process_gauge` extension functions. These functions were already deprecated and did not report any metrics.
+- [1a863490](https://github.com/appsignal/appsignal-ruby/commit/1a863490046318b8cee5fff2ac341fb73065f252) patch - Remove the `appsignal_set_host_gauge` and `appsignal_set_process_gauge` extension functions. These functions were already deprecated and did not report any metrics.
 
 ### Fixed
 
