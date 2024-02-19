@@ -65,7 +65,8 @@ if DependencyHelper.rails_present?
 
     describe "#call_with_appsignal_monitoring" do
       def run
-        middleware.call(env)
+        _status, _headers, body = middleware.call(env)
+        body.close # Rack will always call close() on the body
       end
 
       it "calls the wrapped app" do
@@ -126,7 +127,8 @@ if DependencyHelper.rails_present?
           end
         end
 
-        it "records the exception" do
+        it "records the exception and completes the transaction" do
+          expect(Appsignal::Transaction).to receive(:complete_current!)
           expect { run }.to raise_error(error)
 
           transaction_hash = last_transaction.to_h
