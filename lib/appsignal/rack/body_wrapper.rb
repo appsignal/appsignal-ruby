@@ -59,7 +59,12 @@ module Appsignal
         # thread-local and it needs to remove itself from the
         # thread variables correctly, which does not happen on
         # Transaction#complete.
-        Appsignal::Transaction.complete_current! unless @transaction.nil_transaction?
+        #
+        # In the future it would be a good idea to ensure
+        # that the current transaction is the same as @transaction,
+        # or allow @transaction to complete itself and remove
+        # itself from Thread.current
+        Appsignal::Transaction.complete_current!
       end
     end
 
