@@ -91,7 +91,9 @@ module Appsignal
         # in a blockless way it is still a good idea to have it in place.
         return enum_for(:each) unless block_given?
 
-        Appsignal.instrument("response_body_each.rack") { @body.each(&blk) }
+        Appsignal.instrument("process_response_body.rack", "Process Rack response body (#each)") do
+          @body.each(&blk)
+        end
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -108,7 +110,9 @@ module Appsignal
       def call(stream)
         # `stream` will be closed by the app we are calling, no need for us
         # to close it ourselves
-        Appsignal.instrument("response_body_call.rack") { @body.call(stream) }
+        Appsignal.instrument("process_response_body.rack", "Stream response body (#call)") do
+          @body.call(stream)
+        end
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -127,7 +131,9 @@ module Appsignal
     class ArrayableBodyWrapper < EnumerableBodyWrapper
       def to_ary
         @body_already_closed = true
-        Appsignal.instrument("response_body_to_ary.rack") { @body.to_ary }
+        Appsignal.instrument("process_response_body.rack", "Stream response body (#to_ary)") do
+          @body.to_ary
+        end
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
