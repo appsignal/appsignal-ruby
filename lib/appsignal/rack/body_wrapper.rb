@@ -110,7 +110,7 @@ module Appsignal
       def call(stream)
         # `stream` will be closed by the app we are calling, no need for us
         # to close it ourselves
-        Appsignal.instrument("process_response_body.rack", "Stream response body (#call)") do
+        Appsignal.instrument("process_response_body.rack", "Process Rack response body (#call)") do
           @body.call(stream)
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
@@ -131,7 +131,10 @@ module Appsignal
     class ArrayableBodyWrapper < EnumerableBodyWrapper
       def to_ary
         @body_already_closed = true
-        Appsignal.instrument("process_response_body.rack", "Stream response body (#to_ary)") do
+        Appsignal.instrument(
+          "process_response_body.rack",
+          "Process Rack response body (#to_ary)"
+        ) do
           @body.to_ary
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
