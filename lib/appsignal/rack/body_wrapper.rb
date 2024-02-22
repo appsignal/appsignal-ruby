@@ -25,7 +25,13 @@ module Appsignal
         elsif original_body.respond_to?(:to_ary)
           ArrayableBodyWrapper.new(original_body, appsignal_transaction)
         elsif !original_body.respond_to?(:each) && original_body.respond_to?(:call)
-          CallableBodyWrapper.new(original_body, appsignal_transaction)
+          # This body only supports #call, so we must be running a Rack 3 application
+          # It is possible that a body exposes both `each` and `call` in the hopes of
+          # being backwards-compatible with both Rack 3.x and Rack 2.x, however
+          # this is not going to work since the SPEC says that if both are available,
+          # `each` should be used and `call` should be ignored.
+          # So for that case we can drop by to our default EnumerableBodyWrapper
+          CallableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
         else
           EnumerableBodyWrapper.new(original_body, appsignal_transaction)
         end
