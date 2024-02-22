@@ -31,7 +31,7 @@ module Appsignal
           # this is not going to work since the SPEC says that if both are available,
           # `each` should be used and `call` should be ignored.
           # So for that case we can drop by to our default EnumerableBodyWrapper
-          CallableBodyWrapper.new(original_body, appsignal_transaction_or_nil)
+          CallableBodyWrapper.new(original_body, appsignal_transaction)
         else
           EnumerableBodyWrapper.new(original_body, appsignal_transaction)
         end
