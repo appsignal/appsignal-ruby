@@ -50,7 +50,7 @@ describe Appsignal::Rack::GenericInstrumentation do
       expect(app).to receive(:call).with(env)
     end
 
-    context "with an exception", :error => true do
+    context "with an exception raised from call()", :error => true do
       let(:error) { ExampleException }
       let(:app) do
         double.tap do |d|
@@ -58,8 +58,9 @@ describe Appsignal::Rack::GenericInstrumentation do
         end
       end
 
-      it "records the exception" do
+      it "records the exception and completes the transaction" do
         expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+        expect(Appsignal::Transaction).to receive(:complete_current!)
       end
     end
 
