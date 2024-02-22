@@ -3,7 +3,9 @@ if DependencyHelper.sinatra_present?
 
   module SinatraRequestHelpers
     def make_request(env)
-      middleware.call(env)
+      _status, _headers, body = middleware.call(env)
+      # Close the body so that the transaction gets completed
+      body&.close
     end
 
     def make_request_with_error(env, error)
