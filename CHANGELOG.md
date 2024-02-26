@@ -1,5 +1,39 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.0
+
+_Published on 2024-02-26._
+
+### Added
+
+- [9984156f](https://github.com/appsignal/appsignal-ruby/commit/9984156faea0a76cb0fe81594e1ddf40d55dabbe) minor - Add instrumentation for all Rack responses, including streaming responses. New `response_body_each.rack`, `response_body_call.rack` and `response_body_to_ary.rack` events will be shown in the event timeline. This will show how long it takes to complete responses, depending on the response implementation.
+  
+  This Sinatra route with a streaming response will be better instrumented, for example:
+  
+  ```ruby
+  get "/stream" do
+    stream do |out|
+      sleep 1
+      out << "1"
+      sleep 1
+      out << "2"
+      sleep 1
+      out << "3"
+    end
+  end
+  ```
+- [e7706038](https://github.com/appsignal/appsignal-ruby/commit/e7706038d8b2f52ea90441cfa62d5ee867d893a2) patch - Add histogram support to the OpenTelemetry HTTP server. This allows OpenTelemetry-based instrumentations to report histogram data to AppSignal as distribution metrics.
+
+### Changed
+
+- [11220302](https://github.com/appsignal/appsignal-ruby/commit/112203023a58e53e607a9fd7d545044fa7d896d5) minor - **Breaking change**: Normalize CPU metrics for cgroups v1 systems. When we can detect how many CPUs are configured in the container's limits, we will normalize the CPU percentages to a maximum of 100%. This is a breaking change. Triggers for CPU percentages that are configured for a CPU percentage higher than 100% will no longer trigger after this update. Please configure triggers to a percentage with a maximum of 100% CPU percentage.
+- [11220302](https://github.com/appsignal/appsignal-ruby/commit/112203023a58e53e607a9fd7d545044fa7d896d5) patch - Support fractional CPUs for cgroups v2 metrics. Previously a CPU count of 0.5 would be interpreted as 1 CPU. Now it will be correctly seen as half a CPU and calculate CPU percentages accordingly.
+- [14aefc35](https://github.com/appsignal/appsignal-ruby/commit/14aefc3594b3f55a4c2ab14ba1259a4f10499467) patch - Update bundled trusted root certificates.
+
+### Fixed
+
+- [f2abbd6a](https://github.com/appsignal/appsignal-ruby/commit/f2abbd6aeb2230d79139cbdf82af98557bbe5b54) patch - Fix (sub)traces not being reported in their entirety when the OpenTelemetry exporter sends one trace in multiple export requests. This would be an issue for long running traces, that are exported in several requests.
+
 ## 3.5.6
 
 ### Changed
