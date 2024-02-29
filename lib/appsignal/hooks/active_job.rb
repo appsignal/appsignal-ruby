@@ -56,7 +56,9 @@ module Appsignal
           super
         rescue Exception => exception # rubocop:disable Lint/RescueException
           job_status = :failed
-          transaction.set_error(exception)
+          unless Appsignal.config[:activejob_report_errors] == "none"
+            transaction.set_error(exception)
+          end
           raise exception
         ensure
           if transaction
