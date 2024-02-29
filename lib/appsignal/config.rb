@@ -11,6 +11,7 @@ module Appsignal
     include Appsignal::Utils::DeprecationMessage
 
     DEFAULT_CONFIG = {
+      :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :debug => false,
       :dns_servers => [],
@@ -65,6 +66,7 @@ module Appsignal
 
     ENV_TO_KEY_MAPPING = {
       "APPSIGNAL_ACTIVE" => :active,
+      "APPSIGNAL_ACTIVE_JOB_REPORT_ERRORS" => :activejob_report_errors,
       "APPSIGNAL_APP_NAME" => :name,
       "APPSIGNAL_BIND_ADDRESS" => :bind_address,
       "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
@@ -112,6 +114,7 @@ module Appsignal
     }.freeze
     # @api private
     ENV_STRING_KEYS = %w[
+      APPSIGNAL_ACTIVE_JOB_REPORT_ERRORS
       APPSIGNAL_APP_NAME
       APPSIGNAL_BIND_ADDRESS
       APPSIGNAL_CA_FILE_PATH
