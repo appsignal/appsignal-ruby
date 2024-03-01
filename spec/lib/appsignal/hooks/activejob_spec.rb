@@ -224,7 +224,9 @@ if DependencyHelper.active_job_present?
 
       context "with activejob_report_errors set to none" do
         it "does not report the error" do
-          allow(Appsignal).to receive(:config).and_return({ :activejob_report_errors => "none" })
+          Appsignal.config = project_fixture_config("production")
+          Appsignal.config[:activejob_report_errors] = ["none"]
+
           # Other calls we're testing in another test
           allow(Appsignal).to receive(:increment_counter)
           tags = { :queue => queue }
