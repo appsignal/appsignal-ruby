@@ -18,7 +18,7 @@ Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
 
       loop do
         # Implement similar behavior to minutely probes.
-        # Initial sleep to wait until the app is fully initalized.
+        # Initial sleep to wait until the app is fully initialized.
         # Then loop every 60 seconds and collect the Puma stats as AppSignal
         # metrics.
         sleep sleep_time

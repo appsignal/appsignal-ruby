@@ -204,7 +204,7 @@ RSpec.describe "Puma plugin" do
       }
     end
 
-    it "collects puma stats as guage metrics with the (summed) worker metrics" do
+    it "collects puma stats as gauge metrics with the (summed) worker metrics" do
       run_plugin(stats_data, appsignal_plugin) do
         expect(logs).to_not include([:error, kind_of(String)])
         expect_gauge(:workers, 2, "type" => "count")
