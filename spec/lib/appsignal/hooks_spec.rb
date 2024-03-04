@@ -47,7 +47,7 @@ describe Appsignal::Hooks do
     Appsignal::Hooks.hooks.delete(:mock_present_hook)
   end
 
-  it "should not install if depencies are not present" do
+  it "should not install if dependencies are not present" do
     Appsignal::Hooks::Hook.register(:mock_not_present_hook, MockNotPresentHook)
 
     expect(Appsignal::Hooks.hooks[:mock_not_present_hook]).to be_instance_of(MockNotPresentHook)
