@@ -152,6 +152,7 @@ describe Appsignal::Config do
     it "merges with the default config" do
       expect(config.config_hash).to eq(
         :active                         => true,
+        :activejob_report_errors        => "all",
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :debug                          => false,
         :dns_servers                    => [],

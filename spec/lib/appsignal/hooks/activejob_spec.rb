@@ -222,6 +222,31 @@ if DependencyHelper.active_job_present?
         expect(events).to eq(expected_perform_events)
       end
 
+      context "with activejob_report_errors set to none" do
+        it "does not report the error" do
+          Appsignal.config = project_fixture_config("production")
+          Appsignal.config[:activejob_report_errors] = "none"
+
+          # Other calls we're testing in another test
+          allow(Appsignal).to receive(:increment_counter)
+          tags = { :queue => queue }
+          expect(Appsignal).to receive(:increment_counter)
+            .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
+          expect(Appsignal).to receive(:increment_counter)
+            .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
+
+          expect do
+            perform_job(ActiveJobErrorTestJob)
+          end.to raise_error(RuntimeError, "uh oh")
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash).to include(
+            "error" => nil
+          )
+        end
+      end
+
       if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
         context "with priority" do
           before do
