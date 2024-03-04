@@ -90,7 +90,7 @@ describe Appsignal::Environment do
       end
     end
 
-    context "when something unforseen errors" do
+    context "when something unforeseen errors" do
       it "does not re-raise the error and writes it to the log" do
         klass = Class.new do
           def inspect
@@ -127,7 +127,7 @@ describe Appsignal::Environment do
       expect(rake_spec.version.to_s).to_not be_empty
     end
 
-    context "when something unforseen errors" do
+    context "when something unforeseen errors" do
       it "does not re-raise the error and writes it to the log" do
         expect(Bundler).to receive(:rubygems).and_raise(RuntimeError, "bundler error")
 
@@ -148,7 +148,7 @@ describe Appsignal::Environment do
       expect_environment_metadata("ruby_a_test_enabled", "true")
     end
 
-    context "when something unforseen errors" do
+    context "when something unforeseen errors" do
       it "does not re-raise the error and writes it to the log" do
         klass = Class.new do
           def to_s
