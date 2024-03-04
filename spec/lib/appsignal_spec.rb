@@ -258,7 +258,7 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
-      it "does not record anyhing" do
+      it "does not record anything" do
         error = RuntimeError.new("specific error")
         expect do
           Appsignal.listen_for_error do

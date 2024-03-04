@@ -125,7 +125,7 @@ module Appsignal
     # "Middleware may call to_ary directly on the Body and return a new Body in its place"
     # One could "fold" both the to_ary API and the each() API into one Body object, but
     # to_ary must also call "close" after it executes - and in the Rails implementation
-    # this pecularity was not handled properly.
+    # this peculiarity was not handled properly.
     #
     # @api private
     class ArrayableBodyWrapper < EnumerableBodyWrapper

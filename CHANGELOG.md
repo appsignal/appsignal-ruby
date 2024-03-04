@@ -1443,7 +1443,7 @@ Yanked
 - Support for arrays, literal value types and function arguments in sql lexer
 
 ## 1.2.2
-- Handle out of range numbers in queue lenght and metrics api
+- Handle out of range numbers in queue length and metrics api
 
 ## 1.2.1
 - Use Dir.pwd in CLI install wizard
@@ -1468,7 +1468,7 @@ Yanked
 ## 1.1.7
 - Make logging resilient for closing FD's (daemons gem does this)
 - Add support for using Resque through ActiveJob
-- Rescue more expections in json generation
+- Rescue more exceptions in json generation
 
 ## 1.1.6
 - Generic Rack instrumentation middleware
@@ -1518,7 +1518,7 @@ Yanked
 - Improved sql sanitization
 - Improved mongoid/mongodb sanitization
 - Minor performance improvements
-- Better handling for non-utf8 convertable strings
+- Better handling for non-utf8 convertible strings
 - Make gem installable (but not functional) on JRuby
 
 ## 1.0.4
@@ -1699,7 +1699,7 @@ Yanked
 Yanked
 
 ## 0.8.8
-- Explicitely require securerandom
+- Explicitly require securerandom
 
 ## 0.8.7
 - Dup process action event to avoid threading issue

@@ -441,7 +441,7 @@ module Appsignal
             "'APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR=1' in your system " \
             "environment."
         end
-      message = "An error occured while loading the AppSignal config file. " \
+      message = "An error occurred while loading the AppSignal config file. " \
         "#{extra_message}\n" \
         "File: #{config_file.inspect}\n" \
         "#{e.class.name}: #{e}"
