@@ -64,7 +64,7 @@ module Appsignal
     alias log add
 
     # Log a debug level message
-    # @param message Mesage to log
+    # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
     def debug(message = nil, attributes = {})
@@ -77,7 +77,7 @@ module Appsignal
     end
 
     # Log an info level message
-    # @param message Mesage to log
+    # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
     def info(message = nil, attributes = {})
@@ -90,7 +90,7 @@ module Appsignal
     end
 
     # Log a warn level message
-    # @param message Mesage to log
+    # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
     def warn(message = nil, attributes = {})
@@ -103,7 +103,7 @@ module Appsignal
     end
 
     # Log an error level message
-    # @param message Mesage to log
+    # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
     def error(message = nil, attributes = {})
@@ -116,7 +116,7 @@ module Appsignal
     end
 
     # Log a fatal level message
-    # @param message Mesage to log
+    # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
     def fatal(message = nil, attributes = {})
