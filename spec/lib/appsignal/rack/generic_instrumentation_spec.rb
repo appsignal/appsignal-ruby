@@ -13,11 +13,11 @@ describe Appsignal::Rack::GenericInstrumentation do
       allow(middleware).to receive(:raw_payload).and_return({})
     end
 
-    context "when appsignal is active" do
+    context "when appsignal is active and there is no transaction in env" do
       before { allow(Appsignal).to receive(:active?).and_return(true) }
 
       it "should call with monitoring" do
-        expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
+        expect(middleware).to receive(:call_with_new_appsignal_transaction).with(env)
       end
     end
 
@@ -30,6 +30,27 @@ describe Appsignal::Rack::GenericInstrumentation do
 
       it "should call the stack" do
         expect(app).to receive(:call).with(env)
+      end
+    end
+
+    context "with multiple nested instances of the middleware" do
+      before { allow(Appsignal).to receive(:active?).and_return(true) }
+
+      it "only creates and completes the transaction once" do
+        expect(Appsignal::Transaction).to receive(:create).with(
+          kind_of(String),
+          Appsignal::Transaction::HTTP_REQUEST,
+          kind_of(Rack::Request)
+        ).once.and_return(double(:set_action_if_nil => nil, :set_http_or_background_queue_start => nil,
+          :set_metadata => nil))
+        expect(Appsignal::Transaction).to receive(:complete_current!).once
+
+        inner = described_class.new(app, options)
+        outer = described_class.new(inner, options)
+        outermost = described_class.new(outer, options)
+
+        _status, _headers, body = outermost.call(env)
+        body.close
       end
     end
 
