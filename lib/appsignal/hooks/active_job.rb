@@ -14,17 +14,27 @@ module Appsignal
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+          ::ActiveJob::Base.after_discard do |_job, exception|
+            puts "!!! after_discard"
+            break unless Appsignal.config[:activejob_report_errors] == "discard"
+
+            Appsignal::Transaction.current.set_error(exception)
+          end
         end
       end
 
       module ActiveJobClassInstrumentation
         def execute(job)
+          # TODO: we would need to instrument another part. Not execute but something like `perform` or `perform_now`. Otherwise we also instrument retries automatically as part of one job, if they happen instantly, like in the test adapter
+          puts "!!!! job: #{job}"
           job_status = nil
           has_wrapper_transaction = Appsignal::Transaction.current?
           transaction =
             if has_wrapper_transaction
+              puts "!!! has_wrapper_transaction"
               Appsignal::Transaction.current
             else
+              puts "!!! new transaction"
               # No standalone integration started before ActiveJob integration.
               # We don't have a separate integration for this QueueAdapter like
               # we do for Sidekiq.
@@ -55,21 +65,27 @@ module Appsignal
 
           super
         rescue Exception => exception # rubocop:disable Lint/RescueException
+          puts "!!! rescue: #{exception}"
           job_status = :failed
           transaction_set_error(transaction, exception)
           raise exception
         ensure
+          puts "!!! ensure"
           if transaction
             enqueued_at = job["enqueued_at"]
             if enqueued_at # Present in Rails 6 and up
               transaction.set_queue_start((Time.parse(enqueued_at).to_f * 1_000).to_i)
             end
 
-            unless has_wrapper_transaction
-              # Only complete transaction if ActiveJob is not wrapped in
-              # another supported integration, such as Sidekiq.
-              Appsignal::Transaction.complete_current!
-            end
+          end
+          if has_wrapper_transaction
+            puts "!!! no clear"
+
+          else
+            puts "!!! clear transaction"
+            # Only complete transaction if ActiveJob is not wrapped in
+            # another supported integration, such as Sidekiq.
+            Appsignal::Transaction.complete_current!
           end
 
           metrics = ActiveJobHelpers.metrics_for(job)
@@ -86,7 +102,9 @@ module Appsignal
         private
 
         def transaction_set_error(transaction, exception)
-          return if Appsignal.config[:activejob_report_errors] == "none"
+          # Only report errors when the config option is set to "all" this way.
+          # To report errors on discard, see the `after_discard` callback.
+          return unless Appsignal.config[:activejob_report_errors] == "all"
 
           transaction.set_error(exception)
         end

@@ -17,11 +17,11 @@ describe Appsignal::Hooks::ResqueHook do
 
   if DependencyHelper.resque_present?
     describe "#install" do
-      def perform_job(klass, options = {})
-        payload = { "class" => klass.to_s }.merge(options)
-        job = ::Resque::Job.new(queue, payload)
-        keep_transactions { job.perform }
-      end
+      # def perform_job(klass, options = {})
+      #   payload = { "class" => klass.to_s }.merge(options)
+      #   job = ::Resque::Job.new(queue, payload)
+      #   keep_transactions { job.perform }
+      # end
 
       let(:queue) { "default" }
       let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }

@@ -43,9 +43,9 @@ if DependencyHelper.que_present?
       end
       around { |example| keep_transactions { example.run } }
 
-      def perform_job(job)
-        job._run
-      end
+      # def perform_job(job)
+      #   job._run
+      # end
 
       context "success" do
         it "creates a transaction for a job" do

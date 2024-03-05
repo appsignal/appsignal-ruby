@@ -11,6 +11,10 @@ require "rack"
 require "rspec"
 require "timecop"
 require "webmock/rspec"
+require "active_job"
+require "action_view"
+require "action_controller"
+require "rspec/rails"
 
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].sort.each do |f|
   require f

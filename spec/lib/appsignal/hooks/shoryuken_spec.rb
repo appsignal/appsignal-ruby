@@ -10,18 +10,18 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   before(:context) { start_agent }
   around { |example| keep_transactions { example.run } }
 
-  def perform_job(&block)
-    block ||= lambda {}
-    Timecop.freeze(Time.parse(time)) do
-      Appsignal::Hooks::ShoryukenMiddleware.new.call(
-        worker_instance,
-        queue,
-        sqs_msg,
-        body,
-        &block
-      )
-    end
-  end
+  # def perform_job(&block)
+  #   block ||= lambda {}
+  #   Timecop.freeze(Time.parse(time)) do
+  #     Appsignal::Hooks::ShoryukenMiddleware.new.call(
+  #       worker_instance,
+  #       queue,
+  #       sqs_msg,
+  #       body,
+  #       &block
+  #     )
+  #   end
+  # end
 
   context "with a performance call" do
     let(:sent_timestamp) { Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 }

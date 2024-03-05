@@ -330,18 +330,18 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
   end
 
-  def perform_job
-    Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
-      exception = nil
-      plugin.call(worker, item, queue) do
-        yield if block_given?
-      end
-    rescue Exception => exception # rubocop:disable Lint/RescueException
-      raise exception
-    ensure
-      Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item) if exception
-    end
-  end
+  # def perform_job
+  #   Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
+  #     exception = nil
+  #     plugin.call(worker, item, queue) do
+  #       yield if block_given?
+  #     end
+  #   rescue Exception => exception
+  #     raise exception
+  #   ensure
+  #     Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item) if exception
+  #   end
+  # end
 
   def transaction
     last_transaction
@@ -557,9 +557,9 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    def perform_job(job_class, args)
-      perform_sidekiq { job_class.perform_later(args) }
-    end
+    # def perform_job(job_class, args)
+    #   perform_sidekiq { job_class.perform_later(args) }
+    # end
 
     def perform_mailer(mailer, method, args = nil)
       perform_sidekiq { perform_action_mailer(mailer, method, args) }
