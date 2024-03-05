@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.1
+
+_Published on 2024-03-05._
+
+### Added
+
+- [8974d201](https://github.com/appsignal/appsignal-ruby/commit/8974d20144407fce7a274ebaeb771ef76705d901) patch - Add `activejob_report_errors` config option. When set to `"none"`, ActiveJob jobs will no longer report errors. This can be used in combination with [custom exception reporting](https://docs.appsignal.com/ruby/instrumentation/exception-handling.html). By default, the config option has the value `"all"`, which reports all errors.
+
 ## 3.6.0
 
 _Published on 2024-02-26._
