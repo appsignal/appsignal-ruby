@@ -107,7 +107,7 @@ if DependencyHelper.active_job_present?
       expect(Appsignal).to receive(:increment_counter)
         .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
 
-      perform_job(ActiveJobTestJob)
+      queue_job(ActiveJobTestJob)
 
       transaction = last_transaction
       transaction_hash = transaction.to_h
@@ -136,7 +136,7 @@ if DependencyHelper.active_job_present?
         tags = { :queue => "custom_queue" }
         expect(Appsignal).to receive(:increment_counter)
           .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-        perform_job(ActiveJobCustomQueueTestJob)
+        queue_job(ActiveJobCustomQueueTestJob)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -170,7 +170,7 @@ if DependencyHelper.active_job_present?
             .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
               :status => :processed))
 
-          perform_job(ActiveJobPriorityTestJob)
+          queue_job(ActiveJobPriorityTestJob)
 
           transaction = last_transaction
           transaction_hash = transaction.to_h
@@ -193,7 +193,7 @@ if DependencyHelper.active_job_present?
           .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
 
         expect do
-          perform_job(ActiveJobErrorTestJob)
+          queue_job(ActiveJobErrorTestJob)
         end.to raise_error(RuntimeError, "uh oh")
 
         transaction = last_transaction
@@ -236,7 +236,7 @@ if DependencyHelper.active_job_present?
             .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
 
           expect do
-            perform_job(ActiveJobErrorTestJob)
+            queue_job(ActiveJobErrorTestJob)
           end.to raise_error(RuntimeError, "uh oh")
 
           transaction = last_transaction
@@ -276,7 +276,7 @@ if DependencyHelper.active_job_present?
                 :status => :failed))
 
             expect do
-              perform_job(ActiveJobErrorPriorityTestJob)
+              queue_job(ActiveJobErrorPriorityTestJob)
             end.to raise_error(RuntimeError, "uh oh")
 
             transaction = last_transaction
@@ -297,7 +297,7 @@ if DependencyHelper.active_job_present?
         allow(current_transaction).to receive(:complete).and_call_original
         set_current_transaction current_transaction
 
-        perform_job(ActiveJobTestJob)
+        queue_job(ActiveJobTestJob)
 
         expect(created_transactions.count).to eql(1)
         expect(current_transaction).to_not have_received(:complete)
@@ -333,7 +333,7 @@ if DependencyHelper.active_job_present?
       it "filters the configured params" do
         Appsignal.config = project_fixture_config("production")
         Appsignal.config[:filter_parameters] = ["foo"]
-        perform_job(ActiveJobTestJob, method_given_args)
+        queue_job(ActiveJobTestJob, method_given_args)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -382,7 +382,7 @@ if DependencyHelper.active_job_present?
       end
 
       it "sets provider_job_id as tag" do
-        perform_job(ProviderWrappedActiveJobTestJob)
+        queue_job(ProviderWrappedActiveJobTestJob)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -424,7 +424,7 @@ if DependencyHelper.active_job_present?
 
       it "sets queue time on transaction" do
         allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
-        perform_job(ProviderWrappedActiveJobTestJob)
+        queue_job(ProviderWrappedActiveJobTestJob)
 
         transaction = last_transaction
         queue_time = Time.parse("2020-10-10T10:10:10Z")
@@ -611,7 +611,7 @@ if DependencyHelper.active_job_present?
       Timecop.freeze(time, &block)
     end
 
-    def perform_job(job_class, args = nil)
+    def queue_job(job_class, args = nil)
       perform_active_job do
         if args
           job_class.perform_later(args)
