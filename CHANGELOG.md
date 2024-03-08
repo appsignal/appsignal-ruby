@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.2
+
+_Published on 2024-03-08._
+
+### Fixed
+
+- [c3921865](https://github.com/appsignal/appsignal-ruby/commit/c392186573a72fd9afe22299fabcd14dcfe96139) patch - Revert Rack middleware changes (see [changelog](https://github.com/appsignal/appsignal-ruby/blob/main/CHANGELOG.md#360)) to fix issues relating to Unicorn broken pipe errors and multiple requests merging into a single sample.
+
 ## 3.6.1
 
 _Published on 2024-03-05._
