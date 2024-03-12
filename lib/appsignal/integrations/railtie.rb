@@ -60,9 +60,13 @@ module Appsignal
           return unless handled
 
           Appsignal.send_error(error) do |transaction|
-            namespace, action_name, tags, custom_data = context_for(context.dup)
+            namespace, action_name, path, method, params, tags, custom_data =
+              context_for(context.dup)
             transaction.set_namespace(namespace) if namespace
             transaction.set_action(action_name) if action_name
+            transaction.set_metadata("path", path)
+            transaction.set_metadata("method", method)
+            transaction.params = params
             transaction.set_sample_data("custom_data", custom_data) if custom_data
 
             tags[:severity] = severity
@@ -81,9 +85,15 @@ module Appsignal
           # Fetch the namespace and action name based on the Rails execution
           # context.
           controller = context.delete(:controller)
+          path = nil
+          method = nil
+          params = nil
           if controller
             namespace = Appsignal::Transaction::HTTP_REQUEST
             action_name = "#{controller.class.name}##{controller.action_name}"
+            path = controller.request.path
+            method = controller.request.method
+            params = controller.request.filtered_parameters
           end
           # ActiveJob transaction naming relies on the current AppSignal
           # transaction namespace and action name copying done after this.
@@ -115,7 +125,7 @@ module Appsignal
           end
           tags.merge!(context)
 
-          [namespace, action_name, tags, custom_data]
+          [namespace, action_name, path, method, params, tags, custom_data]
         end
       end
     end
