@@ -256,9 +256,27 @@ if DependencyHelper.rails_present?
             end
 
             context "when no transaction is active" do
+              class ExampleRailsRequestMock
+                def path
+                  "path"
+                end
+
+                def method
+                  "GET"
+                end
+
+                def filtered_parameters
+                  { :user_id => 123, :password => "[FILTERED]" }
+                end
+              end
+
               class ExampleRailsControllerMock
                 def action_name
                   "index"
+                end
+
+                def request
+                  @request ||= ExampleRailsRequestMock.new
                 end
               end
 
@@ -275,7 +293,7 @@ if DependencyHelper.rails_present?
                 clear_current_transaction!
               end
 
-              it "fetches the action from the controller in the context" do
+              it "fetches the action, path and method from the controller in the context" do
                 # The controller key is set by Rails when raised in a controller
                 given_context = { :controller => ExampleRailsControllerMock.new }
                 with_rails_error_reporter do
@@ -285,7 +303,14 @@ if DependencyHelper.rails_present?
                 transaction = last_transaction
                 transaction_hash = transaction.to_h
                 expect(transaction_hash).to include(
-                  "action" => "ExampleRailsControllerMock#index"
+                  "action" => "ExampleRailsControllerMock#index",
+                  "metadata" => hash_including(
+                    "path" => "path",
+                    "method" => "GET"
+                  ),
+                  "sample_data" => hash_including(
+                    "params" => { "user_id" => 123, "password" => "[FILTERED]" },
+                  )
                 )
               end
 
