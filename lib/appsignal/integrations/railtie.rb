@@ -91,9 +91,11 @@ module Appsignal
           if controller
             namespace = Appsignal::Transaction::HTTP_REQUEST
             action_name = "#{controller.class.name}##{controller.action_name}"
-            path = controller.request.path
-            method = controller.request.method
-            params = controller.request.filtered_parameters
+            unless controller.request.nil?
+              path = controller.request.path
+              method = controller.request.method
+              params = controller.request.filtered_parameters
+            end
           end
           # ActiveJob transaction naming relies on the current AppSignal
           # transaction namespace and action name copying done after this.
