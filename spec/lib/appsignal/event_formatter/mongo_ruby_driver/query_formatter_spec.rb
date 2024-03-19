@@ -21,7 +21,7 @@ describe Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter do
       formatter.format(strategy, command)
     end
 
-    context "when strategy is unkown" do
+    context "when strategy is unknown" do
       let(:strategy) { :bananas }
 
       it "should return an empty hash" do

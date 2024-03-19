@@ -303,7 +303,7 @@ describe Appsignal::Transaction do
         context "with overridden options" do
           let(:options) { { :params_method => :filtered_params } }
 
-          it "sets the overriden :params_method" do
+          it "sets the overridden :params_method" do
             expect(subject[:params_method]).to eq :filtered_params
           end
         end
@@ -751,7 +751,7 @@ describe Appsignal::Transaction do
         e
       end
 
-      it "should also respond to add_exception for backwords compatibility" do
+      it "should also respond to add_exception for backwards compatibility" do
         expect(transaction).to respond_to(:add_exception)
       end
 
