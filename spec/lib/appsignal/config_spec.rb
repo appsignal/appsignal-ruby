@@ -264,7 +264,7 @@ describe Appsignal::Config do
       end
     end
 
-    context "with an overriden config file" do
+    context "with an overridden config file" do
       let(:config) do
         project_fixture_config("production", {}, Appsignal.internal_logger,
           File.join(project_fixture_path, "config", "appsignal.yml"))
@@ -275,7 +275,7 @@ describe Appsignal::Config do
         expect(config.active?).to be_truthy
       end
 
-      context "with an invalid overriden config file" do
+      context "with an invalid overridden config file" do
         let(:config) do
           project_fixture_config("production", {}, Appsignal.internal_logger,
             File.join(project_fixture_path, "config", "missing.yml"))
@@ -300,7 +300,7 @@ describe Appsignal::Config do
           stdout = std_stream
           stderr = std_stream
           log = capture_logs { capture_std_streams(stdout, stderr) { config } }
-          message = "An error occured while loading the AppSignal config file. " \
+          message = "An error occurred while loading the AppSignal config file. " \
             "Skipping file config. " \
             "In future versions AppSignal will not start on a config file " \
             "error. To opt-in to this new behavior set " \
@@ -326,7 +326,7 @@ describe Appsignal::Config do
           ENV["APPSIGNAL_PUSH_API_KEY"] = "something valid"
           ENV["APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR"] = "1"
           log = capture_logs { capture_std_streams(stdout, stderr) { config } }
-          message = "An error occured while loading the AppSignal config file. " \
+          message = "An error occurred while loading the AppSignal config file. " \
             "Not starting AppSignal because APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR is set.\n" \
             "File: #{File.join(config_path, "config", "appsignal.yml").inspect}\n" \
             "KeyError: key not found"

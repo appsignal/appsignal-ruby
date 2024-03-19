@@ -160,7 +160,7 @@ if DependencyHelper.capistrano2_present?
               run
             end
 
-            it "transmits the overriden revision" do
+            it "transmits the overridden revision" do
               expect(output).to include \
                 "Notifying AppSignal of deploy with: revision: abc123, user: batman",
                 "AppSignal has been notified of this deploy!"
@@ -174,7 +174,7 @@ if DependencyHelper.capistrano2_present?
               run
             end
 
-            it "transmits the overriden deploy user" do
+            it "transmits the overridden deploy user" do
               expect(output).to include \
                 "Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005," \
                   " user: robin",

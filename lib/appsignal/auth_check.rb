@@ -40,7 +40,7 @@ module Appsignal
     # @return [Array<String/nil, String>] response tuple.
     #   - First value is the response status code.
     #   - Second value is a description of the response and the exception error
-    #     message if an exception occured.
+    #     message if an exception occurred.
     def perform_with_result
       status = perform
       result =

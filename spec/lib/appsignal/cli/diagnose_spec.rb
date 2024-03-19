@@ -466,7 +466,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
       end
 
-      context "when the extention returns invalid JSON" do
+      context "when the extension returns invalid JSON" do
         before do
           expect(Appsignal::Extension).to receive(:diagnose).and_return("invalid agent\njson")
           run
