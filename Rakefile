@@ -219,7 +219,7 @@ namespace :build do
     Gem::PackageTask.new(base_gemspec, &block)
   rescue StandardError => e
     puts "Warning: An error occurred defining `build:#{task_name}:gem` Rake task."
-    puts "This task will not be availble."
+    puts "This task will not be available."
     if ENV["DEBUG"]
       puts "#{e}: #{e.message}"
       puts e.backtrace

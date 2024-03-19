@@ -8,7 +8,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
   end
   around { |example| keep_transactions { example.run } }
 
-  context "without a current transction" do
+  context "without a current transaction" do
     let(:exception) do
       raise ExampleStandardError, "uh oh"
     rescue => error

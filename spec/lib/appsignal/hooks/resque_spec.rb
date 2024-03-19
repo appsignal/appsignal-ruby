@@ -160,7 +160,7 @@ describe Appsignal::Hooks::ResqueHook do
         end
         after { Object.send(:remove_const, :ActiveJobMock) }
 
-        it "does not set arguments but lets the ActiveJob intergration handle it" do
+        it "does not set arguments but lets the ActiveJob integration handle it" do
           perform_job(
             ResqueTestJob,
             "class" => "ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper",
