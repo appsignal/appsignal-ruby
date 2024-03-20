@@ -1,5 +1,20 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.3
+
+_Published on 2024-03-20._
+
+### Added
+
+- [e50433fb](https://github.com/appsignal/appsignal-ruby/commit/e50433fbcb109ef741a889b0b7e78f16b884bd81) patch - Implement CPU count configuration option. Use it to override the auto-detected, cgroups-provided number of CPUs that is used to calculate CPU usage percentages.
+  
+  To set it, use the the `cpu_count`
+  configuration option or the `APPSIGNAL_CPU_COUNT` environment variable.
+
+### Fixed
+
+- [c6dd9779](https://github.com/appsignal/appsignal-ruby/commit/c6dd9779bb50dd9385da8962ccf1057ca1a44c7a) patch - Add request parameters, path and method tags to errors reported in controllers via the Rails error reporter.
+
 ## 3.6.2
 
 _Published on 2024-03-08._
