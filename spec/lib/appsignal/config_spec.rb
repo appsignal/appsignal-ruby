@@ -6,7 +6,8 @@ describe Appsignal::Config do
       configured_env_keys = (
         config::ENV_STRING_KEYS +
         config::ENV_BOOLEAN_KEYS +
-        config::ENV_ARRAY_KEYS
+        config::ENV_ARRAY_KEYS +
+        config::ENV_FLOAT_KEYS
       ).sort
 
       expect(mapped_env_keys).to eql(configured_env_keys)
@@ -414,6 +415,7 @@ describe Appsignal::Config do
         :push_api_key => "aaa-bbb-ccc",
         :active => true,
         :bind_address => "0.0.0.0",
+        :cpu_count => 1.5,
         :name => "App name",
         :debug => true,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
@@ -436,6 +438,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_ACTIVE"]                  = "true"
       ENV["APPSIGNAL_APP_NAME"]                = "App name"
       ENV["APPSIGNAL_BIND_ADDRESS"]            = "0.0.0.0"
+      ENV["APPSIGNAL_CPU_COUNT"]               = "1.5"
       ENV["APPSIGNAL_DEBUG"]                   = "true"
       ENV["APPSIGNAL_DNS_SERVERS"]             = "8.8.8.8,8.8.4.4"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
@@ -631,6 +634,7 @@ describe Appsignal::Config do
     let(:config) { project_fixture_config(:production) }
     before do
       config[:bind_address] = "0.0.0.0"
+      config[:cpu_count] = 1.5
       config[:logging_endpoint] = "http://localhost:123"
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w[action1 action2]
@@ -654,6 +658,7 @@ describe Appsignal::Config do
         .to end_with("spec/support/fixtures/projects/valid")
       expect(ENV.fetch("_APPSIGNAL_AGENT_PATH", nil)).to end_with("/ext")
       expect(ENV.fetch("_APPSIGNAL_BIND_ADDRESS", nil)).to eq("0.0.0.0")
+      expect(ENV.fetch("_APPSIGNAL_CPU_COUNT", nil)).to eq("1.5")
       expect(ENV.fetch("_APPSIGNAL_DEBUG_LOGGING", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_LOG", nil)).to eq "stdout"
       expect(ENV.fetch("_APPSIGNAL_LOG_FILE_PATH", nil)).to end_with("/tmp/appsignal.log")

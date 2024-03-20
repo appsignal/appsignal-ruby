@@ -3,4 +3,4 @@ bump: "patch"
 type: "fix"
 ---
 
-Add params, path and method to errors reported via `Rails.error` in controllers.
+Add request parameters, path and method tags to errors reported in controllers via the Rails error reporter.

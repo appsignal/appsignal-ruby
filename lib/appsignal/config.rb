@@ -70,6 +70,7 @@ module Appsignal
       "APPSIGNAL_APP_NAME" => :name,
       "APPSIGNAL_BIND_ADDRESS" => :bind_address,
       "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
+      "APPSIGNAL_CPU_COUNT" => :cpu_count,
       "APPSIGNAL_DEBUG" => :debug,
       "APPSIGNAL_DNS_SERVERS" => :dns_servers,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
@@ -166,6 +167,9 @@ module Appsignal
       APPSIGNAL_IGNORE_ERRORS
       APPSIGNAL_IGNORE_NAMESPACES
       APPSIGNAL_REQUEST_HEADERS
+    ].freeze
+    ENV_FLOAT_KEYS = %w[
+      APPSIGNAL_CPU_COUNT
     ].freeze
 
     # @attribute [r] system_config
@@ -344,6 +348,7 @@ module Appsignal
       ENV["_APPSIGNAL_APP_PATH"]                     = root_path.to_s
       ENV["_APPSIGNAL_BIND_ADDRESS"]                 = config_hash[:bind_address].to_s
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
+      ENV["_APPSIGNAL_CPU_COUNT"]                    = config_hash[:cpu_count].to_s
       ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
@@ -499,6 +504,14 @@ module Appsignal
         next unless env_var
 
         config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
+      end
+
+      # Configuration with float type
+      ENV_FLOAT_KEYS.each do |var|
+        env_var = ENV.fetch(var, nil)
+        next unless env_var
+
+        config[ENV_TO_KEY_MAPPING[var]] = env_var.to_f
       end
 
       config
