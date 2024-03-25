@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.4
+
+_Published on 2024-03-25._
+
+### Fixed
+
+- [09b9aa41](https://github.com/appsignal/appsignal-ruby/commit/09b9aa41d374cd4ef5ca39c68721bd241e7c93a3) patch - Fix CPU `user`/`system` usage measurements, as to take into account the amount of CPUs available.
+
 ## 3.6.3
 
 _Published on 2024-03-20._
