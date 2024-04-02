@@ -4,15 +4,26 @@ describe Appsignal::Heartbeat do
   let(:transmitter) { Appsignal::Transmitter.new("http://heartbeats/", config) }
 
   before(:each) do
+    allow(Appsignal).to receive(:active?).and_return(true)
     config.logger = Logger.new(StringIO.new)
     allow(Appsignal::Heartbeat).to receive(:transmitter).and_return(transmitter)
+  end
+
+  describe "when Appsignal is not active" do
+    it "should not transmit any events" do
+      allow(Appsignal).to receive(:active?).and_return(false)
+      expect(transmitter).not_to receive(:transmit)
+
+      heartbeat.start
+      heartbeat.finish
+    end
   end
 
   describe "#start" do
     it "should send a heartbeat start" do
       expect(transmitter).to receive(:transmit).with(hash_including(
         :name => "heartbeat-name",
-        :kind => "Start"
+        :kind => "start"
       )).and_return(nil)
 
       heartbeat.start
@@ -23,7 +34,7 @@ describe Appsignal::Heartbeat do
     it "should send a heartbeat finish" do
       expect(transmitter).to receive(:transmit).with(hash_including(
         :name => "heartbeat-name",
-        :kind => "Finish"
+        :kind => "finish"
       )).and_return(nil)
 
       heartbeat.finish
@@ -34,12 +45,12 @@ describe Appsignal::Heartbeat do
     describe "when a block is given" do
       it "should send a heartbeat start and finish and return the block output" do
         expect(transmitter).to receive(:transmit).with(hash_including(
-          :kind => "Start",
+          :kind => "start",
           :name => "heartbeat-with-block"
         )).and_return(nil)
 
         expect(transmitter).to receive(:transmit).with(hash_including(
-          :kind => "Finish",
+          :kind => "finish",
           :name => "heartbeat-with-block"
         )).and_return(nil)
 
@@ -67,7 +78,7 @@ describe Appsignal::Heartbeat do
     describe "when no block is given" do
       it "should only send a heartbeat finish event" do
         expect(transmitter).to receive(:transmit).with(hash_including(
-          :kind => "Finish",
+          :kind => "finish",
           :name => "heartbeat-without-block"
         )).and_return(nil)
 
