@@ -18,11 +18,11 @@ module Appsignal
     end
 
     def start
-      transmit_event("Start")
+      transmit_event("start")
     end
 
     def finish
-      transmit_event("Finish")
+      transmit_event("finish")
     end
 
     private
@@ -37,7 +37,17 @@ module Appsignal
     end
 
     def transmit_event(kind)
-      self.class.transmitter.transmit(event(kind))
+      response = self.class.transmitter.transmit(event(kind))
+
+      if response.code.to_i >= 200 && response.code.to_i < 300
+        Appsignal.internal_logger.trace("Transmitted heartbeat `#{name}` #{kind} event")
+      else
+        Appsignal.internal_logger.error(
+          "Failed to transmit heartbeat event: status code was #{response.code}"
+        )
+      end
+    rescue => e
+      Appsignal.internal_logger.error("Failed to transmit heartbeat event: #{e}")
     end
   end
 
