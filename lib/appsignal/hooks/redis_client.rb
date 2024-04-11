@@ -8,6 +8,7 @@ module Appsignal
 
       def dependencies_present?
         defined?(::RedisClient) &&
+          Gem::Version.new(::RedisClient::VERSION) >= Gem::Version.new("0.14.0") &&
           Appsignal.config &&
           Appsignal.config[:instrument_redis]
       end
