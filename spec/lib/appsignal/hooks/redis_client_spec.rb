@@ -4,12 +4,28 @@ describe Appsignal::Hooks::RedisClientHook do
   end
 
   if DependencyHelper.redis_client_present?
-    context "with redis_client" do
+    context "with redis-client" do
       context "with instrumentation enabled" do
         describe "#dependencies_present?" do
           subject { described_class.new.dependencies_present? }
 
-          it { is_expected.to be_truthy }
+          context "with gem version new than 0.14.0" do
+            before { stub_const("RedisClient::VERSION", "1.2.3") }
+
+            it { is_expected.to be_truthy }
+          end
+
+          context "with gem version 0.14.0" do
+            before { stub_const("RedisClient::VERSION", "0.14.0") }
+
+            it { is_expected.to be_truthy }
+          end
+
+          context "with gem version older than 0.14.0" do
+            before { stub_const("RedisClient::VERSION", "0.13.9") }
+
+            it { is_expected.to be_falsy }
+          end
         end
 
         context "with rest-client gem" do
@@ -211,7 +227,7 @@ describe Appsignal::Hooks::RedisClientHook do
       end
     end
   else
-    context "without redis" do
+    context "without redis-client" do
       describe "#dependencies_present?" do
         subject { described_class.new.dependencies_present? }
 
