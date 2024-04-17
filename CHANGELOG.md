@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.6.5
+
+_Published on 2024-04-17._
+
+### Fixed
+
+- [83004ae5](https://github.com/appsignal/appsignal-ruby/commit/83004ae597e55a70673d6589c8b4457960d7b1ba) patch - Check the redis-client gem version before installing instrumentation. This prevents errors from being raised on redis-client gem versions older than 0.14.0.
+
 ## 3.6.4
 
 _Published on 2024-03-25._
