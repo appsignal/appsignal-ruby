@@ -30,6 +30,7 @@ module Appsignal
       :filter_session_data => [],
       :ignore_actions => [],
       :ignore_errors => [],
+      :ignore_logs => [],
       :ignore_namespaces => [],
       :instrument_http_rb => true,
       :instrument_net_http => true,
@@ -90,6 +91,7 @@ module Appsignal
       "APPSIGNAL_HTTP_PROXY" => :http_proxy,
       "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
       "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
+      "APPSIGNAL_IGNORE_LOGS" => :ignore_logs,
       "APPSIGNAL_IGNORE_NAMESPACES" => :ignore_namespaces,
       "APPSIGNAL_INSTRUMENT_HTTP_RB" => :instrument_http_rb,
       "APPSIGNAL_INSTRUMENT_NET_HTTP" => :instrument_net_http,
@@ -165,6 +167,7 @@ module Appsignal
       APPSIGNAL_FILTER_SESSION_DATA
       APPSIGNAL_IGNORE_ACTIONS
       APPSIGNAL_IGNORE_ERRORS
+      APPSIGNAL_IGNORE_LOGS
       APPSIGNAL_IGNORE_NAMESPACES
       APPSIGNAL_REQUEST_HEADERS
     ].freeze
@@ -363,6 +366,7 @@ module Appsignal
       ENV["_APPSIGNAL_HTTP_PROXY"]                   = config_hash[:http_proxy]
       ENV["_APPSIGNAL_IGNORE_ACTIONS"]               = config_hash[:ignore_actions].join(",")
       ENV["_APPSIGNAL_IGNORE_ERRORS"]                = config_hash[:ignore_errors].join(",")
+      ENV["_APPSIGNAL_IGNORE_LOGS"]                  = config_hash[:ignore_logs].join(",")
       ENV["_APPSIGNAL_IGNORE_NAMESPACES"]            = config_hash[:ignore_namespaces].join(",")
       ENV["_APPSIGNAL_LANGUAGE_INTEGRATION_VERSION"] = "ruby-#{Appsignal::VERSION}"
       ENV["_APPSIGNAL_LOG"]                          = config_hash[:log]
