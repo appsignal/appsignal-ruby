@@ -172,6 +172,7 @@ describe Appsignal::Config do
         :filter_session_data            => [],
         :ignore_actions                 => [],
         :ignore_errors                  => [],
+        :ignore_logs                    => [],
         :ignore_namespaces              => [],
         :instrument_http_rb             => true,
         :instrument_net_http            => true,
@@ -421,6 +422,7 @@ describe Appsignal::Config do
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :ignore_actions => %w[action1 action2],
         :ignore_errors => %w[ExampleStandardError AnotherError],
+        :ignore_logs => ["^start$", "^Completed 2.* in .*ms (.*)"],
         :ignore_namespaces => %w[admin private_namespace],
         :instrument_net_http => false,
         :instrument_redis => false,
@@ -443,6 +445,7 @@ describe Appsignal::Config do
       ENV["APPSIGNAL_DNS_SERVERS"]             = "8.8.8.8,8.8.4.4"
       ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
       ENV["APPSIGNAL_IGNORE_ERRORS"]           = "ExampleStandardError,AnotherError"
+      ENV["APPSIGNAL_IGNORE_LOGS"]             = "^start$,^Completed 2.* in .*ms (.*)"
       ENV["APPSIGNAL_IGNORE_NAMESPACES"]       = "admin,private_namespace"
       ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]     = "false"
       ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
@@ -639,6 +642,7 @@ describe Appsignal::Config do
       config[:http_proxy] = "http://localhost"
       config[:ignore_actions] = %w[action1 action2]
       config[:ignore_errors] = %w[ExampleStandardError AnotherError]
+      config[:ignore_logs] = ["^start$", "^Completed 2.* in .*ms (.*)"]
       config[:ignore_namespaces] = %w[admin private_namespace]
       config[:log] = "stdout"
       config[:log_path] = "/tmp"
@@ -672,6 +676,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_HTTP_PROXY", nil)).to eq "http://localhost"
       expect(ENV.fetch("_APPSIGNAL_IGNORE_ACTIONS", nil)).to eq "action1,action2"
       expect(ENV.fetch("_APPSIGNAL_IGNORE_ERRORS", nil)).to eq "ExampleStandardError,AnotherError"
+      expect(ENV.fetch("_APPSIGNAL_IGNORE_LOGS", nil)).to eq "^start$,^Completed 2.* in .*ms (.*)"
       expect(ENV.fetch("_APPSIGNAL_IGNORE_NAMESPACES", nil)).to eq "admin,private_namespace"
       expect(ENV.fetch("_APPSIGNAL_RUNNING_IN_CONTAINER", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
