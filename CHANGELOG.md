@@ -1,5 +1,43 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.0
+
+_Published on 2024-04-22._
+
+### Added
+
+- [5b0eb9b2](https://github.com/appsignal/appsignal-ruby/commit/5b0eb9b25ee3f5a738962acee9052dfce74acb29) minor - _Heartbeats are currently only available to beta testers. If you are interested in trying it out, [send an email to support@appsignal.com](mailto:support@appsignal.com?subject=Heartbeat%20beta)!_
+  
+  ---
+  
+  Add heartbeats support. You can send heartbeats directly from your code, to track the execution of certain processes:
+  
+  ```ruby
+  def send_invoices()
+    # ... your code here ...
+    Appsignal.heartbeat("send_invoices")
+  end
+  ```
+  
+  You can pass a block to `Appsignal.heartbeat`, to report to AppSignal both when the process starts, and when it finishes, allowing you to see the duration of the process:
+  
+  ```ruby
+  def send_invoices()
+    Appsignal.heartbeat("send_invoices") do
+      # ... your code here ...
+    end
+  end
+  ```
+  
+  If an exception is raised within the block, the finish event will not be reported to AppSignal, triggering a notification about the missing heartbeat. The exception will bubble outside of the heartbeat block.
+- [5fc83cc1](https://github.com/appsignal/appsignal-ruby/commit/5fc83cc186b1574d759731c5191edf13cf8339b7) patch - Implement the `ignore_logs` configuration option, which can also be configured as the `APPSIGNAL_IGNORE_LOGS` environment variable.
+  
+  The value of `ignore_logs` is a list (comma-separated, when using the environment variable) of log line messages that should be ignored. For example, the value `"start"` will cause any message containing the word "start" to be ignored. Any log line message containing a value in `ignore_logs` will not be reported to AppSignal.
+  
+  The values can use a small subset of regular expression syntax (specifically, `^`, `$` and `.*`) to narrow or expand the scope of lines that should be matched.
+  
+  For example, the value `"^start$"` can be used to ignore any message that is _exactly_ the word "start", but not messages that merely contain it, like "Process failed to start". The value `"Task .* succeeded"` can be used to ignore messages about task success regardless of the specific task name.
+
 ## 3.6.5
 
 _Published on 2024-04-17._
