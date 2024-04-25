@@ -3,7 +3,7 @@
 module Appsignal
   module Helpers
     module Instrumentation # rubocop:disable Metrics/ModuleLength
-      include Appsignal::Utils::DeprecationMessage
+      include Appsignal::Utils::StdoutAndLoggerMessage
 
       # Creates an AppSignal transaction for the given block.
       #
@@ -207,7 +207,7 @@ module Appsignal
       )
         if tags
           call_location = caller(1..1).first
-          deprecation_message \
+          stdout_and_logger_warning \
             "The tags argument for `Appsignal.send_error` is deprecated. " \
               "Please use the block method to set tags instead.\n\n" \
               "  Appsignal.send_error(error) do |transaction|\n" \
@@ -217,7 +217,7 @@ module Appsignal
         end
         if namespace
           call_location = caller(1..1).first
-          deprecation_message \
+          stdout_and_logger_warning \
             "The namespace argument for `Appsignal.send_error` is deprecated. " \
               "Please use the block method to set the namespace instead.\n\n" \
               "  Appsignal.send_error(error) do |transaction|\n" \
@@ -300,7 +300,7 @@ module Appsignal
       def set_error(exception, tags = nil, namespace = nil)
         if tags
           call_location = caller(1..1).first
-          deprecation_message \
+          stdout_and_logger_warning \
             "The tags argument for `Appsignal.set_error` is deprecated. " \
               "Please use the block method to set tags instead.\n\n" \
               "  Appsignal.set_error(error) do |transaction|\n" \
@@ -310,7 +310,7 @@ module Appsignal
         end
         if namespace
           call_location = caller(1..1).first
-          deprecation_message \
+          stdout_and_logger_warning \
             "The namespace argument for `Appsignal.set_error` is deprecated. " \
               "Please use the block method to set the namespace instead.\n\n" \
               "  Appsignal.set_error(error) do |transaction|\n" \

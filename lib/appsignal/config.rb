@@ -8,7 +8,7 @@ require "tmpdir"
 
 module Appsignal
   class Config
-    include Appsignal::Utils::DeprecationMessage
+    include Appsignal::Utils::StdoutAndLoggerMessage
 
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
@@ -476,7 +476,7 @@ module Appsignal
     def maintain_backwards_compatibility
       return unless config_hash.key?(:working_dir_path)
 
-      deprecation_message \
+      stdout_and_logger_warning \
         "The `working_dir_path` option is deprecated, please use " \
           "`working_directory_path` instead and specify the " \
           "full path to the working directory",
@@ -542,7 +542,7 @@ module Appsignal
           config[:send_session_data] = true # Set default value
         end
       else
-        deprecation_message "The `skip_session_data` config option is " \
+        stdout_and_logger_warning "The `skip_session_data` config option is " \
           "deprecated. Please use `send_session_data` instead.",
           logger
         # Not configured by user

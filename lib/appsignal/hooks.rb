@@ -76,7 +76,7 @@ module Appsignal
       when :SidekiqPlugin
         require "appsignal/integrations/sidekiq"
         callers = caller
-        Appsignal::Utils::DeprecationMessage.message \
+        Appsignal::Utils::StdoutAndLoggerMessage.warning \
           "The constant Appsignal::Hooks::SidekiqPlugin has been deprecated. " \
             "Please update the constant name to Appsignal::Integrations::SidekiqMiddleware " \
             "in the following file to remove this message.\n#{callers.first}"
