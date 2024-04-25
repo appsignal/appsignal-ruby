@@ -757,7 +757,10 @@ describe Appsignal::Config do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
     let(:config) { project_fixture_config("production", :log_path => log_path) }
-    subject { capture_stdout(out_stream) { config.log_file_path } }
+
+    def log_file_path
+      capture_stdout(out_stream) { config.log_file_path }
+    end
 
     context "when path is writable" do
       let(:log_path) { File.join(tmp_dir, "writable-path") }
@@ -765,11 +768,11 @@ describe Appsignal::Config do
       after { FileUtils.rm_rf(log_path) }
 
       it "returns log file path" do
-        expect(subject).to eq File.join(log_path, "appsignal.log")
+        expect(log_file_path).to eq File.join(log_path, "appsignal.log")
       end
 
       it "prints no warning" do
-        subject
+        log_file_path
         expect(output).to be_empty
       end
     end
@@ -783,13 +786,23 @@ describe Appsignal::Config do
         before { FileUtils.chmod(0o777, system_tmp_dir) }
 
         it "returns returns the tmp location" do
-          expect(subject).to eq(File.join(system_tmp_dir, "appsignal.log"))
+          expect(log_file_path).to eq(File.join(system_tmp_dir, "appsignal.log"))
         end
 
         it "prints a warning" do
-          subject
+          log_file_path
           expect(output).to include "appsignal: Unable to log to '#{log_path}'. " \
             "Logging to '#{system_tmp_dir}' instead."
+        end
+
+        it "prints a warning once" do
+          capture_stdout(out_stream) do
+            log_file_path
+            log_file_path
+          end
+          message = "appsignal: Unable to log to '#{log_path}'. " \
+            "Logging to '#{system_tmp_dir}' instead."
+          expect(output.scan(message).count).to eq(1)
         end
       end
 
@@ -797,13 +810,22 @@ describe Appsignal::Config do
         before { FileUtils.chmod(0o555, system_tmp_dir) }
 
         it "returns nil" do
-          expect(subject).to be_nil
+          expect(log_file_path).to be_nil
         end
 
         it "prints a warning" do
-          subject
+          log_file_path
           expect(output).to include "appsignal: Unable to log to '#{log_path}' " \
             "or the '#{system_tmp_dir}' fallback."
+        end
+
+        it "prints a warning once" do
+          capture_stdout(out_stream) do
+            log_file_path
+            log_file_path
+          end
+          message = "appsignal: Unable to log to '#{log_path}' or the '#{system_tmp_dir}' fallback."
+          expect(output.scan(message).count).to eq(1)
         end
       end
     end
@@ -819,11 +841,11 @@ describe Appsignal::Config do
 
       context "when root_path is set" do
         it "returns returns the project log location" do
-          expect(subject).to eq File.join(config.root_path, "log/appsignal.log")
+          expect(log_file_path).to eq File.join(config.root_path, "log/appsignal.log")
         end
 
         it "prints no warning" do
-          subject
+          log_file_path
           expect(output).to be_empty
         end
       end
@@ -883,7 +905,7 @@ describe Appsignal::Config do
           end
 
           it "returns real path of log path" do
-            expect(subject).to eq(File.join(real_path, "appsignal.log"))
+            expect(log_file_path).to eq(File.join(real_path, "appsignal.log"))
           end
         end
       end

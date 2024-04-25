@@ -320,20 +320,29 @@ module Appsignal
     end
 
     def log_file_path
+      return @log_file_path if defined? @log_file_path
+
       path = config_hash[:log_path] || (root_path && File.join(root_path, "log"))
-      return File.join(File.realpath(path), "appsignal.log") if path && File.writable?(path)
+      if path && File.writable?(path)
+        @log_file_path = File.join(File.realpath(path), "appsignal.log")
+        return @log_file_path
+      end
 
       system_tmp_dir = self.class.system_tmp_dir
       if File.writable? system_tmp_dir
         $stdout.puts "appsignal: Unable to log to '#{path}'. Logging to " \
-          "'#{system_tmp_dir}' instead. Please check the " \
-          "permissions for the application's (log) directory."
-        File.join(system_tmp_dir, "appsignal.log")
+          "'#{system_tmp_dir}' instead. " \
+          "Please check the permissions for the application's (log) " \
+          "directory."
+        @log_file_path = File.join(system_tmp_dir, "appsignal.log")
       else
         $stdout.puts "appsignal: Unable to log to '#{path}' or the " \
           "'#{system_tmp_dir}' fallback. Please check the permissions " \
           "for the application's (log) directory."
+        @log_file_path = nil
       end
+
+      @log_file_path
     end
 
     def valid?
