@@ -14,7 +14,7 @@ module Appsignal
       end
 
       console do
-        Appsignal::Minutely.stop
+        Appsignal::Probes.stop
       end
 
       def self.initialize_appsignal(app)

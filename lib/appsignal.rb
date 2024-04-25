@@ -120,7 +120,7 @@ module Appsignal
             Appsignal::Environment.report_enabled("allocation_tracking")
           end
 
-          Appsignal::Minutely.start if config[:enable_minutely_probes]
+          Appsignal::Probes.start if config[:enable_minutely_probes]
 
           collect_environment_metadata
         else
@@ -287,6 +287,22 @@ module Appsignal
       end
       Appsignal::Environment.report_supported_gems
     end
+
+    # Alias constants that have moved with a warning message that points to the
+    # place to update the reference.
+    def const_missing(name)
+      case name
+      when :Minutely
+        callers = caller
+        Appsignal::Utils::StdoutAndLoggerMessage.warning \
+          "The constant Appsignal::Minutely has been deprecated. " \
+            "Please update the constant name to Appsignal::Probes " \
+            "in the following file to remove this message.\n#{callers.first}"
+        Appsignal::Probes
+      else
+        super
+      end
+    end
   end
 end
 
@@ -300,7 +316,6 @@ require "appsignal/event_formatter"
 require "appsignal/hooks"
 require "appsignal/probes"
 require "appsignal/marker"
-require "appsignal/minutely"
 require "appsignal/garbage_collection"
 require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"

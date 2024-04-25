@@ -171,11 +171,11 @@ RSpec.configure do |config|
   def stop_minutely_probes
     thread =
       begin
-        Appsignal::Minutely.class_variable_get(:@@thread) # Fetch old thread
+        Appsignal::Probes.class_variable_get(:@@thread) # Fetch old thread
       rescue NameError
         nil
       end
-    Appsignal::Minutely.stop
+    Appsignal::Probes.stop
     thread&.join # Wait for old thread to exit
   end
 end
