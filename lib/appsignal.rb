@@ -218,7 +218,10 @@ module Appsignal
         else
           Appsignal::Config::DEFAULT_LOG_LEVEL
         end
-      internal_logger << @in_memory_log.string if @in_memory_log
+      return unless @in_memory_log
+
+      internal_logger << @in_memory_log.string
+      @in_memory_log = nil
     end
 
     # Returns if the C-extension was loaded properly.

@@ -1121,7 +1121,14 @@ describe Appsignal do
     let(:log_path) { File.join(tmp_dir, "log") }
     let(:log_file) { File.join(log_path, "appsignal.log") }
 
-    before { FileUtils.mkdir_p(log_path) }
+    before do
+      FileUtils.mkdir_p(log_path)
+      # Clear state from previous test
+      Appsignal.internal_logger = nil
+      if Appsignal.instance_variable_defined?(:@in_memory_log)
+        Appsignal.remove_instance_variable(:@in_memory_log)
+      end
+    end
     after { FileUtils.rm_rf(log_path) }
 
     def initialize_config
@@ -1130,6 +1137,7 @@ describe Appsignal do
         :log_path => log_path
       )
       Appsignal.internal_logger.error("Log in memory")
+      expect(Appsignal.in_memory_log.string).to_not be_empty
     end
 
     context "when the log path is writable" do
@@ -1153,6 +1161,10 @@ describe Appsignal do
 
         it "amends in memory log to log file" do
           expect(log_file_contents).to include "[ERROR] appsignal: Log in memory"
+        end
+
+        it "clears the in memory log after writing to the new logger" do
+          expect(Appsignal.in_memory_log.string).to be_empty
         end
       end
 
@@ -1178,8 +1190,11 @@ describe Appsignal do
           expect(output).to include "[ERROR] appsignal: Log in memory"
         end
 
+        it "clears the in memory log after writing to the new logger" do
+          expect(Appsignal.in_memory_log.string).to be_empty
+        end
+
         it "outputs a warning" do
-          puts output
           expect(output).to include \
             "[WARN] appsignal: Unable to start internal logger with log path '#{log_file}'.",
             "[WARN] appsignal: Permission denied"
@@ -1236,6 +1251,10 @@ describe Appsignal do
 
       it "amends in memory log to stdout" do
         expect(output).to include "[ERROR] appsignal: Log in memory"
+      end
+
+      it "clears the in memory log after writing to the new logger" do
+        expect(Appsignal.in_memory_log.string).to be_empty
       end
     end
 
