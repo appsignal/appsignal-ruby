@@ -136,6 +136,7 @@ module Appsignal
       # @api private
       def start
         stop
+        @started = true
         @thread = Thread.new do
           # Advise multi-threaded app servers to ignore this thread
           # for the purposes of fork safety warnings
@@ -160,9 +161,18 @@ module Appsignal
         end
       end
 
+      # Returns if the probes thread has been started. If the value is false or
+      # nil, it has not been started yet.
+      #
+      # @return [Boolean, nil]
+      def started?
+        @started
+      end
+
       # @api private
       def stop
         defined?(@thread) && @thread.kill
+        @started = false
         probe_instances.clear
       end
 

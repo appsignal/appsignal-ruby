@@ -77,6 +77,23 @@ describe Appsignal::Probes do
       allow(Appsignal::Probes).to receive(:wait_time).and_return(0.001)
     end
 
+    describe ".started?" do
+      it "returns true when the probes thread has been started" do
+        expect(Appsignal::Probes.started?).to be_falsy
+        Appsignal::Probes.register :my_probe, (lambda {})
+        Appsignal::Probes.start
+        expect(Appsignal::Probes.started?).to be_truthy
+      end
+
+      it "returns false when the probes thread has been stopped" do
+        Appsignal::Probes.register :my_probe, lambda {}
+        Appsignal::Probes.start
+        expect(Appsignal::Probes.started?).to be_truthy
+        Appsignal::Probes.stop
+        expect(Appsignal::Probes.started?).to be_falsy
+      end
+    end
+
     context "with an instance of a class" do
       it "calls the probe every <wait_time>" do
         probe = MockProbe.new
