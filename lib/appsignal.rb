@@ -5,7 +5,7 @@ require "securerandom"
 require "stringio"
 
 require "appsignal/logger"
-require "appsignal/utils/deprecation_message"
+require "appsignal/utils/stdout_and_logger_message"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
 
