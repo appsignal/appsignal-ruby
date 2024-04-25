@@ -58,6 +58,11 @@ module Appsignal
     end
 
     class << self
+      # @api private
+      def mutex
+        @mutex ||= Thread::Mutex.new
+      end
+
       # @see ProbeCollection
       # @return [ProbeCollection] Returns list of probes.
       def probes
@@ -131,6 +136,8 @@ module Appsignal
       # @return [void]
       def register(name, probe)
         probes.internal_register(name, probe)
+
+        initialize_probe(name, probe) if started?
       end
 
       # @api private
@@ -148,13 +155,15 @@ module Appsignal
           initialize_probes
           loop do
             logger = Appsignal.internal_logger
-            logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
-            probe_instances.each do |name, probe|
-              logger.debug("Gathering minutely metrics with '#{name}' probe")
-              probe.call
-            rescue => ex
-              logger.error "Error in minutely probe '#{name}': #{ex}"
-              logger.debug ex.backtrace.join("\n")
+            mutex.synchronize do
+              logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
+              probe_instances.each do |name, probe|
+                logger.debug("Gathering minutely metrics with '#{name}' probe")
+                probe.call
+              rescue => ex
+                logger.error "Error in minutely probe '#{name}': #{ex}"
+                logger.debug ex.backtrace.join("\n")
+              end
             end
             sleep wait_time
           end
@@ -209,7 +218,9 @@ module Appsignal
             "#{klass}.dependency_present? returned falsy"
           return
         end
-        probe_instances[name] = instance
+        mutex.synchronize do
+          probe_instances[name] = instance
+        end
       rescue => error
         logger = Appsignal.internal_logger
         logger.error "Error while initializing minutely probe '#{name}': #{error}"

@@ -240,6 +240,25 @@ describe Appsignal::Probes do
         thread&.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
     end
+
+    context "with thread already started" do
+      before do
+        allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.00001)
+      end
+
+      it "auto starts probes added after the thread is started" do
+        Appsignal::Probes.start
+        wait_for("Probes thread to start") { Appsignal::Probes.started? }
+
+        calls = 0
+        probe = lambda { calls += 1 }
+        Appsignal::Probes.register :late_probe, probe
+
+        wait_for("enough probe calls") { calls >= 2 }
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
+        expect(log).to contains_log(:debug, "Gathering minutely metrics with 'late_probe' probe")
+      end
+    end
   end
 
   describe ".stop" do
