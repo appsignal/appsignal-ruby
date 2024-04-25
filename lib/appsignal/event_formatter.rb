@@ -14,8 +14,6 @@ module Appsignal
   # @api private
   class EventFormatter
     class << self
-      include Appsignal::Utils::DeprecationMessage
-
       def formatters
         @formatters ||= {}
       end
