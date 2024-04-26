@@ -16,7 +16,7 @@ describe Appsignal::Hooks::MriHook do
       end
 
       it "should be added to minutely probes" do
-        expect(Appsignal::Minutely.probes[:mri]).to be Appsignal::Probes::MriProbe
+        expect(Appsignal::Probes.probes[:mri]).to be Appsignal::Probes::MriProbe
       end
     end
   end

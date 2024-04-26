@@ -87,7 +87,7 @@ describe Appsignal do
         end
 
         it "should start minutely" do
-          expect(Appsignal::Minutely).to receive(:start)
+          expect(Appsignal::Probes).to receive(:start)
           Appsignal.start
         end
       end
@@ -98,7 +98,7 @@ describe Appsignal do
         end
 
         it "should not start minutely" do
-          expect(Appsignal::Minutely).to_not receive(:start)
+          expect(Appsignal::Probes).to_not receive(:start)
           Appsignal.start
         end
       end

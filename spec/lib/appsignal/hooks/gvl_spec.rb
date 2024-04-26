@@ -93,7 +93,7 @@ describe Appsignal::Hooks::GvlHook do
           it "is added to minutely probes" do
             Appsignal::Hooks.load_hooks
 
-            expect(Appsignal::Minutely.probes[:gvl]).to be Appsignal::Probes::GvlProbe
+            expect(Appsignal::Probes.probes[:gvl]).to be Appsignal::Probes::GvlProbe
           end
         end
       end

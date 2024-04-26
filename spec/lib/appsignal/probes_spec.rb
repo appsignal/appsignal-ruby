@@ -1,11 +1,40 @@
-describe Appsignal::Minutely do
+describe Appsignal::Probes do
   include WaitForHelper
 
-  before { Appsignal::Minutely.probes.clear }
+  before { Appsignal::Probes.probes.clear }
+
+  context "Minutely constant" do
+    let(:err_stream) { std_stream }
+    let(:stderr) { err_stream.read }
+
+    it "returns the Probes constant calling the Minutely constant" do
+      silence { expect(Appsignal::Minutely).to be(Appsignal::Probes) }
+    end
+
+    it "prints a deprecation warning to STDERR" do
+      capture_std_streams(std_stream, err_stream) do
+        expect(Appsignal::Minutely).to be(Appsignal::Probes)
+      end
+
+      expect(stderr)
+        .to include("appsignal WARNING: The constant Appsignal::Minutely has been deprecated.")
+    end
+
+    it "logs a warning to STDERR" do
+      logs =
+        capture_logs do
+          silence do
+            expect(Appsignal::Minutely).to be(Appsignal::Probes)
+          end
+        end
+
+      expect(logs).to include("The constant Appsignal::Minutely has been deprecated.")
+    end
+  end
 
   it "returns a ProbeCollection" do
-    expect(Appsignal::Minutely.probes)
-      .to be_instance_of(Appsignal::Minutely::ProbeCollection)
+    expect(Appsignal::Probes.probes)
+      .to be_instance_of(Appsignal::Probes::ProbeCollection)
   end
 
   describe ".start" do
@@ -44,15 +73,15 @@ describe Appsignal::Minutely do
     before do
       Appsignal.internal_logger = test_logger(log_stream)
       # Speed up test time
-      allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
-      allow(Appsignal::Minutely).to receive(:wait_time).and_return(0.001)
+      allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
+      allow(Appsignal::Probes).to receive(:wait_time).and_return(0.001)
     end
 
     context "with an instance of a class" do
       it "calls the probe every <wait_time>" do
         probe = MockProbe.new
-        Appsignal::Minutely.probes.register :my_probe, probe
-        Appsignal::Minutely.start
+        Appsignal::Probes.probes.register :my_probe, probe
+        Appsignal::Probes.start
 
         wait_for("enough probe calls") { probe.calls >= 2 }
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
@@ -63,11 +92,11 @@ describe Appsignal::Minutely do
         it "does not initialize the probe" do
           # Working probe which we can use to wait for X ticks
           working_probe = ProbeWithoutDependency.new
-          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+          Appsignal::Probes.probes.register :probe_without_dep, working_probe
 
           probe = ProbeWithMissingDependency.new
-          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
-          Appsignal::Minutely.start
+          Appsignal::Probes.probes.register :probe_with_missing_dep, probe
+          Appsignal::Probes.start
 
           wait_for("enough probe calls") { working_probe.calls >= 2 }
           # Only counts initialized probes
@@ -83,8 +112,8 @@ describe Appsignal::Minutely do
         probe = MockProbe
         probe_instance = MockProbe.new
         expect(probe).to receive(:new).and_return(probe_instance)
-        Appsignal::Minutely.probes.register :my_probe, probe
-        Appsignal::Minutely.start
+        Appsignal::Probes.probes.register :my_probe, probe
+        Appsignal::Probes.start
 
         wait_for("enough probe calls") { probe_instance.calls >= 2 }
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
@@ -97,11 +126,11 @@ describe Appsignal::Minutely do
           working_probe = ProbeWithoutDependency
           working_probe_instance = working_probe.new
           expect(working_probe).to receive(:new).and_return(working_probe_instance)
-          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+          Appsignal::Probes.probes.register :probe_without_dep, working_probe
 
           probe = ProbeWithMissingDependency
-          Appsignal::Minutely.probes.register :probe_with_missing_dep, probe
-          Appsignal::Minutely.start
+          Appsignal::Probes.probes.register :probe_with_missing_dep, probe
+          Appsignal::Probes.start
 
           wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
           # Only counts initialized probes
@@ -117,11 +146,11 @@ describe Appsignal::Minutely do
           working_probe = ProbeWithoutDependency
           working_probe_instance = working_probe.new
           expect(working_probe).to receive(:new).and_return(working_probe_instance)
-          Appsignal::Minutely.probes.register :probe_without_dep, working_probe
+          Appsignal::Probes.probes.register :probe_without_dep, working_probe
 
           probe = BrokenProbeOnInitialize
-          Appsignal::Minutely.probes.register :broken_probe_on_initialize, probe
-          Appsignal::Minutely.start
+          Appsignal::Probes.probes.register :broken_probe_on_initialize, probe
+          Appsignal::Probes.start
 
           wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
           # Only counts initialized probes
@@ -142,8 +171,8 @@ describe Appsignal::Minutely do
       it "calls the lambda every <wait time>" do
         calls = 0
         probe = lambda { calls += 1 }
-        Appsignal::Minutely.probes.register :my_probe, probe
-        Appsignal::Minutely.start
+        Appsignal::Probes.probes.register :my_probe, probe
+        Appsignal::Probes.start
 
         wait_for("enough probe calls") { calls >= 2 }
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
@@ -155,9 +184,9 @@ describe Appsignal::Minutely do
       it "logs the error and continues calling the probes every <wait_time>" do
         probe = MockProbe.new
         broken_probe = BrokenProbe.new
-        Appsignal::Minutely.probes.register :my_probe, probe
-        Appsignal::Minutely.probes.register :broken_probe, broken_probe
-        Appsignal::Minutely.start
+        Appsignal::Probes.probes.register :my_probe, probe
+        Appsignal::Probes.probes.register :broken_probe, broken_probe
+        Appsignal::Probes.start
 
         wait_for("enough probe calls") { probe.calls >= 2 }
         wait_for("enough broken_probe calls") { broken_probe.calls >= 2 }
@@ -174,23 +203,23 @@ describe Appsignal::Minutely do
     it "ensures only one minutely probes thread is active at a time" do
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = MockProbe.new
-      Appsignal::Minutely.probes.register :my_probe, probe
+      Appsignal::Probes.probes.register :my_probe, probe
       expect do
-        Appsignal::Minutely.start
+        Appsignal::Probes.start
       end.to change { alive_thread_counter.call }.by(1)
 
       wait_for("enough probe calls") { probe.calls >= 2 }
-      expect(Appsignal::Minutely).to have_received(:initial_wait_time).once
-      expect(Appsignal::Minutely).to have_received(:wait_time).at_least(:once)
+      expect(Appsignal::Probes).to have_received(:initial_wait_time).once
+      expect(Appsignal::Probes).to have_received(:wait_time).at_least(:once)
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
 
       # Starting twice in this spec, so expecting it more than once
-      expect(Appsignal::Minutely).to have_received(:initial_wait_time).once
+      expect(Appsignal::Probes).to have_received(:initial_wait_time).once
       expect do
         # Fetch old thread
-        thread = Appsignal::Minutely.instance_variable_get(:@thread)
-        Appsignal::Minutely.start
+        thread = Appsignal::Probes.instance_variable_get(:@thread)
+        Appsignal::Probes.start
         thread&.join # Wait for old thread to exit
       end.to_not(change { alive_thread_counter.call })
     end
@@ -198,29 +227,29 @@ describe Appsignal::Minutely do
 
   describe ".stop" do
     before do
-      allow(Appsignal::Minutely).to receive(:initial_wait_time).and_return(0.001)
+      allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
     end
 
     it "stops the minutely thread" do
-      Appsignal::Minutely.start
-      thread = Appsignal::Minutely.instance_variable_get(:@thread)
+      Appsignal::Probes.start
+      thread = Appsignal::Probes.instance_variable_get(:@thread)
       expect(%w[sleep run]).to include(thread.status)
-      Appsignal::Minutely.stop
+      Appsignal::Probes.stop
       thread.join
       expect(thread.status).to eql(false)
     end
 
     it "clears the probe instances array" do
-      Appsignal::Minutely.probes.register :my_probe, lambda {}
-      Appsignal::Minutely.start
-      thread = Appsignal::Minutely.instance_variable_get(:@thread)
+      Appsignal::Probes.probes.register :my_probe, lambda {}
+      Appsignal::Probes.start
+      thread = Appsignal::Probes.instance_variable_get(:@thread)
       wait_for("probes initialized") do
-        !Appsignal::Minutely.send(:probe_instances).empty?
+        !Appsignal::Probes.send(:probe_instances).empty?
       end
-      expect(Appsignal::Minutely.send(:probe_instances)).to_not be_empty
-      Appsignal::Minutely.stop
+      expect(Appsignal::Probes.send(:probe_instances)).to_not be_empty
+      Appsignal::Probes.stop
       thread.join
-      expect(Appsignal::Minutely.send(:probe_instances)).to be_empty
+      expect(Appsignal::Probes.send(:probe_instances)).to be_empty
     end
   end
 
@@ -228,7 +257,7 @@ describe Appsignal::Minutely do
     it "gets the time to the next minute" do
       time = Time.new(2019, 4, 9, 12, 0, 20)
       Timecop.freeze time do
-        expect(Appsignal::Minutely.wait_time).to eq 40
+        expect(Appsignal::Probes.wait_time).to eq 40
       end
     end
   end
@@ -238,7 +267,7 @@ describe Appsignal::Minutely do
       it "waits for the number of seconds + 60" do
         time = Time.new(2019, 4, 9, 12, 0, 31)
         Timecop.freeze time do
-          expect(Appsignal::Minutely.send(:initial_wait_time)).to eql(29 + 60)
+          expect(Appsignal::Probes.send(:initial_wait_time)).to eql(29 + 60)
         end
       end
     end
@@ -247,13 +276,13 @@ describe Appsignal::Minutely do
       it "waits the remaining seconds in the minute" do
         time = Time.new(2019, 4, 9, 12, 0, 29)
         Timecop.freeze time do
-          expect(Appsignal::Minutely.send(:initial_wait_time)).to eql(31)
+          expect(Appsignal::Probes.send(:initial_wait_time)).to eql(31)
         end
       end
     end
   end
 
-  describe Appsignal::Minutely::ProbeCollection do
+  describe Appsignal::Probes::ProbeCollection do
     let(:collection) { described_class.new }
 
     describe "#count" do

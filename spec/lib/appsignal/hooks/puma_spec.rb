@@ -27,7 +27,7 @@ describe Appsignal::Hooks::PumaHook do
     end
 
     describe "installation" do
-      before { Appsignal::Minutely.probes.clear }
+      before { Appsignal::Probes.probes.clear }
 
       context "when not clustered mode" do
         it "does not add AppSignal stop behavior Puma::Cluster" do
