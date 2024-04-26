@@ -178,7 +178,8 @@ module Appsignal
         @started
       end
 
-      # @api private
+      # Stop the minutely probes mechanism. Stop the thread and clear all probe
+      # instances.
       def stop
         defined?(@thread) && @thread.kill
         @started = false
