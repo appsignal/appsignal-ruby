@@ -190,6 +190,9 @@ def store_download_version_on_report
 end
 
 def http_proxy
+  proxy = try_http_proxy_value(ENV.fetch("APPSIGNAL_HTTP_PROXY", nil))
+  return [proxy, nil] if proxy
+
   proxy, error =
     begin
       [try_http_proxy_value(Gem.configuration[:http_proxy]), nil]
