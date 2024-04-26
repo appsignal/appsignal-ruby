@@ -35,7 +35,7 @@ RSpec.describe "Puma plugin" do
     def start
       stop
       @socket = UDPSocket.new
-      @socket.bind("127.0.0.1", 8125)
+      @socket.bind("127.0.0.1", ENV.fetch("APPSIGNAL_STATSD_PORT"))
 
       loop do
         # Listen for messages and track them on the messages Array.
@@ -115,6 +115,7 @@ RSpec.describe "Puma plugin" do
 
   def run_plugin(stats_data, plugin, &block)
     Puma._set_stats = stats_data
+    ENV["APPSIGNAL_STATSD_PORT"] = "8126"
     @statsd = StatsdServer.new
     @server_thread = Thread.new { @statsd.start }
     @server_thread.abort_on_exception = true
@@ -122,6 +123,7 @@ RSpec.describe "Puma plugin" do
     @client_thread.abort_on_exception = true
     wait_for(:puma_client_wait, &block)
   ensure
+    ENV["APPSIGNAL_STATSD_PORT"] = nil
     Puma._set_stats = nil
     # Stop all threads in test and stop listening on the UDPSocket
     @client_thread.kill if defined?(@client_thread) && @client_thread
