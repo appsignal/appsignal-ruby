@@ -152,6 +152,7 @@ module Appsignal
         internal_logger.debug("Stopping appsignal")
       end
       Appsignal::Extension.stop
+      Appsignal::Probes.stop
     end
 
     def forked
