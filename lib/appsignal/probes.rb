@@ -44,6 +44,11 @@ module Appsignal
       end
 
       # @api private
+      def unregister(name)
+        probes.delete(name)
+      end
+
+      # @api private
       def each(&block)
         probes.each(&block)
       end
@@ -128,9 +133,10 @@ module Appsignal
       #   # "started" # Printed on Appsignal::Probes.start
       #   # "called" # Repeated every minute
       #
-      # @param name [Symbol/String] Name of the probe. Can be used with {[]}.
-      #   This name will be used in errors in the log and allows overwriting of
-      #   probes by registering new ones with the same name.
+      # @param name [Symbol/String] Name of the probe. Can be used with
+      #   {ProbeCollection#[]}. This name will be used in errors in the log and
+      #   allows overwriting of probes by registering new ones with the same
+      #   name.
       # @param probe [Object] Any object that listens to the `call` method will
       #   be used as a probe.
       # @return [void]
@@ -138,6 +144,26 @@ module Appsignal
         probes.internal_register(name, probe)
 
         initialize_probe(name, probe) if started?
+      end
+
+      # Unregister a probe that's registered with {register}.
+      # Can also be used to unregister automatically registered probes by the
+      # gem.
+      #
+      # @example Unregister probes
+      #   # First register a probe
+      #   Appsignal::Probes.register :my_probe, lambda {}
+      #
+      #   # Then unregister a probe if needed
+      #   Appsignal::Probes.unregister :my_probe
+      #
+      # @param name [Symbol/String] Name of the probe used to {register} the
+      #   probe.
+      # @return [void]
+      def unregister(name)
+        probes.unregister(name)
+
+        uninitialize_probe(name)
       end
 
       # @api private
@@ -226,6 +252,12 @@ module Appsignal
         logger = Appsignal.internal_logger
         logger.error "Error while initializing minutely probe '#{name}': #{error}"
         logger.debug error.backtrace.join("\n")
+      end
+
+      def uninitialize_probe(name)
+        mutex.synchronize do
+          probe_instances.delete(name)
+        end
       end
 
       def dependencies_present?(probe)

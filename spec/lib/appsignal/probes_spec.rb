@@ -72,9 +72,7 @@ describe Appsignal::Probes do
     let(:log) { log_contents(log_stream) }
     before do
       Appsignal.internal_logger = test_logger(log_stream)
-      # Speed up test time
-      allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
-      allow(Appsignal::Probes).to receive(:wait_time).and_return(0.001)
+      speed_up_tests!
     end
 
     describe ".started?" do
@@ -261,6 +259,35 @@ describe Appsignal::Probes do
     end
   end
 
+  describe ".unregister" do
+    let(:log_stream) { StringIO.new }
+    let(:log) { log_contents(log_stream) }
+    before do
+      Appsignal.internal_logger = test_logger(log_stream)
+      speed_up_tests!
+    end
+
+    it "does not call the initialized probe after unregistering" do
+      probe1_calls = 0
+      probe2_calls = 0
+      probe1 = lambda { probe1_calls += 1 }
+      probe2 = lambda { probe2_calls += 1 }
+      Appsignal::Probes.register :probe1, probe1
+      Appsignal::Probes.register :probe2, probe2
+      Appsignal::Probes.start
+      wait_for("enough probe1 calls") { probe1_calls >= 2 }
+      wait_for("enough probe2 calls") { probe2_calls >= 2 }
+
+      Appsignal::Probes.unregister :probe2
+      probe1_calls = 0
+      probe2_calls = 0
+      # Check the probe 1 calls to make sure the probes have been called before
+      # testing if the unregistered probe has not been called
+      wait_for("enough probe1 calls") { probe1_calls >= 2 }
+      expect(probe2_calls).to eq(0)
+    end
+  end
+
   describe ".stop" do
     before do
       allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
@@ -411,6 +438,19 @@ describe Appsignal::Probes do
       end
     end
 
+    describe "#unregister" do
+      it "removes the probe from the collection" do
+        expect(Appsignal::Probes).to receive(:probes).and_return(collection)
+
+        probe = lambda {}
+        silence { collection.register :my_probe, probe }
+        expect(collection[:my_probe]).to eql(probe)
+
+        silence { collection.unregister :my_probe }
+        expect(collection[:my_probe]).to be_nil
+      end
+    end
+
     describe "#each" do
       it "loops over the registered probes" do
         probe = lambda {}
@@ -422,5 +462,11 @@ describe Appsignal::Probes do
         expect(list).to eql([[:my_probe, probe]])
       end
     end
+  end
+
+  # Speed up test time by decreasing wait times in the probes mechanism
+  def speed_up_tests!
+    allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
+    allow(Appsignal::Probes).to receive(:wait_time).and_return(0.001)
   end
 end
