@@ -133,9 +133,10 @@ module Appsignal
       #   # "started" # Printed on Appsignal::Probes.start
       #   # "called" # Repeated every minute
       #
-      # @param name [Symbol/String] Name of the probe. Can be used with {[]}.
-      #   This name will be used in errors in the log and allows overwriting of
-      #   probes by registering new ones with the same name.
+      # @param name [Symbol/String] Name of the probe. Can be used with
+      #   {ProbeCollection#[]}. This name will be used in errors in the log and
+      #   allows overwriting of probes by registering new ones with the same
+      #   name.
       # @param probe [Object] Any object that listens to the `call` method will
       #   be used as a probe.
       # @return [void]
