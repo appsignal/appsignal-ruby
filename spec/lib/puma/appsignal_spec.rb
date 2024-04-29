@@ -32,10 +32,14 @@ RSpec.describe "Puma plugin" do
   # StatsD server used for these tests.
   # Open a UDPSocket and listen for messages sent by the AppSignal Puma plugin.
   class StatsdServer
+    def initialize(statsd_port)
+      @statsd_port = statsd_port
+    end
+
     def start
       stop
       @socket = UDPSocket.new
-      @socket.bind("127.0.0.1", ENV.fetch("APPSIGNAL_STATSD_PORT"))
+      @socket.bind("127.0.0.1", @statsd_port)
 
       loop do
         # Listen for messages and track them on the messages Array.
@@ -116,7 +120,7 @@ RSpec.describe "Puma plugin" do
   def run_plugin(stats_data, plugin, &block)
     Puma._set_stats = stats_data
     ENV["APPSIGNAL_STATSD_PORT"] = "8126"
-    @statsd = StatsdServer.new
+    @statsd = StatsdServer.new(ENV.fetch("APPSIGNAL_STATSD_PORT"))
     @server_thread = Thread.new { @statsd.start }
     @server_thread.abort_on_exception = true
     @client_thread = Thread.new { start_plugin(plugin) }
