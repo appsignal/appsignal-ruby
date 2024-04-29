@@ -1,5 +1,24 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.1
+
+_Published on 2024-04-29._
+
+### Changed
+
+- [226a8f51](https://github.com/appsignal/appsignal-ruby/commit/226a8f51aa467f443ca8a93d4134f445b81f683a) patch - If the gem can't find a valid log path in the app's `log/` directory, it will no longer print the warning more than once.
+- [5f97aa29](https://github.com/appsignal/appsignal-ruby/commit/5f97aa2997ca64955d6f7dc0a21de265eec110dc) patch - Stop the minutely probes when `Appsignal.stop` is called. When `Appsignal.stop` is called, the probes thread will no longer continue running in the app process.
+- [ccfa3572](https://github.com/appsignal/appsignal-ruby/commit/ccfa3572260dc71765ff233682e50276059aa6aa) patch - Listen to the `APPSIGNAL_HTTP_PROXY` environment variable in the extension installer. When `APPSIGNAL_HTTP_PROXY` is set during `gem instal appsignal` or `bundle install`, it will use the proxy specified in the `APPSIGNAL_HTTP_PROXY` environment variable to download the extension and agent.
+- [123c7108](https://github.com/appsignal/appsignal-ruby/commit/123c710861a09c4a857d749b3bf9e3b17968ce68) patch - Allow unregistering minutely probes. Use `Appsignal::Probes.unregister` to unregister probes registered with `Appsignal::Probes.register` if you do not need a certain probe, including default probes.
+- [12305025](https://github.com/appsignal/appsignal-ruby/commit/1230502525004d324f3dbcf0ee61eb0e6fe7fdb5) patch - Add `Appsignal::Probes.register` method as the preferred method to register probes. The `Appsignal::Probes.probes.register` and `Appsignal::Minutely.probes.register` methods are now deprecated.
+- [12305025](https://github.com/appsignal/appsignal-ruby/commit/1230502525004d324f3dbcf0ee61eb0e6fe7fdb5) patch - Automatically start new probes registered with `Appsignal::Probes.register` when the gem has already started the probes thread. Previously, the late registered probes would not be run.
+- [12305025](https://github.com/appsignal/appsignal-ruby/commit/1230502525004d324f3dbcf0ee61eb0e6fe7fdb5) patch - Rename the Minutely constant to Probes so that the API is the same between AppSignal integrations. If your apps calls `Appsignal::Minutely`, please update it to `Appsignal::Probes`. If your app calls `Appsignal::Minutely` after this upgrade without the name change, the gem will print a deprecation warning for each time the `Appsignal::Minutely` is called.
+- [ee08eed2](https://github.com/appsignal/appsignal-ruby/commit/ee08eed28a15955499bbb736fe76ae82a61de1b2) patch - Log debug messages when metrics are received for easier debugging.
+
+### Fixed
+
+- [a2f4b313](https://github.com/appsignal/appsignal-ruby/commit/a2f4b31359c13fc89bcf22e162cf9f79664edc6b) patch - Clear the AppSignal in memory logger, used during the gem start, after the file/STDOUT logger is started. This reduces memory usage of the AppSignal Ruby gem by a tiny bit, and prevent stale logs being logged whenever a process gets forked and starts AppSignal.
+
 ## 3.7.0
 
 _Published on 2024-04-22._
