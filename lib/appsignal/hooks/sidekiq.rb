@@ -11,7 +11,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/sidekiq"
-        Appsignal::Probes.probes.register :sidekiq, Appsignal::Probes::SidekiqProbe
+        Appsignal::Probes.register :sidekiq, Appsignal::Probes::SidekiqProbe
 
         ::Sidekiq.configure_server do |config|
           config.error_handlers <<
