@@ -11,7 +11,7 @@ module Appsignal
       end
 
       def install
-        Appsignal::Probes.probes.register :mri, Appsignal::Probes::MriProbe
+        Appsignal::Probes.register :mri, Appsignal::Probes::MriProbe
       end
     end
   end
