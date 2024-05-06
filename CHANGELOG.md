@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.2
+
+_Published on 2024-05-06._
+
+### Fixed
+
+- [b6e8ebe2](https://github.com/appsignal/appsignal-ruby/commit/b6e8ebe27e56d111337c5901e4b819bf97bba174) patch - Fix deprecation warnings for Probes.probes introduced in 3.7.1 for internally registered probes.
+
 ## 3.7.1
 
 _Published on 2024-04-29._
