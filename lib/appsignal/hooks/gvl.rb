@@ -16,7 +16,7 @@ module Appsignal
       end
 
       def install
-        Appsignal::Probes.probes.register :gvl, Appsignal::Probes::GvlProbe
+        Appsignal::Probes.register :gvl, Appsignal::Probes::GvlProbe
         ::GVLTools::GlobalTimer.enable if Appsignal.config[:enable_gvl_global_timer]
         ::GVLTools::WaitingThreads.enable if Appsignal.config[:enable_gvl_waiting_threads]
       end
