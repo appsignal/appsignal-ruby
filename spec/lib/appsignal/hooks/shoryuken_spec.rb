@@ -10,7 +10,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
   before(:context) { start_agent }
   around { |example| keep_transactions { example.run } }
 
-  def perform_job(&block)
+  def perform_shoryuken_job(&block)
     block ||= lambda {}
     Timecop.freeze(Time.parse(time)) do
       Appsignal::Hooks::ShoryukenMiddleware.new.call(
@@ -34,7 +34,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
 
       it "wraps the job in a transaction with the correct params" do
         allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
-        expect { perform_job }.to change { created_transactions.length }.by(1)
+        expect { perform_shoryuken_job }.to change { created_transactions.length }.by(1)
 
         transaction = last_transaction
         expect(transaction).to be_completed
@@ -80,7 +80,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         end
 
         it "filters selected arguments" do
-          perform_job
+          perform_shoryuken_job
 
           transaction_hash = last_transaction.to_h
           expect(transaction_hash["sample_data"]).to include(
@@ -94,7 +94,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       let(:body) { "foo bar" }
 
       it "handles string arguments" do
-        perform_job
+        perform_shoryuken_job
 
         transaction_hash = last_transaction.to_h
         expect(transaction_hash["sample_data"]).to include(
@@ -107,7 +107,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       let(:body) { 1 }
 
       it "handles primitive types as arguments" do
-        perform_job
+        perform_shoryuken_job
 
         transaction_hash = last_transaction.to_h
         expect(transaction_hash["sample_data"]).to include(
@@ -121,7 +121,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     it "sets the exception on the transaction" do
       expect do
         expect do
-          perform_job { raise ExampleException, "error message" }
+          perform_shoryuken_job { raise ExampleException, "error message" }
         end.to raise_error(ExampleException)
       end.to change { created_transactions.length }.by(1)
 
@@ -167,7 +167,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
     it "creates a transaction for the batch" do
       allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
       expect do
-        perform_job {} # rubocop:disable Lint/EmptyBlock
+        perform_shoryuken_job {} # rubocop:disable Lint/EmptyBlock
       end.to change { created_transactions.length }.by(1)
 
       transaction = last_transaction

@@ -1,8 +1,10 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
 ruby_version = Gem::Version.new(RUBY_VERSION)
-if ruby_version < Gem::Version.new("2.3.0")
-  gem 'rack', '~> 1.6'
-end
+gem "rack", "~> 1.6" if ruby_version < Gem::Version.new("2.3.0")
 
-gemspec :path => '../'
+# Fix install issue for jruby on gem 3.1.8.
+# No java stub is published.
+gem "bigdecimal", "3.1.7" if RUBY_PLATFORM == "java"
+
+gemspec :path => "../"

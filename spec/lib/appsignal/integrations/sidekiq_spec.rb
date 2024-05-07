@@ -95,7 +95,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   describe "internal Sidekiq job values" do
     it "does not save internal Sidekiq values as metadata on transaction" do
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash["metadata"].keys)
@@ -110,7 +110,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
 
     it "filters selected arguments" do
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash["sample_data"]).to include(
@@ -133,7 +133,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
 
     it "replaces the last argument (the secret bag) with an [encrypted data] string" do
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash["sample_data"]).to include(
@@ -159,7 +159,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
 
     it "uses the delayed class and method name for the action" do
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash["action"]).to eq("DelayedTestClass.foo_method")
@@ -172,7 +172,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       before { item["args"] = [] }
 
       it "logs a warning and uses the default argument" do
-        perform_job
+        perform_sidekiq_job
 
         transaction_hash = transaction.to_h
         expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedClass#perform")
@@ -199,7 +199,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
 
     it "uses the delayed class and method name for the action" do
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash["action"]).to eq("DelayedTestClass#foo_method")
@@ -212,7 +212,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       before { item["args"] = [] }
 
       it "logs a warning and uses the default argument" do
-        perform_job
+        perform_sidekiq_job
 
         transaction_hash = transaction.to_h
         expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedModel#perform")
@@ -233,7 +233,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       expect(Appsignal).to receive(:increment_counter)
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
       expect do
-        perform_job { raise error, "uh oh" }
+        perform_sidekiq_job { raise error, "uh oh" }
       end.to raise_error(error)
 
       transaction_hash = transaction.to_h
@@ -271,7 +271,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       it "reports the worker name as the action, copies the namespace and tags" do
         Appsignal.config = project_fixture_config("production")
         with_rails_error_reporter do
-          perform_job do
+          perform_sidekiq_job do
             Appsignal.tag_job("test_tag" => "value")
             Rails.error.handle do
               raise ExampleStandardError, "uh oh"
@@ -301,7 +301,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       # https://github.com/rspec/rspec-mocks/issues/1460
       expect(Appsignal).to receive(:increment_counter)
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
-      perform_job
+      perform_sidekiq_job
 
       transaction_hash = transaction.to_h
       expect(transaction_hash).to include(
@@ -330,7 +330,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     end
   end
 
-  def perform_job
+  def perform_sidekiq_job
     Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
       exception = nil
       plugin.call(worker, item, queue) do
@@ -460,7 +460,7 @@ if DependencyHelper.active_job_present?
     end
 
     it "reports the transaction from the ActiveJob integration" do
-      perform_job(ActiveJobSidekiqTestJob, given_args)
+      perform_sidekiq_job(ActiveJobSidekiqTestJob, given_args)
 
       transaction = last_transaction
       transaction_hash = transaction.to_h
@@ -488,7 +488,7 @@ if DependencyHelper.active_job_present?
     context "with error" do
       it "reports the error on the transaction from the ActiveRecord integration" do
         expect do
-          perform_job(ActiveJobSidekiqErrorTestJob, given_args)
+          perform_sidekiq_job(ActiveJobSidekiqErrorTestJob, given_args)
         end.to raise_error(RuntimeError, "uh oh")
 
         transaction = last_transaction
@@ -557,7 +557,7 @@ if DependencyHelper.active_job_present?
       end
     end
 
-    def perform_job(job_class, args)
+    def perform_sidekiq_job(job_class, args)
       perform_sidekiq { job_class.perform_later(args) }
     end
 

@@ -17,7 +17,7 @@ describe Appsignal::Hooks::ResqueHook do
 
   if DependencyHelper.resque_present?
     describe "#install" do
-      def perform_job(klass, options = {})
+      def perform_rescue_job(klass, options = {})
         payload = { "class" => klass.to_s }.merge(options)
         job = ::Resque::Job.new(queue, payload)
         keep_transactions { job.perform }
@@ -50,7 +50,7 @@ describe Appsignal::Hooks::ResqueHook do
       end
 
       it "tracks a transaction on perform" do
-        perform_job(ResqueTestJob)
+        perform_rescue_job(ResqueTestJob)
 
         transaction = last_transaction
         transaction_hash = transaction.to_h
@@ -72,7 +72,7 @@ describe Appsignal::Hooks::ResqueHook do
       context "with error" do
         it "tracks the error on the transaction" do
           expect do
-            perform_job(ResqueErrorTestJob)
+            perform_rescue_job(ResqueErrorTestJob)
           end.to raise_error(RuntimeError, "resque job error")
 
           transaction = last_transaction
@@ -102,7 +102,7 @@ describe Appsignal::Hooks::ResqueHook do
         end
 
         it "filters out configured arguments" do
-          perform_job(
+          perform_rescue_job(
             ResqueTestJob,
             "args" => [
               "foo",
@@ -161,7 +161,7 @@ describe Appsignal::Hooks::ResqueHook do
         after { Object.send(:remove_const, :ActiveJobMock) }
 
         it "does not set arguments but lets the ActiveJob integration handle it" do
-          perform_job(
+          perform_rescue_job(
             ResqueTestJob,
             "class" => "ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper",
             "args" => [
