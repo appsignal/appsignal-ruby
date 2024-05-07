@@ -6,6 +6,12 @@ module Appsignal
     class ActiveJobHook < Appsignal::Hooks::Hook
       register :active_job
 
+      def self.version_7_1_or_higher?
+        major = ::ActiveJob::VERSION::MAJOR
+        minor = ::ActiveJob::VERSION::MINOR
+        major > 7 || (major == 7 && minor >= 1)
+      end
+
       def dependencies_present?
         defined?(::ActiveJob)
       end
@@ -14,6 +20,14 @@ module Appsignal
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+          return unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
+
+          # Only works on ActiveJob 7.1 and newer
+          ::ActiveJob::Base.after_discard do |_job, exception|
+            next unless Appsignal.config[:activejob_report_errors] == "discard"
+
+            Appsignal::Transaction.current.set_error(exception)
+          end
         end
       end
 
@@ -86,7 +100,9 @@ module Appsignal
         private
 
         def transaction_set_error(transaction, exception)
-          return if Appsignal.config[:activejob_report_errors] == "none"
+          # Only report errors when the config option is set to "all".
+          # To report errors on discard, see the `after_discard` callback.
+          return unless Appsignal.config[:activejob_report_errors] == "all"
 
           transaction.set_error(exception)
         end
