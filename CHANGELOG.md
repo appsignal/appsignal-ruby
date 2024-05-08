@@ -1,5 +1,23 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.3
+
+_Published on 2024-05-08._
+
+### Added
+
+- [28a36ba1](https://github.com/appsignal/appsignal-ruby/commit/28a36ba17c236cf3f2f4991f3ff224a98c76eec7) patch - Add option to `activejob_report_errors` option to only report errors when a job is discard by Active Job. In the example below the job is retried twice. If it fails with an error twice the job is discarded. If `activejob_report_errors` is set to `discard`, you will only get an error reported when the job is discarded. This new `discard` value only works for Active Job 7.1 and newer.
+  
+  
+  ```ruby
+  class ExampleJob < ActiveJob::Base
+    retry_on StandardError, :attempts => 2
+  
+    # ...
+  end
+  ```
+- [d6d233de](https://github.com/appsignal/appsignal-ruby/commit/d6d233de8d1dd6aa203924e66db0635287aaea7b) patch - Track Active Job executions per job. When a job is retried the "executions" metadata for Active Job jobs goes up by one for every retry. We now track this as the `executions` tag on the job sample.
+
 ## 3.7.2
 
 _Published on 2024-05-06._
