@@ -129,7 +129,8 @@ if DependencyHelper.active_job_present?
           "params" => [],
           "tags" => {
             "active_job_id" => kind_of(String),
-            "queue" => queue
+            "queue" => queue,
+            "executions" => 1
           }
         )
       )
@@ -220,7 +221,8 @@ if DependencyHelper.active_job_present?
             "params" => [],
             "tags" => {
               "active_job_id" => kind_of(String),
-              "queue" => queue
+              "queue" => queue,
+              "executions" => 1
             }
           )
         )
@@ -269,7 +271,14 @@ if DependencyHelper.active_job_present?
 
             transaction = last_transaction
             transaction_hash = transaction.to_h
-            expect(transaction_hash).to include("error" => nil)
+            expect(transaction_hash).to include(
+              "error" => nil,
+              "sample_data" => hash_including(
+                "tags" => hash_including(
+                  "executions" => 1
+                )
+              )
+            )
           end
 
           it "reports error when discarding the job" do
@@ -291,7 +300,12 @@ if DependencyHelper.active_job_present?
                 "name" => "RuntimeError",
                 "message" => "uh oh",
                 "backtrace" => kind_of(String)
-              }
+              },
+              "sample_data" => hash_including(
+                "tags" => hash_including(
+                  "executions" => 2
+                )
+              )
             )
           end
         end
@@ -341,6 +355,24 @@ if DependencyHelper.active_job_present?
       end
     end
 
+    context "with retries" do
+      it "reports the number of retries as executions" do
+        with_test_adapter do
+          expect do
+            queue_job(ActiveJobErrorWithRetryTestJob)
+          end.to raise_error(RuntimeError, "uh oh")
+        end
+
+        transaction = last_transaction
+        transaction_hash = transaction.to_h
+        expect(transaction_hash).to include(
+          "sample_data" => hash_including(
+            "tags" => hash_including("executions" => 2)
+          )
+        )
+      end
+    end
+
     context "when wrapped in another transaction" do
       it "does not create a new transaction or close the currently open one" do
         current_transaction = background_job_transaction
@@ -366,7 +398,8 @@ if DependencyHelper.active_job_present?
             "params" => [],
             "tags" => {
               "active_job_id" => kind_of(String),
-              "queue" => queue
+              "queue" => queue,
+              "executions" => 1
             }
           )
         )
@@ -509,7 +542,8 @@ if DependencyHelper.active_job_present?
                            "deliver_now"] + active_job_args_wrapper,
               "tags" => {
                 "active_job_id" => kind_of(String),
-                "queue" => "mailers"
+                "queue" => "mailers",
+                "executions" => 1
               }
             )
           )
@@ -529,7 +563,8 @@ if DependencyHelper.active_job_present?
                            "deliver_now"] + active_job_args_wrapper(:args => method_expected_args),
               "tags" => {
                 "active_job_id" => kind_of(String),
-                "queue" => "mailers"
+                "queue" => "mailers",
+                "executions" => 1
               }
             )
           )
@@ -553,7 +588,8 @@ if DependencyHelper.active_job_present?
                 ] + active_job_args_wrapper(:params => parameterized_expected_args),
                 "tags" => {
                   "active_job_id" => kind_of(String),
-                  "queue" => "mailers"
+                  "queue" => "mailers",
+                  "executions" => 1
                 }
               )
             )
@@ -594,7 +630,8 @@ if DependencyHelper.active_job_present?
               ],
               "tags" => {
                 "active_job_id" => kind_of(String),
-                "queue" => "mailers"
+                "queue" => "mailers",
+                "executions" => 1
               }
             )
           )
@@ -620,7 +657,8 @@ if DependencyHelper.active_job_present?
                 ],
                 "tags" => {
                   "active_job_id" => kind_of(String),
-                  "queue" => "mailers"
+                  "queue" => "mailers",
+                  "executions" => 1
                 }
               )
             )
@@ -648,7 +686,8 @@ if DependencyHelper.active_job_present?
                 ],
                 "tags" => {
                   "active_job_id" => kind_of(String),
-                  "queue" => "mailers"
+                  "queue" => "mailers",
+                  "executions" => 1
                 }
               )
             )
