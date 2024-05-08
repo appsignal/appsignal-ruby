@@ -88,6 +88,14 @@ if DependencyHelper.active_job_present?
         end
       end
 
+      class ActiveJobErrorWithRetryTestJob < ActiveJob::Base
+        retry_on StandardError, :wait => 0.seconds, :attempts => 2
+
+        def perform
+          raise "uh oh"
+        end
+      end
+
       class ActiveJobCustomQueueTestJob < ActiveJob::Base
         queue_as :custom_queue
 
@@ -99,6 +107,7 @@ if DependencyHelper.active_job_present?
     after do
       Object.send(:remove_const, :ActiveJobTestJob)
       Object.send(:remove_const, :ActiveJobErrorTestJob)
+      Object.send(:remove_const, :ActiveJobErrorWithRetryTestJob)
       Object.send(:remove_const, :ActiveJobCustomQueueTestJob)
     end
 
@@ -227,13 +236,10 @@ if DependencyHelper.active_job_present?
           Appsignal.config = project_fixture_config("production")
           Appsignal.config[:activejob_report_errors] = "none"
 
-          # Other calls we're testing in another test
           allow(Appsignal).to receive(:increment_counter)
           tags = { :queue => queue }
           expect(Appsignal).to receive(:increment_counter)
             .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
-          expect(Appsignal).to receive(:increment_counter)
-            .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
 
           expect do
             queue_job(ActiveJobErrorTestJob)
@@ -241,9 +247,53 @@ if DependencyHelper.active_job_present?
 
           transaction = last_transaction
           transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "error" => nil
-          )
+          expect(transaction_hash).to include("error" => nil)
+        end
+      end
+
+      if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
+        context "with activejob_report_errors set to discard" do
+          before do
+            Appsignal.config = project_fixture_config("production")
+            Appsignal.config[:activejob_report_errors] = "discard"
+          end
+
+          it "does not report error on first failure" do
+            with_test_adapter do
+              # Prevent the job from being instantly retried so we can test
+              # what happens before it's retried
+              allow_any_instance_of(ActiveJobErrorWithRetryTestJob).to receive(:retry_job)
+
+              queue_job(ActiveJobErrorWithRetryTestJob)
+            end
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include("error" => nil)
+          end
+
+          it "reports error when discarding the job" do
+            allow(Appsignal).to receive(:increment_counter)
+            tags = { :queue => queue }
+            expect(Appsignal).to receive(:increment_counter)
+              .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
+
+            with_test_adapter do
+              expect do
+                queue_job(ActiveJobErrorWithRetryTestJob)
+              end.to raise_error(RuntimeError, "uh oh")
+            end
+
+            transaction = last_transaction
+            transaction_hash = transaction.to_h
+            expect(transaction_hash).to include(
+              "error" => {
+                "name" => "RuntimeError",
+                "message" => "uh oh",
+                "backtrace" => kind_of(String)
+              }
+            )
+          end
         end
       end
 
@@ -605,6 +655,16 @@ if DependencyHelper.active_job_present?
           end
         end
       end
+    end
+
+    def with_test_adapter
+      ActiveJob::Base.queue_adapter = :test
+      ActiveJob::Base.queue_adapter.performed_jobs.clear
+      ActiveJob::Base.queue_adapter.perform_enqueued_jobs = true
+      ActiveJob::Base.queue_adapter.perform_enqueued_at_jobs = true
+      yield
+    ensure
+      ActiveJob::Base.queue_adapter = :inline # Restore to default
     end
 
     def perform_active_job(&block)

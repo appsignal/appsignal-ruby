@@ -559,6 +559,30 @@ describe Appsignal::Config do
         end
       end
     end
+
+    if DependencyHelper.rails_present?
+      require "active_job"
+
+      context "activejob_report_errors" do
+        let(:config_options) { { :activejob_report_errors => "discard" } }
+
+        if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
+          context "when Active Job >= 7.1 and 'discard'" do
+            it "does not override the activejob_report_errors value" do
+              expect(config[:activejob_report_errors]).to eq("discard")
+              expect(config.override_config[:activejob_report_errors]).to be_nil
+            end
+          end
+        else
+          context "when Active Job < 7.1 and 'discard'" do
+            it "sets activejob_report_errors to 'all'" do
+              expect(config[:activejob_report_errors]).to eq("all")
+              expect(config.override_config[:activejob_report_errors]).to eq("all")
+            end
+          end
+        end
+      end
+    end
   end
 
   describe "config keys" do
