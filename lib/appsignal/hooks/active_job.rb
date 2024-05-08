@@ -162,6 +162,8 @@ module Appsignal
           tags[:queue] = queue if queue
           priority = job["priority"]
           tags[:priority] = priority if priority
+          executions = job["executions"]
+          tags[:executions] = executions.to_i + 1 if executions
           tags
         end
 

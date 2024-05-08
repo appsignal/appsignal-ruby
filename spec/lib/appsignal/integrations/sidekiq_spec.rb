@@ -407,7 +407,7 @@ if DependencyHelper.active_job_present?
       end
     end
     let(:expected_tags) do
-      {}.tap do |hash|
+      { "executions" => 1 }.tap do |hash|
         hash["active_job_id"] = kind_of(String)
         if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
           hash["provider_job_id"] = kind_of(String)
