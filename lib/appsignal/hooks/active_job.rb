@@ -7,22 +7,32 @@ module Appsignal
       register :active_job
 
       def self.version_7_1_or_higher?
-        major = ::ActiveJob::VERSION::MAJOR
-        minor = ::ActiveJob::VERSION::MINOR
-        major > 7 || (major == 7 && minor >= 1)
+        @version_7_1_or_higher ||=
+          if dependencies_present?
+            major = ::ActiveJob::VERSION::MAJOR
+            minor = ::ActiveJob::VERSION::MINOR
+            major > 7 || (major == 7 && minor >= 1)
+          else
+            false
+          end
+      end
+
+      def self.dependencies_present?
+        defined?(::ActiveJob)
       end
 
       def dependencies_present?
-        defined?(::ActiveJob)
+        self.class.dependencies_present?
       end
 
       def install
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+
           return unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
 
-          # Only works on ActiveJob 7.1 and newer
+          # Only works on Active Job 7.1 and newer
           ::ActiveJob::Base.after_discard do |_job, exception|
             next unless Appsignal.config[:activejob_report_errors] == "discard"
 

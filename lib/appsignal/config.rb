@@ -558,6 +558,11 @@ module Appsignal
         config[:send_session_data] = !skip_session_data if send_session_data.nil?
       end
 
+      if config_hash[:activejob_report_errors] == "discard" &&
+          !Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
+        config[:activejob_report_errors] = "all"
+      end
+
       config
     end
 
