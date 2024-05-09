@@ -30,7 +30,7 @@ module Appsignal
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
 
-          return unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
+          next unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
 
           # Only works on Active Job 7.1 and newer
           ::ActiveJob::Base.after_discard do |_job, exception|
