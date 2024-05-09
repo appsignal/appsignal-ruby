@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.4
+
+_Published on 2024-05-09._
+
+### Fixed
+
+- [4f12684b](https://github.com/appsignal/appsignal-ruby/commit/4f12684baf6fadac43fcb5108f5a7f793b2e1046) patch - Fix LocalJumpError in Active Job instrumentation initialization for Active Job < 7.1.
+
 ## 3.7.3
 
 _Published on 2024-05-08._
