@@ -324,7 +324,7 @@ begin
 
   desc "Run the AppSignal gem test suite."
   RSpec::Core::RakeTask.new :test do |t|
-    t.rspec_opts = exclude_pattern
+    t.rspec_opts = "#{exclude_pattern} --format documentation"
   end
 
   namespace :test do
