@@ -34,7 +34,6 @@ if DependencyHelper.hanami2_present?
     require f
   end
 end
-require "pry" if DependencyHelper.dependency_present?("pry")
 require "appsignal"
 # Include patches of AppSignal modules and classes to make test helpers
 # available.
