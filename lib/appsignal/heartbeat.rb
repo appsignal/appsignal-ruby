@@ -45,7 +45,7 @@ module Appsignal
       response = self.class.transmitter.transmit(event(kind))
 
       if response.code.to_i >= 200 && response.code.to_i < 300
-        Appsignal.internal_logger.trace("Transmitted heartbeat `#{name}` (#{id}) #{kind} event")
+        Appsignal.internal_logger.debug("Transmitted heartbeat `#{name}` (#{id}) #{kind} event")
       else
         Appsignal.internal_logger.error(
           "Failed to transmit heartbeat event: status code was #{response.code}"

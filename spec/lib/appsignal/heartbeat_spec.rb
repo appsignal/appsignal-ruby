@@ -24,7 +24,26 @@ describe Appsignal::Heartbeat do
       expect(transmitter).to receive(:transmit).with(hash_including(
         :name => "heartbeat-name",
         :kind => "start"
-      )).and_return(nil)
+      )).and_return(Net::HTTPResponse.new(nil, "200", nil))
+
+      expect(Appsignal.internal_logger).to receive(:debug).with(
+        "Transmitted heartbeat `heartbeat-name` (#{heartbeat.id}) start event"
+      )
+      expect(Appsignal.internal_logger).not_to receive(:error)
+
+      heartbeat.start
+    end
+
+    it "should log an error if it fails" do
+      expect(transmitter).to receive(:transmit).with(hash_including(
+        :name => "heartbeat-name",
+        :kind => "start"
+      )).and_return(Net::HTTPResponse.new(nil, "499", nil))
+
+      expect(Appsignal.internal_logger).not_to receive(:debug)
+      expect(Appsignal.internal_logger).to receive(:error).with(
+        "Failed to transmit heartbeat event: status code was 499"
+      )
 
       heartbeat.start
     end
@@ -35,7 +54,26 @@ describe Appsignal::Heartbeat do
       expect(transmitter).to receive(:transmit).with(hash_including(
         :name => "heartbeat-name",
         :kind => "finish"
-      )).and_return(nil)
+      )).and_return(Net::HTTPResponse.new(nil, "200", nil))
+
+      expect(Appsignal.internal_logger).to receive(:debug).with(
+        "Transmitted heartbeat `heartbeat-name` (#{heartbeat.id}) finish event"
+      )
+      expect(Appsignal.internal_logger).not_to receive(:error)
+
+      heartbeat.finish
+    end
+
+    it "should log an error if it fails" do
+      expect(transmitter).to receive(:transmit).with(hash_including(
+        :name => "heartbeat-name",
+        :kind => "finish"
+      )).and_return(Net::HTTPResponse.new(nil, "499", nil))
+
+      expect(Appsignal.internal_logger).not_to receive(:debug)
+      expect(Appsignal.internal_logger).to receive(:error).with(
+        "Failed to transmit heartbeat event: status code was 499"
+      )
 
       heartbeat.finish
     end
