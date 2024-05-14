@@ -1,5 +1,32 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.5
+
+_Published on 2024-05-14._
+
+### Added
+
+- [bf81e165](https://github.com/appsignal/appsignal-ruby/commit/bf81e16593c7598e266d1e4cfb108aeef2ed7e73) patch - Support events emitted by ViewComponent. Rendering of ViewComponent-based components will appear as events in your performance samples' event timeline.
+  
+  For AppSignal to instrument ViewComponent events, you must first configure ViewComponent to emit those events:
+  
+  ```ruby
+  # config/application.rb
+  module MyRailsApp
+    class Application < Rails::Application
+      config.view_component.instrumentation_enabled = true
+      config.view_component.use_deprecated_instrumentation_name = false
+    end
+  end
+  ```
+  
+  Thanks to Trae Robrock (@trobrock) for providing a starting point for this implementation!
+- [ad5c9955](https://github.com/appsignal/appsignal-ruby/commit/ad5c99556421fe86501205465053466a91f28448) patch - Support Kamal-based deployments. Read the `KAMAL_VERSION` environment variable, which Kamal exposes within the deployed container, if present, and use it as the application revision if it is not set. This will automatically report deploy markers for applications using Kamal.
+
+### Fixed
+
+- [30bb675f](https://github.com/appsignal/appsignal-ruby/commit/30bb675ffa99ec1949a613f309e6c1792b88d4ce) patch - Fix an issue where an error about the AppSignal internal logger is raised when sending a heartbeat.
+
 ## 3.7.4
 
 _Published on 2024-05-09._
