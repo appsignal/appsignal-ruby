@@ -55,17 +55,4 @@ module Appsignal
       Appsignal.internal_logger.error("Failed to transmit heartbeat event: #{e}")
     end
   end
-
-  def self.heartbeat(name)
-    heartbeat = Appsignal::Heartbeat.new(:name => name)
-    output = nil
-
-    if block_given?
-      heartbeat.start
-      output = yield
-    end
-
-    heartbeat.finish
-    output
-  end
 end
