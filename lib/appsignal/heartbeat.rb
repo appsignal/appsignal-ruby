@@ -3,6 +3,7 @@
 module Appsignal
   class Heartbeat
     class << self
+      # @api private
       def transmitter
         @transmitter ||= Appsignal::Transmitter.new(
           "#{Appsignal.config[:logging_endpoint]}/heartbeats/json"
