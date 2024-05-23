@@ -240,10 +240,6 @@ describe Appsignal::Probes do
     end
 
     context "with thread already started" do
-      before do
-        allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.00001)
-      end
-
       it "auto starts probes added after the thread is started" do
         Appsignal::Probes.start
         wait_for("Probes thread to start") { Appsignal::Probes.started? }
