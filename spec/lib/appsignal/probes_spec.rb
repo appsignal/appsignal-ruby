@@ -286,7 +286,7 @@ describe Appsignal::Probes do
 
   describe ".stop" do
     before do
-      allow(Appsignal::Probes).to receive(:initial_wait_time).and_return(0.001)
+      speed_up_tests!
     end
 
     it "stops the minutely thread" do
