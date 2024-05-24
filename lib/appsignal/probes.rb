@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module Appsignal
-  module Probes
+  module Probes # rubocop:disable Metrics/ModuleLength
+    ITERATION_IN_SECONDS = 60
+
     class ProbeCollection
       def initialize
         @probes = {}
@@ -180,6 +182,7 @@ module Appsignal
           sleep initial_wait_time
           initialize_probes
           loop do
+            start_time = Time.now
             logger = Appsignal.internal_logger
             mutex.synchronize do
               logger.debug("Gathering minutely metrics with #{probe_instances.count} probes")
@@ -190,6 +193,15 @@ module Appsignal
                 logger.error "Error in minutely probe '#{name}': #{ex}"
                 logger.debug ex.backtrace.join("\n")
               end
+            end
+            end_time = Time.now
+            duration = end_time - start_time
+            if duration >= ITERATION_IN_SECONDS
+              logger.error(
+                "The minutely probes took more than 60 seconds. " \
+                  "The probes should not take this long as metrics will not " \
+                  "be accurately reported."
+              )
             end
             sleep wait_time
           end
@@ -214,16 +226,16 @@ module Appsignal
 
       # @api private
       def wait_time
-        60 - Time.now.sec
+        ITERATION_IN_SECONDS - Time.now.sec
       end
 
       private
 
       def initial_wait_time
-        remaining_seconds = 60 - Time.now.sec
+        remaining_seconds = ITERATION_IN_SECONDS - Time.now.sec
         return remaining_seconds if remaining_seconds > 30
 
-        remaining_seconds + 60
+        remaining_seconds + ITERATION_IN_SECONDS
       end
 
       def initialize_probes
