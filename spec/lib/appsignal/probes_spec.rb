@@ -215,6 +215,29 @@ describe Appsignal::Probes do
       end
     end
 
+    context "with a probe that takes 60 seconds" do
+      it "logs an error and continues calling the probes every <wait_time>" do
+        stub_const("Appsignal::Probes::ITERATION_IN_SECONDS", 0.2)
+        calls = 0
+        probe = lambda do
+          calls += 1
+          sleep 0.2
+        end
+        Appsignal::Probes.register :my_probe, probe
+        Appsignal::Probes.register :other_probe, lambda {}
+        Appsignal::Probes.start
+
+        wait_for("enough probe calls") { calls >= 2 }
+
+        expect(log).to contains_log(
+          :error,
+          "The minutely probes took more than 60 seconds. " \
+            "The probes should not take this long as metrics will not " \
+            "be accurately reported."
+        )
+      end
+    end
+
     it "ensures only one minutely probes thread is active at a time" do
       alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = MockProbe.new
