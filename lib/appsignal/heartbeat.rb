@@ -3,6 +3,7 @@
 module Appsignal
   class Heartbeat
     class << self
+      # @api private
       def transmitter
         @transmitter ||= Appsignal::Transmitter.new(
           "#{Appsignal.config[:logging_endpoint]}/heartbeats/json"
@@ -54,18 +55,5 @@ module Appsignal
     rescue => e
       Appsignal.internal_logger.error("Failed to transmit heartbeat event: #{e}")
     end
-  end
-
-  def self.heartbeat(name)
-    heartbeat = Appsignal::Heartbeat.new(:name => name)
-    output = nil
-
-    if block_given?
-      heartbeat.start
-      output = yield
-    end
-
-    heartbeat.finish
-    output
   end
 end

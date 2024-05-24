@@ -6,6 +6,7 @@ require "stringio"
 
 require "appsignal/logger"
 require "appsignal/utils/stdout_and_logger_message"
+require "appsignal/helpers/heartbeats"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
 
@@ -17,6 +18,7 @@ require "appsignal/helpers/metrics"
 # {Appsignal::Helpers::Metrics}) for ease of use.
 module Appsignal
   class << self
+    include Helpers::Heartbeats
     include Helpers::Instrumentation
     include Helpers::Metrics
 
