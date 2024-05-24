@@ -97,11 +97,11 @@ module Appsignal
     # @since 0.7.0
     def start
       unless extension_loaded?
-        internal_logger.info("Not starting appsignal, extension is not loaded")
+        internal_logger.info("Not starting AppSignal, extension is not loaded")
         return
       end
 
-      internal_logger.debug("Starting appsignal")
+      internal_logger.debug("Loading AppSignal gem")
 
       @config ||= Config.new(
         Dir.pwd,
