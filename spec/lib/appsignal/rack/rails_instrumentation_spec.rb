@@ -9,6 +9,14 @@ if DependencyHelper.rails_present?
       Appsignal.internal_logger = test_logger(log)
     end
 
+    let(:transaction) do
+      Appsignal::Transaction.new(
+        "transaction_id",
+        Appsignal::Transaction::HTTP_REQUEST,
+        Rack::Request.new(env)
+      )
+    end
+    let(:app) { double(:call => true) }
     let(:params) do
       {
         "controller" => "blog_posts",
@@ -19,12 +27,11 @@ if DependencyHelper.rails_present?
       }
     end
     let(:env_extra) { {} }
-    let(:app) { double(:call => true) }
     let(:env) do
       http_request_env_with_data({
         :params => params,
         :with_queue_start => true,
-        "action_dispatch.request_id" => "1",
+        "action_dispatch.request_id" => "request_id123",
         "action_dispatch.parameter_filter" => [:my_custom_param, :password],
         "action_controller.instance" => double(
           :class => MockController,
@@ -34,6 +41,9 @@ if DependencyHelper.rails_present?
     end
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
     around { |example| keep_transactions { example.run } }
+    before do
+      env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
+    end
 
     describe "#call" do
       before do
@@ -43,7 +53,7 @@ if DependencyHelper.rails_present?
       context "when appsignal is active" do
         before { allow(Appsignal).to receive(:active?).and_return(true) }
 
-        it "should call with monitoring" do
+        it "calls with monitoring" do
           expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
         end
       end
@@ -51,11 +61,11 @@ if DependencyHelper.rails_present?
       context "when appsignal is not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
-        it "should not call with monitoring" do
+        it "does not call with monitoring" do
           expect(middleware).to_not receive(:call_with_appsignal_monitoring)
         end
 
-        it "should call the app" do
+        it "calls the app" do
           expect(app).to receive(:call).with(env)
         end
       end
@@ -66,36 +76,34 @@ if DependencyHelper.rails_present?
     describe "#call_with_appsignal_monitoring" do
       def run
         middleware.call(env)
+        last_transaction.complete # Manually close transaction to set sample data
       end
 
       it "calls the wrapped app" do
-        run
+        expect { run }.to_not(change { created_transactions.length })
         expect(app).to have_received(:call).with(env)
       end
 
-      it "creates one transaction with metadata" do
+      it "sets request metadata on the transaction" do
         run
 
-        expect(created_transactions.length).to eq(1)
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash).to include(
+        expect(last_transaction.to_h).to include(
           "namespace" => Appsignal::Transaction::HTTP_REQUEST,
           "action" => "MockController#index",
           "metadata" => hash_including(
             "method" => "GET",
             "path" => "/blog"
+          ),
+          "sample_data" => hash_including(
+            "tags" => { "request_id" => "request_id123" }
           )
-        )
-        expect(last_transaction.ext.queue_start).to eq(
-          fixed_time * 1_000.0
         )
       end
 
-      it "filter parameters in Rails" do
+      it "reports Rails filter parameters" do
         run
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash).to include(
+        expect(last_transaction.to_h).to include(
           "sample_data" => hash_including(
             "params" => params.merge(
               "my_custom_param" => "[FILTERED]",
@@ -113,8 +121,8 @@ if DependencyHelper.rails_present?
 
           transaction_hash = last_transaction.to_h
           expect(transaction_hash["metadata"]).to_not have_key("method")
-          expect(log_contents(log)).to contains_log(:error,
-            "Unable to report HTTP request method: '")
+          expect(log_contents(log))
+            .to contains_log(:error, "Unable to report HTTP request method: '")
         end
       end
 
@@ -139,23 +147,13 @@ if DependencyHelper.rails_present?
       end
     end
 
-    describe "#request_id" do
-      subject { middleware.request_id(env) }
+    describe "#fetch_request_id" do
+      subject { middleware.fetch_request_id(env) }
 
-      context "with request id present" do
-        let(:env) { { "action_dispatch.request_id" => "id" } }
+      let(:env) { { "action_dispatch.request_id" => "id" } }
 
-        it "returns the present id" do
-          is_expected.to eq "id"
-        end
-      end
-
-      context "with request id not present" do
-        let(:env) { {} }
-
-        it "sets a new id" do
-          expect(subject.length).to eq 36
-        end
+      it "returns the action dispatch id" do
+        is_expected.to eq "id"
       end
     end
   end

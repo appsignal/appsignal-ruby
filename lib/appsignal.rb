@@ -325,5 +325,6 @@ require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"
 require "appsignal/version"
 require "appsignal/rack/generic_instrumentation"
+require "appsignal/rack/event_handler"
 require "appsignal/transmitter"
 require "appsignal/heartbeat"
