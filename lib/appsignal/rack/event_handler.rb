@@ -55,13 +55,20 @@ module Appsignal
         end
       end
 
-      def on_finish(request, _response)
+      def on_finish(request, response)
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction = request.env[APPSIGNAL_TRANSACTION]
           return unless transaction
 
           transaction.finish_event("process_request.rack", "", "")
+          transaction.set_tags(:response_status => response.status)
           transaction.set_http_or_background_queue_start
+          Appsignal.increment_counter(
+            :response_status,
+            1,
+            :status => response.status,
+            :namespace => format_namespace(transaction.namespace)
+          )
 
           # Make sure the current transaction is always closed when the request
           # is finished
