@@ -144,7 +144,15 @@ describe Appsignal::Rack::EventHandler do
       on_finish
 
       expect(last_transaction.to_h).to include(
-        "action" => "GET /path"
+        # The action is not set on purpose, as we can't set a normalized route
+        # It requires the app to set an action name
+        "action" => nil,
+        "sample_data" => hash_including(
+          "environment" => {
+            "REQUEST_METHOD" => "GET",
+            "PATH_INFO" => "/path"
+          }
+        )
       )
       expect(last_transaction.ext.queue_start).to eq(queue_start_time)
     end

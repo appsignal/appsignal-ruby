@@ -61,7 +61,6 @@ module Appsignal
           return unless transaction
 
           transaction.finish_event("process_request.rack", "", "")
-          transaction.set_action_if_nil("#{request.request_method} #{request.path}")
           transaction.set_http_or_background_queue_start
 
           # Make sure the current transaction is always closed when the request

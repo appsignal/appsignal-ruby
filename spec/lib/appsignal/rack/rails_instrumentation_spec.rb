@@ -1,8 +1,7 @@
 if DependencyHelper.rails_present?
-  class MockController
-  end
-
   describe Appsignal::Rack::RailsInstrumentation do
+    class MockController; end
+
     let(:log) { StringIO.new }
     before do
       start_agent
@@ -142,6 +141,23 @@ if DependencyHelper.rails_present?
             "name" => "ExampleException",
             "message" => "ExampleException message",
             "backtrace" => kind_of(String)
+          )
+        end
+      end
+
+      context "with a request path that's not a route" do
+        let(:env_extra) do
+          {
+            :path => "/unknown-route",
+            "action_controller.instance" => nil
+          }
+        end
+
+        it "doesn't set an action name" do
+          run
+
+          expect(last_transaction.to_h).to include(
+            "action" => nil
           )
         end
       end
