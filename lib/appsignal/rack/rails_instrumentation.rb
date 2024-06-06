@@ -52,10 +52,12 @@ module Appsignal
       end
 
       def fetch_params(request)
+        return unless request.respond_to?(:filtered_parameters)
+
         request.filtered_parameters
       rescue => error
         # Getting params from the request has been know to fail.
-        Appsignal.internal_logger.debug "Exception while getting params: #{error}"
+        Appsignal.internal_logger.debug "Exception while getting Rails params: #{error}"
         nil
       end
 
