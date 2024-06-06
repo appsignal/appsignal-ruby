@@ -112,6 +112,26 @@ if DependencyHelper.rails_present?
         )
       end
 
+      context "with custom params" do
+        let(:app) do
+          lambda do |env|
+            env[Appsignal::Rack::APPSIGNAL_TRANSACTION].params = { "custom_param" => "yes" }
+          end
+        end
+
+        it "allows custom params to be set" do
+          run
+
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "params" => {
+                "custom_param" => "yes"
+              }
+            )
+          )
+        end
+      end
+
       context "with an invalid HTTP request method" do
         let(:env_extra) { { :request_method => "FOO", "REQUEST_METHOD" => "FOO" } }
 
