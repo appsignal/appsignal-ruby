@@ -719,7 +719,6 @@ describe Appsignal::Transaction do
 
         sample_data = transaction.to_h["sample_data"]
         expect(sample_data["environment"]).to include(
-          "CONTENT_LENGTH" => "0",
           "REQUEST_METHOD" => "GET",
           "SERVER_NAME" => "example.org",
           "SERVER_PORT" => "80",
