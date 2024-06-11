@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.7.6
+
+_Published on 2024-06-11._
+
+### Changed
+
+- [704a7d29](https://github.com/appsignal/appsignal-ruby/commit/704a7d29ae428f93549000a2c606bff948040c96) patch - When the minutely probes thread takes more than 60 seconds to run all the registered probes, log an error. This helps find issues with the metrics reported by the probes not being accurately reported for every minute.
+- [5f4cc8be](https://github.com/appsignal/appsignal-ruby/commit/5f4cc8beb0ad88a0a58265d990626a7ee39fddd3) patch - Internal agent changes for the Ruby gem.
+
 ## 3.7.5
 
 _Published on 2024-05-14._
