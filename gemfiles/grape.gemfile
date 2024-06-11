@@ -1,6 +1,5 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'grape'
-gem 'activesupport', '~> 4.2'
+gem "grape"
 
-gemspec :path => '../'
+gemspec :path => "../"
