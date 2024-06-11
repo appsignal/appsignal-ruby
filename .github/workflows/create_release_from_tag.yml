@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PACKAGE_NAME: "Ruby gem"
+      CHANGELOG_CATEGORY: "Ruby"
       CHANGELOG_LINK: "https://github.com/appsignal/appsignal-ruby/blob/main/CHANGELOG.md"
     steps:
       - name: Checkout repository at tag
@@ -46,10 +47,11 @@ jobs:
         run: |
           # Prepare JSON payload using jq to ensure proper escaping
           payload=$(jq -n \
-            --arg package "Ruby gem" \
-            --arg version "${{ env.TAG_NAME }}" \
+            --arg title "Add changelog entry for $PACKAGE_NAME ${{ env.TAG_NAME }}" \
+            --arg category "$CHANGELOG_CATEGORY" \
+            --arg version "$(echo "${{ env.TAG_NAME }}" | sed 's/^v//')" \
             --arg changelog "$(cat CHANGELOG_TEXT.txt)" \
-            '{ref: "main", inputs: {package: $package, version: $version, changelog: $changelog}}')
+            '{ref: "main", inputs: {title: $title, category: $category, version: $version, changelog: $changelog}}')
 
           curl -X POST \
             -H "Authorization: token ${{ secrets.INTEGRATIONS_CHANGELOG_TOKEN }}" \
