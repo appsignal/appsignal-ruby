@@ -29,6 +29,11 @@ module Appsignal
         # Start logger
         Appsignal.start_logger
 
+        app.middleware.insert(
+          0,
+          ::Rack::Events,
+          [Appsignal::Rack::EventHandler.new]
+        )
         app.middleware.insert_after(
           ActionDispatch::DebugExceptions,
           Appsignal::Rack::RailsInstrumentation

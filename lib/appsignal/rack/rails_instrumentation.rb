@@ -22,13 +22,14 @@ module Appsignal
 
       def call_with_appsignal_monitoring(env)
         request = ActionDispatch::Request.new(env)
-        transaction = Appsignal::Transaction.create(
-          request_id(env),
-          Appsignal::Transaction::HTTP_REQUEST,
-          request,
-          :params_method => :filtered_parameters
+        transaction = env.fetch(
+          Appsignal::Rack::APPSIGNAL_TRANSACTION,
+          Appsignal::Transaction::NilTransaction.new
         )
+
         begin
+          transaction.params = fetch_params(request)
+
           @app.call(env)
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
@@ -38,19 +39,33 @@ module Appsignal
           if controller
             transaction.set_action_if_nil("#{controller.class}##{controller.action_name}")
           end
-          transaction.set_http_or_background_queue_start
+          request_id = fetch_request_id(env)
+          transaction.set_tags(:request_id => request_id) if request_id
           transaction.set_metadata("path", request.path)
-          begin
-            transaction.set_metadata("method", request.request_method)
-          rescue => error
-            Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
-          end
-          Appsignal::Transaction.complete_current!
+          request_method = fetch_request_method(request)
+          transaction.set_metadata("method", request_method) if request_method
         end
       end
 
-      def request_id(env)
-        env["action_dispatch.request_id"] || SecureRandom.uuid
+      def fetch_request_id(env)
+        env["action_dispatch.request_id"]
+      end
+
+      def fetch_params(request)
+        return unless request.respond_to?(:filtered_parameters)
+
+        request.filtered_parameters
+      rescue => error
+        # Getting params from the request has been know to fail.
+        Appsignal.internal_logger.debug "Exception while getting Rails params: #{error}"
+        nil
+      end
+
+      def fetch_request_method(request)
+        request.request_method
+      rescue => error
+        Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
+        nil
       end
     end
   end
