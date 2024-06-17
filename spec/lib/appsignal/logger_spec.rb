@@ -162,4 +162,25 @@ describe Appsignal::Logger do
       end
     end
   end
+
+  describe "#error with exception object" do
+    it "logs the exception class and its message" do
+      error =
+        begin
+          raise ExampleStandardError, "oh no!"
+        rescue => e
+          # This makes the exception include a backtrace, so we can assert it's NOT included
+          e
+        end
+      expect(Appsignal::Extension).to receive(:log)
+        .with(
+          "group",
+          6,
+          0,
+          "ExampleStandardError: oh no!",
+          instance_of(Appsignal::Extension::Data)
+        )
+      logger.error(error)
+    end
+  end
 end
