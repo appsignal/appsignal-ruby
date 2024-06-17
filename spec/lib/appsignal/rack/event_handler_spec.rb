@@ -183,6 +183,25 @@ describe Appsignal::Rack::EventHandler do
       )
     end
 
+    it "sets the response status as a tag" do
+      on_start
+      on_finish
+
+      expect(last_transaction.to_h).to include(
+        "sample_data" => hash_including(
+          "tags" => { "response_status" => 200 }
+        )
+      )
+    end
+
+    it "increments the response status counter for response status" do
+      expect(Appsignal).to receive(:increment_counter)
+        .with(:response_status, 1, :status => 200, :namespace => :web)
+
+      on_start
+      on_finish
+    end
+
     it "logs an error in case of an error" do
       expect(Appsignal::Transaction)
         .to receive(:complete_current!).and_raise(ExampleStandardError, "oh no")
