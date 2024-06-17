@@ -1,5 +1,11 @@
 describe Appsignal::Logger do
+  let(:log_stream) { StringIO.new }
+  let(:logs) { log_contents(log_stream) }
   let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::DEBUG) }
+
+  before do
+    Appsignal.internal_logger = test_logger(log_stream)
+  end
 
   it "should not create a logger with a nil group" do
     expect do
@@ -12,6 +18,19 @@ describe Appsignal::Logger do
       expect(Appsignal::Extension).to receive(:log)
         .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message")
+    end
+
+    it "does not log a message that's not a String" do
+      expect(Appsignal::Extension).to_not receive(:log)
+      logger.add(::Logger::INFO, 123)
+      logger.add(::Logger::INFO, {})
+      logger.add(::Logger::INFO, [])
+      expect(logs)
+        .to contains_log(:warn, "Logger message was ignored, because it was not a String: 123")
+      expect(logs)
+        .to contains_log(:warn, "Logger message was ignored, because it was not a String: []")
+      expect(logs)
+        .to contains_log(:warn, "Logger message was ignored, because it was not a String: {}")
     end
 
     it "should log with a block" do
@@ -160,6 +179,27 @@ describe Appsignal::Logger do
           logger.send(method[0], "Log message")
         end
       end
+    end
+  end
+
+  describe "#error with exception object" do
+    it "logs the exception class and its message" do
+      error =
+        begin
+          raise ExampleStandardError, "oh no!"
+        rescue => e
+          # This makes the exception include a backtrace, so we can assert it's NOT included
+          e
+        end
+      expect(Appsignal::Extension).to receive(:log)
+        .with(
+          "group",
+          6,
+          0,
+          "ExampleStandardError: oh no!",
+          instance_of(Appsignal::Extension::Data)
+        )
+      logger.error(error)
     end
   end
 end

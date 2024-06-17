@@ -53,6 +53,13 @@ module Appsignal
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 
+      unless message.is_a?(String)
+        Appsignal.internal_logger.warn(
+          "Logger message was ignored, because it was not a String: #{message.inspect}"
+        )
+        return
+      end
+
       Appsignal::Extension.log(
         group,
         SEVERITY_MAP.fetch(severity, 0),
@@ -111,6 +118,8 @@ module Appsignal
 
       message = yield if message.nil? && block_given?
       return if message.nil?
+
+      message = "#{message.class}: #{message.message}" if message.is_a?(Exception)
 
       add_with_attributes(ERROR, message, @group, attributes)
     end
