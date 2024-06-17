@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "rails", "~> 7.1.0"
+# gem "rails", "~> 7.1.0"
 gem "rake", "> 12.2"
 gem "sidekiq"
 gem "view_component"
@@ -8,5 +8,31 @@ gem "view_component"
 # Fix install issue for jruby on gem 3.1.8.
 # No java stub is published.
 gem "bigdecimal", "3.1.7" if RUBY_PLATFORM == "java"
+
+# Borrowing hardcoded dependencies from working build diff:
+# https://github.com/jruby/jruby/issues/7059#issuecomment-2174217819
+gem "actioncable", "7.1.3.3"
+gem "actionmailbox", "7.1.3.3"
+gem "actionmailer", "7.1.3.3"
+gem "actionpack", "7.1.3.3"
+gem "actiontext", "7.1.3.3"
+gem "actionview", "7.1.3.3"
+gem "activejob", "7.1.3.3"
+gem "activemodel", "7.1.3.3"
+gem "activerecord", "7.1.3.3"
+gem "activestorage", "7.1.3.3"
+gem "activesupport", "7.1.3.3"
+gem "builder", "3.2.4"
+gem "concurrent-ruby", "1.2.3"
+gem "erubi", "1.12.0"
+gem "net-imap", "0.4.11"
+gem "nokogiri", "1.16.5"
+gem "rails", "7.1.3.3"
+gem "railties", "7.1.3.3"
+gem "reline", "0.5.7"
+gem "rexml", "3.2.8"
+gem "rspec-expectations", "3.13.0"
+gem "timecop", "0.9.8"
+gem "zeitwerk", "2.6.14"
 
 gemspec :path => "../"
