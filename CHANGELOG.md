@@ -1,5 +1,15 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.8.1
+
+_Published on 2024-06-17._
+
+### Added
+
+- [5459a021](https://github.com/appsignal/appsignal-ruby/commit/5459a021d7d4bbbd09a0dcbdf5f3af7bf861b6f5) patch - Report the response status for Rails requests as the `response_status` tag on samples, e.g. 200, 301, 500. This tag is visible on the sample detail page.
+  
+  The response status is also reported as the `response_status` metric.
+
 ## 3.8.0
 
 _Published on 2024-06-17._
