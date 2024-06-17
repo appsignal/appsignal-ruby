@@ -1,5 +1,23 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.8.0
+
+_Published on 2024-06-17._
+
+### Changed
+
+- [ca53b043](https://github.com/appsignal/appsignal-ruby/commit/ca53b04360ae123498640d043ee7ba74efc4b295) minor - Report the time spent in Rails middleware as part of the request duration. The AppSignal Rack middleware is now higher in the middleware stack and reports more time of the request to give insights in how long other middleware took. This is reported under the new `process_request.rack` event in the event timeline.
+
+### Fixed
+
+- [37fbae5a](https://github.com/appsignal/appsignal-ruby/commit/37fbae5a0f1a4e964baceb21837e5d5f0cf903c0) patch - Fix ArgumentError being raised on Ruby logger and Rails.logger error calls. This fixes the error from being raised from within the AppSignal Ruby gem.
+  Please do not use this for error reporting. We recommend using our error reporting feature instead to be notified of new errors. Read more on [exception handling in Ruby with our Ruby gem](https://docs.appsignal.com/ruby/instrumentation/exception-handling.html).
+  
+  ```ruby
+  # No longer raises an error
+  Rails.logger.error StandardError.new("StandardError log message")
+  ```
+
 ## 3.7.6
 
 _Published on 2024-06-11._
