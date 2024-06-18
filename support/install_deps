@@ -4,6 +4,12 @@ set -eu
 
 gem_args="--no-verbose --no-document"
 
+# Workaround for https://github.com/jruby/jruby/issues/7059
+if [[ "${RUBY_VERSION}" == *"jruby"* ]]; then
+  echo "Skipping rubygems and bundler update for JRuby"
+  exit 0
+fi
+
 case "${_RUBYGEMS_VERSION-"latest"}" in
   "latest")
     echo "Updating rubygems"
