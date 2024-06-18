@@ -46,17 +46,26 @@ module Appsignal
         end
       end
 
+      private
+
       def call_with_appsignal_monitoring(env)
-        options = { :force => @options.include?(:force) && @options[:force] }
-        options.merge!(:params_method => @options[:params_method]) if @options[:params_method]
         request = @options.fetch(:request_class, Sinatra::Request).new(env)
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST,
-          request,
-          options
-        )
+        has_parent_instrumentation = env.key?(Appsignal::Rack::APPSIGNAL_TRANSACTION)
+        transaction =
+          if has_parent_instrumentation
+            env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+          else
+            Appsignal::Transaction.create(
+              SecureRandom.uuid,
+              Appsignal::Transaction::HTTP_REQUEST,
+              request
+            )
+          end
+
         begin
+          params = fetch_params(request, @options.fetch(:params_method, :params))
+          transaction.params = params if params
+
           Appsignal.instrument("process_action.sinatra") do
             @app.call(env)
           end
@@ -73,7 +82,9 @@ module Appsignal
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", request.request_method)
           transaction.set_http_or_background_queue_start
-          Appsignal::Transaction.complete_current!
+
+          # Only close if this middleware created the instrumentation
+          Appsignal::Transaction.complete_current! unless has_parent_instrumentation
         end
       end
 
@@ -88,7 +99,15 @@ module Appsignal
         end
       end
 
-      private
+      def fetch_params(request, params_method)
+        return unless request.respond_to?(params_method)
+
+        request.send(params_method)
+      rescue => error
+        # Getting params from the request has been know to fail.
+        Appsignal.internal_logger.debug "Exception while getting Sinatra params: #{error}"
+        nil
+      end
 
       def raise_errors?(app)
         app.respond_to?(:settings) &&

@@ -28,8 +28,7 @@ if DependencyHelper.sinatra_present?
       before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
       it "doesn't instrument requests" do
-        make_request(env)
-        expect(created_transactions.count).to eq(0)
+        expect { make_request(env) }.to_not(change { created_transactions.count })
       end
     end
 
@@ -47,7 +46,7 @@ if DependencyHelper.sinatra_present?
 
     let(:settings) { double(:raise_errors => false) }
     let(:app) { double(:call => true, :settings => settings) }
-    let(:env) { { "sinatra.route" => "GET /", :path => "/", :method => "GET" } }
+    let(:env) { { "sinatra.route" => "GET /path", :path => "/path", :method => "GET" } }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
@@ -93,216 +92,241 @@ if DependencyHelper.sinatra_present?
     describe "#call" do
       before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
-      context "when appsignal is active" do
-        it "instruments requests" do
-          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
-        end
-      end
-
       context "when appsignal is not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "does not instrument requests" do
-          expect(created_transactions.count).to eq(0)
+          expect { make_request(env) }.to_not(change { created_transactions.count })
         end
 
         it "calls the next middleware in the stack" do
           expect(app).to receive(:call).with(env)
-        end
-      end
-
-      after { make_request(env) }
-    end
-
-    describe "#call_with_appsignal_monitoring" do
-      context "without an error" do
-        it "creates a transaction" do
-          expect(app).to receive(:call).with(env)
-
           make_request(env)
-
-          expect(created_transactions.count).to eq(1)
-          expect(last_transaction.to_h).to include(
-            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
-            "action" => "GET /",
-            "error" => nil,
-            "metadata" => { "path" => "" }
-          )
         end
       end
 
-      context "with an error" do
-        let(:error) { ExampleException }
-        let(:app) do
-          double.tap do |d|
-            allow(d).to receive(:call).and_raise(error)
-            allow(d).to receive(:settings).and_return(settings)
+      context "when appsignal is active" do
+        it "calls the next middleware in the stack" do
+          expect(app).to receive(:call).with(env)
+          make_request(env)
+        end
+
+        context "without an error" do
+          before do
+            expect { make_request(env) }.to(change { created_transactions.count }.by(1))
+          end
+
+          it "creates a transaction without an error" do
+            expect(last_transaction.to_h).to include(
+              "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+              "action" => "GET /path",
+              "error" => nil,
+              "metadata" => { "path" => "" }
+            )
+          end
+
+          it "completes the transaction" do
+            expect(last_transaction).to be_completed
           end
         end
 
-        it "records the exception" do
-          make_request_with_error(env, error)
+        context "with an error" do
+          let(:error) { ExampleException.new("error message") }
+          before do
+            allow(app).to receive(:call).and_raise(error)
+            expect { make_request_with_error(env, error) }
+              .to(change { created_transactions.count }.by(1))
+          end
 
-          expect(created_transactions.count).to eq(1)
-          expect(last_transaction.to_h).to include(
-            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
-            "action" => "GET /",
-            "error" => hash_including(
-              "name" => "ExampleException",
-              "message" => "ExampleException"
-            )
-          )
-        end
-      end
-
-      context "with an error in sinatra.error" do
-        let(:error) { ExampleException.new }
-        let(:env) { { "sinatra.error" => error } }
-
-        context "when raise_errors is off" do
-          let(:settings) { double(:raise_errors => false) }
-
-          it "record the error" do
-            make_request(env)
-
-            expect(created_transactions.count).to eq(1)
+          it "creates and completes a transaction and records the exception" do
             expect(last_transaction.to_h).to include(
+              "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+              "action" => "GET /path",
               "error" => hash_including(
                 "name" => "ExampleException",
-                "message" => "ExampleException"
+                "message" => "error message"
               )
             )
           end
-        end
 
-        context "when raise_errors is on" do
-          let(:settings) { double(:raise_errors => true) }
-
-          it "does not record the error" do
-            make_request(env)
-
-            expect(created_transactions.count).to eq(1)
-            expect(last_transaction.to_h).to include("error" => nil)
+          it "completes the transaction" do
+            expect(last_transaction).to be_completed
           end
         end
 
-        context "if sinatra.skip_appsignal_error is set" do
-          let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
+        context "with an error in sinatra.error" do
+          let(:error) { ExampleException.new("error message") }
+          let(:env) { { "sinatra.error" => error } }
 
-          it "does not record the error" do
-            make_request(env)
+          context "when raise_errors is off" do
+            let(:settings) { double(:raise_errors => false) }
 
-            expect(created_transactions.count).to eq(1)
-            expect(last_transaction.to_h).to include("error" => nil)
+            it "record the error" do
+              expect { make_request(env) }
+                .to(change { created_transactions.count }.by(1))
+
+              expect(last_transaction.to_h).to include(
+                "error" => hash_including(
+                  "name" => "ExampleException",
+                  "message" => "error message"
+                )
+              )
+            end
+          end
+
+          context "when raise_errors is on" do
+            let(:settings) { double(:raise_errors => true) }
+
+            it "does not record the error" do
+              expect { make_request(env) }
+                .to(change { created_transactions.count }.by(1))
+
+              expect(last_transaction.to_h).to include("error" => nil)
+            end
+          end
+
+          context "if sinatra.skip_appsignal_error is set" do
+            let(:env) { { "sinatra.error" => error, "sinatra.skip_appsignal_error" => true } }
+
+            it "does not record the error" do
+              expect { make_request(env) }
+                .to(change { created_transactions.count }.by(1))
+
+              expect(last_transaction.to_h).to include("error" => nil)
+            end
           end
         end
-      end
 
-      describe "action name" do
-        it "sets the action" do
-          make_request(env)
-
-          expect(created_transactions.count).to eq(1)
-          expect(last_transaction.to_h).to include("action" => "GET /")
-        end
-
-        context "without 'sinatra.route' env" do
-          let(:env) { { :path => "/", :method => "GET" } }
-
-          it "doesn't set an action name" do
+        describe "action name" do
+          it "sets the action to the request method and path" do
             make_request(env)
 
-            expect(created_transactions.count).to eq(1)
-            expect(last_transaction.to_h).to include("action" => nil)
-          end
-        end
-
-        context "with mounted modular application" do
-          before { env["SCRIPT_NAME"] = "/api" }
-
-          it "should call set_action with an application prefix path" do
-            make_request(env)
-
-            expect(created_transactions.count).to eq(1)
-            expect(last_transaction.to_h).to include("action" => "GET /api/")
+            expect(last_transaction.to_h).to include("action" => "GET /path")
           end
 
           context "without 'sinatra.route' env" do
-            let(:env) { { :path => "/", :method => "GET" } }
+            let(:env) { { :path => "/path", :method => "GET" } }
 
             it "doesn't set an action name" do
               make_request(env)
 
-              expect(created_transactions.count).to eq(1)
               expect(last_transaction.to_h).to include("action" => nil)
             end
           end
+
+          context "with mounted modular application" do
+            before { env["SCRIPT_NAME"] = "/api" }
+
+            it "sets the action name with an application prefix path" do
+              make_request(env)
+
+              expect(last_transaction.to_h).to include("action" => "GET /api/path")
+            end
+
+            context "without 'sinatra.route' env" do
+              let(:env) { { :path => "/path", :method => "GET" } }
+
+              it "doesn't set an action name" do
+                make_request(env)
+
+                expect(last_transaction.to_h).to include("action" => nil)
+              end
+            end
+          end
         end
-      end
 
-      context "metadata" do
-        let(:env) { { "PATH_INFO" => "/some/path", "REQUEST_METHOD" => "GET" } }
+        context "metadata" do
+          let(:env) { { "PATH_INFO" => "/some/path", "REQUEST_METHOD" => "GET" } }
 
-        it "sets metadata from the environment" do
-          make_request(env)
+          it "sets metadata from the environment" do
+            make_request(env)
 
-          expect(created_transactions.count).to eq(1)
-          expect(last_transaction.to_h).to include(
-            "metadata" => {
-              "method" => "GET",
-              "path" => "/some/path"
-            },
-            "sample_data" => hash_including(
-              "environment" => hash_including(
-                "REQUEST_METHOD" => "GET",
-                "PATH_INFO" => "/some/path"
+            expect(last_transaction.to_h).to include(
+              "metadata" => {
+                "method" => "GET",
+                "path" => "/some/path"
+              },
+              "sample_data" => hash_including(
+                "environment" => hash_including(
+                  "REQUEST_METHOD" => "GET",
+                  "PATH_INFO" => "/some/path"
+                )
               )
             )
-          )
-        end
-      end
-
-      context "with queue start" do
-        let(:queue_start_time) { fixed_time * 1_000 }
-        let(:env) do
-          { "HTTP_X_REQUEST_START" => "t=#{queue_start_time.to_i}" } # in milliseconds
+          end
         end
 
-        it "sets the queue start" do
-          make_request(env)
-          expect(last_transaction.ext.queue_start).to eq(queue_start_time)
-        end
-      end
+        context "with queue start" do
+          let(:queue_start_time) { fixed_time * 1_000 }
+          let(:env) do
+            { "HTTP_X_REQUEST_START" => "t=#{queue_start_time.to_i}" } # in milliseconds
+          end
 
-      class FilteredRequest
-        def initialize(_args) # rubocop:disable Style/RedundantInitialize
-        end
-
-        def path
-          "/static/path"
+          it "sets the queue start" do
+            make_request(env)
+            expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+          end
         end
 
-        def request_method
-          "GET"
+        class FilteredRequest
+          def initialize(_args) # rubocop:disable Style/RedundantInitialize
+          end
+
+          def path
+            "/static/path"
+          end
+
+          def request_method
+            "GET"
+          end
+
+          def filtered_params
+            { "abc" => "123" }
+          end
         end
 
-        def filtered_params
-          { "abc" => "123" }
-        end
-      end
+        context "with overridden request class and params method" do
+          let(:options) do
+            { :request_class => FilteredRequest, :params_method => :filtered_params }
+          end
 
-      context "with overridden request class and params method" do
-        let(:options) { { :request_class => FilteredRequest, :params_method => :filtered_params } }
+          it "uses the overridden request class and params method to fetch params" do
+            make_request(env)
 
-        it "uses the overridden request class and params method to fetch params" do
-          make_request(env)
-
-          expect(created_transactions.count).to eq(1)
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "params" => { "abc" => "123" }
+            expect(last_transaction.to_h).to include(
+              "sample_data" => hash_including(
+                "params" => { "abc" => "123" }
+              )
             )
-          )
+          end
+        end
+
+        context "with parent instrumentation" do
+          before do
+            env["PATH_INFO"] = "/some/path"
+            env["REQUEST_METHOD"] = "GET"
+            env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = http_request_transaction
+            make_request(env)
+          end
+
+          it "uses the existing transaction" do
+            expect { make_request(env) }.to_not(change { created_transactions.count })
+          end
+
+          it "sets metadata on the transaction" do
+            expect(env[Appsignal::Rack::APPSIGNAL_TRANSACTION].to_h).to include(
+              "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+              "action" => "GET /path",
+              "metadata" => {
+                "method" => "GET",
+                "path" => "/some/path"
+              }
+            )
+          end
+
+          it "doesn't complete the existing transaction" do
+            expect(env[Appsignal::Rack::APPSIGNAL_TRANSACTION]).to_not be_completed
+          end
         end
       end
     end
