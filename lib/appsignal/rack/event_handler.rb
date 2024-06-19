@@ -3,6 +3,7 @@
 module Appsignal
   module Rack
     APPSIGNAL_TRANSACTION = "appsignal.transaction"
+    APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
     RACK_AFTER_REPLY = "rack.after_reply"
 
     class EventHandler
@@ -16,8 +17,22 @@ module Appsignal
         )
       end
 
+      attr_reader :id
+
+      def initialize
+        @id = SecureRandom.uuid
+      end
+
+      def request_handler?(given_id)
+        id == given_id
+      end
+
       def on_start(request, _response)
+        event_handler = self
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_start") do
+          request.env[APPSIGNAL_EVENT_HANDLER_ID] ||= id
+          return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
           transaction = Appsignal::Transaction.create(
             SecureRandom.uuid,
             Appsignal::Transaction::HTTP_REQUEST,
@@ -29,6 +44,8 @@ module Appsignal
           request.env[RACK_AFTER_REPLY] << proc do
             Appsignal::Rack::EventHandler
               .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
+              next unless event_handler.request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
               transaction.finish_event("process_request.rack", "", "")
               transaction.set_http_or_background_queue_start
 
@@ -48,6 +65,8 @@ module Appsignal
 
       def on_error(request, _response, error)
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_error") do
+          return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
           transaction = request.env[APPSIGNAL_TRANSACTION]
           return unless transaction
 
@@ -57,6 +76,8 @@ module Appsignal
 
       def on_finish(request, response)
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
+          return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
           transaction = request.env[APPSIGNAL_TRANSACTION]
           return unless transaction
 
