@@ -11,6 +11,7 @@ describe Appsignal::Rack::EventHandler do
   let(:response) { nil }
   let(:log_stream) { StringIO.new }
   let(:log) { log_contents(log_stream) }
+  let(:event_handler_instance) { described_class.new }
   before do
     start_agent
     Appsignal.internal_logger = test_logger(log_stream)
@@ -18,7 +19,7 @@ describe Appsignal::Rack::EventHandler do
   around { |example| keep_transactions { example.run } }
 
   def on_start
-    described_class.new.on_start(request, response)
+    event_handler_instance.on_start(request, response)
   end
 
   describe "#on_start" do
@@ -32,6 +33,14 @@ describe Appsignal::Rack::EventHandler do
       )
 
       expect(Appsignal::Transaction.current).to eq(last_transaction)
+    end
+
+    context "when the handler is nested in another EventHandler" do
+      it "does not create a new transaction in the nested EventHandler" do
+        on_start
+        expect { described_class.new.on_start(request, response) }
+          .to_not(change { created_transactions.length })
+      end
     end
 
     it "registers transaction on the request environment" do
@@ -87,7 +96,7 @@ describe Appsignal::Rack::EventHandler do
 
   describe "#on_error" do
     def on_error(error)
-      described_class.new.on_error(request, response, error)
+      event_handler_instance.on_error(request, response, error)
     end
 
     it "reports the error" do
@@ -101,6 +110,15 @@ describe Appsignal::Rack::EventHandler do
           "backtrace" => kind_of(String)
         }
       )
+    end
+
+    context "when the handler is nested in another EventHandler" do
+      it "does not report the error on the transaction" do
+        on_start
+        described_class.new.on_error(request, response, ExampleStandardError.new("the error"))
+
+        expect(last_transaction.to_h).to include("error" => nil)
+      end
     end
 
     it "logs an error in case of an internal error" do
@@ -122,7 +140,7 @@ describe Appsignal::Rack::EventHandler do
     let(:response) { Rack::Events::BufferedResponse.new(200, {}, ["body"]) }
 
     def on_finish
-      described_class.new.on_finish(request, response)
+      event_handler_instance.on_finish(request, response)
     end
 
     it "doesn't do anything without a transaction" do
@@ -155,6 +173,22 @@ describe Appsignal::Rack::EventHandler do
         )
       )
       expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+      expect(last_transaction).to be_completed
+    end
+
+    context "when the handler is nested in another EventHandler" do
+      it "does not complete the transaction" do
+        on_start
+        described_class.new.on_finish(request, response)
+
+        expect(last_transaction.to_h).to include(
+          "action" => nil,
+          "metadata" => {},
+          "sample_data" => {},
+          "events" => []
+        )
+        expect(last_transaction).to_not be_completed
+      end
     end
 
     it "doesn't set the action name if already set" do
