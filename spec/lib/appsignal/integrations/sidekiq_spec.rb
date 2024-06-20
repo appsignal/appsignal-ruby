@@ -1,19 +1,83 @@
 require "appsignal/integrations/sidekiq"
 
-describe Appsignal::Integrations::SidekiqErrorHandler do
-  let(:log) { StringIO.new }
-  before do
-    start_agent
-    Appsignal.internal_logger = test_logger(log)
-  end
+describe Appsignal::Integrations::SidekiqDeathHandler do
+  before { start_agent }
   around { |example| keep_transactions { example.run } }
 
-  context "without a current transaction" do
-    let(:exception) do
-      raise ExampleStandardError, "uh oh"
-    rescue => error
-      error
+  let(:exception) do
+    raise ExampleStandardError, "uh oh"
+  rescue => error
+    error
+  end
+  let(:job_context) { {} }
+  let(:transaction) { http_request_transaction }
+  before { set_current_transaction(transaction) }
+
+  def call_handler
+    expect do
+      described_class.new.call(job_context, exception)
+    end.to_not(change { created_transactions.count })
+  end
+
+  def expect_error_on_transaction
+    expect(last_transaction.to_h).to include(
+      "error" => hash_including(
+        "name" => "ExampleStandardError",
+        "message" => "uh oh",
+        "backtrace" => kind_of(String)
+      )
+    )
+  end
+
+  def expect_no_error_on_transaction
+    expect(last_transaction.to_h).to include("error" => nil)
+  end
+
+  context "when sidekiq_report_errors = none" do
+    before do
+      Appsignal.config[:sidekiq_report_errors] = "none"
+      call_handler
     end
+
+    it "doesn't track the error on the transaction" do
+      expect_no_error_on_transaction
+    end
+  end
+
+  context "when sidekiq_report_errors = all" do
+    before do
+      Appsignal.config[:sidekiq_report_errors] = "all"
+      call_handler
+    end
+
+    it "doesn't track the error on the transaction" do
+      expect_no_error_on_transaction
+    end
+  end
+
+  context "when sidekiq_report_errors = discard" do
+    before do
+      Appsignal.config[:sidekiq_report_errors] = "discard"
+      call_handler
+    end
+
+    it "records each occurrence of the error on the transaction" do
+      expect_error_on_transaction
+    end
+  end
+end
+
+describe Appsignal::Integrations::SidekiqErrorHandler do
+  before { start_agent }
+  around { |example| keep_transactions { example.run } }
+
+  let(:exception) do
+    raise ExampleStandardError, "uh oh"
+  rescue => error
+    error
+  end
+
+  context "when error is an internal error" do
     let(:job_context) do
       {
         :context => "Sidekiq internal error!",
@@ -21,53 +85,116 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
       }
     end
 
-    context "when error is an internal error" do
-      it "tracks error on a new transaction" do
-        expect do
-          described_class.new.call(exception, job_context)
-        end.to(change { created_transactions.count }.by(1))
+    def expect_report_internal_error
+      expect do
+        described_class.new.call(exception, job_context)
+      end.to(change { created_transactions.count }.by(1))
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "SidekiqInternal",
-          "error" => hash_including(
-            "name" => "ExampleStandardError",
-            "message" => "uh oh",
-            "backtrace" => kind_of(String)
-          )
+      transaction_hash = last_transaction.to_h
+      expect(transaction_hash).to include(
+        "action" => "SidekiqInternal",
+        "error" => hash_including(
+          "name" => "ExampleStandardError",
+          "message" => "uh oh",
+          "backtrace" => kind_of(String)
         )
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => {
-            "jobstr" => "{ bad json }"
-          }
-        )
-        expect(transaction_hash["metadata"]).to include(
-          "sidekiq_error" => "Sidekiq internal error!"
-        )
+      )
+      expect(transaction_hash["sample_data"]).to include(
+        "params" => {
+          "jobstr" => "{ bad json }"
+        }
+      )
+      expect(transaction_hash["metadata"]).to include(
+        "sidekiq_error" => "Sidekiq internal error!"
+      )
+    end
+
+    context "when sidekiq_report_errors = none" do
+      before { Appsignal.config[:sidekiq_report_errors] = "none" }
+
+      it "tracks the error on a new transaction" do
+        expect_report_internal_error
       end
     end
 
-    context "when error is a job error" do
-      let(:transaction) { http_request_transaction }
+    context "when sidekiq_report_errors = all" do
+      before { Appsignal.config[:sidekiq_report_errors] = "all" }
+
+      it "tracks the error on a new transaction" do
+        expect_report_internal_error
+      end
+    end
+
+    context "when sidekiq_report_errors = discard" do
+      before { Appsignal.config[:sidekiq_report_errors] = "discard" }
+
+      it "tracks the error on a new transaction" do
+        expect_report_internal_error
+      end
+    end
+  end
+
+  context "when error is a job error" do
+    let(:sidekiq_context) { { :job => {} } }
+    let(:transaction) { http_request_transaction }
+    before do
+      transaction.set_action("existing transaction action")
+      set_current_transaction(transaction)
+    end
+
+    def call_handler
+      expect do
+        described_class.new.call(exception, sidekiq_context)
+      end.to_not(change { created_transactions.count })
+    end
+
+    def expect_error_on_transaction
+      expect(last_transaction.to_h).to include(
+        "error" => hash_including(
+          "name" => "ExampleStandardError",
+          "message" => "uh oh",
+          "backtrace" => kind_of(String)
+        )
+      )
+    end
+
+    def expect_no_error_on_transaction
+      expect(last_transaction.to_h).to include("error" => nil)
+    end
+
+    context "when sidekiq_report_errors = none" do
       before do
-        transaction.set_action("existing transaction action")
-        set_current_transaction(transaction)
+        Appsignal.config[:sidekiq_report_errors] = "none"
+        call_handler
       end
 
-      it "tracks error on the existing transaction" do
-        expect do
-          described_class.new.call(exception, job_context)
-        end.to_not(change { created_transactions.count })
+      it "doesn't track the error on the transaction" do
+        expect_no_error_on_transaction
+        expect(last_transaction).to be_completed
+      end
+    end
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "existing transaction action",
-          "error" => hash_including(
-            "name" => "ExampleStandardError",
-            "message" => "uh oh",
-            "backtrace" => kind_of(String)
-          )
-        )
+    context "when sidekiq_report_errors = all" do
+      before do
+        Appsignal.config[:sidekiq_report_errors] = "all"
+        call_handler
+      end
+
+      it "records each occurrence of the error on the transaction" do
+        expect_error_on_transaction
+        expect(last_transaction).to be_completed
+      end
+    end
+
+    context "when sidekiq_report_errors = discard" do
+      before do
+        Appsignal.config[:sidekiq_report_errors] = "discard"
+        call_handler
+      end
+
+      it "doesn't track the error on the transaction" do
+        expect_no_error_on_transaction
+        expect(last_transaction).to be_completed
       end
     end
   end

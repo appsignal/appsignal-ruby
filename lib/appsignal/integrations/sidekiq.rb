@@ -4,32 +4,51 @@ require "yaml"
 
 module Appsignal
   module Integrations
+    # Handler for job death events. We get notified when a job has exhausted
+    # its retries.
+    #
+    # This is called before the SidekiqErrorHandler so it doesn't need to worry
+    # about completing the transaction.
+    #
+    # Introduced in Sidekiq 5.1.
+    class SidekiqDeathHandler
+      def call(_job_context, exception)
+        return unless Appsignal.config[:sidekiq_report_errors] == "discard"
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_error(exception)
+      end
+    end
+
     # Error handler for Sidekiq to report errors from jobs and internal Sidekiq
     # errors.
     #
     # @api private
     class SidekiqErrorHandler
+      # Sidekiq 7.1.5 introduced the third sidekiq_config argument. It is not
+      # given on older Sidekiq versions.
       def call(exception, sidekiq_context, _sidekiq_config = nil)
-        transaction =
-          if Appsignal::Transaction.current?
-            Appsignal::Transaction.current
-          else
-            # Sidekiq error outside of the middleware scope.
-            # Can be a job JSON parse error or some other error happening in
-            # Sidekiq.
-            transaction =
-              Appsignal::Transaction.create(
-                SecureRandom.uuid, # Newly generated job id
-                Appsignal::Transaction::BACKGROUND_JOB,
-                Appsignal::Transaction::GenericRequest.new({})
-              )
-            transaction.set_action_if_nil("SidekiqInternal")
-            transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
-            transaction.params = { :jobstr => sidekiq_context[:jobstr] }
-            transaction
+        if Appsignal::Transaction.current?
+          if Appsignal.config[:sidekiq_report_errors] == "all"
+            transaction = Appsignal::Transaction.current
+            transaction.set_error(exception)
           end
+        else
+          # Sidekiq error outside of the middleware scope.
+          # Can be a job JSON parse error or some other error happening in
+          # Sidekiq.
+          transaction =
+            Appsignal::Transaction.create(
+              SecureRandom.uuid, # Newly generated job id
+              Appsignal::Transaction::BACKGROUND_JOB,
+              Appsignal::Transaction::GenericRequest.new({})
+            )
+          transaction.set_action_if_nil("SidekiqInternal")
+          transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
+          transaction.params = { :jobstr => sidekiq_context[:jobstr] }
+          transaction.set_error(exception)
+        end
 
-        transaction.set_error(exception)
         Appsignal::Transaction.complete_current!
       end
     end

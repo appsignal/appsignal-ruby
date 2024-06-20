@@ -47,6 +47,7 @@ module Appsignal
       ],
       :send_environment_metadata => true,
       :send_params => true,
+      :sidekiq_report_errors => "all",
       :transaction_debug_mode => false
     }.freeze
 
@@ -108,6 +109,7 @@ module Appsignal
       "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS" => :send_params,
       "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
+      "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => :sidekiq_report_errors,
       "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
       "APPSIGNAL_STATSD_PORT" => :statsd_port,
       "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode,
@@ -130,6 +132,7 @@ module Appsignal
       APPSIGNAL_LOGGING_ENDPOINT
       APPSIGNAL_PUSH_API_ENDPOINT
       APPSIGNAL_PUSH_API_KEY
+      APPSIGNAL_SIDEKIQ_REPORT_ERRORS
       APPSIGNAL_STATSD_PORT
       APPSIGNAL_WORKING_DIRECTORY_PATH
       APPSIGNAL_WORKING_DIR_PATH
@@ -561,6 +564,11 @@ module Appsignal
       if config_hash[:activejob_report_errors] == "discard" &&
           !Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
         config[:activejob_report_errors] = "all"
+      end
+
+      if config_hash[:sidekiq_report_errors] == "discard" &&
+          !Appsignal::Hooks::SidekiqHook.version_5_1_or_higher?
+        config[:sidekiq_report_errors] = "all"
       end
 
       config
