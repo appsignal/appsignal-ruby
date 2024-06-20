@@ -21,23 +21,54 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
       }
     end
 
-    it "tracks error on a new transaction" do
-      described_class.new.call(exception, job_context)
+    context "when error is an internal error" do
+      it "tracks error on a new transaction" do
+        expect do
+          described_class.new.call(exception, job_context)
+        end.to(change { created_transactions.count }.by(1))
 
-      transaction_hash = last_transaction.to_h
-      expect(transaction_hash["error"]).to include(
-        "name" => "ExampleStandardError",
-        "message" => "uh oh",
-        "backtrace" => kind_of(String)
-      )
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => {
-          "jobstr" => "{ bad json }"
-        }
-      )
-      expect(transaction_hash["metadata"]).to include(
-        "sidekiq_error" => "Sidekiq internal error!"
-      )
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash).to include(
+          "action" => "SidekiqInternal",
+          "error" => hash_including(
+            "name" => "ExampleStandardError",
+            "message" => "uh oh",
+            "backtrace" => kind_of(String)
+          )
+        )
+        expect(transaction_hash["sample_data"]).to include(
+          "params" => {
+            "jobstr" => "{ bad json }"
+          }
+        )
+        expect(transaction_hash["metadata"]).to include(
+          "sidekiq_error" => "Sidekiq internal error!"
+        )
+      end
+    end
+
+    context "when error is a job error" do
+      let(:transaction) { http_request_transaction }
+      before do
+        transaction.set_action("existing transaction action")
+        set_current_transaction(transaction)
+      end
+
+      it "tracks error on the existing transaction" do
+        expect do
+          described_class.new.call(exception, job_context)
+        end.to_not(change { created_transactions.count })
+
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash).to include(
+          "action" => "existing transaction action",
+          "error" => hash_including(
+            "name" => "ExampleStandardError",
+            "message" => "uh oh",
+            "backtrace" => kind_of(String)
+          )
+        )
+      end
     end
   end
 end
