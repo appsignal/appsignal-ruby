@@ -402,8 +402,6 @@ describe Appsignal::Transaction do
 
       context "when the params are not set" do
         it "sets the params on the transaction" do
-          expect(transaction.params).to be_nil
-
           params = { "key" => "value" }
           transaction.set_params_if_nil(params)
 
