@@ -3,8 +3,8 @@
 require "rack"
 
 module Appsignal
-  # @api private
   module Rack
+    # @api private
     class AbstractMiddleware
       def initialize(app, options = {})
         Appsignal.internal_logger.debug "Initializing #{self.class}"

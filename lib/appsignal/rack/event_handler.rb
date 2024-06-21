@@ -6,6 +6,7 @@ module Appsignal
     APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
     RACK_AFTER_REPLY = "rack.after_reply"
 
+    # @api private
     class EventHandler
       include ::Rack::Events::Abstract
 
