@@ -13,59 +13,83 @@ if DependencyHelper.sinatra_present?
   end
 
   describe "Sinatra integration" do
-    before { allow(Appsignal).to receive(:active?).and_return(true) }
+    before do
+      Appsignal.config = nil
+    end
     after { uninstall_sinatra_integration }
 
-    context "Appsignal.internal_logger" do
-      subject { Appsignal.internal_logger }
+    context "when active" do
+      before { allow(Appsignal).to receive(:active?).and_return(true) }
 
-      it "sets a logger" do
+      it "does not start AppSignal again" do
+        expect(Appsignal::Config).to_not receive(:new)
+        expect(Appsignal).to_not receive(:start)
+        expect(Appsignal).to_not receive(:start_logger)
         install_sinatra_integration
-        is_expected.to be_a Logger
+      end
+
+      it "adds the instrumentation middleware to Sinatra::Base" do
+        install_sinatra_integration
+        expect(Sinatra::Base.middleware.to_a).to include(
+          [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
+        )
       end
     end
 
-    describe "middleware" do
-      context "when AppSignal is not active" do
-        before { allow(Appsignal).to receive(:active?).and_return(false) }
+    context "when not active" do
+      context "Appsignal.internal_logger" do
+        subject { Appsignal.internal_logger }
 
-        it "does not add the instrumentation middleware to Sinatra::Base" do
+        it "sets a logger" do
           install_sinatra_integration
-          expect(Sinatra::Base.middleware.to_a).to_not include(
-            [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
-          )
+          is_expected.to be_a Logger
         end
       end
 
-      context "when AppSignal is active" do
-        it "adds the instrumentation middleware to Sinatra::Base" do
-          install_sinatra_integration
-          expect(Sinatra::Base.middleware.to_a).to include(
-            [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
-          )
+      describe "middleware" do
+        context "when AppSignal is not active" do
+          it "does not add the instrumentation middleware to Sinatra::Base" do
+            install_sinatra_integration
+            expect(Sinatra::Base.middleware.to_a).to_not include(
+              [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
+            )
+          end
+        end
+
+        context "when the new AppSignal config is active" do
+          it "adds the instrumentation middleware to Sinatra::Base" do
+            ENV["APPSIGNAL_APP_NAME"] = "My Sinatra app name"
+            ENV["APPSIGNAL_APP_ENV"] = "test"
+            ENV["APPSIGNAL_PUSH_API_KEY"] = "my-key"
+
+            install_sinatra_integration
+            expect(Sinatra::Base.middleware.to_a).to include(
+              [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
+            )
+          end
         end
       end
-    end
 
-    describe "environment" do
-      subject { Appsignal.config.env }
+      describe "environment" do
+        subject { Appsignal.config.env }
 
-      context "without APPSIGNAL_APP_ENV" do
-        before { install_sinatra_integration }
+        context "without APPSIGNAL_APP_ENV" do
+          before { install_sinatra_integration }
 
-        it "uses the app environment" do
-          expect(subject).to eq("test")
-        end
-      end
-
-      context "with APPSIGNAL_APP_ENV" do
-        before do
-          ENV["APPSIGNAL_APP_ENV"] = "env-staging"
-          install_sinatra_integration
+          it "uses the app environment" do
+            expect(subject).to eq("test")
+          end
         end
 
-        it "uses the environment variable" do
-          expect(subject).to eq("env-staging")
+        context "with APPSIGNAL_APP_ENV" do
+          before do
+            ENV["APPSIGNAL_APP_ENV"] = "env-staging"
+            install_sinatra_integration
+          end
+
+          it "uses the environment variable" do
+            expect(subject).to eq("env-staging")
+          end
         end
       end
     end
