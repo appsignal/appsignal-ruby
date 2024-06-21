@@ -1,5 +1,24 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.9.0
+
+_Published on 2024-06-21._
+
+### Added
+
+- [500b2b4b](https://github.com/appsignal/appsignal-ruby/commit/500b2b4bb57a29663a197ff063c672e6b0c44769) minor - Report Sidekiq errors when a job is dead/discarded. Configure the new `sidekiq_report_errors` config option to "discard" to only report errors when the job is not retried further.
+
+### Changed
+
+- [c76952ff](https://github.com/appsignal/appsignal-ruby/commit/c76952ff5c8bd6e9d1d841a3aeb600b27494bb43) patch - Improve instrumentation for mounted Sinatra apps in Rails apps. The sample reported for the Sinatra request will now include the time spent in Rails and its middleware.
+- [661b8e08](https://github.com/appsignal/appsignal-ruby/commit/661b8e08de962e8f95326f0bbc9c0061b8cc0a62) patch - Support apps that have multiple Appsignal::Rack::EventHandler-s in the middleware stack.
+- [7382afa3](https://github.com/appsignal/appsignal-ruby/commit/7382afa3e9c89ce0c9f3430fb71825736e484e82) patch - Improve support for instrumentation of nested pure Rack and Sinatra apps. It will now report more of the request's duration and events. This also improves support for apps that have multiple Rack GenericInstrumentation or SinatraInstrumentation middlewares.
+
+### Fixed
+
+- [2478eb19](https://github.com/appsignal/appsignal-ruby/commit/2478eb19f51c18433785347d02af18f405eeeabd) patch - Fix issue with AppSignal getting stuck in a boot loop when loading the Sinatra integration with: `require "appsignal/integrations/sinatra"`
+  This could happen in nested applications, like a Sinatra app in a Rails app. It will now use the first config AppSignal starts with.
+
 ## 3.8.1
 
 _Published on 2024-06-17._
