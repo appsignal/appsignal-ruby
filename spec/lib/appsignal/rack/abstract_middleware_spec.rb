@@ -190,6 +190,24 @@ describe Appsignal::Rack::AbstractMiddleware do
             )
           )
         end
+
+        context "when setting custom params" do
+          let(:app) do
+            lambda { |_env| Appsignal::Transaction.current.set_params("custom" => "param") }
+          end
+
+          it "allow custom request parameters to be set" do
+            make_request(env)
+
+            expect(last_transaction.to_h).to include(
+              "sample_data" => hash_including(
+                "params" => hash_including(
+                  "custom" => "param"
+                )
+              )
+            )
+          end
+        end
       end
 
       context "with queue start header" do
