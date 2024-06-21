@@ -101,7 +101,10 @@ module Appsignal
           request.env["appsignal.route"] || request.env["appsignal.action"]
         transaction.set_action_if_nil(default_action)
         transaction.set_metadata("path", request.path)
-        transaction.set_metadata("method", request.request_method)
+
+        request_method = request_method_for(request)
+        transaction.set_metadata("method", request_method) if request_method
+
         transaction.set_params_if_nil(params_for(request))
         transaction.set_http_or_background_queue_start
       end
@@ -115,6 +118,13 @@ module Appsignal
         Appsignal.internal_logger.debug(
           "Exception while getting params in #{self.class} from '#{@params_method}': #{error}"
         )
+        nil
+      end
+
+      def request_method_for(request)
+        request.request_method
+      rescue => error
+        Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
         nil
       end
 

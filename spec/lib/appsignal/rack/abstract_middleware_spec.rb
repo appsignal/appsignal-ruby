@@ -134,7 +134,7 @@ describe Appsignal::Rack::AbstractMiddleware do
 
       describe "request metadata" do
         before do
-          env.merge("PATH_INFO" => "/some/path", "REQUEST_METHOD" => "GET")
+          env.merge!("PATH_INFO" => "/some/path", "REQUEST_METHOD" => "GET")
         end
 
         it "sets request metadata" do
@@ -153,6 +153,29 @@ describe Appsignal::Rack::AbstractMiddleware do
               )
             )
           )
+        end
+
+        context "with an invalid HTTP request method" do
+          it "stores the invalid HTTP request method" do
+            make_request(env.merge("REQUEST_METHOD" => "FOO"))
+
+            expect(last_transaction.to_h["metadata"]).to include("method" => "FOO")
+          end
+        end
+
+        context "with fetching the request method raises an error" do
+          class BrokenRequestMethodRequest < Rack::Request
+            def request_method
+              raise "uh oh!"
+            end
+          end
+
+          let(:options) { { :request_class => BrokenRequestMethodRequest } }
+          it "does not store the invalid HTTP request method" do
+            make_request(env.merge("REQUEST_METHOD" => "FOO"))
+
+            expect(last_transaction.to_h["metadata"]).to_not have_key("method")
+          end
         end
 
         it "sets request parameters" do
