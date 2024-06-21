@@ -187,6 +187,7 @@ describe Appsignal::Config do
         :send_environment_metadata      => true,
         :send_params                    => true,
         :send_session_data              => true,
+        :sidekiq_report_errors          => "all",
         :transaction_debug_mode         => false
       )
     end
@@ -580,6 +581,33 @@ describe Appsignal::Config do
               expect(config.override_config[:activejob_report_errors]).to eq("all")
             end
           end
+        end
+      end
+    end
+
+    context "sidekiq_report_errors" do
+      let(:config_options) { { :sidekiq_report_errors => "discard" } }
+      before do
+        if Appsignal::Hooks::SidekiqHook.instance_variable_defined?(:@version_5_1_or_higher)
+          Appsignal::Hooks::SidekiqHook.remove_instance_variable(:@version_5_1_or_higher)
+        end
+      end
+
+      context "when Sidekiq >= 5.1 and 'discard'" do
+        before { stub_const("Sidekiq::VERSION", "5.1.0") }
+
+        it "does not override the sidekiq_report_errors value" do
+          expect(config[:sidekiq_report_errors]).to eq("discard")
+          expect(config.override_config[:sidekiq_report_errors]).to be_nil
+        end
+      end
+
+      context "when Sidekiq < 5.1 and 'discard'" do
+        before { stub_const("Sidekiq::VERSION", "5.0.0") }
+
+        it "sets sidekiq_report_errors to 'all'" do
+          expect(config[:sidekiq_report_errors]).to eq("all")
+          expect(config.override_config[:sidekiq_report_errors]).to eq("all")
         end
       end
     end
