@@ -4,30 +4,25 @@ if DependencyHelper.hanami2_present?
   describe "Hanami integration" do
     require "appsignal/integrations/hanami"
 
-    before do
-      allow(Appsignal).to receive(:active?).and_return(true)
-      allow(Appsignal).to receive(:start).and_return(true)
-      allow(Appsignal).to receive(:start_logger).and_return(true)
-    end
-
     describe Appsignal::Integrations::HanamiPlugin do
       it "starts AppSignal on init" do
         expect(Appsignal).to receive(:start)
-      end
-
-      it "starts the logger on init" do
         expect(Appsignal).to receive(:start_logger)
+        Appsignal::Integrations::HanamiPlugin.init
       end
 
       it "prepends the integration to Hanami" do
-        expect(::Hanami::Action).to receive(:prepend)
-          .with(Appsignal::Integrations::HanamiIntegration)
+        allow(Appsignal).to receive(:active?).and_return(true)
+        Appsignal::Integrations::HanamiPlugin.init
+        expect(::Hanami::Action.included_modules)
+          .to include(Appsignal::Integrations::HanamiIntegration)
       end
 
       context "when not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "does not prepend the integration" do
+          Appsignal::Integrations::HanamiPlugin.init
           expect(::Hanami::Action).to_not receive(:prepend)
             .with(Appsignal::Integrations::HanamiIntegration)
         end
@@ -52,8 +47,6 @@ if DependencyHelper.hanami2_present?
           expect(Appsignal.config.env).to eq("test")
         end
       end
-
-      after { Appsignal::Integrations::HanamiPlugin.init }
     end
 
     describe "Hanami Actions" do
@@ -64,59 +57,90 @@ if DependencyHelper.hanami2_present?
           :method => "GET"
         )
       end
+      let(:router_params) { { "foo" => "bar", "baz" => "qux" } }
+      around { |example| keep_transactions { example.run } }
+      before :context do
+        start_agent
+      end
+      before do
+        allow(Appsignal).to receive(:active?).and_return(true)
+        Appsignal::Integrations::HanamiPlugin.init
+      end
 
-      let(:router_params) { { :foo => "bar", :baz => "qux" } }
+      def make_request(env, app: HanamiApp::Actions::Books::Index)
+        action = app.new
+        action.call(env)
+      end
 
-      describe "#call", :error => false do
+      describe "#call" do
         it "sets params" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:params=).with(router_params)
+          make_request(env)
+
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "params" => router_params
+            )
+          )
         end
 
-        it "sets the action name" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_action_if_nil)
-            .with("HanamiApp::Actions::Books::Index")
+        it "sets the namespace and action name" do
+          make_request(env)
+
+          expect(last_transaction.to_h).to include(
+            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+            "action" => "HanamiApp::Actions::Books::Index"
+          )
         end
 
         it "sets the metadata" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
-            .with("status", "200")
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
-            .with("path", "/books")
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
-            .with("method", "GET")
+          make_request(env)
+
+          expect(last_transaction.to_h).to include(
+            "metadata" => hash_including(
+              "status" => "200",
+              "path" => "/books",
+              "method" => "GET"
+            )
+          )
         end
 
-        it "sets the queue start" do
-          expect_any_instance_of(Appsignal::Transaction)
-            .to receive(:set_http_or_background_queue_start)
+        context "with queue start header" do
+          let(:queue_start_time) { fixed_time * 1_000 }
+          before do
+            env["HTTP_X_REQUEST_START"] = "t=#{queue_start_time.to_i}" # in milliseconds
+          end
+
+          it "sets the queue start" do
+            make_request(env)
+
+            expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+          end
         end
 
-        context "with error", :error => true do
-          let(:error) { HanamiApp::ExampleError }
+        context "with error" do
+          before do
+            expect do
+              make_request(env, :app => HanamiApp::Actions::Books::Error)
+            end.to raise_error(ExampleException)
+          end
 
           it "records the exception" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
+            expect(last_transaction.to_h).to include(
+              "error" => {
+                "name" => "ExampleException",
+                "message" => "exception message",
+                "backtrace" => kind_of(String)
+              }
+            )
           end
 
           it "sets the status to 500" do
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata)
-              .with("status", "500")
-            expect_any_instance_of(Appsignal::Transaction).to receive(:set_metadata).twice
+            expect(last_transaction.to_h).to include(
+              "metadata" => hash_including(
+                "status" => "500"
+              )
+            )
           end
-        end
-
-        after(:error => false) do
-          Appsignal::Integrations::HanamiPlugin.init
-
-          action = HanamiApp::Actions::Books::Index.new
-          action.call(env)
-        end
-
-        after(:error => true) do
-          Appsignal::Integrations::HanamiPlugin.init
-
-          action = HanamiApp::Actions::Books::Error.new
-          expect { action.call(env) }.to raise_error(error)
         end
       end
     end

@@ -21,11 +21,9 @@ module HanamiApp
 
       class Error < Hanami::Action
         def handle(_request, _response)
-          raise ExampleError
+          raise ExampleException, "exception message"
         end
       end
     end
   end
-
-  class ExampleError < StandardError; end
 end
