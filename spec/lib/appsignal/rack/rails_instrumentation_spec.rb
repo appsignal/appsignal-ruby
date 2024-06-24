@@ -115,7 +115,7 @@ if DependencyHelper.rails_present?
       context "with custom params" do
         let(:app) do
           lambda do |env|
-            env[Appsignal::Rack::APPSIGNAL_TRANSACTION].params = { "custom_param" => "yes" }
+            env[Appsignal::Rack::APPSIGNAL_TRANSACTION].set_params("custom_param" => "yes")
           end
         end
 

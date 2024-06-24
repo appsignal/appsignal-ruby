@@ -45,7 +45,7 @@ module Appsignal
             )
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
-          transaction.params = { :jobstr => sidekiq_context[:jobstr] }
+          transaction.set_params_if_nil(:jobstr => sidekiq_context[:jobstr])
           transaction.set_error(exception)
         end
 
@@ -83,9 +83,7 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          params = filtered_arguments(item)
-          transaction.params = params if params
-
+          transaction.set_params_if_nil(filtered_arguments(item))
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current! unless exception
 

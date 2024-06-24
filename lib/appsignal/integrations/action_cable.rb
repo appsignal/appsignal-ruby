@@ -22,7 +22,7 @@ module Appsignal
           transaction.set_error(exception)
           raise exception
         ensure
-          transaction.params = args.first
+          transaction.set_params_if_nil(args.first)
           transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", "websocket")
