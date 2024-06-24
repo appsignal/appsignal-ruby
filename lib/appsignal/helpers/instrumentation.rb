@@ -176,7 +176,7 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.send_error(e) do |transaction|
-      #     transaction.params = { :search_query => params[:search_query] }
+      #     transaction.set_params(:search_query => params[:search_query])
       #     transaction.set_action("my_action_name")
       #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
@@ -273,7 +273,7 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.set_error(e) do |transaction|
-      #     transaction.params = { :search_query => params[:search_query] }
+      #     transaction.set_params(:search_query => params[:search_query])
       #     transaction.set_action("my_action_name")
       #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")

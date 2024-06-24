@@ -328,7 +328,7 @@ describe Appsignal::Transaction do
 
       context "with custom params set on transaction" do
         before do
-          transaction.params = { :foo => "bar" }
+          transaction.set_params(:foo => "bar")
         end
 
         it "returns custom parameters" do
@@ -352,7 +352,7 @@ describe Appsignal::Transaction do
 
       it "sets params on the transaction" do
         params = { "foo" => "bar" }
-        transaction.params = params
+        silence { transaction.params = params }
 
         transaction.complete # Sample the data
         expect(transaction.params).to eq(params)
@@ -1241,7 +1241,7 @@ describe Appsignal::Transaction do
 
       context "with custom params" do
         before do
-          transaction.params = { :foo => "bar", :baz => :bat }
+          transaction.set_params(:foo => "bar", :baz => :bat)
         end
 
         it "returns custom params" do

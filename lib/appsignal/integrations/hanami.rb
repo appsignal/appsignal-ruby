@@ -55,7 +55,7 @@ module Appsignal::Integrations::HanamiIntegration
       transaction.set_metadata("status", "500")
       raise error
     ensure
-      transaction.params = request.params.to_h
+      transaction.set_params_if_nil(request.params.to_h)
       transaction.set_action_if_nil(self.class.name)
       transaction.set_metadata("path", request.path)
       transaction.set_metadata("method", request.request_method)

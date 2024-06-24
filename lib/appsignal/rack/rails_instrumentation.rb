@@ -28,8 +28,6 @@ module Appsignal
         )
 
         begin
-          transaction.params = fetch_params(request)
-
           @app.call(env)
         rescue Exception => error # rubocop:disable Lint/RescueException
           transaction.set_error(error)
@@ -39,6 +37,7 @@ module Appsignal
           if controller
             transaction.set_action_if_nil("#{controller.class}##{controller.action_name}")
           end
+          transaction.set_params_if_nil(fetch_params(request))
           request_id = fetch_request_id(env)
           transaction.set_tags(:request_id => request_id) if request_id
           transaction.set_metadata("path", request.path)
