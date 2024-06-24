@@ -16,4 +16,10 @@ unless Appsignal.active?
   Appsignal.start
 end
 
-::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation) if Appsignal.active?
+if Appsignal.active?
+  ::Sinatra::Base.use(
+    ::Rack::Events,
+    [Appsignal::Rack::EventHandler.new]
+  )
+  ::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation)
+end

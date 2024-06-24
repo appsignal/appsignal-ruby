@@ -50,8 +50,12 @@ if DependencyHelper.sinatra_present?
         context "when AppSignal is not active" do
           it "does not add the instrumentation middleware to Sinatra::Base" do
             install_sinatra_integration
-            expect(Sinatra::Base.middleware.to_a).to_not include(
+            middlewares = Sinatra::Base.middleware.to_a
+            expect(middlewares).to_not include(
               [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
+            )
+            expect(middlewares).to_not include(
+              [Rack::Events, [Appsignal::Rack::EventHandler], nil]
             )
           end
         end
@@ -63,7 +67,9 @@ if DependencyHelper.sinatra_present?
             ENV["APPSIGNAL_PUSH_API_KEY"] = "my-key"
 
             install_sinatra_integration
-            expect(Sinatra::Base.middleware.to_a).to include(
+            middlewares = Sinatra::Base.middleware.to_a
+            expect(middlewares).to include(
+              [Rack::Events, [[Appsignal::Rack::EventHandler]], nil],
               [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
             )
           end
