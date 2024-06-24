@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.9.1
+
+_Published on 2024-06-24._
+
+### Fixed
+
+- [0a253aa1](https://github.com/appsignal/appsignal-ruby/commit/0a253aa16c00cd6172e35a4edaff34f76ac9cbe5) patch - Fix parameter reporting for Rack and Sinatra apps, especially POST payloads.
+
 ## 3.9.0
 
 _Published on 2024-06-21._
