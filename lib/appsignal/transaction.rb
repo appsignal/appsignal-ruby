@@ -76,18 +76,6 @@ module Appsignal
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
       :discarded, :breadcrumbs
 
-    # @!attribute params
-    #   Attribute for parameters of the transaction.
-    #
-    #   When no parameters are set with {#params=} the parameters it will look
-    #   for parameters on the {#request} environment.
-    #
-    #   The parameters set using {#params=} are leading over those extracted
-    #   from a request's environment.
-    #
-    #   @return [Hash]
-    attr_writer :params
-
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
       @action = nil
@@ -154,6 +142,40 @@ module Appsignal
       return @params if defined?(@params)
 
       request_params
+    end
+
+    # Set parameters on the transaction.
+    #
+    # When no parameters are set this way, the transaction will look for
+    # parameters on the {#request} environment.
+    #
+    # The parameters set using {#set_params} are leading over those extracted
+    # from a request's environment.
+    #
+    # @param given_params [Hash] The parameters to set on the transaction.
+    # @return [void]
+    def set_params(given_params)
+      @params = given_params if given_params
+    end
+
+    # @deprecated Use {#set_params} or {#set_params_if_nil} instead.
+    def params=(given_params)
+      Appsignal::Utils::StdoutAndLoggerMessage.warning(
+        "Transaction#params= is deprecated." \
+          "Use Transaction#set_params or #set_params_if_nil instead."
+      )
+      set_params(given_params)
+    end
+
+    # Set parameters on the transaction if not already set
+    #
+    # When no parameters are set this way, the transaction will look for
+    # parameters on the {#request} environment.
+    #
+    # @param given_params [Hash] The parameters to set on the transaction if none are already set.
+    # @return [void]
+    def set_params_if_nil(given_params)
+      set_params(given_params) unless @params
     end
 
     # Set tags on the transaction.

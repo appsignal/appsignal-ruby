@@ -348,9 +348,92 @@ describe Appsignal::Transaction do
     end
 
     describe "#params=" do
+      around { |example| keep_transactions { example.run } }
+
       it "sets params on the transaction" do
-        transaction.params = { :foo => "bar" }
-        expect(transaction.params).to eq(:foo => "bar")
+        params = { "foo" => "bar" }
+        transaction.params = params
+
+        transaction.complete # Sample the data
+        expect(transaction.params).to eq(params)
+        expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+      end
+
+      it "logs a deprecation warning" do
+        transaction.params = { "foo" => "bar" }
+
+        expect(log_contents(log)).to contains_log(
+          :warn,
+          "Transaction#params= is deprecated." \
+            "Use Transaction#set_params or #set_params_if_nil instead."
+        )
+      end
+    end
+
+    describe "#set_params" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the params are set" do
+        it "updates the params on the transaction" do
+          params = { "key" => "value" }
+          transaction.set_params(params)
+
+          transaction.complete # Sample the data
+          expect(transaction.params).to eq(params)
+          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+        end
+      end
+
+      context "when the given params is nil" do
+        it "does not update the params on the transaction" do
+          params = { "key" => "value" }
+          transaction.set_params(params)
+          transaction.set_params(nil)
+
+          transaction.complete # Sample the data
+          expect(transaction.params).to eq(params)
+          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+        end
+      end
+    end
+
+    describe "#set_params_if_nil" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the params are not set" do
+        it "sets the params on the transaction" do
+          params = { "key" => "value" }
+          transaction.set_params_if_nil(params)
+
+          transaction.complete # Sample the data
+          expect(transaction.params).to eq(params)
+          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+        end
+
+        context "when the given params is nil" do
+          it "does not update the params on the transaction" do
+            params = { "key" => "value" }
+            transaction.set_params(params)
+            transaction.set_params_if_nil(nil)
+
+            transaction.complete # Sample the data
+            expect(transaction.params).to eq(params)
+            expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+          end
+        end
+      end
+
+      context "when the params are set" do
+        it "does not update the params on the transaction" do
+          preset_params = { "other" => "params" }
+          params = { "key" => "value" }
+          transaction.set_params(preset_params)
+          transaction.set_params_if_nil(params)
+
+          transaction.complete # Sample the data
+          expect(transaction.params).to eq(preset_params)
+          expect(transaction.to_h.dig("sample_data", "params")).to eq(preset_params)
+        end
       end
     end
 

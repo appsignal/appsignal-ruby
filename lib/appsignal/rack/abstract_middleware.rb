@@ -91,8 +91,6 @@ module Appsignal
       # Override this method to set metadata before the app is called.
       # Call `super` to also include the default set metadata.
       def add_transaction_metadata_before(transaction, request)
-        params = params_for(request)
-        transaction.params = params if params
       end
 
       # Add metadata to the transaction based on the request environment.
@@ -104,6 +102,7 @@ module Appsignal
         transaction.set_action_if_nil(default_action)
         transaction.set_metadata("path", request.path)
         transaction.set_metadata("method", request.request_method)
+        transaction.set_params_if_nil(params_for(request))
         transaction.set_http_or_background_queue_start
       end
 
