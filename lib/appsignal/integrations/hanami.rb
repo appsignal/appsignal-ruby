@@ -17,7 +17,9 @@ module Appsignal
         Appsignal.start_logger
         Appsignal.start
 
-        ::Hanami::Action.prepend Appsignal::Integrations::HanamiIntegration if Appsignal.active?
+        return unless Appsignal.active?
+
+        ::Hanami::Action.prepend Appsignal::Integrations::HanamiIntegration
       end
     end
   end
@@ -41,11 +43,15 @@ module Appsignal::Integrations::HanamiIntegration
     begin
       Appsignal.instrument("process_action.hanami") do
         super.tap do |response|
+          # TODO: update to response_status or remove:
+          # https://github.com/appsignal/appsignal-ruby/issues/183
           transaction.set_metadata("status", response.status.to_s)
         end
       end
     rescue Exception => error # rubocop:disable Lint/RescueException
       transaction.set_error(error)
+      # TODO: update to response_status or remove:
+      # https://github.com/appsignal/appsignal-ruby/issues/183
       transaction.set_metadata("status", "500")
       raise error
     ensure
