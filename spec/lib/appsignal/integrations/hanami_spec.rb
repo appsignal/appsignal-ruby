@@ -11,17 +11,28 @@ if DependencyHelper.hanami2_present?
         Appsignal::Integrations::HanamiPlugin.init
       end
 
-      it "prepends the integration to Hanami" do
+      it "prepends the integration to Hanami::Action" do
         allow(Appsignal).to receive(:active?).and_return(true)
         Appsignal::Integrations::HanamiPlugin.init
         expect(::Hanami::Action.included_modules)
           .to include(Appsignal::Integrations::HanamiIntegration)
       end
 
+      it "adds middleware to the Hanami app" do
+        allow(Appsignal).to receive(:active?).and_return(true)
+        Appsignal::Integrations::HanamiPlugin.init
+
+        expect(::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX])
+          .to include(
+            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], nil],
+            [Appsignal::Rack::HanamiMiddleware, [], nil]
+          )
+      end
+
       context "when not active" do
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
-        it "does not prepend the integration" do
+        it "does not prepend the integration to Hanami::Action" do
           Appsignal::Integrations::HanamiPlugin.init
           expect(::Hanami::Action).to_not receive(:prepend)
             .with(Appsignal::Integrations::HanamiIntegration)
@@ -49,19 +60,10 @@ if DependencyHelper.hanami2_present?
       end
     end
 
-    describe "Hanami Actions" do
-      let(:env) do
-        Rack::MockRequest.env_for(
-          "/books",
-          "router.params" => router_params,
-          :method => "GET"
-        )
-      end
-      let(:router_params) { { "foo" => "bar", "baz" => "qux" } }
+    describe Appsignal::Integrations::HanamiIntegration do
+      let(:transaction) { http_request_transaction }
       around { |example| keep_transactions { example.run } }
-      before :context do
-        start_agent
-      end
+      before(:context) { start_agent }
       before do
         allow(Appsignal).to receive(:active?).and_return(true)
         Appsignal::Integrations::HanamiPlugin.init
@@ -73,72 +75,26 @@ if DependencyHelper.hanami2_present?
       end
 
       describe "#call" do
-        it "sets params" do
-          make_request(env)
+        context "without an active transaction" do
+          let(:env) { {} }
 
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "params" => router_params
-            )
-          )
-        end
-
-        it "sets the namespace and action name" do
-          make_request(env)
-
-          expect(last_transaction.to_h).to include(
-            "namespace" => Appsignal::Transaction::HTTP_REQUEST,
-            "action" => "HanamiApp::Actions::Books::Index"
-          )
-        end
-
-        it "sets the metadata" do
-          make_request(env)
-
-          expect(last_transaction.to_h).to include(
-            "metadata" => hash_including(
-              "status" => "200",
-              "path" => "/books",
-              "method" => "GET"
-            )
-          )
-        end
-
-        context "with queue start header" do
-          let(:queue_start_time) { fixed_time * 1_000 }
-          before do
-            env["HTTP_X_REQUEST_START"] = "t=#{queue_start_time.to_i}" # in milliseconds
-          end
-
-          it "sets the queue start" do
+          it "does not set the action name" do
             make_request(env)
 
-            expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+            expect(transaction.to_h).to include(
+              "action" => nil
+            )
           end
         end
 
-        context "with error" do
-          before do
-            expect do
-              make_request(env, :app => HanamiApp::Actions::Books::Error)
-            end.to raise_error(ExampleException)
-          end
+        context "with an active transaction" do
+          let(:env) { { Appsignal::Rack::APPSIGNAL_TRANSACTION => transaction } }
 
-          it "records the exception" do
-            expect(last_transaction.to_h).to include(
-              "error" => {
-                "name" => "ExampleException",
-                "message" => "exception message",
-                "backtrace" => kind_of(String)
-              }
-            )
-          end
+          it "sets action name on the transaction" do
+            make_request(env)
 
-          it "sets the status to 500" do
-            expect(last_transaction.to_h).to include(
-              "metadata" => hash_including(
-                "status" => "500"
-              )
+            expect(transaction.to_h).to include(
+              "action" => "HanamiApp::Actions::Books::Index"
             )
           end
         end

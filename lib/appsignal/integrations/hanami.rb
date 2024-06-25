@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 require "appsignal"
+require "appsignal/rack/hanami_middleware"
 
 module Appsignal
   module Integrations
+    # @api private
     module HanamiPlugin
       def self.init
         Appsignal.internal_logger.debug("Loading Hanami integration")
@@ -19,48 +21,25 @@ module Appsignal
 
         return unless Appsignal.active?
 
+        hanami_app_config.middleware.use(
+          ::Rack::Events,
+          [Appsignal::Rack::EventHandler.new]
+        )
+        hanami_app_config.middleware.use(Appsignal::Rack::HanamiMiddleware)
+
         ::Hanami::Action.prepend Appsignal::Integrations::HanamiIntegration
       end
     end
-  end
-end
 
-module Appsignal::Integrations::HanamiIntegration
-  def call(env)
-    params = ::Hanami::Action::BaseParams.new(env)
-    request = ::Hanami::Action::Request.new(
-      :env => env,
-      :params => params,
-      :sessions_enabled => true
-    )
+    # @api private
+    module HanamiIntegration
+      def call(env)
+        super
+      ensure
+        transaction = env[::Appsignal::Rack::APPSIGNAL_TRANSACTION]
 
-    transaction = Appsignal::Transaction.create(
-      SecureRandom.uuid,
-      Appsignal::Transaction::HTTP_REQUEST,
-      request
-    )
-
-    begin
-      Appsignal.instrument("process_action.hanami") do
-        super.tap do |response|
-          # TODO: update to response_status or remove:
-          # https://github.com/appsignal/appsignal-ruby/issues/183
-          transaction.set_metadata("status", response.status.to_s)
-        end
+        transaction&.set_action_if_nil(self.class.name)
       end
-    rescue Exception => error # rubocop:disable Lint/RescueException
-      transaction.set_error(error)
-      # TODO: update to response_status or remove:
-      # https://github.com/appsignal/appsignal-ruby/issues/183
-      transaction.set_metadata("status", "500")
-      raise error
-    ensure
-      transaction.set_params_if_nil(request.params.to_h)
-      transaction.set_action_if_nil(self.class.name)
-      transaction.set_metadata("path", request.path)
-      transaction.set_metadata("method", request.request_method)
-      transaction.set_http_or_background_queue_start
-      Appsignal::Transaction.complete_current!
     end
   end
 end
