@@ -18,8 +18,8 @@ describe Appsignal::Rack::AbstractMiddleware do
     middleware.call(env)
   end
 
-  def make_request_with_error(env, error)
-    expect { make_request(env) }.to raise_error(error)
+  def make_request_with_error(env, error_class, error_message)
+    expect { make_request(env) }.to raise_error(error_class, error_message)
   end
 
   describe "#call" do
@@ -80,9 +80,9 @@ describe Appsignal::Rack::AbstractMiddleware do
 
       context "with an exception" do
         let(:error) { ExampleException.new("error message") }
+        let(:app) { lambda { |_env| raise ExampleException, "error message" } }
         before do
-          allow(app).to receive(:call).and_raise(error)
-          expect { make_request_with_error(env, error) }
+          expect { make_request_with_error(env, ExampleException, "error message") }
             .to(change { created_transactions.count }.by(1))
         end
 
@@ -270,6 +270,16 @@ describe Appsignal::Rack::AbstractMiddleware do
           expect { make_request(env) }.to_not(change { created_transactions.count })
         end
 
+        context "with exception" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+
+          it "doesn't record the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include("error" => nil)
+          end
+        end
+
         it "doesn't complete the existing transaction" do
           make_request(env)
 
@@ -283,6 +293,22 @@ describe Appsignal::Rack::AbstractMiddleware do
             make_request(env)
 
             expect(last_transaction.to_h).to include("action" => "My custom action")
+          end
+        end
+
+        context "with :report_errors set to true" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => true } }
+
+          it "records the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include(
+              "error" => hash_including(
+                "name" => "ExampleException",
+                "message" => "error message"
+              )
+            )
           end
         end
       end

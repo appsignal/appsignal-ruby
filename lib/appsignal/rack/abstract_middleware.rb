@@ -13,6 +13,7 @@ module Appsignal
         @request_class = options.fetch(:request_class, ::Rack::Request)
         @params_method = options.fetch(:params_method, :params)
         @instrument_span_name = options.fetch(:instrument_span_name, "process.abstract")
+        @report_errors = options.fetch(:report_errors, false)
       end
 
       def call(env)
@@ -32,15 +33,27 @@ module Appsignal
               )
             end
 
-          add_transaction_metadata_before(transaction, request)
-          if wrapped_instrumentation
-            instrument_wrapped_request(request, transaction)
-          else
+          unless wrapped_instrumentation
             # Set transaction on the request environment so other nested
             # middleware can detect if there is parent instrumentation
             # middleware active.
             env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
-            instrument_request(request, transaction)
+          end
+
+          begin
+            add_transaction_metadata_before(transaction, request)
+            # Report errors if the :report_errors option is turned on or when
+            # there is no parent instrumentation that can rescue and report the error.
+            if @report_errors || !wrapped_instrumentation
+              instrument_app_call_with_exception_handling(request.env, transaction)
+            else
+              instrument_app_call(request.env)
+            end
+          ensure
+            add_transaction_metadata_after(transaction, request)
+
+            # Complete transaction because this is the top instrumentation middleware.
+            Appsignal::Transaction.complete_current! unless wrapped_instrumentation
           end
         else
           @app.call(env)
@@ -56,35 +69,24 @@ module Appsignal
       # Either another {GenericInstrumentation} or {EventHandler} is higher in
       # the stack and will report the exception and complete the transaction.
       #
-      # @see {#instrument_request}
-      def instrument_wrapped_request(request, transaction)
-        instrument_app_call(request.env)
-      ensure
-        add_transaction_metadata_after(transaction, request)
-      end
-
-      # Instrument the request fully. This is used by the top instrumentation
-      # middleware in the middleware stack. Unlike
-      # {#instrument_wrapped_request} this will report any exceptions being
-      # raised.
-      #
-      # @see {#instrument_wrapped_request}
-      def instrument_request(request, transaction)
-        instrument_app_call(request.env)
-      rescue Exception => error # rubocop:disable Lint/RescueException
-        transaction.set_error(error)
-        raise error
-      ensure
-        add_transaction_metadata_after(transaction, request)
-
-        # Complete transaction because this is the top instrumentation middleware.
-        Appsignal::Transaction.complete_current!
-      end
-
+      # @see {#instrument_app_call_with_exception_handling}
       def instrument_app_call(env)
         Appsignal.instrument(@instrument_span_name) do
           @app.call(env)
         end
+      end
+
+      # Instrument the request fully. This is used by the top instrumentation
+      # middleware in the middleware stack. Unlike
+      # {#instrument_app_call} this will report any exceptions being
+      # raised.
+      #
+      # @see {#instrument_app_call}
+      def instrument_app_call_with_exception_handling(env, transaction)
+        instrument_app_call(env)
+      rescue Exception => error # rubocop:disable Lint/RescueException
+        transaction.set_error(error)
+        raise error
       end
 
       # Add metadata to the transaction based on the request environment.

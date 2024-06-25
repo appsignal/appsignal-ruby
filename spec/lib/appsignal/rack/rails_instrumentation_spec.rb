@@ -3,11 +3,6 @@ if DependencyHelper.rails_present?
     class MockController; end
 
     let(:log) { StringIO.new }
-    before do
-      start_agent
-      Appsignal.internal_logger = test_logger(log)
-    end
-
     let(:transaction) do
       Appsignal::Transaction.new(
         "transaction_id",
@@ -40,12 +35,33 @@ if DependencyHelper.rails_present?
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
     around { |example| keep_transactions { example.run } }
     before do
+      start_agent
+      Appsignal.internal_logger = test_logger(log)
       env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
     end
 
     def make_request(env)
       middleware.call(env)
       last_transaction.complete # Manually close transaction to set sample data
+    end
+
+    def make_request_with_error(env, error_class, error_message)
+      expect { make_request(env) }.to raise_error(error_class, error_message)
+    end
+
+    context "with a request that raises an error" do
+      let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+
+      it "reports the error on the transaction" do
+        make_request_with_error(env, ExampleException, "error message")
+
+        expect(last_transaction.to_h).to include(
+          "error" => hash_including(
+            "name" => "ExampleException",
+            "message" => "error message"
+          )
+        )
+      end
     end
 
     it "sets the controller action as the action name" do
