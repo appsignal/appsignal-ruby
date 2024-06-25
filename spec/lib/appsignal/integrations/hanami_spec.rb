@@ -4,6 +4,18 @@ if DependencyHelper.hanami2_present?
   describe "Hanami integration" do
     require "appsignal/integrations/hanami"
 
+    before do
+      uninstall_hanami_middleware
+    end
+
+    def uninstall_hanami_middleware
+      middleware_stack = ::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX]
+      middleware_stack.delete_if do |middleware|
+        middleware.first == Appsignal::Rack::HanamiMiddleware ||
+          middleware.first == Rack::Events
+      end
+    end
+
     describe Appsignal::Integrations::HanamiPlugin do
       it "starts AppSignal on init" do
         expect(Appsignal).to receive(:start)
@@ -36,6 +48,18 @@ if DependencyHelper.hanami2_present?
           Appsignal::Integrations::HanamiPlugin.init
           expect(::Hanami::Action).to_not receive(:prepend)
             .with(Appsignal::Integrations::HanamiIntegration)
+        end
+
+        it "does not add the middleware to the Hanami app" do
+          Appsignal::Integrations::HanamiPlugin.init
+
+          middleware_stack = ::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX]
+          expect(middleware_stack).to_not include(
+            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], nil]
+          )
+          expect(middleware_stack).to_not include(
+            [Appsignal::Rack::HanamiMiddleware, [], nil]
+          )
         end
       end
 
