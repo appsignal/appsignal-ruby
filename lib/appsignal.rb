@@ -305,6 +305,15 @@ module Appsignal
             "Please update the constant name to Appsignal::Probes " \
             "in the following file to remove this message.\n#{callers.first}"
         Appsignal::Probes
+      when :Heartbeat
+        unless @heartbeat_constant_deprecation_warning_emitted
+          callers = caller
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "The constant Appsignal::Heartbeat has been deprecated. " \
+              "Please update the constant name to Appsignal::CheckIn::Cron " \
+              "in the following file and elsewhere to remove this message.\n#{callers.first}"
+          @heartbeat_constant_deprecation_warning_emitted = true
+        end
       else
         super
       end
@@ -329,4 +338,4 @@ require "appsignal/version"
 require "appsignal/rack/generic_instrumentation"
 require "appsignal/rack/event_handler"
 require "appsignal/transmitter"
-require "appsignal/heartbeat"
+require "appsignal/check_in"

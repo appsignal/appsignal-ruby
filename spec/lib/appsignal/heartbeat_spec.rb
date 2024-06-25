@@ -1,12 +1,12 @@
-describe Appsignal::Heartbeat do
+describe Appsignal::CheckIn::Cron do
   let(:config) { project_fixture_config }
-  let(:heartbeat) { described_class.new(:name => "heartbeat-name") }
-  let(:transmitter) { Appsignal::Transmitter.new("http://heartbeats/", config) }
+  let(:cron_checkin) { described_class.new(:name => "cron-checkin-name") }
+  let(:transmitter) { Appsignal::Transmitter.new("http://cron_checkins/", config) }
 
   before(:each) do
     allow(Appsignal).to receive(:active?).and_return(true)
     config.logger = Logger.new(StringIO.new)
-    allow(Appsignal::Heartbeat).to receive(:transmitter).and_return(transmitter)
+    allow(Appsignal::CheckIn::Cron).to receive(:transmitter).and_return(transmitter)
   end
 
   describe "when Appsignal is not active" do
@@ -14,113 +14,113 @@ describe Appsignal::Heartbeat do
       allow(Appsignal).to receive(:active?).and_return(false)
       expect(transmitter).not_to receive(:transmit)
 
-      heartbeat.start
-      heartbeat.finish
+      cron_checkin.start
+      cron_checkin.finish
     end
   end
 
   describe "#start" do
-    it "should send a heartbeat start" do
+    it "should send a cron check-in start" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "heartbeat-name",
+        :name => "cron-checkin-name",
         :kind => "start"
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Transmitted heartbeat `heartbeat-name` (#{heartbeat.id}) start event"
+        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.id}) start event"
       )
       expect(Appsignal.internal_logger).not_to receive(:error)
 
-      heartbeat.start
+      cron_checkin.start
     end
 
     it "should log an error if it fails" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "heartbeat-name",
+        :name => "cron-checkin-name",
         :kind => "start"
       )).and_return(Net::HTTPResponse.new(nil, "499", nil))
 
       expect(Appsignal.internal_logger).not_to receive(:debug)
       expect(Appsignal.internal_logger).to receive(:error).with(
-        "Failed to transmit heartbeat event: status code was 499"
+        "Failed to transmit cron check-in start event: status code was 499"
       )
 
-      heartbeat.start
+      cron_checkin.start
     end
   end
 
   describe "#finish" do
-    it "should send a heartbeat finish" do
+    it "should send a cron check-in finish" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "heartbeat-name",
+        :name => "cron-checkin-name",
         :kind => "finish"
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Transmitted heartbeat `heartbeat-name` (#{heartbeat.id}) finish event"
+        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.id}) finish event"
       )
       expect(Appsignal.internal_logger).not_to receive(:error)
 
-      heartbeat.finish
+      cron_checkin.finish
     end
 
     it "should log an error if it fails" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "heartbeat-name",
+        :name => "cron-checkin-name",
         :kind => "finish"
       )).and_return(Net::HTTPResponse.new(nil, "499", nil))
 
       expect(Appsignal.internal_logger).not_to receive(:debug)
       expect(Appsignal.internal_logger).to receive(:error).with(
-        "Failed to transmit heartbeat event: status code was 499"
+        "Failed to transmit cron check-in finish event: status code was 499"
       )
 
-      heartbeat.finish
+      cron_checkin.finish
     end
   end
 
-  describe ".heartbeat" do
+  describe ".cron_checkin" do
     describe "when a block is given" do
-      it "should send a heartbeat start and finish and return the block output" do
+      it "should send a cron check-in start and finish and return the block output" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "start",
-          :name => "heartbeat-with-block"
+          :name => "cron-checkin-with-block"
         )).and_return(nil)
 
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "heartbeat-with-block"
+          :name => "cron-checkin-with-block"
         )).and_return(nil)
 
-        output = Appsignal.heartbeat("heartbeat-with-block") { "output" }
+        output = Appsignal::CheckIn.cron("cron-checkin-with-block") { "output" }
         expect(output).to eq("output")
       end
 
-      it "should not send a heartbeat finish event when an error is raised" do
+      it "should not send a cron check-in finish event when an error is raised" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "start",
-          :name => "heartbeat-with-block"
+          :name => "cron-checkin-with-block"
         )).and_return(nil)
 
         expect(transmitter).not_to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "heartbeat-with-block"
+          :name => "cron-checkin-with-block"
         ))
 
         expect do
-          Appsignal.heartbeat("heartbeat-with-block") { raise "error" }
+          Appsignal::CheckIn.cron("cron-checkin-with-block") { raise "error" }
         end.to raise_error(RuntimeError, "error")
       end
     end
 
     describe "when no block is given" do
-      it "should only send a heartbeat finish event" do
+      it "should only send a cron check-in finish event" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "heartbeat-without-block"
+          :name => "cron-checkin-without-block"
         )).and_return(nil)
 
-        Appsignal.heartbeat("heartbeat-without-block")
+        Appsignal::CheckIn.cron("cron-checkin-without-block")
       end
     end
   end
