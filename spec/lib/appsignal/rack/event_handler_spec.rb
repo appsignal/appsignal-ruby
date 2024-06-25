@@ -66,6 +66,30 @@ describe Appsignal::Rack::EventHandler do
       expect(last_transaction.ext.queue_start).to eq(queue_start_time)
     end
 
+    context "with error inside rack.after_reply handler" do
+      before do
+        on_start
+        # A random spot we can access to raise an error for this test
+        expect(request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION])
+          .to receive(:finish_event)
+          .and_raise(ExampleStandardError, "oh no")
+        callback = request.env[Appsignal::Rack::RACK_AFTER_REPLY].first
+        callback.call
+      end
+
+      it "completes the transaction" do
+        expect(last_transaction).to be_completed
+      end
+
+      it "logs an error" do
+        expect(log).to contains_log(
+          :error,
+          "Error occurred in Appsignal::Rack::EventHandler's after_reply: " \
+            "ExampleStandardError: oh no"
+        )
+      end
+    end
+
     it "logs errors from rack.after_reply callbacks" do
       on_start
 
@@ -139,8 +163,8 @@ describe Appsignal::Rack::EventHandler do
   describe "#on_finish" do
     let(:response) { Rack::Events::BufferedResponse.new(200, {}, ["body"]) }
 
-    def on_finish
-      event_handler_instance.on_finish(request, response)
+    def on_finish(given_request = request, given_response = response)
+      event_handler_instance.on_finish(given_request, given_response)
     end
 
     it "doesn't do anything without a transaction" do
@@ -155,6 +179,7 @@ describe Appsignal::Rack::EventHandler do
         "sample_data" => {},
         "events" => []
       )
+      expect(last_transaction).to_not be_completed
     end
 
     it "completes the transaction" do
@@ -174,6 +199,60 @@ describe Appsignal::Rack::EventHandler do
       )
       expect(last_transaction.ext.queue_start).to eq(queue_start_time)
       expect(last_transaction).to be_completed
+    end
+
+    context "without a response" do
+      it "completes the transaction" do
+        on_start
+        on_finish(request, nil)
+
+        expect(last_transaction.to_h).to include(
+          # The action is not set on purpose, as we can't set a normalized route
+          # It requires the app to set an action name
+          "action" => nil,
+          "sample_data" => hash_including(
+            "environment" => {
+              "REQUEST_METHOD" => "GET",
+              "PATH_INFO" => "/path"
+            }
+          )
+        )
+        expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+        expect(last_transaction).to be_completed
+      end
+
+      it "does not set a response_status tag" do
+        on_start
+        on_finish(request, nil)
+
+        expect(last_transaction.to_h.dig("sample_data", "tags")).to_not have_key("response_status")
+      end
+
+      it "does not report a response_status counter metric" do
+        expect(Appsignal).to_not receive(:increment_counter)
+          .with(:response_status, anything, anything)
+
+        on_start
+        on_finish(request, nil)
+      end
+    end
+
+    context "with error inside on_finish handler" do
+      before do
+        on_start
+        # A random spot we can access to raise an error for this test
+        expect(Appsignal).to receive(:increment_counter).and_raise(ExampleStandardError, "oh no")
+        on_finish
+      end
+
+      it "completes the transaction" do
+        expect(last_transaction).to be_completed
+      end
+
+      it "logs an error" do
+        expect(log).to contains_log(:error,
+          "Error occurred in Appsignal::Rack::EventHandler#on_finish: ExampleStandardError: oh no")
+      end
     end
 
     context "when the handler is nested in another EventHandler" do
@@ -237,8 +316,8 @@ describe Appsignal::Rack::EventHandler do
     end
 
     it "logs an error in case of an error" do
-      expect(Appsignal::Transaction)
-        .to receive(:complete_current!).and_raise(ExampleStandardError, "oh no")
+      # A random spot we can access to raise an error for this test
+      expect(Appsignal).to receive(:increment_counter).and_raise(ExampleStandardError, "oh no")
 
       on_start
       on_finish

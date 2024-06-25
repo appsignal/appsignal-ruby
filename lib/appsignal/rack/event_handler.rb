@@ -42,22 +42,22 @@ module Appsignal
 
           request.env[RACK_AFTER_REPLY] ||= []
           request.env[RACK_AFTER_REPLY] << proc do
+            next unless event_handler.request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
             Appsignal::Rack::EventHandler
               .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
-              next unless event_handler.request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
-
               transaction.finish_event("process_request.rack", "", "")
               transaction.set_http_or_background_queue_start
-
-              # Make sure the current transaction is always closed when the request
-              # is finished. This is a fallback for in case the `on_finish`
-              # callback is not called. This is supported by servers like Puma and
-              # Unicorn.
-              #
-              # The EventHandler.on_finish callback should be called first, this is
-              # just a fallback if that doesn't get called.
-              Appsignal::Transaction.complete_current!
             end
+
+            # Make sure the current transaction is always closed when the request
+            # is finished. This is a fallback for in case the `on_finish`
+            # callback is not called. This is supported by servers like Puma and
+            # Unicorn.
+            #
+            # The EventHandler.on_finish callback should be called first, this is
+            # just a fallback if that doesn't get called.
+            Appsignal::Transaction.complete_current!
           end
           transaction.start_event
         end
@@ -75,26 +75,28 @@ module Appsignal
       end
 
       def on_finish(request, response)
+        return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
+        transaction = request.env[APPSIGNAL_TRANSACTION]
+        return unless transaction
+
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
-          return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
-
-          transaction = request.env[APPSIGNAL_TRANSACTION]
-          return unless transaction
-
           transaction.finish_event("process_request.rack", "", "")
-          transaction.set_tags(:response_status => response.status)
           transaction.set_http_or_background_queue_start
-          Appsignal.increment_counter(
-            :response_status,
-            1,
-            :status => response.status,
-            :namespace => format_namespace(transaction.namespace)
-          )
-
-          # Make sure the current transaction is always closed when the request
-          # is finished
-          Appsignal::Transaction.complete_current!
+          if response
+            transaction.set_tags(:response_status => response.status)
+            Appsignal.increment_counter(
+              :response_status,
+              1,
+              :status => response.status,
+              :namespace => format_namespace(transaction.namespace)
+            )
+          end
         end
+
+        # Make sure the current transaction is always closed when the request
+        # is finished
+        Appsignal::Transaction.complete_current!
       end
 
       private
