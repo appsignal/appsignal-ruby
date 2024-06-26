@@ -1,5 +1,25 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.9.2
+
+_Published on 2024-06-26._
+
+### Added
+
+- Improve instrumentation of Hanami requests by making sure the transaction is always closed.
+  It will also report a `response_status` tag and metric for Hanami requests.
+
+  (patch [e79d4277](https://github.com/appsignal/appsignal-ruby/commit/e79d4277046bf4ec0d32263d06d4975ca8c426ee))
+
+### Changed
+
+- Instrument the entire Sinatra request. Instrumenting Sinatra apps using `require "appsignal/integrations/sinatra"` will now report more of the request, if previously other middleware were not instrumented. It will also report the response status with the `response_status` tag and metric. (patch [15b3390b](https://github.com/appsignal/appsignal-ruby/commit/15b3390b5b54cdc7378d69c92d91ec51dab1b0e4))
+
+### Fixed
+
+- Fix deprecation warnings about `Transacation.params=` usage by updating how we record parameters in our instrumentations. (patch [b65d6674](https://github.com/appsignal/appsignal-ruby/commit/b65d6674c93afbc95e9cecee8c032e6949229aab))
+- Fix error reporting for requests with an error that use the AppSignal EventHandler. (patch [0e48f19b](https://github.com/appsignal/appsignal-ruby/commit/0e48f19bb9f5c3ead96d21fbacdd5d7f221e2063))
+
 ## 3.9.1
 
 _Published on 2024-06-24._
