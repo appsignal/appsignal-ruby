@@ -21,21 +21,30 @@ describe Appsignal do
 
   describe ".start" do
     context "with no config set beforehand" do
-      it "should do nothing when config is not set and there is no valid config in the env" do
-        expect(Appsignal.internal_logger).to receive(:error)
-          .with("Push API key not set after loading config").once
-        expect(Appsignal.internal_logger).to receive(:error)
-          .with("Not starting, no valid config for this environment").once
+      let(:stdout_stream) { std_stream }
+      let(:stdout) { stdout_stream.read }
+      let(:stderr_stream) { std_stream }
+      let(:stderr) { stderr_stream.read }
+      before { ENV["APPSIGNAL_LOG"] = "stdout" }
+
+      it "does nothing when config is not set and there is no valid config in the env" do
         expect(Appsignal::Extension).to_not receive(:start)
-        Appsignal.start
+        capture_std_streams(stdout_stream, stderr_stream) { Appsignal.start }
+
+        expect(stdout).to contains_log(
+          :error,
+          "appsignal: Not starting, no valid config for this environment"
+        )
       end
 
       it "should create a config from the env" do
         ENV["APPSIGNAL_PUSH_API_KEY"] = "something"
         expect(Appsignal::Extension).to receive(:start)
-        expect(Appsignal.internal_logger).not_to receive(:error)
-        silence { Appsignal.start }
+        capture_std_streams(stdout_stream, stderr_stream) { Appsignal.start }
+
         expect(Appsignal.config[:push_api_key]).to eq("something")
+        expect(stderr).to_not include("[ERROR]")
+        expect(stdout).to_not include("[ERROR]")
       end
     end
 
@@ -129,7 +138,7 @@ describe Appsignal do
 
   describe ".forked" do
     context "when not active" do
-      it "should should do nothing" do
+      it "does nothing" do
         expect(Appsignal::Extension).to_not receive(:start)
 
         Appsignal.forked
@@ -141,8 +150,8 @@ describe Appsignal do
         Appsignal.config = project_fixture_config
       end
 
-      it "should resubscribe and start the extension" do
-        expect(Appsignal).to receive(:start_logger)
+      it "starts the logger and extension" do
+        expect(Appsignal).to receive(:_start_logger)
         expect(Appsignal::Extension).to receive(:start)
 
         Appsignal.forked
@@ -228,7 +237,6 @@ describe Appsignal do
       before do
         Appsignal.config = project_fixture_config("not_active")
         Appsignal.start
-        Appsignal.start_logger
         Appsignal.internal_logger = test_logger(log_stream)
       end
       after { Appsignal.internal_logger = nil }
@@ -314,7 +322,6 @@ describe Appsignal do
     before do
       Appsignal.config = project_fixture_config
       Appsignal.start
-      Appsignal.start_logger
       Appsignal.internal_logger = test_logger(log_stream)
     end
     after { Appsignal.internal_logger = nil }
@@ -1123,6 +1130,23 @@ describe Appsignal do
   end
 
   describe ".start_logger" do
+    let(:stderr_stream) { std_stream }
+    let(:stderr) { stderr_stream.read }
+    let(:log_stream) { std_stream }
+    let(:log) { log_contents(log_stream) }
+
+    it "prints and logs a deprecation warning" do
+      use_logger_with(log_stream) do
+        capture_std_streams(std_stream, stderr_stream) do
+          Appsignal.start_logger
+        end
+      end
+      expect(stderr).to include("appsignal WARNING: Callng 'Appsignal.start_logger' is deprecated.")
+      expect(log).to contains_log(:warn, "Callng 'Appsignal.start_logger' is deprecated.")
+    end
+  end
+
+  describe "._start_logger" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
     let(:log_path) { File.join(tmp_dir, "log") }
@@ -1154,7 +1178,7 @@ describe Appsignal do
         before do
           capture_stdout(out_stream) do
             initialize_config
-            Appsignal.start_logger
+            Appsignal._start_logger
             Appsignal.internal_logger.error("Log to file")
           end
           expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
@@ -1182,7 +1206,7 @@ describe Appsignal do
 
           capture_stdout(out_stream) do
             initialize_config
-            Appsignal.start_logger
+            Appsignal._start_logger
             Appsignal.internal_logger.error("Log to not writable log file")
             expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
           end
@@ -1216,7 +1240,7 @@ describe Appsignal do
 
         capture_stdout(out_stream) do
           initialize_config
-          Appsignal.start_logger
+          Appsignal._start_logger
           Appsignal.internal_logger.error("Log to not writable log path")
         end
         expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
@@ -1245,7 +1269,7 @@ describe Appsignal do
       before do
         capture_stdout(out_stream) do
           initialize_config
-          Appsignal.start_logger
+          Appsignal._start_logger
           Appsignal.internal_logger.error("Log to stdout")
         end
         expect(Appsignal.internal_logger).to be_a(Appsignal::Utils::IntegrationLogger)
@@ -1272,7 +1296,7 @@ describe Appsignal do
         before do
           Appsignal.config = nil
           capture_stdout(out_stream) do
-            Appsignal.start_logger
+            Appsignal._start_logger
           end
         end
 
@@ -1287,7 +1311,7 @@ describe Appsignal do
             capture_stdout(out_stream) do
               initialize_config
               Appsignal.config[:log_level] = "debug"
-              Appsignal.start_logger
+              Appsignal._start_logger
             end
           end
 

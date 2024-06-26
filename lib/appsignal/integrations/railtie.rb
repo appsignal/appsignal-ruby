@@ -26,9 +26,6 @@ module Appsignal
           :log_path => Rails.root.join("log")
         )
 
-        # Start logger
-        Appsignal.start_logger
-
         app.middleware.insert(
           0,
           ::Rack::Events,

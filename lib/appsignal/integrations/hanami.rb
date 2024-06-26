@@ -16,7 +16,6 @@ module Appsignal
           hanami_app_config.env
         )
 
-        Appsignal.start_logger
         Appsignal.start
 
         return unless Appsignal.active?

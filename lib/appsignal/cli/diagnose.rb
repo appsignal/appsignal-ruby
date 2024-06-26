@@ -200,7 +200,7 @@ module Appsignal
             initial_config
           )
           Appsignal.config.write_to_environment
-          Appsignal.start_logger
+          Appsignal._start_logger
           Appsignal.internal_logger.info("Starting AppSignal diagnose")
         end
 

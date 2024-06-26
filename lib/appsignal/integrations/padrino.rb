@@ -12,7 +12,6 @@ module Appsignal
         root = Padrino.mounted_root
         Appsignal.config = Appsignal::Config.new(root, Padrino.env)
 
-        Appsignal.start_logger
         Appsignal.start
       end
     end

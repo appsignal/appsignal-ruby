@@ -233,7 +233,7 @@ module Appsignal
     #   variables config.
     # @param logger [Logger] The logger to use for the AppSignal gem. This is
     #   used by the configuration class only. Default:
-    #   {Appsignal.internal_logger}. See also {Appsignal.start_logger}.
+    #   {Appsignal.internal_logger}. See also {Appsignal.start}.
     # @param config_file [String] Custom config file location. Default
     #   `config/appsignal.yml`.
     #
