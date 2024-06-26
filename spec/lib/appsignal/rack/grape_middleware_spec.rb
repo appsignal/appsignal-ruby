@@ -1,7 +1,40 @@
 if DependencyHelper.grape_present?
   require "appsignal/integrations/grape"
 
-  describe Appsignal::Grape::Middleware do
+  context "Appsignal::Grape::Middleware constant" do
+    let(:err_stream) { std_stream }
+    let(:stderr) { err_stream.read }
+
+    it "returns the Probes constant calling the Minutely constant" do
+      silence { expect(Appsignal::Grape::Middleware).to be(Appsignal::Rack::GrapeMiddleware) }
+    end
+
+    it "prints a deprecation warning to STDERR" do
+      capture_std_streams(std_stream, err_stream) do
+        expect(Appsignal::Grape::Middleware).to be(Appsignal::Rack::GrapeMiddleware)
+      end
+
+      expect(stderr).to include(
+        "appsignal WARNING: The constant Appsignal::Grape::Middleware has been deprecated."
+      )
+    end
+
+    it "logs a warning" do
+      logs =
+        capture_logs do
+          silence do
+            expect(Appsignal::Grape::Middleware).to be(Appsignal::Rack::GrapeMiddleware)
+          end
+        end
+
+      expect(logs).to contains_log(
+        :warn,
+        "The constant Appsignal::Grape::Middleware has been deprecated."
+      )
+    end
+  end
+
+  describe Appsignal::Rack::GrapeMiddleware do
     let(:app) do
       Class.new(::Grape::API) do
         format :json
@@ -17,7 +50,7 @@ if DependencyHelper.grape_present?
         "REQUEST_METHOD" => "POST",
         :path => "/ping"
     end
-    let(:middleware) { Appsignal::Grape::Middleware.new(api_endpoint) }
+    let(:middleware) { Appsignal::Rack::GrapeMiddleware.new(api_endpoint) }
     around do |example|
       GrapeExample = Module.new
       GrapeExample.send(:const_set, :Api, app)
