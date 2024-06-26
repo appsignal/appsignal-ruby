@@ -20,7 +20,7 @@ describe Appsignal::Probes do
         .to include("appsignal WARNING: The constant Appsignal::Minutely has been deprecated.")
     end
 
-    it "logs a warning to STDERR" do
+    it "logs a warning" do
       logs =
         capture_logs do
           silence do
@@ -28,7 +28,10 @@ describe Appsignal::Probes do
           end
         end
 
-      expect(logs).to include("The constant Appsignal::Minutely has been deprecated.")
+      expect(logs).to contains_log(
+        :warn,
+        "The constant Appsignal::Minutely has been deprecated."
+      )
     end
   end
 
