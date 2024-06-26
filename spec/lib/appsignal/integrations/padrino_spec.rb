@@ -5,16 +5,11 @@ if DependencyHelper.padrino_present?
     before do
       allow(Appsignal).to receive(:active?).and_return(true)
       allow(Appsignal).to receive(:start).and_return(true)
-      allow(Appsignal).to receive(:start_logger).and_return(true)
     end
 
     describe Appsignal::Integrations::PadrinoPlugin do
       it "starts AppSignal on init" do
         expect(Appsignal).to receive(:start)
-      end
-
-      it "starts the logger on init" do
-        expect(Appsignal).to receive(:start_logger)
       end
 
       context "when not active" do

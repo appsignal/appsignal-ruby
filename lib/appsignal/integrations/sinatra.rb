@@ -12,7 +12,6 @@ unless Appsignal.active?
     app_settings.environment
   )
 
-  Appsignal.start_logger
   Appsignal.start
 end
 

@@ -62,7 +62,7 @@ module Appsignal
     #     defaults are pointed to this attribute.
     #   @api private
     #   @return [Logger]
-    #   @see start_logger
+    #   @see start
     attr_writer :internal_logger
 
     # @api private
@@ -83,8 +83,6 @@ module Appsignal
     # list](https://docs.appsignal.com/ruby/integrations/) and our [Integrating
     # AppSignal](https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html)
     # guide.
-    #
-    # To start the logger see {.start_logger}.
     #
     # @example
     #   Appsignal.start
@@ -108,8 +106,9 @@ module Appsignal
         ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV.fetch("RACK_ENV", nil)
       )
 
+      _start_logger
+
       if config.valid?
-        internal_logger.level = config.log_level
         if config.active?
           internal_logger.info "Starting AppSignal #{Appsignal::VERSION} " \
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
@@ -160,7 +159,7 @@ module Appsignal
     def forked
       return unless active?
 
-      Appsignal.start_logger
+      Appsignal._start_logger
       internal_logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
     end
@@ -170,9 +169,9 @@ module Appsignal
     end
 
     # In memory internal logger used before any internal logger is started with
-    # {.start_logger}.
+    # {._start_logger}.
     #
-    # The contents of this logger are flushed to the logger in {.start_logger}.
+    # The contents of this logger are flushed to the logger in {._start_logger}.
     #
     # @api private
     # @return [StringIO]
@@ -201,14 +200,26 @@ module Appsignal
       end
     end
 
+    # @deprecated Only {.start} has to be called.
+    # @return [void]
+    # @since 0.7.0
+    def start_logger
+      callers = caller
+      Appsignal::Utils::StdoutAndLoggerMessage.warning \
+        "Callng 'Appsignal.start_logger' is deprecated. " \
+          "The logger will be started when calling 'Appsignal.start'. " \
+          "Remove the 'Appsignal.start_logger' call in the following file to " \
+          "remove this message.\n#{callers.first}"
+    end
+
     # Start the AppSignal internal logger.
     #
     # Sets the log level and sets the logger. Uses a file-based logger or the
     # STDOUT-based logger. See the `:log` configuration option.
     #
+    # @api private
     # @return [void]
-    # @since 0.7.0
-    def start_logger
+    def _start_logger
       if config && config[:log] == "file" && config.log_file_path
         start_internal_file_logger(config.log_file_path)
       else

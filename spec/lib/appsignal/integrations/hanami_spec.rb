@@ -19,7 +19,6 @@ if DependencyHelper.hanami2_present?
     describe Appsignal::Integrations::HanamiPlugin do
       it "starts AppSignal on init" do
         expect(Appsignal).to receive(:start)
-        expect(Appsignal).to receive(:start_logger)
         Appsignal::Integrations::HanamiPlugin.init
       end
 

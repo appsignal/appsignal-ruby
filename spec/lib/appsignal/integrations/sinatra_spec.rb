@@ -24,7 +24,6 @@ if DependencyHelper.sinatra_present?
       it "does not start AppSignal again" do
         expect(Appsignal::Config).to_not receive(:new)
         expect(Appsignal).to_not receive(:start)
-        expect(Appsignal).to_not receive(:start_logger)
         install_sinatra_integration
       end
 
