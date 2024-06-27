@@ -29,7 +29,6 @@ module Appsignal
       #   - returns `false` if Appsignal is not active.
       def transmit
         Appsignal.start
-        Appsignal.start_logger
         return false unless Appsignal.active?
 
         create_example_error_request
