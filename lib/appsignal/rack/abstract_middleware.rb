@@ -77,7 +77,11 @@ module Appsignal
       #
       # @see {#instrument_app_call_with_exception_handling}
       def instrument_app_call(env)
-        Appsignal.instrument(@instrument_span_name) do
+        if @instrument_span_name
+          Appsignal.instrument(@instrument_span_name) do
+            @app.call(env)
+          end
+        else
           @app.call(env)
         end
       end
