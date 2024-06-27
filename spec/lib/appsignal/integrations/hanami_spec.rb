@@ -74,6 +74,39 @@ if DependencyHelper.hanami2_present?
         end
       end
 
+      context "when AppSignal is already active" do
+        before do
+          expect(Appsignal).to receive(:active?).at_least(1).and_return(true)
+        end
+
+        it "does not initialize AppSignal again" do
+          expect(Appsignal).to_not receive(:start)
+
+          Appsignal::Integrations::HanamiPlugin.init
+        end
+
+        it "prepends the integration to Hanami::Action" do
+          Appsignal::Integrations::HanamiPlugin.init
+
+          expect(::Hanami::Action)
+            .to have_received(:prepend).with(Appsignal::Integrations::HanamiIntegration)
+        end
+
+        it "adds middleware to the Hanami app" do
+          Appsignal::Integrations::HanamiPlugin.init
+
+          expect(::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX])
+            .to include(
+              [
+                Rack::Events,
+                [[kind_of(Appsignal::Rack::EventHandler)]],
+                *hanami_middleware_options
+              ],
+              [Appsignal::Rack::HanamiMiddleware, [], *hanami_middleware_options]
+            )
+        end
+      end
+
       context "when APPSIGNAL_APP_ENV ENV var is provided" do
         it "uses this as the environment" do
           ENV["APPSIGNAL_APP_ENV"] = "custom"
