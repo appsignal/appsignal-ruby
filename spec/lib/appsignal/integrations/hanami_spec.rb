@@ -35,8 +35,8 @@ if DependencyHelper.hanami2_present?
 
         expect(::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX])
           .to include(
-            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], nil],
-            [Appsignal::Rack::HanamiMiddleware, [], nil]
+            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], *hanami_middleware_options],
+            [Appsignal::Rack::HanamiMiddleware, [], *hanami_middleware_options]
           )
       end
 
@@ -54,10 +54,10 @@ if DependencyHelper.hanami2_present?
 
           middleware_stack = ::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX]
           expect(middleware_stack).to_not include(
-            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], nil]
+            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], *hanami_middleware_options]
           )
           expect(middleware_stack).to_not include(
-            [Appsignal::Rack::HanamiMiddleware, [], nil]
+            [Appsignal::Rack::HanamiMiddleware, [], *hanami_middleware_options]
           )
         end
       end
@@ -121,6 +121,14 @@ if DependencyHelper.hanami2_present?
             )
           end
         end
+      end
+    end
+
+    def hanami_middleware_options
+      if DependencyHelper.hanami2_1_present?
+        [{}, nil]
+      else
+        [nil]
       end
     end
   end
