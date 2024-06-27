@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "appsignal/utils/integration_memory_logger"
 require "appsignal/utils/stdout_and_logger_message"
 require "appsignal/utils/data"
 require "appsignal/utils/hash_sanitizer"
