@@ -1,4 +1,4 @@
-module DependencyHelper # rubocop:disable Metrics/ModuleLength
+module DependencyHelper
   module_function
 
   def ruby_version

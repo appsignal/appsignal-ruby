@@ -47,7 +47,7 @@ module Appsignal
       # @api private
       def self.dependencies_present?
         return true if sidekiq7_and_greater?
-        return unless defined?(::Redis::VERSION) # Sidekiq <= 6
+        return false unless defined?(::Redis::VERSION) # Sidekiq <= 6
 
         Gem::Version.new(::Redis::VERSION) >= Gem::Version.new("3.3.5")
       end

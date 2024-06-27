@@ -51,11 +51,29 @@ Style/Lambda:
 Style/WordArray:
   Enabled: false
 
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  Exclude:
+    - "spec/**/*.rb"
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
+
+Style/RedundantConstantBase:
+  Enabled: false
+
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - "spec/**/*.rb"
 
 Lint/EmptyClass:
+  Exclude:
+    - "spec/**/*.rb"
+
+Lint/EmptyFile:
   Exclude:
     - "spec/**/*.rb"
 
@@ -83,18 +101,25 @@ Layout/MultilineMethodCallIndentation:
 Layout/MultilineOperationIndentation:
   EnforcedStyle: indented
 
-Lint/EmptyFile:
-  Exclude:
-    - "spec/**/*.rb"
+Layout/LineLength:
+  Max: 100
 
 Naming/FileName:
   Exclude:
     - "ext/Rakefile"
 
+Naming/AccessorMethodName:
+  Exclude:
+    - "lib/appsignal/helpers/instrumentation.rb"
+    - "lib/appsignal/transaction.rb"
+
 Naming/RescuedExceptionsVariableName:
   Enabled: false
 
 Naming/VariableNumber:
+  Enabled: false
+
+Metrics/ModuleLength:
   Enabled: false
 
 Metrics/ClassLength:
@@ -104,22 +129,5 @@ Metrics/BlockLength:
   Exclude:
     - "Rakefile"
 
-Style/FrozenStringLiteralComment:
-  Enabled: true
-  Exclude:
-    - "spec/**/*.rb"
-
-Style/NumericPredicate:
-  Enabled: false
-
-Style/SymbolArray:
-  EnforcedStyle: brackets
-
-Style/RedundantConstantBase:
-  Enabled: false
-
 Gemspec/DevelopmentDependencies:
   Enabled: false
-
-Layout/LineLength:
-  Max: 100

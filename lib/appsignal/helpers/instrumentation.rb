@@ -2,7 +2,7 @@
 
 module Appsignal
   module Helpers
-    module Instrumentation # rubocop:disable Metrics/ModuleLength
+    module Instrumentation
       include Appsignal::Utils::StdoutAndLoggerMessage
 
       # Creates an AppSignal transaction for the given block.

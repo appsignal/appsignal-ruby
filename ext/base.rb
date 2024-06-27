@@ -8,7 +8,7 @@ require "json"
 require "rubygems/package"
 require File.expand_path("../lib/appsignal/version.rb", __dir__)
 require File.expand_path("../lib/appsignal/system.rb", __dir__)
-require_relative "./agent"
+require_relative "agent"
 
 EXT_PATH = File.expand_path(__dir__).freeze
 

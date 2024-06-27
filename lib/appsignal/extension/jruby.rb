@@ -9,7 +9,7 @@ module Appsignal
     # Only loaded if the system is detected as JRuby.
     #
     # @api private
-    module Jruby # rubocop:disable Metrics/ModuleLength
+    module Jruby
       extend FFI::Library
 
       # JRuby extension String helpers.
