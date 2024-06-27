@@ -3,11 +3,6 @@ if DependencyHelper.rails_present?
     class MockController; end
 
     let(:log) { StringIO.new }
-    before do
-      start_agent
-      Appsignal.internal_logger = test_logger(log)
-    end
-
     let(:transaction) do
       Appsignal::Transaction.new(
         "transaction_id",
@@ -25,9 +20,8 @@ if DependencyHelper.rails_present?
         "password" => "super secret"
       }
     end
-    let(:env_extra) { {} }
     let(:env) do
-      http_request_env_with_data({
+      http_request_env_with_data(
         :params => params,
         :with_queue_start => true,
         "action_dispatch.request_id" => "request_id123",
@@ -36,160 +30,102 @@ if DependencyHelper.rails_present?
           :class => MockController,
           :action_name => "index"
         )
-      }.merge(env_extra))
+      )
     end
     let(:middleware) { Appsignal::Rack::RailsInstrumentation.new(app, {}) }
     around { |example| keep_transactions { example.run } }
     before do
+      start_agent
+      Appsignal.internal_logger = test_logger(log)
       env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
     end
 
-    describe "#call" do
-      before do
-        allow(middleware).to receive(:raw_payload).and_return({})
-      end
-
-      context "when appsignal is active" do
-        before { allow(Appsignal).to receive(:active?).and_return(true) }
-
-        it "calls with monitoring" do
-          expect(middleware).to receive(:call_with_appsignal_monitoring).with(env)
-        end
-      end
-
-      context "when appsignal is not active" do
-        before { allow(Appsignal).to receive(:active?).and_return(false) }
-
-        it "does not call with monitoring" do
-          expect(middleware).to_not receive(:call_with_appsignal_monitoring)
-        end
-
-        it "calls the app" do
-          expect(app).to receive(:call).with(env)
-        end
-      end
-
-      after { middleware.call(env) }
+    def make_request(env)
+      middleware.call(env)
+      last_transaction.complete # Manually close transaction to set sample data
     end
 
-    describe "#call_with_appsignal_monitoring" do
-      def run
-        middleware.call(env)
-        last_transaction.complete # Manually close transaction to set sample data
-      end
+    def make_request_with_error(env, error_class, error_message)
+      expect { make_request(env) }.to raise_error(error_class, error_message)
+    end
 
-      it "calls the wrapped app" do
-        expect { run }.to_not(change { created_transactions.length })
-        expect(app).to have_received(:call).with(env)
-      end
+    context "with a request that raises an error" do
+      let(:app) { lambda { |_env| raise ExampleException, "error message" } }
 
-      it "sets request metadata on the transaction" do
-        run
+      it "reports the error on the transaction" do
+        make_request_with_error(env, ExampleException, "error message")
 
         expect(last_transaction.to_h).to include(
-          "namespace" => Appsignal::Transaction::HTTP_REQUEST,
-          "action" => "MockController#index",
-          "metadata" => hash_including(
-            "method" => "GET",
-            "path" => "/blog"
-          ),
-          "sample_data" => hash_including(
-            "tags" => { "request_id" => "request_id123" }
-          )
-        )
-      end
-
-      it "reports Rails filter parameters" do
-        run
-
-        expect(last_transaction.to_h).to include(
-          "sample_data" => hash_including(
-            "params" => params.merge(
-              "my_custom_param" => "[FILTERED]",
-              "password" => "[FILTERED]"
-            )
-          )
-        )
-      end
-
-      context "with custom params" do
-        let(:app) do
-          lambda do |env|
-            env[Appsignal::Rack::APPSIGNAL_TRANSACTION].set_params("custom_param" => "yes")
-          end
-        end
-
-        it "allows custom params to be set" do
-          run
-
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "params" => {
-                "custom_param" => "yes"
-              }
-            )
-          )
-        end
-      end
-
-      context "with an invalid HTTP request method" do
-        let(:env_extra) { { :request_method => "FOO", "REQUEST_METHOD" => "FOO" } }
-
-        it "does not store the HTTP request method" do
-          run
-
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash["metadata"]).to_not have_key("method")
-          expect(log_contents(log))
-            .to contains_log(:error, "Unable to report HTTP request method: '")
-        end
-      end
-
-      context "with an exception" do
-        let(:error) { ExampleException.new("ExampleException message") }
-        let(:app) do
-          double.tap do |d|
-            allow(d).to receive(:call).and_raise(error)
-          end
-        end
-
-        it "records the exception" do
-          expect { run }.to raise_error(error)
-
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash["error"]).to include(
+          "error" => hash_including(
             "name" => "ExampleException",
-            "message" => "ExampleException message",
-            "backtrace" => kind_of(String)
+            "message" => "error message"
           )
-        end
+        )
       end
+    end
 
-      context "with a request path that's not a route" do
-        let(:env_extra) do
-          {
+    it "sets the controller action as the action name" do
+      make_request(env)
+
+      expect(last_transaction.to_h).to include(
+        "namespace" => Appsignal::Transaction::HTTP_REQUEST,
+        "action" => "MockController#index"
+      )
+    end
+
+    it "sets request metadata on the transaction" do
+      make_request(env)
+
+      expect(last_transaction.to_h).to include(
+        "metadata" => hash_including(
+          "method" => "GET",
+          "path" => "/blog"
+        ),
+        "sample_data" => hash_including(
+          "tags" => { "request_id" => "request_id123" }
+        )
+      )
+    end
+
+    it "reports Rails filter parameters" do
+      make_request(env)
+
+      expect(last_transaction.to_h).to include(
+        "sample_data" => hash_including(
+          "params" => {
+            "controller" => "blog_posts",
+            "action" => "show",
+            "id" => "1",
+            "my_custom_param" => "[FILTERED]",
+            "password" => "[FILTERED]"
+          }
+        )
+      )
+    end
+
+    context "with an invalid HTTP request method" do
+      it "does not store the invalid HTTP request method" do
+        make_request(env.merge(:request_method => "FOO", "REQUEST_METHOD" => "FOO"))
+
+        transaction_hash = last_transaction.to_h
+        expect(transaction_hash["metadata"]).to_not have_key("method")
+        expect(log_contents(log))
+          .to contains_log(:error, "Unable to report HTTP request method: '")
+      end
+    end
+
+    context "with a request path that's not a route" do
+      it "doesn't set an action name" do
+        make_request(
+          env.merge(
             :path => "/unknown-route",
             "action_controller.instance" => nil
-          }
-        end
-
-        it "doesn't set an action name" do
-          run
-
-          expect(last_transaction.to_h).to include(
-            "action" => nil
           )
-        end
-      end
-    end
+        )
 
-    describe "#fetch_request_id" do
-      subject { middleware.fetch_request_id(env) }
-
-      let(:env) { { "action_dispatch.request_id" => "id" } }
-
-      it "returns the action dispatch id" do
-        is_expected.to eq "id"
+        expect(last_transaction.to_h).to include(
+          "action" => nil
+        )
       end
     end
   end
