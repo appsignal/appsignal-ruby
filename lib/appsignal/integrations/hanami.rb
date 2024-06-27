@@ -43,4 +43,4 @@ module Appsignal
   end
 end
 
-Appsignal::Integrations::HanamiPlugin.init
+Appsignal::Integrations::HanamiPlugin.init unless Appsignal.testing?
