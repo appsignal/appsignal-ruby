@@ -1151,13 +1151,14 @@ describe Appsignal do
     let(:output) { out_stream.read }
     let(:log_path) { File.join(tmp_dir, "log") }
     let(:log_file) { File.join(log_path, "appsignal.log") }
+    let(:log_level) { "debug" }
 
     before do
       FileUtils.mkdir_p(log_path)
       # Clear state from previous test
       Appsignal.internal_logger = nil
-      if Appsignal.instance_variable_defined?(:@in_memory_log)
-        Appsignal.remove_instance_variable(:@in_memory_log)
+      if Appsignal.instance_variable_defined?(:@in_memory_logger)
+        Appsignal.remove_instance_variable(:@in_memory_logger)
       end
     end
     after { FileUtils.rm_rf(log_path) }
@@ -1165,10 +1166,12 @@ describe Appsignal do
     def initialize_config
       Appsignal.config = project_fixture_config(
         "production",
-        :log_path => log_path
+        :log_path => log_path,
+        :log_level => log_level
       )
-      Appsignal.internal_logger.error("Log in memory")
-      expect(Appsignal.in_memory_log.string).to_not be_empty
+      Appsignal.internal_logger.error("Log in memory line 1")
+      Appsignal.internal_logger.debug("Log in memory line 2")
+      expect(Appsignal.in_memory_logger.messages).to_not be_empty
     end
 
     context "when the log path is writable" do
@@ -1190,12 +1193,26 @@ describe Appsignal do
           expect(output).to be_empty
         end
 
-        it "amends in memory log to log file" do
-          expect(log_file_contents).to include "[ERROR] appsignal: Log in memory"
+        context "with log level info" do
+          let(:log_level) { "info" }
+
+          it "amends info log level and higher memory log messages to log file" do
+            expect(log_file_contents).to include "[ERROR] appsignal: Log in memory line 1"
+            expect(log_file_contents).to_not include "[DEBUG]"
+          end
+        end
+
+        context "with log level debug" do
+          let(:log_level) { "debug" }
+
+          it "amends debug log level and higher memory log messages to log file" do
+            expect(log_file_contents).to include "[ERROR] appsignal: Log in memory line 1"
+            expect(log_file_contents).to include "[DEBUG] appsignal: Log in memory line 2"
+          end
         end
 
         it "clears the in memory log after writing to the new logger" do
-          expect(Appsignal.in_memory_log.string).to be_empty
+          expect(Appsignal.instance_variable_get(:@in_memory_logger)).to be_nil
         end
       end
 
@@ -1222,7 +1239,7 @@ describe Appsignal do
         end
 
         it "clears the in memory log after writing to the new logger" do
-          expect(Appsignal.in_memory_log.string).to be_empty
+          expect(Appsignal.instance_variable_get(:@in_memory_logger)).to be_nil
         end
 
         it "outputs a warning" do
@@ -1285,7 +1302,7 @@ describe Appsignal do
       end
 
       it "clears the in memory log after writing to the new logger" do
-        expect(Appsignal.in_memory_log.string).to be_empty
+        expect(Appsignal.instance_variable_get(:@in_memory_logger)).to be_nil
       end
     end
 

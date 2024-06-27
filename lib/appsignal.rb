@@ -55,8 +55,9 @@ module Appsignal
     #   directly.
     #
     #   If no logger has been set, it will return a "in memory logger", using
-    #   `in_memory_log`. Once AppSignal is started (using {.start}) the
-    #   contents of the "in memory logger" is written to the new logger.
+    #   {Utils::IntegrationMemoryLogger}. Once AppSignal is started (using
+    #   {.start}) the contents of the "in memory logger" is written to the new
+    #   logger.
     #
     #   @note some classes may have options to set custom loggers. Their
     #     defaults are pointed to this attribute.
@@ -168,27 +169,15 @@ module Appsignal
       Appsignal::Extension.get_server_state(key)
     end
 
-    # In memory internal logger used before any internal logger is started with
-    # {._start_logger}.
-    #
-    # The contents of this logger are flushed to the logger in {._start_logger}.
-    #
-    # @api private
-    # @return [StringIO]
-    def in_memory_log
-      if defined?(@in_memory_log) && @in_memory_log
-        @in_memory_log
-      else
-        @in_memory_log = StringIO.new
-      end
+    def in_memory_logger
+      @in_memory_logger ||=
+        Appsignal::Utils::IntegrationMemoryLogger.new.tap do |l|
+          l.formatter = log_formatter("appsignal")
+        end
     end
 
     def internal_logger
-      @internal_logger ||=
-        Appsignal::Utils::IntegrationLogger.new(in_memory_log).tap do |l|
-          l.level = ::Logger::INFO
-          l.formatter = log_formatter("appsignal")
-        end
+      @internal_logger ||= in_memory_logger
     end
 
     # @api private
@@ -232,10 +221,11 @@ module Appsignal
         else
           Appsignal::Config::DEFAULT_LOG_LEVEL
         end
-      return unless @in_memory_log
+      return unless @in_memory_logger
 
-      internal_logger << @in_memory_log.string
-      @in_memory_log = nil
+      messages = @in_memory_logger.messages_for_level(internal_logger.level)
+      internal_logger << messages.join
+      @in_memory_logger = nil
     end
 
     # Returns if the C-extension was loaded properly.

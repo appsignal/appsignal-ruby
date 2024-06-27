@@ -385,6 +385,8 @@ describe Appsignal::Config do
 
     context "without the selected env" do
       let(:config) { project_fixture_config("nonsense") }
+      let(:log_stream) { std_stream }
+      let(:log) { log_contents(log_stream) }
 
       it "is not valid or active" do
         expect(config.valid?).to be_falsy
@@ -392,11 +394,11 @@ describe Appsignal::Config do
       end
 
       it "logs an error" do
-        expect_any_instance_of(Logger).to receive(:error).once
-          .with("Not loading from config file: config for 'nonsense' not found")
-        expect_any_instance_of(Logger).to receive(:error).once
-          .with("Push API key not set after loading config")
-        config
+        use_logger_with(log_stream) { config }
+        expect(log)
+          .to contains_log(:error, "Not loading from config file: config for 'nonsense' not found")
+        expect(log)
+          .to contains_log(:error, "Push API key not set after loading config")
       end
     end
   end
