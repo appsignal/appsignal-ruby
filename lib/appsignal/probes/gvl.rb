@@ -25,6 +25,11 @@ module Appsignal
         Appsignal.internal_logger.debug("Initializing GVL probe")
         @appsignal = appsignal
         @gvl_tools = gvl_tools
+
+        # Store the process name and ID at initialization time
+        # to avoid picking up changes to the process name at runtime
+        @process_name = File.basename($PROGRAM_NAME).split.first || "[unknown process]"
+        @process_id = Process.pid
       end
 
       def call
@@ -39,13 +44,30 @@ module Appsignal
         gauge_delta :gvl_global_timer, monotonic_time_ns do |time_delta_ns|
           if time_delta_ns > 0
             time_delta_ms = time_delta_ns / 1_000_000
-            set_gauge_with_hostname("gvl_global_timer", time_delta_ms)
+            set_gauges_with_hostname_and_process(
+              "gvl_global_timer",
+              time_delta_ms
+            )
           end
         end
       end
 
       def probe_waiting_threads
-        set_gauge_with_hostname("gvl_waiting_threads", @gvl_tools::WaitingThreads.count)
+        set_gauges_with_hostname_and_process(
+          "gvl_waiting_threads",
+          @gvl_tools::WaitingThreads.count
+        )
+      end
+
+      def set_gauges_with_hostname_and_process(name, value)
+        set_gauge_with_hostname(name, value, {
+          :process_name => @process_name,
+          :process_id => @process_id
+        })
+
+        # Also set the gauge without the process name and ID for
+        # compatibility with existing automated dashboards
+        set_gauge_with_hostname(name, value)
       end
     end
   end
