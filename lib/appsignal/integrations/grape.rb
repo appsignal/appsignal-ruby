@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
+require "appsignal"
 require "appsignal/rack/grape_middleware"
+
+Appsignal.internal_logger.debug("Loading Grape integration")
 
 module Appsignal
   # @api private
