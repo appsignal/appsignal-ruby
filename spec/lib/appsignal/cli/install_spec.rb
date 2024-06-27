@@ -155,7 +155,7 @@ describe Appsignal::CLI::Install do
     end
 
     it "requires an application name" do
-      expect(output.scan(/Enter application name:/).length).to eq(2)
+      expect(output.scan("Enter application name:").length).to eq(2)
     end
   end
 
@@ -184,7 +184,7 @@ describe Appsignal::CLI::Install do
           run
 
           expect(output).to_not include "Adding AppSignal integration to Capfile"
-          expect(File.read(capfile).scan(/appsignal/).count).to eq(1)
+          expect(File.read(capfile).scan("appsignal").count).to eq(1)
         end
       end
 
@@ -351,7 +351,7 @@ describe Appsignal::CLI::Install do
           choose_environment_config
           run
 
-          expect(output.scan(/Choose app's display name:/).length).to eq(2)
+          expect(output.scan("Choose app's display name:").length).to eq(2)
         end
 
         context "with configuration using environment variables" do

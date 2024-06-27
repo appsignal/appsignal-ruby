@@ -81,7 +81,7 @@ describe Appsignal::Probes do
     describe ".started?" do
       it "returns true when the probes thread has been started" do
         expect(Appsignal::Probes.started?).to be_falsy
-        Appsignal::Probes.register :my_probe, (lambda {})
+        Appsignal::Probes.register :my_probe, lambda {}
         Appsignal::Probes.start
         expect(Appsignal::Probes.started?).to be_truthy
       end
@@ -478,7 +478,7 @@ describe Appsignal::Probes do
         probe = lambda {}
         collection.internal_register :my_probe, probe
         list = []
-        collection.each do |name, p|
+        collection.each do |name, p| # rubocop:disable Style/MapIntoArray
           list << [name, p]
         end
         expect(list).to eql([[:my_probe, probe]])

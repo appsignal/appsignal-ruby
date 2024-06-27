@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  module Probes # rubocop:disable Metrics/ModuleLength
+  module Probes
     ITERATION_IN_SECONDS = 60
 
     class ProbeCollection

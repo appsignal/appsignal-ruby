@@ -35,7 +35,7 @@ def build_task(matrix, ruby_version, type = nil)
       "prologue" => matrix["prologue"].merge(
         "commands" => matrix["prologue"]["commands"] + [
           "./support/bundler_wrapper exec rake extension:install",
-          "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'", # rubocop:disable Metrics/LineLength
+          "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'", # rubocop:disable Layout/LineLength
           "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
         ]
       ),
@@ -191,11 +191,11 @@ namespace :build_matrix do
     if included_rubies.any?
       # If this gem only runs on these specific Ruby version
       included_rubies.each { |version| check_if_ruby_version_exists!(matrix, version) }
-      return true if included_rubies.include?(ruby["ruby"])
+      true if included_rubies.include?(ruby["ruby"])
     else
       # If this gem is excluded from running on this Ruby version
       excluded_rubies.each { |version| check_if_ruby_version_exists!(matrix, version) }
-      return true unless excluded_rubies.include?(ruby["ruby"])
+      true unless excluded_rubies.include?(ruby["ruby"])
     end
   end
 

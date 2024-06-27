@@ -3,6 +3,8 @@
 module Appsignal
   # @api private
   class Environment
+    ERROR_ON_YIELD = :APPSIGNAL_ERROR_ON_YIELD
+
     # Add environment metadata.
     #
     # The key and value of the environment metadata must be a String, even if
@@ -46,8 +48,10 @@ module Appsignal
           Appsignal.internal_logger.error \
             "Unable to report on environment metadata #{key.inspect}:\n" \
               "#{e.class}: #{e}"
-          return
+          ERROR_ON_YIELD
         end
+
+      return if yielded_value == ERROR_ON_YIELD
 
       value =
         case yielded_value
