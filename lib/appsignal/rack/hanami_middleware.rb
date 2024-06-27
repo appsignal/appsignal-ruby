@@ -9,6 +9,13 @@ module Appsignal
         options[:params_method] ||= :params
         options[:instrument_span_name] ||= "process_action.hanami"
         super
+
+        @session_options_key =
+          if Gem::Version.new(::Hanami::VERSION) >= Gem::Version.new("2.1.0")
+            :session_enabled
+          else
+            :sessions_enabled
+          end
       end
 
       private
@@ -22,7 +29,7 @@ module Appsignal
         @request_class.new(
           :env => env,
           :params => params,
-          :sessions_enabled => true
+          @session_options_key => true
         )
       end
     end
