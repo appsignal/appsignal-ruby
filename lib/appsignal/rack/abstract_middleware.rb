@@ -6,6 +6,8 @@ module Appsignal
   module Rack
     # @api private
     class AbstractMiddleware
+      DEFAULT_ERROR_REPORTING = :default
+
       def initialize(app, options = {})
         Appsignal.internal_logger.debug "Initializing #{self.class}"
         @app = app
@@ -13,7 +15,7 @@ module Appsignal
         @request_class = options.fetch(:request_class, ::Rack::Request)
         @params_method = options.fetch(:params_method, :params)
         @instrument_span_name = options.fetch(:instrument_span_name, "process.abstract")
-        @report_errors = options.fetch(:report_errors, false)
+        @report_errors = options.fetch(:report_errors, DEFAULT_ERROR_REPORTING)
       end
 
       def call(env)
@@ -42,10 +44,14 @@ module Appsignal
 
           begin
             add_transaction_metadata_before(transaction, request)
-            # Report errors if the :report_errors option is turned on or when
+            # Report errors if the :report_errors option is set to true or when
             # there is no parent instrumentation that can rescue and report the error.
             if @report_errors || !wrapped_instrumentation
-              instrument_app_call_with_exception_handling(request.env, transaction)
+              instrument_app_call_with_exception_handling(
+                request.env,
+                transaction,
+                wrapped_instrumentation
+              )
             else
               instrument_app_call(request.env)
             end
@@ -82,10 +88,22 @@ module Appsignal
       # raised.
       #
       # @see {#instrument_app_call}
-      def instrument_app_call_with_exception_handling(env, transaction)
+      def instrument_app_call_with_exception_handling(env, transaction, wrapped_instrumentation)
         instrument_app_call(env)
       rescue Exception => error # rubocop:disable Lint/RescueException
-        transaction.set_error(error)
+        report_errors =
+          if @report_errors == DEFAULT_ERROR_REPORTING
+            # If there's no parent transaction, report the error
+            !wrapped_instrumentation
+          elsif @report_errors.respond_to?(:call)
+            # If the @report_errors option is callable, call it with the
+            # request environment so it can determine if the error needs to be
+            # reported.
+            @report_errors.call(env)
+          else
+            @report_errors
+          end
+        transaction.set_error(error) if report_errors
         raise error
       end
 

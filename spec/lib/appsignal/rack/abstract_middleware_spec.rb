@@ -90,13 +90,68 @@ describe Appsignal::Rack::AbstractMiddleware do
           expect(last_transaction.to_h).to include(
             "error" => hash_including(
               "name" => "ExampleException",
-              "message" => "error message"
+              "message" => "error message",
+              "backtrace" => kind_of(String)
             )
           )
         end
 
         it "completes the transaction" do
           expect(last_transaction).to be_completed
+        end
+
+        context "with :report_errors set to false" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => false } }
+
+          it "does not record the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include("error" => nil)
+          end
+        end
+
+        context "with :report_errors set to true" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => true } }
+
+          it "records the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include(
+              "error" => hash_including(
+                "name" => "ExampleException",
+                "message" => "error message"
+              )
+            )
+          end
+        end
+
+        context "with :report_errors set to a lambda that returns false" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => lambda { |_env| false } } }
+
+          it "does not record the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include("error" => nil)
+          end
+        end
+
+        context "with :report_errors set to a lambda that returns true" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => lambda { |_env| true } } }
+
+          it "records the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include(
+              "error" => hash_including(
+                "name" => "ExampleException",
+                "message" => "error message"
+              )
+            )
+          end
         end
       end
 
@@ -296,9 +351,47 @@ describe Appsignal::Rack::AbstractMiddleware do
           end
         end
 
+        context "with :report_errors set to false" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => false } }
+
+          it "does not record the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include("error" => nil)
+          end
+        end
+
         context "with :report_errors set to true" do
           let(:app) { lambda { |_env| raise ExampleException, "error message" } }
           let(:options) { { :report_errors => true } }
+
+          it "records the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include(
+              "error" => hash_including(
+                "name" => "ExampleException",
+                "message" => "error message"
+              )
+            )
+          end
+        end
+
+        context "with :report_errors set to a lambda that returns false" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => lambda { |_env| false } } }
+
+          it "does not record the exception on the transaction" do
+            make_request_with_error(env, ExampleException, "error message")
+
+            expect(last_transaction.to_h).to include("error" => nil)
+          end
+        end
+
+        context "with :report_errors set to a lambda that returns true" do
+          let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+          let(:options) { { :report_errors => lambda { |_env| true } } }
 
           it "records the exception on the transaction" do
             make_request_with_error(env, ExampleException, "error message")
