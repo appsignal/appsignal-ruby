@@ -88,13 +88,10 @@ describe Appsignal::Hooks::RedisClientHook do
                 connection = RedisClient::RubyConnection.new client_config
                 expect(connection.write([:get, "key"])).to eql("stub_write")
 
-                transaction_hash = transaction.to_h
-                expect(transaction_hash["events"]).to include(
-                  hash_including(
-                    "name" => "query.redis",
-                    "body" => "get ?",
-                    "title" => "stub_id"
-                  )
+                expect(transaction).to include_event(
+                  "name" => "query.redis",
+                  "body" => "get ?",
+                  "title" => "stub_id"
                 )
               end
 
@@ -103,16 +100,13 @@ describe Appsignal::Hooks::RedisClientHook do
                 script = "return redis.call('set',KEYS[1],ARGV[1])"
                 keys = ["foo"]
                 argv = ["bar"]
-                expect(connection.write([:eval, script, keys.size, keys,
-                                         argv])).to eql("stub_write")
+                expect(connection.write([:eval, script, keys.size, keys, argv]))
+                  .to eql("stub_write")
 
-                transaction_hash = transaction.to_h
-                expect(transaction_hash["events"]).to include(
-                  hash_including(
-                    "name" => "query.redis",
-                    "body" => "#{script} ? ?",
-                    "title" => "stub_id"
-                  )
+                expect(transaction).to include_event(
+                  "name" => "query.redis",
+                  "body" => "#{script} ? ?",
+                  "title" => "stub_id"
                 )
               end
             end
@@ -181,13 +175,10 @@ describe Appsignal::Hooks::RedisClientHook do
                   connection = RedisClient::HiredisConnection.new client_config
                   expect(connection.write([:get, "key"])).to eql("stub_write")
 
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash["events"]).to include(
-                    hash_including(
-                      "name" => "query.redis",
-                      "body" => "get ?",
-                      "title" => "stub_id"
-                    )
+                  expect(transaction).to include_event(
+                    "name" => "query.redis",
+                    "body" => "get ?",
+                    "title" => "stub_id"
                   )
                 end
 
@@ -199,13 +190,10 @@ describe Appsignal::Hooks::RedisClientHook do
                   expect(connection.write([:eval, script, keys.size, keys,
                                            argv])).to eql("stub_write")
 
-                  transaction_hash = transaction.to_h
-                  expect(transaction_hash["events"]).to include(
-                    hash_including(
-                      "name" => "query.redis",
-                      "body" => "#{script} ? ?",
-                      "title" => "stub_id"
-                    )
+                  expect(transaction).to include_event(
+                    "name" => "query.redis",
+                    "body" => "#{script} ? ?",
+                    "title" => "stub_id"
                   )
                 end
               end

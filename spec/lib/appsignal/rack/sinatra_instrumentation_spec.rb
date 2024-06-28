@@ -2,11 +2,11 @@ if DependencyHelper.sinatra_present?
   require "appsignal/integrations/sinatra"
 
   module SinatraRequestHelpers
-    def make_request(env)
+    def make_request
       middleware.call(env)
     end
 
-    def make_request_with_error(env, error)
+    def make_request_with_error(error)
       expect { middleware.call(env) }.to raise_error(error)
     end
   end
@@ -30,7 +30,7 @@ if DependencyHelper.sinatra_present?
       before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
       it "doesn't instrument requests" do
-        expect { make_request(env) }.to_not(change { created_transactions.count })
+        expect { make_request }.to_not(change { created_transactions.count })
       end
     end
 
@@ -100,54 +100,48 @@ if DependencyHelper.sinatra_present?
         before { allow(Appsignal).to receive(:active?).and_return(false) }
 
         it "does not instrument requests" do
-          expect { make_request(env) }.to_not(change { created_transactions.count })
+          expect { make_request }.to_not(change { created_transactions.count })
         end
 
         it "calls the next middleware in the stack" do
-          make_request(env)
+          make_request
 
           expect(app).to have_received(:call).with(env)
         end
       end
 
       context "when appsignal is active" do
-        context "without an exception" do
-          it "reports a process_action.sinatra event" do
-            make_request(env)
+        context "without an error" do
+          it "creates a transaction for the request" do
+            expect { make_request }.to(change { created_transactions.count }.by(1))
 
-            expect(last_transaction.to_h).to include(
-              "events" => [
-                hash_including(
-                  "body" => "",
-                  "body_format" => Appsignal::EventFormatter::DEFAULT,
-                  "count" => 1,
-                  "name" => "process_action.sinatra",
-                  "title" => ""
-                )
-              ]
-            )
+            expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          end
+
+          it "reports a process_action.sinatra event" do
+            make_request
+
+            expect(last_transaction).to include_event("name" => "process_action.sinatra")
           end
         end
 
         context "with an error in sinatra.error" do
           let(:error) { ExampleException.new("error message") }
-          before do
-            env["sinatra.error"] = error
+          before { env["sinatra.error"] = error }
+
+          it "creates a transaction for the request" do
+            expect { make_request }.to(change { created_transactions.count }.by(1))
+
+            expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
           end
 
           context "when raise_errors is off" do
             let(:settings) { double(:raise_errors => false) }
 
-            it "record the error" do
-              expect { make_request(env) }
-                .to(change { created_transactions.count }.by(1))
+            it "records the error" do
+              make_request
 
-              expect(last_transaction.to_h).to include(
-                "error" => hash_including(
-                  "name" => "ExampleException",
-                  "message" => "error message"
-                )
-              )
+              expect(last_transaction).to have_error("ExampleException", "error message")
             end
           end
 
@@ -155,10 +149,9 @@ if DependencyHelper.sinatra_present?
             let(:settings) { double(:raise_errors => true) }
 
             it "does not record the error" do
-              expect { make_request(env) }
-                .to(change { created_transactions.count }.by(1))
+              make_request
 
-              expect(last_transaction.to_h).to include("error" => nil)
+              expect(last_transaction).to_not have_error
             end
           end
 
@@ -171,19 +164,18 @@ if DependencyHelper.sinatra_present?
             end
 
             it "does not record the error" do
-              expect { make_request(env) }
-                .to(change { created_transactions.count }.by(1))
+              make_request
 
-              expect(last_transaction.to_h).to include("error" => nil)
+              expect(last_transaction).to_not have_error
             end
           end
         end
 
         describe "action name" do
           it "sets the action to the request method and path" do
-            make_request(env)
+            make_request
 
-            expect(last_transaction.to_h).to include("action" => "GET /path")
+            expect(last_transaction).to have_action("GET /path")
           end
 
           context "without 'sinatra.route' env" do
@@ -192,9 +184,9 @@ if DependencyHelper.sinatra_present?
             end
 
             it "doesn't set an action name" do
-              make_request(env)
+              make_request
 
-              expect(last_transaction.to_h).to include("action" => nil)
+              expect(last_transaction).to_not have_action
             end
           end
 
@@ -202,9 +194,9 @@ if DependencyHelper.sinatra_present?
             before { env["SCRIPT_NAME"] = "/api" }
 
             it "sets the action name with an application prefix path" do
-              make_request(env)
+              make_request
 
-              expect(last_transaction.to_h).to include("action" => "GET /api/path")
+              expect(last_transaction).to have_action("GET /api/path")
             end
 
             context "without 'sinatra.route' env" do
@@ -213,9 +205,9 @@ if DependencyHelper.sinatra_present?
               end
 
               it "doesn't set an action name" do
-                make_request(env)
+                make_request
 
-                expect(last_transaction.to_h).to include("action" => nil)
+                expect(last_transaction).to_not have_action
               end
             end
           end

@@ -53,22 +53,13 @@ if DependencyHelper.dry_monitor_present?
 
       it "creates an sql event" do
         notifications.instrument(event_id, payload)
-        expect(transaction.to_h["events"]).to match([
-          {
-            "allocation_count" => kind_of(Integer),
-            "body" => "SELECT * FROM users",
-            "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
-            "child_allocation_count" => kind_of(Integer),
-            "child_duration" => kind_of(Float),
-            "child_gc_duration" => kind_of(Float),
-            "count" => 1,
-            "duration" => kind_of(Float),
-            "gc_duration" => kind_of(Float),
-            "name" => "query.postgres",
-            "start" => kind_of(Float),
-            "title" => "query.postgres"
-          }
-        ])
+        expect(transaction).to include_event(
+          "body" => "SELECT * FROM users",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+          "count" => 1,
+          "name" => "query.postgres",
+          "title" => "query.postgres"
+        )
       end
     end
 
@@ -82,22 +73,13 @@ if DependencyHelper.dry_monitor_present?
 
       it "creates a generic event" do
         notifications.instrument(event_id, payload)
-        expect(transaction.to_h["events"]).to match([
-          {
-            "allocation_count" => kind_of(Integer),
-            "body" => "",
-            "body_format" => Appsignal::EventFormatter::DEFAULT,
-            "child_allocation_count" => kind_of(Integer),
-            "child_duration" => kind_of(Float),
-            "child_gc_duration" => kind_of(Float),
-            "count" => 1,
-            "duration" => kind_of(Float),
-            "gc_duration" => kind_of(Float),
-            "name" => "foo",
-            "start" => kind_of(Float),
-            "title" => ""
-          }
-        ])
+        expect(transaction).to include_event(
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "count" => 1,
+          "name" => "foo",
+          "title" => ""
+        )
       end
     end
   end

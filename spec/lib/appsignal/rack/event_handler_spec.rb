@@ -31,12 +31,10 @@ describe Appsignal::Rack::EventHandler do
       expect { on_start }.to change { created_transactions.length }.by(1)
 
       transaction = last_transaction
-      expect(transaction.to_h).to include(
-        "id" => kind_of(String),
-        "namespace" => Appsignal::Transaction::HTTP_REQUEST
-      )
+      expect(transaction).to have_id
+      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
 
-      expect(Appsignal::Transaction.current).to eq(last_transaction)
+      expect(Appsignal::Transaction.current).to eq(transaction)
     end
 
     context "when the handler is nested in another EventHandler" do
@@ -127,13 +125,7 @@ describe Appsignal::Rack::EventHandler do
       on_start
       on_error(ExampleStandardError.new("the error"))
 
-      expect(last_transaction.to_h).to include(
-        "error" => {
-          "name" => "ExampleStandardError",
-          "message" => "the error",
-          "backtrace" => kind_of(String)
-        }
-      )
+      expect(last_transaction).to have_error("ExampleStandardError", "the error")
     end
 
     context "when the handler is nested in another EventHandler" do
@@ -141,7 +133,7 @@ describe Appsignal::Rack::EventHandler do
         on_start
         described_class.new.on_error(request, response, ExampleStandardError.new("the error"))
 
-        expect(last_transaction.to_h).to include("error" => nil)
+        expect(last_transaction).to_not have_error
       end
     end
 
@@ -174,11 +166,9 @@ describe Appsignal::Rack::EventHandler do
 
       on_finish
 
-      expect(last_transaction.to_h).to include(
-        "action" => nil,
-        "sample_data" => {},
-        "events" => []
-      )
+      expect(last_transaction).to_not have_action
+      expect(last_transaction).to_not include_events
+      expect(last_transaction).to include("sample_data" => {})
       expect(last_transaction).to_not be_completed
     end
 
@@ -186,18 +176,12 @@ describe Appsignal::Rack::EventHandler do
       on_start
       on_finish
 
-      expect(last_transaction.to_h).to include(
-        # The action is not set on purpose, as we can't set a normalized route
-        # It requires the app to set an action name
-        "action" => nil,
-        "sample_data" => hash_including(
-          "environment" => {
-            "REQUEST_METHOD" => "GET",
-            "PATH_INFO" => "/path"
-          }
-        )
+      expect(last_transaction).to_not have_action
+      expect(last_transaction).to include_environment(
+        "REQUEST_METHOD" => "GET",
+        "PATH_INFO" => "/path"
       )
-      expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+      expect(last_transaction).to have_queue_start(queue_start_time)
       expect(last_transaction).to be_completed
     end
 
@@ -206,18 +190,14 @@ describe Appsignal::Rack::EventHandler do
         on_start
         on_finish(request, nil)
 
-        expect(last_transaction.to_h).to include(
-          # The action is not set on purpose, as we can't set a normalized route
-          # It requires the app to set an action name
-          "action" => nil,
-          "sample_data" => hash_including(
-            "environment" => {
-              "REQUEST_METHOD" => "GET",
-              "PATH_INFO" => "/path"
-            }
-          )
+        # The action is not set on purpose, as we can't set a normalized route
+        # It requires the app to set an action name
+        expect(last_transaction).to_not have_action
+        expect(last_transaction).to include_environment(
+          "REQUEST_METHOD" => "GET",
+          "PATH_INFO" => "/path"
         )
-        expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+        expect(last_transaction).to have_queue_start(queue_start_time)
         expect(last_transaction).to be_completed
       end
 
@@ -225,7 +205,7 @@ describe Appsignal::Rack::EventHandler do
         on_start
         on_finish(request, nil)
 
-        expect(last_transaction.to_h.dig("sample_data", "tags")).to_not have_key("response_status")
+        expect(last_transaction).to_not include_tags("response_status" => anything)
       end
 
       it "does not report a response_status counter metric" do
@@ -242,11 +222,7 @@ describe Appsignal::Rack::EventHandler do
           on_error(ExampleStandardError.new("the error"))
           on_finish(request, nil)
 
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "tags" => { "response_status" => 500 }
-            )
-          )
+          expect(last_transaction).to include_tags("response_status" => 500)
         end
 
         it "increments the response status counter for response status 500" do
@@ -283,12 +259,10 @@ describe Appsignal::Rack::EventHandler do
         on_start
         described_class.new.on_finish(request, response)
 
-        expect(last_transaction.to_h).to include(
-          "action" => nil,
-          "metadata" => {},
-          "sample_data" => {},
-          "events" => []
-        )
+        expect(last_transaction).to_not have_action
+        expect(last_transaction).to_not include_metadata
+        expect(last_transaction).to_not include_events
+        expect(last_transaction.to_h).to include("sample_data" => {})
         expect(last_transaction).to_not be_completed
       end
     end
@@ -298,25 +272,14 @@ describe Appsignal::Rack::EventHandler do
       last_transaction.set_action("My action")
       on_finish
 
-      expect(last_transaction.to_h).to include(
-        "action" => "My action"
-      )
+      expect(last_transaction).to have_action("My action")
     end
 
     it "finishes the process_request.rack event" do
       on_start
       on_finish
 
-      expect(last_transaction.to_h).to include(
-        "events" => [
-          hash_including(
-            "name" => "process_request.rack",
-            "title" => "",
-            "body" => "",
-            "body_format" => Appsignal::EventFormatter::DEFAULT
-          )
-        ]
-      )
+      expect(last_transaction).to include_event("name" => "process_request.rack")
     end
 
     context "with response" do
@@ -324,11 +287,7 @@ describe Appsignal::Rack::EventHandler do
         on_start
         on_finish
 
-        expect(last_transaction.to_h).to include(
-          "sample_data" => hash_including(
-            "tags" => { "response_status" => 200 }
-          )
-        )
+        expect(last_transaction).to include_tags("response_status" => 200)
       end
 
       it "increments the response status counter for response status" do
@@ -345,11 +304,7 @@ describe Appsignal::Rack::EventHandler do
           on_error(ExampleStandardError.new("the error"))
           on_finish
 
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "tags" => { "response_status" => 200 }
-            )
-          )
+          expect(last_transaction).to include_tags("response_status" => 200)
         end
 
         it "increments the response status counter based on the response" do

@@ -23,9 +23,8 @@ if DependencyHelper.http_present?
 
       HTTP.get("http://www.google.com")
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include("namespace" => Appsignal::Transaction::HTTP_REQUEST)
-      expect(transaction_hash["events"].first).to include(
+      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+      expect(transaction).to include_event(
         "body" => "",
         "body_format" => Appsignal::EventFormatter::DEFAULT,
         "name" => "request.http_rb",
@@ -38,9 +37,8 @@ if DependencyHelper.http_present?
 
       HTTP.get("https://www.google.com")
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include("namespace" => Appsignal::Transaction::HTTP_REQUEST)
-      expect(transaction_hash["events"].first).to include(
+      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+      expect(transaction).to include_event(
         "body" => "",
         "body_format" => Appsignal::EventFormatter::DEFAULT,
         "name" => "request.http_rb",
@@ -54,7 +52,7 @@ if DependencyHelper.http_present?
 
         HTTP.get("https://www.google.com", :params => { :q => "Appsignal" })
 
-        expect(transaction.to_h["events"].first).to include(
+        expect(transaction).to include_event(
           "body" => "",
           "title" => "GET https://www.google.com"
         )
@@ -66,7 +64,7 @@ if DependencyHelper.http_present?
 
         HTTP.post("https://www.google.com", :json => { :q => "Appsignal" })
 
-        expect(transaction.to_h["events"].first).to include(
+        expect(transaction).to include_event(
           "body" => "",
           "title" => "POST https://www.google.com"
         )
@@ -83,20 +81,14 @@ if DependencyHelper.http_present?
           HTTP.get("https://www.google.com")
         end.to raise_error(ExampleException)
 
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include("namespace" => Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction_hash["events"].first).to include(
+        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        expect(transaction).to include_event(
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
           "name" => "request.http_rb",
           "title" => "GET https://www.google.com"
         )
-
-        expect(transaction_hash["error"]).to include(
-          "backtrace" => kind_of(String),
-          "name" => error.class.name,
-          "message" => error.message
-        )
+        expect(transaction).to have_error(error.class.name, error.message)
       end
     end
 
@@ -112,7 +104,7 @@ if DependencyHelper.http_present?
 
         HTTP.get(request_uri.new("http://www.google.com"))
 
-        expect(transaction.to_h["events"].first).to include(
+        expect(transaction).to include_event(
           "name" => "request.http_rb",
           "title" => "GET http://www.google.com"
         )
@@ -123,7 +115,7 @@ if DependencyHelper.http_present?
 
         HTTP.get(URI("http://www.google.com"))
 
-        expect(transaction.to_h["events"].first).to include(
+        expect(transaction).to include_event(
           "name" => "request.http_rb",
           "title" => "GET http://www.google.com"
         )
@@ -134,7 +126,7 @@ if DependencyHelper.http_present?
 
         HTTP.get("http://www.google.com")
 
-        expect(transaction.to_h["events"].first).to include(
+        expect(transaction).to include_event(
           "name" => "request.http_rb",
           "title" => "GET http://www.google.com"
         )

@@ -23,28 +23,14 @@ if DependencyHelper.hanami2_present?
       it "sets request parameters on the transaction" do
         make_request(env)
 
-        expect(last_transaction.to_h).to include(
-          "sample_data" => hash_including(
-            "params" => { "param1" => "value1", "param2" => "value2" }
-          )
-        )
+        expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
       end
     end
 
     it "reports a process_action.hanami event" do
       make_request(env)
 
-      expect(last_transaction.to_h).to include(
-        "events" => [
-          hash_including(
-            "body" => "",
-            "body_format" => Appsignal::EventFormatter::DEFAULT,
-            "count" => 1,
-            "name" => "process_action.hanami",
-            "title" => ""
-          )
-        ]
-      )
+      expect(last_transaction).to include_event("name" => "process_action.hanami")
     end
   end
 end

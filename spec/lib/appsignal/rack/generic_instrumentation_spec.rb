@@ -14,17 +14,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     it "reports a process_action.generic event" do
       make_request(env)
 
-      expect(last_transaction.to_h).to include(
-        "events" => [
-          hash_including(
-            "body" => "",
-            "body_format" => Appsignal::EventFormatter::DEFAULT,
-            "count" => 1,
-            "name" => "process_action.generic",
-            "title" => ""
-          )
-        ]
-      )
+      expect(last_transaction).to include_event("name" => "process_action.generic")
     end
   end
 
@@ -32,7 +22,7 @@ describe Appsignal::Rack::GenericInstrumentation do
     it "reports 'unknown' as the action name" do
       make_request(env)
 
-      expect(last_transaction.to_h).to include("action" => "unknown")
+      expect(last_transaction).to have_action("unknown")
     end
   end
 end

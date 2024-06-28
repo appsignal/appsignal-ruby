@@ -20,17 +20,11 @@ describe Appsignal::Integrations::SidekiqDeathHandler do
   end
 
   def expect_error_on_transaction
-    expect(last_transaction.to_h).to include(
-      "error" => hash_including(
-        "name" => "ExampleStandardError",
-        "message" => "uh oh",
-        "backtrace" => kind_of(String)
-      )
-    )
+    expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
   end
 
   def expect_no_error_on_transaction
-    expect(last_transaction.to_h).to include("error" => nil)
+    expect(last_transaction).to_not have_error
   end
 
   context "when sidekiq_report_errors = none" do
@@ -90,21 +84,13 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
         described_class.new.call(exception, job_context)
       end.to(change { created_transactions.count }.by(1))
 
-      transaction_hash = last_transaction.to_h
-      expect(transaction_hash).to include(
-        "action" => "SidekiqInternal",
-        "error" => hash_including(
-          "name" => "ExampleStandardError",
-          "message" => "uh oh",
-          "backtrace" => kind_of(String)
-        )
+      transaction = last_transaction
+      expect(transaction).to have_action("SidekiqInternal")
+      expect(transaction).to have_error("ExampleStandardError", "uh oh")
+      expect(transaction).to include_params(
+        "jobstr" => "{ bad json }"
       )
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => {
-          "jobstr" => "{ bad json }"
-        }
-      )
-      expect(transaction_hash["metadata"]).to include(
+      expect(transaction).to include_metadata(
         "sidekiq_error" => "Sidekiq internal error!"
       )
     end
@@ -149,17 +135,11 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     def expect_error_on_transaction
-      expect(last_transaction.to_h).to include(
-        "error" => hash_including(
-          "name" => "ExampleStandardError",
-          "message" => "uh oh",
-          "backtrace" => kind_of(String)
-        )
-      )
+      expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
     end
 
     def expect_no_error_on_transaction
-      expect(last_transaction.to_h).to include("error" => nil)
+      expect(last_transaction).to_not have_error
     end
 
     context "when sidekiq_report_errors = none" do
@@ -270,9 +250,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "filters selected arguments" do
       perform_sidekiq_job
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => [
+      expect(transaction).to include_params(
+        [
           "foo",
           {
             "foo" => "[FILTERED]",
@@ -293,10 +272,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "replaces the last argument (the secret bag) with an [encrypted data] string" do
       perform_sidekiq_job
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => expected_args << "[encrypted data]"
-      )
+      expect(transaction).to include_params(expected_args << "[encrypted data]")
     end
   end
 
@@ -319,11 +295,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "uses the delayed class and method name for the action" do
       perform_sidekiq_job
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash["action"]).to eq("DelayedTestClass.foo_method")
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => ["bar" => "baz"]
-      )
+      expect(transaction).to have_action("DelayedTestClass.foo_method")
+      expect(transaction).to include_params(["bar" => "baz"])
     end
 
     context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
@@ -332,9 +305,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       it "logs a warning and uses the default argument" do
         perform_sidekiq_job
 
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedClass#perform")
-        expect(transaction_hash["sample_data"]).to include("params" => [])
+        expect(transaction).to have_action("Sidekiq::Extensions::DelayedClass#perform")
+        expect(transaction).to include_params([])
         expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
       end
     end
@@ -359,11 +331,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     it "uses the delayed class and method name for the action" do
       perform_sidekiq_job
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash["action"]).to eq("DelayedTestClass#foo_method")
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => ["bar" => "baz"]
-      )
+      expect(transaction).to have_action("DelayedTestClass#foo_method")
+      expect(transaction).to include_params(["bar" => "baz"])
     end
 
     context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
@@ -372,9 +341,8 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       it "logs a warning and uses the default argument" do
         perform_sidekiq_job
 
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["action"]).to eq("Sidekiq::Extensions::DelayedModel#perform")
-        expect(transaction_hash["sample_data"]).to include("params" => [])
+        expect(transaction).to have_action("Sidekiq::Extensions::DelayedModel#perform")
+        expect(transaction).to include_params([])
         expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
       end
     end
@@ -394,31 +362,20 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
         perform_sidekiq_job { raise error, "uh oh" }
       end.to raise_error(error)
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "id" => jid,
-        "action" => "TestClass#perform",
-        "error" => {
-          "name" => "ExampleException",
-          "message" => "uh oh",
-          # TODO: backtrace should be an Array of Strings
-          # https://github.com/appsignal/appsignal-agent/issues/294
-          "backtrace" => kind_of(String)
-        },
-        "metadata" => {
-          "extra" => "data",
-          "queue" => "default",
-          "retry_count" => "0"
-        },
-        "namespace" => namespace,
-        "sample_data" => {
-          "environment" => {},
-          "params" => expected_args,
-          "tags" => {},
-          "breadcrumbs" => []
-        }
+      expect(transaction).to have_id(jid)
+      expect(transaction).to have_namespace(namespace)
+      expect(transaction).to have_action("TestClass#perform")
+      expect(transaction).to have_error("ExampleException", "uh oh")
+      expect(transaction).to include_metadata(
+        "extra" => "data",
+        "queue" => "default",
+        "retry_count" => "0"
       )
-      expect_transaction_to_have_sidekiq_event(transaction_hash)
+      expect(transaction).to_not include_environment
+      expect(transaction).to include_params(expected_args)
+      expect(transaction).to_not include_tags
+      expect(transaction).to_not include_breadcrumbs
+      expect_transaction_to_have_sidekiq_event(transaction)
     end
   end
 
@@ -438,17 +395,17 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
         end
 
         expect(created_transactions.count).to eq(2)
-        expected_transaction = {
-          "namespace" => "background_job",
-          "action" => "TestClass#perform",
-          "sample_data" => hash_including(
-            "tags" => hash_including("test_tag" => "value")
-          )
-        }
-        sidekiq_transaction = created_transactions.first.to_h
-        error_reporter_transaction = created_transactions.last.to_h
-        expect(sidekiq_transaction).to include(expected_transaction)
-        expect(error_reporter_transaction).to include(expected_transaction)
+        tags = { "test_tag" => "value" }
+        sidekiq_transaction = created_transactions.first
+        error_reporter_transaction = created_transactions.last
+
+        expect(sidekiq_transaction).to have_namespace("background_job")
+        expect(sidekiq_transaction).to have_action("TestClass#perform")
+        expect(sidekiq_transaction).to include_tags(tags)
+
+        expect(error_reporter_transaction).to have_namespace("background_job")
+        expect(error_reporter_transaction).to have_action("TestClass#perform")
+        expect(error_reporter_transaction).to include_tags(tags)
       end
     end
   end
@@ -461,30 +418,21 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
       perform_sidekiq_job
 
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "id" => jid,
-        "action" => "TestClass#perform",
-        "error" => nil,
-        "metadata" => {
-          "extra" => "data",
-          "queue" => "default",
-          "retry_count" => "0"
-        },
-        "namespace" => namespace,
-        "sample_data" => {
-          "environment" => {},
-          "params" => expected_args,
-          "tags" => {},
-          "breadcrumbs" => []
-        }
+      expect(transaction).to have_id(jid)
+      expect(transaction).to have_namespace(namespace)
+      expect(transaction).to have_action("TestClass#perform")
+      expect(transaction).to_not have_error
+      expect(transaction).to_not include_tags
+      expect(transaction).to_not include_environment
+      expect(transaction).to_not include_breadcrumbs
+      expect(transaction).to_not include_params(expected_args)
+      expect(transaction).to include_metadata(
+        "extra" => "data",
+        "queue" => "default",
+        "retry_count" => "0"
       )
-      # TODO: Not available in transaction.to_h yet.
-      # https://github.com/appsignal/appsignal-agent/issues/293
-      expect(transaction.request.env).to eq(
-        :queue_start => Time.parse("2001-01-01 10:00:00UTC").to_f
-      )
-      expect_transaction_to_have_sidekiq_event(transaction_hash)
+      expect(transaction).to have_queue_start(Time.parse("2001-01-01 10:00:00UTC").to_i * 1000)
+      expect_transaction_to_have_sidekiq_event(transaction)
     end
   end
 
@@ -505,10 +453,9 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     last_transaction
   end
 
-  def expect_transaction_to_have_sidekiq_event(transaction_hash)
-    events = transaction_hash["events"]
-    expect(events.count).to eq(1)
-    expect(events.first).to include(
+  def expect_transaction_to_have_sidekiq_event(transaction)
+    expect(transaction.to_h["events"].count).to eq(1)
+    expect(transaction).to include_event(
       "name"        => "perform_job.sidekiq",
       "title"       => "",
       "count"       => 1,
@@ -621,25 +568,18 @@ if DependencyHelper.active_job_present?
       perform_sidekiq_job(ActiveJobSidekiqTestJob, given_args)
 
       transaction = last_transaction
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "action" => "ActiveJobSidekiqTestJob#perform",
-        "error" => nil,
-        "namespace" => namespace,
-        "metadata" => hash_including(
-          "queue" => "default"
-        ),
-        "sample_data" => hash_including(
-          "environment" => {},
-          "params" => [expected_args],
-          "tags" => expected_tags.merge("queue" => "default")
-        )
-      )
-      expect(transaction.request.env).to eq(:queue_start => time.to_f)
-      events = transaction_hash["events"]
+      expect(transaction).to have_namespace(namespace)
+      expect(transaction).to have_action("ActiveJobSidekiqTestJob#perform")
+      expect(transaction).to_not have_error
+      expect(transaction).to include_metadata("queue" => "default")
+      expect(transaction).to_not include_environment
+      expect(transaction).to include_params([expected_args])
+      expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
+      expect(transaction).to have_queue_start(time.to_i * 1000)
+
+      events = transaction.to_h["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
-
       expect(events).to eq(expected_perform_events)
     end
 
@@ -650,29 +590,18 @@ if DependencyHelper.active_job_present?
         end.to raise_error(RuntimeError, "uh oh")
 
         transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "ActiveJobSidekiqErrorTestJob#perform",
-          "error" => {
-            "name" => "RuntimeError",
-            "message" => "uh oh",
-            "backtrace" => kind_of(String)
-          },
-          "namespace" => namespace,
-          "metadata" => hash_including(
-            "queue" => "default"
-          ),
-          "sample_data" => hash_including(
-            "environment" => {},
-            "params" => [expected_args],
-            "tags" => expected_tags.merge("queue" => "default")
-          )
-        )
-        expect(transaction.request.env).to eq(:queue_start => time.to_f)
-        events = transaction_hash["events"]
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ActiveJobSidekiqErrorTestJob#perform")
+        expect(transaction).to have_error("RuntimeError", "uh oh")
+        expect(transaction).to include_metadata("queue" => "default")
+        expect(transaction).to_not include_environment
+        expect(transaction).to include_params([expected_args])
+        expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
+        expect(transaction).to have_queue_start(time.to_i * 1000)
+
+        events = transaction.to_h["events"]
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-
         expect(events).to eq(expected_perform_events)
       end
     end
@@ -691,13 +620,10 @@ if DependencyHelper.active_job_present?
         perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
 
         transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "ActionMailerSidekiqTestJob#welcome",
-          "sample_data" => hash_including(
-            "params" => ["ActionMailerSidekiqTestJob", "welcome",
-                         "deliver_now"] + expected_wrapped_args
-          )
+        expect(transaction).to have_action("ActionMailerSidekiqTestJob#welcome")
+        expect(transaction).to include_params(
+          ["ActionMailerSidekiqTestJob", "welcome",
+           "deliver_now"] + expected_wrapped_args
         )
       end
     end

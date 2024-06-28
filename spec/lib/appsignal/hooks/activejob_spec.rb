@@ -119,25 +119,19 @@ if DependencyHelper.active_job_present?
       queue_job(ActiveJobTestJob)
 
       transaction = last_transaction
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "action" => "ActiveJobTestJob#perform",
-        "error" => nil,
-        "namespace" => namespace,
-        "metadata" => {},
-        "sample_data" => hash_including(
-          "params" => [],
-          "tags" => {
-            "active_job_id" => kind_of(String),
-            "queue" => queue,
-            "executions" => 1
-          }
-        )
+      expect(transaction).to have_namespace(namespace)
+      expect(transaction).to have_action("ActiveJobTestJob#perform")
+      expect(transaction).to_not have_error
+      expect(transaction).to_not include_metadata
+      expect(transaction).to include_params([])
+      expect(transaction).to include_tags(
+        "active_job_id" => kind_of(String),
+        "queue" => queue,
+        "executions" => 1
       )
-      events = transaction_hash["events"]
+      events = transaction.to_h["events"]
         .sort_by { |e| e["start"] }
         .map { |event| event["name"] }
-
       expect(events).to eq(expected_perform_events)
     end
 
@@ -148,13 +142,7 @@ if DependencyHelper.active_job_present?
           .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
         queue_job(ActiveJobCustomQueueTestJob)
 
-        transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "sample_data" => hash_including(
-            "tags" => hash_including("queue" => "custom_queue")
-          )
-        )
+        expect(last_transaction).to include_tags("queue" => "custom_queue")
       end
     end
 
@@ -182,13 +170,7 @@ if DependencyHelper.active_job_present?
 
           queue_job(ActiveJobPriorityTestJob)
 
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "sample_data" => hash_including(
-              "tags" => hash_including("queue" => queue, "priority" => 10)
-            )
-          )
+          expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
         end
       end
     end
@@ -207,29 +189,20 @@ if DependencyHelper.active_job_present?
         end.to raise_error(RuntimeError, "uh oh")
 
         transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "ActiveJobErrorTestJob#perform",
-          "error" => {
-            "name" => "RuntimeError",
-            "message" => "uh oh",
-            "backtrace" => kind_of(String)
-          },
-          "namespace" => namespace,
-          "metadata" => {},
-          "sample_data" => hash_including(
-            "params" => [],
-            "tags" => {
-              "active_job_id" => kind_of(String),
-              "queue" => queue,
-              "executions" => 1
-            }
-          )
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ActiveJobErrorTestJob#perform")
+        expect(transaction).to have_error("RuntimeError", "uh oh")
+        expect(transaction).to_not include_metadata
+        expect(transaction).to include_params([])
+        expect(transaction).to include_tags(
+          "active_job_id" => kind_of(String),
+          "queue" => queue,
+          "executions" => 1
         )
-        events = transaction_hash["events"]
+
+        events = transaction.to_h["events"]
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-
         expect(events).to eq(expected_perform_events)
       end
 
@@ -247,9 +220,7 @@ if DependencyHelper.active_job_present?
             queue_job(ActiveJobErrorTestJob)
           end.to raise_error(RuntimeError, "uh oh")
 
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include("error" => nil)
+          expect(last_transaction).to_not have_error
         end
       end
 
@@ -270,15 +241,8 @@ if DependencyHelper.active_job_present?
             end
 
             transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "error" => nil,
-              "sample_data" => hash_including(
-                "tags" => hash_including(
-                  "executions" => 1
-                )
-              )
-            )
+            expect(transaction).to_not have_error
+            expect(transaction).to include_tags("executions" => 1)
           end
 
           it "reports error when discarding the job" do
@@ -294,19 +258,8 @@ if DependencyHelper.active_job_present?
             end
 
             transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "error" => {
-                "name" => "RuntimeError",
-                "message" => "uh oh",
-                "backtrace" => kind_of(String)
-              },
-              "sample_data" => hash_including(
-                "tags" => hash_including(
-                  "executions" => 2
-                )
-              )
-            )
+            expect(transaction).to have_error("RuntimeError", "uh oh")
+            expect(transaction).to include_tags("executions" => 2)
           end
         end
       end
@@ -343,13 +296,7 @@ if DependencyHelper.active_job_present?
               queue_job(ActiveJobErrorPriorityTestJob)
             end.to raise_error(RuntimeError, "uh oh")
 
-            transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "sample_data" => hash_including(
-                "tags" => hash_including("queue" => queue, "priority" => 10)
-              )
-            )
+            expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
           end
         end
       end
@@ -363,51 +310,39 @@ if DependencyHelper.active_job_present?
           end.to raise_error(RuntimeError, "uh oh")
         end
 
-        transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "sample_data" => hash_including(
-            "tags" => hash_including("executions" => 2)
-          )
-        )
+        expect(last_transaction).to include_tags("executions" => 2)
       end
     end
 
     context "when wrapped in another transaction" do
       it "does not create a new transaction or close the currently open one" do
         current_transaction = background_job_transaction
-        allow(current_transaction).to receive(:complete).and_call_original
         set_current_transaction current_transaction
 
         queue_job(ActiveJobTestJob)
 
         expect(created_transactions.count).to eql(1)
-        expect(current_transaction).to_not have_received(:complete)
-        current_transaction.complete
 
         transaction = current_transaction
-        transaction_hash = transaction.to_h
+        expect(transaction).to_not be_completed
+        transaction._sample
         # It does set data on the transaction
-        expect(transaction_hash).to include(
-          "id" => current_transaction.transaction_id,
-          "action" => "ActiveJobTestJob#perform",
-          "error" => nil,
-          "namespace" => namespace,
-          "metadata" => {},
-          "sample_data" => hash_including(
-            "params" => [],
-            "tags" => {
-              "active_job_id" => kind_of(String),
-              "queue" => queue,
-              "executions" => 1
-            }
-          )
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_id(current_transaction.transaction_id)
+        expect(transaction).to have_action("ActiveJobTestJob#perform")
+        expect(transaction).to_not have_error
+        expect(transaction).to_not include_metadata
+        expect(transaction).to include_params([])
+        expect(transaction).to include_tags(
+          "active_job_id" => kind_of(String),
+          "queue" => queue,
+          "executions" => 1
         )
-        events = transaction_hash["events"]
+
+        events = transaction.to_h["events"]
           .reject { |e| e["name"] == "enqueue.active_job" }
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
-
         expect(events).to eq(expected_perform_events)
       end
     end
@@ -467,9 +402,7 @@ if DependencyHelper.active_job_present?
       it "sets provider_job_id as tag" do
         queue_job(ProviderWrappedActiveJobTestJob)
 
-        transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["sample_data"]["tags"]).to include(
+        expect(last_transaction).to include_tags(
           "provider_job_id" => "my_provider_job_id"
         )
       end
@@ -506,13 +439,10 @@ if DependencyHelper.active_job_present?
       end
 
       it "sets queue time on transaction" do
-        allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
         queue_job(ProviderWrappedActiveJobTestJob)
 
-        transaction = last_transaction
         queue_time = Time.parse("2020-10-10T10:10:10Z")
-        expect(transaction).to have_received(:set_queue_start)
-          .with((queue_time.to_f * 1_000).to_i)
+        expect(last_transaction).to have_queue_start((queue_time.to_f * 1_000).to_i)
       end
     end
 
@@ -534,18 +464,14 @@ if DependencyHelper.active_job_present?
           perform_mailer(ActionMailerTestJob, :welcome)
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "ActionMailerTestJob#welcome",
-            "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome",
-                           "deliver_now"] + active_job_args_wrapper,
-              "tags" => {
-                "active_job_id" => kind_of(String),
-                "queue" => "mailers",
-                "executions" => 1
-              }
-            )
+          expect(transaction).to have_action("ActionMailerTestJob#welcome")
+          expect(transaction).to include_params(
+            ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper
+          )
+          expect(transaction).to include_tags(
+            "active_job_id" => kind_of(String),
+            "queue" => "mailers",
+            "executions" => 1
           )
         end
       end
@@ -555,18 +481,15 @@ if DependencyHelper.active_job_present?
           perform_mailer(ActionMailerTestJob, :welcome, method_given_args)
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "ActionMailerTestJob#welcome",
-            "sample_data" => hash_including(
-              "params" => ["ActionMailerTestJob", "welcome",
-                           "deliver_now"] + active_job_args_wrapper(:args => method_expected_args),
-              "tags" => {
-                "active_job_id" => kind_of(String),
-                "queue" => "mailers",
-                "executions" => 1
-              }
-            )
+          expect(transaction).to have_action("ActionMailerTestJob#welcome")
+          expect(transaction).to include_params(
+            ["ActionMailerTestJob", "welcome",
+             "deliver_now"] + active_job_args_wrapper(:args => method_expected_args)
+          )
+          expect(transaction).to include_tags(
+            "active_job_id" => kind_of(String),
+            "queue" => "mailers",
+            "executions" => 1
           )
         end
       end
@@ -577,21 +500,18 @@ if DependencyHelper.active_job_present?
             perform_mailer(ActionMailerTestJob, :welcome, parameterized_given_args)
 
             transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "action" => "ActionMailerTestJob#welcome",
-              "sample_data" => hash_including(
-                "params" => [
-                  "ActionMailerTestJob",
-                  "welcome",
-                  "deliver_now"
-                ] + active_job_args_wrapper(:params => parameterized_expected_args),
-                "tags" => {
-                  "active_job_id" => kind_of(String),
-                  "queue" => "mailers",
-                  "executions" => 1
-                }
-              )
+            expect(transaction).to have_action("ActionMailerTestJob#welcome")
+            expect(transaction).to include_params(
+              [
+                "ActionMailerTestJob",
+                "welcome",
+                "deliver_now"
+              ] + active_job_args_wrapper(:params => parameterized_expected_args)
+            )
+            expect(transaction).to include_tags(
+              "active_job_id" => kind_of(String),
+              "queue" => "mailers",
+              "executions" => 1
             )
           end
         end
@@ -618,22 +538,19 @@ if DependencyHelper.active_job_present?
           perform_mailer(ActionMailerTestMailDeliveryJob, :welcome)
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "ActionMailerTestMailDeliveryJob#welcome",
-            "sample_data" => hash_including(
-              "params" => [
-                "ActionMailerTestMailDeliveryJob",
-                "welcome",
-                "deliver_now",
-                { active_job_internal_key => ["args"], "args" => [] }
-              ],
-              "tags" => {
-                "active_job_id" => kind_of(String),
-                "queue" => "mailers",
-                "executions" => 1
-              }
-            )
+          expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
+          expect(transaction).to include_params(
+            [
+              "ActionMailerTestMailDeliveryJob",
+              "welcome",
+              "deliver_now",
+              { active_job_internal_key => ["args"], "args" => [] }
+            ]
+          )
+          expect(transaction).to include_tags(
+            "active_job_id" => kind_of(String),
+            "queue" => "mailers",
+            "executions" => 1
           )
         end
 
@@ -642,25 +559,22 @@ if DependencyHelper.active_job_present?
             perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, method_given_args)
 
             transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "action" => "ActionMailerTestMailDeliveryJob#welcome",
-              "sample_data" => hash_including(
-                "params" => [
-                  "ActionMailerTestMailDeliveryJob",
-                  "welcome",
-                  "deliver_now",
-                  {
-                    active_job_internal_key => ["args"],
-                    "args" => method_expected_args
-                  }
-                ],
-                "tags" => {
-                  "active_job_id" => kind_of(String),
-                  "queue" => "mailers",
-                  "executions" => 1
+            expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
+            expect(transaction).to include_params(
+              [
+                "ActionMailerTestMailDeliveryJob",
+                "welcome",
+                "deliver_now",
+                {
+                  active_job_internal_key => ["args"],
+                  "args" => method_expected_args
                 }
-              )
+              ]
+            )
+            expect(transaction).to include_tags(
+              "active_job_id" => kind_of(String),
+              "queue" => "mailers",
+              "executions" => 1
             )
           end
         end
@@ -670,11 +584,9 @@ if DependencyHelper.active_job_present?
             perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, parameterized_given_args)
 
             transaction = last_transaction
-            transaction_hash = transaction.to_h
-            expect(transaction_hash).to include(
-              "action" => "ActionMailerTestMailDeliveryJob#welcome",
-              "sample_data" => hash_including(
-                "params" => [
+            expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
+            expect(transaction).to include_params(
+                [
                   "ActionMailerTestMailDeliveryJob",
                   "welcome",
                   "deliver_now",
@@ -683,13 +595,12 @@ if DependencyHelper.active_job_present?
                     "args" => [],
                     "params" => parameterized_expected_args
                   }
-                ],
-                "tags" => {
-                  "active_job_id" => kind_of(String),
-                  "queue" => "mailers",
-                  "executions" => 1
-                }
+                ]
               )
+            expect(transaction).to include_tags(
+              "active_job_id" => kind_of(String),
+              "queue" => "mailers",
+              "executions" => 1
             )
           end
         end

@@ -120,16 +120,25 @@ end
 
 module AppsignalTest
   module Transaction
-    # Override the {Appsignal::Transaction.new} method so we can track which
-    # transactions are created on the {Appsignal::Testing.transactions} list.
-    #
-    # @see TransactionHelpers#last_transaction
-    def new(*_args)
-      transaction = super
-      Appsignal::Testing.transactions << transaction
-      transaction
+    module ClassMethods
+      # Override the {Appsignal::Transaction.new} method so we can track which
+      # transactions are created on the {Appsignal::Testing.transactions} list.
+      #
+      # @see TransactionHelpers#last_transaction
+      def new(*_args)
+        transaction = super
+        Appsignal::Testing.transactions << transaction
+        transaction
+      end
+    end
+
+    module InstanceMethods
+      def _sample
+        sample_data
+      end
     end
   end
 end
 
-Appsignal::Transaction.extend(AppsignalTest::Transaction)
+Appsignal::Transaction.extend(AppsignalTest::Transaction::ClassMethods)
+Appsignal::Transaction.prepend(AppsignalTest::Transaction::InstanceMethods)

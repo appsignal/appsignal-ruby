@@ -53,38 +53,27 @@ if DependencyHelper.que_present?
             perform_que_job(instance)
           end.to change { created_transactions.length }.by(1)
 
-          expect(last_transaction).to be_completed
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "MyQueJob#run",
-            "id" => instance_of(String),
-            "namespace" => Appsignal::Transaction::BACKGROUND_JOB
-          )
-          expect(transaction_hash["error"]).to be_nil
-          expect(transaction_hash["events"].first).to include(
-            "allocation_count" => kind_of(Integer),
+          transaction = last_transaction
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_action("MyQueJob#run")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_event(
             "body" => "",
             "body_format" => Appsignal::EventFormatter::DEFAULT,
-            "child_allocation_count" => kind_of(Integer),
-            "child_duration" => kind_of(Float),
-            "child_gc_duration" => kind_of(Float),
             "count" => 1,
-            "gc_duration" => kind_of(Float),
-            "start" => kind_of(Float),
-            "duration" => kind_of(Float),
             "name" => "perform_job.que",
             "title" => ""
           )
-          expect(transaction_hash["sample_data"]).to include(
-            "params" => %w[1 birds],
-            "metadata" => {
-              "attempts" => 0,
-              "id" => 123,
-              "priority" => 100,
-              "queue" => "dfl",
-              "run_at" => fixed_time.to_s
-            }
+          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_sample_metadata(
+            "attempts" => 0,
+            "id" => 123,
+            "priority" => 100,
+            "queue" => "dfl",
+            "run_at" => fixed_time.to_s
           )
+          expect(transaction).to be_completed
         end
       end
 
@@ -100,28 +89,20 @@ if DependencyHelper.que_present?
             end.to raise_error(ExampleException)
           end.to change { created_transactions.length }.by(1)
 
-          expect(last_transaction).to be_completed
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "MyQueJob#run",
-            "id" => instance_of(String),
-            "namespace" => Appsignal::Transaction::BACKGROUND_JOB
+          transaction = last_transaction
+          expect(transaction).to have_id
+          expect(transaction).to have_action("MyQueJob#run")
+          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_error(error.class.name, error.message)
+          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_sample_metadata(
+            "attempts" => 0,
+            "id" => 123,
+            "priority" => 100,
+            "queue" => "dfl",
+            "run_at" => fixed_time.to_s
           )
-          expect(transaction_hash["error"]).to include(
-            "backtrace" => kind_of(String),
-            "name" => error.class.name,
-            "message" => error.message
-          )
-          expect(transaction_hash["sample_data"]).to include(
-            "params" => %w[1 birds],
-            "metadata" => {
-              "attempts" => 0,
-              "id" => 123,
-              "priority" => 100,
-              "queue" => "dfl",
-              "run_at" => fixed_time.to_s
-            }
-          )
+          expect(transaction).to be_completed
         end
       end
 
@@ -133,28 +114,20 @@ if DependencyHelper.que_present?
 
           expect { perform_que_job(instance) }.to change { created_transactions.length }.by(1)
 
-          expect(last_transaction).to be_completed
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "MyQueJob#run",
-            "id" => instance_of(String),
-            "namespace" => Appsignal::Transaction::BACKGROUND_JOB
+          transaction = last_transaction
+          expect(transaction).to have_id
+          expect(transaction).to have_action("MyQueJob#run")
+          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_error(error.class.name, error.message)
+          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_sample_metadata(
+            "attempts" => 0,
+            "id" => 123,
+            "priority" => 100,
+            "queue" => "dfl",
+            "run_at" => fixed_time.to_s
           )
-          expect(transaction_hash["error"]).to include(
-            "backtrace" => kind_of(String),
-            "name" => error.class.name,
-            "message" => error.message
-          )
-          expect(transaction_hash["sample_data"]).to include(
-            "params" => %w[1 birds],
-            "metadata" => {
-              "attempts" => 0,
-              "id" => 123,
-              "priority" => 100,
-              "queue" => "dfl",
-              "run_at" => fixed_time.to_s
-            }
-          )
+          expect(transaction).to be_completed
         end
       end
 
@@ -170,9 +143,9 @@ if DependencyHelper.que_present?
         it "uses the custom action" do
           perform_que_job(instance)
 
-          expect(last_transaction).to be_completed
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash).to include("action" => "MyCustomJob#perform")
+          transaction = last_transaction
+          expect(transaction).to have_action("MyCustomJob#perform")
+          expect(transaction).to be_completed
         end
       end
     end

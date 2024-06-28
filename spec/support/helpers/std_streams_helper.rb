@@ -89,6 +89,6 @@ module StdStreamsHelper
         end
       end
       reject
-    end.join(",")
+    end.join
   end
 end

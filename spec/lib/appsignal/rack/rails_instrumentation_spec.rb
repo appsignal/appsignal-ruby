@@ -10,7 +10,7 @@ if DependencyHelper.rails_present?
         Rack::Request.new(env)
       )
     end
-    let(:app) { double(:call => true) }
+    let(:app) { DummyApp.new }
     let(:params) do
       {
         "controller" => "blog_posts",
@@ -40,85 +40,80 @@ if DependencyHelper.rails_present?
       env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
     end
 
-    def make_request(env)
+    def make_request
       middleware.call(env)
-      last_transaction.complete # Manually close transaction to set sample data
+      last_transaction&._sample
     end
 
-    def make_request_with_error(env, error_class, error_message)
-      expect { make_request(env) }.to raise_error(error_class, error_message)
+    def make_request_with_error(error_class, error_message)
+      expect { make_request }.to raise_error(error_class, error_message)
     end
 
-    context "with a request without an error" do
-      it "does not report an event" do
-        make_request(env)
+    context "with a request that doesn't raise an error" do
+      before { make_request }
 
-        expect(last_transaction.to_h).to include(
-          "events" => []
-        )
+      it "calls the next middleware in the stack" do
+        expect(app).to be_called
+      end
+
+      it "does not instrument an event" do
+        expect(last_transaction).to_not include_events
       end
     end
 
     context "with a request that raises an error" do
-      let(:app) { lambda { |_env| raise ExampleException, "error message" } }
+      let(:app) do
+        DummyApp.new { |_env| raise ExampleException, "error message" }
+      end
+      before do
+        make_request_with_error(ExampleException, "error message")
+      end
+
+      it "calls the next middleware in the stack" do
+        expect(app).to be_called
+      end
 
       it "reports the error on the transaction" do
-        make_request_with_error(env, ExampleException, "error message")
-
-        expect(last_transaction.to_h).to include(
-          "error" => hash_including(
-            "name" => "ExampleException",
-            "message" => "error message"
-          )
-        )
+        expect(last_transaction).to have_error("ExampleException", "error message")
       end
     end
 
     it "sets the controller action as the action name" do
-      make_request(env)
+      make_request
 
-      expect(last_transaction.to_h).to include(
-        "namespace" => Appsignal::Transaction::HTTP_REQUEST,
-        "action" => "MockController#index"
-      )
+      expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+      expect(last_transaction).to have_action("MockController#index")
     end
 
     it "sets request metadata on the transaction" do
-      make_request(env)
+      make_request
 
-      expect(last_transaction.to_h).to include(
-        "metadata" => hash_including(
-          "method" => "GET",
-          "path" => "/blog"
-        ),
-        "sample_data" => hash_including(
-          "tags" => { "request_id" => "request_id123" }
-        )
+      expect(last_transaction).to include_metadata(
+        "method" => "GET",
+        "path" => "/blog"
       )
+      expect(last_transaction).to include_tags("request_id" => "request_id123")
     end
 
     it "reports Rails filter parameters" do
-      make_request(env)
+      make_request
 
-      expect(last_transaction.to_h).to include(
-        "sample_data" => hash_including(
-          "params" => {
-            "controller" => "blog_posts",
-            "action" => "show",
-            "id" => "1",
-            "my_custom_param" => "[FILTERED]",
-            "password" => "[FILTERED]"
-          }
-        )
+      expect(last_transaction).to include_params(
+        "controller" => "blog_posts",
+        "action" => "show",
+        "id" => "1",
+        "my_custom_param" => "[FILTERED]",
+        "password" => "[FILTERED]"
       )
     end
 
     context "with an invalid HTTP request method" do
       it "does not store the invalid HTTP request method" do
-        make_request(env.merge(:request_method => "FOO", "REQUEST_METHOD" => "FOO"))
+        env[:request_method] = "FOO"
+        env["REQUEST_METHOD"] = "FOO"
+        make_request
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash["metadata"]).to_not have_key("method")
+        expect(last_transaction).to_not include_metadata("method" => anything)
         expect(log_contents(log))
           .to contains_log(:error, "Unable to report HTTP request method: '")
       end
@@ -126,16 +121,11 @@ if DependencyHelper.rails_present?
 
     context "with a request path that's not a route" do
       it "doesn't set an action name" do
-        make_request(
-          env.merge(
-            :path => "/unknown-route",
-            "action_controller.instance" => nil
-          )
-        )
+        env[:path] = "/unknown-route"
+        env["action_controller.instance"] = nil
+        make_request
 
-        expect(last_transaction.to_h).to include(
-          "action" => nil
-        )
+        expect(last_transaction).to_not have_action
       end
     end
   end
