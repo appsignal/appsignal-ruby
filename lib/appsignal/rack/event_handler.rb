@@ -4,6 +4,7 @@ module Appsignal
   module Rack
     APPSIGNAL_TRANSACTION = "appsignal.transaction"
     APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
+    APPSIGNAL_EVENT_HANDLER_HAS_ERROR = "appsignal.event_handler.error"
     RACK_AFTER_REPLY = "rack.after_reply"
 
     # @api private
@@ -71,6 +72,7 @@ module Appsignal
           transaction = request.env[APPSIGNAL_TRANSACTION]
           return unless transaction
 
+          request.env[APPSIGNAL_EVENT_HANDLER_HAS_ERROR] = true
           transaction.set_error(error)
         end
       end
@@ -84,12 +86,18 @@ module Appsignal
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction.finish_event("process_request.rack", "", "")
           transaction.set_http_or_background_queue_start
-          if response
-            transaction.set_tags(:response_status => response.status)
+          response_status =
+            if response
+              response.status
+            elsif request.env[APPSIGNAL_EVENT_HANDLER_HAS_ERROR] == true
+              500
+            end
+          if response_status
+            transaction.set_tags(:response_status => response_status)
             Appsignal.increment_counter(
               :response_status,
               1,
-              :status => response.status,
+              :status => response_status,
               :namespace => format_namespace(transaction.namespace)
             )
           end

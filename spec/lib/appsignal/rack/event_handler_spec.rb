@@ -22,6 +22,10 @@ describe Appsignal::Rack::EventHandler do
     event_handler_instance.on_start(request, response)
   end
 
+  def on_error(error)
+    event_handler_instance.on_error(request, response, error)
+  end
+
   describe "#on_start" do
     it "creates a new transaction" do
       expect { on_start }.to change { created_transactions.length }.by(1)
@@ -119,10 +123,6 @@ describe Appsignal::Rack::EventHandler do
   end
 
   describe "#on_error" do
-    def on_error(error)
-      event_handler_instance.on_error(request, response, error)
-    end
-
     it "reports the error" do
       on_start
       on_error(ExampleStandardError.new("the error"))
@@ -235,6 +235,29 @@ describe Appsignal::Rack::EventHandler do
         on_start
         on_finish(request, nil)
       end
+
+      context "with an error previously recorded by on_error" do
+        it "sets response status 500 as a tag" do
+          on_start
+          on_error(ExampleStandardError.new("the error"))
+          on_finish(request, nil)
+
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "tags" => { "response_status" => 500 }
+            )
+          )
+        end
+
+        it "increments the response status counter for response status 500" do
+          expect(Appsignal).to receive(:increment_counter)
+            .with(:response_status, 1, :status => 500, :namespace => :web)
+
+          on_start
+          on_error(ExampleStandardError.new("the error"))
+          on_finish(request, nil)
+        end
+      end
     end
 
     context "with error inside on_finish handler" do
@@ -296,23 +319,48 @@ describe Appsignal::Rack::EventHandler do
       )
     end
 
-    it "sets the response status as a tag" do
-      on_start
-      on_finish
+    context "with response" do
+      it "sets the response status as a tag" do
+        on_start
+        on_finish
 
-      expect(last_transaction.to_h).to include(
-        "sample_data" => hash_including(
-          "tags" => { "response_status" => 200 }
+        expect(last_transaction.to_h).to include(
+          "sample_data" => hash_including(
+            "tags" => { "response_status" => 200 }
+          )
         )
-      )
-    end
+      end
 
-    it "increments the response status counter for response status" do
-      expect(Appsignal).to receive(:increment_counter)
-        .with(:response_status, 1, :status => 200, :namespace => :web)
+      it "increments the response status counter for response status" do
+        expect(Appsignal).to receive(:increment_counter)
+          .with(:response_status, 1, :status => 200, :namespace => :web)
 
-      on_start
-      on_finish
+        on_start
+        on_finish
+      end
+
+      context "with an error previously recorded by on_error" do
+        it "sets response status from the response as a tag" do
+          on_start
+          on_error(ExampleStandardError.new("the error"))
+          on_finish
+
+          expect(last_transaction.to_h).to include(
+            "sample_data" => hash_including(
+              "tags" => { "response_status" => 200 }
+            )
+          )
+        end
+
+        it "increments the response status counter based on the response" do
+          expect(Appsignal).to receive(:increment_counter)
+            .with(:response_status, 1, :status => 200, :namespace => :web)
+
+          on_start
+          on_error(ExampleStandardError.new("the error"))
+          on_finish
+        end
+      end
     end
 
     it "logs an error in case of an error" do
