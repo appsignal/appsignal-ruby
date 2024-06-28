@@ -5,7 +5,6 @@ module Appsignal
     # @api private
     class HanamiMiddleware < AbstractMiddleware
       def initialize(app, options = {})
-        options[:request_class] ||= ::Hanami::Action::Request
         options[:params_method] ||= :params
         options[:instrument_span_name] ||= "process_action.hanami"
         super
@@ -14,16 +13,7 @@ module Appsignal
       private
 
       def params_for(request)
-        super&.to_h
-      end
-
-      def request_for(env)
-        params = ::Hanami::Action.params_class.new(env)
-        @request_class.new(
-          :env => env,
-          :params => params,
-          :sessions_enabled => true
-        )
+        ::Hanami::Action.params_class.new(request.env).to_h
       end
     end
   end
