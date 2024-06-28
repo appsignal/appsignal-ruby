@@ -49,6 +49,16 @@ if DependencyHelper.rails_present?
       expect { make_request(env) }.to raise_error(error_class, error_message)
     end
 
+    context "with a request without an error" do
+      it "does not report an event" do
+        make_request(env)
+
+        expect(last_transaction.to_h).to include(
+          "events" => []
+        )
+      end
+    end
+
     context "with a request that raises an error" do
       let(:app) { lambda { |_env| raise ExampleException, "error message" } }
 
