@@ -11,12 +11,14 @@ module Appsignal
         Appsignal.internal_logger.debug("Loading Hanami integration")
 
         hanami_app_config = ::Hanami.app.config
-        Appsignal.config = Appsignal::Config.new(
-          hanami_app_config.root || Dir.pwd,
-          hanami_app_config.env
-        )
 
-        Appsignal.start
+        unless Appsignal.active?
+          Appsignal.config = Appsignal::Config.new(
+            hanami_app_config.root || Dir.pwd,
+            hanami_app_config.env
+          )
+          Appsignal.start
+        end
 
         return unless Appsignal.active?
 
@@ -43,4 +45,4 @@ module Appsignal
   end
 end
 
-Appsignal::Integrations::HanamiPlugin.init
+Appsignal::Integrations::HanamiPlugin.init unless Appsignal.testing?
