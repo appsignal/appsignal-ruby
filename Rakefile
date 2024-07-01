@@ -20,98 +20,113 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
-def env_map(key, value)
+def build_job(ruby_version, ruby_gem = nil)
   {
-    "name" => key,
-    "value" => value
+    "name" => "Ruby #{ruby_version}#{" - #{ruby_gem}" if ruby_gem}",
+    "needs" => "validation",
+    "runs-on" => "ubuntu-latest",
+    "steps" => [
+      {
+        "name" => "Check out repository",
+        "uses" => "actions/checkout@v4"
+      },
+      {
+        "name" => "Install Ruby",
+        "uses" => "ruby/setup-ruby@v1",
+        "with" => {
+          "ruby-version" => ruby_version,
+          "bundler-cache" => true
+        }
+      },
+      {
+        "name" => "Install gem extension",
+        "run" => "./support/bundler_wrapper exec rake extension:install"
+      },
+      {
+        "name" => "Print extension install report",
+        "run" => "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'" # rubocop:disable Layout/LineLength
+      },
+      {
+        "name" => "Print Makefile log file",
+        "run" => "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
+      }
+    ]
   }
 end
 
-def build_task(matrix, ruby_version, type = nil)
-  {
-    "name" => "Ruby #{ruby_version}#{type ? " - #{type}" : nil}",
-    "dependencies" => ["Validation"],
-    "task" => {
-      "prologue" => matrix["prologue"].merge(
-        "commands" => matrix["prologue"]["commands"] + [
-          "./support/bundler_wrapper exec rake extension:install",
-          "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report file found'", # rubocop:disable Layout/LineLength
-          "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
-        ]
-      ),
-      "epilogue" => matrix["epilogue"],
-      "jobs" => []
-    }
-  }
+def build_matrix_key(ruby_version, ruby_gem = nil)
+  base = "ruby_#{ruby_version}"
+  base = "#{base}__#{ruby_gem}" if ruby_gem
+  base.downcase.gsub(/\W/, "-")
 end
 
 def gems_with_gemfiles
   YAML.load_file("build_matrix.yml")["matrix"]["gems"].map { |g| g["gem"] }.freeze
 end
 
+GITHUB_ACTION_WORKFLOW_FILE = ".github/workflows/ci.yml"
+
 namespace :build_matrix do
-  namespace :semaphore do
+  namespace :github do
     task :generate do
       yaml = YAML.load_file("build_matrix.yml")
       matrix = yaml["matrix"]
-      defaults = matrix["defaults"]
-      semaphore = yaml["semaphore"]
+      github = yaml["github"]
 
-      builds = []
+      builds = {}
       matrix["ruby"].each do |ruby|
         ruby_version = ruby["ruby"]
-        ruby_primary_block = build_task(matrix, ruby_version)
-        ruby_secondary_block = build_task(matrix, ruby_version, "Gems").tap do |t|
-          t["dependencies"] = ["Ruby #{ruby_version}"]
-        end
-        gemset_for_ruby(ruby, matrix).each do |gem|
-          next unless included_for_ruby?(matrix, gem, ruby)
+        gemset_for_ruby(ruby, matrix).each do |ruby_gem|
+          next unless included_for_ruby?(matrix, ruby_gem, ruby)
 
-          env = matrix["env_vars"] + [
-            env_map("RUBY_VERSION", ruby_version),
-            env_map("GEMSET", gem["gem"]),
-            env_map("BUNDLE_GEMFILE", "gemfiles/#{gem["gem"]}.gemfile")
-          ]
-          rubygems = gem["rubygems"] || ruby["rubygems"] || defaults["rubygems"]
-          env << env_map("_RUBYGEMS_VERSION", rubygems) if rubygems
-          bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
-          env << env_map("_BUNDLER_VERSION", bundler) if bundler
+          is_primary_job = ruby_gem["gem"] == "no_dependencies"
+          job =
+            if is_primary_job
+              build_job(ruby_version)
+            else
+              build_job(ruby_version, ruby_gem["gem"])
+            end
+          job["env"] = matrix["env"]
+            .merge("BUNDLE_GEMFILE" => "gemfiles/#{ruby_gem["gem"]}.gemfile")
 
-          job = {
-            "name" => "Ruby #{ruby_version} for #{gem["gem"]}",
-            "env_vars" => env + ruby.fetch("env_vars", []),
-            "commands" => [
-              "./support/bundler_wrapper exec rake test"
-            ]
+          test_step = {
+            "name" => "Run tests",
+            "run" => "./support/bundler_wrapper exec rake test"
           }
-          if gem["gem"] == "no_dependencies"
+
+          if is_primary_job
+            job["steps"] << test_step
             # Only test the failure scenarios once per Ruby version
-            job["commands"] << "./support/bundler_wrapper exec rake test:failure"
-            ruby_primary_block["task"]["jobs"] << job
+            job["steps"] << {
+              "name" => "Run tests without extension",
+              "run" => "./support/bundler_wrapper exec rake test:failure"
+            }
+            builds[build_matrix_key(ruby["ruby"])] = job
           else
-            ruby_secondary_block["task"]["jobs"] << job
+            job["needs"] = build_matrix_key(ruby["ruby"])
+            job["steps"] << test_step
+            builds[build_matrix_key(ruby["ruby"], ruby_gem["gem"])] = job
           end
         end
-        builds << ruby_primary_block
-        builds << ruby_secondary_block if ruby_secondary_block["task"]["jobs"].count.nonzero?
       end
-      semaphore["blocks"] += builds
+      github["jobs"] = github["jobs"].merge(builds)
 
+      job_count = github["jobs"].count
       header = "# DO NOT EDIT\n" \
-        "# This is a generated file by the `rake build_matrix:semaphore:generate` task.\n" \
+        "# This is a generated file by the `rake build_matrix:github:generate` task.\n" \
         "# See `build_matrix.yml` for the build matrix.\n" \
-        "# Generate this file with `rake build_matrix:semaphore:generate`.\n"
-      generated_yaml = header + YAML.dump(semaphore)
-      File.write(".semaphore/semaphore.yml", generated_yaml)
-      puts "Generated `.semaphore/semaphore.yml`"
-      puts "Task count: #{builds.length}"
-      puts "Job count: #{builds.sum { |block| block["task"]["jobs"].count }}"
+        "# Generate this file with `rake build_matrix:github:generate`.\n" \
+        "# Generated job count: #{job_count}\n"
+      generated_yaml = header + YAML.dump(github)
+      File.write(GITHUB_ACTION_WORKFLOW_FILE, generated_yaml)
+      puts "Generated `#{GITHUB_ACTION_WORKFLOW_FILE}`"
+      puts "Job count: #{job_count}"
     end
 
     task :validate => :generate do
       output = `git status`
-      if output.include? ".semaphore/semaphore.yml"
-        puts "The `.semaphore/semaphore.yml` is modified. The changes were not committed."
+      if output.include? GITHUB_ACTION_WORKFLOW_FILE
+        puts "The `#{GITHUB_ACTION_WORKFLOW_FILE}` is modified. The changes were not committed."
         puts "Please run `rake build_matrix:semaphore:generate` and commit the changes."
         exit 1
       end
