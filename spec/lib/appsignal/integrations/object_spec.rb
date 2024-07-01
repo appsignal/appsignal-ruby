@@ -1,6 +1,8 @@
 require "appsignal/integrations/object"
 
 describe Object do
+  around { |example| keep_transactions { example.run } }
+
   describe "#instrument_method" do
     context "with instance method" do
       let(:klass) do
@@ -24,10 +26,8 @@ describe Object do
       context "when active" do
         let(:transaction) { http_request_transaction }
         before do
-          Appsignal.config = project_fixture_config
-          expect(Appsignal::Transaction).to receive(:current)
-            .at_least(:once).and_return(transaction)
-          expect(Appsignal.active?).to be_truthy
+          start_agent
+          set_current_transaction(transaction)
         end
         after { Appsignal.config = nil }
 
@@ -80,10 +80,9 @@ describe Object do
 
         context "with anonymous class" do
           it "instruments the method and calls it" do
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "foo.AnonymousClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+
+            expect(transaction).to include_event("name" => "foo.AnonymousClass.other")
           end
         end
 
@@ -100,10 +99,9 @@ describe Object do
           let(:klass) { NamedClass }
 
           it "instruments the method and calls it" do
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "foo.NamedClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(instance.foo).to eq(1)
+
+            expect(transaction).to include_event("name" => "foo.NamedClass.other")
           end
         end
 
@@ -124,11 +122,11 @@ describe Object do
           let(:klass) { MyModule::NestedModule::NamedClass }
 
           it "instruments the method and calls it" do
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "bar.NamedClass.NestedModule.MyModule.other", nil, nil,
-              Appsignal::EventFormatter::DEFAULT
             expect(instance.bar).to eq(2)
+
+            expect(transaction).to include_event(
+              "name" => "bar.NamedClass.NestedModule.MyModule.other"
+            )
           end
         end
 
@@ -143,10 +141,11 @@ describe Object do
           end
 
           it "instruments with custom name" do
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "my_method.group", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(instance.foo).to eq(1)
+
+            expect(transaction).to include_event(
+              "name" => "my_method.group"
+            )
           end
         end
 
@@ -160,7 +159,7 @@ describe Object do
             end
           end
 
-          it "should yield the block" do
+          it "yields the block" do
             expect(instance.foo { 42 }).to eq(42)
           end
         end
@@ -171,7 +170,6 @@ describe Object do
 
         it "does not instrument, but still calls the method" do
           expect(Appsignal.active?).to be_falsy
-          expect(transaction).to_not receive(:start_event)
           expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
         end
       end
@@ -198,8 +196,7 @@ describe Object do
         let(:transaction) { http_request_transaction }
         before do
           Appsignal.config = project_fixture_config
-          expect(Appsignal::Transaction).to receive(:current).at_least(:once)
-            .and_return(transaction)
+          set_current_transaction(transaction)
         end
         after { Appsignal.config = nil }
 
@@ -253,10 +250,10 @@ describe Object do
         context "with anonymous class" do
           it "instruments the method and calls it" do
             expect(Appsignal.active?).to be_truthy
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "bar.class_method.AnonymousClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
+
+            transaction._sample
+            expect(transaction).to include_event("name" => "bar.class_method.AnonymousClass.other")
           end
         end
 
@@ -274,10 +271,9 @@ describe Object do
 
           it "instruments the method and calls it" do
             expect(Appsignal.active?).to be_truthy
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "bar.class_method.NamedClass.other", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(klass.bar).to eq(2)
+
+            expect(transaction).to include_event("name" => "bar.class_method.NamedClass.other")
           end
 
           context "with nested named class" do
@@ -298,11 +294,10 @@ describe Object do
 
             it "instruments the method and calls it" do
               expect(Appsignal.active?).to be_truthy
-              expect(transaction).to receive(:start_event)
-              expect(transaction).to receive(:finish_event).with \
-                "bar.class_method.NamedClass.NestedModule.MyModule.other", nil, nil,
-                Appsignal::EventFormatter::DEFAULT
               expect(klass.bar).to eq(2)
+              expect(transaction).to include_event(
+                "name" => "bar.class_method.NamedClass.NestedModule.MyModule.other"
+              )
             end
           end
         end
@@ -319,10 +314,9 @@ describe Object do
 
           it "instruments with custom name" do
             expect(Appsignal.active?).to be_truthy
-            expect(transaction).to receive(:start_event)
-            expect(transaction).to receive(:finish_event).with \
-              "my_method.group", nil, nil, Appsignal::EventFormatter::DEFAULT
             expect(klass.bar).to eq(2)
+
+            expect(transaction).to include_event("name" => "my_method.group")
           end
         end
 
@@ -336,7 +330,7 @@ describe Object do
             end
           end
 
-          it "should yield the block" do
+          it "yields the block" do
             expect(klass.bar { 42 }).to eq(42)
           end
         end
@@ -347,7 +341,6 @@ describe Object do
 
         it "does not instrument, but still call the method" do
           expect(Appsignal.active?).to be_falsy
-          expect(transaction).to_not receive(:start_event)
           expect(call_with_arguments).to eq(["abc", { :foo => "bar" }, 2])
         end
       end

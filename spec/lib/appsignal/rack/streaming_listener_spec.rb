@@ -1,8 +1,6 @@
 require "appsignal/rack/streaming_listener"
 
 describe Appsignal::Rack::StreamingListener do
-  before(:context) { start_agent }
-  let(:headers) { {} }
   let(:env) do
     {
       "rack.input" => StringIO.new,
@@ -11,114 +9,96 @@ describe Appsignal::Rack::StreamingListener do
       "QUERY_STRING" => "param=something"
     }
   end
-  let(:app)      { double(:call => [200, headers, "body"]) }
+  let(:app) { DummyApp.new }
   let(:listener) { Appsignal::Rack::StreamingListener.new(app, {}) }
+  before(:context) { start_agent }
+  around { |example| keep_transactions { example.run } }
 
   describe "#call" do
-    context "when Appsignal is active" do
-      before { allow(Appsignal).to receive(:active?).and_return(true) }
-
-      it "should call `call_with_appsignal_monitoring`" do
-        expect(listener).to receive(:call_with_appsignal_monitoring)
-      end
-    end
-
     context "when Appsignal is not active" do
       before { allow(Appsignal).to receive(:active?).and_return(false) }
 
-      it "should not call `call_with_appsignal_monitoring`" do
-        expect(listener).to_not receive(:call_with_appsignal_monitoring)
-      end
-    end
-
-    after { listener.call(env) }
-  end
-
-  describe "#call_with_appsignal_monitoring" do
-    let!(:transaction) do
-      Appsignal::Transaction.create(
-        SecureRandom.uuid,
-        Appsignal::Transaction::HTTP_REQUEST,
-        ::Rack::Request.new(env)
-      )
-    end
-    let(:wrapper)     { Appsignal::StreamWrapper.new("body", transaction) }
-    let(:raw_payload) { { :foo => :bar } }
-
-    before do
-      allow(SecureRandom).to receive(:uuid).and_return("123")
-      allow(listener).to receive(:raw_payload).and_return(raw_payload)
-      allow(Appsignal::Transaction).to receive(:create).and_return(transaction)
-    end
-
-    it "should create a transaction" do
-      expect(Appsignal::Transaction).to receive(:create)
-        .with("123", Appsignal::Transaction::HTTP_REQUEST, instance_of(Rack::Request))
-        .and_return(transaction)
-
-      listener.call_with_appsignal_monitoring(env)
-    end
-
-    it "should instrument the call" do
-      expect(Appsignal).to receive(:instrument)
-        .with("process_action.rack")
-        .and_yield
-
-      listener.call_with_appsignal_monitoring(env)
-    end
-
-    it "should add `appsignal.action` to the transaction" do
-      allow(Appsignal).to receive(:instrument).and_yield
-
-      env["appsignal.action"] = "Action"
-
-      expect(transaction).to receive(:set_action_if_nil).with("Action")
-
-      listener.call_with_appsignal_monitoring(env)
-    end
-
-    it "should add the path, method and queue start to the transaction" do
-      allow(Appsignal).to receive(:instrument).and_yield
-
-      expect(transaction).to receive(:set_metadata).with("path", "/homepage")
-      expect(transaction).to receive(:set_metadata).with("method", "GET")
-      expect(transaction).to receive(:set_http_or_background_queue_start)
-
-      listener.call_with_appsignal_monitoring(env)
-    end
-
-    context "with an exception in the instrumentation call" do
-      let(:error) { ExampleException }
-
-      it "should add the exception to the transaction" do
-        allow(app).to receive(:call).and_raise(error)
-
-        expect(transaction).to receive(:set_error).with(error)
-
+      it "does not create a transaction" do
         expect do
-          listener.call_with_appsignal_monitoring(env)
-        end.to raise_error(error)
+          listener.call(env)
+        end.to_not(change { created_transactions.count })
+      end
+
+      it "calls the app" do
+        listener.call(env)
+
+        expect(app).to be_called
       end
     end
 
-    it "should wrap the body in a wrapper" do
-      expect(Appsignal::StreamWrapper).to receive(:new)
-        .with("body", transaction)
-        .and_return(wrapper)
+    context "when Appsignal is active" do
+      before { allow(Appsignal).to receive(:active?).and_return(true) }
 
-      body = listener.call_with_appsignal_monitoring(env)[2]
+      let(:wrapper) { Appsignal::StreamWrapper.new("body", transaction) }
+      let(:raw_payload) { { :foo => :bar } }
+      before { allow(listener).to receive(:raw_payload).and_return(raw_payload) }
 
-      expect(body).to be_a(Appsignal::StreamWrapper)
+      it "creates a transaction" do
+        expect do
+          listener.call(env)
+        end.to(change { created_transactions.count }.by(1))
+      end
+
+      it "instruments the call" do
+        listener.call(env)
+
+        expect(last_transaction).to include_event("name" => "process_action.rack")
+      end
+
+      it "set `appsignal.action` to the action name" do
+        env["appsignal.action"] = "Action"
+
+        listener.call(env)
+
+        expect(last_transaction).to have_action("Action")
+      end
+
+      it "adds the path, method and queue start to the transaction" do
+        listener.call(env)
+
+        expect(last_transaction).to include_metadata(
+          "path" => "/homepage",
+          "method" => "GET"
+        )
+        expect(last_transaction).to have_queue_start
+      end
+
+      context "with an exception in the instrumentation call" do
+        let(:error) { ExampleException.new("error message") }
+        let(:app) { DummyApp.new { raise error } }
+
+        it "adds the exception to the transaction" do
+          expect do
+            listener.call(env)
+          end.to raise_error(error)
+
+          expect(last_transaction).to have_error("ExampleException", "error message")
+        end
+      end
+
+      it "wraps the body in a wrapper" do
+        _, _, body = listener.call(env)
+
+        expect(body).to be_a(Appsignal::StreamWrapper)
+      end
     end
   end
 end
 
 describe Appsignal::StreamWrapper do
-  let(:stream)      { double }
-  let(:transaction) do
-    Appsignal::Transaction.create(SecureRandom.uuid, Appsignal::Transaction::HTTP_REQUEST, {})
-  end
+  let(:stream) { double }
+  let(:transaction) { http_request_transaction }
   let(:wrapper) { Appsignal::StreamWrapper.new(stream, transaction) }
+  before do
+    start_agent
+    set_current_transaction(transaction)
+  end
+  around { |example| keep_transactions { example.run } }
 
   describe "#each" do
     it "calls the original stream" do
@@ -128,14 +108,14 @@ describe Appsignal::StreamWrapper do
     end
 
     context "when #each raises an error" do
-      let(:error) { ExampleException }
+      let(:error) { ExampleException.new("error message") }
 
       it "records the exception" do
         allow(stream).to receive(:each).and_raise(error)
 
-        expect(transaction).to receive(:set_error).with(error)
-
         expect { wrapper.send(:each) }.to raise_error(error)
+
+        expect(transaction).to have_error("ExampleException", "error message")
       end
     end
   end
@@ -143,21 +123,23 @@ describe Appsignal::StreamWrapper do
   describe "#close" do
     it "closes the original stream and completes the transaction" do
       expect(stream).to receive(:close)
-      expect(Appsignal::Transaction).to receive(:complete_current!)
 
       wrapper.close
+
+      expect(current_transaction?).to be_falsy
+      expect(transaction).to be_completed
     end
 
     context "when #close raises an error" do
-      let(:error) { ExampleException }
+      let(:error) { ExampleException.new("error message") }
 
       it "records the exception and completes the transaction" do
         allow(stream).to receive(:close).and_raise(error)
 
-        expect(transaction).to receive(:set_error).with(error)
-        expect(transaction).to receive(:complete)
-
         expect { wrapper.send(:close) }.to raise_error(error)
+
+        expect(transaction).to have_error("ExampleException", "error message")
+        expect(transaction).to be_completed
       end
     end
   end

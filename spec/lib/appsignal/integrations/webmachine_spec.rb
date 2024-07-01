@@ -17,70 +17,59 @@ if DependencyHelper.webmachine_present?
     let(:request) do
       Webmachine::Request.new("GET", "http://google.com:80/foo", {}, nil)
     end
-    let(:resource)    { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
-    let(:response)    { Response.new }
-    let(:transaction) { double(:set_action_if_nil => true) }
+    let(:resource) { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
+    let(:response) { Response.new }
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
     before(:context) { start_agent }
+    around { |example| keep_transactions { example.run } }
 
     # Make sure the request responds to the method we need to get query params.
     describe "request" do
-      it "should respond to `query`" do
+      it "responds to #query" do
         expect(request).to respond_to(:query)
       end
     end
 
     describe "#run" do
-      before do
-        allow(SecureRandom).to receive(:uuid).and_return("uuid")
-        allow(Appsignal::Transaction).to receive(:create).and_return(transaction)
+      before { allow(fsm).to receive(:call).and_call_original }
+
+      it "creates a transaction" do
+        expect { fsm.run }.to(change { created_transactions.count }.by(1))
       end
 
-      it "should create a transaction" do
-        expect(Appsignal::Transaction).to receive(:create).with(
-          "uuid",
-          Appsignal::Transaction::HTTP_REQUEST,
-          request,
-          :params_method => :query
-        ).and_return(transaction)
+      it "sets the action" do
+        fsm.run
+        expect(last_transaction).to have_action("RSpec::Mocks::Double#GET")
       end
 
-      it "should set the action" do
-        expect(transaction).to receive(:set_action_if_nil).with("RSpec::Mocks::Double#GET")
+      it "records an instrumentation event" do
+        fsm.run
+        expect(last_transaction).to include_event("name" => "process_action.webmachine")
       end
 
-      it "should call the original method" do
-        expect(fsm).to receive(:run)
+      it "closes the transaction" do
+        fsm.run
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be_falsy
       end
 
-      it "should instrument the original method" do
-        expect(Appsignal).to receive(:instrument).with("process_action.webmachine")
-      end
-
-      it "should close the transaction" do
-        expect(Appsignal::Transaction).to receive(:complete_current!)
-      end
-
-      after { fsm.run }
-
-      describe "concerning the response" do
-        it "sets a response code" do
-          expect(fsm.response.code).to be_nil
-          fsm.run
-          expect(fsm.response.code).not_to be_nil
-        end
+      it "sets a response code" do
+        expect(fsm.response.code).to be_nil
+        fsm.run
+        expect(fsm.response.code).not_to be_nil
       end
     end
 
     describe "#handle_exceptions" do
-      let(:error) { ExampleException }
+      let(:error) { ExampleException.new("error message") }
+      let(:transaction) { http_request_transaction }
 
-      it "should catch the error and send it to AppSignal" do
-        expect(Appsignal).to receive(:set_error).with(error)
-      end
+      it "tracks the error" do
+        with_current_transaction(transaction) do
+          fsm.send(:handle_exceptions) { raise error }
+        end
 
-      after do
-        fsm.send(:handle_exceptions) { raise error }
+        expect(last_transaction).to have_error("ExampleException", "error message")
       end
     end
   end

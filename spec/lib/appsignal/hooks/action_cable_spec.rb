@@ -53,14 +53,6 @@ describe Appsignal::Hooks::ActionCableHook do
 
           set_current_transaction(transaction)
 
-          expect(Appsignal::Transaction).to receive(:create).with(
-            transaction_id,
-            Appsignal::Transaction::ACTION_CABLE,
-            kind_of(ActionDispatch::Request)
-          )
-            .and_return(transaction)
-          allow(Appsignal::Transaction).to receive(:current).and_return(transaction)
-
           # Stub transmit call for subscribe/unsubscribe tests
           allow(connection).to receive(:websocket)
             .and_return(instance_double("ActionCable::Connection::WebSocket", :transmit => nil))
@@ -122,9 +114,6 @@ describe Appsignal::Hooks::ActionCableHook do
                 kind_of(ActionDispatch::Request)
               ).and_return(action_transaction)
               allow(Appsignal::Transaction).to receive(:current).and_return(action_transaction)
-              # Stub complete call, stops it from being cleared in the extension
-              # And allows us to call `#to_h` on it after it's been completed.
-              expect(action_transaction.ext).to receive(:complete)
 
               instance.perform_action("message" => "foo", "action" => "speak")
               expect(action_transaction).to have_id(transaction_id)

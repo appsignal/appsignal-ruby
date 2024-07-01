@@ -5,7 +5,11 @@ class DummyApp
   end
 
   def call(env)
-    @app&.call(env)
+    if @app
+      @app&.call(env)
+    else
+      [200, {}, "body"]
+    end
   ensure
     @called = true
   end

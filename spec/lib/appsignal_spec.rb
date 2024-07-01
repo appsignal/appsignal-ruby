@@ -232,27 +232,26 @@ describe Appsignal do
   end
 
   context "not active" do
-    describe ".monitor_transaction" do
-      let(:log_stream) { StringIO.new }
-      let(:log) { log_contents(log_stream) }
-      before do
-        Appsignal.config = project_fixture_config("not_active")
-        Appsignal.start
-        Appsignal.internal_logger = test_logger(log_stream)
-      end
-      after { Appsignal.internal_logger = nil }
+    before { Appsignal.config = project_fixture_config("not_active") }
 
-      it "should do nothing but still yield the block" do
-        expect(Appsignal::Transaction).to_not receive(:create)
-        expect(Appsignal).to_not receive(:instrument)
-        object = double
-        expect(object).to receive(:some_method).and_return(1)
+    describe ".monitor_transaction" do
+      it "does not create a transaction" do
+        object = double(:some_method => 1)
 
         expect do
-          expect(Appsignal.monitor_transaction("perform_job.nothing") do
+          Appsignal.monitor_transaction("perform_job.nothing") do
             object.some_method
-          end).to eq 1
-        end.to_not raise_error
+          end
+        end.to_not(change { created_transactions.count })
+      end
+
+      it "returns the block's return value" do
+        object = double(:some_method => 1)
+
+        return_value = Appsignal.monitor_transaction("perform_job.nothing") do
+          object.some_method
+        end
+        expect(return_value).to eq 1
       end
 
       context "with an unknown event type" do
@@ -263,8 +262,11 @@ describe Appsignal do
         end
 
         it "logs an error" do
-          Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
-          expect(log).to contains_log(
+          logs =
+            capture_logs do
+              Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
+            end
+          expect(logs).to contains_log(
             :error,
             "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
               "(for jobs and tasks) or 'process_action' (for HTTP requests)"
@@ -281,6 +283,14 @@ describe Appsignal do
           Appsignal.listen_for_error { raise error }
         end.to raise_error(error)
       end
+
+      it "does not create a transaction" do
+        expect do
+          expect do
+            Appsignal.listen_for_error { raise error }
+          end.to raise_error(error)
+        end.to_not(change { created_transactions.count })
+      end
     end
 
     describe ".send_error" do
@@ -289,6 +299,12 @@ describe Appsignal do
       it "does not raise an error" do
         Appsignal.send_error(error)
       end
+
+      it "does not create a transaction" do
+        expect do
+          Appsignal.send_error(error)
+        end.to_not(change { created_transactions.count })
+      end
     end
 
     describe ".set_error" do
@@ -296,6 +312,12 @@ describe Appsignal do
 
       it "does not raise an error" do
         Appsignal.set_error(error)
+      end
+
+      it "does not create a transaction" do
+        expect do
+          Appsignal.set_error(error)
+        end.to_not(change { created_transactions.count })
       end
     end
 
@@ -313,66 +335,70 @@ describe Appsignal do
   end
 
   context "with config and started" do
-    let(:log_stream) { StringIO.new }
-    let(:log) { log_contents(log_stream) }
-    before do
-      Appsignal.config = project_fixture_config
-      Appsignal.start
-      Appsignal.internal_logger = test_logger(log_stream)
-    end
-    after { Appsignal.internal_logger = nil }
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
 
     describe ".monitor_transaction" do
       context "with a successful call" do
-        it "should instrument and complete for a background job" do
-          expect(Appsignal).to receive(:instrument)
-            .with("perform_job.something").and_yield
-          expect(Appsignal::Transaction).to receive(:complete_current!)
-          object = double
-          expect(object).to receive(:some_method).and_return(1)
+        it "instruments and completes for a background job" do
+          return_value = nil
+          expect do
+            return_value =
+              Appsignal.monitor_transaction(
+                "perform_job.something",
+                {
+                  :class => "BackgroundJob",
+                  :method => "perform"
+                }
+              ) do
+                :return_value
+              end
+          end.to(change { created_transactions.count }.by(1))
+          expect(return_value).to eq(:return_value)
 
-          expect(Appsignal.monitor_transaction(
-            "perform_job.something",
-            background_env_with_data
-          ) do
-            current = Appsignal::Transaction.current
-            expect(current.namespace).to eq Appsignal::Transaction::BACKGROUND_JOB
-            expect(current.request).to be_a(Appsignal::Transaction::GenericRequest)
-            object.some_method
-          end).to eq 1
+          transaction = last_transaction
+          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_action("BackgroundJob#perform")
+          expect(transaction).to include_event("name" => "perform_job.something")
+          expect(transaction).to be_completed
         end
 
-        it "should instrument and complete for a http request" do
-          expect(Appsignal).to receive(:instrument)
-            .with("process_action.something").and_yield
-          expect(Appsignal::Transaction).to receive(:complete_current!)
-          object = double
-          expect(object).to receive(:some_method)
+        it "instruments and completes for a http request" do
+          return_value = nil
+          expect do
+            return_value =
+              Appsignal.monitor_transaction(
+                "process_action.something",
+                {
+                  :controller => "BlogPostsController",
+                  :action => "show"
+                }
+              ) do
+                :return_value
+              end
+          end.to(change { created_transactions.count }.by(1))
+          expect(return_value).to eq(:return_value)
 
-          Appsignal.monitor_transaction(
-            "process_action.something",
-            http_request_env_with_data
-          ) do
-            current = Appsignal::Transaction.current
-            expect(current.namespace).to eq Appsignal::Transaction::HTTP_REQUEST
-            expect(current.request).to be_a(::Rack::Request)
-            object.some_method
-          end
+          transaction = last_transaction
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          expect(transaction).to have_action("BlogPostsController#show")
+          expect(transaction).to include_event("name" => "process_action.something")
+          expect(transaction).to be_completed
         end
       end
 
       context "with an erroring call" do
-        let(:error) { ExampleException.new }
+        let(:error) { ExampleException.new("error message") }
 
-        it "should add the error to the current transaction and complete" do
-          expect_any_instance_of(Appsignal::Transaction).to receive(:set_error).with(error)
-          expect(Appsignal::Transaction).to receive(:complete_current!)
-
+        it "adds the error to the current transaction and complete" do
           expect do
             Appsignal.monitor_transaction("perform_job.something") do
               raise error
             end
           end.to raise_error(error)
+
+          expect(last_transaction).to have_error("ExampleException", "error message")
+          expect(last_transaction).to be_completed
         end
       end
 
@@ -384,8 +410,11 @@ describe Appsignal do
         end
 
         it "logs an error" do
-          Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
-          expect(log).to contains_log(
+          logs =
+            capture_logs do
+              Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
+            end
+          expect(logs).to contains_log(
             :error,
             "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
               "(for jobs and tasks) or 'process_action' (for HTTP requests)"

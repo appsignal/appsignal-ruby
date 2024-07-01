@@ -83,10 +83,6 @@ describe Appsignal::Transaction do
     end
 
     describe ".current" do
-      def current_transaction
-        Appsignal::Transaction.current
-      end
-
       context "when there is a current transaction" do
         let!(:transaction) do
           Appsignal::Transaction.create(transaction_id, namespace, request, options)
