@@ -68,6 +68,16 @@ describe Appsignal::Utils::IntegrationLogger do
     end
   end
 
+  describe "#warn_once_then_debug" do
+    it "only warns once, then uses debug" do
+      message = "This is a log line"
+      3.times { logger.warn_once_then_debug(:key, message) }
+
+      expect(logger.messages[:WARN]).to eq([message])
+      expect(logger.messages[:DEBUG]).to eq([message, message])
+    end
+  end
+
   describe "#error" do
     it "adds a log message with the error severity" do
       logger.error("error message")

@@ -35,6 +35,18 @@ module Appsignal
         add(:WARN, message)
       end
 
+      def seen_keys
+        @seen_keys ||= Set.new
+      end
+
+      def warn_once_then_debug(key, message)
+        if seen_keys.add?(key).nil?
+          debug message
+        else
+          warn message
+        end
+      end
+
       def error(message)
         add(:ERROR, message)
       end
