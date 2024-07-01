@@ -28,9 +28,6 @@ shared_examples "activesupport start finish override" do
   end
 
   it "does not instrument events whose name starts with a bang" do
-    expect(Appsignal::Transaction.current).not_to receive(:start_event)
-    expect(Appsignal::Transaction.current).not_to receive(:finish_event)
-
     instrumenter.start("!sql.active_record", {})
     instrumenter.finish("!sql.active_record", {})
 

@@ -44,6 +44,14 @@ module TransactionHelpers
     created_transactions.last
   end
 
+  def current_transaction?
+    Appsignal::Transaction.current?
+  end
+
+  def current_transaction
+    Appsignal::Transaction.current
+  end
+
   # Set current transaction manually.
   # Cleared by {clear_current_transaction!}
   #
