@@ -662,9 +662,7 @@ describe Appsignal::Transaction do
 
         expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
 
-        expect do
-          transaction.set_queue_start(10)
-        end.to_not raise_error
+        transaction.set_queue_start(10)
       end
     end
 
@@ -966,7 +964,7 @@ describe Appsignal::Transaction do
         end
 
         it "should not raise an error" do
-          expect { transaction.set_error(error) }.to_not raise_error
+          transaction.set_error(error)
         end
 
         it "should set an error in the extension" do
@@ -1607,22 +1605,20 @@ describe Appsignal::Transaction do
     subject { Appsignal::Transaction::NilTransaction.new }
 
     it "should have method stubs" do
-      expect do
-        subject.complete
-        subject.pause!
-        subject.resume!
-        subject.paused?
-        subject.store(:key)
-        subject.set_tags(:tag => 1)
-        subject.set_action("action")
-        subject.set_http_or_background_action
-        subject.set_queue_start(1)
-        subject.set_http_or_background_queue_start
-        subject.set_metadata("key", "value")
-        subject.set_sample_data("key", "data")
-        subject.sample_data
-        subject.set_error("a")
-      end.to_not raise_error
+      subject.complete
+      subject.pause!
+      subject.resume!
+      subject.paused?
+      subject.store(:key)
+      subject.set_tags(:tag => 1)
+      subject.set_action("action")
+      subject.set_http_or_background_action
+      subject.set_queue_start(1)
+      subject.set_http_or_background_queue_start
+      subject.set_metadata("key", "value")
+      subject.set_sample_data("key", "data")
+      subject.sample_data
+      subject.set_error("a")
     end
   end
 end

@@ -274,45 +274,40 @@ describe Appsignal do
     end
 
     describe ".listen_for_error" do
-      it "does not record anything" do
-        error = RuntimeError.new("specific error")
+      let(:error) { ExampleException.new("specific error") }
+
+      it "reraises the error" do
         expect do
-          Appsignal.listen_for_error do
-            raise error
-          end
+          Appsignal.listen_for_error { raise error }
         end.to raise_error(error)
       end
     end
 
     describe ".send_error" do
-      it "should do nothing" do
-        expect do
-          Appsignal.send_error(RuntimeError.new)
-        end.to_not raise_error
+      let(:error) { ExampleException.new("specific error") }
+
+      it "does not raise an error" do
+        Appsignal.send_error(error)
       end
     end
 
     describe ".set_error" do
-      it "should do nothing" do
-        expect do
-          Appsignal.set_error(RuntimeError.new)
-        end.to_not raise_error
+      let(:error) { ExampleException.new("specific error") }
+
+      it "does not raise an error" do
+        Appsignal.set_error(error)
       end
     end
 
     describe ".set_namespace" do
-      it "should do nothing" do
-        expect do
-          Appsignal.set_namespace("custom")
-        end.to_not raise_error
+      it "does not raise an error" do
+        Appsignal.set_namespace("custom")
       end
     end
 
     describe ".tag_request" do
-      it "should do nothing" do
-        expect do
-          Appsignal.tag_request(:tag => "tag")
-        end.to_not raise_error
+      it "does not raise an error" do
+        Appsignal.tag_request(:tag => "tag")
       end
     end
   end
@@ -542,9 +537,8 @@ describe Appsignal do
           ).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
             .with("Gauge value 10 for key 'key' is too big")
-          expect do
-            Appsignal.set_gauge("key", 10)
-          end.to_not raise_error
+
+          Appsignal.set_gauge("key", 10)
         end
       end
 
@@ -622,9 +616,8 @@ describe Appsignal do
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
             .with("Counter value 10 for key 'key' is too big")
-          expect do
-            Appsignal.increment_counter("key", 10)
-          end.to_not raise_error
+
+          Appsignal.increment_counter("key", 10)
         end
       end
 
@@ -652,9 +645,8 @@ describe Appsignal do
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
             .with("Distribution value 10 for key 'key' is too big")
-          expect do
-            Appsignal.add_distribution_value("key", 10)
-          end.to_not raise_error
+
+          Appsignal.add_distribution_value("key", 10)
         end
       end
     end
