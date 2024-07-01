@@ -159,9 +159,7 @@ if DependencyHelper.hanami2_present?
           it "does not set the action name" do
             make_request(env)
 
-            expect(transaction.to_h).to include(
-              "action" => nil
-            )
+            expect(transaction).to_not have_action
           end
         end
 
@@ -171,9 +169,7 @@ if DependencyHelper.hanami2_present?
           it "sets action name on the transaction" do
             make_request(env)
 
-            expect(transaction.to_h).to include(
-              "action" => "HanamiApp::Actions::Books::Index::TestClass"
-            )
+            expect(transaction).to have_action("HanamiApp::Actions::Books::Index::TestClass")
           end
         end
       end

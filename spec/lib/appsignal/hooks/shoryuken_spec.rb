@@ -37,37 +37,25 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         expect { perform_shoryuken_job }.to change { created_transactions.length }.by(1)
 
         transaction = last_transaction
-        expect(transaction).to be_completed
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "action" => "DemoShoryukenWorker#perform",
-          "id" => kind_of(String), # AppSignal generated id
-          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-          "error" => nil
-        )
-        expect(transaction_hash["events"].first).to include(
-          "allocation_count" => kind_of(Integer),
+        expect(transaction).to have_id
+        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(transaction).to have_action("DemoShoryukenWorker#perform")
+        expect(transaction).to_not have_error
+        expect(transaction).to include_event(
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
-          "child_allocation_count" => kind_of(Integer),
-          "child_duration" => kind_of(Float),
-          "child_gc_duration" => kind_of(Float),
           "count" => 1,
-          "gc_duration" => kind_of(Float),
-          "start" => kind_of(Float),
-          "duration" => kind_of(Float),
           "name" => "perform_job.shoryuken",
           "title" => ""
         )
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => { "foo" => "Foo", "bar" => "Bar" },
-          "metadata" => {
-            "message_id" => "msg1",
-            "queue" => queue,
-            "SentTimestamp" => sent_timestamp
-          }
+        expect(transaction).to include_params("foo" => "Foo", "bar" => "Bar")
+        expect(transaction).to include_sample_metadata(
+          "message_id" => "msg1",
+          "queue" => queue,
+          "SentTimestamp" => sent_timestamp
         )
-        expect(transaction).to have_received(:set_queue_start).with(sent_timestamp)
+        expect(transaction).to have_queue_start(sent_timestamp)
+        expect(transaction).to be_completed
       end
 
       context "with parameter filtering" do
@@ -82,10 +70,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
         it "filters selected arguments" do
           perform_shoryuken_job
 
-          transaction_hash = last_transaction.to_h
-          expect(transaction_hash["sample_data"]).to include(
-            "params" => { "foo" => "[FILTERED]", "bar" => "Bar" }
-          )
+          expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
         end
       end
     end
@@ -96,10 +81,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       it "handles string arguments" do
         perform_shoryuken_job
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => { "params" => body }
-        )
+        expect(last_transaction).to include_params("params" => body)
       end
     end
 
@@ -109,10 +91,7 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       it "handles primitive types as arguments" do
         perform_shoryuken_job
 
-        transaction_hash = last_transaction.to_h
-        expect(transaction_hash["sample_data"]).to include(
-          "params" => { "params" => body }
-        )
+        expect(last_transaction).to include_params("params" => body)
       end
     end
   end
@@ -126,18 +105,11 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       end.to change { created_transactions.length }.by(1)
 
       transaction = last_transaction
+      expect(transaction).to have_id
+      expect(transaction).to have_action("DemoShoryukenWorker#perform")
+      expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+      expect(transaction).to have_error("ExampleException", "error message")
       expect(transaction).to be_completed
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "action" => "DemoShoryukenWorker#perform",
-        "id" => kind_of(String), # AppSignal generated id
-        "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-        "error" => {
-          "name" => "ExampleException",
-          "message" => "error message",
-          "backtrace" => kind_of(String)
-        }
-      )
     end
   end
 
@@ -171,41 +143,28 @@ describe Appsignal::Hooks::ShoryukenMiddleware do
       end.to change { created_transactions.length }.by(1)
 
       transaction = last_transaction
-      expect(transaction).to be_completed
-      transaction_hash = transaction.to_h
-      expect(transaction_hash).to include(
-        "action" => "DemoShoryukenWorker#perform",
-        "id" => kind_of(String), # AppSignal generated id
-        "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-        "error" => nil
-      )
-      expect(transaction_hash["events"].first).to include(
-        "allocation_count" => kind_of(Integer),
+      expect(transaction).to have_id
+      expect(transaction).to have_action("DemoShoryukenWorker#perform")
+      expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+      expect(transaction).to_not have_error
+      expect(transaction).to include_event(
         "body" => "",
         "body_format" => Appsignal::EventFormatter::DEFAULT,
-        "child_allocation_count" => kind_of(Integer),
-        "child_duration" => kind_of(Float),
-        "child_gc_duration" => kind_of(Float),
         "count" => 1,
-        "gc_duration" => kind_of(Float),
-        "start" => kind_of(Float),
-        "duration" => kind_of(Float),
         "name" => "perform_job.shoryuken",
         "title" => ""
       )
-      expect(transaction_hash["sample_data"]).to include(
-        "params" => {
-          "msg2" => "foo bar",
-          "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
-        },
-        "metadata" => {
-          "batch" => true,
-          "queue" => "some-funky-queue-name",
-          "SentTimestamp" => sent_timestamp.to_s # Earliest/oldest timestamp from messages
-        }
+      expect(transaction).to include_params(
+        "msg2" => "foo bar",
+        "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
+      )
+      expect(transaction).to include_sample_metadata(
+        "batch" => true,
+        "queue" => "some-funky-queue-name",
+        "SentTimestamp" => sent_timestamp.to_s # Earliest/oldest timestamp from messages
       )
       # Queue time based on earliest/oldest timestamp from messages
-      expect(transaction).to have_received(:set_queue_start).with(sent_timestamp)
+      expect(transaction).to have_queue_start(sent_timestamp)
     end
   end
 end

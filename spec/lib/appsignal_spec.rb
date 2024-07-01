@@ -1,5 +1,6 @@
 describe Appsignal do
   include EnvironmentMetadataHelper
+  around { |example| keep_transactions { example.run } }
 
   before do
     # Make sure we have a clean state because we want to test
@@ -399,8 +400,6 @@ describe Appsignal do
     end
 
     describe ".monitor_single_transaction" do
-      around { |example| keep_transactions { example.run } }
-
       context "with a successful call" do
         it "calls monitor_transaction and Appsignal.stop" do
           expect(Appsignal).to receive(:stop)
@@ -414,18 +413,8 @@ describe Appsignal do
           end
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "my_controller#my_action"
-          )
-          expect(transaction_hash["events"]).to match([
-            hash_including(
-              "name" => "perform_job.something",
-              "title" => "",
-              "body" => "",
-              "body_format" => Appsignal::EventFormatter::DEFAULT
-            )
-          ])
+          expect(transaction).to have_action("my_controller#my_action")
+          expect(transaction).to include_event("name" => "perform_job.something")
         end
       end
 
@@ -446,80 +435,69 @@ describe Appsignal do
           end.to raise_error(error)
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "action" => "my_controller#my_action"
-          )
-          expect(transaction_hash["events"]).to match([
-            hash_including(
-              "name" => "perform_job.something",
-              "title" => "",
-              "body" => "",
-              "body_format" => Appsignal::EventFormatter::DEFAULT
-            )
-          ])
+          expect(transaction).to have_action("my_controller#my_action")
+          expect(transaction).to include_event("name" => "perform_job.something")
         end
       end
     end
 
     describe ".tag_request" do
-      let(:transaction) { http_request_transaction }
       around do |example|
         start_agent
-        with_current_transaction transaction do
-          keep_transactions { example.run }
-        end
+        with_current_transaction(transaction) { example.run }
       end
 
       context "with transaction" do
+        let(:transaction) { http_request_transaction }
+
         it "calls set_tags on the current transaction" do
           Appsignal.tag_request("a" => "b")
-          transaction.complete # Manually trigger transaction sampling
 
-          expect(transaction.to_h).to include(
-            "sample_data" => hash_including(
-              "tags" => { "a" => "b" }
-            )
-          )
+          transaction._sample
+          expect(transaction).to include_tags("a" => "b")
         end
       end
 
       context "without transaction" do
         let(:transaction) { nil }
 
-        it "should call set_tags on transaction" do
+        it "does not set tags on the transaction" do
           expect(Appsignal.tag_request).to be_falsy
+          Appsignal.tag_request("a" => "b")
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_tags)
         end
       end
 
-      it "should also listen to tag_job" do
+      it "also listens to tag_job" do
         expect(Appsignal).to respond_to(:tag_job)
       end
     end
 
     describe ".add_breadcrumb" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      around do |example|
+        start_agent
+        with_current_transaction(transaction) { example.run }
+      end
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
-        around do |example|
-          Appsignal.config = project_fixture_config
-          set_current_transaction transaction do
-            example.run
-          end
-        end
 
-        it "should call add_breadcrumb on transaction" do
-          expect(transaction).to receive(:add_breadcrumb)
-            .with("Network", "http", "User made network request", { :response => 200 }, fixed_time)
-        end
-
-        after do
+        it "adds the breadcrumb to the transaction" do
           Appsignal.add_breadcrumb(
             "Network",
             "http",
             "User made network request",
             { :response => 200 },
+            fixed_time
+          )
+
+          transaction._sample
+          expect(transaction).to include_breadcrumb(
+            "http",
+            "Network",
+            "User made network request",
+            { "response" => 200 },
             fixed_time
           )
         end
@@ -528,7 +506,7 @@ describe Appsignal do
       context "without transaction" do
         let(:transaction) { nil }
 
-        it "should not call add_breadcrumb on transaction" do
+        it "does not add a breadcrumb to any transaction" do
           expect(Appsignal.add_breadcrumb("Network", "http")).to be_falsy
         end
       end
@@ -557,8 +535,11 @@ describe Appsignal do
         end
 
         it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with("key", 10,
-            Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal::Extension).to receive(:set_gauge).with(
+            "key",
+            10,
+            Appsignal::Extension.data_map_new
+          ).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
             .with("Gauge value 10 for key 'key' is too big")
           expect do
@@ -713,46 +694,39 @@ describe Appsignal do
     end
 
     describe ".send_error" do
-      let(:transaction) do
-        Appsignal::Transaction.new(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
-      end
-      let(:error) { ExampleException.new }
+      let(:error) { ExampleException.new("error message") }
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
-      around { |example| keep_transactions { example.run } }
+      around do |example|
+        keep_transactions { example.run }
+      end
 
       it "sends the error to AppSignal" do
-        expect(Appsignal::Transaction).to receive(:new).with(
-          kind_of(String),
-          Appsignal::Transaction::HTTP_REQUEST,
-          kind_of(Appsignal::Transaction::GenericRequest)
-        ).and_return(transaction)
-        expect(transaction).to receive(:set_error).with(error)
-        expect(transaction).to_not receive(:set_tags)
-        expect(transaction).to receive(:complete)
+        expect { Appsignal.send_error(error) }.to(change { created_transactions.count }.by(1))
 
-        Appsignal.send_error(error)
+        transaction = last_transaction
+        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        expect(transaction).to_not have_action
+        expect(transaction).to have_error("ExampleException", "error message")
+        expect(transaction).to_not include_tags
+        expect(transaction).to be_completed
       end
 
       context "when given error is not an Exception" do
-        let(:error) { double }
+        let(:error) { "string value" }
 
         it "logs an error message" do
-          expect(Appsignal.internal_logger).to receive(:error).with(
+          logs = capture_logs { Appsignal.send_error(error) }
+          expect(logs).to contains_log(
+            :error,
             "Appsignal.send_error: Cannot send error. " \
               "The given value is not an exception: #{error.inspect}"
           )
         end
 
         it "does not send the error" do
-          expect(Appsignal::Transaction).to_not receive(:create)
+          expect { Appsignal.send_error(error) }.to_not(change { created_transactions.count })
         end
-
-        after { Appsignal.send_error(error) }
       end
 
       context "with tags" do
@@ -767,13 +741,7 @@ describe Appsignal do
             end.to change { created_transactions.count }.by(1)
           end
 
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "sample_data" => hash_including(
-              "tags" => { "a" => "a", "b" => "b" }
-            )
-          )
+          expect(last_transaction).to include_tags("a" => "a", "b" => "b")
 
           message = "The tags argument for `Appsignal.send_error` is deprecated. " \
             "Please use the block method to set tags instead.\n\n" \
@@ -798,9 +766,7 @@ describe Appsignal do
             end.to change { created_transactions.count }.by(1)
           end
 
-          transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include("namespace" => namespace)
+          expect(last_transaction).to have_namespace(namespace)
 
           message = "The namespace argument for `Appsignal.send_error` is deprecated. " \
             "Please use the block method to set the namespace instead.\n\n" \
@@ -815,23 +781,15 @@ describe Appsignal do
 
       context "when given a block" do
         it "yields the transaction and allows additional metadata to be set" do
-          captured_transaction = nil
           keep_transactions do
             Appsignal.send_error(StandardError.new("my_error")) do |transaction|
-              captured_transaction = transaction
               transaction.set_action("my_action")
               transaction.set_namespace("my_namespace")
             end
           end
-          expect(captured_transaction.to_h).to include(
-            "namespace" => "my_namespace",
-            "action" => "my_action",
-            "error" => {
-              "name" => "StandardError",
-              "message" => "my_error",
-              "backtrace" => kind_of(String) # TODO: should be Array
-            }
-          )
+          expect(last_transaction).to have_namespace("my_namespace")
+          expect(last_transaction).to have_action("my_action")
+          expect(last_transaction).to have_error("StandardError", "my_error")
         end
       end
     end
@@ -848,17 +806,10 @@ describe Appsignal do
           end.to raise_error(ExampleException, "I am an exception")
         end.to change { created_transactions.count }.by(1)
 
-        expect(last_transaction.to_h).to include(
-          "error" => {
-            "name" => "ExampleException",
-            "message" => "I am an exception",
-            "backtrace" => kind_of(String)
-          },
-          "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
-          "sample_data" => hash_including(
-            "tags" => {}
-          )
-        )
+        # Default namespace
+        expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        expect(last_transaction).to have_error("ExampleException", "I am an exception")
+        expect(last_transaction).to_not include_tags
       end
 
       context "with tags" do
@@ -871,17 +822,10 @@ describe Appsignal do
             end.to raise_error(ExampleException, "I am an exception")
           end.to change { created_transactions.count }.by(1)
 
-          expect(last_transaction.to_h).to include(
-            "error" => {
-              "name" => "ExampleException",
-              "message" => "I am an exception",
-              "backtrace" => kind_of(String)
-            },
-            "namespace" => Appsignal::Transaction::HTTP_REQUEST, # Default namespace
-            "sample_data" => hash_including(
-              "tags" => { "foo" => "bar" }
-            )
-          )
+          # Default namespace
+          expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          expect(last_transaction).to have_error("ExampleException", "I am an exception")
+          expect(last_transaction).to include_tags("foo" => "bar")
         end
       end
 
@@ -895,17 +839,10 @@ describe Appsignal do
             end.to raise_error(ExampleException, "I am an exception")
           end.to change { created_transactions.count }.by(1)
 
-          expect(last_transaction.to_h).to include(
-            "error" => {
-              "name" => "ExampleException",
-              "message" => "I am an exception",
-              "backtrace" => kind_of(String)
-            },
-            "namespace" => "custom_namespace",
-            "sample_data" => hash_including(
-              "tags" => {}
-            )
-          )
+          # Default namespace
+          expect(last_transaction).to have_namespace("custom_namespace")
+          expect(last_transaction).to have_error("ExampleException", "I am an exception")
+          expect(last_transaction).to_not include_tags
         end
       end
     end
@@ -914,42 +851,56 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       let(:error) { ExampleException.new("I am an exception") }
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      let(:transaction) { http_request_transaction }
       around { |example| keep_transactions { example.run } }
 
       context "when there is an active transaction" do
-        it "adds the error to the active transaction" do
-          expect(transaction).to receive(:set_error).with(error)
-          expect(transaction).to_not receive(:set_tags)
-          expect(transaction).to_not receive(:set_namespace)
+        before { set_current_transaction(transaction) }
 
+        it "adds the error to the active transaction" do
           Appsignal.set_error(error)
+
+          transaction._sample
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          expect(transaction).to have_error("ExampleException", "I am an exception")
+          expect(transaction).to_not include_tags
         end
 
         context "when the error is not an Exception" do
           let(:error) { Object.new }
 
+          it "does not set an error" do
+            silence { Appsignal.set_error(error) }
+
+            transaction._sample
+            expect(transaction).to_not have_error
+            expect(transaction).to_not include_tags
+          end
+
           it "logs an error" do
-            expect(Appsignal.internal_logger).to receive(:error).with(
+            logs = capture_logs { Appsignal.set_error(error) }
+            expect(logs).to contains_log(
+              :error,
               "Appsignal.set_error: Cannot set error. " \
                 "The given value is not an exception: #{error.inspect}"
             )
-            expect(transaction).to_not receive(:set_error)
-            expect(transaction).to_not receive(:set_tags)
-            expect(transaction).to_not receive(:set_namespace)
-
-            Appsignal.set_error(error)
           end
         end
 
         context "with tags" do
           let(:tags) { { "foo" => "bar" } }
 
-          it "prints a deprecation warning and tags the transaction" do
-            expect(transaction).to receive(:set_error).with(error)
-            expect(transaction).to receive(:set_tags).with(tags)
-            expect(transaction).to_not receive(:set_namespace)
+          it "tags the transaction" do
+            silence(:allowed => ["set_error", "The tags argument for"]) do
+              Appsignal.set_error(error, tags)
+            end
 
+            transaction._sample
+            expect(transaction).to have_error(error)
+            expect(transaction).to include_tags(tags)
+          end
+
+          it "prints a deprecation warning and tags the transaction" do
             logs = capture_logs do
               capture_std_streams(std_stream, err_stream) do
                 Appsignal.set_error(error, tags)
@@ -970,11 +921,17 @@ describe Appsignal do
         context "with namespace" do
           let(:namespace) { "admin" }
 
-          it "prints a deprecation warning andsets the namespace on the transaction" do
-            expect(transaction).to receive(:set_error).with(error)
-            expect(transaction).to_not receive(:set_tags)
-            expect(transaction).to receive(:set_namespace).with(namespace)
+          it "sets the namespace on the transaction" do
+            silence(:allowed => ["set_error", "The namespace argument for"]) do
+              Appsignal.set_error(error, nil, namespace)
+            end
 
+            expect(transaction).to have_error("ExampleException", "I am an exception")
+            expect(transaction).to have_namespace(namespace)
+            expect(transaction).to_not include_tags
+          end
+
+          it "prints a deprecation warning andsets the namespace on the transaction" do
             logs = capture_logs do
               capture_std_streams(std_stream, err_stream) do
                 Appsignal.set_error(error, nil, namespace)
@@ -994,135 +951,137 @@ describe Appsignal do
 
         context "when given a block" do
           it "yields the transaction and allows additional metadata to be set" do
-            captured_transaction = nil
-            keep_transactions do
-              Appsignal.set_error(StandardError.new("my_error")) do |transaction|
-                captured_transaction = transaction
-                transaction.set_action("my_action")
-                transaction.set_namespace("my_namespace")
-              end
+            Appsignal.set_error(StandardError.new("my_error")) do |t|
+              t.set_action("my_action")
+              t.set_namespace("my_namespace")
             end
 
-            expect(transaction).to eql(captured_transaction)
-            expect(captured_transaction.to_h).to include(
-              "namespace" => "my_namespace",
-              "action" => "my_action",
-              "error" => {
-                "name" => "StandardError",
-                "message" => "my_error",
-                "backtrace" => kind_of(String)
-              }
-            )
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to have_error("StandardError", "my_error")
           end
         end
       end
 
       context "when there is no active transaction" do
         it "does nothing" do
-          allow(Appsignal::Transaction).to receive(:current).and_return(nil)
-
-          expect(transaction).to_not receive(:set_error)
-
           Appsignal.set_error(error)
+
+          expect(transaction).to_not have_error
         end
       end
     end
 
     describe ".set_action" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      around { |example| keep_transactions { example.run } }
 
-      it "should set the namespace to the current transaction" do
-        expect(transaction).to receive(:set_action).with("custom")
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
 
-        Appsignal.set_action("custom")
+        it "sets the namespace on the current transaction" do
+          Appsignal.set_action("custom")
+
+          expect(transaction).to have_action("custom")
+        end
+
+        it "does not set the action if the action is nil" do
+          Appsignal.set_action(nil)
+
+          expect(transaction).to_not have_action
+        end
       end
 
-      it "should do nothing if there is no current transaction" do
-        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+      context "without current transaction" do
+        it "does not set ther action" do
+          Appsignal.set_action("custom")
 
-        expect(transaction).to_not receive(:set_action)
-
-        Appsignal.set_action("custom")
-      end
-
-      it "should do nothing if the error is nil" do
-        expect(transaction).to_not receive(:set_action)
-
-        Appsignal.set_action(nil)
+          expect(transaction).to_not have_action
+        end
       end
     end
 
     describe ".set_namespace" do
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+      around { |example| keep_transactions { example.run } }
 
-      it "should set the namespace to the current transaction" do
-        expect(transaction).to receive(:set_namespace).with("custom")
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
 
-        Appsignal.set_namespace("custom")
+        it "should set the namespace to the current transaction" do
+          Appsignal.set_namespace("custom")
+
+          expect(transaction).to have_namespace("custom")
+        end
+
+        it "does not update the namespace if the namespace is nil" do
+          Appsignal.set_namespace(nil)
+
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        end
       end
 
-      it "should do nothing if there is no current transaction" do
-        allow(Appsignal::Transaction).to receive(:current).and_return(nil)
+      context "without current transaction" do
+        it "does not update the namespace" do
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
 
-        expect(transaction).to_not receive(:set_namespace)
+          Appsignal.set_namespace("custom")
 
-        Appsignal.set_namespace("custom")
-      end
-
-      it "should do nothing if the error is nil" do
-        expect(transaction).to_not receive(:set_namespace)
-
-        Appsignal.set_namespace(nil)
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        end
       end
     end
 
     describe ".instrument" do
       it_behaves_like "instrument helper" do
         let(:instrumenter) { Appsignal }
-        before do
-          expect(Appsignal::Transaction).to receive(:current).at_least(:once)
-            .and_return(transaction)
-        end
+        before { set_current_transaction(transaction) }
       end
     end
 
     describe ".instrument_sql" do
-      before do
-        expect(Appsignal::Transaction).to receive(:current).at_least(:once)
-          .and_return(transaction)
-      end
+      around { |example| keep_transactions { example.run } }
+      before { set_current_transaction(transaction) }
 
       it "creates an SQL event on the transaction" do
-        expect(transaction).to receive(:start_event)
-        expect(transaction).to receive(:finish_event)
-          .with("name", "title", "body", Appsignal::EventFormatter::SQL_BODY_FORMAT)
+        result =
+          Appsignal.instrument_sql "name", "title", "body" do
+            "return value"
+          end
 
-        result = Appsignal.instrument_sql "name", "title", "body" do
-          "return value"
-        end
         expect(result).to eq "return value"
+        expect(transaction).to include_event(
+          "name" => "name",
+          "title" => "title",
+          "body" => "body",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
+        )
       end
     end
 
     describe ".without_instrumentation" do
+      around { |example| keep_transactions { example.run } }
       let(:transaction) { http_request_transaction }
-      before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
-      it "does not record events on the transaction" do
-        expect(transaction).to receive(:pause!).and_call_original
-        expect(transaction).to receive(:resume!).and_call_original
-        Appsignal.instrument("register.this.event") { :do_nothing }
-        Appsignal.without_instrumentation do
-          Appsignal.instrument("dont.register.this.event") { :do_nothing }
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
+
+        it "does not record events on the transaction" do
+          expect(transaction).to receive(:pause!).and_call_original
+          expect(transaction).to receive(:resume!).and_call_original
+
+          Appsignal.instrument("register.this.event") { :do_nothing }
+          Appsignal.without_instrumentation do
+            Appsignal.instrument("dont.register.this.event") { :do_nothing }
+          end
+
+          expect(transaction).to include_event("name" => "register.this.event")
+          expect(transaction).to_not include_event("name" => "dont.register.this.event")
         end
-        expect(transaction.to_h["events"].map { |e| e["name"] })
-          .to match_array("register.this.event")
       end
 
-      context "without transaction" do
+      context "without current transaction" do
         let(:transaction) { nil }
 
-        it "should not crash" do
+        it "does not crash" do
           Appsignal.without_instrumentation { :do_nothing }
         end
       end

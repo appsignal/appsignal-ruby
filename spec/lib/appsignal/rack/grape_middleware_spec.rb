@@ -83,13 +83,7 @@ if DependencyHelper.grape_present?
       it "sets the error" do
         make_request_with_exception(env, ExampleException, "error message")
 
-        expect(last_transaction.to_h).to include(
-          "error" => {
-            "name" => "ExampleException",
-            "message" => "error message",
-            "backtrace" => kind_of(String)
-          }
-        )
+        expect(last_transaction).to have_error("ExampleException", "error message")
       end
 
       context "with env['grape.skip_appsignal_error'] = true" do
@@ -106,7 +100,7 @@ if DependencyHelper.grape_present?
         it "does not add the error" do
           make_request_with_exception(env, ExampleException, "error message")
 
-          expect(last_transaction).to include("error" => nil)
+          expect(last_transaction).to_not have_error
         end
       end
     end
@@ -129,13 +123,8 @@ if DependencyHelper.grape_present?
       it "sets non-unique route path" do
         make_request(env)
 
-        expect(last_transaction.to_h).to include(
-          "action" => "GET::GrapeExample::Api#/hello",
-          "metadata" => {
-            "path" => "/hello",
-            "method" => "GET"
-          }
-        )
+        expect(last_transaction).to have_action("GET::GrapeExample::Api#/hello")
+        expect(last_transaction).to include_metadata("path" => "/hello", "method" => "GET")
       end
     end
 
@@ -162,13 +151,8 @@ if DependencyHelper.grape_present?
       it "sets non-unique route_param path" do
         make_request(env)
 
-        expect(last_transaction.to_h).to include(
-          "action" => "GET::GrapeExample::Api#/users/:id/",
-          "metadata" => {
-            "path" => "/users/:id/",
-            "method" => "GET"
-          }
-        )
+        expect(last_transaction).to have_action("GET::GrapeExample::Api#/users/:id/")
+        expect(last_transaction).to include_metadata("path" => "/users/:id/", "method" => "GET")
       end
     end
 
@@ -190,13 +174,9 @@ if DependencyHelper.grape_present?
         it "sets namespaced path" do
           make_request(env)
 
-          expect(last_transaction.to_h).to include(
-            "action" => "POST::GrapeExample::Api#/v1/beta/ping",
-            "metadata" => {
-              "path" => "/v1/beta/ping",
-              "method" => "POST"
-            }
-          )
+          expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
+          expect(last_transaction).to include_metadata("path" => "/v1/beta/ping",
+            "method" => "POST")
         end
       end
 
@@ -218,12 +198,10 @@ if DependencyHelper.grape_present?
           it "sets namespaced path" do
             make_request(env)
 
-            expect(last_transaction.to_h).to include(
-              "action" => "POST::GrapeExample::Api#/v1/beta/ping",
-              "metadata" => {
-                "path" => "/v1/beta/ping",
-                "method" => "POST"
-              }
+            expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
+            expect(last_transaction).to include_metadata(
+              "path" => "/v1/beta/ping",
+              "method" => "POST"
             )
           end
         end
@@ -245,13 +223,9 @@ if DependencyHelper.grape_present?
           it "sets namespaced path" do
             make_request(env)
 
-            expect(last_transaction.to_h).to include(
-              "action" => "POST::GrapeExample::Api#/v1/beta/ping",
-              "metadata" => {
-                "path" => "/v1/beta/ping",
-                "method" => "POST"
-              }
-            )
+            expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
+            expect(last_transaction).to include_metadata("path" => "/v1/beta/ping",
+              "method" => "POST")
           end
         end
       end

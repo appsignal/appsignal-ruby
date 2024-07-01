@@ -46,11 +46,12 @@ describe Appsignal::Hooks::ActionCableHook do
           http_request_env_with_data("action_dispatch.request_id" => request_id, :params => params)
         end
         let(:instance) { channel.new(connection, identifier, params) }
-        subject { transaction.to_h }
         before do
           start_agent
           expect(Appsignal.active?).to be_truthy
           transaction
+
+          set_current_transaction(transaction)
 
           expect(Appsignal::Transaction).to receive(:create).with(
             transaction_id,
@@ -70,35 +71,25 @@ describe Appsignal::Hooks::ActionCableHook do
           it "creates a transaction for an action" do
             instance.perform_action("message" => "foo", "action" => "speak")
 
-            expect(subject).to include(
-              "action" => "MyChannel#speak",
-              "error" => nil,
-              "id" => transaction_id,
-              "namespace" => Appsignal::Transaction::ACTION_CABLE,
-              "metadata" => {
-                "method" => "websocket",
-                "path" => "/blog"
-              }
+            transaction = last_transaction
+            expect(transaction).to have_id(transaction_id)
+            expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+            expect(transaction).to have_action("MyChannel#speak")
+            expect(transaction).to_not have_error
+            expect(transaction).to include_metadata(
+              "method" => "websocket",
+              "path" => "/blog"
             )
-            expect(subject["events"].first).to include(
-              "allocation_count" => kind_of(Integer),
+            expect(transaction).to include_event(
               "body" => "",
               "body_format" => Appsignal::EventFormatter::DEFAULT,
-              "child_allocation_count" => kind_of(Integer),
-              "child_duration" => kind_of(Float),
-              "child_gc_duration" => kind_of(Float),
               "count" => 1,
-              "gc_duration" => kind_of(Float),
-              "start" => kind_of(Float),
-              "duration" => kind_of(Float),
               "name" => "perform_action.action_cable",
               "title" => ""
             )
-            expect(subject["sample_data"]).to include(
-              "params" => {
-                "action" => "speak",
-                "message" => "foo"
-              }
+            expect(transaction).to include_params(
+              "action" => "speak",
+              "message" => "foo"
             )
           end
 
@@ -120,7 +111,7 @@ describe Appsignal::Hooks::ActionCableHook do
             it "uses its own internal request_id set by the subscribed callback" do
               # Subscribe action, sets the request_id
               instance.subscribe_to_channel
-              expect(transaction.to_h["id"]).to eq(transaction_id)
+              expect(transaction).to have_id(transaction_id)
 
               # Expect another transaction for the action.
               # This transaction will use the same request_id as the
@@ -136,7 +127,7 @@ describe Appsignal::Hooks::ActionCableHook do
               expect(action_transaction.ext).to receive(:complete)
 
               instance.perform_action("message" => "foo", "action" => "speak")
-              expect(action_transaction.to_h["id"]).to eq(transaction_id)
+              expect(action_transaction).to have_id(transaction_id)
             end
           end
 
@@ -158,25 +149,18 @@ describe Appsignal::Hooks::ActionCableHook do
                 instance.perform_action("message" => "foo", "action" => "speak")
               end.to raise_error(ExampleException)
 
-              expect(subject).to include(
-                "action" => "MyChannel#speak",
-                "id" => transaction_id,
-                "namespace" => Appsignal::Transaction::ACTION_CABLE,
-                "metadata" => {
-                  "method" => "websocket",
-                  "path" => "/blog"
-                }
+              transaction = last_transaction
+              expect(transaction).to have_id(transaction_id)
+              expect(transaction).to have_action("MyChannel#speak")
+              expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+              expect(transaction).to have_error("ExampleException", "oh no!")
+              expect(transaction).to include_metadata(
+                "method" => "websocket",
+                "path" => "/blog"
               )
-              expect(subject["error"]).to include(
-                "backtrace" => kind_of(String),
-                "name" => "ExampleException",
-                "message" => "oh no!"
-              )
-              expect(subject["sample_data"]).to include(
-                "params" => {
-                  "action" => "speak",
-                  "message" => "foo"
-                }
+              expect(transaction).to include_params(
+                "action" => "speak",
+                "message" => "foo"
               )
             end
           end
@@ -188,32 +172,22 @@ describe Appsignal::Hooks::ActionCableHook do
           it "creates a transaction for a subscription" do
             instance.subscribe_to_channel
 
-            expect(subject).to include(
-              "action" => "MyChannel#subscribed",
-              "error" => nil,
-              "id" => transaction_id,
-              "namespace" => Appsignal::Transaction::ACTION_CABLE,
-              "metadata" => {
-                "method" => "websocket",
-                "path" => "/blog"
-              }
+            transaction = last_transaction
+            expect(transaction).to have_id(transaction_id)
+            expect(transaction).to have_action("MyChannel#subscribed")
+            expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+            expect(transaction).to_not have_error
+            expect(transaction).to include_metadata(
+              "method" => "websocket",
+              "path" => "/blog"
             )
-            expect(subject["events"].first).to include(
-              "allocation_count" => kind_of(Integer),
+            expect(transaction).to include_params("internal" => "true")
+            expect(transaction).to include_event(
               "body" => "",
               "body_format" => Appsignal::EventFormatter::DEFAULT,
-              "child_allocation_count" => kind_of(Integer),
-              "child_duration" => kind_of(Float),
-              "child_gc_duration" => kind_of(Float),
               "count" => 1,
-              "gc_duration" => kind_of(Float),
-              "start" => kind_of(Float),
-              "duration" => kind_of(Float),
               "name" => "subscribed.action_cable",
               "title" => ""
-            )
-            expect(subject["sample_data"]).to include(
-              "params" => { "internal" => "true" }
             )
           end
 
@@ -226,7 +200,7 @@ describe Appsignal::Hooks::ActionCableHook do
             end
 
             it "uses its own internal request_id" do
-              expect(subject["id"]).to eq(transaction_id)
+              expect(last_transaction).to have_id(transaction_id)
             end
           end
 
@@ -248,23 +222,16 @@ describe Appsignal::Hooks::ActionCableHook do
                 instance.subscribe_to_channel
               end.to raise_error(ExampleException)
 
-              expect(subject).to include(
-                "action" => "MyChannel#subscribed",
-                "id" => transaction_id,
-                "namespace" => Appsignal::Transaction::ACTION_CABLE,
-                "metadata" => {
-                  "method" => "websocket",
-                  "path" => "/blog"
-                }
+              transaction = last_transaction
+              expect(transaction).to have_id(transaction_id)
+              expect(transaction).to have_action("MyChannel#subscribed")
+              expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+              expect(transaction).to have_error("ExampleException", "oh no!")
+              expect(transaction).to include_metadata(
+                "method" => "websocket",
+                "path" => "/blog"
               )
-              expect(subject["error"]).to include(
-                "backtrace" => kind_of(String),
-                "name" => "ExampleException",
-                "message" => "oh no!"
-              )
-              expect(subject["sample_data"]).to include(
-                "params" => { "internal" => "true" }
-              )
+              expect(transaction).to include_params("internal" => "true")
             end
           end
 
@@ -280,32 +247,22 @@ describe Appsignal::Hooks::ActionCableHook do
               it "does not fail on missing `#env` method on `ConnectionStub`" do
                 instance.subscribe_to_channel
 
-                expect(subject).to include(
-                  "action" => "MyChannel#subscribed",
-                  "error" => nil,
-                  "id" => transaction_id,
-                  "namespace" => Appsignal::Transaction::ACTION_CABLE,
-                  "metadata" => {
-                    "method" => "websocket",
-                    "path" => "" # No path as the ConnectionStub doesn't have the real request env
-                  }
+                transaction = last_transaction
+                expect(transaction).to have_id(transaction_id)
+                expect(transaction).to have_action("MyChannel#subscribed")
+                expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+                expect(transaction).to_not have_error
+                expect(transaction).to include_metadata(
+                  "method" => "websocket",
+                  "path" => "" # No path as the ConnectionStub doesn't have the real request env
                 )
-                expect(subject["events"].first).to include(
-                  "allocation_count" => kind_of(Integer),
+                expect(transaction).to include_params("internal" => "true")
+                expect(transaction).to include_event(
                   "body" => "",
                   "body_format" => Appsignal::EventFormatter::DEFAULT,
-                  "child_allocation_count" => kind_of(Integer),
-                  "child_duration" => kind_of(Float),
-                  "child_gc_duration" => kind_of(Float),
                   "count" => 1,
-                  "gc_duration" => kind_of(Float),
-                  "start" => kind_of(Float),
-                  "duration" => kind_of(Float),
                   "name" => "subscribed.action_cable",
                   "title" => ""
-                )
-                expect(subject["sample_data"]).to include(
-                  "params" => { "internal" => "true" }
                 )
               end
             end
@@ -318,32 +275,22 @@ describe Appsignal::Hooks::ActionCableHook do
           it "creates a transaction for a subscription" do
             instance.unsubscribe_from_channel
 
-            expect(subject).to include(
-              "action" => "MyChannel#unsubscribed",
-              "error" => nil,
-              "id" => transaction_id,
-              "namespace" => Appsignal::Transaction::ACTION_CABLE,
-              "metadata" => {
-                "method" => "websocket",
-                "path" => "/blog"
-              }
+            transaction = last_transaction
+            expect(transaction).to have_id(transaction_id)
+            expect(transaction).to have_action("MyChannel#unsubscribed")
+            expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+            expect(transaction).to_not have_error
+            expect(transaction).to include_metadata(
+              "method" => "websocket",
+              "path" => "/blog"
             )
-            expect(subject["events"].first).to include(
-              "allocation_count" => kind_of(Integer),
+            expect(transaction).to include_params("internal" => "true")
+            expect(transaction).to include_event(
               "body" => "",
               "body_format" => Appsignal::EventFormatter::DEFAULT,
-              "child_allocation_count" => kind_of(Integer),
-              "child_duration" => kind_of(Float),
-              "child_gc_duration" => kind_of(Float),
               "count" => 1,
-              "gc_duration" => kind_of(Float),
-              "start" => kind_of(Float),
-              "duration" => kind_of(Float),
               "name" => "unsubscribed.action_cable",
               "title" => ""
-            )
-            expect(subject["sample_data"]).to include(
-              "params" => { "internal" => "true" }
             )
           end
 
@@ -356,7 +303,7 @@ describe Appsignal::Hooks::ActionCableHook do
             end
 
             it "uses its own internal request_id" do
-              expect(subject["id"]).to eq(transaction_id)
+              expect(transaction).to have_id(transaction_id)
             end
           end
 
@@ -378,23 +325,16 @@ describe Appsignal::Hooks::ActionCableHook do
                 instance.unsubscribe_from_channel
               end.to raise_error(ExampleException)
 
-              expect(subject).to include(
-                "action" => "MyChannel#unsubscribed",
-                "id" => transaction_id,
-                "namespace" => Appsignal::Transaction::ACTION_CABLE,
-                "metadata" => {
-                  "method" => "websocket",
-                  "path" => "/blog"
-                }
+              transaction = last_transaction
+              expect(transaction).to have_id(transaction_id)
+              expect(transaction).to have_action("MyChannel#unsubscribed")
+              expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+              expect(transaction).to have_error("ExampleException", "oh no!")
+              expect(transaction).to include_metadata(
+                "method" => "websocket",
+                "path" => "/blog"
               )
-              expect(subject["error"]).to include(
-                "backtrace" => kind_of(String),
-                "name" => "ExampleException",
-                "message" => "oh no!"
-              )
-              expect(subject["sample_data"]).to include(
-                "params" => { "internal" => "true" }
-              )
+              expect(transaction).to include_params("internal" => "true")
             end
           end
 
@@ -410,32 +350,22 @@ describe Appsignal::Hooks::ActionCableHook do
               it "does not fail on missing `#env` method on `ConnectionStub`" do
                 instance.unsubscribe_from_channel
 
-                expect(subject).to include(
-                  "action" => "MyChannel#unsubscribed",
-                  "error" => nil,
-                  "id" => transaction_id,
-                  "namespace" => Appsignal::Transaction::ACTION_CABLE,
-                  "metadata" => {
-                    "method" => "websocket",
-                    "path" => "" # No path as the ConnectionStub doesn't have the real request env
-                  }
+                transaction = last_transaction
+                expect(transaction).to have_id(transaction_id)
+                expect(transaction).to have_action("MyChannel#unsubscribed")
+                expect(transaction).to have_namespace(Appsignal::Transaction::ACTION_CABLE)
+                expect(transaction).to_not have_error
+                expect(transaction).to include_metadata(
+                  "method" => "websocket",
+                  "path" => "" # No path as the ConnectionStub doesn't have the real request env
                 )
-                expect(subject["events"].first).to include(
-                  "allocation_count" => kind_of(Integer),
+                expect(transaction).to include_params("internal" => "true")
+                expect(transaction).to include_event(
                   "body" => "",
                   "body_format" => Appsignal::EventFormatter::DEFAULT,
-                  "child_allocation_count" => kind_of(Integer),
-                  "child_duration" => kind_of(Float),
-                  "child_gc_duration" => kind_of(Float),
                   "count" => 1,
-                  "gc_duration" => kind_of(Float),
-                  "start" => kind_of(Float),
-                  "duration" => kind_of(Float),
                   "name" => "unsubscribed.action_cable",
                   "title" => ""
-                )
-                expect(subject["sample_data"]).to include(
-                  "params" => { "internal" => "true" }
                 )
               end
             end

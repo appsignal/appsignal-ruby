@@ -136,8 +136,8 @@ if DependencyHelper.rails_present?
             it "does nothing" do
               with_rails_error_reporter do
                 expect do
-                  Rails.error.record { raise ExampleStandardError }
-                end.to raise_error(ExampleStandardError)
+                  Rails.error.record { raise ExampleStandardError, "error message" }
+                end.to raise_error(ExampleStandardError, "error message")
               end
 
               expect(created_transactions).to be_empty
@@ -156,24 +156,15 @@ if DependencyHelper.rails_present?
 
                 with_rails_error_reporter do
                   with_current_transaction current_transaction do
-                    Rails.error.handle { raise ExampleStandardError }
+                    Rails.error.handle { raise ExampleStandardError, "error message" }
 
                     transaction = last_transaction
-                    transaction_hash = transaction.to_h
-                    expect(transaction_hash).to include(
-                      "action" => "CustomAction",
-                      "namespace" => "custom",
-                      "error" => {
-                        "name" => "ExampleStandardError",
-                        "message" => "ExampleStandardError",
-                        "backtrace" => kind_of(String)
-                      },
-                      "sample_data" => hash_including(
-                        "tags" => hash_including(
-                          "duplicated_tag" => "duplicated value",
-                          "severity" => "warning"
-                        )
-                      )
+                    expect(transaction).to have_namespace("custom")
+                    expect(transaction).to have_action("CustomAction")
+                    expect(transaction).to have_error("ExampleStandardError", "error message")
+                    expect(transaction).to include_tags(
+                      "duplicated_tag" => "duplicated value",
+                      "severity" => "warning"
                     )
                   end
                 end
@@ -188,16 +179,10 @@ if DependencyHelper.rails_present?
                     given_context = { :tag1 => "value1", :tag2 => "value2" }
                     Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
-                    transaction = last_transaction
-                    transaction_hash = transaction.to_h
-                    expect(transaction_hash).to include(
-                      "sample_data" => hash_including(
-                        "tags" => hash_including(
-                          "tag1" => "value1",
-                          "tag2" => "value2",
-                          "severity" => "warning"
-                        )
-                      )
+                    expect(last_transaction).to include_tags(
+                      "tag1" => "value1",
+                      "tag2" => "value2",
+                      "severity" => "warning"
                     )
                   end
                 end
@@ -219,14 +204,9 @@ if DependencyHelper.rails_present?
                     Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
                     transaction = last_transaction
-                    transaction_hash = transaction.to_h
-                    expect(transaction_hash).to include(
-                      "sample_data" => hash_including(
-                        "custom_data" => {
-                          "array" => [1, 2],
-                          "hash" => { "one" => 1, "two" => 2 }
-                        }
-                      )
+                    expect(transaction).to include_custom_data(
+                      "array" => [1, 2],
+                      "hash" => { "one" => 1, "two" => 2 }
                     )
                   end
                 end
@@ -245,11 +225,8 @@ if DependencyHelper.rails_present?
                     Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
                     transaction = last_transaction
-                    transaction_hash = transaction.to_h
-                    expect(transaction_hash).to include(
-                      "namespace" => "context",
-                      "action" => "ContextAction"
-                    )
+                    expect(transaction).to have_namespace("context")
+                    expect(transaction).to have_action("ContextAction")
                   end
                 end
               end
@@ -301,17 +278,9 @@ if DependencyHelper.rails_present?
                 end
 
                 transaction = last_transaction
-                transaction_hash = transaction.to_h
-                expect(transaction_hash).to include(
-                  "action" => "ExampleRailsControllerMock#index",
-                  "metadata" => hash_including(
-                    "path" => "path",
-                    "method" => "GET"
-                  ),
-                  "sample_data" => hash_including(
-                    "params" => { "user_id" => 123, "password" => "[FILTERED]" }
-                  )
-                )
+                expect(transaction).to have_action("ExampleRailsControllerMock#index")
+                expect(transaction).to include_metadata("path" => "path", "method" => "GET")
+                expect(transaction).to include_params("user_id" => 123, "password" => "[FILTERED]")
               end
 
               it "sets no action if no execution context is present" do
@@ -320,11 +289,7 @@ if DependencyHelper.rails_present?
                   Rails.error.handle { raise ExampleStandardError }
                 end
 
-                transaction = last_transaction
-                transaction_hash = transaction.to_h
-                expect(transaction_hash).to include(
-                  "action" => nil
-                )
+                expect(last_transaction).to_not have_action
               end
             end
 
@@ -340,16 +305,10 @@ if DependencyHelper.rails_present?
                 Rails.error.handle(:context => given_context) { raise ExampleStandardError }
               end
 
-              transaction = last_transaction
-              transaction_hash = transaction.to_h
-              expect(transaction_hash).to include(
-                "sample_data" => hash_including(
-                  "tags" => hash_including(
-                    "tag1" => "value1",
-                    "tag2" => "value2",
-                    "severity" => "warning"
-                  )
-                )
+              expect(last_transaction).to include_tags(
+                "tag1" => "value1",
+                "tag2" => "value2",
+                "severity" => "warning"
               )
             end
           end

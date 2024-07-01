@@ -40,10 +40,8 @@ describe Appsignal::Transaction do
           expect(transaction.namespace).to eq namespace
           expect(transaction.request).to eq request
 
-          expect(transaction.to_h).to include(
-            "id" => transaction_id,
-            "namespace" => namespace
-          )
+          expect(transaction).to have_id(transaction_id)
+          expect(transaction).to have_namespace(namespace)
         end
 
         it "assigns the transaction to current" do
@@ -166,9 +164,7 @@ describe Appsignal::Transaction do
       it "samples data" do
         transaction.set_tags(:foo => "bar")
         keep_transactions { transaction.complete }
-        expect(transaction.to_h["sample_data"]).to include(
-          "tags" => { "foo" => "bar" }
-        )
+        expect(transaction).to include_tags("foo" => "bar")
       end
     end
 
@@ -181,13 +177,13 @@ describe Appsignal::Transaction do
 
     context "when a transaction is marked as discarded" do
       it "does not complete the transaction" do
-        expect(transaction.ext).to_not receive(:complete)
-
         expect do
           transaction.discard!
         end.to change { transaction.discarded? }.from(false).to(true)
 
         transaction.complete
+
+        expect(transaction).to_not be_completed
       end
 
       it "logs a debug message" do
@@ -202,13 +198,13 @@ describe Appsignal::Transaction do
         before { transaction.discard! }
 
         it "completes the transaction" do
-          expect(transaction.ext).to receive(:complete).and_call_original
-
           expect do
             transaction.restore!
           end.to change { transaction.discarded? }.from(true).to(false)
 
           transaction.complete
+
+          expect(transaction).to be_completed
         end
       end
     end
@@ -354,9 +350,9 @@ describe Appsignal::Transaction do
         params = { "foo" => "bar" }
         silence { transaction.params = params }
 
-        transaction.complete # Sample the data
+        transaction._sample
         expect(transaction.params).to eq(params)
-        expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+        expect(transaction).to include_params(params)
       end
 
       it "logs a deprecation warning" do
@@ -378,9 +374,9 @@ describe Appsignal::Transaction do
           params = { "key" => "value" }
           transaction.set_params(params)
 
-          transaction.complete # Sample the data
+          transaction._sample
           expect(transaction.params).to eq(params)
-          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+          expect(transaction).to include_params(params)
         end
       end
 
@@ -390,9 +386,9 @@ describe Appsignal::Transaction do
           transaction.set_params(params)
           transaction.set_params(nil)
 
-          transaction.complete # Sample the data
+          transaction._sample
           expect(transaction.params).to eq(params)
-          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+          expect(transaction).to include_params(params)
         end
       end
     end
@@ -405,9 +401,9 @@ describe Appsignal::Transaction do
           params = { "key" => "value" }
           transaction.set_params_if_nil(params)
 
-          transaction.complete # Sample the data
+          transaction._sample
           expect(transaction.params).to eq(params)
-          expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+          expect(transaction).to include_params(params)
         end
 
         context "when the given params is nil" do
@@ -416,9 +412,9 @@ describe Appsignal::Transaction do
             transaction.set_params(params)
             transaction.set_params_if_nil(nil)
 
-            transaction.complete # Sample the data
+            transaction._sample
             expect(transaction.params).to eq(params)
-            expect(transaction.to_h.dig("sample_data", "params")).to eq(params)
+            expect(transaction).to include_params(params)
           end
         end
       end
@@ -430,9 +426,9 @@ describe Appsignal::Transaction do
           transaction.set_params(preset_params)
           transaction.set_params_if_nil(params)
 
-          transaction.complete # Sample the data
+          transaction._sample
           expect(transaction.params).to eq(preset_params)
-          expect(transaction.to_h.dig("sample_data", "params")).to eq(preset_params)
+          expect(transaction).to include_params(preset_params)
         end
       end
     end
@@ -455,7 +451,7 @@ describe Appsignal::Transaction do
       end
 
       it "stores tags on the transaction" do
-        expect(transaction.to_h["sample_data"]["tags"]).to eq(
+        expect(transaction).to include_tags(
           "valid_key" => "valid_value",
           "valid_string_key" => "valid_value",
           "both_symbols" => "valid_value",
@@ -507,12 +503,13 @@ describe Appsignal::Transaction do
           transaction.sample_data
           timeframe_end = Time.now.utc.to_i
 
-          breadcrumb = transaction.to_h["sample_data"]["breadcrumbs"][0]
-          expect(breadcrumb["category"]).to eq("user_action")
-          expect(breadcrumb["action"]).to eq("clicked HOME")
-          expect(breadcrumb["message"]).to eq("")
-          expect(breadcrumb["time"]).to be_between(timeframe_start, timeframe_end)
-          expect(breadcrumb["metadata"]).to eq({})
+          expect(transaction).to include_breadcrumb(
+            "clicked HOME",
+            "user_action",
+            "",
+            {},
+            be_between(timeframe_start, timeframe_end)
+          )
         end
       end
 
@@ -521,7 +518,7 @@ describe Appsignal::Transaction do
           transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
           transaction.sample_data
 
-          expect(transaction.to_h["sample_data"]["breadcrumbs"]).to be_empty
+          expect(transaction).to_not include_breadcrumbs
           expect(log_contents(log)).to contains_log(
             :error,
             "add_breadcrumb: Cannot add breadcrumb. The given metadata argument is not a Hash."
@@ -537,7 +534,7 @@ describe Appsignal::Transaction do
           transaction.set_action(action_name)
 
           expect(transaction.action).to eq(action_name)
-          expect(transaction.to_h["action"]).to eq(action_name)
+          expect(transaction).to have_action(action_name)
         end
       end
 
@@ -548,7 +545,7 @@ describe Appsignal::Transaction do
           transaction.set_action(nil)
 
           expect(transaction.action).to eq(action_name)
-          expect(transaction.to_h["action"]).to eq(action_name)
+          expect(transaction).to have_action(action_name)
         end
       end
     end
@@ -557,13 +554,13 @@ describe Appsignal::Transaction do
       context "when the action is not set" do
         it "updates the action name on the transaction" do
           expect(transaction.action).to eq(nil)
-          expect(transaction.to_h["action"]).to eq(nil)
+          expect(transaction).to_not have_action
 
           action_name = "PagesController#show"
           transaction.set_action_if_nil(action_name)
 
           expect(transaction.action).to eq(action_name)
-          expect(transaction.to_h["action"]).to eq(action_name)
+          expect(transaction).to have_action(action_name)
         end
 
         context "when the given action is nil" do
@@ -573,7 +570,7 @@ describe Appsignal::Transaction do
             transaction.set_action_if_nil(nil)
 
             expect(transaction.action).to eq(action_name)
-            expect(transaction.to_h["action"]).to eq(action_name)
+            expect(transaction).to have_action(action_name)
           end
         end
       end
@@ -585,7 +582,7 @@ describe Appsignal::Transaction do
           transaction.set_action_if_nil("something else")
 
           expect(transaction.action).to eq(action_name)
-          expect(transaction.to_h["action"]).to eq(action_name)
+          expect(transaction).to have_action(action_name)
         end
       end
     end
@@ -597,7 +594,7 @@ describe Appsignal::Transaction do
           transaction.set_namespace(namespace)
 
           expect(transaction.namespace).to eq namespace
-          expect(transaction.to_h["namespace"]).to eq(namespace)
+          expect(transaction).to have_namespace(namespace)
         end
       end
 
@@ -608,7 +605,7 @@ describe Appsignal::Transaction do
           transaction.set_namespace(nil)
 
           expect(transaction.namespace).to eq(namespace)
-          expect(transaction.to_h["namespace"]).to eq(namespace)
+          expect(transaction).to have_namespace(namespace)
         end
       end
     end
@@ -620,21 +617,21 @@ describe Appsignal::Transaction do
             :controller => "HomeController",
             :action => "show"
           )
-          expect(transaction.to_h["action"]).to eql("HomeController#show")
+          expect(transaction).to have_action("HomeController#show")
         end
       end
 
       context "for a hash with just action" do
         it "sets the action" do
           transaction.set_http_or_background_action(:action => "show")
-          expect(transaction.to_h["action"]).to eql("show")
+          expect(transaction).to have_action("show")
         end
       end
 
       context "for a hash with class and method" do
         it "sets the action" do
           transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
-          expect(transaction.to_h["action"]).to eql("Worker#perform")
+          expect(transaction).to have_action("Worker#perform")
         end
       end
 
@@ -642,7 +639,7 @@ describe Appsignal::Transaction do
         it "does not overwrite the set action" do
           transaction.set_action("MyCustomAction#perform")
           transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
-          expect(transaction.to_h["action"]).to eql("MyCustomAction#perform")
+          expect(transaction).to have_action("MyCustomAction#perform")
         end
       end
     end
@@ -716,7 +713,7 @@ describe Appsignal::Transaction do
       it "updates the metadata on the transaction" do
         transaction.set_metadata("request_method", "GET")
 
-        expect(transaction.to_h["metadata"]).to eq("request_method" => "GET")
+        expect(transaction).to include_metadata("request_method" => "GET")
       end
 
       context "when filter_metadata includes metadata key" do
@@ -727,7 +724,7 @@ describe Appsignal::Transaction do
           transaction.set_metadata(:filter_key, "filtered value")
           transaction.set_metadata("filter_key", "filtered value")
 
-          expect(transaction.to_h["metadata"].keys).to_not include("filter_key")
+          expect(transaction).to_not include_metadata("filter_key" => anything)
         end
       end
 
@@ -735,7 +732,7 @@ describe Appsignal::Transaction do
         it "does not update the metadata on the transaction" do
           transaction.set_metadata(nil, "GET")
 
-          expect(transaction.to_h["metadata"]).to eq({})
+          expect(transaction).to_not include_metadata
         end
       end
 
@@ -743,7 +740,7 @@ describe Appsignal::Transaction do
         it "does not update the metadata on the transaction" do
           transaction.set_metadata("request_method", nil)
 
-          expect(transaction.to_h["metadata"]).to eq({})
+          expect(transaction).to_not include_metadata
         end
       end
     end
@@ -757,12 +754,10 @@ describe Appsignal::Transaction do
           :id         => "1"
         )
 
-        expect(transaction.to_h["sample_data"]).to eq(
-          "params" => {
-            "action" => "show",
-            "controller" => "blog_posts",
-            "id" => "1"
-          }
+        expect(transaction).to include_params(
+          "action" => "show",
+          "controller" => "blog_posts",
+          "id" => "1"
         )
       end
 
@@ -785,7 +780,7 @@ describe Appsignal::Transaction do
           end
           transaction.set_sample_data("params", klass.new => 1)
 
-          expect(transaction.to_h["sample_data"]).to eq({})
+          expect(transaction).to_not include_params
           expect(log_contents(log)).to contains_log :error,
             "Error generating data (RuntimeError: foo) for"
         end
@@ -800,27 +795,26 @@ describe Appsignal::Transaction do
         transaction.add_breadcrumb "category", "action", "message", "key" => "value"
         transaction.sample_data
 
-        sample_data = transaction.to_h["sample_data"]
-        expect(sample_data["environment"]).to include(
+        expect(transaction).to include_environment(
           "REQUEST_METHOD" => "GET",
           "SERVER_NAME" => "example.org",
           "SERVER_PORT" => "80",
           "PATH_INFO" => "/blog"
         )
-        expect(sample_data["session_data"]).to eq("session" => "value")
-        expect(sample_data["params"]).to eq(
+        expect(transaction).to include_session_data("session" => "value")
+        expect(transaction).to include_params(
           "controller" => "blog_posts",
           "action" => "show",
           "id" => "1"
         )
-        expect(sample_data["metadata"]).to eq("key" => "value")
-        expect(sample_data["tags"]).to eq("tag" => "value")
-        expect(sample_data["breadcrumbs"]).to contain_exactly(
-          "action" => "action",
-          "category" => "category",
-          "message" => "message",
-          "metadata" => { "key" => "value" },
-          "time" => kind_of(Integer)
+        expect(transaction).to include_sample_metadata("key" => "value")
+        expect(transaction).to include_tags("tag" => "value")
+        expect(transaction).to include_breadcrumb(
+          "action",
+          "category",
+          "message",
+          { "key" => "value" },
+          kind_of(Integer)
         )
       end
     end

@@ -53,20 +53,14 @@ describe Appsignal::Hooks::ResqueHook do
         perform_rescue_job(ResqueTestJob)
 
         transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash).to include(
-          "id" => kind_of(String),
-          "action" => "ResqueTestJob#perform",
-          "error" => nil,
-          "namespace" => namespace,
-          "metadata" => {},
-          "sample_data" => {
-            "breadcrumbs" => [],
-            "tags" => { "queue" => queue }
-          }
-        )
-        expect(transaction_hash["events"].map { |e| e["name"] })
-          .to eql(["perform.resque"])
+        expect(transaction).to have_id
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ResqueTestJob#perform")
+        expect(transaction).to_not have_error
+        expect(transaction).to_not include_metadata
+        expect(transaction).to_not include_breadcrumbs
+        expect(transaction).to include_tags("queue" => queue)
+        expect(transaction).to include_event("name" => "perform.resque")
       end
 
       context "with error" do
@@ -76,22 +70,14 @@ describe Appsignal::Hooks::ResqueHook do
           end.to raise_error(RuntimeError, "resque job error")
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "id" => kind_of(String),
-            "action" => "ResqueErrorTestJob#perform",
-            "error" => {
-              "name" => "RuntimeError",
-              "message" => "resque job error",
-              "backtrace" => kind_of(String)
-            },
-            "namespace" => namespace,
-            "metadata" => {},
-            "sample_data" => {
-              "breadcrumbs" => [],
-              "tags" => { "queue" => queue }
-            }
-          )
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("ResqueErrorTestJob#perform")
+          expect(transaction).to have_error("RuntimeError", "resque job error")
+          expect(transaction).to_not include_metadata
+          expect(transaction).to_not include_breadcrumbs
+          expect(transaction).to include_tags("queue" => queue)
+          expect(transaction).to include_event("name" => "perform.resque")
         end
       end
 
@@ -115,25 +101,23 @@ describe Appsignal::Hooks::ResqueHook do
           )
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "id" => kind_of(String),
-            "action" => "ResqueTestJob#perform",
-            "error" => nil,
-            "namespace" => namespace,
-            "metadata" => {},
-            "sample_data" => {
-              "tags" => { "queue" => queue },
-              "breadcrumbs" => [],
-              "params" => [
-                "foo",
-                {
-                  "foo" => "[FILTERED]",
-                  "bar" => "Bar",
-                  "baz" => { "1" => "foo" }
-                }
-              ]
-            }
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("ResqueTestJob#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to_not include_metadata
+          expect(transaction).to_not include_breadcrumbs
+          expect(transaction).to include_tags("queue" => queue)
+          expect(transaction).to include_event("name" => "perform.resque")
+          expect(transaction).to include_params(
+            [
+              "foo",
+              {
+                "foo" => "[FILTERED]",
+                "bar" => "Bar",
+                "baz" => { "1" => "foo" }
+              }
+            ]
           )
         end
       end
@@ -173,19 +157,15 @@ describe Appsignal::Hooks::ResqueHook do
           )
 
           transaction = last_transaction
-          transaction_hash = transaction.to_h
-          expect(transaction_hash).to include(
-            "id" => kind_of(String),
-            "action" => "ResqueTestJobByActiveJob#perform",
-            "error" => nil,
-            "namespace" => namespace,
-            "metadata" => {},
-            "sample_data" => {
-              "breadcrumbs" => [],
-              "tags" => { "queue" => queue }
-              # Params will be set by the ActiveJob integration
-            }
-          )
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("ResqueTestJobByActiveJob#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to_not include_metadata
+          expect(transaction).to_not include_breadcrumbs
+          expect(transaction).to include_tags("queue" => queue)
+          expect(transaction).to include_event("name" => "perform.resque")
+          expect(transaction).to_not include_params
         end
       end
     end

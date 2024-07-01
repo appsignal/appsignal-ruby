@@ -32,56 +32,53 @@ describe Appsignal::Demo do
   end
 
   describe ".create_example_error_request" do
-    let!(:error_transaction) { http_request_transaction }
-    let(:config) { project_fixture_config("production") }
-    before do
-      Appsignal.config = config
-      expect(Appsignal::Transaction).to receive(:new).with(
-        kind_of(String),
-        Appsignal::Transaction::HTTP_REQUEST,
-        kind_of(::Rack::Request),
-        kind_of(Hash)
-      ).and_return(error_transaction)
-    end
-    subject { described_class.send(:create_example_error_request) }
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
 
     it "sets an error" do
-      expect(error_transaction).to receive(:set_error).with(kind_of(described_class::TestError))
-      expect(error_transaction).to receive(:set_metadata).with("path", "/hello")
-      expect(error_transaction).to receive(:set_metadata).with("method", "GET")
-      expect(error_transaction).to receive(:set_metadata).with("demo_sample", "true")
-      expect(error_transaction).to receive(:complete)
-      subject
+      described_class.send(:create_example_error_request)
+
+      transaction = last_transaction
+      expect(transaction).to have_id
+      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+      expect(transaction).to have_action("DemoController#hello")
+      expect(transaction).to have_error(
+        "Appsignal::Demo::TestError",
+        "Hello world! This is an error used for demonstration purposes."
+      )
+      expect(transaction).to include_metadata(
+        "path" => "/hello",
+        "method" => "GET",
+        "demo_sample" => "true"
+      )
+      expect(transaction).to be_completed
     end
   end
 
   describe ".create_example_performance_request" do
-    let!(:performance_transaction) { http_request_transaction }
-    let(:config) { project_fixture_config("production") }
-    before do
-      Appsignal.config = config
-      expect(Appsignal::Transaction).to receive(:new).with(
-        kind_of(String),
-        Appsignal::Transaction::HTTP_REQUEST,
-        kind_of(::Rack::Request),
-        kind_of(Hash)
-      ).and_return(performance_transaction)
-    end
-    subject { described_class.send(:create_example_performance_request) }
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
 
     it "sends a performance sample" do
-      expect(performance_transaction).to receive(:start_event)
-      expect(performance_transaction).to receive(:finish_event).with(
-        "action_view.render",
-        "Render hello.html.erb",
-        "<h1>Hello world!</h1>",
-        Appsignal::EventFormatter::DEFAULT
+      described_class.send(:create_example_performance_request)
+
+      transaction = last_transaction
+      expect(transaction).to have_id
+      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+      expect(transaction).to have_action("DemoController#hello")
+      expect(transaction).to_not have_error
+      expect(transaction).to include_metadata(
+        "path" => "/hello",
+        "method" => "GET",
+        "demo_sample" => "true"
       )
-      expect(performance_transaction).to receive(:set_metadata).with("path", "/hello")
-      expect(performance_transaction).to receive(:set_metadata).with("method", "GET")
-      expect(performance_transaction).to receive(:set_metadata).with("demo_sample", "true")
-      expect(performance_transaction).to receive(:complete)
-      subject
+      expect(transaction).to include_event(
+        "name" => "action_view.render",
+        "title" => "Render hello.html.erb",
+        "body" => "<h1>Hello world!</h1>",
+        "body_format" => Appsignal::EventFormatter::DEFAULT
+      )
+      expect(transaction).to be_completed
     end
   end
 end

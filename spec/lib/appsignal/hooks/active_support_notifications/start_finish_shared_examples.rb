@@ -5,44 +5,26 @@ shared_examples "activesupport start finish override" do
     instrumenter.start("sql.active_record", :sql => "SQL")
     instrumenter.finish("sql.active_record", {})
 
-    expect(transaction.to_h["events"]).to match([
-      {
-        "allocation_count" => kind_of(Integer),
-        "body" => "",
-        "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
-        "child_allocation_count" => kind_of(Integer),
-        "child_duration" => kind_of(Float),
-        "child_gc_duration" => kind_of(Float),
-        "count" => 1,
-        "duration" => kind_of(Float),
-        "gc_duration" => kind_of(Float),
-        "name" => "sql.active_record",
-        "start" => kind_of(Float),
-        "title" => ""
-      }
-    ])
+    expect(transaction).to include_event(
+      "body" => "",
+      "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+      "count" => 1,
+      "name" => "sql.active_record",
+      "title" => ""
+    )
   end
 
   it "instruments an ActiveSupport::Notifications.start/finish event with payload on finish" do
     instrumenter.start("sql.active_record", {})
     instrumenter.finish("sql.active_record", :sql => "SQL")
 
-    expect(transaction.to_h["events"]).to match([
-      {
-        "allocation_count" => kind_of(Integer),
-        "body" => "SQL",
-        "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
-        "child_allocation_count" => kind_of(Integer),
-        "child_duration" => kind_of(Float),
-        "child_gc_duration" => kind_of(Float),
-        "count" => 1,
-        "duration" => kind_of(Float),
-        "gc_duration" => kind_of(Float),
-        "name" => "sql.active_record",
-        "start" => kind_of(Float),
-        "title" => ""
-      }
-    ])
+    expect(transaction).to include_event(
+      "body" => "SQL",
+      "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+      "count" => 1,
+      "name" => "sql.active_record",
+      "title" => ""
+    )
   end
 
   it "does not instrument events whose name starts with a bang" do
@@ -52,7 +34,7 @@ shared_examples "activesupport start finish override" do
     instrumenter.start("!sql.active_record", {})
     instrumenter.finish("!sql.active_record", {})
 
-    expect(transaction.to_h["events"]).to be_empty
+    expect(transaction).to_not include_events
   end
 
   context "when a transaction is completed in an instrumented block" do
@@ -63,7 +45,7 @@ shared_examples "activesupport start finish override" do
       Appsignal::Transaction.complete_current!
       instrumenter.finish("sql.active_record", {})
 
-      expect(transaction.to_h["events"]).to match([])
+      expect(transaction).to_not include_events
     end
   end
 end

@@ -81,14 +81,11 @@ describe Appsignal::Hooks::RedisHook do
                 client = Redis::Client.new
                 expect(client.write([:get, "key"])).to eql("stub_write")
 
-                transaction_hash = transaction.to_h
-                expect(transaction_hash["events"]).to include(
-                                                        hash_including(
-                                                          "name" => "query.redis",
-                                                          "body" => "get ?",
-                                                          "title" => "stub_id"
-                                                        )
-                                                      )
+                expect(transaction).to include_event(
+                  "name" => "query.redis",
+                  "body" => "get ?",
+                  "title" => "stub_id"
+                )
               end
 
               it "instrument a redis script call" do
@@ -98,14 +95,11 @@ describe Appsignal::Hooks::RedisHook do
                 argv = ["bar"]
                 expect(client.write([:eval, script, keys.size, keys, argv])).to eql("stub_write")
 
-                transaction_hash = transaction.to_h
-                expect(transaction_hash["events"]).to include(
-                                                        hash_including(
-                                                          "name" => "query.redis",
-                                                          "body" => "#{script} ? ?",
-                                                          "title" => "stub_id"
-                                                        )
-                                                      )
+                expect(transaction).to include_event(
+                  "name" => "query.redis",
+                  "body" => "#{script} ? ?",
+                  "title" => "stub_id"
+                )
               end
             end
           end

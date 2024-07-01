@@ -15,8 +15,7 @@ describe Appsignal::Hooks::RakeHook do
       end
 
       it "creates no transaction" do
-        expect(Appsignal::Transaction).to_not receive(:new)
-        expect { perform }.to_not(change { created_transactions })
+        expect { perform }.to_not(change { created_transactions.count })
       end
 
       it "calls the original task" do
@@ -42,20 +41,13 @@ describe Appsignal::Hooks::RakeHook do
       it "creates a background job transaction" do
         perform
 
-        expect(last_transaction).to be_completed
-        expect(last_transaction.to_h).to include(
-          "id" => kind_of(String),
-          "namespace" => Appsignal::Transaction::BACKGROUND_JOB,
-          "action" => "task:name",
-          "error" => {
-            "name" => "ExampleException",
-            "message" => "my error message",
-            "backtrace" => kind_of(String)
-          },
-          "sample_data" => hash_including(
-            "params" => { "foo" => "bar" }
-          )
-        )
+        transaction = last_transaction
+        expect(transaction).to have_id
+        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(transaction).to have_action("task:name")
+        expect(transaction).to have_error("ExampleException", "my error message")
+        expect(transaction).to include_params("foo" => "bar")
+        expect(transaction).to be_completed
       end
 
       context "when first argument is not a `Rake::TaskArguments`" do
@@ -64,9 +56,7 @@ describe Appsignal::Hooks::RakeHook do
         it "does not add the params to the transaction" do
           perform
 
-          expect(last_transaction.to_h).to include(
-            "sample_data" => hash_excluding("params")
-          )
+          expect(last_transaction).to_not include_params
         end
       end
     end
