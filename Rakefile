@@ -127,7 +127,7 @@ namespace :build_matrix do
       output = `git status`
       if output.include? GITHUB_ACTION_WORKFLOW_FILE
         puts "The `#{GITHUB_ACTION_WORKFLOW_FILE}` is modified. The changes were not committed."
-        puts "Please run `rake build_matrix:semaphore:generate` and commit the changes."
+        puts "Please run `rake build_matrix:github:generate` and commit the changes."
         exit 1
       end
     end
