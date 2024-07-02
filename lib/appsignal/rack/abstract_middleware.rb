@@ -93,8 +93,14 @@ module Appsignal
 
       def call_app(env, transaction)
         status, headers, obody = @app.call(env)
-        # Instrument response body and closing of the response body
-        [status, headers, Appsignal::Rack::BodyWrapper.wrap(obody, transaction)]
+        body =
+          if obody.is_a? Appsignal::Rack::BodyWrapper
+            obody
+          else
+            # Instrument response body and closing of the response body
+            Appsignal::Rack::BodyWrapper.wrap(obody, transaction)
+          end
+        [status, headers, body]
       end
 
       # Instrument the request fully. This is used by the top instrumentation

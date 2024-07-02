@@ -331,14 +331,45 @@ describe Appsignal::Rack::AbstractMiddleware do
       end
 
       context "with parent instrumentation" do
+        let(:transaction) { http_request_transaction }
         before do
-          env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = http_request_transaction
+          env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
+          set_current_transaction(transaction)
         end
 
         it "uses the existing transaction" do
           make_request
 
           expect { make_request }.to_not(change { created_transactions.count })
+        end
+
+        it "wraps the response body in a BodyWrapper subclass" do
+          _status, _headers, body = make_request
+          expect(body).to be_kind_of(Appsignal::Rack::BodyWrapper)
+
+          body.to_ary
+          response_events =
+            last_transaction.to_h["events"].count do |event|
+              event["name"] == "process_response_body.rack"
+            end
+          expect(response_events).to eq(1)
+        end
+
+        context "when response body is already a BodyWrapper subclass" do
+          let(:body) { Appsignal::Rack::BodyWrapper.wrap(["hello!"], transaction) }
+          let(:app) { DummyApp.new { [200, {}, body] } }
+
+          it "doesn't wrap the body again" do
+            _status, _headers, body = make_request
+            expect(body).to eq(body)
+
+            body.to_ary
+            response_events =
+              last_transaction.to_h["events"].count do |event|
+                event["name"] == "process_response_body.rack"
+              end
+            expect(response_events).to eq(1)
+          end
         end
 
         context "with error" do
