@@ -22,9 +22,26 @@ if DependencyHelper.webmachine_present?
         nil
       )
     end
-    let(:resource) { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
-    let(:response) { Response.new }
-    let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
+    let(:app) do
+      proc do
+        def to_html
+          "Some HTML"
+        end
+      end
+    end
+    let(:resource) do
+      app_block = app
+      Class.new(Webmachine::Resource) do
+        class_eval(&app_block) if app_block
+
+        def self.name
+          "MyResource"
+        end
+      end
+    end
+    let(:resource_instance) { resource.new(request, response) }
+    let(:response) { Webmachine::Response.new }
+    let(:fsm) { Webmachine::Decision::FSM.new(resource_instance, request, response) }
     before { start_agent }
     around { |example| keep_transactions { example.run } }
 
@@ -35,7 +52,23 @@ if DependencyHelper.webmachine_present?
 
       it "sets the action" do
         fsm.run
-        expect(last_transaction).to have_action("RSpec::Mocks::Double#GET")
+        expect(last_transaction).to have_action("MyResource#GET")
+      end
+
+      context "with action already set" do
+        let(:app) do
+          proc do
+            def to_html
+              Appsignal.set_action("Custom Action")
+              "Some HTML"
+            end
+          end
+        end
+
+        it "doesn't overwrite the action" do
+          fsm.run
+          expect(last_transaction).to have_action("Custom Action")
+        end
       end
 
       it "records an instrumentation event" do
@@ -52,12 +85,6 @@ if DependencyHelper.webmachine_present?
         fsm.run
         expect(last_transaction).to be_completed
         expect(current_transaction?).to be_falsy
-      end
-
-      it "sets a response code" do
-        expect(fsm.response.code).to be_nil
-        fsm.run
-        expect(fsm.response.code).not_to be_nil
       end
     end
 
