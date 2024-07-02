@@ -45,6 +45,11 @@ describe Appsignal::Rack::AbstractMiddleware do
         expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
       end
 
+      it "wraps the response body in a BodyWrapper subclass" do
+        _status, _headers, body = make_request
+        expect(body).to be_kind_of(Appsignal::Rack::BodyWrapper)
+      end
+
       context "without an error" do
         before { make_request }
 
