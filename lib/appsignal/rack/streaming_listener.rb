@@ -1,5 +1,10 @@
 # frozen_string_literal: true
 
+Appsignal::Utils::StdoutAndLoggerMessage.warning \
+  "The constant Appsignal::Rack::StreamingListener has been deprecated. " \
+    "Please update the constant name to " \
+    "Appsignal::Rack::InstrumentationMiddleware."
+
 module Appsignal
   module Rack
     # Instrumentation middleware that tracks exceptions in streaming Rack
