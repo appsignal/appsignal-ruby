@@ -56,8 +56,20 @@ describe Appsignal::Rack::AbstractMiddleware do
           expect(last_transaction).to_not have_error
         end
 
-        it "records an instrumentation event" do
-          expect(last_transaction).to include_event(:name => "process.abstract")
+        context "without :instrument_span_name option set" do
+          let(:options) { {} }
+
+          it "does not record an instrumentation event" do
+            expect(last_transaction).to_not include_event
+          end
+        end
+
+        context "with :instrument_span_name option set" do
+          let(:options) { { :instrument_span_name => "span_name.category" } }
+
+          it "records an instrumentation event" do
+            expect(last_transaction).to include_event(:name => "span_name.category")
+          end
         end
 
         it "completes the transaction" do
