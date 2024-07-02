@@ -1320,7 +1320,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "transmits path data in report" do
-            mode = ENV["RUNNING_IN_CI"] ? "40775" : "40755"
+            mode = "40755"
             expect(received_report["paths"]["root_path"]).to eq(
               "path" => root_path,
               "exists" => true,
