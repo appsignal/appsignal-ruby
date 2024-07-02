@@ -18,6 +18,15 @@ describe Appsignal::Rack::GenericInstrumentation do
     end
   end
 
+  context "with action name env" do
+    it "reports the appsignal.action env as the action name" do
+      env["appsignal.action"] = "MyAction"
+      make_request(env)
+
+      expect(last_transaction).to have_action("MyAction")
+    end
+  end
+
   context "without action name metadata" do
     it "reports 'unknown' as the action name" do
       make_request(env)
