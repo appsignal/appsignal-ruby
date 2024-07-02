@@ -86,6 +86,26 @@ if DependencyHelper.webmachine_present?
         expect(last_transaction).to be_completed
         expect(current_transaction?).to be_falsy
       end
+
+      context "with parent transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "sets the action" do
+          fsm.run
+          expect(last_transaction).to have_action("MyResource#GET")
+        end
+
+        it "sets the params" do
+          fsm.run
+          last_transaction._sample
+          expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
+        end
+
+        it "does not close the transaction" do
+          expect(last_transaction).to_not be_completed
+        end
+      end
     end
 
     describe "#handle_exceptions" do
