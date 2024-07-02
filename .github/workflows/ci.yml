@@ -6,15 +6,9 @@
 ---
 name: Ruby gem CI
 'on':
-  push:
-    branches:
-    - main
-    - develop
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+  push: {}
+  schedule:
+  - cron: 0 0 * * 1-5
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: "${{ !contains(github.ref, 'main')}}"
