@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "rack"
-
 module Appsignal
   module Rack
     # @api private

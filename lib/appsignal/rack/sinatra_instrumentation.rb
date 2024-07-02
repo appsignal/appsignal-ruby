@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "rack"
-
 module Appsignal
   module Rack
     # Stub old middleware. Prevents Sinatra middleware being loaded twice.

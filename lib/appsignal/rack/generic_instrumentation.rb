@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
-require "rack"
-
 module Appsignal
-  # @api private
   module Rack
+    # @api private
     class GenericInstrumentation < AbstractMiddleware
       def initialize(app, options = {})
         options[:instrument_span_name] ||= "process_action.generic"
@@ -16,5 +14,8 @@ module Appsignal
         transaction.set_action_if_nil("unknown")
       end
     end
+
+    # @api private
+    class GenericInstrumentationAlias < GenericInstrumentation; end
   end
 end

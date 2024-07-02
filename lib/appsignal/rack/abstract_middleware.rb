@@ -72,8 +72,8 @@ module Appsignal
       # don't report any exceptions here, the top instrumentation middleware
       # will be the one reporting the exception.
       #
-      # Either another {GenericInstrumentation} or {EventHandler} is higher in
-      # the stack and will report the exception and complete the transaction.
+      # Either another {AbstractMiddleware} or {EventHandler} is higher in the
+      # stack and will report the exception and complete the transaction.
       #
       # @see {#instrument_app_call_with_exception_handling}
       def instrument_app_call(env)
