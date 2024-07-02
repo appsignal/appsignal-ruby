@@ -15,24 +15,20 @@ if DependencyHelper.webmachine_present?
 
   describe Appsignal::Integrations::WebmachineIntegration do
     let(:request) do
-      Webmachine::Request.new("GET", "http://google.com:80/foo", {}, nil)
+      Webmachine::Request.new(
+        "GET",
+        "http://google.com:80/foo?param1=value1&param2=value2",
+        {},
+        nil
+      )
     end
     let(:resource) { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
     let(:response) { Response.new }
     let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
-    before(:context) { start_agent }
+    before { start_agent }
     around { |example| keep_transactions { example.run } }
 
-    # Make sure the request responds to the method we need to get query params.
-    describe "request" do
-      it "responds to #query" do
-        expect(request).to respond_to(:query)
-      end
-    end
-
     describe "#run" do
-      before { allow(fsm).to receive(:call).and_call_original }
-
       it "creates a transaction" do
         expect { fsm.run }.to(change { created_transactions.count }.by(1))
       end
@@ -45,6 +41,11 @@ if DependencyHelper.webmachine_present?
       it "records an instrumentation event" do
         fsm.run
         expect(last_transaction).to include_event("name" => "process_action.webmachine")
+      end
+
+      it "sets the params" do
+        fsm.run
+        expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
       end
 
       it "closes the transaction" do
