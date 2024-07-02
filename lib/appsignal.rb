@@ -325,6 +325,7 @@ require "appsignal/probes"
 require "appsignal/marker"
 require "appsignal/garbage_collection"
 require "appsignal/rack/abstract_middleware"
+require "appsignal/rack/instrumentation_middleware"
 require "appsignal/rack/generic_instrumentation"
 require "appsignal/rack/event_handler"
 require "appsignal/integrations/railtie" if defined?(::Rails)
