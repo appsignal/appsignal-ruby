@@ -1,5 +1,43 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.9.3
+
+_Published on 2024-07-02._
+
+### Added
+
+- [0230ab4d](https://github.com/appsignal/appsignal-ruby/commit/0230ab4da00d75e4fc72fd493fc98441b5d7254d) patch - Track error response status for web requests. When an unhandled exception reaches the AppSignal EventHandler instrumentation, report the response status as `500` for the `response_status` tag on the transaction and on the `response_status` metric.
+
+### Changed
+
+- [b3a80038](https://github.com/appsignal/appsignal-ruby/commit/b3a800380c0d83422d7f3c0e9c93551d343c50c0) patch - Require the AppSignal gem in the Grape integration file. Previously `require "appsignal"` had to be called before `require "appsignal/integrations/grape"`. This `require "appsignal"` is no longer required.
+- [e9aa0603](https://github.com/appsignal/appsignal-ruby/commit/e9aa06031b6c17f9f2704250bb1775a4cb72b276) patch - Report Global VM Lock metrics per process. In addition to the existing `hostname` tag, add `process_name` and `process_id` tags to the `gvl_global_timer` and `gvl_waiting_threads` metrics emitted by the [GVL probe](https://docs.appsignal.com/ruby/integrations/global-vm-lock.html), allowing these metrics to be tracked in a per-process basis.
+
+### Deprecated
+
+- [844aa0af](https://github.com/appsignal/appsignal-ruby/commit/844aa0afa3311860dca84badc27c2be8996bfd3c) patch - Deprecate `Appsignal::Grape::Middleware` constant in favor of `Appsignal::Rack::GrapeMiddleware` constant.
+  
+  To fix this deprecation warning, update the usage of `Appsignal::Grape::Middleware` like this:
+  
+  ```ruby
+  # Grape only apps
+  insert_before Grape::Middleware::Error, Appsignal::Rack::GrapeMiddleware
+  # or
+  use Appsignal::Rack::GrapeMiddleware
+  
+  # Grape on Rails app
+  use Appsignal::Rack::GrapeMiddleware
+  ```
+- [1f648ab4](https://github.com/appsignal/appsignal-ruby/commit/1f648ab4d0372f37d15a980a9902779834811531) patch - Deprecate the `Appsignal.start_logger` method. Remove this method call from apps if it is present. Calling `Appsignal.start` will now initialize the logger.
+
+### Fixed
+
+- [0bb29809](https://github.com/appsignal/appsignal-ruby/commit/0bb29809f1750bdac2b66a1132a3638c58e6d1f8) patch - Fix an issue with invalid request methods raising an error in the GenericInstrumentation middleware when using a request class that throws an error when calling the `request_method` method, like `ActionDispatch::Request`.
+- [66bb7a60](https://github.com/appsignal/appsignal-ruby/commit/66bb7a60cafd3fb1a91d4ed0430d51ee8ac8de46) patch - Support Grape apps that are nested in other apps like Sinatra and Rails, that also include AppSignal middleware for instrumentation.
+- [a7b056bd](https://github.com/appsignal/appsignal-ruby/commit/a7b056bd333912b3b6388d68d6dd3af0b2cb9a75) patch - Support Hanami version 2.1. On older versions of our Ruby gem it would error on an unknown keyword argument "sessions_enabled".
+- [00b7ac6a](https://github.com/appsignal/appsignal-ruby/commit/00b7ac6a9128d47fa9d3a1556f73a14304de8944) patch - Fix issue with AppSignal getting stuck in a boot loop when loading the Hanami integration with: `require "appsignal/integrations/hanami"`
+  This could happen in nested applications, like a Hanami app in a Rails app. It will now use the first config AppSignal starts with.
+
 ## 3.9.2
 
 _Published on 2024-06-26._
