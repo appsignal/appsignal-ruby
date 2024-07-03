@@ -2990,8 +2990,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_jruby-9-4-1-0:
-    name: Ruby jruby-9.4.1.0
+  ruby_jruby-9-4-7-0:
+    name: Ruby jruby-9.4.7.0
     needs: validation
     runs-on: ubuntu-latest
     steps:
@@ -3000,7 +3000,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: jruby-9.4.1.0
+        ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -3019,9 +3019,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_jruby-9-4-1-0__rails-6-0:
-    name: Ruby jruby-9.4.1.0 - rails-6.0
-    needs: ruby_jruby-9-4-1-0
+  ruby_jruby-9-4-7-0__rails-6-0:
+    name: Ruby jruby-9.4.7.0 - rails-6.0
+    needs: ruby_jruby-9-4-7-0
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -3029,7 +3029,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: jruby-9.4.1.0
+        ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -3046,9 +3046,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.0.gemfile
-  ruby_jruby-9-4-1-0__rails-6-1:
-    name: Ruby jruby-9.4.1.0 - rails-6.1
-    needs: ruby_jruby-9-4-1-0
+  ruby_jruby-9-4-7-0__rails-6-1:
+    name: Ruby jruby-9.4.7.0 - rails-6.1
+    needs: ruby_jruby-9-4-7-0
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -3056,7 +3056,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: jruby-9.4.1.0
+        ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -3073,9 +3073,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.1.gemfile
-  ruby_jruby-9-4-1-0__rails-7-0:
-    name: Ruby jruby-9.4.1.0 - rails-7.0
-    needs: ruby_jruby-9-4-1-0
+  ruby_jruby-9-4-7-0__rails-7-0:
+    name: Ruby jruby-9.4.7.0 - rails-7.0
+    needs: ruby_jruby-9-4-7-0
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -3083,7 +3083,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: jruby-9.4.1.0
+        ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -3100,9 +3100,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
-  ruby_jruby-9-4-1-0__rails-7-1:
-    name: Ruby jruby-9.4.1.0 - rails-7.1
-    needs: ruby_jruby-9-4-1-0
+  ruby_jruby-9-4-7-0__rails-7-1:
+    name: Ruby jruby-9.4.7.0 - rails-7.1
+    needs: ruby_jruby-9-4-7-0
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -3110,7 +3110,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: jruby-9.4.1.0
+        ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
