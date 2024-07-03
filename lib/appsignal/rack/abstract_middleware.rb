@@ -14,7 +14,7 @@ module Appsignal
         @options = options
         @request_class = options.fetch(:request_class, ::Rack::Request)
         @params_method = options.fetch(:params_method, :params)
-        @instrument_span_name = options.fetch(:instrument_span_name, "process.abstract")
+        @instrument_span_name = options.fetch(:instrument_span_name, nil)
         @report_errors = options.fetch(:report_errors, DEFAULT_ERROR_REPORTING)
       end
 
