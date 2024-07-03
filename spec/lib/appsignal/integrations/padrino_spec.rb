@@ -3,40 +3,102 @@ if DependencyHelper.padrino_present?
     require "appsignal/integrations/padrino"
 
     describe Appsignal::Integrations::PadrinoPlugin do
-      it "starts AppSignal on init" do
-        expect(Appsignal).to receive(:start)
+      let(:callbacks) { { :before_load => nil } }
+      before do
+        Appsignal.config = nil
+        allow(Padrino).to receive(:before_load)
+          .and_wrap_original do |original_method, *args, &block|
+            callbacks[:before_load] = block
+            original_method.call(*args, &block)
+          end
+      end
+      after { uninstall_padrino_integration }
+
+      def uninstall_padrino_integration
+        expected_middleware = [
+          Rack::Events,
+          Appsignal::Rack::SinatraBaseInstrumentation
+        ]
+        Padrino.middleware.delete_if do |middleware|
+          expected_middleware.include?(middleware.first)
+        end
+      end
+
+      context "with active config" do
+        before do
+          ENV["APPSIGNAL_APP_NAME"] = "My Padrino app name"
+          ENV["APPSIGNAL_APP_ENV"] = "test"
+          ENV["APPSIGNAL_PUSH_API_KEY"] = "my-key"
+        end
+
+        it "starts AppSignal on init" do
+          expect(Appsignal).to_not be_active
+
+          Appsignal::Integrations::PadrinoPlugin.init
+          callbacks[:before_load].call
+
+          expect(Appsignal).to be_active
+          middlewares = Padrino.middleware
+          expect(middlewares).to include(
+            [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+          )
+          expect(middlewares).to include(
+            [
+              Appsignal::Rack::SinatraBaseInstrumentation,
+              [
+                :instrument_span_name => "process_action.padrino"
+              ],
+              nil
+            ]
+          )
+        end
+
+        context "when APPSIGNAL_APP_ENV ENV var is provided" do
+          it "uses this as the environment" do
+            ENV["APPSIGNAL_APP_ENV"] = "custom"
+
+            Appsignal::Integrations::PadrinoPlugin.init
+            callbacks[:before_load].call
+
+            expect(Appsignal.config.env).to eq("custom")
+          end
+        end
+
+        context "when APPSIGNAL_APP_ENV ENV var is not provided" do
+          it "uses the Padrino environment" do
+            Appsignal::Integrations::PadrinoPlugin.init
+            callbacks[:before_load].call
+
+            expect(Padrino.env.to_s).to eq("test")
+            expect(Appsignal.config.env).to eq(Padrino.env.to_s)
+          end
+        end
       end
 
       context "when not active" do
-        before { allow(Appsignal).to receive(:active?).and_return(false) }
-
         it "does not add the listener middleware to the stack" do
-          expect(Padrino).to_not receive(:use)
-        end
-      end
+          expect(Appsignal).to_not be_active
 
-      context "when APPSIGNAL_APP_ENV ENV var is provided" do
-        it "uses this as the environment" do
-          ENV["APPSIGNAL_APP_ENV"] = "custom"
-
-          # Reset the plugin to pull down the latest data
           Appsignal::Integrations::PadrinoPlugin.init
+          callbacks[:before_load].call
 
-          expect(Appsignal.config.env).to eq("custom")
+          expect(Appsignal).to_not be_active
+          middlewares = Padrino.middleware
+          expect(middlewares).to_not include(
+            [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+          )
+          expect(middlewares).to_not include(
+            [
+              Appsignal::Rack::SinatraBaseInstrumentation,
+              [
+                :request_class => ::Sinatra::Request,
+                :instrument_span_name => "process_action.padrino"
+              ],
+              nil
+            ]
+          )
         end
       end
-
-      context "when APPSIGNAL_APP_ENV ENV var is not provided" do
-        it "uses the Padrino environment" do
-          # Reset the plugin to pull down the latest data
-          Appsignal::Integrations::PadrinoPlugin.init
-
-          expect(Padrino.env.to_s).to eq("test")
-          expect(Appsignal.config.env).to eq(Padrino.env.to_s)
-        end
-      end
-
-      after { Appsignal::Integrations::PadrinoPlugin.init }
     end
 
     describe Padrino::Routing::InstanceMethods do
@@ -50,9 +112,9 @@ if DependencyHelper.padrino_present?
       # TODO: use an instance double
       let(:settings) { double(:name => "TestApp") }
       around { |example| keep_transactions { example.run } }
+      before { Appsignal.config = nil }
 
       describe "routes" do
-        let(:request_kind) { kind_of(Sinatra::Request) }
         let(:env) do
           {
             "REQUEST_METHOD" => "GET",
@@ -83,20 +145,7 @@ if DependencyHelper.padrino_present?
           end
         end
 
-        def expect_a_transaction_to_be_created
-          transaction = last_transaction
-          expect(transaction).to have_id
-          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(transaction).to include_metadata(
-            "path" => path,
-            "method" => "GET"
-          )
-          expect(transaction).to include_event("name" => "process_action.padrino")
-          expect(transaction).to be_completed
-        end
-
         context "when AppSignal is not active" do
-          before { allow(Appsignal).to receive(:active?).and_return(false) }
           let(:path) { "/foo" }
           before { app.controllers { get(:foo) { "content" } } }
 
@@ -108,16 +157,17 @@ if DependencyHelper.padrino_present?
         end
 
         context "when AppSignal is active" do
-          before { start_agent }
+          let(:transaction) { http_request_transaction }
+          before do
+            start_agent
+            set_current_transaction(transaction)
+          end
 
           context "with not existing route" do
             let(:path) { "/404" }
 
             it "instruments the request" do
               expect(response).to match_response(404, /^GET &#x2F;404/)
-
-              expect_a_transaction_to_be_created
-              # Uses path for action name
               expect(last_transaction).to have_action("PadrinoTestApp#unknown")
             end
           end
@@ -130,9 +180,8 @@ if DependencyHelper.padrino_present?
             end
 
             it "does not instrument the request" do
-              expect do
-                expect(response).to match_response(200, "Static!")
-              end.to_not(change { created_transactions.count })
+              expect(response).to match_response(200, "Static!")
+              expect(last_transaction).to_not have_action
             end
           end
 
@@ -145,11 +194,7 @@ if DependencyHelper.padrino_present?
             end
 
             it "falls back on Sinatra::Request#route_obj.original_path" do
-              expect do
-                expect(response).to match_response(200, "content")
-              end.to(change { created_transactions.count }.by(1))
-
-              expect_a_transaction_to_be_created
+              expect(response).to match_response(200, "content")
               expect(last_transaction).to have_action("PadrinoTestApp:/my_original_path/:id")
             end
           end
@@ -164,118 +209,92 @@ if DependencyHelper.padrino_present?
 
             it "falls back on app name" do
               expect(response).to match_response(200, "content")
-              expect_a_transaction_to_be_created
               expect(last_transaction).to have_action("PadrinoTestApp#unknown")
             end
           end
 
           context "with existing route" do
-            context "with an exception in the controller" do
-              let(:path) { "/exception" }
-              before do
-                app.controllers { get(:exception) { raise ExampleException, "error message" } }
-                expect { response }.to raise_error(ExampleException, "error message")
-                expect_a_transaction_to_be_created
+            let(:path) { "/" }
+            def make_request
+              expect(response).to match_response(200, "content")
+            end
+
+            context "with action name as symbol" do
+              context "with :index helper" do
+                before do
+                  # :index == "/"
+                  app.controllers { get(:index) { "content" } }
+                end
+
+                it "sets the action with the app name and action name" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:#index")
+                end
               end
 
-              it "sets the action name based on the app name and action name" do
-                expect(last_transaction).to have_action("PadrinoTestApp:#exception")
-              end
+              context "with custom action name" do
+                let(:path) { "/foo" }
+                before do
+                  app.controllers { get(:foo) { "content" } }
+                end
 
-              it "sets the error on the transaction" do
-                expect(last_transaction).to have_error("ExampleException", "error message")
+                it "sets the action with the app name and action name" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:#foo")
+                end
               end
             end
 
-            context "without an exception in the controller" do
-              let(:path) { "/" }
-              def make_request
-                expect(response).to match_response(200, "content")
-              end
-
-              context "with action name as symbol" do
-                context "with :index helper" do
-                  before do
-                    # :index == "/"
-                    app.controllers { get(:index) { "content" } }
-                  end
-
-                  it "sets the action with the app name and action name" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:#index")
-                  end
+            context "with an action defined with a path" do
+              context "with root path" do
+                before do
+                  # :index == "/"
+                  app.controllers { get("/") { "content" } }
                 end
 
-                context "with custom action name" do
-                  let(:path) { "/foo" }
-                  before do
-                    app.controllers { get(:foo) { "content" } }
-                  end
-
-                  it "sets the action with the app name and action name" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:#foo")
-                  end
+                it "sets the action with the app name and action path" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:#/")
                 end
               end
 
-              context "with an action defined with a path" do
-                context "with root path" do
-                  before do
-                    # :index == "/"
-                    app.controllers { get("/") { "content" } }
-                  end
-
-                  it "sets the action with the app name and action path" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:#/")
-                  end
+              context "with custom path" do
+                let(:path) { "/foo" }
+                before do
+                  app.controllers { get("/foo") { "content" } }
                 end
 
-                context "with custom path" do
-                  let(:path) { "/foo" }
-                  before do
-                    app.controllers { get("/foo") { "content" } }
-                  end
+                it "sets the action with the app name and action path" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:#/foo")
+                end
+              end
+            end
 
-                  it "sets the action with the app name and action path" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:#/foo")
-                  end
+            context "with controller" do
+              let(:path) { "/my_controller" }
+
+              context "with controller as name" do
+                before do
+                  # :index == "/"
+                  app.controllers(:my_controller) { get(:index) { "content" } }
+                end
+
+                it "sets the action with the app name, controller name and action name" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:my_controller#index")
                 end
               end
 
-              context "with controller" do
-                let(:path) { "/my_controller" }
-
-                context "with controller as name" do
-                  before do
-                    # :index == "/"
-                    app.controllers(:my_controller) { get(:index) { "content" } }
-                  end
-
-                  it "sets the action with the app name, controller name and action name" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:my_controller#index")
-                  end
+              context "with controller as path" do
+                before do
+                  # :index == "/"
+                  app.controllers("/my_controller") { get(:index) { "content" } }
                 end
 
-                context "with controller as path" do
-                  before do
-                    # :index == "/"
-                    app.controllers("/my_controller") { get(:index) { "content" } }
-                  end
-
-                  it "sets the action with the app name, controller name and action path" do
-                    make_request
-                    expect_a_transaction_to_be_created
-                    expect(last_transaction).to have_action("PadrinoTestApp:/my_controller#index")
-                  end
+                it "sets the action with the app name, controller name and action path" do
+                  make_request
+                  expect(last_transaction).to have_action("PadrinoTestApp:/my_controller#index")
                 end
               end
             end
