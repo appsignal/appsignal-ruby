@@ -88,7 +88,7 @@ matrix:
     - ruby: "3.1.3"
     - ruby: "3.0.5"
     - ruby: "2.7.8"
-    - ruby: "jruby-9.4.1.0"
+    - ruby: "jruby-9.4.7.0"
       gems: "minimal"
   gems:
     - gem: "no_dependencies"
@@ -141,7 +141,7 @@ matrix:
         ruby:
           - "3.0.5"
           - "2.7.8"
-          - "jruby-9.4.1.0"
+          - "jruby-9.4.7.0"
     - gem: "rails-6.1"
       only:
         ruby:
@@ -150,7 +150,7 @@ matrix:
           - "3.1.3"
           - "3.0.5"
           - "2.7.8"
-          - "jruby-9.4.1.0"
+          - "jruby-9.4.7.0"
     - gem: "rails-7.0"
       only:
         ruby:
@@ -159,7 +159,7 @@ matrix:
           - "3.1.3"
           - "3.0.5"
           - "2.7.8"
-          - "jruby-9.4.1.0"
+          - "jruby-9.4.7.0"
     - gem: "rails-7.1"
       only:
         ruby:
@@ -167,7 +167,7 @@ matrix:
           - "3.2.1"
           - "3.1.3"
           - "3.0.5"
-          - "jruby-9.4.1.0"
+          - "jruby-9.4.7.0"
     - gem: "sequel"
     - gem: "sinatra"
     - gem: "webmachine1"
