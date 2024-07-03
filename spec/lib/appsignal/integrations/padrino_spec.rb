@@ -24,6 +24,37 @@ if DependencyHelper.padrino_present?
         end
       end
 
+      context "when already active" do
+        before { allow(Appsignal).to receive(:active?).and_return(true) }
+
+        it "does not start AppSignal again" do
+          expect(Appsignal::Config).to_not receive(:new)
+          expect(Appsignal).to_not receive(:start)
+
+          Appsignal::Integrations::PadrinoPlugin.init
+          callbacks[:before_load].call
+        end
+
+        it "adds the instrumentation middleware to Sinatra::Base" do
+          Appsignal::Integrations::PadrinoPlugin.init
+          callbacks[:before_load].call
+
+          middlewares = Padrino.middleware
+          expect(middlewares).to include(
+            [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+          )
+          expect(middlewares).to include(
+            [
+              Appsignal::Rack::SinatraBaseInstrumentation,
+              [
+                :instrument_span_name => "process_action.padrino"
+              ],
+              nil
+            ]
+          )
+        end
+      end
+
       context "with active config" do
         before do
           ENV["APPSIGNAL_APP_NAME"] = "My Padrino app name"

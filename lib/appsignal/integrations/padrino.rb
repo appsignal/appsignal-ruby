@@ -13,9 +13,11 @@ module Appsignal
         Padrino.before_load do
           Appsignal.internal_logger.debug("Loading Padrino (#{Padrino::VERSION}) integration")
 
-          root = Padrino.mounted_root
-          Appsignal.config = Appsignal::Config.new(root, Padrino.env)
-          Appsignal.start
+          unless Appsignal.active?
+            root = Padrino.mounted_root
+            Appsignal.config = Appsignal::Config.new(root, Padrino.env)
+            Appsignal.start
+          end
 
           next unless Appsignal.active?
 
