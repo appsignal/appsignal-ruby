@@ -109,6 +109,7 @@ module Appsignal
       @params = nil
       @session_data = nil
       @headers = nil
+      @errors = []
 
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -127,8 +128,28 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      sample_data if @ext.finish(0)
+
+      sample_data if !@duplicate && @ext.finish(0)
+
+      transactions =
+        @errors.each do |error|
+          # This part would be done in the extension like:
+          # transaction = @ext.duplicate_transaction
+
+          transaction = self.class.new(
+            SecureRandom.uuid,
+            namespace,
+            request,
+            options
+          )
+          transaction.ext = ext.duplicate
+          transaction.duplicate = true
+          transaction.set_error(error)
+          transaction.complete
+        end
       @ext.complete
+
+      transactions.each(&:complete)
     end
 
     # @api private
@@ -434,6 +455,10 @@ module Appsignal
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
       @ext.set_metadata(key, value)
+    end
+
+    def add_error(error)
+      @errors << error
     end
 
     # @see Appsignal::Helpers::Instrumentation#set_error
