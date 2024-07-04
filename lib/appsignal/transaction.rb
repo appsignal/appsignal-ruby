@@ -180,6 +180,8 @@ module Appsignal
 
     # Set tags on the transaction.
     #
+    # When this method is called multiple times, it will merge the tags.
+    #
     # @param given_tags [Hash] Collection of tags.
     # @option given_tags [String, Symbol, Integer] :any
     #   The name of the tag as a Symbol.
@@ -187,7 +189,7 @@ module Appsignal
     #   The name of the tag as a String.
     # @return [void]
     #
-    # @see Appsignal.tag_request
+    # @see Helpers::Instrumentation#tag_request
     # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
     #   Tagging guide
     def set_tags(given_tags = {})

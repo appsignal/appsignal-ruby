@@ -479,8 +479,10 @@ module Appsignal
       # Tags are extra bits of information that are added to transaction and
       # appear on sample details pages on AppSignal.com.
       #
+      # When this method is called multiple times, it will merge the tags.
+      #
       # @example
-      #   Appsignal.tag_request(:locale => "en")
+      #   Appsignal.tag_request(:locale => "en", :user_id => 1)
       #   Appsignal.tag_request("locale" => "en")
       #   Appsignal.tag_request("user_id" => 1)
       #
