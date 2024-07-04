@@ -5,7 +5,7 @@ if DependencyHelper.grape_present?
     let(:err_stream) { std_stream }
     let(:stderr) { err_stream.read }
 
-    it "returns the Probes constant calling the Minutely constant" do
+    it "returns the Rack::GrapeMiddleware constant calling the Grape::Middleware constant" do
       silence { expect(Appsignal::Grape::Middleware).to be(Appsignal::Rack::GrapeMiddleware) }
     end
 
