@@ -321,6 +321,20 @@ describe Appsignal do
       end
     end
 
+    describe ".report_error" do
+      let(:error) { ExampleException.new("specific error") }
+
+      it "does not raise an error" do
+        Appsignal.report_error(error)
+      end
+
+      it "does not create a transaction" do
+        expect do
+          Appsignal.report_error(error)
+        end.to_not(change { created_transactions.count })
+      end
+    end
+
     describe ".set_namespace" do
       it "does not raise an error" do
         Appsignal.set_namespace("custom")
@@ -989,6 +1003,101 @@ describe Appsignal do
           Appsignal.set_error(error)
 
           expect(transaction).to_not have_error
+        end
+      end
+    end
+
+    describe ".report_error" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
+      let(:error) { ExampleException.new("error message") }
+      before { start_agent }
+      around { |example| keep_transactions { example.run } }
+
+      context "when the error is not an Exception" do
+        let(:error) { Object.new }
+
+        it "does not set an error" do
+          silence { Appsignal.report_error(error) }
+
+          expect(last_transaction).to_not have_error
+        end
+
+        it "logs an error" do
+          logs = capture_logs { Appsignal.report_error(error) }
+          expect(logs).to contains_log(
+            :error,
+            "Appsignal.report_error: Cannot set error. " \
+              "The given value is not an exception: #{error.inspect}"
+          )
+        end
+      end
+
+      context "when there is no active transaction" do
+        it "creates a new transaction" do
+          expect do
+            Appsignal.report_error(error)
+          end.to(change { created_transactions.count }.by(1))
+        end
+
+        it "completes the transaction" do
+          Appsignal.report_error(error)
+
+          expect(last_transaction).to be_completed
+        end
+
+        context "when given a block" do
+          it "yields the transaction and allows additional metadata to be set" do
+            Appsignal.report_error(error) do |t|
+              t.set_action("my_action")
+              t.set_namespace("my_namespace")
+              t.set_tags(:tag1 => "value1")
+            end
+
+            transaction = last_transaction
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to be_completed
+          end
+        end
+      end
+
+      context "when there is an active transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "adds the error to the active transaction" do
+          Appsignal.report_error(error)
+
+          expect(last_transaction).to eq(transaction)
+          transaction._sample
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          expect(transaction).to have_error("ExampleException", "error message")
+        end
+
+        it "does not complete the transaction" do
+          Appsignal.report_error(error)
+
+          expect(last_transaction).to_not be_completed
+        end
+
+        context "when given a block" do
+          it "yields the transaction and allows additional metadata to be set" do
+            Appsignal.report_error(error) do |t|
+              t.set_action("my_action")
+              t.set_namespace("my_namespace")
+              t.set_tags(:tag1 => "value1")
+            end
+
+            transaction._sample
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to_not be_completed
+          end
         end
       end
     end

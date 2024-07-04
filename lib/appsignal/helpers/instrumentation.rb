@@ -195,6 +195,7 @@ module Appsignal
       #   used to send the error.
       # @return [void]
       #
+      # @see Transaction#report_error
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
@@ -294,6 +295,7 @@ module Appsignal
       # @return [void]
       #
       # @see Transaction#set_error
+      # @see Transaction#report_error
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @since 0.6.6
@@ -333,6 +335,74 @@ module Appsignal
       end
       alias :set_exception :set_error
       alias :add_exception :set_error
+
+      # Report an error.
+      #
+      # If a transaction is currently active, it will report the error on the
+      # current transaction. If no transaction is active, it will report the
+      # error on a new transaction.
+      #
+      # **Note**: If AppSignal is not active, no error is reported.
+      #
+      # **Note**: If the given exception argument is not an Exception subclass,
+      # it will not be reported.
+      #
+      # @example
+      #   class SomeController < ApplicationController
+      #     def create
+      #       # Do something that breaks
+      #     rescue => error
+      #       Appsignal.report_error(error)
+      #     end
+      #   end
+      #
+      # @example Add more metadata to transaction
+      #   Appsignal.report_error(error) do |transaction|
+      #     transaction.set_namespace("my_namespace")
+      #     transaction.set_action("my_action_name")
+      #     transaction.set_params(:search_query => params[:search_query])
+      #     transaction.set_tags(:key => "value")
+      #   end
+      #
+      # @param exception [Exception] The error to add to the current
+      #   transaction.
+      # @yield [transaction] yields block to allow modification of the
+      #   transaction.
+      # @yieldparam transaction [Transaction] yields the AppSignal transaction
+      #   used to report the error.
+      # @return [void]
+      #
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      #   Exception handling guide
+      # @since 3.10.0
+      def report_error(exception)
+        unless exception.is_a?(Exception)
+          internal_logger.error "Appsignal.report_error: Cannot set error. " \
+            "The given value is not an exception: #{exception.inspect}"
+          return
+        end
+        return unless active?
+
+        has_parent_transaction = Appsignal::Transaction.current?
+        transaction =
+          if has_parent_transaction
+            Appsignal::Transaction.current
+          else
+            Appsignal::Transaction.new(
+              SecureRandom.uuid,
+              Appsignal::Transaction::HTTP_REQUEST,
+              Appsignal::Transaction::GenericRequest.new({})
+            )
+          end
+
+        transaction.set_error(exception)
+        yield transaction if block_given?
+
+        return if has_parent_transaction
+
+        transaction.complete
+      end
+      alias :report_exception :report_error
 
       # Set a custom action name for the current transaction.
       #
