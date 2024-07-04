@@ -431,7 +431,8 @@ describe Appsignal::Transaction do
 
     describe "#set_tags" do
       let(:long_string) { "a" * 10_001 }
-      before do
+
+      it "stores tags on the transaction" do
         transaction.set_tags(
           :valid_key => "valid_value",
           "valid_string_key" => "valid_value",
@@ -443,10 +444,8 @@ describe Appsignal::Transaction do
           :too_long_value => long_string,
           long_string => "too_long_key"
         )
-        transaction.sample_data
-      end
+        transaction._sample
 
-      it "stores tags on the transaction" do
         expect(transaction).to include_tags(
           "valid_key" => "valid_value",
           "valid_string_key" => "valid_value",
@@ -454,6 +453,17 @@ describe Appsignal::Transaction do
           "integer_value" => 1,
           "too_long_value" => "#{"a" * 10_000}...",
           long_string => "too_long_key"
+        )
+      end
+
+      it "merges the tags when called multiple times" do
+        transaction.set_tags(:key1 => "value1")
+        transaction.set_tags(:key2 => "value2")
+        transaction._sample
+
+        expect(transaction).to include_tags(
+          "key1" => "value1",
+          "key2" => "value2"
         )
       end
     end
