@@ -1,18 +1,28 @@
 # frozen_string_literal: true
 
 require "appsignal"
+require "appsignal/rack/sinatra_instrumentation"
 
 module Appsignal
   module Integrations
     # @api private
     module PadrinoPlugin
       def self.init
-        Appsignal.internal_logger.debug("Loading Padrino (#{Padrino::VERSION}) integration")
+        Padrino::Application.prepend Appsignal::Integrations::PadrinoIntegration
 
-        root = Padrino.mounted_root
-        Appsignal.config = Appsignal::Config.new(root, Padrino.env)
+        Padrino.before_load do
+          Appsignal.internal_logger.debug("Loading Padrino (#{Padrino::VERSION}) integration")
 
-        Appsignal.start
+          root = Padrino.mounted_root
+          Appsignal.config = Appsignal::Config.new(root, Padrino.env)
+          Appsignal.start
+
+          next unless Appsignal.active?
+
+          Padrino.use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
+          Padrino.use Appsignal::Rack::SinatraBaseInstrumentation,
+            :instrument_span_name => "process_action.padrino"
+        end
       end
     end
   end
@@ -24,31 +34,18 @@ module Appsignal
       def route!(base = settings, pass_block = nil)
         return super if !Appsignal.active? || env["sinatra.static_file"]
 
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST,
-          request
-        )
         begin
-          Appsignal.instrument("process_action.padrino") do
-            super
-          end
-        rescue Exception => error # rubocop:disable Lint/RescueException
-          transaction.set_error(error)
-          raise error
+          super
         ensure
+          transaction = Appsignal::Transaction.current
           transaction.set_action_if_nil(get_payload_action(request))
-          transaction.set_metadata("path", request.path)
-          transaction.set_metadata("method", request.request_method)
-          transaction.set_http_or_background_queue_start
-          Appsignal::Transaction.complete_current!
         end
       end
 
       private
 
       def get_payload_action(request)
-        # Short-circut is there's no request object to obtain information from
+        # Short-circuit is there's no request object to obtain information from
         return settings.name.to_s unless request
 
         # Newer versions expose the action / controller on the request class.
@@ -75,8 +72,4 @@ module Appsignal
   end
 end
 
-Padrino::Application.prepend Appsignal::Integrations::PadrinoIntegration
-
-Padrino.after_load do
-  Appsignal::Integrations::PadrinoPlugin.init
-end
+Appsignal::Integrations::PadrinoPlugin.init

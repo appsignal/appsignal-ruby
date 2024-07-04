@@ -7,8 +7,12 @@ if DependencyHelper.sinatra_present?
 
   # "Uninstall" the AppSignal integration
   def uninstall_sinatra_integration
+    expected_middleware = [
+      Rack::Events,
+      Appsignal::Rack::SinatraBaseInstrumentation
+    ]
     Sinatra::Base.instance_variable_get(:@middleware).delete_if do |middleware|
-      middleware.first == Appsignal::Rack::SinatraBaseInstrumentation
+      expected_middleware.include?(middleware.first)
     end
   end
 
@@ -29,7 +33,11 @@ if DependencyHelper.sinatra_present?
 
       it "adds the instrumentation middleware to Sinatra::Base" do
         install_sinatra_integration
-        expect(Sinatra::Base.middleware.to_a).to include(
+        middlewares = Sinatra::Base.middleware.to_a
+        expect(middlewares).to include(
+          [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+        )
+        expect(middlewares).to include(
           [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]
         )
       end
