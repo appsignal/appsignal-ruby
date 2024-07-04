@@ -468,6 +468,85 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#set_custom_data" do
+      let(:log_stream) { std_stream }
+      let(:logs) { log_contents(log_stream) }
+      around { |example| use_logger_with(log_stream) { example.run } }
+
+      it "stores custom Hash data on the transaction" do
+        transaction.set_custom_data(
+          :user => {
+            :id => 123,
+            :locale => "abc"
+          },
+          :organization => {
+            :slug => "appsignal",
+            :plan => "enterprise"
+          }
+        )
+
+        transaction._sample
+        expect(transaction).to include_custom_data(
+          "user" => {
+            "id" => 123,
+            "locale" => "abc"
+          },
+          "organization" => {
+            "slug" => "appsignal",
+            "plan" => "enterprise"
+          }
+        )
+      end
+
+      it "stores custom Array data on the transaction" do
+        transaction.set_custom_data([
+          [123, "abc"],
+          ["appsignal", "enterprise"]
+        ])
+
+        transaction._sample
+        expect(transaction).to include_custom_data([
+          [123, "abc"],
+          ["appsignal", "enterprise"]
+        ])
+      end
+
+      it "does not store non Hash or Array custom data" do
+        transaction.set_custom_data("abc")
+        transaction._sample
+        expect(transaction).to_not include_custom_data
+
+        transaction.set_custom_data(123)
+        transaction._sample
+        expect(transaction).to_not include_custom_data
+
+        transaction.set_custom_data(Object.new)
+        transaction._sample
+        expect(transaction).to_not include_custom_data
+
+        expect(logs).to contains_log(
+          :error,
+          "set_custom_data: Unsupported data type String received."
+        )
+        expect(logs).to contains_log(
+          :error,
+          "set_custom_data: Unsupported data type Integer received."
+        )
+        expect(logs).to contains_log(
+          :error,
+          "set_custom_data: Unsupported data type String received."
+        )
+      end
+
+      it "overwrites the custom data if called multiple times" do
+        transaction.set_custom_data("user" => { "id" => 123 })
+        transaction.set_custom_data("user" => { "id" => 456 })
+
+        transaction._sample
+        expect(transaction).to include_custom_data("user" => { "id" => 456 })
+      end
+    end
+
     describe "#add_breadcrumb" do
       context "when over the limit" do
         before do

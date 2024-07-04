@@ -346,6 +346,12 @@ describe Appsignal do
         Appsignal.tag_request(:tag => "tag")
       end
     end
+
+    describe ".set_custom_data" do
+      it "does not raise an error" do
+        Appsignal.set_custom_data(:data => "value")
+      end
+    end
   end
 
   context "with config and started" do
@@ -480,15 +486,13 @@ describe Appsignal do
     end
 
     describe ".tag_request" do
-      around do |example|
-        start_agent
-        with_current_transaction(transaction) { example.run }
-      end
+      before { start_agent }
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
 
-        it "calls set_tags on the current transaction" do
+        it "sets tags on the current transaction" do
           Appsignal.tag_request("a" => "b")
 
           transaction._sample
@@ -509,6 +513,39 @@ describe Appsignal do
 
       it "also listens to tag_job" do
         expect(Appsignal).to respond_to(:tag_job)
+      end
+    end
+
+    describe ".set_custom_data" do
+      before { start_agent }
+
+      context "with transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction transaction }
+
+        it "sets custom data on the current transaction" do
+          Appsignal.set_custom_data(
+            :user => { :id => 123 },
+            :organization => { :slug => "appsignal" }
+          )
+
+          transaction._sample
+          expect(transaction).to include_custom_data(
+            "user" => { "id" => 123 },
+            "organization" => { "slug" => "appsignal" }
+          )
+        end
+      end
+
+      context "without transaction" do
+        it "does not set tags on the transaction" do
+          Appsignal.set_custom_data(
+            :user => { :id => 123 },
+            :organization => { :slug => "appsignal" }
+          )
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_custom_data)
+        end
       end
     end
 

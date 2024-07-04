@@ -74,7 +74,7 @@ module Appsignal
     end
 
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :discarded, :breadcrumbs
+      :discarded, :breadcrumbs, :custom_data
 
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
@@ -84,6 +84,7 @@ module Appsignal
       @paused = false
       @discarded = false
       @tags = {}
+      @custom_data = nil
       @breadcrumbs = []
       @store = Hash.new({})
       @options = options
@@ -194,6 +195,27 @@ module Appsignal
     #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
+    end
+
+    # Set custom data on the transaction.
+    #
+    # When this method is called multiple times, it will overwrite the
+    # previously set value.
+    #
+    # @since 3.10.0
+    # @see Appsignal.set_custom_data
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    # @param data [Hash/Array]
+    # @return [void]
+    def set_custom_data(data)
+      case data
+      when Array, Hash
+        @custom_data = data
+      else
+        Appsignal.internal_logger
+          .error("set_custom_data: Unsupported data type #{data.class} received.")
+      end
     end
 
     # Add breadcrumbs to the transaction.
@@ -378,7 +400,8 @@ module Appsignal
         :session_data => sanitized_session_data,
         :metadata => sanitized_metadata,
         :tags => sanitized_tags,
-        :breadcrumbs => breadcrumbs
+        :breadcrumbs => breadcrumbs,
+        :custom_data => custom_data
       }.each do |key, data|
         set_sample_data(key, data)
       end
