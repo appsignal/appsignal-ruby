@@ -4,6 +4,11 @@ require "rack"
 
 module Appsignal
   module Rack
+    # Base instrumentation middleware.
+    #
+    # Do not use this middleware directly. Instead use
+    # {InstrumentationMiddleware}.
+    #
     # @api private
     class AbstractMiddleware
       DEFAULT_ERROR_REPORTING = :default

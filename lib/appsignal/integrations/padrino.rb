@@ -32,6 +32,7 @@ end
 
 module Appsignal
   module Integrations
+    # @api private
     module PadrinoIntegration
       def route!(base = settings, pass_block = nil)
         return super if !Appsignal.active? || env["sinatra.static_file"]
