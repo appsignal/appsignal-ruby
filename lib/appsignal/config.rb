@@ -23,6 +23,7 @@ module Appsignal
       :enable_gvl_global_timer => true,
       :enable_gvl_waiting_threads => true,
       :enable_rails_error_reporter => true,
+      :enable_rake_performance_instrumentation => false,
       :endpoint => "https://push.appsignal.com",
       :files_world_accessible => true,
       :filter_metadata => [],
@@ -83,6 +84,8 @@ module Appsignal
       "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => :enable_gvl_global_timer,
       "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => :enable_gvl_waiting_threads,
       "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER" => :enable_rails_error_reporter,
+      "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION" =>
+        :enable_rake_performance_instrumentation,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => :files_world_accessible,
       "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
       "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
@@ -150,6 +153,7 @@ module Appsignal
       APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER
       APPSIGNAL_ENABLE_GVL_WAITING_THREADS
       APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER
+      APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION
       APPSIGNAL_FILES_WORLD_ACCESSIBLE
       APPSIGNAL_INSTRUMENT_HTTP_RB
       APPSIGNAL_INSTRUMENT_NET_HTTP
