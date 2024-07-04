@@ -508,7 +508,11 @@ describe Appsignal do
       end
 
       it "also listens to tag_job" do
-        expect(Appsignal).to respond_to(:tag_job)
+        expect(Appsignal.method(:tag_job)).to eq(Appsignal.method(:tag_request))
+      end
+
+      it "also listens to set_tags" do
+        expect(Appsignal.method(:set_tags)).to eq(Appsignal.method(:tag_request))
       end
     end
 
