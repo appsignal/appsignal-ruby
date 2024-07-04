@@ -23,7 +23,7 @@ module Appsignal
 
           Padrino.use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
           Padrino.use Appsignal::Rack::SinatraBaseInstrumentation,
-            :instrument_span_name => "process_action.padrino"
+            :instrument_event_name => "process_action.padrino"
         end
       end
     end

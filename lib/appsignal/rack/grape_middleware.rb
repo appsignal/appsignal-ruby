@@ -5,7 +5,7 @@ module Appsignal
     # @api private
     class GrapeMiddleware < Appsignal::Rack::AbstractMiddleware
       def initialize(app, options = {})
-        options[:instrument_span_name] = "process_request.grape"
+        options[:instrument_event_name] = "process_request.grape"
         options[:report_errors] = lambda { |env| !env["grape.skip_appsignal_error"] }
         super
       end

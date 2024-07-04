@@ -47,7 +47,7 @@ if DependencyHelper.padrino_present?
             [
               Appsignal::Rack::SinatraBaseInstrumentation,
               [
-                :instrument_span_name => "process_action.padrino"
+                :instrument_event_name => "process_action.padrino"
               ],
               nil
             ]
@@ -77,7 +77,7 @@ if DependencyHelper.padrino_present?
             [
               Appsignal::Rack::SinatraBaseInstrumentation,
               [
-                :instrument_span_name => "process_action.padrino"
+                :instrument_event_name => "process_action.padrino"
               ],
               nil
             ]
@@ -123,7 +123,7 @@ if DependencyHelper.padrino_present?
               Appsignal::Rack::SinatraBaseInstrumentation,
               [
                 :request_class => ::Sinatra::Request,
-                :instrument_span_name => "process_action.padrino"
+                :instrument_event_name => "process_action.padrino"
               ],
               nil
             ]

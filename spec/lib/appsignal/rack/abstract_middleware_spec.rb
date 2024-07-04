@@ -56,7 +56,7 @@ describe Appsignal::Rack::AbstractMiddleware do
           expect(last_transaction).to_not have_error
         end
 
-        context "without :instrument_span_name option set" do
+        context "without :instrument_event_name option set" do
           let(:options) { {} }
 
           it "does not record an instrumentation event" do
@@ -64,11 +64,11 @@ describe Appsignal::Rack::AbstractMiddleware do
           end
         end
 
-        context "with :instrument_span_name option set" do
-          let(:options) { { :instrument_span_name => "span_name.category" } }
+        context "with :instrument_event_name option set" do
+          let(:options) { { :instrument_event_name => "event_name.category" } }
 
           it "records an instrumentation event" do
-            expect(last_transaction).to include_event(:name => "span_name.category")
+            expect(last_transaction).to include_event(:name => "event_name.category")
           end
         end
 
@@ -78,8 +78,8 @@ describe Appsignal::Rack::AbstractMiddleware do
             .to be_kind_of(Appsignal::Transaction::NilTransaction)
         end
 
-        context "when instrument_span_name option is nil" do
-          let(:options) { { :instrument_span_name => nil } }
+        context "when instrument_event_name option is nil" do
+          let(:options) { { :instrument_event_name => nil } }
 
           it "does not record an instrumentation event" do
             expect(last_transaction).to_not include_events

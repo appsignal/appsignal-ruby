@@ -7,7 +7,7 @@ module Appsignal
       def initialize(app, options = {})
         options[:request_class] ||= ActionDispatch::Request
         options[:params_method] ||= :filtered_parameters
-        options[:instrument_span_name] = nil
+        options[:instrument_event_name] = nil
         options[:report_errors] = true
         super
       end

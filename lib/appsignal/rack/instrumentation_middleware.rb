@@ -5,7 +5,7 @@ module Appsignal
     # @api public
     class InstrumentationMiddleware < AbstractMiddleware
       def initialize(app, options = {})
-        options[:instrument_span_name] ||= "process_request_middleware.rack"
+        options[:instrument_event_name] ||= "process_request_middleware.rack"
         super
       end
     end
