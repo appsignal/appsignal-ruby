@@ -152,6 +152,7 @@ module Appsignal
     # The parameters set using {#set_params} are leading over those extracted
     # from a request's environment.
     #
+    # @since 3.9.1
     # @param given_params [Hash] The parameters to set on the transaction.
     # @return [void]
     def set_params(given_params)
@@ -172,6 +173,7 @@ module Appsignal
     # When no parameters are set this way, the transaction will look for
     # parameters on the {#request} environment.
     #
+    # @since 3.9.1
     # @param given_params [Hash] The parameters to set on the transaction if none are already set.
     # @return [void]
     def set_params_if_nil(given_params)

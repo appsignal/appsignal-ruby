@@ -518,6 +518,43 @@ module Appsignal
       end
       alias :tag_job :tag_request
 
+      # Set parameters on the current transaction.
+      #
+      # Parameters are automatically set by most of our integrations. It should
+      # not be necessary to call this method unless you want to report
+      # different parameters.
+      #
+      # To filter parameters, see our parameter filtering guide.
+      #
+      # When this method is called multiple times, it will overwrite the
+      # previously set value.
+      #
+      # When no parameters are set this way, the transaction will look for
+      # parameters in its request environment.
+      #
+      # @example
+      #   Appsignal.set_params("param1" => "value1")
+      #
+      # @example
+      #   Appsignal.set_params("param1" => "value1")
+      #   Appsignal.set_params("param2" => "value2")
+      #   # Parameters are: { "param2" => "value2" }
+      #
+      # @since 3.10.0
+      # @param given_params [Hash] The parameters to set on the transaction.
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      # @see https://docs.appsignal.com/guides/filter-data/filter-parameters.html
+      #   Parameter filtering guide
+      # @return [void]
+      def set_params(params)
+        return unless active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_params(params)
+      end
+
       # Add breadcrumbs to the transaction.
       #
       # Breadcrumbs can be used to trace what path a user has taken
