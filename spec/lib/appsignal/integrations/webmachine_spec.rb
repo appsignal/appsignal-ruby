@@ -15,36 +15,70 @@ if DependencyHelper.webmachine_present?
 
   describe Appsignal::Integrations::WebmachineIntegration do
     let(:request) do
-      Webmachine::Request.new("GET", "http://google.com:80/foo", {}, nil)
+      Webmachine::Request.new(
+        "GET",
+        "http://google.com:80/foo?param1=value1&param2=value2",
+        {},
+        nil
+      )
     end
-    let(:resource) { double(:trace? => false, :handle_exception => true, :"code=" => nil) }
-    let(:response) { Response.new }
-    let(:fsm) { Webmachine::Decision::FSM.new(resource, request, response) }
-    before(:context) { start_agent }
-    around { |example| keep_transactions { example.run } }
-
-    # Make sure the request responds to the method we need to get query params.
-    describe "request" do
-      it "responds to #query" do
-        expect(request).to respond_to(:query)
+    let(:app) do
+      proc do
+        def to_html
+          "Some HTML"
+        end
       end
     end
+    let(:resource) do
+      app_block = app
+      Class.new(Webmachine::Resource) do
+        class_eval(&app_block) if app_block
+
+        def self.name
+          "MyResource"
+        end
+      end
+    end
+    let(:resource_instance) { resource.new(request, response) }
+    let(:response) { Webmachine::Response.new }
+    let(:fsm) { Webmachine::Decision::FSM.new(resource_instance, request, response) }
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
 
     describe "#run" do
-      before { allow(fsm).to receive(:call).and_call_original }
-
       it "creates a transaction" do
         expect { fsm.run }.to(change { created_transactions.count }.by(1))
       end
 
       it "sets the action" do
         fsm.run
-        expect(last_transaction).to have_action("RSpec::Mocks::Double#GET")
+        expect(last_transaction).to have_action("MyResource#GET")
+      end
+
+      context "with action already set" do
+        let(:app) do
+          proc do
+            def to_html
+              Appsignal.set_action("Custom Action")
+              "Some HTML"
+            end
+          end
+        end
+
+        it "doesn't overwrite the action" do
+          fsm.run
+          expect(last_transaction).to have_action("Custom Action")
+        end
       end
 
       it "records an instrumentation event" do
         fsm.run
         expect(last_transaction).to include_event("name" => "process_action.webmachine")
+      end
+
+      it "sets the params" do
+        fsm.run
+        expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
       end
 
       it "closes the transaction" do
@@ -53,10 +87,24 @@ if DependencyHelper.webmachine_present?
         expect(current_transaction?).to be_falsy
       end
 
-      it "sets a response code" do
-        expect(fsm.response.code).to be_nil
-        fsm.run
-        expect(fsm.response.code).not_to be_nil
+      context "with parent transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "sets the action" do
+          fsm.run
+          expect(last_transaction).to have_action("MyResource#GET")
+        end
+
+        it "sets the params" do
+          fsm.run
+          last_transaction._sample
+          expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
+        end
+
+        it "does not close the transaction" do
+          expect(last_transaction).to_not be_completed
+        end
       end
     end
 

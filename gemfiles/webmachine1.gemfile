@@ -1,6 +1,7 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'webmachine', '~> 1.6'
-gem 'webrick'
+gem "i18n", "~> 0.0" # Lock to pre 1.x version as it's not compatible
+gem "webmachine", "~> 1.6"
+gem "webrick"
 
-gemspec :path => '../'
+gemspec :path => "../"
