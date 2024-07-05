@@ -532,27 +532,50 @@ module Appsignal
       # When no parameters are set this way, the transaction will look for
       # parameters in its request environment.
       #
-      # @example
+      # A block can be given to this method to defer the fetching and parsing
+      # of the parameters until and only when the transaction is sampled.
+      #
+      # When both the `given_params` and a block is given to this method, the
+      # `given_params` argument is leading and the block will _not_ be called.
+      #
+      # @example Set parameters
       #   Appsignal.set_params("param1" => "value1")
       #
-      # @example
+      # @example Calling `set_params` multiple times will only keep the last call
       #   Appsignal.set_params("param1" => "value1")
       #   Appsignal.set_params("param2" => "value2")
-      #   # Parameters are: { "param2" => "value2" }
+      #   # The parameters are: { "param2" => "value2" }
+      #
+      # @example Calling `set_params` with a block
+      #   Appsignal.set_params do
+      #     # Some slow code to parse parameters
+      #     JSON.parse('{"param1": "value1"}')
+      #   end
+      #   # The parameters are: { "param1" => "value1" }
+      #
+      # @example Calling `set_params` with a parameter and a block
+      #   Appsignal.set_params("argument" => "argument value") do
+      #     # Some slow code to parse parameters
+      #     JSON.parse('{"param1": "value1"}')
+      #   end
+      #   # The parameters are: { "argument" => "argument value" }
       #
       # @since 3.10.0
       # @param given_params [Hash] The parameters to set on the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new parameters.
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-parameters.html
       #   Parameter filtering guide
+      # @see Transaction#set_params
       # @return [void]
-      def set_params(params)
+      def set_params(params = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_params(params)
+        transaction.set_params(params, &block)
       end
 
       # Add breadcrumbs to the transaction.

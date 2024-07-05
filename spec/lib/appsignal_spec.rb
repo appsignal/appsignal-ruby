@@ -535,6 +535,13 @@ describe Appsignal do
           transaction._sample
           expect(transaction).to include_params("param2" => "value2")
         end
+
+        it "sets parameters with a block on the transaction" do
+          Appsignal.set_params { { "param1" => "value1" } }
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
       end
 
       context "without transaction" do
