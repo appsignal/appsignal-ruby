@@ -1,10 +1,27 @@
 require "rake"
 
 describe Appsignal::Hooks::RakeHook do
+  let(:helper) { Appsignal::Integrations::RakeIntegrationHelper }
   let(:task) { Rake::Task.new("task:name", Rake::Application.new) }
   let(:arguments) { Rake::TaskArguments.new(["foo"], ["bar"]) }
-  before { start_agent }
+  before do
+    start_agent
+    allow(Kernel).to receive(:at_exit)
+  end
   around { |example| keep_transactions { example.run } }
+  after do
+    if helper.instance_variable_defined?(:@register_at_exit_hook)
+      helper.remove_instance_variable(:@register_at_exit_hook)
+    end
+  end
+
+  def expect_to_not_have_registered_at_exit_hook
+    expect(Kernel).to_not have_received(:at_exit)
+  end
+
+  def expect_to_have_registered_at_exit_hook
+    expect(Kernel).to have_received(:at_exit)
+  end
 
   describe "#execute" do
     context "without error" do
@@ -15,7 +32,6 @@ describe Appsignal::Hooks::RakeHook do
       context "with :enable_rake_performance_instrumentation == false" do
         before do
           Appsignal.config[:enable_rake_performance_instrumentation] = false
-          expect(Appsignal).to_not receive(:stop)
         end
 
         it "creates no transaction" do
@@ -25,15 +41,16 @@ describe Appsignal::Hooks::RakeHook do
         it "calls the original task" do
           expect(perform).to eq([])
         end
+
+        it "does not register an at_exit hook" do
+          perform
+          expect_to_not_have_registered_at_exit_hook
+        end
       end
 
       context "with :enable_rake_performance_instrumentation == true" do
         before do
           Appsignal.config[:enable_rake_performance_instrumentation] = true
-
-          # We don't call `and_call_original` here as we don't want AppSignal to
-          # stop and start for every spec.
-          expect(Appsignal).to receive(:stop).with("rake")
         end
 
         it "creates a transaction" do
@@ -52,16 +69,17 @@ describe Appsignal::Hooks::RakeHook do
         it "calls the original task" do
           expect(perform).to eq([])
         end
+
+        it "registers an at_exit hook" do
+          perform
+          expect_to_have_registered_at_exit_hook
+        end
       end
     end
 
     context "with error" do
       before do
         task.enhance { raise ExampleException, "error message" }
-
-        # We don't call `and_call_original` here as we don't want AppSignal to
-        # stop and start for every spec.
-        expect(Appsignal).to receive(:stop).with("rake")
       end
 
       def perform
@@ -80,6 +98,11 @@ describe Appsignal::Hooks::RakeHook do
         expect(transaction).to be_completed
       end
 
+      it "registers an at_exit hook" do
+        perform
+        expect_to_have_registered_at_exit_hook
+      end
+
       context "when first argument is not a `Rake::TaskArguments`" do
         let(:arguments) { nil }
 
@@ -89,6 +112,36 @@ describe Appsignal::Hooks::RakeHook do
           expect(last_transaction).to_not include_params
         end
       end
+    end
+  end
+end
+
+describe "Appsignal::Integrations::RakeIntegrationHelper" do
+  let(:helper) { Appsignal::Integrations::RakeIntegrationHelper }
+  describe ".register_at_exit_hook" do
+    before do
+      start_agent
+      allow(Appsignal).to receive(:stop)
+    end
+
+    it "registers the at_exit hook only once" do
+      allow(Kernel).to receive(:at_exit)
+      helper.register_at_exit_hook
+      helper.register_at_exit_hook
+      expect(Kernel).to have_received(:at_exit).once
+    end
+  end
+
+  describe ".at_exit_hook" do
+    let(:helper) { Appsignal::Integrations::RakeIntegrationHelper }
+    before do
+      start_agent
+      allow(Appsignal).to receive(:stop)
+    end
+
+    it "calls Appsignal.stop" do
+      helper.at_exit_hook
+      expect(Appsignal).to have_received(:stop).with("rake")
     end
   end
 end
