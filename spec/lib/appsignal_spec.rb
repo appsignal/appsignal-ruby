@@ -358,6 +358,132 @@ describe Appsignal do
     before { start_agent }
     around { |example| keep_transactions { example.run } }
 
+    describe ".monitor" do
+      it "creates a transaction" do
+        expect do
+          Appsignal.monitor
+        end.to(change { created_transactions.count }.by(1))
+
+        transaction = last_transaction
+        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        expect(transaction).to_not have_action
+        expect(transaction).to_not have_error
+        expect(transaction).to_not include_events
+        expect(transaction).to_not have_queue_start
+        expect(transaction).to be_completed
+      end
+
+      it "returns the block's return value" do
+        expect(Appsignal.monitor { :return_value }).to eq(:return_value)
+      end
+
+      it "sets a custom namespace via the namespace argument" do
+        Appsignal.monitor(:namespace => "custom")
+
+        expect(last_transaction).to have_namespace("custom")
+      end
+
+      it "doesn't overwrite custom namespace set in the block" do
+        Appsignal.monitor(:namespace => "custom") do
+          Appsignal.set_namespace("more custom")
+        end
+
+        expect(last_transaction).to have_namespace("more custom")
+      end
+
+      it "sets a custom action via the action argument" do
+        Appsignal.monitor(:action => "custom")
+
+        expect(last_transaction).to have_action("custom")
+      end
+
+      it "doesn't overwrite custom action set in the block" do
+        Appsignal.monitor(:action => "custom") do
+          Appsignal.set_action("more custom")
+        end
+
+        expect(last_transaction).to have_action("more custom")
+      end
+
+      it "reports exceptions that occur in the block" do
+        expect do
+          Appsignal.monitor do
+            raise ExampleException, "error message"
+          end
+        end.to raise_error(ExampleException, "error message")
+
+        expect(last_transaction).to have_error("ExampleException", "error message")
+      end
+
+      context "with already active transction" do
+        let(:err_stream) { std_stream }
+        let(:stderr) { err_stream.read }
+        let(:transaction) { http_request_transaction }
+        before do
+          set_current_transaction(transaction)
+          transaction.set_action("My action")
+        end
+
+        it "doesn't create a new transaction" do
+          expect do
+            Appsignal.monitor
+          end.to_not(change { created_transactions.count })
+        end
+
+        it "does not overwrite the parent transaction's namespace" do
+          logs =
+            capture_logs do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.monitor(:namespace => "custom")
+              end
+            end
+
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          warning =
+            "A parent transaction is active around this 'Appsignal.monitor' call. " \
+              "The namespace is not updated"
+          expect(logs).to contains_log(:warn, warning)
+          expect(stderr).to include("appsignal WARNING: #{warning}")
+        end
+
+        it "does not overwrite the parent transaction's action" do
+          logs =
+            capture_logs do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.monitor(:action => "custom")
+              end
+            end
+
+          expect(transaction).to have_action("My action")
+          warning =
+            "A parent transaction is active around this 'Appsignal.monitor' call. " \
+              "The action is not updated"
+          expect(logs).to contains_log(:warn, warning)
+          expect(stderr).to include("appsignal WARNING: #{warning}")
+        end
+
+        it "doesn't complete the parent transaction" do
+          Appsignal.monitor
+
+          expect(transaction).to_not be_completed
+        end
+      end
+    end
+
+    describe ".monitor_and_stop" do
+      it "calls Appsignal.stop after the block" do
+        allow(Appsignal).to receive(:stop)
+        Appsignal.monitor_and_stop(:namespace => "custom", :action => "My Action")
+
+        transaction = last_transaction
+        expect(transaction).to have_namespace("custom")
+        expect(transaction).to have_action("My Action")
+        expect(transaction).to be_completed
+
+        expect(Appsignal).to have_received(:stop).with("monitor_and_stop")
+      end
+    end
+
     describe ".monitor_transaction" do
       context "with a successful call" do
         it "instruments and completes for a background job" do

@@ -180,18 +180,20 @@ RSpec::Matchers.alias_matcher :include_breadcrumbs, :include_breadcrumb
 
 RSpec::Matchers.define :have_queue_start do |queue_start_time|
   match(:notify_expectation_failures => true) do |transaction|
+    actual_start = transaction.ext.queue_start
     if queue_start_time
-      expect(transaction.ext.queue_start).to eq(queue_start_time)
+      expect(actual_start).to eq(queue_start_time)
     else
-      expect(transaction.ext.queue_start).to_not be_nil
+      expect(actual_start).to_not be_nil
     end
   end
 
   match_when_negated(:notify_expectation_failures => true) do |transaction|
+    actual_start = transaction.ext.queue_start
     if queue_start_time
-      expect(transaction.ext.queue_start).to_not eq(queue_start_time)
+      expect(actual_start).to_not eq(queue_start_time)
     else
-      expect(transaction.ext.queue_start).to be_nil
+      expect(actual_start).to be_nil
     end
   end
 end
