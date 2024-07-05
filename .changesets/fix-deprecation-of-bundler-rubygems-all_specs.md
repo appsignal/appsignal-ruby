@@ -3,4 +3,4 @@ bump: "patch"
 type: "fix"
 ---
 
-Fix deprecation of Bundler.rubygems.all_specs
+Fix deprecation warning of Bundler.rubygems.all_specs usage.
