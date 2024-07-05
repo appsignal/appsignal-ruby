@@ -121,11 +121,12 @@ module Appsignal
     def self.report_supported_gems
       return unless defined?(Bundler) # Do nothing if Bundler is not present
 
-      bundle_gem_specs = if ::Bundler.rubygems.respond_to?(:installed_specs)
-        ::Bundler.rubygems.installed_specs
-      else
-        ::Bundler.rubygems.all_specs
-      end
+      bundle_gem_specs =
+        if ::Bundler.rubygems.respond_to?(:installed_specs)
+          ::Bundler.rubygems.installed_specs
+        else
+          ::Bundler.rubygems.all_specs
+        end
       SUPPORTED_GEMS.each do |gem_name|
         gem_spec = bundle_gem_specs.find { |spec| spec.name == gem_name }
         next unless gem_spec
