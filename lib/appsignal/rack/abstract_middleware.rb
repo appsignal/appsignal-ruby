@@ -127,7 +127,7 @@ module Appsignal
       # Call `super` to also include the default set metadata.
       def add_transaction_metadata_after(transaction, request)
         default_action =
-          request.env["appsignal.route"] || request.env["appsignal.action"]
+          appsignal_route_env_value(request) || appsignal_action_env_value(request)
         transaction.set_action_if_nil(default_action)
         transaction.set_metadata("path", request.path)
 
@@ -159,6 +159,26 @@ module Appsignal
 
       def request_for(env)
         @request_class.new(env)
+      end
+
+      def appsignal_route_env_value(request)
+        request.env["appsignal.route"].tap do |value|
+          next unless value
+
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "Setting the action name with the request env 'appsignal.route' is deprecated. " \
+              "Please use `Appsignal.set_action` instead. "
+        end
+      end
+
+      def appsignal_action_env_value(request)
+        request.env["appsignal.action"].tap do |value|
+          next unless value
+
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "Setting the action name with the request env 'appsignal.action' is deprecated. " \
+              "Please use `Appsignal.set_action` instead. "
+        end
       end
     end
   end

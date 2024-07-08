@@ -160,20 +160,60 @@ describe Appsignal::Rack::AbstractMiddleware do
       end
 
       context "with appsignal.route env" do
+        before { env["appsignal.route"] = "POST /my-route" }
+
         it "reports the appsignal.route value as the action name" do
-          env["appsignal.route"] = "POST /my-route"
           make_request
 
           expect(last_transaction).to have_action("POST /my-route")
         end
+
+        it "prints a deprecation warning" do
+          err_stream = std_stream
+          capture_std_streams(std_stream, err_stream) do
+            make_request
+          end
+
+          expect(err_stream.read).to include(
+            "Setting the action name with the request env 'appsignal.route' is deprecated."
+          )
+        end
+
+        it "logs a deprecation warning" do
+          logs = capture_logs { make_request }
+          expect(logs).to contains_log(
+            :warn,
+            "Setting the action name with the request env 'appsignal.route' is deprecated."
+          )
+        end
       end
 
       context "with appsignal.action env" do
-        it "reports the appsignal.route value as the action name" do
-          env["appsignal.action"] = "POST /my-action"
+        before { env["appsignal.action"] = "POST /my-action" }
+
+        it "reports the appsignal.action value as the action name" do
           make_request
 
           expect(last_transaction).to have_action("POST /my-action")
+        end
+
+        it "prints a deprecation warning" do
+          err_stream = std_stream
+          capture_std_streams(std_stream, err_stream) do
+            make_request
+          end
+
+          expect(err_stream.read).to include(
+            "Setting the action name with the request env 'appsignal.action' is deprecated."
+          )
+        end
+
+        it "logs a deprecation warning" do
+          logs = capture_logs { make_request }
+          expect(logs).to contains_log(
+            :warn,
+            "Setting the action name with the request env 'appsignal.action' is deprecated."
+          )
         end
       end
 
