@@ -474,6 +474,35 @@ module Appsignal
         Appsignal::Transaction.current.set_namespace(namespace)
       end
 
+      # Set custom data on the current transaction.
+      #
+      # Add extra information about the request or background that cannot be
+      # expressed in tags, like nested data structures.
+      #
+      # When this method is called multiple times, it will overwrite the
+      # previously set value.
+      #
+      # @example
+      #   Appsignal.set_custom_data(:user => { :locale => "en" })
+      #   Appsignal.set_custom_data([
+      #     "array with data",
+      #     :options => { :verbose => true }
+      #   ])
+      #
+      # @since 3.10.0
+      # @see Transaction#set_custom_data
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      # @param data [Hash/Array]
+      # @return [void]
+      def set_custom_data(data)
+        return unless active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_custom_data(data)
+      end
+
       # Set tags on the current transaction.
       #
       # Tags are extra bits of information that are added to transaction and
