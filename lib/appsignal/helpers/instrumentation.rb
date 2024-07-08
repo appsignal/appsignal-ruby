@@ -517,6 +517,7 @@ module Appsignal
         transaction.set_tags(tags)
       end
       alias :tag_job :tag_request
+      alias :set_tags :tag_request
 
       # Set parameters on the current transaction.
       #
