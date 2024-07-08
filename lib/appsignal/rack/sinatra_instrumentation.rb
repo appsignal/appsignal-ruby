@@ -32,7 +32,7 @@ module Appsignal
       def initialize(app, options = {})
         options[:request_class] ||= Sinatra::Request
         options[:params_method] ||= :params
-        options[:instrument_span_name] ||= "process_action.sinatra"
+        options[:instrument_event_name] ||= "process_action.sinatra"
         super
         @raise_errors_on = raise_errors?(app)
       end

@@ -4,6 +4,11 @@ require "rack"
 
 module Appsignal
   module Rack
+    # Base instrumentation middleware.
+    #
+    # Do not use this middleware directly. Instead use
+    # {InstrumentationMiddleware}.
+    #
     # @api private
     class AbstractMiddleware
       DEFAULT_ERROR_REPORTING = :default
@@ -14,7 +19,7 @@ module Appsignal
         @options = options
         @request_class = options.fetch(:request_class, ::Rack::Request)
         @params_method = options.fetch(:params_method, :params)
-        @instrument_span_name = options.fetch(:instrument_span_name, nil)
+        @instrument_event_name = options.fetch(:instrument_event_name, nil)
         @report_errors = options.fetch(:report_errors, DEFAULT_ERROR_REPORTING)
       end
 
@@ -77,8 +82,8 @@ module Appsignal
       #
       # @see {#instrument_app_call_with_exception_handling}
       def instrument_app_call(env)
-        if @instrument_span_name
-          Appsignal.instrument(@instrument_span_name) do
+        if @instrument_event_name
+          Appsignal.instrument(@instrument_event_name) do
             @app.call(env)
           end
         else

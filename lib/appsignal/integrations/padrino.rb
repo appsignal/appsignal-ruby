@@ -23,7 +23,7 @@ module Appsignal
 
           Padrino.use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
           Padrino.use Appsignal::Rack::SinatraBaseInstrumentation,
-            :instrument_span_name => "process_action.padrino"
+            :instrument_event_name => "process_action.padrino"
         end
       end
     end
@@ -32,6 +32,7 @@ end
 
 module Appsignal
   module Integrations
+    # @api private
     module PadrinoIntegration
       def route!(base = settings, pass_block = nil)
         return super if !Appsignal.active? || env["sinatra.static_file"]

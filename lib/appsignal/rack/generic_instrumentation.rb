@@ -5,7 +5,7 @@ module Appsignal
     # @api private
     class GenericInstrumentation < AbstractMiddleware
       def initialize(app, options = {})
-        options[:instrument_span_name] ||= "process_action.generic"
+        options[:instrument_event_name] ||= "process_action.generic"
         super
       end
 

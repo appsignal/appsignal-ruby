@@ -6,7 +6,7 @@ module Appsignal
     class HanamiMiddleware < AbstractMiddleware
       def initialize(app, options = {})
         options[:params_method] ||= :params
-        options[:instrument_span_name] ||= "process_action.hanami"
+        options[:instrument_event_name] ||= "process_action.hanami"
         super
       end
 
