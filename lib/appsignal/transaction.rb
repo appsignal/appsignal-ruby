@@ -166,7 +166,7 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
-    # @see {Helpers::Instrumentation#set_params}
+    # @see Helpers::Instrumentation#set_params
     def set_params(given_params = nil, &block)
       @params = block if block
       @params = given_params if given_params
@@ -191,7 +191,7 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
-    # @see {Helpers::Instrumentation#set_params_if_nil}
+    # @see Helpers::Instrumentation#set_params_if_nil
     def set_params_if_nil(given_params = nil, &block)
       set_params(given_params, &block) unless @params
     end
