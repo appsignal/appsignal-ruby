@@ -1,146 +1,69 @@
-require "appsignal/rack/streaming_listener"
-
-describe Appsignal::Rack::StreamingListener do
-  let(:env) do
-    {
-      "rack.input" => StringIO.new,
-      "REQUEST_METHOD" => "GET",
-      "PATH_INFO" => "/homepage",
-      "QUERY_STRING" => "param=something"
-    }
+describe "Appsignal::Rack::StreamingListener" do
+  def load_middleware
+    load "lib/appsignal/rack/streaming_listener.rb"
   end
-  let(:app) { DummyApp.new }
-  let(:listener) { Appsignal::Rack::StreamingListener.new(app, {}) }
-  before(:context) { start_agent }
-  around { |example| keep_transactions { example.run } }
 
-  describe "#call" do
-    context "when Appsignal is not active" do
-      before { allow(Appsignal).to receive(:active?).and_return(false) }
+  describe "loading the streaming_listener integrations file" do
+    let(:err_stream) { std_stream }
+    let(:stderr) { err_stream.read }
+    after { Appsignal::Rack.send(:remove_const, :StreamingListener) }
 
-      it "does not create a transaction" do
-        expect do
-          listener.call(env)
-        end.to_not(change { created_transactions.count })
+    it "prints a deprecation warning to STDERR" do
+      capture_std_streams(std_stream, err_stream) do
+        load_middleware
       end
 
-      it "calls the app" do
-        listener.call(env)
-
-        expect(app).to be_called
-      end
+      expect(stderr).to include(
+        "appsignal WARNING: The constant Appsignal::Rack::StreamingListener " \
+          "has been deprecated."
+      )
     end
 
-    context "when Appsignal is active" do
-      before { allow(Appsignal).to receive(:active?).and_return(true) }
-
-      let(:wrapper) { Appsignal::StreamWrapper.new("body", transaction) }
-      let(:raw_payload) { { :foo => :bar } }
-      before { allow(listener).to receive(:raw_payload).and_return(raw_payload) }
-
-      it "creates a transaction" do
-        expect do
-          listener.call(env)
-        end.to(change { created_transactions.count }.by(1))
-      end
-
-      it "instruments the call" do
-        listener.call(env)
-
-        expect(last_transaction).to include_event("name" => "process_action.rack")
-      end
-
-      it "set `appsignal.action` to the action name" do
-        env["appsignal.action"] = "Action"
-
-        listener.call(env)
-
-        expect(last_transaction).to have_action("Action")
-      end
-
-      it "adds the path, method and queue start to the transaction" do
-        listener.call(env)
-
-        expect(last_transaction).to include_metadata(
-          "path" => "/homepage",
-          "method" => "GET"
-        )
-        expect(last_transaction).to have_queue_start
-      end
-
-      context "with an exception in the instrumentation call" do
-        let(:error) { ExampleException.new("error message") }
-        let(:app) { DummyApp.new { raise error } }
-
-        it "adds the exception to the transaction" do
-          expect do
-            listener.call(env)
-          end.to raise_error(error)
-
-          expect(last_transaction).to have_error("ExampleException", "error message")
+    it "logs a warning" do
+      logs =
+        capture_logs do
+          silence do
+            load_middleware
+          end
         end
-      end
 
-      it "wraps the body in a wrapper" do
-        _, _, body = listener.call(env)
-
-        expect(body).to be_a(Appsignal::StreamWrapper)
-      end
-    end
-  end
-end
-
-describe Appsignal::StreamWrapper do
-  let(:stream) { double }
-  let(:transaction) { http_request_transaction }
-  let(:wrapper) { Appsignal::StreamWrapper.new(stream, transaction) }
-  before do
-    start_agent
-    set_current_transaction(transaction)
-  end
-  around { |example| keep_transactions { example.run } }
-
-  describe "#each" do
-    it "calls the original stream" do
-      expect(stream).to receive(:each)
-
-      wrapper.each
-    end
-
-    context "when #each raises an error" do
-      let(:error) { ExampleException.new("error message") }
-
-      it "records the exception" do
-        allow(stream).to receive(:each).and_raise(error)
-
-        expect { wrapper.send(:each) }.to raise_error(error)
-
-        expect(transaction).to have_error("ExampleException", "error message")
-      end
+      expect(logs).to contains_log(
+        :warn,
+        "The constant Appsignal::Rack::StreamingListener has been deprecated."
+      )
     end
   end
 
-  describe "#close" do
-    it "closes the original stream and completes the transaction" do
-      expect(stream).to receive(:close)
+  describe "middleware" do
+    let(:env) { {} }
+    let(:app) { DummyApp.new }
+    let(:middleware) { Appsignal::Rack::StreamingListener.new(app, {}) }
+    around { |example| keep_transactions { example.run } }
+    before(:context) { load_middleware }
+    before { start_agent }
 
-      wrapper.close
-
-      expect(current_transaction?).to be_falsy
-      expect(transaction).to be_completed
+    def make_request
+      middleware.call(env)
     end
 
-    context "when #close raises an error" do
-      let(:error) { ExampleException.new("error message") }
+    it "instruments the call" do
+      make_request
 
-      it "records the exception and completes the transaction" do
-        allow(stream).to receive(:close).and_raise(error)
+      expect(last_transaction).to include_event("name" => "process_streaming_request.rack")
+    end
 
-        expect { wrapper.send(:close) }.to raise_error(error)
+    it "set no action by default" do
+      make_request
 
-        expect(transaction).to have_error("ExampleException", "error message")
-        expect(transaction).to be_completed
-      end
+      expect(last_transaction).to_not have_action
+    end
+
+    it "set `appsignal.action` to the action name" do
+      env["appsignal.action"] = "Action"
+
+      make_request
+
+      expect(last_transaction).to have_action("Action")
     end
   end
 end

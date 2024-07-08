@@ -8,7 +8,7 @@ class DummyApp
     if @app
       @app&.call(env)
     else
-      [200, {}, "body"]
+      [200, {}, ["body"]]
     end
   ensure
     @called = true

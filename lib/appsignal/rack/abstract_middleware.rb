@@ -58,7 +58,7 @@ module Appsignal
                 wrapped_instrumentation
               )
             else
-              instrument_app_call(request.env)
+              instrument_app_call(request.env, transaction)
             end
           ensure
             add_transaction_metadata_after(transaction, request)
@@ -81,14 +81,26 @@ module Appsignal
       # stack and will report the exception and complete the transaction.
       #
       # @see {#instrument_app_call_with_exception_handling}
-      def instrument_app_call(env)
+      def instrument_app_call(env, transaction)
         if @instrument_event_name
           Appsignal.instrument(@instrument_event_name) do
-            @app.call(env)
+            call_app(env, transaction)
           end
         else
-          @app.call(env)
+          call_app(env, transaction)
         end
+      end
+
+      def call_app(env, transaction)
+        status, headers, obody = @app.call(env)
+        body =
+          if obody.is_a? Appsignal::Rack::BodyWrapper
+            obody
+          else
+            # Instrument response body and closing of the response body
+            Appsignal::Rack::BodyWrapper.wrap(obody, transaction)
+          end
+        [status, headers, body]
       end
 
       # Instrument the request fully. This is used by the top instrumentation
@@ -98,7 +110,7 @@ module Appsignal
       #
       # @see {#instrument_app_call}
       def instrument_app_call_with_exception_handling(env, transaction, wrapped_instrumentation)
-        instrument_app_call(env)
+        instrument_app_call(env, transaction)
       rescue Exception => error # rubocop:disable Lint/RescueException
         report_errors =
           if @report_errors == DEFAULT_ERROR_REPORTING
