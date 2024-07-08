@@ -2,6 +2,7 @@
 
 module Appsignal
   class EventFormatter
+    # @api private
     module Rom
       class SqlFormatter
         def format(payload)

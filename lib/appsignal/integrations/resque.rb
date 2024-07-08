@@ -34,6 +34,7 @@ module Appsignal
       end
     end
 
+    # @api private
     class ResqueHelpers
       def self.arguments(payload)
         case payload["class"]

@@ -3,6 +3,8 @@
 Appsignal::Environment.report_enabled("object_instrumentation") if defined?(Appsignal)
 
 class Object
+  # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
+  #   Method instrumentation documentation.
   def self.appsignal_instrument_class_method(method_name, options = {})
     singleton_class.send \
       :alias_method, "appsignal_uninstrumented_#{method_name}", method_name
@@ -20,6 +22,8 @@ class Object
     end
   end
 
+  # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
+  #   Method instrumentation documentation.
   def self.appsignal_instrument_method(method_name, options = {})
     alias_method "appsignal_uninstrumented_#{method_name}", method_name
     define_method method_name do |*args, &block|
@@ -33,12 +37,14 @@ class Object
     ruby2_keywords method_name if respond_to?(:ruby2_keywords, true)
   end
 
+  # @api private
   def self.appsignal_reverse_class_name
     return "AnonymousClass" unless name
 
     name.split("::").reverse.join(".")
   end
 
+  # @api private
   def appsignal_reverse_class_name
     self.class.appsignal_reverse_class_name
   end

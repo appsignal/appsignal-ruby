@@ -10,6 +10,7 @@ module Appsignal
   class Config
     include Appsignal::Utils::StdoutAndLoggerMessage
 
+    # @api private
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
@@ -67,6 +68,7 @@ module Appsignal
       "trace" => ::Logger::DEBUG
     }.freeze
 
+    # @api private
     ENV_TO_KEY_MAPPING = {
       "APPSIGNAL_ACTIVE" => :active,
       "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS" => :activejob_report_errors,
@@ -178,6 +180,7 @@ module Appsignal
       APPSIGNAL_IGNORE_NAMESPACES
       APPSIGNAL_REQUEST_HEADERS
     ].freeze
+    # @api private
     ENV_FLOAT_KEYS = %w[
       APPSIGNAL_CPU_COUNT
     ].freeze
@@ -211,8 +214,10 @@ module Appsignal
     #   @api private
     #   @return [Hash]
 
+    # @api private
     attr_reader :root_path, :env, :config_hash, :system_config,
       :initial_config, :file_config, :env_config, :override_config
+    # @api private
     attr_accessor :logger
 
     # Initialize a new configuration object for AppSignal.
@@ -316,6 +321,7 @@ module Appsignal
       config_hash[key] = value
     end
 
+    # @api private
     def log_level
       level = ::Logger::DEBUG if config_hash[:debug] || config_hash[:transaction_debug_mode]
       option = config_hash[:log_level]
@@ -326,6 +332,7 @@ module Appsignal
       level.nil? ? Appsignal::Config::DEFAULT_LOG_LEVEL : level
     end
 
+    # @api private
     def log_file_path
       return @log_file_path if defined? @log_file_path
 
@@ -360,6 +367,7 @@ module Appsignal
       @valid && config_hash[:active]
     end
 
+    # @api private
     def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
@@ -405,6 +413,7 @@ module Appsignal
       ENV["_APP_REVISION"] = config_hash[:revision].to_s
     end
 
+    # @api private
     def validate
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.

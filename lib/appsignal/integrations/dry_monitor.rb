@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module DryMonitorIntegration
       def instrument(event_id, payload = {}, &block)
         Appsignal::Transaction.current.start_event

@@ -2,6 +2,7 @@
 
 module Appsignal
   module Rack
+    # @deprecated Use {InstrumentationMiddleware} instead.
     # @api private
     class GenericInstrumentation < AbstractMiddleware
       def initialize(app, options = {})

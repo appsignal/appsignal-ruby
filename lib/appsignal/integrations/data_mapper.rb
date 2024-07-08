@@ -2,6 +2,7 @@
 
 module Appsignal
   class Hooks
+    # @api private
     module DataMapperLogListener
       SQL_CLASSES = [
         "DataObjects::SqlServer::Connection",

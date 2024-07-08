@@ -9,6 +9,7 @@ module Appsignal
     # Do not use this middleware directly. Instead use
     # {InstrumentationMiddleware}.
     #
+    # @abstract
     # @api private
     class AbstractMiddleware
       DEFAULT_ERROR_REPORTING = :default
@@ -80,7 +81,7 @@ module Appsignal
       # Either another {AbstractMiddleware} or {EventHandler} is higher in the
       # stack and will report the exception and complete the transaction.
       #
-      # @see {#instrument_app_call_with_exception_handling}
+      # @see #instrument_app_call_with_exception_handling
       def instrument_app_call(env, transaction)
         if @instrument_event_name
           Appsignal.instrument(@instrument_event_name) do
@@ -108,7 +109,7 @@ module Appsignal
       # {#instrument_app_call} this will report any exceptions being
       # raised.
       #
-      # @see {#instrument_app_call}
+      # @see #instrument_app_call
       def instrument_app_call_with_exception_handling(env, transaction, wrapped_instrumentation)
         instrument_app_call(env, transaction)
       rescue Exception => error # rubocop:disable Lint/RescueException

@@ -4,7 +4,10 @@ require "logger"
 require "set"
 
 module Appsignal
-  # Logger that flushes logs to the AppSignal logging service
+  # Logger that flushes logs to the AppSignal logging service.
+  #
+  # @see https://docs.appsignal.com/logging/platforms/integrations/ruby.html
+  #   AppSignal Ruby logging documentation.
   class Logger < ::Logger
     PLAINTEXT = 0
     LOGFMT = 1
@@ -144,8 +147,9 @@ module Appsignal
     # as our logger directly inherits from Ruby base logger.
     #
     # Links:
-    # https://github.com/rails/rails/blob/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/activesupport/lib/active_support/logger.rb#L60-L76
-    # https://github.com/rails/rails/blob/main/activesupport/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/active_support/logger_silence.rb
+    #
+    # - https://github.com/rails/rails/blob/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/activesupport/lib/active_support/logger.rb#L60-L76
+    # - https://github.com/rails/rails/blob/main/activesupport/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/active_support/logger_silence.rb
     def silence(_severity = ERROR, &block)
       block.call
     end

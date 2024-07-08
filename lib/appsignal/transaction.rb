@@ -6,15 +6,24 @@ module Appsignal
   class Transaction
     HTTP_REQUEST   = "http_request"
     BACKGROUND_JOB = "background_job"
+    # @api private
     ACTION_CABLE   = "action_cable"
+    # @api private
     FRONTEND       = "frontend"
+    # @api private
     BLANK          = ""
+    # @api private
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
+    # @api private
     ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
+    # @api private
     BREADCRUMB_LIMIT = 20
+    # @api private
     ERROR_CAUSES_LIMIT = 10
 
     class << self
+      # Create a new transaction and set it as the currently active
+      # transaction.
       def create(id, namespace, request, options = {})
         # Allow middleware to force a new transaction
         Thread.current[:appsignal_transaction] = nil if options.include?(:force) && options[:force]
@@ -56,6 +65,8 @@ module Appsignal
         current && !current.nil_transaction?
       end
 
+      # Complete the currently active transaction and unset it as the active
+      # transaction.
       def complete_current!
         current.complete
       rescue => e
@@ -73,8 +84,9 @@ module Appsignal
       end
     end
 
+    # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :discarded, :breadcrumbs, :custom_data
+      :breadcrumbs, :custom_data
 
     def initialize(transaction_id, namespace, request, options = {})
       @transaction_id = transaction_id
@@ -124,18 +136,22 @@ module Appsignal
       @paused == true
     end
 
+    # @api private
     def discard!
       @discarded = true
     end
 
+    # @api private
     def restore!
       @discarded = false
     end
 
+    # @api private
     def discarded?
       @discarded == true
     end
 
+    # @api private
     def store(key)
       @store[key]
     end
@@ -166,7 +182,7 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
-    # @see {Helpers::Instrumentation#set_params}
+    # @see Helpers::Instrumentation#set_params
     def set_params(given_params = nil, &block)
       @params = block if block
       @params = given_params if given_params
@@ -191,7 +207,7 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
-    # @see {Helpers::Instrumentation#set_params_if_nil}
+    # @see Helpers::Instrumentation#set_params_if_nil
     def set_params_if_nil(given_params = nil, &block)
       set_params(given_params, &block) unless @params
     end
@@ -325,6 +341,7 @@ module Appsignal
       @ext.set_namespace(namespace)
     end
 
+    # @api private
     def set_http_or_background_action(from = request.params)
       return unless from
 
@@ -383,6 +400,7 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
+    # @api private
     def set_sample_data(key, data)
       return unless key && data
 
@@ -410,6 +428,7 @@ module Appsignal
       end
     end
 
+    # @api private
     def sample_data
       {
         :params => sanitized_params,
@@ -424,6 +443,7 @@ module Appsignal
       end
     end
 
+    # @see Appsignal::Helpers::Instrumentation#set_error
     def set_error(error)
       unless error.is_a?(Exception)
         Appsignal.internal_logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
@@ -521,6 +541,7 @@ module Appsignal
     end
     alias_method :to_hash, :to_h
 
+    # @api private
     class GenericRequest
       attr_reader :env
 
