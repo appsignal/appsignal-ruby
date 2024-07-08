@@ -2,7 +2,6 @@
 
 module Appsignal
   module Utils
-    # @api private
     class HashSanitizer
       FILTERED = "[FILTERED]"
       RECURSIVE = "[RECURSIVE VALUE]"

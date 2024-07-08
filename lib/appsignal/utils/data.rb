@@ -2,7 +2,6 @@
 
 module Appsignal
   module Utils
-    # @api private
     class Data
       class << self
         def generate(body)

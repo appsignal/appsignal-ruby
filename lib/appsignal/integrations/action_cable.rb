@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module ActionCableIntegration
       def perform_action(*args, &block)
         # The request is only the original websocket request

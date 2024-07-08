@@ -2,6 +2,7 @@
 
 module Appsignal
   module Probes
+    # @api private
     class SidekiqProbe
       include Helpers
 

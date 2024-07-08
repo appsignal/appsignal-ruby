@@ -39,7 +39,6 @@ module Appsignal
     #   AppSignal demo documentation
     # @see https://docs.appsignal.com/support/debugging.html
     #   Debugging AppSignal guide
-    # @api private
     class Demo
       class << self
         # @param options [Hash]

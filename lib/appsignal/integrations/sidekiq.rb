@@ -11,6 +11,7 @@ module Appsignal
     # about completing the transaction.
     #
     # Introduced in Sidekiq 5.1.
+    # @api private
     class SidekiqDeathHandler
       def call(_job_context, exception)
         return unless Appsignal.config[:sidekiq_report_errors] == "discard"

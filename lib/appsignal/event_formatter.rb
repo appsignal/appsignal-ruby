@@ -10,14 +10,14 @@ module Appsignal
   # event, the same object will be called intermittently in a threaded environment.
   # So only keep global configuration as state and pass the payload around as an
   # argument if you need to use helper methods.
-  #
-  # @api private
   class EventFormatter
     class << self
+      # @api private
       def formatters
         @formatters ||= {}
       end
 
+      # @api private
       def formatter_classes
         @formatter_classes ||= {}
       end
@@ -49,6 +49,7 @@ module Appsignal
         end
       end
 
+      # @api private
       def format(name, payload)
         formatter = formatters[name]
         formatter&.format(payload)

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
+  # @api private
   class Span
     def initialize(namespace = nil, ext = nil)
       @ext = ext || Appsignal::Extension::Span.root(namespace || "")

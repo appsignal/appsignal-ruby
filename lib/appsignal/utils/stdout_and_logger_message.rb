@@ -2,7 +2,6 @@
 
 module Appsignal
   module Utils
-    # @api private
     module StdoutAndLoggerMessage
       def self.warning(message, logger = Appsignal.internal_logger)
         Kernel.warn "appsignal WARNING: #{message}"

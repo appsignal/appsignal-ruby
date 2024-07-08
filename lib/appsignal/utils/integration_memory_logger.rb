@@ -4,7 +4,6 @@ require "logger"
 
 module Appsignal
   module Utils
-    # @api private
     class IntegrationMemoryLogger
       LEVELS = {
         Logger::DEBUG => :DEBUG,

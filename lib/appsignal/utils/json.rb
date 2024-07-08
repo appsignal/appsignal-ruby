@@ -2,7 +2,6 @@
 
 module Appsignal
   module Utils
-    # @api private
     class JSON
       class << self
         def generate(body)

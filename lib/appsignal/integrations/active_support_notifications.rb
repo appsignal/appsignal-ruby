@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module ActiveSupportNotificationsIntegration
       BANG = "!"
 

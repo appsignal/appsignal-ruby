@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module QuePlugin
       def _run(*)
         local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs

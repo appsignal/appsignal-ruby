@@ -2,8 +2,10 @@
 
 module Appsignal
   module Probes
+    # @api private
     ITERATION_IN_SECONDS = 60
 
+    # @api private
     class ProbeCollection
       def initialize
         @probes = {}
@@ -72,6 +74,7 @@ module Appsignal
 
       # @see ProbeCollection
       # @return [ProbeCollection] Returns list of probes.
+      # @api private
       def probes
         @probes ||= ProbeCollection.new
       end

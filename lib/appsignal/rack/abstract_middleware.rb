@@ -9,6 +9,7 @@ module Appsignal
     # Do not use this middleware directly. Instead use
     # {InstrumentationMiddleware}.
     #
+    # @abstract
     # @api private
     class AbstractMiddleware
       DEFAULT_ERROR_REPORTING = :default

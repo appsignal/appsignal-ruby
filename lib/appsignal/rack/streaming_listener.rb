@@ -10,6 +10,7 @@ module Appsignal
     # Instrumentation middleware that tracks exceptions in streaming Rack
     # responses.
     #
+    # @deprecated Use {InstrumentationMiddleware} instead.
     # @api private
     class StreamingListener < AbstractMiddleware
       def initialize(app, options = {})

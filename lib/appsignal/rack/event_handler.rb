@@ -7,10 +7,32 @@ module Appsignal
     APPSIGNAL_EVENT_HANDLER_HAS_ERROR = "appsignal.event_handler.error"
     RACK_AFTER_REPLY = "rack.after_reply"
 
-    # @api private
+    # Instrumentation middleware using Rack's Events module.
+    #
+    # We recommend using this in combination with the
+    # {InstrumentationMiddleware}.
+    #
+    # This middleware will report the response status code as the
+    # `response_status` tag on the sample. It will also report the response
+    # status as the `response_status` metric.
+    #
+    # This middleware will ensure the AppSignal transaction is always completed
+    # for every request.
+    #
+    # @example Add EventHandler to a Rack app
+    #   # Add this middleware as the first middleware of an app
+    #   use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
+    #
+    #   # Then add the InstrumentationMiddleware
+    #   use Appsignal::Rack::InstrumentationMiddleware
+    #
+    # @see https://docs.appsignal.com/ruby/integrations/rack.html
+    #   Rack integration documentation.
+    # @api public
     class EventHandler
       include ::Rack::Events::Abstract
 
+      # @api private
       def self.safe_execution(name)
         yield
       rescue => e
@@ -19,16 +41,20 @@ module Appsignal
         )
       end
 
+      # @api private
       attr_reader :id
 
+      # @api private
       def initialize
         @id = SecureRandom.uuid
       end
 
+      # @api private
       def request_handler?(given_id)
         id == given_id
       end
 
+      # @api private
       def on_start(request, _response)
         event_handler = self
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_start") do
@@ -65,6 +91,7 @@ module Appsignal
         end
       end
 
+      # @api private
       def on_error(request, _response, error)
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_error") do
           return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
@@ -77,6 +104,7 @@ module Appsignal
         end
       end
 
+      # @api private
       def on_finish(request, response)
         return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 

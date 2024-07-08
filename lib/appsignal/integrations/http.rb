@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module HttpIntegration
       def request(verb, uri, opts = {})
         parsed_request_uri = uri.is_a?(URI) ? uri : URI.parse(uri.to_s)

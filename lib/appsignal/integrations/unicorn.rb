@@ -2,6 +2,7 @@
 
 module Appsignal
   module Integrations
+    # @api private
     module UnicornIntegration
       # Make sure that appsignal is started and the last transaction
       # in a worker gets flushed.
