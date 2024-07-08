@@ -1,5 +1,97 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.10.0
+
+_Published on 2024-07-08._
+
+### Added
+
+- Add our new recommended Rack instrumentation middleware. If an app is using the `Appsignal::Rack::GenericInstrumentation` middleware, please update it to use `Appsignal::Rack::InstrumentationMiddleware` instead.
+
+  This new middleware will not report all requests under the "unknown" action if no action name is set. To set an action name, call the `Appsignal.set_action` helper from the app.
+
+  ```ruby
+  # config.ru
+
+  # Setup AppSignal
+
+  use Appsignal::Rack::InstrumentationMiddleware
+
+  # Run app
+  ```
+
+  (minor [f2596781](https://github.com/appsignal/appsignal-ruby/commit/f259678111067bd3d7cf60552201f4d4f95a99d6))
+- Add Rake task performance instrumentation. Configure the `enable_rake_performance_instrumentation` option to `true` to enable Rake task instrumentation for both error and performance monitoring. To ignore specific Rake tasks, configure `ignore_actions` to include the name of the Rake task. (minor [63c9aeed](https://github.com/appsignal/appsignal-ruby/commit/63c9aeed978fcd0942238772c2e441b33e12e16a))
+- Add instrumentation to Rack responses, including streaming responses. New `process_response_body.rack` and `close_response_body.rack` events will be shown in the event timeline. These events show how long it takes to complete responses, depending on the response implementation, and when the response is closed.
+
+  This Sinatra route with a streaming response will be better instrumented, for example:
+
+  ```ruby
+  get "/stream" do
+    stream do |out|
+      sleep 1
+      out << "1"
+      sleep 1
+      out << "2"
+      sleep 1
+      out << "3"
+    end
+  end
+  ```
+
+  (minor [bd2f037b](https://github.com/appsignal/appsignal-ruby/commit/bd2f037ba4840f4606373ee2fc11553f098d5436))
+- Add the `Appsignal.report_error` helper to report errors. If you unsure whether to use the `Appsignal.set_error` or `Appsignal.send_error` helpers in what context, use `Appsignal.report_error` to always report the error. (minor [1502ea14](https://github.com/appsignal/appsignal-ruby/commit/1502ea147210d77dd4ee9d301c52ace30c2a6700))
+- Support nested webmachine apps. If webmachine apps are nested in other AppSignal instrumentation it will now report the webmachine instrumentation as part of the parent transaction, reporting more runtime of the request. (patch [243d20ac](https://github.com/appsignal/appsignal-ruby/commit/243d20acd68a9e59a01d74e17abb910691667b25))
+- Report the response status for Padrino requests as the `response_status` tag on samples, e.g. 200, 301, 500. This tag is visible on the sample detail page.
+  Report the response status for Padrino requests as the `response_status` metric.
+
+  (patch [9239c26b](https://github.com/appsignal/appsignal-ruby/commit/9239c26beb144b9d8bf094bc58030cd618633c38))
+- Add support for nested Padrino apps. When a Padrino app is nested in another Padrino app, or another framework like Sinatra or Rails, it will now report the entire request. (patch [9239c26b](https://github.com/appsignal/appsignal-ruby/commit/9239c26beb144b9d8bf094bc58030cd618633c38))
+- Add `Appsignal.set_params` helper. Set custom parameters on the current transaction with the `Appsignal.set_params` helper. Note that this will overwrite any request parameters that would be set automatically on the transaction. When this method is called multiple times, it will overwrite the previously set value.
+
+  ```ruby
+  Appsignal.set_params("param1" => "value1", "param2" => "value2")
+  ```
+
+  (patch [e8d73e8d](https://github.com/appsignal/appsignal-ruby/commit/e8d73e8d31264c44dd5db5d769be6b599b0ded48))
+- Add `Appsignal.set_custom_data` helper to set custom data on the transaction. Previously, this could only be set with `Appsignal::Transaction.current.set_custom_data("custom_data", ...)`. This helper makes setting the custom data more convenient. (patch [875e4435](https://github.com/appsignal/appsignal-ruby/commit/875e4435ba97838f79a02ff456d3418bc012634a))
+- Add `Appsignal.set_tags` helper as an alias for `Appsignal.tag_request`. This is a context independent named alias available on the Transaction class as well. (patch [1502ea14](https://github.com/appsignal/appsignal-ruby/commit/1502ea147210d77dd4ee9d301c52ace30c2a6700))
+- Add a block argument to the `Appsignal.set_params` and `Appsignal::Transaction#set_params` helpers. When `set_params` is called with a block argument, the block is executed when the parameters are stored on the Transaction. This block is only called when the Transaction is sampled. Use this block argument to avoid having to parse parameters for every transaction, to speed things up when the transaction is not sampled.
+
+  ```ruby
+  Appsignal.set_params do
+    # Some slow code to parse parameters
+    JSON.parse('{"param1": "value1"}')
+  end
+  ```
+
+  (patch [1502ea14](https://github.com/appsignal/appsignal-ruby/commit/1502ea147210d77dd4ee9d301c52ace30c2a6700))
+
+### Deprecated
+
+- Deprecate the `appsignal.action` and `appsignal.route` request env methods to set the transaction action name. Use the `Appsignal.set_action` helper instead.
+
+  ```ruby
+  # Before
+  env["appsignal.action"] = "POST /my-action"
+  env["appsignal.route"] = "POST /my-action"
+
+  # After
+  Appsignal.set_action("POST /my-action")
+  ```
+
+  (patch [1e6d0b31](https://github.com/appsignal/appsignal-ruby/commit/1e6d0b315577176d4dd37db0a8f5fde89c66e8a4))
+- Deprecate the `Appsignal::Rack::StreamingListener` middleware. Use the `Appsignal::Rack::InstrumentationMiddleware` middleware instead. (patch [57d6fa33](https://github.com/appsignal/appsignal-ruby/commit/57d6fa3386d9a9720da76c7b899a332952d472e0))
+- Deprecate the `Appsignal::Rack::GenericInstrumentation` middleware. Use the `Appsignal::Rack::InstrumentationMiddleware` middleware instead. See also the changelog entry about the `InstrumentationMiddleware`. (patch [1502ea14](https://github.com/appsignal/appsignal-ruby/commit/1502ea147210d77dd4ee9d301c52ace30c2a6700))
+
+### Fixed
+
+- Fix issue with AppSignal getting stuck in a boot loop when loading the Padrino integration with: `require "appsignal/integrations/padrino"`
+  This could happen in nested applications, like a Padrino app in a Rails app. AppSignal will now use the first config AppSignal starts with.
+
+  (patch [10722b60](https://github.com/appsignal/appsignal-ruby/commit/10722b60d0ad9dc63b2c7add7d5ee8703190b8f0))
+- Fix the deprecation warning of `Bundler.rubygems.all_specs` usage. (patch [1502ea14](https://github.com/appsignal/appsignal-ruby/commit/1502ea147210d77dd4ee9d301c52ace30c2a6700))
+
 ## 3.9.3
 
 _Published on 2024-07-02._
