@@ -83,7 +83,7 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          transaction.set_params_if_nil(filtered_arguments(item))
+          transaction.set_params_if_nil(parse_arguments(item))
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current! unless exception
 
@@ -113,16 +113,6 @@ module Appsignal
         return sidekiq_action_name if complete_action
 
         "#{sidekiq_action_name}#perform"
-      end
-
-      def filtered_arguments(job)
-        arguments = parse_arguments(job)
-        return unless arguments
-
-        Appsignal::Utils::HashSanitizer.sanitize(
-          arguments,
-          Appsignal.config[:filter_parameters]
-        )
       end
 
       def formatted_metadata(item)

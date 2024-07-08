@@ -62,12 +62,7 @@ module Appsignal
             end
 
           if transaction
-            transaction.set_params_if_nil(
-              Appsignal::Utils::HashSanitizer.sanitize(
-                job["arguments"],
-                Appsignal.config[:filter_parameters]
-              )
-            )
+            transaction.set_params_if_nil(job["arguments"])
 
             transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
             transaction_tags["active_job_id"] = job["job_id"]
