@@ -88,6 +88,7 @@ module Appsignal
       @store = Hash.new({})
       @options = options
       @options[:params_method] ||= :params
+      @params = nil
 
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -139,9 +140,13 @@ module Appsignal
     end
 
     def params
-      return @params if defined?(@params)
+      parameters = @params || request_params
 
-      request_params
+      if parameters.respond_to? :call
+        parameters.call
+      else
+        parameters
+      end
     end
 
     # Set parameters on the transaction.
@@ -152,10 +157,17 @@ module Appsignal
     # The parameters set using {#set_params} are leading over those extracted
     # from a request's environment.
     #
+    # When both the `given_params` and a block is given to this method, the
+    # `given_params` argument is leading and the block will _not_ be called.
+    #
     # @since 3.9.1
     # @param given_params [Hash] The parameters to set on the transaction.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
     # @return [void]
-    def set_params(given_params)
+    # @see {Helpers::Instrumentation#set_params}
+    def set_params(given_params = nil, &block)
+      @params = block if block
       @params = given_params if given_params
     end
 
@@ -175,9 +187,12 @@ module Appsignal
     #
     # @since 3.9.1
     # @param given_params [Hash] The parameters to set on the transaction if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
     # @return [void]
-    def set_params_if_nil(given_params)
-      set_params(given_params) unless @params
+    # @see {Helpers::Instrumentation#set_params_if_nil}
+    def set_params_if_nil(given_params = nil, &block)
+      set_params(given_params, &block) unless @params
     end
 
     # Set tags on the transaction.

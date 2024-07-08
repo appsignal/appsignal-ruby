@@ -129,7 +129,7 @@ module Appsignal
         request_method = request_method_for(request)
         transaction.set_metadata("method", request_method) if request_method
 
-        transaction.set_params_if_nil(params_for(request))
+        transaction.set_params_if_nil { params_for(request) }
         transaction.set_http_or_background_queue_start
       end
 

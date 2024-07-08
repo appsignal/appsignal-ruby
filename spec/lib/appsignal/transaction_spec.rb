@@ -326,6 +326,16 @@ describe Appsignal::Transaction do
         it "returns custom parameters" do
           expect(subject).to eq(:foo => "bar")
         end
+
+        context "when params is a callable object" do
+          it "calls the params object and sets the return value as parametesr" do
+            transaction.set_params { { "param1" => "value1" } }
+
+            expect(transaction.params).to eq(
+              "param1" => "value1"
+            )
+          end
+        end
       end
 
       context "without custom params set on transaction" do
@@ -374,6 +384,25 @@ describe Appsignal::Transaction do
           expect(transaction.params).to eq(params)
           expect(transaction).to include_params(params)
         end
+
+        it "updates the params on the transaction with a block" do
+          params = { "key" => "value" }
+          transaction.set_params { params }
+
+          transaction._sample
+          expect(transaction.params).to eq(params)
+          expect(transaction).to include_params(params)
+        end
+
+        it "updates with the params argument when both an argument and block are given" do
+          arg_params = { "argument" => "value" }
+          block_params = { "block" => "value" }
+          transaction.set_params(arg_params) { block_params }
+
+          transaction._sample
+          expect(transaction.params).to eq(arg_params)
+          expect(transaction).to include_params(arg_params)
+        end
       end
 
       context "when the given params is nil" do
@@ -402,6 +431,25 @@ describe Appsignal::Transaction do
           expect(transaction).to include_params(params)
         end
 
+        it "updates the params on the transaction with a block" do
+          params = { "key" => "value" }
+          transaction.set_params_if_nil { params }
+
+          transaction._sample
+          expect(transaction.params).to eq(params)
+          expect(transaction).to include_params(params)
+        end
+
+        it "updates with the params argument when both an argument and block are given" do
+          arg_params = { "argument" => "value" }
+          block_params = { "block" => "value" }
+          transaction.set_params_if_nil(arg_params) { block_params }
+
+          transaction._sample
+          expect(transaction.params).to eq(arg_params)
+          expect(transaction).to include_params(arg_params)
+        end
+
         context "when the given params is nil" do
           it "does not update the params on the transaction" do
             params = { "key" => "value" }
@@ -421,6 +469,17 @@ describe Appsignal::Transaction do
           params = { "key" => "value" }
           transaction.set_params(preset_params)
           transaction.set_params_if_nil(params)
+
+          transaction._sample
+          expect(transaction.params).to eq(preset_params)
+          expect(transaction).to include_params(preset_params)
+        end
+
+        it "does not update the params with a block on the transaction" do
+          preset_params = { "other" => "params" }
+          params = { "key" => "value" }
+          transaction.set_params(preset_params)
+          transaction.set_params_if_nil { params }
 
           transaction._sample
           expect(transaction.params).to eq(preset_params)
@@ -820,6 +879,17 @@ describe Appsignal::Transaction do
           { "key" => "value" },
           kind_of(Integer)
         )
+      end
+
+      context "when params is a callable object" do
+        it "calls the params object and sets the return value as parametesr" do
+          transaction.set_params { { "param1" => "value1" } }
+
+          transaction.sample_data
+          expect(transaction).to include_params(
+            "param1" => "value1"
+          )
+        end
       end
     end
 
