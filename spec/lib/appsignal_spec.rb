@@ -512,6 +512,40 @@ describe Appsignal do
       end
     end
 
+    describe ".set_params" do
+      before do
+        start_agent
+      end
+
+      context "with transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "sets parameters on the transaction" do
+          Appsignal.set_params("param1" => "value1")
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
+
+        it "overwrites the params if called multiple times" do
+          Appsignal.set_params("param1" => "value1")
+          Appsignal.set_params("param2" => "value2")
+
+          transaction._sample
+          expect(transaction).to include_params("param2" => "value2")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set tags on the transaction" do
+          Appsignal.set_params("a" => "b")
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_params)
+        end
+      end
+    end
+
     describe ".add_breadcrumb" do
       around do |example|
         start_agent
