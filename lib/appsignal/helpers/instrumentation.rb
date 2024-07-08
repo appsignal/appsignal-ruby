@@ -565,8 +565,8 @@ module Appsignal
       # A block can be given to this method to defer the fetching and parsing
       # of the parameters until and only when the transaction is sampled.
       #
-      # When both the `given_params` and a block is given to this method, the
-      # `given_params` argument is leading and the block will _not_ be called.
+      # When both the `params` and a block is given to this method, the
+      # `params` argument is leading and the block will _not_ be called.
       #
       # @example Set parameters
       #   Appsignal.set_params("param1" => "value1")
@@ -591,7 +591,7 @@ module Appsignal
       #   # The parameters are: { "argument" => "argument value" }
       #
       # @since 3.10.0
-      # @param given_params [Hash] The parameters to set on the transaction.
+      # @param params [Hash] The parameters to set on the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new parameters.
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
