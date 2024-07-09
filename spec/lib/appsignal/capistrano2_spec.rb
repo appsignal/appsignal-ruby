@@ -17,7 +17,7 @@ if DependencyHelper.capistrano2_present?
         c.dry_run = false
       end
     end
-    before { Appsignal::Capistrano.tasks(capistrano_config) }
+    before { Appsignal::Integrations::Capistrano.tasks(capistrano_config) }
 
     def run
       capture_stdout(out_stream) do
