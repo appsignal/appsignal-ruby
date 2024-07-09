@@ -1,5 +1,9 @@
-require 'appsignal'
-require 'benchmark'
+# frozen_string_literal: true
+
+$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), "lib"))
+
+require "appsignal"
+require "benchmark"
 
 def process_rss
   `ps -o rss= -p #{Process.pid}`.to_i
@@ -7,60 +11,80 @@ end
 
 GC.disable
 
-task :default => :'benchmark:all'
+task :default => :"benchmark:all"
 
 namespace :benchmark do
   task :all => [:run_inactive, :run_active]
 
   task :run_inactive do
-    puts 'Running with appsignal off'
-    ENV['APPSIGNAL_PUSH_API_KEY'] = nil
+    puts "Running with appsignal off"
+    ENV["APPSIGNAL_PUSH_API_KEY"] = nil
     run_benchmark
   end
 
   task :run_active do
-    puts 'Running with appsignal on'
-    ENV['APPSIGNAL_PUSH_API_KEY'] = 'something'
+    puts "Running with appsignal on"
+    ENV["APPSIGNAL_PUSH_API_KEY"] = "something"
     run_benchmark
   end
 end
 
-def run_benchmark
-  no_transactions = (ENV['NO_TRANSACTIONS'] || 100_000).to_i
-  no_threads = (ENV['NO_THREADS'] || 1).to_i
+def run_benchmark # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+  no_transactions = (ENV["NO_TRANSACTIONS"] || 100_000).to_i
+  no_threads = (ENV["NO_THREADS"] || 1).to_i
 
   total_objects = ObjectSpace.count_objects[:TOTAL]
   puts "Initializing, currently #{total_objects} objects"
   puts "RSS: #{process_rss}"
 
-  Appsignal.config = Appsignal::Config.new(Dir.pwd, 'production', :endpoint => 'http://localhost:8080')
+  Appsignal.config = Appsignal::Config.new(Dir.pwd, "production", :endpoint => "http://localhost:8080")
   Appsignal.start
-  puts "Appsignal #{Appsignal.active? ? 'active' : 'not active'}"
+  puts "Appsignal #{Appsignal.active? ? "active" : "not active"}"
 
   threads = []
   puts "Running #{no_transactions} normal transactions in #{no_threads} threads"
+  # rubocop:disable Metrics/BlockLength
   puts(Benchmark.measure do
     no_threads.times do
       thread = Thread.new do
         no_transactions.times do |i|
           request = Appsignal::Transaction::GenericRequest.new(
-            :controller => 'HomeController',
-            :action     => 'show',
-            :params     => {:id => 1}
+            :controller => "HomeController",
+            :action     => "show",
+            :params     => { :id => 1 }
           )
-          Appsignal::Transaction.create("transaction_#{i}", Appsignal::Transaction::HTTP_REQUEST, request)
+          transaction = Appsignal::Transaction.create(
+            "transaction_#{i}",
+            Appsignal::Transaction::HTTP_REQUEST,
+            request
+          )
+          transaction.set_http_or_background_action
 
-          Appsignal.instrument('process_action.action_controller') do
-            Appsignal.instrument_sql('sql.active_record', nil, 'SELECT `users`.* FROM `users` WHERE `users`.`id` = ?')
+          Appsignal.instrument("process_action.action_controller") do
+            Appsignal.instrument_sql(
+              "sql.active_record",
+              nil,
+              "SELECT `users`.* FROM `users` WHERE `users`.`id` = ?"
+            )
             10.times do
-              Appsignal.instrument_sql('sql.active_record', nil, 'SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?')
+              Appsignal.instrument_sql(
+                "sql.active_record",
+                nil,
+                "SELECT `todos`.* FROM `todos` WHERE `todos`.`id` = ?"
+              )
             end
 
-            Appsignal.instrument('render_template.action_view', 'app/views/home/show.html.erb') do
+            Appsignal.instrument(
+              "render_template.action_view",
+              "app/views/home/show.html.erb"
+            ) do
               5.times do
-                Appsignal.instrument('render_partial.action_view', 'app/views/home/_piece.html.erb') do
+                Appsignal.instrument(
+                  "render_partial.action_view",
+                  "app/views/home/_piece.html.erb"
+                ) do
                   3.times do
-                    Appsignal.instrument('cache.read')
+                    Appsignal.instrument("cache.read")
                   end
                 end
               end
@@ -73,9 +97,10 @@ def run_benchmark
       thread.abort_on_exception = true
       threads << thread
     end
+    # rubocop:enable Metrics/BlockLength
 
     threads.each(&:join)
-    puts 'Finished'
+    puts "Finished"
   end)
 
   puts "Done, currently #{ObjectSpace.count_objects[:TOTAL] - total_objects} objects created"
