@@ -9,7 +9,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   let(:queue) { "some-funky-queue-name" }
   let(:sqs_msg) { double(:message_id => "msg1", :attributes => {}) }
   let(:body) { {} }
-  before(:context) { start_agent }
+  before { start_agent }
   around { |example| keep_transactions { example.run } }
 
   def perform_shoryuken_job(&block)
@@ -35,7 +35,6 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
       let(:body) { { :foo => "Foo", :bar => "Bar" } }
 
       it "wraps the job in a transaction with the correct params" do
-        allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
         expect { perform_shoryuken_job }.to change { created_transactions.length }.by(1)
 
         transaction = last_transaction
@@ -51,7 +50,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           "title" => ""
         )
         expect(transaction).to include_params("foo" => "Foo", "bar" => "Bar")
-        expect(transaction).to include_sample_metadata(
+        expect(transaction).to include_tags(
           "message_id" => "msg1",
           "queue" => queue,
           "SentTimestamp" => sent_timestamp
@@ -64,9 +63,6 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         before do
           Appsignal.config = project_fixture_config("production")
           Appsignal.config[:filter_parameters] = ["foo"]
-        end
-        after do
-          Appsignal.config[:filter_parameters] = []
         end
 
         it "filters selected arguments" do
@@ -139,7 +135,6 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     let(:sent_timestamp) { Time.parse("1976-11-18 01:00:00UTC").to_i * 1000 }
 
     it "creates a transaction for the batch" do
-      allow_any_instance_of(Appsignal::Transaction).to receive(:set_queue_start).and_call_original
       expect do
         perform_shoryuken_job {} # rubocop:disable Lint/EmptyBlock
       end.to change { created_transactions.length }.by(1)
@@ -160,7 +155,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         "msg2" => "foo bar",
         "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
       )
-      expect(transaction).to include_sample_metadata(
+      expect(transaction).to include_tags(
         "batch" => true,
         "queue" => "some-funky-queue-name",
         "SentTimestamp" => sent_timestamp.to_s # Earliest/oldest timestamp from messages
