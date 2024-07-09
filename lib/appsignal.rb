@@ -193,7 +193,7 @@ module Appsignal
     def start_logger
       callers = caller
       Appsignal::Utils::StdoutAndLoggerMessage.warning \
-        "Callng 'Appsignal.start_logger' is deprecated. " \
+        "Calling 'Appsignal.start_logger' is deprecated. " \
           "The logger will be started when calling 'Appsignal.start'. " \
           "Remove the 'Appsignal.start_logger' call in the following file to " \
           "remove this message.\n#{callers.first}"

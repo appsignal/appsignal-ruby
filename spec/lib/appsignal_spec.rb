@@ -1312,8 +1312,9 @@ describe Appsignal do
           Appsignal.start_logger
         end
       end
-      expect(stderr).to include("appsignal WARNING: Callng 'Appsignal.start_logger' is deprecated.")
-      expect(log).to contains_log(:warn, "Callng 'Appsignal.start_logger' is deprecated.")
+      expect(stderr)
+        .to include("appsignal WARNING: Calling 'Appsignal.start_logger' is deprecated.")
+      expect(log).to contains_log(:warn, "Calling 'Appsignal.start_logger' is deprecated.")
     end
   end
 
