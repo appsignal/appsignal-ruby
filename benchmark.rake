@@ -53,11 +53,12 @@ def run_benchmark # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
             :action     => "show",
             :params     => { :id => 1 }
           )
-          Appsignal::Transaction.create(
+          transaction = Appsignal::Transaction.create(
             "transaction_#{i}",
             Appsignal::Transaction::HTTP_REQUEST,
             request
           )
+          transaction.set_http_or_background_action
 
           Appsignal.instrument("process_action.action_controller") do
             Appsignal.instrument_sql(
