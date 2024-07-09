@@ -103,6 +103,7 @@ module Appsignal
       @options[:params_method] ||= :params
       @params = nil
       @session_data = nil
+      @headers = nil
 
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -270,6 +271,45 @@ module Appsignal
     #   Sample data guide
     def set_session_data_if_nil(given_session_data = nil, &block)
       set_session_data(given_session_data, &block) unless @session_data
+    end
+
+    # Set headers on the transaction.
+    #
+    # When both the `given_headers` and a block is given to this method,
+    # the `given_headers` argument is leading and the block will _not_ be
+    # called.
+    #
+    # @param given_headers [Hash] A hash containing headers.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new headers.
+    # @return [void]
+    #
+    # @since 3.10.1
+    # @see Helpers::Instrumentation#set_headers
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def set_headers(given_headers = nil, &block)
+      @headers = block if block
+      @headers = given_headers if given_headers
+    end
+
+    # Set headers on the transaction if not already set.
+    #
+    # When both the `given_headers` and a block is given to this method,
+    # the `given_headers` argument is leading and the block will _not_ be
+    # called.
+    #
+    # @param given_headers [Hash] A hash containing headers.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new headers.
+    # @return [void]
+    #
+    # @since 3.10.1
+    # @see #set_headers
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def set_headers_if_nil(given_headers = nil, &block)
+      set_headers(given_headers, &block) unless @headers
     end
 
     # Set custom data on the transaction.
@@ -661,24 +701,6 @@ module Appsignal
       end
     end
 
-    # Returns sanitized environment for a transaction.
-    #
-    # The environment of a transaction can contain a lot of information, not
-    # all of it useful for debugging.
-    #
-    # @return [nil] if no environment is present.
-    # @return [Hash<String, Object>]
-    def sanitized_environment
-      env = environment
-      return if env.empty?
-
-      {}.tap do |out|
-        Appsignal.config[:request_headers].each do |key|
-          out[key] = env[key] if env[key]
-        end
-      end
-    end
-
     def session_data
       if @session_data
         if @session_data.respond_to? :call
@@ -720,17 +742,36 @@ module Appsignal
         .reject { |key, _value| Appsignal.config[:filter_metadata].include?(key) }
     end
 
-    # Returns the environment for a transaction.
-    #
-    # Returns an empty Hash when the {#request} object doesn't listen to the
-    # `#env` method or the `#env` is nil.
-    #
-    # @return [Hash<String, Object>]
     def environment
-      return {} unless request.respond_to?(:env)
-      return {} unless request.env
+      if @headers
+        if @headers.respond_to? :call
+          @headers.call
+        else
+          @headers
+        end
+      elsif request.respond_to?(:env)
+        request.env || {}
+      else
+        {}
+      end
+    end
 
-      request.env
+    # Returns sanitized environment for a transaction.
+    #
+    # The environment of a transaction can contain a lot of information, not
+    # all of it useful for debugging.
+    #
+    # @return [nil] if no environment is present.
+    # @return [Hash<String, Object>]
+    def sanitized_environment
+      env = environment
+      return if env.empty?
+
+      {}.tap do |out|
+        Appsignal.config[:request_headers].each do |key|
+          out[key] = env[key] if env[key]
+        end
+      end
     end
 
     # Only keep tags if they meet the following criteria:

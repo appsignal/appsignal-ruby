@@ -599,6 +599,120 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#set_headers" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the headers are set" do
+        it "updates the headers on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates the session data on the transaction with a block" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates with the session data argument when both an argument and block are given" do
+          arg_data = { "PATH_INFO" => "/arg-path" }
+          block_data = { "PATH_INFO" => "/block-path" }
+          transaction.set_headers(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_environment(arg_data)
+        end
+
+        it "does not include filtered out session data" do
+          Appsignal.config[:request_headers] = ["MY_HEADER"]
+          transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+
+          transaction._sample
+          expect(transaction).to include_environment("MY_HEADER" => "value1")
+        end
+      end
+
+      context "when the given session data is nil" do
+        it "does not update the session data on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers(headers)
+          transaction.set_headers(nil)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+      end
+    end
+
+    describe "#set_headers_if_nil" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the params are not set" do
+        it "sets the params on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers_if_nil(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates the params on the transaction with a block" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers_if_nil { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates with the params argument when both an argument and block are given" do
+          arg_data = { "PATH_INFO" => "/arg-path" }
+          block_data = { "PATH_INFO" => "/block-path" }
+          transaction.set_headers_if_nil(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_environment(arg_data)
+        end
+
+        context "when the given params is nil" do
+          it "does not update the params on the transaction" do
+            headers = { "PATH_INFO" => "value" }
+            transaction.set_headers(headers)
+            transaction.set_headers_if_nil(nil)
+
+            transaction._sample
+            expect(transaction).to include_environment(headers)
+          end
+        end
+      end
+
+      context "when the params are set" do
+        it "does not update the params on the transaction" do
+          preset_headers = { "PATH_INFO" => "/first-path" }
+          headers = { "PATH_INFO" => "/other-path" }
+          transaction.set_headers(preset_headers)
+          transaction.set_headers_if_nil(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(preset_headers)
+        end
+
+        it "does not update the params with a block on the transaction" do
+          preset_headers = { "PATH_INFO" => "/first-path" }
+          headers = { "PATH_INFO" => "/other-path" }
+          transaction.set_headers(preset_headers)
+          transaction.set_headers_if_nil { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(preset_headers)
+        end
+      end
+    end
+
     describe "#set_tags" do
       let(:long_string) { "a" * 10_001 }
 
