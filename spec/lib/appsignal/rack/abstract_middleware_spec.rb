@@ -5,7 +5,8 @@ describe Appsignal::Rack::AbstractMiddleware do
     Rack::MockRequest.env_for(
       request_path,
       "REQUEST_METHOD" => "GET",
-      :params => { "page" => 2, "query" => "lorem" }
+      :params => { "page" => 2, "query" => "lorem" },
+      "rack.session" => { "session" => "data", "user_id" => 123 }
     )
   end
   let(:options) { {} }
@@ -285,6 +286,12 @@ describe Appsignal::Rack::AbstractMiddleware do
             expect(last_transaction).to include_params("custom" => "param")
           end
         end
+
+        it "sets session data" do
+          make_request
+
+          expect(last_transaction).to include_session_data("session" => "data", "user_id" => 123)
+        end
       end
 
       context "with queue start header" do
@@ -316,6 +323,10 @@ describe Appsignal::Rack::AbstractMiddleware do
         def filtered_params
           { "abc" => "123" }
         end
+
+        def session
+          { "data" => "value" }
+        end
       end
 
       context "with overridden request class and params method" do
@@ -327,6 +338,12 @@ describe Appsignal::Rack::AbstractMiddleware do
           make_request
 
           expect(last_transaction).to include_params("abc" => "123")
+        end
+
+        it "uses the overridden request class to fetch session data" do
+          make_request
+
+          expect(last_transaction).to include_session_data("data" => "value")
         end
       end
 
