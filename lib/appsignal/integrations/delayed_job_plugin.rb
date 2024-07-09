@@ -17,52 +17,49 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
-        payload = job.payload_object
+        transaction = Appsignal::Transaction.create(
+          SecureRandom.uuid,
+          Appsignal::Transaction::BACKGROUND_JOB,
+          Appsignal::Transaction::GenericRequest.new({})
+        )
 
+        Appsignal.instrument("perform_job.delayed_job") do
+          block.call(job)
+        end
+      rescue Exception => error # rubocop:disable Lint/RescueException
+        transaction.set_error(error)
+        raise
+      ensure
+        payload = job.payload_object
         if payload.respond_to? :job_data
           # ActiveJob
           job_data = payload.job_data
-          args = job_data.fetch("arguments", {})
-          class_name = job_data["job_class"]
-          method_name = "perform"
+          transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
+          transaction.set_params_if_nil(job_data.fetch("arguments", {}))
         else
           # Delayed Job
-          args = extract_value(payload, :args, {})
-          class_name, method_name = class_and_method_name_from_object_or_hash(payload, job.name)
+          transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
+          transaction.set_params_if_nil(extract_value(payload, :args, {}))
         end
 
-        params = Appsignal::Utils::HashSanitizer.sanitize(
-          args,
-          Appsignal.config[:filter_parameters]
+        transaction.set_tags(
+          :id => extract_value(job, :id, nil, true),
+          :queue => extract_value(job, :queue),
+          :priority => extract_value(job, :priority, 0),
+          :attempts => extract_value(job, :attempts, 0)
         )
 
-        Appsignal.monitor_transaction(
-          "perform_job.delayed_job",
-          :class    => class_name,
-          :method   => method_name,
-          :metadata => {
-            :id => extract_value(job, :id, nil, true),
-            :queue => extract_value(job, :queue),
-            :priority => extract_value(job, :priority, 0),
-            :attempts => extract_value(job, :attempts, 0)
-          },
-          :params      => params,
-          :queue_start => extract_value(job, :run_at)
-        ) do
-          block.call(job)
-        end
+        transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+
+        Appsignal::Transaction.complete_current!
       end
 
-      def self.class_and_method_name_from_object_or_hash(payload, default_name)
+      def self.action_name_from_payload(payload, default_name)
         # Attempt to find appsignal_name override
         class_and_method_name = extract_value(payload, :appsignal_name, nil)
-        return class_and_method_name.split("#") if class_and_method_name.is_a?(String)
-
-        pound_split = default_name.split("#")
-        return pound_split if pound_split.length == 2
-
-        dot_split = default_name.split(".")
-        return default_name if dot_split.length == 2
+        return class_and_method_name if class_and_method_name.is_a?(String)
+        return default_name if default_name.split("#").length == 2
+        return default_name if default_name.split(".").length == 2
 
         "#{default_name}#perform"
       end

@@ -52,12 +52,13 @@ describe "Appsignal::Integrations::DelayedJobHook" do
     context "with a normal call" do
       it "wraps it in a transaction" do
         perform
+
         transaction = last_transaction
-        expect(transaction).to have_action("TestClass#perform")
         expect(transaction).to have_namespace("background_job")
+        expect(transaction).to have_action("TestClass#perform")
         expect(transaction).to_not have_error
         expect(transaction).to include_event(:name => "perform_job.delayed_job")
-        expect(transaction).to include_sample_metadata(
+        expect(transaction).to include_tags(
           "priority" => 1,
           "attempts" => 1,
           "queue" => "default",
@@ -242,7 +243,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
             expect(transaction).to have_action("TestClass#perform")
             expect(transaction).to_not have_error
             expect(transaction).to include_event("name" => "perform_job.delayed_job")
-            expect(transaction).to include_sample_metadata(
+            expect(transaction).to include_tags(
               "priority" => 1,
               "attempts" => 1,
               "queue" => "default",
