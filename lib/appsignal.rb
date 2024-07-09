@@ -47,7 +47,7 @@ module Appsignal
     # @see Extension
     # @see extension_loaded?
     attr_accessor :extension_loaded
-    # @!attribute [rw] logger
+    # @!attribute [rw] internal_logger
     #   Accessor for the internal AppSignal logger.
     #
     #   Not to be confused with our logging feature.
@@ -59,10 +59,8 @@ module Appsignal
     #   {.start}) the contents of the "in memory logger" is written to the new
     #   logger.
     #
-    #   @note some classes may have options to set custom loggers. Their
-    #     defaults are pointed to this attribute.
     #   @api private
-    #   @return [Logger]
+    #   @return [Utils::IntegrationLogger or Utils::IntegrationMemoryLogger]
     #   @see start
     attr_writer :internal_logger
 
