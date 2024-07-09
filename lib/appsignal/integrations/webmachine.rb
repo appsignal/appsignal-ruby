@@ -23,6 +23,7 @@ module Appsignal
       ensure
         transaction.set_action_if_nil("#{resource.class.name}##{request.method}")
         transaction.set_params_if_nil(request.query)
+        transaction.set_headers_if_nil { request.headers if request.respond_to?(:headers) }
 
         Appsignal::Transaction.complete_current! unless has_parent_transaction
       end
