@@ -134,7 +134,7 @@ module AppsignalTest
 
     module InstanceMethods
       def _sample
-        sample_data
+        _sample_data
       end
     end
   end
