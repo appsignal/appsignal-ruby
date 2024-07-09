@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  class Hooks
+  module Integrations
     # @api private
     class DelayedJobPlugin < ::Delayed::Plugin
       extend Appsignal::Hooks::Helpers
