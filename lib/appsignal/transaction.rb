@@ -102,6 +102,7 @@ module Appsignal
       @options = options
       @options[:params_method] ||= :params
       @params = nil
+      @session_data = nil
 
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -207,6 +208,8 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
+    #
+    # @see #set_params
     # @see Helpers::Instrumentation#set_params_if_nil
     def set_params_if_nil(given_params = nil, &block)
       set_params(given_params, &block) unless @params
@@ -228,6 +231,45 @@ module Appsignal
     #   Tagging guide
     def set_tags(given_tags = {})
       @tags.merge!(given_tags)
+    end
+
+    # Set session data on the transaction.
+    #
+    # When both the `given_session_data` and a block is given to this method,
+    # the `given_session_data` argument is leading and the block will _not_ be
+    # called.
+    #
+    # @param given_session_data [Hash] A hash containing session data.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new session data.
+    # @return [void]
+    #
+    # @since 3.10.1
+    # @see Helpers::Instrumentation#set_session_data
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def set_session_data(given_session_data = nil, &block)
+      @session_data = block if block
+      @session_data = given_session_data if given_session_data
+    end
+
+    # Set session data on the transaction if not already set.
+    #
+    # When both the `given_session_data` and a block is given to this method,
+    # the `given_session_data` argument is leading and the block will _not_ be
+    # called.
+    #
+    # @param given_session_data [Hash] A hash containing session data.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new session data.
+    # @return [void]
+    #
+    # @since 3.10.1
+    # @see #set_session_data
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def set_session_data_if_nil(given_session_data = nil, &block)
+      set_session_data(given_session_data, &block) unless @session_data
     end
 
     # Set custom data on the transaction.
@@ -637,6 +679,18 @@ module Appsignal
       end
     end
 
+    def session_data
+      if @session_data
+        if @session_data.respond_to? :call
+          @session_data.call
+        else
+          @session_data
+        end
+      elsif request.respond_to?(:session)
+        request.session
+      end
+    end
+
     # Returns sanitized session data.
     #
     # The session data is sanitized by the {Appsignal::Utils::HashSanitizer}.
@@ -646,14 +700,10 @@ module Appsignal
     # @return [nil] if the {#request} session data is `nil`.
     # @return [Hash<String, Object>]
     def sanitized_session_data
-      return if !Appsignal.config[:send_session_data] ||
-        !request.respond_to?(:session)
-
-      session = request.session
-      return unless session
+      return unless Appsignal.config[:send_session_data]
 
       Appsignal::Utils::HashSanitizer.sanitize(
-        session.to_hash, Appsignal.config[:filter_session_data]
+        session_data&.to_hash, Appsignal.config[:filter_session_data]
       )
     end
 
