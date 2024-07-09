@@ -501,7 +501,9 @@ describe Appsignal::Transaction do
           :array_value => %w[invalid array],
           :object => Object.new,
           :too_long_value => long_string,
-          long_string => "too_long_key"
+          long_string => "too_long_key",
+          :true_tag => true,
+          :false_tag => false
         )
         transaction._sample
 
@@ -511,7 +513,9 @@ describe Appsignal::Transaction do
           "both_symbols" => "valid_value",
           "integer_value" => 1,
           "too_long_value" => "#{"a" * 10_000}...",
-          long_string => "too_long_key"
+          long_string => "too_long_key",
+          "true_tag" => true,
+          "false_tag" => false
         )
       end
 
