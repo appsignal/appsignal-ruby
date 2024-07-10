@@ -1,8 +1,4 @@
 describe Appsignal::Transaction do
-  before :context do
-    start_agent
-  end
-
   let(:transaction_id) { "1" }
   let(:time)           { Time.at(fixed_time) }
   let(:namespace)      { Appsignal::Transaction::HTTP_REQUEST }
@@ -16,6 +12,7 @@ describe Appsignal::Transaction do
   before { Timecop.freeze(time) }
   after { Timecop.return }
   around do |example|
+    start_agent
     use_logger_with log do
       example.run
     end
@@ -484,6 +481,234 @@ describe Appsignal::Transaction do
           transaction._sample
           expect(transaction.params).to eq(preset_params)
           expect(transaction).to include_params(preset_params)
+        end
+      end
+    end
+
+    describe "#set_session_data" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the session data is set" do
+        it "updates the session data on the transaction" do
+          data = { "key" => "value" }
+          transaction.set_session_data(data)
+
+          transaction._sample
+          expect(transaction).to include_session_data(data)
+        end
+
+        it "updates the session data on the transaction with a block" do
+          data = { "key" => "value" }
+          transaction.set_session_data { data }
+
+          transaction._sample
+          expect(transaction).to include_session_data(data)
+        end
+
+        it "updates with the session data argument when both an argument and block are given" do
+          arg_data = { "argument" => "value" }
+          block_data = { "block" => "value" }
+          transaction.set_session_data(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_session_data(arg_data)
+        end
+
+        it "does not include filtered out session data" do
+          Appsignal.config[:filter_session_data] = ["filtered_key"]
+          transaction.set_session_data("data" => "value1", "filtered_key" => "filtered_value")
+
+          transaction._sample
+          expect(transaction).to include_session_data("data" => "value1")
+        end
+      end
+
+      context "when the given session data is nil" do
+        it "does not update the session data on the transaction" do
+          data = { "key" => "value" }
+          transaction.set_session_data(data)
+          transaction.set_session_data(nil)
+
+          transaction._sample
+          expect(transaction).to include_session_data(data)
+        end
+      end
+    end
+
+    describe "#set_session_data_if_nil" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the params are not set" do
+        it "sets the params on the transaction" do
+          data = { "key" => "value" }
+          transaction.set_session_data_if_nil(data)
+
+          transaction._sample
+          expect(transaction).to include_session_data(data)
+        end
+
+        it "updates the params on the transaction with a block" do
+          data = { "key" => "value" }
+          transaction.set_session_data_if_nil { data }
+
+          transaction._sample
+          expect(transaction).to include_session_data(data)
+        end
+
+        it "updates with the params argument when both an argument and block are given" do
+          arg_data = { "argument" => "value" }
+          block_data = { "block" => "value" }
+          transaction.set_session_data_if_nil(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_session_data(arg_data)
+        end
+
+        context "when the given params is nil" do
+          it "does not update the params on the transaction" do
+            data = { "key" => "value" }
+            transaction.set_session_data(data)
+            transaction.set_session_data_if_nil(nil)
+
+            transaction._sample
+            expect(transaction).to include_session_data(data)
+          end
+        end
+      end
+
+      context "when the params are set" do
+        it "does not update the params on the transaction" do
+          preset_data = { "other" => "data" }
+          data = { "key" => "value" }
+          transaction.set_session_data(preset_data)
+          transaction.set_session_data_if_nil(data)
+
+          transaction._sample
+          expect(transaction).to include_session_data(preset_data)
+        end
+
+        it "does not update the params with a block on the transaction" do
+          preset_data = { "other" => "data" }
+          data = { "key" => "value" }
+          transaction.set_session_data(preset_data)
+          transaction.set_session_data_if_nil { data }
+
+          transaction._sample
+          expect(transaction).to include_session_data(preset_data)
+        end
+      end
+    end
+
+    describe "#set_headers" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the headers are set" do
+        it "updates the headers on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates the session data on the transaction with a block" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates with the session data argument when both an argument and block are given" do
+          arg_data = { "PATH_INFO" => "/arg-path" }
+          block_data = { "PATH_INFO" => "/block-path" }
+          transaction.set_headers(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_environment(arg_data)
+        end
+
+        it "does not include filtered out session data" do
+          Appsignal.config[:request_headers] = ["MY_HEADER"]
+          transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+
+          transaction._sample
+          expect(transaction).to include_environment("MY_HEADER" => "value1")
+        end
+      end
+
+      context "when the given session data is nil" do
+        it "does not update the session data on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers(headers)
+          transaction.set_headers(nil)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+      end
+    end
+
+    describe "#set_headers_if_nil" do
+      around { |example| keep_transactions { example.run } }
+
+      context "when the params are not set" do
+        it "sets the params on the transaction" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers_if_nil(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates the params on the transaction with a block" do
+          headers = { "PATH_INFO" => "value" }
+          transaction.set_headers_if_nil { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(headers)
+        end
+
+        it "updates with the params argument when both an argument and block are given" do
+          arg_data = { "PATH_INFO" => "/arg-path" }
+          block_data = { "PATH_INFO" => "/block-path" }
+          transaction.set_headers_if_nil(arg_data) { block_data }
+
+          transaction._sample
+          expect(transaction).to include_environment(arg_data)
+        end
+
+        context "when the given params is nil" do
+          it "does not update the params on the transaction" do
+            headers = { "PATH_INFO" => "value" }
+            transaction.set_headers(headers)
+            transaction.set_headers_if_nil(nil)
+
+            transaction._sample
+            expect(transaction).to include_environment(headers)
+          end
+        end
+      end
+
+      context "when the params are set" do
+        it "does not update the params on the transaction" do
+          preset_headers = { "PATH_INFO" => "/first-path" }
+          headers = { "PATH_INFO" => "/other-path" }
+          transaction.set_headers(preset_headers)
+          transaction.set_headers_if_nil(headers)
+
+          transaction._sample
+          expect(transaction).to include_environment(preset_headers)
+        end
+
+        it "does not update the params with a block on the transaction" do
+          preset_headers = { "PATH_INFO" => "/first-path" }
+          headers = { "PATH_INFO" => "/other-path" }
+          transaction.set_headers(preset_headers)
+          transaction.set_headers_if_nil { headers }
+
+          transaction._sample
+          expect(transaction).to include_environment(preset_headers)
         end
       end
     end

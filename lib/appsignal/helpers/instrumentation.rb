@@ -565,8 +565,8 @@ module Appsignal
       # A block can be given to this method to defer the fetching and parsing
       # of the parameters until and only when the transaction is sampled.
       #
-      # When both the `params` and a block is given to this method, the
-      # `params` argument is leading and the block will _not_ be called.
+      # When both the `params` argument and a block is given to this method,
+      # the `params` argument is leading and the block will _not_ be called.
       #
       # @example Set parameters
       #   Appsignal.set_params("param1" => "value1")
@@ -606,6 +606,125 @@ module Appsignal
 
         transaction = Appsignal::Transaction.current
         transaction.set_params(params, &block)
+      end
+
+      # Set session data on the current transaction.
+      #
+      # Session data is automatically set by most of our integrations. It
+      # should not be necessary to call this method unless you want to report
+      # different session data.
+      #
+      # To filter session data, see our session data filtering guide.
+      #
+      # When this method is called multiple times, it will overwrite the
+      # previously set value.
+      #
+      # A block can be given to this method to defer the fetching and parsing
+      # of the session data until and only when the transaction is sampled.
+      #
+      # When both the `session_data` argument and a block is given to this
+      # method, the `session_data` argument is leading and the block will _not_
+      # be called.
+      #
+      # @example Set session data
+      #   Appsignal.set_session_data("data" => "value")
+      #
+      # @example Calling `set_session_data` multiple times will only keep the last call
+      #   Appsignal.set_session_data("data1" => "value1")
+      #   Appsignal.set_session_data("data2" => "value2")
+      #   # The session data is: { "data2" => "value2" }
+      #
+      # @example Calling `set_session_data` with a block
+      #   Appsignal.set_session_data do
+      #     # Some slow code to parse session data
+      #     JSON.parse('{"data": "value"}')
+      #   end
+      #   # The session data is: { "data" => "value" }
+      #
+      # @example Calling `set_session_data` with a session_data argument and a block
+      #   Appsignal.set_session_data("argument" => "argument value") do
+      #     # Some slow code to parse session data
+      #     JSON.parse('{"data": "value"}')
+      #   end
+      #   # The session data is: { "argument" => "argument value" }
+      #
+      # @since 3.11.0
+      # @param session_data [Hash] The session data to set on the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new session data.
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      # @see https://docs.appsignal.com/guides/filter-data/filter-session-data.html
+      #   Session data filtering guide
+      # @see Transaction#set_session_data
+      # @return [void]
+      def set_session_data(session_data = nil, &block)
+        return unless active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_session_data(session_data, &block)
+      end
+
+      # Set request headers on the current transaction.
+      #
+      # Request headers are automatically set by most of our integrations. It
+      # should not be necessary to call this method unless you want to report
+      # different request headers.
+      #
+      # To filter request headers, see our session data filtering guide.
+      #
+      # When this method is called multiple times, it will overwrite the
+      # previously set value.
+      #
+      # A block can be given to this method to defer the fetching and parsing
+      # of the request headers until and only when the transaction is sampled.
+      #
+      # When both the `request_headers` argument and a block is given to this
+      # method, the `request_headers` argument is leading and the block will
+      # _not_ be called.
+      #
+      # @example Set request headers
+      #   Appsignal.set_headers(
+      #     "PATH_INFO" => "/some-path",
+      #     "HTTP_USER_AGENT" => "Firefox"
+      #   )
+      #
+      # @example Calling `set_headers` multiple times will only keep the last call
+      #   Appsignal.set_headers("PATH_INFO" => "/some-path")
+      #   Appsignal.set_headers("HTTP_USER_AGENT" => "Firefox")
+      #   # The request headers are: { "HTTP_USER_AGENT" => "Firefox" }
+      #
+      # @example Calling `set_headers` with a block
+      #   Appsignal.set_headers do
+      #     # Some slow code to parse request headers
+      #     JSON.parse('{"PATH_INFO": "/some-path"}')
+      #   end
+      #   # The session data is: { "PATH_INFO" => "/some-path" }
+      #
+      # @example Calling `set_headers` with a headers argument and a block
+      #   Appsignal.set_headers("PATH_INFO" => "/some-path") do
+      #     # Some slow code to parse session data
+      #     JSON.parse('{"PATH_INFO": "/block-path"}')
+      #   end
+      #   # The session data is: { "PATH_INFO" => "/some-path" }
+      #
+      # @since 3.11.0
+      # @param headers [Hash] The request headers to set on the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new request headers.
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html
+      #   Request headers filtering guide
+      # @see Transaction#set_headers
+      # @return [void]
+      def set_headers(headers = nil, &block)
+        return unless active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_headers(headers, &block)
       end
 
       # Add breadcrumbs to the transaction.

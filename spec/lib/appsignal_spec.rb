@@ -521,9 +521,7 @@ describe Appsignal do
     end
 
     describe ".set_params" do
-      before do
-        start_agent
-      end
+      before { start_agent }
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
@@ -557,6 +555,84 @@ describe Appsignal do
           Appsignal.set_params("a" => "b")
 
           expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_params)
+        end
+      end
+    end
+
+    describe ".set_session_data" do
+      before { start_agent }
+
+      context "with transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "sets session data on the transaction" do
+          Appsignal.set_session_data("data" => "value1")
+
+          transaction._sample
+          expect(transaction).to include_session_data("data" => "value1")
+        end
+
+        it "overwrites the session data if called multiple times" do
+          Appsignal.set_session_data("data" => "value1")
+          Appsignal.set_session_data("data" => "value2")
+
+          transaction._sample
+          expect(transaction).to include_session_data("data" => "value2")
+        end
+
+        it "sets session data with a block on the transaction" do
+          Appsignal.set_session_data { { "data" => "value1" } }
+
+          transaction._sample
+          expect(transaction).to include_session_data("data" => "value1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set session data on the transaction" do
+          Appsignal.set_session_data("a" => "b")
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_session_data)
+        end
+      end
+    end
+
+    describe ".set_headers" do
+      before { start_agent }
+
+      context "with transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "sets request headers on the transaction" do
+          Appsignal.set_headers("PATH_INFO" => "/some-path")
+
+          transaction._sample
+          expect(transaction).to include_environment("PATH_INFO" => "/some-path")
+        end
+
+        it "overwrites the request headers if called multiple times" do
+          Appsignal.set_headers("PATH_INFO" => "/some-path1")
+          Appsignal.set_headers("PATH_INFO" => "/some-path2")
+
+          transaction._sample
+          expect(transaction).to include_environment("PATH_INFO" => "/some-path2")
+        end
+
+        it "sets request headers with a block on the transaction" do
+          Appsignal.set_headers { { "PATH_INFO" => "/some-path" } }
+
+          transaction._sample
+          expect(transaction).to include_environment("PATH_INFO" => "/some-path")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set request headers on the transaction" do
+          Appsignal.set_headers("PATH_INFO" => "/some-path")
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_headers)
         end
       end
     end
