@@ -84,7 +84,7 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          transaction.set_params_if_nil(parse_arguments(item))
+          transaction.set_params_if_nil { parse_arguments(item) }
           transaction.set_http_or_background_queue_start
           Appsignal::Transaction.complete_current! unless exception
 
