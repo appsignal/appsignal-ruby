@@ -3,8 +3,11 @@ describe Appsignal::Rack::EventHandler do
   let(:env) do
     {
       "HTTP_X_REQUEST_START" => "t=#{queue_start_time.to_i}", # in milliseconds
-      "REQUEST_METHOD" => "GET",
-      "PATH_INFO" => "/path"
+      "REQUEST_METHOD" => "POST",
+      "PATH_INFO" => "/path",
+      "QUERY_STRING" => "query_param1=value1&query_param2=value2",
+      "rack.session" => { "session1" => "value1", "session2" => "value2" },
+      "rack.input" => StringIO.new("post_param1=value1&post_param2=value2")
     }
   end
   let(:request) { Rack::Request.new(env) }
@@ -172,20 +175,93 @@ describe Appsignal::Rack::EventHandler do
       expect(last_transaction).to_not be_completed
     end
 
+    it "sets params on the transaction" do
+      on_start
+      on_finish
+
+      expect(last_transaction).to include_params(
+        "query_param1" => "value1",
+        "query_param2" => "value2",
+        "post_param1" => "value1",
+        "post_param2" => "value2"
+      )
+    end
+
+    it "sets headers on the transaction" do
+      on_start
+      on_finish
+
+      expect(last_transaction).to include_environment(
+        "REQUEST_METHOD" => "POST",
+        "PATH_INFO" => "/path"
+      )
+    end
+
+    it "sets session data on the transaction" do
+      on_start
+      on_finish
+
+      expect(last_transaction).to include_session_data(
+        "session1" => "value1",
+        "session2" => "value2"
+      )
+    end
+
+    it "sets the queue start time on the transaction" do
+      on_start
+      on_finish
+
+      expect(last_transaction).to have_queue_start(queue_start_time)
+    end
+
     it "completes the transaction" do
       on_start
       on_finish
 
       expect(last_transaction).to_not have_action
-      expect(last_transaction).to include_environment(
-        "REQUEST_METHOD" => "GET",
-        "PATH_INFO" => "/path"
-      )
-      expect(last_transaction).to have_queue_start(queue_start_time)
       expect(last_transaction).to be_completed
     end
 
     context "without a response" do
+      it "sets params on the transaction" do
+        on_start
+        on_finish
+
+        expect(last_transaction).to include_params(
+          "query_param1" => "value1",
+          "query_param2" => "value2",
+          "post_param1" => "value1",
+          "post_param2" => "value2"
+        )
+      end
+
+      it "sets headers on the transaction" do
+        on_start
+        on_finish
+
+        expect(last_transaction).to include_environment(
+          "REQUEST_METHOD" => "POST",
+          "PATH_INFO" => "/path"
+        )
+      end
+
+      it "sets session data on the transaction" do
+        on_start
+        on_finish
+
+        expect(last_transaction).to include_session_data(
+          "session1" => "value1",
+          "session2" => "value2"
+        )
+      end
+
+      it "sets the queue start time on the transaction" do
+        on_start
+        on_finish
+
+        expect(last_transaction).to have_queue_start(queue_start_time)
+      end
+
       it "completes the transaction" do
         on_start
         on_finish(request, nil)
@@ -193,11 +269,6 @@ describe Appsignal::Rack::EventHandler do
         # The action is not set on purpose, as we can't set a normalized route
         # It requires the app to set an action name
         expect(last_transaction).to_not have_action
-        expect(last_transaction).to include_environment(
-          "REQUEST_METHOD" => "GET",
-          "PATH_INFO" => "/path"
-        )
-        expect(last_transaction).to have_queue_start(queue_start_time)
         expect(last_transaction).to be_completed
       end
 
