@@ -14,7 +14,7 @@ module Appsignal
         # The DJ plugin is a subclass of Delayed::Plugin, so we can only
         # require this code if we're actually installing.
         require "appsignal/integrations/delayed_job_plugin"
-        ::Delayed::Worker.plugins << Appsignal::Hooks::DelayedJobPlugin
+        ::Delayed::Worker.plugins << Appsignal::Integrations::DelayedJobPlugin
       end
     end
   end
