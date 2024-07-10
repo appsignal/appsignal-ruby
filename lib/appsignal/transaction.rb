@@ -122,7 +122,7 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      sample_data if @ext.finish(0)
+      _sample_data if @ext.finish(0)
       @ext.complete
     end
 
@@ -482,47 +482,26 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
+    # @deprecated Use one of the set_tags, set_params, set_session_data,
+    #   set_params or set_custom_data helpers instead.
     # @api private
     def set_sample_data(key, data)
-      return unless key && data
-
-      if !data.is_a?(Array) && !data.is_a?(Hash)
-        Appsignal.internal_logger.error(
-          "Invalid sample data for '#{key}'. Value is not an Array or Hash: '#{data.inspect}'"
-        )
-        return
-      end
-
-      @ext.set_sample_data(
-        key.to_s,
-        Appsignal::Utils::Data.generate(data)
+      Appsignal::Utils::StdoutAndLoggerMessage.warning(
+        "Appsignal::Transaction#set_sample_data is deprecated. " \
+          "Please use one of the instrumentation helpers: set_tags, " \
+          "set_params, set_session_data, set_params or set_custom_data."
       )
-    rescue RuntimeError => e
-      begin
-        inspected_data = data.inspect
-        Appsignal.internal_logger.error(
-          "Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'"
-        )
-      rescue => e
-        Appsignal.internal_logger.error(
-          "Error generating data (#{e.class}: #{e.message}). Can't inspect data."
-        )
-      end
+      _set_sample_data(key, data)
     end
 
+    # @deprecated No replacement.
     # @api private
     def sample_data
-      {
-        :params => sanitized_params,
-        :environment => sanitized_environment,
-        :session_data => sanitized_session_data,
-        :metadata => sanitized_metadata,
-        :tags => sanitized_tags,
-        :breadcrumbs => breadcrumbs,
-        :custom_data => custom_data
-      }.each do |key, data|
-        set_sample_data(key, data)
-      end
+      Appsignal::Utils::StdoutAndLoggerMessage.warning(
+        "Appsignal::Transaction#sample_data is deprecated. " \
+          "Please remove any calls to this method."
+      )
+      _sample_data
     end
 
     # @see Appsignal::Helpers::Instrumentation#set_error
@@ -572,7 +551,7 @@ module Appsignal
 
       causes_sample_data.last[:is_root_cause] = false if root_cause_missing
 
-      set_sample_data(
+      _set_sample_data(
         "error_causes",
         causes_sample_data
       )
@@ -637,6 +616,49 @@ module Appsignal
     end
 
     private
+
+    # @api private
+    def _set_sample_data(key, data)
+      return unless key && data
+
+      if !data.is_a?(Array) && !data.is_a?(Hash)
+        Appsignal.internal_logger.error(
+          "Invalid sample data for '#{key}'. Value is not an Array or Hash: '#{data.inspect}'"
+        )
+        return
+      end
+
+      @ext.set_sample_data(
+        key.to_s,
+        Appsignal::Utils::Data.generate(data)
+      )
+    rescue RuntimeError => e
+      begin
+        inspected_data = data.inspect
+        Appsignal.internal_logger.error(
+          "Error generating data (#{e.class}: #{e.message}) for '#{inspected_data}'"
+        )
+      rescue => e
+        Appsignal.internal_logger.error(
+          "Error generating data (#{e.class}: #{e.message}). Can't inspect data."
+        )
+      end
+    end
+
+    # @api private
+    def _sample_data
+      {
+        :params => sanitized_params,
+        :environment => sanitized_environment,
+        :session_data => sanitized_session_data,
+        :metadata => sanitized_metadata,
+        :tags => sanitized_tags,
+        :breadcrumbs => breadcrumbs,
+        :custom_data => custom_data
+      }.each do |key, data|
+        _set_sample_data(key, data)
+      end
+    end
 
     # Returns calculated background queue start time in milliseconds, based on
     # environment values.

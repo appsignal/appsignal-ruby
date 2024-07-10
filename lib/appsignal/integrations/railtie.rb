@@ -69,7 +69,7 @@ module Appsignal
             transaction.set_metadata("path", path)
             transaction.set_metadata("method", method)
             transaction.set_params_if_nil(params)
-            transaction.set_sample_data("custom_data", custom_data) if custom_data
+            transaction.set_custom_data(custom_data) if custom_data
 
             tags[:severity] = severity
             tags[:source] = source.to_s if source

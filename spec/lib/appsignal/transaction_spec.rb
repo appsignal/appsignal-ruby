@@ -847,7 +847,7 @@ describe Appsignal::Transaction do
               Time.parse("10-10-2010 10:00:00 UTC")
             )
           end
-          transaction.sample_data
+          transaction._sample
         end
 
         it "stores last <LIMIT> breadcrumbs on the transaction" do
@@ -873,7 +873,7 @@ describe Appsignal::Transaction do
         it "stores breadcrumb with defaults on transaction" do
           timeframe_start = Time.now.utc.to_i
           transaction.add_breadcrumb("user_action", "clicked HOME")
-          transaction.sample_data
+          transaction._sample
           timeframe_end = Time.now.utc.to_i
 
           expect(transaction).to include_breadcrumb(
@@ -889,7 +889,7 @@ describe Appsignal::Transaction do
       context "with metadata argument that's not a Hash" do
         it "does not add the breadcrumb and logs and error" do
           transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
-          transaction.sample_data
+          transaction._sample
 
           expect(transaction).to_not include_breadcrumbs
           expect(log_contents(log)).to contains_log(
@@ -1116,14 +1116,92 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "storing sample data" do
+      let(:transaction) { http_request_transaction }
+
+      it "stores sample data on the transaction" do
+        transaction.set_params(
+          "string_param" => "string_value",
+          :symbol_param => "symbol_value",
+          "integer" => 123,
+          "float" => 123.45,
+          "array" => ["abc", 456, { "option" => true }],
+          "hash" => { "hash_key" => "hash_value" }
+        )
+
+        transaction._sample
+        expect(transaction).to include_params(
+          "string_param" => "string_value",
+          "symbol_param" => "symbol_value",
+          "integer" => 123,
+          "float" => 123.45,
+          "array" => ["abc", 456, { "option" => true }],
+          "hash" => { "hash_key" => "hash_value" }
+        )
+      end
+
+      it "does not store non-Array and non-Hash data" do
+        transaction.set_params("some string")
+        transaction._sample
+        expect(transaction).to_not include_params
+
+        transaction.set_params(123)
+        transaction._sample
+        expect(transaction).to_not include_params
+
+        transaction.set_params(Class.new)
+        transaction._sample
+        expect(transaction).to_not include_params
+
+        set = Set.new
+        set.add("some value")
+        transaction.set_params(set)
+        transaction._sample
+        expect(transaction).to_not include_params
+
+        logs = log_contents(log)
+        expect(logs).to contains_log :error,
+          %(Invalid sample data for 'params'. Value is not an Array or Hash: '"some string"')
+        expect(logs).to contains_log :error,
+          %(Invalid sample data for 'params'. Value is not an Array or Hash: '123')
+        expect(logs).to contains_log :error,
+          %(Invalid sample data for 'params'. Value is not an Array or Hash: '"#<Class>"')
+        expect(logs).to contains_log :error,
+          %(Invalid sample data for 'params'. Value is not an Array or Hash: '"#<Set>"')
+      end
+
+      it "does not store data that can't be converted to JSON" do
+        klass = Class.new do
+          def initialize
+            @calls = 0
+          end
+
+          def to_s
+            raise "foo" if @calls > 0 # Cause a deliberate error
+
+            @calls += 1
+          end
+        end
+
+        transaction.set_params(klass.new => 1)
+        transaction._sample
+
+        expect(transaction).to_not include_params
+        expect(log_contents(log)).to contains_log :error,
+          "Error generating data (RuntimeError: foo) for"
+      end
+    end
+
     describe "#set_sample_data" do
       it "updates the sample data on the transaction" do
-        transaction.set_sample_data(
-          "params",
-          :controller => "blog_posts",
-          :action     => "show",
-          :id         => "1"
-        )
+        silence do
+          transaction.set_sample_data(
+            "params",
+            :controller => "blog_posts",
+            :action     => "show",
+            :id         => "1"
+          )
+        end
 
         expect(transaction).to include_params(
           "action" => "show",
@@ -1134,7 +1212,7 @@ describe Appsignal::Transaction do
 
       context "when the data is no Array or Hash" do
         it "does not update the sample data on the transaction" do
-          transaction.set_sample_data("params", "string")
+          silence { transaction.set_sample_data("params", "string") }
 
           expect(transaction.to_h["sample_data"]).to eq({})
           expect(log_contents(log)).to contains_log :error,
@@ -1149,7 +1227,7 @@ describe Appsignal::Transaction do
               raise "foo" # Cause a deliberate error
             end
           end
-          transaction.set_sample_data("params", klass.new => 1)
+          silence { transaction.set_sample_data("params", klass.new => 1) }
 
           expect(transaction).to_not include_params
           expect(log_contents(log)).to contains_log :error,
@@ -1164,7 +1242,7 @@ describe Appsignal::Transaction do
       it "sets sample data" do
         transaction.set_tags "tag" => "value"
         transaction.add_breadcrumb "category", "action", "message", "key" => "value"
-        transaction.sample_data
+        silence { transaction.sample_data }
 
         expect(transaction).to include_environment(
           "REQUEST_METHOD" => "GET",
@@ -1193,7 +1271,7 @@ describe Appsignal::Transaction do
         it "calls the params object and sets the return value as parametesr" do
           transaction.set_params { { "param1" => "value1" } }
 
-          transaction.sample_data
+          silence { transaction.sample_data }
           expect(transaction).to include_params(
             "param1" => "value1"
           )
@@ -2001,7 +2079,7 @@ describe Appsignal::Transaction do
       subject.set_http_or_background_queue_start
       subject.set_metadata("key", "value")
       subject.set_sample_data("key", "data")
-      subject.sample_data
+      subject._sample
       subject.set_error("a")
     end
   end
