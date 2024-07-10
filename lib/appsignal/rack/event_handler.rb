@@ -75,7 +75,8 @@ module Appsignal
             Appsignal::Rack::EventHandler
               .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
               transaction.finish_event("process_request.rack", "", "")
-              transaction.set_http_or_background_queue_start
+              queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
+              transaction.set_queue_start(queue_start) if queue_start
             end
 
             # Make sure the current transaction is always closed when the request
@@ -113,7 +114,8 @@ module Appsignal
 
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction.finish_event("process_request.rack", "", "")
-          transaction.set_http_or_background_queue_start
+          queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
+          transaction.set_queue_start(queue_start) if queue_start
           response_status =
             if response
               response.status

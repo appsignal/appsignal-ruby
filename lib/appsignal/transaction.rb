@@ -436,8 +436,6 @@ module Appsignal
 
     # Set queue start time for transaction.
     #
-    # Most commononly called by {set_http_or_background_queue_start}.
-    #
     # @param start [Integer] Queue start time in milliseconds.
     # @raise [RangeError] When the queue start time value is too big, this
     #   method raises a RangeError.
@@ -467,8 +465,14 @@ module Appsignal
     # AppSignal as seconds.
     #
     # @see https://docs.appsignal.com/ruby/instrumentation/request-queue-time.html
+    # @deprecated Use {#set_queue_start} instead.
     # @return [void]
     def set_http_or_background_queue_start
+      Appsignal::Utils::StdoutAndLoggerMessage.warning \
+        "The Appsignal::Transaction#set_http_or_background_queue_start " \
+          "method has been deprecated. " \
+          "Please use the Appsignal::Transaction#set_queue_start method instead."
+
       start = http_queue_start || background_queue_start
       return unless start
 
@@ -683,25 +687,7 @@ module Appsignal
     # @return [Integer] queue start in milliseconds.
     def http_queue_start
       env = environment
-      return unless env
-
-      env_var = env["HTTP_X_QUEUE_START"] || env["HTTP_X_REQUEST_START"]
-      return unless env_var
-
-      cleaned_value = env_var.tr("^0-9", "")
-      return if cleaned_value.empty?
-
-      value = cleaned_value.to_i
-      if value > 4_102_441_200_000
-        # Value is in microseconds. Transform to milliseconds.
-        value / 1_000
-      elsif value < 946_681_200_000
-        # Value is too low to be plausible
-        nil
-      else
-        # Value is in milliseconds
-        value
-      end
+      Appsignal::Rack::Utils.queue_start_from(env)
     end
 
     def sanitized_params

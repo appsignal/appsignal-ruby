@@ -3,6 +3,35 @@
 module Appsignal
   # @api private
   module Rack
+    class Utils
+      # Fetch the queue start time from the request environment.
+      #
+      # @since 3.11.0
+      # @param env [Hash] Request environment hash.
+      # @return [Integer, NilClass]
+      def self.queue_start_from(env)
+        return unless env
+
+        env_var = env["HTTP_X_QUEUE_START"] || env["HTTP_X_REQUEST_START"]
+        return unless env_var
+
+        cleaned_value = env_var.tr("^0-9", "")
+        return if cleaned_value.empty?
+
+        value = cleaned_value.to_i
+        if value > 4_102_441_200_000
+          # Value is in microseconds. Transform to milliseconds.
+          value / 1_000
+        elsif value < 946_681_200_000
+          # Value is too low to be plausible
+          nil
+        else
+          # Value is in milliseconds
+          value
+        end
+      end
+    end
+
     # Alias constants that have moved with a warning message that points to the
     # place to update the reference.
     def self.const_missing(name)

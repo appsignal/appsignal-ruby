@@ -1019,15 +1019,15 @@ describe Appsignal::Transaction do
 
     describe "#set_queue_start" do
       it "sets the queue start in extension" do
-        expect(transaction.ext).to receive(:set_queue_start).with(10.0).once
+        transaction.set_queue_start(10)
 
-        transaction.set_queue_start(10.0)
+        expect(transaction).to have_queue_start(10)
       end
 
       it "does not set the queue start in extension when value is nil" do
-        expect(transaction.ext).to_not receive(:set_queue_start)
-
         transaction.set_queue_start(nil)
+
+        expect(transaction).to_not have_queue_start
       end
 
       it "does not raise an error when the queue start is too big" do
@@ -1040,17 +1040,44 @@ describe Appsignal::Transaction do
     end
 
     describe "#set_http_or_background_queue_start" do
+      let(:err_stream) { std_stream }
+      let(:stderr) { err_stream.read }
       let(:header_factor) { 1_000 }
       let(:env_queue_start) { fixed_time + 20 } # in seconds
+
+      def set_http_or_background_queue_start
+        capture_std_streams(std_stream, err_stream) do
+          transaction.set_http_or_background_queue_start
+        end
+      end
 
       context "when a queue time is found in a request header" do
         let(:header_time) { ((fixed_time + 10) * header_factor).to_i } # in milliseconds
         let(:env) { { "HTTP_X_REQUEST_START" => "t=#{header_time}" } }
 
         it "sets the http header value in milliseconds on the transaction" do
-          expect(transaction).to receive(:set_queue_start).with(1_389_783_610_000)
+          set_http_or_background_queue_start
 
-          transaction.set_http_or_background_queue_start
+          expect(transaction).to have_queue_start(1_389_783_610_000)
+        end
+
+        it "logs a deprecation message" do
+          logs = capture_logs { set_http_or_background_queue_start }
+
+          expect(logs).to contains_log(
+            :warn,
+            "The Appsignal::Transaction#set_http_or_background_queue_start " \
+              "method has been deprecated."
+          )
+        end
+
+        it "prints a deprecation message" do
+          set_http_or_background_queue_start
+
+          expect(stderr).to include(
+            "The Appsignal::Transaction#set_http_or_background_queue_start " \
+              "method has been deprecated."
+          )
         end
 
         context "when a :queue_start key is found in the transaction environment" do
@@ -1062,9 +1089,9 @@ describe Appsignal::Transaction do
           end
 
           it "sets the http header value in milliseconds on the transaction" do
-            expect(transaction).to receive(:set_queue_start).with(1_389_783_610_000)
-
             transaction.set_http_or_background_queue_start
+
+            expect(transaction).to have_queue_start(1_389_783_610_000)
           end
         end
       end
@@ -1073,9 +1100,9 @@ describe Appsignal::Transaction do
         let(:env) { { :queue_start => env_queue_start } } # in seconds
 
         it "sets the :queue_start value in milliseconds on the transaction" do
-          expect(transaction).to receive(:set_queue_start).with(1_389_783_620_000)
-
           transaction.set_http_or_background_queue_start
+
+          expect(transaction).to have_queue_start(1_389_783_620_000)
         end
       end
     end
