@@ -68,9 +68,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           item["jid"],
           Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new(
-            :queue_start => item["enqueued_at"]
-          )
+          Appsignal::Transaction::GenericRequest.new({})
         )
         transaction.set_action_if_nil(formatted_action_name(item))
 
@@ -85,7 +83,8 @@ module Appsignal
       ensure
         if transaction
           transaction.set_params_if_nil { parse_arguments(item) }
-          transaction.set_http_or_background_queue_start
+          queue_start = (item["enqueued_at"].to_f * 1000.0).to_i # Convert seconds to milliseconds
+          transaction.set_queue_start(queue_start)
           Appsignal::Transaction.complete_current! unless exception
 
           queue = item["queue"] || "unknown"

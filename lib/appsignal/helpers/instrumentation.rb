@@ -88,7 +88,9 @@ module Appsignal
           raise error
         ensure
           transaction.set_http_or_background_action(request.env)
-          transaction.set_http_or_background_queue_start
+          queue_start = Appsignal::Rack::Utils.queue_start_from(request.env) ||
+            (env[:queue_start]&.to_i&.* 1_000)
+          transaction.set_queue_start(queue_start) if queue_start
           Appsignal::Transaction.complete_current!
         end
       end

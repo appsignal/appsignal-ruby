@@ -368,7 +368,8 @@ describe Appsignal do
                 "perform_job.something",
                 {
                   :class => "BackgroundJob",
-                  :method => "perform"
+                  :method => "perform",
+                  :queue_start => fixed_time.to_i
                 }
               ) do
                 :return_value
@@ -380,6 +381,7 @@ describe Appsignal do
           expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
           expect(transaction).to have_action("BackgroundJob#perform")
           expect(transaction).to include_event("name" => "perform_job.something")
+          expect(transaction).to have_queue_start(1_389_783_600_000)
           expect(transaction).to be_completed
         end
 
@@ -391,7 +393,8 @@ describe Appsignal do
                 "process_action.something",
                 {
                   :controller => "BlogPostsController",
-                  :action => "show"
+                  :action => "show",
+                  "HTTP_X_REQUEST_START" => "t=#{fixed_time.to_i * 1000}"
                 }
               ) do
                 :return_value
@@ -403,6 +406,7 @@ describe Appsignal do
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
           expect(transaction).to have_action("BlogPostsController#show")
           expect(transaction).to include_event("name" => "process_action.something")
+          expect(transaction).to have_queue_start(1_389_783_600_000)
           expect(transaction).to be_completed
         end
       end

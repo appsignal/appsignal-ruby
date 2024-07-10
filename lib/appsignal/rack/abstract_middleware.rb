@@ -148,7 +148,8 @@ module Appsignal
         transaction.set_metadata("method", request_method) if request_method
 
         transaction.set_params_if_nil { params_for(request) }
-        transaction.set_http_or_background_queue_start
+        queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
+        transaction.set_queue_start(queue_start) if queue_start
       end
 
       def params_for(request)

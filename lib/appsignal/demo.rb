@@ -50,7 +50,6 @@ module Appsignal
         rescue => error
           Appsignal.set_error(error)
         end
-        transaction.set_http_or_background_queue_start
         transaction.set_metadata("path", "/hello")
         transaction.set_metadata("method", "GET")
         transaction.set_action("DemoController#hello")
@@ -68,7 +67,6 @@ module Appsignal
           "<h1>Hello world!</h1>" do
           sleep 2
         end
-        transaction.set_http_or_background_queue_start
         transaction.set_metadata("path", "/hello")
         transaction.set_metadata("method", "GET")
         transaction.set_action("DemoController#hello")
