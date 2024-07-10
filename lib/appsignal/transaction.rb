@@ -15,7 +15,7 @@ module Appsignal
     # @api private
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
     # @api private
-    ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer].freeze
+    ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer, TrueClass, FalseClass].freeze
     # @api private
     BREADCRUMB_LIMIT = 20
     # @api private
