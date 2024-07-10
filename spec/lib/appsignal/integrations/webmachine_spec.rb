@@ -18,7 +18,11 @@ if DependencyHelper.webmachine_present?
       Webmachine::Request.new(
         "GET",
         "http://google.com:80/foo?param1=value1&param2=value2",
-        {},
+        {
+          "REQUEST_METHOD" => "GET",
+          "PATH_INFO" => "/some/path",
+          "ignored_header" => "something"
+        },
         nil
       )
     end
@@ -79,6 +83,14 @@ if DependencyHelper.webmachine_present?
       it "sets the params" do
         fsm.run
         expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
+      end
+
+      it "sets the headers" do
+        fsm.run
+        expect(last_transaction).to include_environment(
+          "REQUEST_METHOD" => "GET",
+          "PATH_INFO" => "/some/path"
+        )
       end
 
       it "closes the transaction" do
