@@ -39,7 +39,6 @@ if DependencyHelper.que_present?
         allow(Que).to receive(:execute)
 
         start_agent
-        expect(Appsignal.active?).to be_truthy
       end
       around { |example| keep_transactions { example.run } }
 
@@ -66,7 +65,7 @@ if DependencyHelper.que_present?
             "title" => ""
           )
           expect(transaction).to include_params(%w[1 birds])
-          expect(transaction).to include_sample_metadata(
+          expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
             "priority" => 100,
@@ -95,7 +94,7 @@ if DependencyHelper.que_present?
           expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
           expect(transaction).to have_error(error.class.name, error.message)
           expect(transaction).to include_params(%w[1 birds])
-          expect(transaction).to include_sample_metadata(
+          expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
             "priority" => 100,
@@ -120,7 +119,7 @@ if DependencyHelper.que_present?
           expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
           expect(transaction).to have_error(error.class.name, error.message)
           expect(transaction).to include_params(%w[1 birds])
-          expect(transaction).to include_sample_metadata(
+          expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
             "priority" => 100,

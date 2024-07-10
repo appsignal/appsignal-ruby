@@ -42,7 +42,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
-          rack_request
+          Appsignal::Transaction::GenericRequest.new({})
         )
         begin
           raise TestError,
@@ -50,6 +50,8 @@ module Appsignal
         rescue => error
           Appsignal.set_error(error)
         end
+        add_params_to(transaction)
+        add_headers_to(transaction)
         transaction.set_metadata("path", "/hello")
         transaction.set_metadata("method", "GET")
         transaction.set_action("DemoController#hello")
@@ -61,12 +63,14 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
-          rack_request
+          Appsignal::Transaction::GenericRequest.new({})
         )
         Appsignal.instrument "action_view.render", "Render hello.html.erb",
           "<h1>Hello world!</h1>" do
           sleep 2
         end
+        add_params_to(transaction)
+        add_headers_to(transaction)
         transaction.set_metadata("path", "/hello")
         transaction.set_metadata("method", "GET")
         transaction.set_action("DemoController#hello")
@@ -78,13 +82,15 @@ module Appsignal
         transaction.set_metadata("demo_sample", "true")
       end
 
-      def rack_request
-        env = ::Rack::MockRequest.env_for(
-          "/demo",
-          :params => {
-            "controller" => "demo",
-            "action" => "hello"
-          },
+      def add_params_to(transaction)
+        transaction.set_params(
+          "controller" => "demo",
+          "action" => "hello"
+        )
+      end
+
+      def add_headers_to(transaction)
+        transaction.set_headers(
           "REMOTE_ADDR" => "127.0.0.1",
           "REQUEST_METHOD" => "GET",
           "SERVER_NAME" => "localhost",
@@ -100,7 +106,6 @@ module Appsignal
           "HTTP_USER_AGENT" => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0)",
           "HTTP_REFERER" => "http://appsignal.com/accounts"
         )
-        ::Rack::Request.new(env)
       end
     end
   end

@@ -64,7 +64,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             SecureRandom.uuid,
             Appsignal::Transaction::HTTP_REQUEST,
-            request
+            Appsignal::Transaction::GenericRequest.new({})
           )
           request.env[APPSIGNAL_TRANSACTION] = transaction
 
@@ -114,6 +114,11 @@ module Appsignal
 
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction.finish_event("process_request.rack", "", "")
+          transaction.set_params_if_nil { request.params }
+          transaction.set_headers_if_nil { request.env }
+          transaction.set_session_data_if_nil do
+            request.session if request.respond_to?(:session)
+          end
           queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
           transaction.set_queue_start(queue_start) if queue_start
           response_status =
