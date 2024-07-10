@@ -5,24 +5,10 @@ module Appsignal
     # @api private
     module QuePlugin
       def _run(*)
-        local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
-        env = {
-          :metadata => {
-            :id => local_attrs[:job_id] || local_attrs[:id],
-            :queue => local_attrs[:queue],
-            :run_at => local_attrs[:run_at].to_s,
-            :priority => local_attrs[:priority],
-            :attempts => local_attrs[:error_count].to_i
-          },
-          :params => local_attrs[:args]
-        }
-
-        request = Appsignal::Transaction::GenericRequest.new(env)
-
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::BACKGROUND_JOB,
-          request
+          Appsignal::Transaction::GenericRequest.new({})
         )
 
         begin
@@ -31,7 +17,16 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_action_if_nil "#{local_attrs[:job_class]}#run"
+          local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
+          transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
+          transaction.set_params_if_nil(local_attrs[:args])
+          transaction.set_tags(
+            "id" => local_attrs[:job_id] || local_attrs[:id],
+            "queue" => local_attrs[:queue],
+            "run_at" => local_attrs[:run_at].to_s,
+            "priority" => local_attrs[:priority],
+            "attempts" => local_attrs[:error_count].to_i
+          )
           Appsignal::Transaction.complete_current!
         end
       end
