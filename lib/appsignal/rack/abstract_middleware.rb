@@ -37,7 +37,7 @@ module Appsignal
               Appsignal::Transaction.create(
                 SecureRandom.uuid,
                 Appsignal::Transaction::HTTP_REQUEST,
-                request
+                Appsignal::Transaction::GenericRequest.new({})
               )
             end
 
@@ -148,6 +148,12 @@ module Appsignal
         transaction.set_metadata("method", request_method) if request_method
 
         transaction.set_params_if_nil { params_for(request) }
+        transaction.set_session_data_if_nil do
+          request.session if request.respond_to?(:session)
+        end
+        transaction.set_headers_if_nil do
+          request.env if request.respond_to?(:env)
+        end
         queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
         transaction.set_queue_start(queue_start) if queue_start
       end
