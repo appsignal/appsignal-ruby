@@ -85,6 +85,19 @@ module Appsignal
         return yield unless active?
 
         has_parent_transaction = Appsignal::Transaction.current?
+        if has_parent_transaction
+          callers = caller
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "An active transaction around this 'Appsignal.monitor' call. " \
+              "Calling `Appsignal.monitor` in another `Appsignal.monitor` block has no effect. " \
+              "The namespace and action are not updated for the active transaction." \
+              "Did you mean to use `Appsignal.instrument`? " \
+              "Update the 'Appsignal.monitor' call in: #{callers.first}"
+          return yield if block_given?
+
+          return
+        end
+
         transaction =
           if has_parent_transaction
             Appsignal::Transaction.current
@@ -98,29 +111,8 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          if has_parent_transaction
-            if namespace
-              callers = caller
-              Appsignal::Utils::StdoutAndLoggerMessage.warning \
-                "A parent transaction is active around this 'Appsignal.monitor' call. " \
-                  "The namespace is not updated for the parent transaction." \
-                  "If you want to update the namespace for this parent transaction, " \
-                  "call 'Appsignal.set_namespace' from within the 'Appsignal.monitor' block. " \
-                  "Update the 'Appsignal.monitor' call in: #{callers.first}"
-            end
-            if action
-              callers = caller
-              Appsignal::Utils::StdoutAndLoggerMessage.warning \
-                "A parent transaction is active around this 'Appsignal.monitor' call. " \
-                  "The action is not updated for the parent transaction." \
-                  "If you want to update the action for this parent transaction, " \
-                  "call 'Appsignal.set_action' from within the 'Appsignal.monitor' block. " \
-                  "Update the 'Appsignal.monitor' call in: #{callers.first}"
-            end
-          else
-            transaction.set_action_if_nil(action)
-            Appsignal::Transaction.complete_current!
-          end
+          transaction.set_action_if_nil(action)
+          Appsignal::Transaction.complete_current!
         end
       end
 

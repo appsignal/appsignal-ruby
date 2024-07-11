@@ -425,45 +425,35 @@ describe Appsignal do
         end
 
         it "doesn't create a new transaction" do
+          logs = nil
           expect do
-            Appsignal.monitor
+            logs =
+              capture_logs do
+                capture_std_streams(std_stream, err_stream) do
+                  Appsignal.monitor
+                end
+              end
           end.to_not(change { created_transactions.count })
+
+          warning = "An active transaction around this 'Appsignal.monitor' call."
+          expect(logs).to contains_log(:warn, warning)
+          expect(stderr).to include("appsignal WARNING: #{warning}")
         end
 
         it "does not overwrite the parent transaction's namespace" do
-          logs =
-            capture_logs do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.monitor(:namespace => "custom")
-              end
-            end
+          silence { Appsignal.monitor(:namespace => "custom") }
 
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          warning =
-            "A parent transaction is active around this 'Appsignal.monitor' call. " \
-              "The namespace is not updated"
-          expect(logs).to contains_log(:warn, warning)
-          expect(stderr).to include("appsignal WARNING: #{warning}")
         end
 
         it "does not overwrite the parent transaction's action" do
-          logs =
-            capture_logs do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.monitor(:action => "custom")
-              end
-            end
+          silence { Appsignal.monitor(:action => "custom") }
 
           expect(transaction).to have_action("My action")
-          warning =
-            "A parent transaction is active around this 'Appsignal.monitor' call. " \
-              "The action is not updated"
-          expect(logs).to contains_log(:warn, warning)
-          expect(stderr).to include("appsignal WARNING: #{warning}")
         end
 
         it "doesn't complete the parent transaction" do
-          Appsignal.monitor
+          silence { Appsignal.monitor }
 
           expect(transaction).to_not be_completed
         end
