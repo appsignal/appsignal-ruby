@@ -31,7 +31,11 @@ describe Appsignal::Hooks::ActionCableHook do
           end
         end
         let(:env) do
-          http_request_env_with_data("action_dispatch.request_id" => request_id, :params => params)
+          http_request_env_with_data(
+            "action_dispatch.request_id" => request_id,
+            :params => params,
+            :with_queue_start => true
+          )
         end
         let(:connection) { ActionCable::Connection::Base.new(server, env) }
         let(:identifier) { { :channel => "MyChannel" }.to_json }
@@ -72,6 +76,8 @@ describe Appsignal::Hooks::ActionCableHook do
               "message" => "foo"
             )
             expect(transaction).to include_tags("request_id" => request_id)
+            expect(transaction).to_not have_queue_start
+            expect(transaction).to be_completed
           end
 
           context "without request_id (standalone server)" do
@@ -117,6 +123,8 @@ describe Appsignal::Hooks::ActionCableHook do
                 "action" => "speak",
                 "message" => "foo"
               )
+              expect(transaction).to_not have_queue_start
+              expect(transaction).to be_completed
             end
           end
         end
@@ -145,6 +153,8 @@ describe Appsignal::Hooks::ActionCableHook do
               "title" => ""
             )
             expect(transaction).to include_tags("request_id" => request_id)
+            expect(transaction).to_not have_queue_start
+            expect(transaction).to be_completed
           end
 
           context "without request_id (standalone server)" do
@@ -184,6 +194,8 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               )
               expect(transaction).to include_params("internal" => "true")
+              expect(transaction).to_not have_queue_start
+              expect(transaction).to be_completed
             end
           end
 
@@ -211,6 +223,8 @@ describe Appsignal::Hooks::ActionCableHook do
                   "name" => "subscribed.action_cable",
                   "title" => ""
                 )
+                expect(transaction).to_not have_queue_start
+                expect(transaction).to be_completed
               end
             end
           end
@@ -239,6 +253,8 @@ describe Appsignal::Hooks::ActionCableHook do
               "name" => "unsubscribed.action_cable",
               "title" => ""
             )
+            expect(transaction).to_not have_queue_start
+            expect(transaction).to be_completed
           end
 
           context "without request_id (standalone server)" do
@@ -278,6 +294,8 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               )
               expect(transaction).to include_params("internal" => "true")
+              expect(transaction).to_not have_queue_start
+              expect(transaction).to be_completed
             end
           end
 
@@ -310,6 +328,8 @@ describe Appsignal::Hooks::ActionCableHook do
                   "name" => "unsubscribed.action_cable",
                   "title" => ""
                 )
+                expect(transaction).to_not have_queue_start
+                expect(transaction).to be_completed
               end
             end
           end
