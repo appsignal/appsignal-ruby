@@ -1,19 +1,4 @@
 describe Appsignal::Config do
-  describe "config keys" do
-    it "all config keys have an environment variable version registered" do
-      config = Appsignal::Config
-      mapped_env_keys = config::ENV_TO_KEY_MAPPING.keys.sort
-      configured_env_keys = (
-        config::ENV_STRING_KEYS +
-        config::ENV_BOOLEAN_KEYS +
-        config::ENV_ARRAY_KEYS +
-        config::ENV_FLOAT_KEYS
-      ).sort
-
-      expect(mapped_env_keys).to eql(configured_env_keys)
-    end
-  end
-
   describe "#initialize" do
     describe "environment" do
       context "when environment is nil" do
@@ -416,49 +401,159 @@ describe Appsignal::Config do
     let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
     let(:env_config) do
       {
-        :running_in_container => true,
-        :push_api_key => "aaa-bbb-ccc",
         :active => true,
+        :activejob_report_errors => "all",
         :bind_address => "0.0.0.0",
+        :ca_file_path => "/some/path",
         :cpu_count => 1.5,
-        :name => "App name",
         :debug => true,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
-        :ignore_actions => %w[action1 action2],
-        :ignore_errors => %w[ExampleStandardError AnotherError],
+        :enable_allocation_tracking => false,
+        :enable_gvl_global_timer => false,
+        :enable_gvl_waiting_threads => false,
+        :enable_host_metrics => false,
+        :enable_minutely_probes => false,
+        :enable_nginx_metrics => false,
+        :enable_rails_error_reporter => false,
+        :enable_rake_performance_instrumentation => false,
+        :enable_statsd => false,
+        :endpoint => "https://test.appsignal.com",
+        :files_world_accessible => false,
+        :filter_metadata => ["key1", "key2"],
+        :filter_parameters => ["param1", "param2"],
+        :filter_session_data => ["session1", "session2"],
+        :host_role => "my host role",
+        :hostname => "my hostname",
+        :http_proxy => "some proxy",
+        :ignore_actions => ["action1", "action2"],
+        :ignore_errors => ["ExampleStandardError", "AnotherError"],
         :ignore_logs => ["^start$", "^Completed 2.* in .*ms (.*)"],
-        :ignore_namespaces => %w[admin private_namespace],
+        :ignore_namespaces => ["admin", "private_namespace"],
+        :instrument_http_rb => false,
         :instrument_net_http => false,
         :instrument_redis => false,
         :instrument_sequel => false,
-        :files_world_accessible => false,
-        :request_headers => %w[accept accept-charset],
+        :log => "file",
+        :log_level => "debug",
+        :log_path => "/tmp/something",
+        :logging_endpoint => "https://appsignal-endpoint.net/test",
+        :name => "App name",
+        :push_api_key => "aaa-bbb-ccc",
+        :request_headers => ["accept", "accept-charset"],
         :revision => "v2.5.1",
+        :running_in_container => true,
         :send_environment_metadata => false,
+        :send_params => false,
+        :send_session_data => false,
+        :sidekiq_report_errors => "all",
+        :skip_session_data => false,
+        :statsd_port => "7890",
+        :transaction_debug_mode => false,
+        :working_dir_path => "/some/path",
         :working_directory_path => working_directory_path
       }
     end
+    let(:env_vars) do
+      {
+        # Strings
+        "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS" => "all",
+        "APPSIGNAL_APP_NAME" => "App name",
+        "APPSIGNAL_BIND_ADDRESS" => "0.0.0.0",
+        "APPSIGNAL_CA_FILE_PATH" => "/some/path",
+        "APPSIGNAL_HOSTNAME" => "my hostname",
+        "APPSIGNAL_HOST_ROLE" => "my host role",
+        "APPSIGNAL_HTTP_PROXY" => "some proxy",
+        "APPSIGNAL_LOG" => "file",
+        "APPSIGNAL_LOGGING_ENDPOINT" => "https://appsignal-endpoint.net/test",
+        "APPSIGNAL_LOG_LEVEL" => "debug",
+        "APPSIGNAL_LOG_PATH" => "/tmp/something",
+        "APPSIGNAL_PUSH_API_ENDPOINT" => "https://test.appsignal.com",
+        "APPSIGNAL_PUSH_API_KEY" => "aaa-bbb-ccc",
+        "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => "all",
+        "APPSIGNAL_STATSD_PORT" => "7890",
+        "APPSIGNAL_WORKING_DIRECTORY_PATH" => working_directory_path,
+        "APPSIGNAL_WORKING_DIR_PATH" => "/some/path",
+        "APP_REVISION" => "v2.5.1",
+
+        # Booleans
+        "APPSIGNAL_ACTIVE" => "true",
+        "APPSIGNAL_DEBUG" => "true",
+        "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => "false",
+        "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => "false",
+        "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => "false",
+        "APPSIGNAL_ENABLE_HOST_METRICS" => "false",
+        "APPSIGNAL_ENABLE_MINUTELY_PROBES" => "false",
+        "APPSIGNAL_ENABLE_NGINX_METRICS" => "false",
+        "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER" => "false",
+        "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION" => "false",
+        "APPSIGNAL_ENABLE_STATSD" => "false",
+        "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => "false",
+        "APPSIGNAL_INSTRUMENT_HTTP_RB" => "false",
+        "APPSIGNAL_INSTRUMENT_NET_HTTP" => "false",
+        "APPSIGNAL_INSTRUMENT_REDIS" => "false",
+        "APPSIGNAL_INSTRUMENT_SEQUEL" => "false",
+        "APPSIGNAL_RUNNING_IN_CONTAINER" => "true",
+        "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => "false",
+        "APPSIGNAL_SEND_PARAMS" => "false",
+        "APPSIGNAL_SEND_SESSION_DATA" => "false",
+        "APPSIGNAL_SKIP_SESSION_DATA" => "false",
+        "APPSIGNAL_TRANSACTION_DEBUG_MODE" => "false",
+
+        # Arrays
+        "APPSIGNAL_DNS_SERVERS" => "8.8.8.8,8.8.4.4",
+        "APPSIGNAL_FILTER_METADATA" => "key1,key2",
+        "APPSIGNAL_FILTER_PARAMETERS" => "param1,param2",
+        "APPSIGNAL_FILTER_SESSION_DATA" => "session1,session2",
+        "APPSIGNAL_IGNORE_ACTIONS" => "action1,action2",
+        "APPSIGNAL_IGNORE_ERRORS" => "ExampleStandardError,AnotherError",
+        "APPSIGNAL_IGNORE_LOGS" => "^start$,^Completed 2.* in .*ms (.*)",
+        "APPSIGNAL_IGNORE_NAMESPACES" => "admin,private_namespace",
+        "APPSIGNAL_REQUEST_HEADERS" => "accept,accept-charset",
+
+        # Floats
+        "APPSIGNAL_CPU_COUNT" => "1.5"
+      }
+    end
     before do
-      ENV["APPSIGNAL_RUNNING_IN_CONTAINER"]    = "true"
-      ENV["APPSIGNAL_PUSH_API_KEY"]            = "aaa-bbb-ccc"
-      ENV["APPSIGNAL_ACTIVE"]                  = "true"
-      ENV["APPSIGNAL_APP_NAME"]                = "App name"
-      ENV["APPSIGNAL_BIND_ADDRESS"]            = "0.0.0.0"
-      ENV["APPSIGNAL_CPU_COUNT"]               = "1.5"
-      ENV["APPSIGNAL_DEBUG"]                   = "true"
-      ENV["APPSIGNAL_DNS_SERVERS"]             = "8.8.8.8,8.8.4.4"
-      ENV["APPSIGNAL_IGNORE_ACTIONS"]          = "action1,action2"
-      ENV["APPSIGNAL_IGNORE_ERRORS"]           = "ExampleStandardError,AnotherError"
-      ENV["APPSIGNAL_IGNORE_LOGS"]             = "^start$,^Completed 2.* in .*ms (.*)"
-      ENV["APPSIGNAL_IGNORE_NAMESPACES"]       = "admin,private_namespace"
-      ENV["APPSIGNAL_INSTRUMENT_NET_HTTP"]     = "false"
-      ENV["APPSIGNAL_INSTRUMENT_REDIS"]        = "false"
-      ENV["APPSIGNAL_INSTRUMENT_SEQUEL"]       = "false"
-      ENV["APPSIGNAL_FILES_WORLD_ACCESSIBLE"]  = "false"
-      ENV["APPSIGNAL_REQUEST_HEADERS"]         = "accept,accept-charset"
-      ENV["APPSIGNAL_SEND_ENVIRONMENT_METADATA"] = "false"
-      ENV["APPSIGNAL_WORKING_DIRECTORY_PATH"] = working_directory_path
-      ENV["APP_REVISION"] = "v2.5.1"
+      env_vars.each do |key, value|
+        ENV[key] = value
+      end
+    end
+
+    it "reads all string env keys" do
+      config
+
+      Appsignal::Config::ENV_STRING_KEYS.each do |env_key, option|
+        ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
+        expect(config[option]).to eq(ENV.fetch(env_key, nil))
+      end
+    end
+
+    it "reads all boolean env keys" do
+      config
+
+      Appsignal::Config::ENV_BOOLEAN_KEYS.each do |env_key, option|
+        ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
+        expect(config[option]).to eq(ENV.fetch(env_key, nil) == "true")
+      end
+    end
+
+    it "reads all array env keys" do
+      config
+
+      Appsignal::Config::ENV_ARRAY_KEYS.each do |env_key, option|
+        ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
+        expect(config[option]).to eq(ENV.fetch(env_key, nil).split(","))
+      end
+    end
+
+    it "reads all float env keys" do
+      config
+
+      Appsignal::Config::ENV_FLOAT_KEYS.each do |env_key, option|
+        ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
+        expect(config[option]).to eq(ENV.fetch(env_key, nil).to_f)
+      end
     end
 
     it "overrides config with environment values" do
