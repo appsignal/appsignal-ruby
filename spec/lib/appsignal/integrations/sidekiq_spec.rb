@@ -362,7 +362,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
         perform_sidekiq_job { raise error, "uh oh" }
       end.to raise_error(error)
 
-      expect(transaction).to have_id(jid)
+      expect(transaction).to have_id
       expect(transaction).to have_namespace(namespace)
       expect(transaction).to have_action("TestClass#perform")
       expect(transaction).to have_error("ExampleException", "uh oh")
@@ -373,7 +373,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       )
       expect(transaction).to_not include_environment
       expect(transaction).to include_params(expected_args)
-      expect(transaction).to_not include_tags
+      expect(transaction).to include_tags("request_id" => jid)
       expect(transaction).to_not include_breadcrumbs
       expect_transaction_to_have_sidekiq_event(transaction)
     end
@@ -418,11 +418,11 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
         .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
       perform_sidekiq_job
 
-      expect(transaction).to have_id(jid)
+      expect(transaction).to have_id
       expect(transaction).to have_namespace(namespace)
       expect(transaction).to have_action("TestClass#perform")
       expect(transaction).to_not have_error
-      expect(transaction).to_not include_tags
+      expect(transaction).to include_tags("request_id" => jid)
       expect(transaction).to_not include_environment
       expect(transaction).to_not include_breadcrumbs
       expect(transaction).to_not include_params(expected_args)
