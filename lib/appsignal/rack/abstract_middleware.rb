@@ -163,9 +163,9 @@ module Appsignal
 
         request.send(@params_method)
       rescue => error
-        # Getting params from the request has been know to fail.
-        Appsignal.internal_logger.debug(
-          "Exception while getting params in #{self.class} from '#{@params_method}': #{error}"
+        Appsignal.internal_logger.error(
+          "Exception while fetching params from '#{@request_class}##{@params_method}': " \
+            "#{error.class} #{error}"
         )
         nil
       end
@@ -173,7 +173,9 @@ module Appsignal
       def request_method_for(request)
         request.request_method
       rescue => error
-        Appsignal.internal_logger.error("Unable to report HTTP request method: '#{error}'")
+        Appsignal.internal_logger.error(
+          "Exception while fetching the HTTP request method: #{error.class}: #{error}"
+        )
         nil
       end
 

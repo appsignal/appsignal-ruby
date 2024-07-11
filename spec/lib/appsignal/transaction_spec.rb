@@ -400,6 +400,16 @@ describe Appsignal::Transaction do
           expect(transaction.params).to eq(arg_params)
           expect(transaction).to include_params(arg_params)
         end
+
+        it "logs an error if an error occurred storing the params" do
+          transaction.set_params { raise "uh oh" }
+
+          logs = capture_logs { transaction._sample }
+          expect(logs).to contains_log(
+            :error,
+            "Exception while fetching params: RuntimeError: uh oh"
+          )
+        end
       end
 
       context "when the given params is nil" do
@@ -521,6 +531,16 @@ describe Appsignal::Transaction do
           transaction._sample
           expect(transaction).to include_session_data("data" => "value1")
         end
+
+        it "logs an error if an error occurred storing the session data" do
+          transaction.set_session_data { raise "uh oh" }
+
+          logs = capture_logs { transaction._sample }
+          expect(logs).to contains_log(
+            :error,
+            "Exception while fetching session data: RuntimeError: uh oh"
+          )
+        end
       end
 
       context "when the given session data is nil" do
@@ -611,7 +631,7 @@ describe Appsignal::Transaction do
           expect(transaction).to include_environment(headers)
         end
 
-        it "updates the session data on the transaction with a block" do
+        it "updates the headers on the transaction with a block" do
           headers = { "PATH_INFO" => "value" }
           transaction.set_headers { headers }
 
@@ -619,7 +639,7 @@ describe Appsignal::Transaction do
           expect(transaction).to include_environment(headers)
         end
 
-        it "updates with the session data argument when both an argument and block are given" do
+        it "updates with the headers argument when both an argument and block are given" do
           arg_data = { "PATH_INFO" => "/arg-path" }
           block_data = { "PATH_INFO" => "/block-path" }
           transaction.set_headers(arg_data) { block_data }
@@ -628,17 +648,27 @@ describe Appsignal::Transaction do
           expect(transaction).to include_environment(arg_data)
         end
 
-        it "does not include filtered out session data" do
+        it "does not include filtered out headers" do
           Appsignal.config[:request_headers] = ["MY_HEADER"]
           transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
 
           transaction._sample
           expect(transaction).to include_environment("MY_HEADER" => "value1")
         end
+
+        it "logs an error if an error occurred storing the headers" do
+          transaction.set_headers { raise "uh oh" }
+
+          logs = capture_logs { transaction._sample }
+          expect(logs).to contains_log(
+            :error,
+            "Exception while fetching headers: RuntimeError: uh oh"
+          )
+        end
       end
 
-      context "when the given session data is nil" do
-        it "does not update the session data on the transaction" do
+      context "when the given headers is nil" do
+        it "does not update the headers on the transaction" do
           headers = { "PATH_INFO" => "value" }
           transaction.set_headers(headers)
           transaction.set_headers(nil)
