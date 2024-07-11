@@ -248,7 +248,7 @@ describe Appsignal::Rack::AbstractMiddleware do
           end
         end
 
-        context "with fetching the request method raises an error" do
+        context "when fetching the request method raises an error" do
           class BrokenRequestMethodRequest < Rack::Request
             def request_method
               raise "uh oh!"
@@ -256,11 +256,16 @@ describe Appsignal::Rack::AbstractMiddleware do
           end
 
           let(:options) { { :request_class => BrokenRequestMethodRequest } }
+
           it "does not store the invalid HTTP request method" do
             env["REQUEST_METHOD"] = "FOO"
-            make_request
+            logs = capture_logs { make_request }
 
             expect(last_transaction).to_not include_metadata("method" => anything)
+            expect(logs).to contains_log(
+              :error,
+              "Exception while fetching the HTTP request method: RuntimeError: uh oh"
+            )
           end
         end
 
@@ -284,6 +289,29 @@ describe Appsignal::Rack::AbstractMiddleware do
             make_request
 
             expect(last_transaction).to include_params("custom" => "param")
+          end
+        end
+
+        context "when fetching the request method raises an error" do
+          class BrokenRequestParamsRequest < Rack::Request
+            def params
+              raise "uh oh!"
+            end
+          end
+
+          let(:options) do
+            { :request_class => BrokenRequestParamsRequest, :params_method => :params }
+          end
+
+          it "does not store the invalid HTTP request method" do
+            logs = capture_logs { make_request }
+
+            expect(last_transaction).to_not include_params
+            expect(logs).to contains_log(
+              :error,
+              "Exception while fetching params " \
+                "from 'BrokenRequestParamsRequest#params': RuntimeError uh oh!"
+            )
           end
         end
 

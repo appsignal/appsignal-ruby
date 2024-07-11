@@ -114,8 +114,10 @@ if DependencyHelper.rails_present?
         make_request
 
         expect(last_transaction).to_not include_metadata("method" => anything)
-        expect(log_contents(log))
-          .to contains_log(:error, "Unable to report HTTP request method: '")
+        expect(log_contents(log)).to contains_log(
+          :error,
+          "Exception while fetching the HTTP request method: "
+        )
       end
     end
 

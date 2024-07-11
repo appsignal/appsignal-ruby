@@ -166,6 +166,9 @@ module Appsignal
       else
         parameters
       end
+    rescue => e
+      Appsignal.internal_logger.error("Exception while fetching params: #{e.class}: #{e}")
+      nil
     end
 
     # Set parameters on the transaction.
@@ -703,8 +706,7 @@ module Appsignal
       begin
         request.send options[:params_method]
       rescue => e
-        # Getting params from the request has been know to fail.
-        Appsignal.internal_logger.debug "Exception while getting params: #{e}"
+        Appsignal.internal_logger.warn "Exception while getting params: #{e}"
         nil
       end
     end
@@ -719,6 +721,10 @@ module Appsignal
       elsif request.respond_to?(:session)
         request.session
       end
+    rescue => e
+      Appsignal.internal_logger.error \
+        "Exception while fetching session data: #{e.class}: #{e}"
+      nil
     end
 
     # Returns sanitized session data.
@@ -737,12 +743,14 @@ module Appsignal
       )
     end
 
-    # Returns sanitized metadata set by {#set_metadata} and from the
-    # {#environment}.
+    # Returns sanitized metadata set on the request environment.
     #
     # @return [Hash<String, Object>]
     def sanitized_metadata
-      metadata = environment[:metadata]
+      env = environment
+      return unless env
+
+      metadata = env[:metadata]
       return unless metadata
 
       metadata
@@ -758,10 +766,12 @@ module Appsignal
           @headers
         end
       elsif request.respond_to?(:env)
-        request.env || {}
-      else
-        {}
+        request.env
       end
+    rescue => e
+      Appsignal.internal_logger.error \
+        "Exception while fetching headers: #{e.class}: #{e}"
+      nil
     end
 
     # Returns sanitized environment for a transaction.
@@ -773,6 +783,8 @@ module Appsignal
     # @return [Hash<String, Object>]
     def sanitized_environment
       env = environment
+      return unless env
+      return unless env.respond_to?(:empty?)
       return if env.empty?
 
       {}.tap do |out|
