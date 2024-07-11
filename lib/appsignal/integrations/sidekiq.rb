@@ -42,7 +42,7 @@ module Appsignal
             Appsignal::Transaction.create(
               SecureRandom.uuid, # Newly generated job id
               Appsignal::Transaction::BACKGROUND_JOB,
-              Appsignal::Transaction::GenericRequest.new({})
+              Appsignal::Transaction::InternalGenericRequest.new({})
             )
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
@@ -68,7 +68,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
+          Appsignal::Transaction::InternalGenericRequest.new({})
         )
         transaction.set_action_if_nil(formatted_action_name(item))
 

@@ -57,7 +57,7 @@ module Appsignal
               Appsignal::Transaction.create(
                 SecureRandom.uuid,
                 Appsignal::Transaction::BACKGROUND_JOB,
-                Appsignal::Transaction::GenericRequest.new({})
+                Appsignal::Transaction::InternalGenericRequest.new({})
               )
             end
 

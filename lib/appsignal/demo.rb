@@ -42,7 +42,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::GenericRequest.new({})
+          Appsignal::Transaction::InternalGenericRequest.new({})
         )
         begin
           raise TestError,
@@ -63,7 +63,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::GenericRequest.new({})
+          Appsignal::Transaction::InternalGenericRequest.new({})
         )
         Appsignal.instrument "action_view.render", "Render hello.html.erb",
           "<h1>Hello world!</h1>" do

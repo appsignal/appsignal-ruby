@@ -7,25 +7,17 @@ module TransactionHelpers
     end
   end
 
-  def background_job_transaction(args = {})
+  def background_job_transaction(_args = {})
     Appsignal::Transaction.new(
       "1",
-      Appsignal::Transaction::BACKGROUND_JOB,
-      Appsignal::Transaction::GenericRequest.new({
-        "SERVER_NAME" => "localhost",
-        "action_dispatch.routes" => "not_available"
-      }.merge(args))
+      Appsignal::Transaction::BACKGROUND_JOB
     )
   end
 
-  def http_request_transaction(args = {})
+  def http_request_transaction(_args = {})
     Appsignal::Transaction.new(
       "1",
-      Appsignal::Transaction::HTTP_REQUEST,
-      Appsignal::Transaction::GenericRequest.new({
-        "SERVER_NAME" => "localhost",
-        "action_dispatch.routes" => "not_available"
-      }.merge(args))
+      Appsignal::Transaction::HTTP_REQUEST
     )
   end
 

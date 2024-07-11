@@ -1625,9 +1625,27 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "generic request" do
+    context "GenericRequest" do
       let(:env) { {} }
       subject { Appsignal::Transaction::GenericRequest.new(env) }
+
+      it "prints a deprecation warning on use" do
+        err_stream = std_stream
+        capture_std_streams(std_stream, err_stream) { subject }
+
+        expect(err_stream.read).to include(
+          "appsignal WARNING: The use of Appsignal::Transaction::GenericRequest is deprecated."
+        )
+      end
+
+      it "logs a deprecation warning on use" do
+        logs = capture_logs { subject }
+
+        expect(logs).to contains_log(
+          :warn,
+          "The use of Appsignal::Transaction::GenericRequest is deprecated."
+        )
+      end
 
       it "initializes with an empty env" do
         expect(subject.env).to be_empty

@@ -13,7 +13,7 @@ module Appsignal
             Appsignal::Transaction.create(
               SecureRandom.uuid,
               Appsignal::Transaction::HTTP_REQUEST,
-              Appsignal::Transaction::GenericRequest.new({})
+              Appsignal::Transaction::InternalGenericRequest.new({})
             )
           end
 

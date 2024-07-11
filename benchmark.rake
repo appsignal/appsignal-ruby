@@ -67,7 +67,7 @@ def start_agent
 end
 
 def monitor_transaction(transaction_id)
-  request = Appsignal::Transaction::GenericRequest.new({})
+  request = Appsignal::Transaction::InternalGenericRequest.new({})
   transaction = Appsignal::Transaction.create(
     transaction_id,
     Appsignal::Transaction::HTTP_REQUEST,

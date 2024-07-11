@@ -609,7 +609,7 @@ module Appsignal
     alias_method :to_hash, :to_h
 
     # @api private
-    class GenericRequest
+    class InternalGenericRequest
       attr_reader :env
 
       def initialize(env)
@@ -618,6 +618,21 @@ module Appsignal
 
       def params
         env[:params]
+      end
+    end
+
+    # @deprecated Use the instrumentation helpers to set metadata on the
+    #   transaction, rather than rely on the GenericRequest automation. See the
+    #   {Helpers::Instrumentation} module for a list of helpers.
+    # @api private
+    class GenericRequest < InternalGenericRequest
+      def initialize(_env)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(
+          "The use of Appsignal::Transaction::GenericRequest is deprecated. " \
+            "Use the `Appsignal.set_*` helpers instead. " \
+            "https://docs.appsignal.com/guides/custom-data/sample-data.html"
+        )
+        super
       end
     end
 

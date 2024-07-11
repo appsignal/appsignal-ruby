@@ -64,7 +64,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             SecureRandom.uuid,
             Appsignal::Transaction::HTTP_REQUEST,
-            Appsignal::Transaction::GenericRequest.new({})
+            Appsignal::Transaction::InternalGenericRequest.new({})
           )
           request.env[APPSIGNAL_TRANSACTION] = transaction
 

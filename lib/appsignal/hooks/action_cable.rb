@@ -39,7 +39,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
-            Appsignal::Transaction::GenericRequest.new({})
+            Appsignal::Transaction::InternalGenericRequest.new({})
           )
 
           begin
@@ -78,7 +78,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
-            Appsignal::Transaction::GenericRequest.new({})
+            Appsignal::Transaction::InternalGenericRequest.new({})
           )
 
           begin
