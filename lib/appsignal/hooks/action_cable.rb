@@ -33,8 +33,8 @@ module Appsignal
           # in apps' test suites.
           env = connection.respond_to?(:env) ? connection.env : {}
           request = ActionDispatch::Request.new(env)
-          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
-            request.request_id || SecureRandom.uuid
+          request_id = request.request_id || SecureRandom.uuid
+          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
@@ -56,6 +56,7 @@ module Appsignal
             transaction.set_params_if_nil { request.params }
             transaction.set_headers_if_nil { request.env }
             transaction.set_session_data { request.session if request.respond_to? :session }
+            transaction.set_tags(:request_id => request_id) if request_id
             Appsignal::Transaction.complete_current!
           end
         end
@@ -71,8 +72,8 @@ module Appsignal
           # in apps' test suites.
           env = connection.respond_to?(:env) ? connection.env : {}
           request = ActionDispatch::Request.new(env)
-          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
-            request.request_id || SecureRandom.uuid
+          request_id = request.request_id || SecureRandom.uuid
+          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
@@ -94,6 +95,7 @@ module Appsignal
             transaction.set_params_if_nil { request.params }
             transaction.set_headers_if_nil { request.env }
             transaction.set_session_data { request.session if request.respond_to? :session }
+            transaction.set_tags(:request_id => request_id) if request_id
             Appsignal::Transaction.complete_current!
           end
         end
