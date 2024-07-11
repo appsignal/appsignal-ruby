@@ -14,7 +14,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           SecureRandom.uuid,
           Appsignal::Transaction::ACTION_CABLE,
-          request
+          Appsignal::Transaction::GenericRequest.new({})
         )
 
         begin
