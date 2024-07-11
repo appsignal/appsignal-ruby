@@ -5,11 +5,7 @@ module Appsignal
     # @api private
     class ShoryukenMiddleware
       def call(worker_instance, queue, sqs_msg, body, &block)
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
+        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
         Appsignal.instrument("perform_job.shoryuken", &block)
       rescue Exception => error # rubocop:disable Lint/RescueException

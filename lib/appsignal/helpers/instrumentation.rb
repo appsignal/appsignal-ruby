@@ -63,7 +63,7 @@ module Appsignal
         # environments.
         if name.start_with?("perform_job")
           namespace = Appsignal::Transaction::BACKGROUND_JOB
-          request   = Appsignal::Transaction::GenericRequest.new(env)
+          request   = Appsignal::Transaction::InternalGenericRequest.new(env)
         elsif name.start_with?("process_action")
           namespace = Appsignal::Transaction::HTTP_REQUEST
           request   = ::Rack::Request.new(env)
@@ -237,8 +237,7 @@ module Appsignal
         end
         transaction = Appsignal::Transaction.new(
           SecureRandom.uuid,
-          namespace || Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::GenericRequest.new({})
+          namespace || Appsignal::Transaction::HTTP_REQUEST
         )
         transaction.set_tags(tags) if tags
         transaction.set_error(error)
@@ -392,8 +391,7 @@ module Appsignal
           else
             Appsignal::Transaction.new(
               SecureRandom.uuid,
-              Appsignal::Transaction::HTTP_REQUEST,
-              Appsignal::Transaction::GenericRequest.new({})
+              Appsignal::Transaction::HTTP_REQUEST
             )
           end
 

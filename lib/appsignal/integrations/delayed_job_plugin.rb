@@ -17,11 +17,8 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
+        transaction =
+          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
         Appsignal.instrument("perform_job.delayed_job") do
           block.call(job)

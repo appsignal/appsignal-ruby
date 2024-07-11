@@ -38,12 +38,7 @@ module Appsignal
           # Sidekiq error outside of the middleware scope.
           # Can be a job JSON parse error or some other error happening in
           # Sidekiq.
-          transaction =
-            Appsignal::Transaction.create(
-              SecureRandom.uuid, # Newly generated job id
-              Appsignal::Transaction::BACKGROUND_JOB,
-              Appsignal::Transaction::GenericRequest.new({})
-            )
+          transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
           transaction.set_params_if_nil(:jobstr => sidekiq_context[:jobstr])
@@ -65,11 +60,7 @@ module Appsignal
 
       def call(_worker, item, _queue, &block)
         job_status = nil
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
+        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
         transaction.set_action_if_nil(formatted_action_name(item))
 
         formatted_metadata(item).each do |key, value|

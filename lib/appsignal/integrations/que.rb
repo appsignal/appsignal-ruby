@@ -5,11 +5,8 @@ module Appsignal
     # @api private
     module QuePlugin
       def _run(*)
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::GenericRequest.new({})
-        )
+        transaction =
+          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
         begin
           Appsignal.instrument("perform_job.que") { super }
