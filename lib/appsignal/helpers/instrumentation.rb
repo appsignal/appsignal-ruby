@@ -870,21 +870,47 @@ module Appsignal
         )
       end
 
-      # Convenience method for skipping instrumentations around a block of code.
+      # Convenience method for ignoring instrumentation events in a block of
+      # code.
+      #
+      # - This helper ignores events, like those created
+      #   `Appsignal.instrument`, within this block.
+      #   This includes custom instrumentation and events recorded by AppSignal
+      #   integrations for requests, database queries, view rendering, etc.
+      # - The time spent in the block is still reported on the transaction.
+      # - Errors and metrics are reported from within this block.
       #
       # @example
-      #   Appsignal.without_instrumentation do
+      #   Appsignal.instrument "my_event.my_group" do
       #     # Complex code here
       #   end
+      #   Appsignal.ignore_instrumentation_events do
+      #     Appsignal.instrument "my_ignored_event.my_ignored_group" do
+      #       # Complex code here
+      #     end
+      #   end
+      #
+      #   # Only the "my_event.my_group" instrumentation event is reported.
       #
       # @yield block of code that shouldn't be instrumented.
       # @return [Object] Returns the return value of the block.
-      # @since 0.8.7
-      def without_instrumentation
+      # @since 3.10.0
+      # @see https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html
+      #   Ignore instrumentation guide
+      def ignore_instrumentation_events
         Appsignal::Transaction.current&.pause!
         yield
       ensure
         Appsignal::Transaction.current&.resume!
+      end
+
+      # @deprecated Use {.ignore_instrumentation_events} instead.
+      # @since 0.8.7
+      def without_instrumentation(&block)
+        stdout_and_logger_warning \
+          "The `Appsignal.without_instrumentation` helper is deprecated. " \
+            "Please use `Appsignal.ignore_instrumentation_events` instead."
+        ignore_instrumentation_events(&block)
       end
     end
   end

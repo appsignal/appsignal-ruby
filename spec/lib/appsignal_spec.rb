@@ -1349,7 +1349,7 @@ describe Appsignal do
       end
     end
 
-    describe ".without_instrumentation" do
+    describe ".ignore_instrumentation_events" do
       around { |example| keep_transactions { example.run } }
       let(:transaction) { http_request_transaction }
 
@@ -1361,12 +1361,36 @@ describe Appsignal do
           expect(transaction).to receive(:resume!).and_call_original
 
           Appsignal.instrument("register.this.event") { :do_nothing }
-          Appsignal.without_instrumentation do
+          Appsignal.ignore_instrumentation_events do
             Appsignal.instrument("dont.register.this.event") { :do_nothing }
           end
 
           expect(transaction).to include_event("name" => "register.this.event")
           expect(transaction).to_not include_event("name" => "dont.register.this.event")
+        end
+
+        it "has a without_instrumentation alias that prints a deprecation warning" do
+          Appsignal.instrument("register.this.event") { :do_nothing }
+          err_stream = std_stream
+          logs =
+            capture_logs do
+              capture_std_streams(std_stream, err_stream) do
+                Appsignal.without_instrumentation do
+                  Appsignal.instrument("dont.register.this.event") { :do_nothing }
+                end
+              end
+            end
+
+          expect(transaction).to include_event("name" => "register.this.event")
+          expect(transaction).to_not include_event("name" => "dont.register.this.event")
+
+          expect(logs).to contains_log(
+            :warn,
+            "The `Appsignal.without_instrumentation` helper is deprecated."
+          )
+          expect(err_stream.read).to include(
+            "appsignal WARNING: The `Appsignal.without_instrumentation` helper is deprecated."
+          )
         end
       end
 
@@ -1374,7 +1398,7 @@ describe Appsignal do
         let(:transaction) { nil }
 
         it "does not crash" do
-          Appsignal.without_instrumentation { :do_nothing }
+          Appsignal.ignore_instrumentation_events { :do_nothing }
         end
       end
     end
