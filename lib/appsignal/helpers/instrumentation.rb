@@ -37,6 +37,15 @@ module Appsignal
       #     end
       #   end
       #
+      # @example Set the action name in the monitor block
+      #   Appsignal.monitor(
+      #     :namespace => "my_namespace",
+      #   ) do
+      #     # Some code
+      #
+      #     Appsignal.set_action("GET /resource/:id")
+      #   end
+      #
       # @example Set custom metadata on the transaction
       #   Appsignal.monitor(
       #     :namespace => "my_namespace",
@@ -68,10 +77,14 @@ module Appsignal
       # @param namespace [String/Symbol] The namespace to set on the new
       #   transaction.
       #   Defaults to the 'web' namespace.
-      #   This will update the already active transaction's namespace if
+      #   This will not update the active transaction's namespace if
       #   {.monitor} is called when another transaction is already active.
       # @param action [String/Symbol] The action name for the transaction.
-      #   This will update the already active transaction's action if
+      #   The action name is required to be set for the transaction to be
+      #   reported.
+      #   The argument can be omitted only if the action is set within the
+      #   block with {#set_action}.
+      #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
       # @yield The block to monitor.
       # @raise [Exception] Any exception that occurs within the given block is
