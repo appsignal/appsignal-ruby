@@ -8,11 +8,11 @@ module Appsignal
         # The request is only the original websocket request
         env = connection.env
         request = ActionDispatch::Request.new(env)
-        env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||=
-          request.request_id || SecureRandom.uuid
+        request_id = request.request_id || SecureRandom.uuid
+        env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
         transaction = Appsignal::Transaction.create(
-          env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
+          SecureRandom.uuid,
           Appsignal::Transaction::ACTION_CABLE,
           request
         )
@@ -27,6 +27,7 @@ module Appsignal
           transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", "websocket")
+          transaction.set_tags(:request_id => request_id) if request_id
           Appsignal::Transaction.complete_current!
         end
       end
