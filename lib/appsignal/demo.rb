@@ -39,11 +39,7 @@ module Appsignal
       private
 
       def create_example_error_request
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::InternalGenericRequest.new({})
-        )
+        transaction = Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
         begin
           raise TestError,
             "Hello world! This is an error used for demonstration purposes."
@@ -60,11 +56,7 @@ module Appsignal
       end
 
       def create_example_performance_request
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::InternalGenericRequest.new({})
-        )
+        transaction = Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
         Appsignal.instrument "action_view.render", "Render hello.html.erb",
           "<h1>Hello world!</h1>" do
           sleep 2

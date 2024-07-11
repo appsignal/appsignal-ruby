@@ -67,11 +67,9 @@ def start_agent
 end
 
 def monitor_transaction(transaction_id)
-  request = Appsignal::Transaction::InternalGenericRequest.new({})
   transaction = Appsignal::Transaction.create(
     transaction_id,
-    Appsignal::Transaction::HTTP_REQUEST,
-    request
+    Appsignal::Transaction::HTTP_REQUEST
   )
   transaction.set_action("HomeController#show")
   transaction.set_params(:id => 1)

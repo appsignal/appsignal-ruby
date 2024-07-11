@@ -34,11 +34,7 @@ module Appsignal
             if wrapped_instrumentation
               env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
             else
-              Appsignal::Transaction.create(
-                SecureRandom.uuid,
-                Appsignal::Transaction::HTTP_REQUEST,
-                Appsignal::Transaction::InternalGenericRequest.new({})
-              )
+              Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
             end
 
           unless wrapped_instrumentation

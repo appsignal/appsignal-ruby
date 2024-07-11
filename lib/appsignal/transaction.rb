@@ -24,15 +24,57 @@ module Appsignal
     class << self
       # Create a new transaction and set it as the currently active
       # transaction.
-      def create(id, namespace, request, options = {})
+      def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
+        if arg_namespace
+          id = id_or_namespace
+          namespace = arg_namespace
+        else
+          id = SecureRandom.uuid
+          namespace = id_or_namespace
+        end
+
+        if id
+          Appsignal.internal_logger.warn(
+            "Appsignal::Transaction.create: " \
+              "A new Transaction is created using the transaction ID argument. " \
+              "This argument is deprecated without replacement."
+          )
+        end
+        if arg_namespace
+          Appsignal.internal_logger.warn(
+            "Appsignal::Transaction.create: " \
+              "A Transaction is created using the namespace argument. " \
+              "Specify the namespace as the first argument to the 'create' " \
+              "method without the ID argument."
+          )
+        end
+        if request
+          Appsignal.internal_logger.warn(
+            "Appsignal::Transaction.create: " \
+              "A Transaction is created using the request argument. " \
+              "This argument is deprecated. Please use the `Appsignal.set_*` helpers instead."
+          )
+        end
         # Allow middleware to force a new transaction
-        Thread.current[:appsignal_transaction] = nil if options.include?(:force) && options[:force]
+        if options[:force]
+          Appsignal.internal_logger.warn(
+            "Appsignal::Transaction.create: " \
+              "A Transaction is created using the `:force => true` option argument. " \
+              "The options argument is deprecated without replacement."
+          )
+          Thread.current[:appsignal_transaction] = nil
+        end
 
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
           Thread.current[:appsignal_transaction] =
-            Appsignal::Transaction.new(id, namespace, request, options)
+            Appsignal::Transaction.new(
+              id,
+              namespace,
+              request,
+              options
+            )
         else
           # Otherwise, log the issue about trying to start another transaction
           Appsignal.internal_logger.warn(
@@ -87,11 +129,15 @@ module Appsignal
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
       :breadcrumbs, :custom_data
 
-    def initialize(transaction_id, namespace, request, options = {})
+    # Use {.create} to create new transactions.
+    #
+    # @see create
+    # @api private
+    def initialize(transaction_id, namespace, request = nil, options = {})
       @transaction_id = transaction_id
       @action = nil
       @namespace = namespace
-      @request = request
+      @request = request || InternalGenericRequest.new({})
       @paused = false
       @discarded = false
       @tags = {}

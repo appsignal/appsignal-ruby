@@ -7,18 +7,50 @@ module TransactionHelpers
     end
   end
 
-  def background_job_transaction(_args = {})
-    Appsignal::Transaction.new(
-      "1",
-      Appsignal::Transaction::BACKGROUND_JOB
-    )
+  def default_namespace
+    Appsignal::Transaction::HTTP_REQUEST
   end
 
-  def http_request_transaction(_args = {})
-    Appsignal::Transaction.new(
-      "1",
-      Appsignal::Transaction::HTTP_REQUEST
-    )
+  def create_transaction(namespace = default_namespace)
+    Appsignal::Transaction.create(namespace)
+  end
+
+  def new_transaction(namespace = default_namespace)
+    Appsignal::Transaction.new(SecureRandom.uuid, namespace)
+  end
+
+  def legacy_create_transaction(
+    id: "mock_transaction_id",
+    namespace: "mock_namespace",
+    request: legacy_request,
+    options: {}
+  )
+    Appsignal::Transaction.create(id, namespace, request, options)
+  end
+
+  def legacy_new_transaction(
+    id: "mock_transaction_id",
+    namespace: "mock_namespace",
+    request: legacy_request,
+    options: {}
+  )
+    Appsignal::Transaction.new(id, namespace, request, options)
+  end
+
+  def legacy_request(env = {})
+    Appsignal::Transaction::InternalGenericRequest.new(env)
+  end
+
+  def rack_request(env)
+    Rack::Request.new(env)
+  end
+
+  def background_job_transaction
+    new_transaction(Appsignal::Transaction::BACKGROUND_JOB)
+  end
+
+  def http_request_transaction
+    new_transaction(Appsignal::Transaction::HTTP_REQUEST)
   end
 
   # Returns the all {Appsignal::Transaction} objects created during this test

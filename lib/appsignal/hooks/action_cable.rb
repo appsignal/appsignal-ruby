@@ -36,11 +36,8 @@ module Appsignal
           request_id = request.request_id || SecureRandom.uuid
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
-          transaction = Appsignal::Transaction.create(
-            env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
-            Appsignal::Transaction::ACTION_CABLE,
-            Appsignal::Transaction::InternalGenericRequest.new({})
-          )
+          transaction =
+            Appsignal::Transaction.create(Appsignal::Transaction::ACTION_CABLE)
 
           begin
             Appsignal.instrument "subscribed.action_cable" do
@@ -75,11 +72,8 @@ module Appsignal
           request_id = request.request_id || SecureRandom.uuid
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
-          transaction = Appsignal::Transaction.create(
-            env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
-            Appsignal::Transaction::ACTION_CABLE,
-            Appsignal::Transaction::InternalGenericRequest.new({})
-          )
+          transaction =
+            Appsignal::Transaction.create(Appsignal::Transaction::ACTION_CABLE)
 
           begin
             Appsignal.instrument "unsubscribed.action_cable" do

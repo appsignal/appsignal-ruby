@@ -61,11 +61,7 @@ module Appsignal
           request.env[APPSIGNAL_EVENT_HANDLER_ID] ||= id
           return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 
-          transaction = Appsignal::Transaction.create(
-            SecureRandom.uuid,
-            Appsignal::Transaction::HTTP_REQUEST,
-            Appsignal::Transaction::InternalGenericRequest.new({})
-          )
+          transaction = Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
           request.env[APPSIGNAL_TRANSACTION] = transaction
 
           request.env[RACK_AFTER_REPLY] ||= []

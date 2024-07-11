@@ -54,11 +54,7 @@ module Appsignal
               # we do for Sidekiq.
               #
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
-              Appsignal::Transaction.create(
-                SecureRandom.uuid,
-                Appsignal::Transaction::BACKGROUND_JOB,
-                Appsignal::Transaction::InternalGenericRequest.new({})
-              )
+              Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
             end
 
           if transaction

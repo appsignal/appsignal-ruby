@@ -33,11 +33,7 @@ module Appsignal
       private
 
       def _appsignal_create_transaction
-        Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::InternalGenericRequest.new({})
-        )
+        Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
       end
     end
 

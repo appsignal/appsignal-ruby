@@ -237,8 +237,7 @@ module Appsignal
         end
         transaction = Appsignal::Transaction.new(
           SecureRandom.uuid,
-          namespace || Appsignal::Transaction::HTTP_REQUEST,
-          Appsignal::Transaction::InternalGenericRequest.new({})
+          namespace || Appsignal::Transaction::HTTP_REQUEST
         )
         transaction.set_tags(tags) if tags
         transaction.set_error(error)
@@ -392,8 +391,7 @@ module Appsignal
           else
             Appsignal::Transaction.new(
               SecureRandom.uuid,
-              Appsignal::Transaction::HTTP_REQUEST,
-              Appsignal::Transaction::InternalGenericRequest.new({})
+              Appsignal::Transaction::HTTP_REQUEST
             )
           end
 

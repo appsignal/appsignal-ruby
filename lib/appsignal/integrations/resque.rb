@@ -5,11 +5,7 @@ module Appsignal
     # @api private
     module ResqueIntegration
       def perform
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          Appsignal::Transaction::BACKGROUND_JOB,
-          Appsignal::Transaction::InternalGenericRequest.new({})
-        )
+        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
         Appsignal.instrument "perform.resque" do
           super

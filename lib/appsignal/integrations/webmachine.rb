@@ -10,11 +10,7 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.create(
-              SecureRandom.uuid,
-              Appsignal::Transaction::HTTP_REQUEST,
-              Appsignal::Transaction::InternalGenericRequest.new({})
-            )
+            Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
           end
 
         Appsignal.instrument("process_action.webmachine") do
