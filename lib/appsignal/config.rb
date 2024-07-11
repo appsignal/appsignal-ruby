@@ -69,15 +69,30 @@ module Appsignal
     }.freeze
 
     # @api private
-    ENV_TO_KEY_MAPPING = {
-      "APPSIGNAL_ACTIVE" => :active,
+    ENV_STRING_KEYS = {
       "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS" => :activejob_report_errors,
       "APPSIGNAL_APP_NAME" => :name,
       "APPSIGNAL_BIND_ADDRESS" => :bind_address,
       "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
-      "APPSIGNAL_CPU_COUNT" => :cpu_count,
+      "APPSIGNAL_HOSTNAME" => :hostname,
+      "APPSIGNAL_HOST_ROLE" => :host_role,
+      "APPSIGNAL_HTTP_PROXY" => :http_proxy,
+      "APPSIGNAL_LOG" => :log,
+      "APPSIGNAL_LOG_LEVEL" => :log_level,
+      "APPSIGNAL_LOG_PATH" => :log_path,
+      "APPSIGNAL_LOGGING_ENDPOINT" => :logging_endpoint,
+      "APPSIGNAL_PUSH_API_ENDPOINT" => :endpoint,
+      "APPSIGNAL_PUSH_API_KEY" => :push_api_key,
+      "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => :sidekiq_report_errors,
+      "APPSIGNAL_STATSD_PORT" => :statsd_port,
+      "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
+      "APPSIGNAL_WORKING_DIR_PATH" => :working_dir_path,
+      "APP_REVISION" => :revision
+    }.freeze
+    # @api private
+    ENV_BOOLEAN_KEYS = {
+      "APPSIGNAL_ACTIVE" => :active,
       "APPSIGNAL_DEBUG" => :debug,
-      "APPSIGNAL_DNS_SERVERS" => :dns_servers,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
       "APPSIGNAL_ENABLE_HOST_METRICS" => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES" => :enable_minutely_probes,
@@ -89,101 +104,33 @@ module Appsignal
       "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION" =>
         :enable_rake_performance_instrumentation,
       "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => :files_world_accessible,
-      "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
-      "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
-      "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
-      "APPSIGNAL_HOSTNAME" => :hostname,
-      "APPSIGNAL_HOST_ROLE" => :host_role,
-      "APPSIGNAL_HTTP_PROXY" => :http_proxy,
-      "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
-      "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
-      "APPSIGNAL_IGNORE_LOGS" => :ignore_logs,
-      "APPSIGNAL_IGNORE_NAMESPACES" => :ignore_namespaces,
       "APPSIGNAL_INSTRUMENT_HTTP_RB" => :instrument_http_rb,
       "APPSIGNAL_INSTRUMENT_NET_HTTP" => :instrument_net_http,
       "APPSIGNAL_INSTRUMENT_REDIS" => :instrument_redis,
       "APPSIGNAL_INSTRUMENT_SEQUEL" => :instrument_sequel,
-      "APPSIGNAL_LOG" => :log,
-      "APPSIGNAL_LOG_LEVEL" => :log_level,
-      "APPSIGNAL_LOG_PATH" => :log_path,
-      "APPSIGNAL_LOGGING_ENDPOINT" => :logging_endpoint,
-      "APPSIGNAL_PUSH_API_ENDPOINT" => :endpoint,
-      "APPSIGNAL_PUSH_API_KEY" => :push_api_key,
-      "APPSIGNAL_REQUEST_HEADERS" => :request_headers,
       "APPSIGNAL_RUNNING_IN_CONTAINER" => :running_in_container,
       "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS" => :send_params,
       "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
-      "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => :sidekiq_report_errors,
       "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
-      "APPSIGNAL_STATSD_PORT" => :statsd_port,
-      "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode,
-      "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
-      "APPSIGNAL_WORKING_DIR_PATH" => :working_dir_path,
-      "APP_REVISION" => :revision
+      "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode
     }.freeze
     # @api private
-    ENV_STRING_KEYS = %w[
-      APPSIGNAL_ACTIVEJOB_REPORT_ERRORS
-      APPSIGNAL_APP_NAME
-      APPSIGNAL_BIND_ADDRESS
-      APPSIGNAL_CA_FILE_PATH
-      APPSIGNAL_HOSTNAME
-      APPSIGNAL_HOST_ROLE
-      APPSIGNAL_HTTP_PROXY
-      APPSIGNAL_LOG
-      APPSIGNAL_LOG_LEVEL
-      APPSIGNAL_LOG_PATH
-      APPSIGNAL_LOGGING_ENDPOINT
-      APPSIGNAL_PUSH_API_ENDPOINT
-      APPSIGNAL_PUSH_API_KEY
-      APPSIGNAL_SIDEKIQ_REPORT_ERRORS
-      APPSIGNAL_STATSD_PORT
-      APPSIGNAL_WORKING_DIRECTORY_PATH
-      APPSIGNAL_WORKING_DIR_PATH
-      APP_REVISION
-    ].freeze
+    ENV_ARRAY_KEYS = {
+      "APPSIGNAL_DNS_SERVERS" => :dns_servers,
+      "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
+      "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
+      "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
+      "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
+      "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
+      "APPSIGNAL_IGNORE_LOGS" => :ignore_logs,
+      "APPSIGNAL_IGNORE_NAMESPACES" => :ignore_namespaces,
+      "APPSIGNAL_REQUEST_HEADERS" => :request_headers
+    }.freeze
     # @api private
-    ENV_BOOLEAN_KEYS = %w[
-      APPSIGNAL_ACTIVE
-      APPSIGNAL_DEBUG
-      APPSIGNAL_ENABLE_ALLOCATION_TRACKING
-      APPSIGNAL_ENABLE_HOST_METRICS
-      APPSIGNAL_ENABLE_MINUTELY_PROBES
-      APPSIGNAL_ENABLE_STATSD
-      APPSIGNAL_ENABLE_NGINX_METRICS
-      APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER
-      APPSIGNAL_ENABLE_GVL_WAITING_THREADS
-      APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER
-      APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION
-      APPSIGNAL_FILES_WORLD_ACCESSIBLE
-      APPSIGNAL_INSTRUMENT_HTTP_RB
-      APPSIGNAL_INSTRUMENT_NET_HTTP
-      APPSIGNAL_INSTRUMENT_REDIS
-      APPSIGNAL_INSTRUMENT_SEQUEL
-      APPSIGNAL_RUNNING_IN_CONTAINER
-      APPSIGNAL_SEND_ENVIRONMENT_METADATA
-      APPSIGNAL_SEND_PARAMS
-      APPSIGNAL_SEND_SESSION_DATA
-      APPSIGNAL_SKIP_SESSION_DATA
-      APPSIGNAL_TRANSACTION_DEBUG_MODE
-    ].freeze
-    # @api private
-    ENV_ARRAY_KEYS = %w[
-      APPSIGNAL_DNS_SERVERS
-      APPSIGNAL_FILTER_METADATA
-      APPSIGNAL_FILTER_PARAMETERS
-      APPSIGNAL_FILTER_SESSION_DATA
-      APPSIGNAL_IGNORE_ACTIONS
-      APPSIGNAL_IGNORE_ERRORS
-      APPSIGNAL_IGNORE_LOGS
-      APPSIGNAL_IGNORE_NAMESPACES
-      APPSIGNAL_REQUEST_HEADERS
-    ].freeze
-    # @api private
-    ENV_FLOAT_KEYS = %w[
-      APPSIGNAL_CPU_COUNT
-    ].freeze
+    ENV_FLOAT_KEYS = {
+      "APPSIGNAL_CPU_COUNT" => :cpu_count
+    }.freeze
 
     # @attribute [r] system_config
     #   Config detected on the system level.
@@ -512,35 +459,35 @@ module Appsignal
       config = {}
 
       # Configuration with string type
-      ENV_STRING_KEYS.each do |var|
-        env_var = ENV.fetch(var, nil)
+      ENV_STRING_KEYS.each do |env_key, option|
+        env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
-        config[ENV_TO_KEY_MAPPING[var]] = env_var
+        config[option] = env_var
       end
 
       # Configuration with boolean type
-      ENV_BOOLEAN_KEYS.each do |var|
-        env_var = ENV.fetch(var, nil)
+      ENV_BOOLEAN_KEYS.each do |env_key, option|
+        env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
-        config[ENV_TO_KEY_MAPPING[var]] = env_var.casecmp("true").zero?
+        config[option] = env_var.casecmp("true").zero?
       end
 
       # Configuration with array of strings type
-      ENV_ARRAY_KEYS.each do |var|
-        env_var = ENV.fetch(var, nil)
+      ENV_ARRAY_KEYS.each do |env_key, option|
+        env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
-        config[ENV_TO_KEY_MAPPING[var]] = env_var.split(",")
+        config[option] = env_var.split(",")
       end
 
       # Configuration with float type
-      ENV_FLOAT_KEYS.each do |var|
-        env_var = ENV.fetch(var, nil)
+      ENV_FLOAT_KEYS.each do |env_key, option|
+        env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
-        config[ENV_TO_KEY_MAPPING[var]] = env_var.to_f
+        config[option] = env_var.to_f
       end
 
       config
