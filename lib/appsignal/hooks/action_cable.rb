@@ -17,12 +17,13 @@ module Appsignal
         require "appsignal/integrations/action_cable"
         ActionCable::Channel::Base.prepend Appsignal::Integrations::ActionCableIntegration
 
-        install_callbacks
+        install_subscribe_callback
+        install_unsubscribe_callback
       end
 
       private
 
-      def install_callbacks
+      def install_subscribe_callback
         ActionCable::Channel::Base.set_callback :subscribe, :around,
           :prepend => true do |channel, inner|
           # The request is only the original websocket request
@@ -38,7 +39,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
-            request
+            Appsignal::Transaction::GenericRequest.new({})
           )
 
           begin
@@ -52,10 +53,15 @@ module Appsignal
             transaction.set_action_if_nil("#{channel.class}#subscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")
+            transaction.set_params_if_nil { request.params }
+            transaction.set_headers_if_nil { request.env }
+            transaction.set_session_data { request.session if request.respond_to? :session }
             Appsignal::Transaction.complete_current!
           end
         end
+      end
 
+      def install_unsubscribe_callback
         ActionCable::Channel::Base.set_callback :unsubscribe, :around,
           :prepend => true do |channel, inner|
           # The request is only the original websocket request
@@ -71,7 +77,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(
             env[Appsignal::Hooks::ActionCableHook::REQUEST_ID],
             Appsignal::Transaction::ACTION_CABLE,
-            request
+            Appsignal::Transaction::GenericRequest.new({})
           )
 
           begin
@@ -85,6 +91,9 @@ module Appsignal
             transaction.set_action_if_nil("#{channel.class}#unsubscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")
+            transaction.set_params_if_nil { request.params }
+            transaction.set_headers_if_nil { request.env }
+            transaction.set_session_data { request.session if request.respond_to? :session }
             Appsignal::Transaction.complete_current!
           end
         end
