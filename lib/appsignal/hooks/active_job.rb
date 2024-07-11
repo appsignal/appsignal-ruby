@@ -55,7 +55,7 @@ module Appsignal
               #
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
               Appsignal::Transaction.create(
-                job["provider_job_id"] || job["job_id"],
+                SecureRandom.uuid,
                 Appsignal::Transaction::BACKGROUND_JOB,
                 Appsignal::Transaction::GenericRequest.new({})
               )
@@ -65,9 +65,6 @@ module Appsignal
             transaction.set_params_if_nil(job["arguments"])
 
             transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
-            transaction_tags["active_job_id"] = job["job_id"]
-            provider_job_id = job["provider_job_id"]
-            transaction_tags[:provider_job_id] = provider_job_id if provider_job_id
             transaction.set_tags(transaction_tags)
 
             transaction.set_action(ActiveJobHelpers.action_name(job))
@@ -154,12 +151,25 @@ module Appsignal
 
         def self.transaction_tags_for(job)
           tags = {}
+
           queue = job["queue_name"]
           tags[:queue] = queue if queue
+
           priority = job["priority"]
           tags[:priority] = priority if priority
+
           executions = job["executions"]
           tags[:executions] = executions.to_i + 1 if executions
+
+          job_id = job["job_id"]
+          tags[:active_job_id] = job_id
+
+          provider_job_id = job["provider_job_id"]
+          tags[:provider_job_id] = provider_job_id if provider_job_id
+
+          request_id = provider_job_id || job_id
+          tags[:request_id] = request_id if request_id
+
           tags
         end
 

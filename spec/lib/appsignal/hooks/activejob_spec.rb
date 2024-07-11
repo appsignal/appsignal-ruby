@@ -126,6 +126,7 @@ if DependencyHelper.active_job_present?
       expect(transaction).to include_params([])
       expect(transaction).to include_tags(
         "active_job_id" => kind_of(String),
+        "request_id" => kind_of(String),
         "queue" => queue,
         "executions" => 1
       )
@@ -196,6 +197,7 @@ if DependencyHelper.active_job_present?
         expect(transaction).to include_params([])
         expect(transaction).to include_tags(
           "active_job_id" => kind_of(String),
+          "request_id" => kind_of(String),
           "queue" => queue,
           "executions" => 1
         )
@@ -335,6 +337,7 @@ if DependencyHelper.active_job_present?
         expect(transaction).to include_params([])
         expect(transaction).to include_tags(
           "active_job_id" => kind_of(String),
+          "request_id" => kind_of(String),
           "queue" => queue,
           "executions" => 1
         )
@@ -470,6 +473,7 @@ if DependencyHelper.active_job_present?
           )
           expect(transaction).to include_tags(
             "active_job_id" => kind_of(String),
+            "request_id" => kind_of(String),
             "queue" => "mailers",
             "executions" => 1
           )
@@ -488,6 +492,7 @@ if DependencyHelper.active_job_present?
           )
           expect(transaction).to include_tags(
             "active_job_id" => kind_of(String),
+            "request_id" => kind_of(String),
             "queue" => "mailers",
             "executions" => 1
           )
@@ -510,6 +515,7 @@ if DependencyHelper.active_job_present?
             )
             expect(transaction).to include_tags(
               "active_job_id" => kind_of(String),
+              "request_id" => kind_of(String),
               "queue" => "mailers",
               "executions" => 1
             )
@@ -549,6 +555,7 @@ if DependencyHelper.active_job_present?
           )
           expect(transaction).to include_tags(
             "active_job_id" => kind_of(String),
+            "request_id" => kind_of(String),
             "queue" => "mailers",
             "executions" => 1
           )
@@ -573,6 +580,7 @@ if DependencyHelper.active_job_present?
             )
             expect(transaction).to include_tags(
               "active_job_id" => kind_of(String),
+              "request_id" => kind_of(String),
               "queue" => "mailers",
               "executions" => 1
             )
@@ -599,6 +607,7 @@ if DependencyHelper.active_job_present?
               )
             expect(transaction).to include_tags(
               "active_job_id" => kind_of(String),
+              "request_id" => kind_of(String),
               "queue" => "mailers",
               "executions" => 1
             )
