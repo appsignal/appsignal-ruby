@@ -66,7 +66,7 @@ module Appsignal
       def call(_worker, item, _queue, &block)
         job_status = nil
         transaction = Appsignal::Transaction.create(
-          item["jid"],
+          SecureRandom.uuid,
           Appsignal::Transaction::BACKGROUND_JOB,
           Appsignal::Transaction::GenericRequest.new({})
         )
@@ -85,6 +85,7 @@ module Appsignal
           transaction.set_params_if_nil { parse_arguments(item) }
           queue_start = (item["enqueued_at"].to_f * 1000.0).to_i # Convert seconds to milliseconds
           transaction.set_queue_start(queue_start)
+          transaction.set_tags(:request_id => item["jid"])
           Appsignal::Transaction.complete_current! unless exception
 
           queue = item["queue"] || "unknown"
