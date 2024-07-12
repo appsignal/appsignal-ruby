@@ -5,6 +5,161 @@ module Appsignal
     module Instrumentation
       include Appsignal::Utils::StdoutAndLoggerMessage
 
+      # Monitor a block of code with AppSignal.
+      #
+      # This is a helper to create an AppSignal transaction, track any errors
+      # that may occur and complete the transaction.
+      #
+      # This helper is recommended to be used in Ruby scripts and parts of an
+      # app not already instrumented by AppSignal's automatic instrumentations.
+      #
+      # Use this helper in combination with our {.instrument} helper to track
+      # instrumentation events.
+      #
+      # If AppSignal is not active ({Appsignal.active?}) it will still execute
+      # the block, but not create a transaction for it.
+      #
+      # @example Instrument a block of code
+      #   Appsignal.monitor(
+      #     :namespace => "my_namespace",
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     # Some code
+      #   end
+      #
+      # @example Instrument a block of code using the default namespace
+      #   Appsignal.monitor(
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     # Some code
+      #   end
+      #
+      # @example Instrument a block of code with an instrumentation event
+      #   Appsignal.monitor(
+      #     :namespace => "my_namespace",
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     Appsignal.instrument("some_event.some_group") do
+      #       # Some code
+      #     end
+      #   end
+      #
+      # @example Set the action name in the monitor block
+      #   Appsignal.monitor(
+      #     :action => nil
+      #   ) do
+      #     # Some code
+      #
+      #     Appsignal.set_action("GET /resource/:id")
+      #   end
+      #
+      # @example Set the action name in the monitor block
+      #   Appsignal.monitor(
+      #     :action => :set_later # Explicit placeholder
+      #   ) do
+      #     # Some code
+      #
+      #     Appsignal.set_action("GET /resource/:id")
+      #   end
+      #
+      # @example Set custom metadata on the transaction
+      #   Appsignal.monitor(
+      #     :namespace => "my_namespace",
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     # Some code
+      #
+      #     Appsignal.set_tags(:tag1 => "value1", :tag2 => "value2")
+      #     Appsignal.set_params(:param1 => "value1", :param2 => "value2")
+      #   end
+      #
+      # @example Call monitor within monitor will do nothing
+      #   Appsignal.monitor(
+      #     :namespace => "my_namespace",
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     # This will _not_ update the namespace and action name
+      #     Appsignal.monitor(
+      #       :namespace => "my_other_namespace",
+      #       :action => "MyOtherClass#my_other_method"
+      #     ) do
+      #       # Some code
+      #
+      #       # The reported namespace will be "my_namespace"
+      #       # The reported action will be "MyClass#my_method"
+      #     end
+      #   end
+      #
+      # @param namespace [String/Symbol] The namespace to set on the new
+      #   transaction.
+      #   Defaults to the 'web' namespace.
+      #   This will not update the active transaction's namespace if
+      #   {.monitor} is called when another transaction is already active.
+      # @param action [String, Symbol, NilClass]
+      #   The action name for the transaction.
+      #   The action name is required to be set for the transaction to be
+      #   reported.
+      #   The argument can be set to `nil` or `:set_later` if the action is set
+      #   within the block with {#set_action}.
+      #   This will not update the active transaction's action if
+      #   {.monitor} is called when another transaction is already active.
+      # @yield The block to monitor.
+      # @raise [Exception] Any exception that occurs within the given block is
+      #   re-raised by this method.
+      # @return [Object] The value of the given block is returned.
+      # @since 3.11.0
+      def monitor(
+        action:, namespace: nil
+      )
+        return yield unless active?
+
+        has_parent_transaction = Appsignal::Transaction.current?
+        if has_parent_transaction
+          callers = caller
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "An active transaction around this 'Appsignal.monitor' call. " \
+              "Calling `Appsignal.monitor` in another `Appsignal.monitor` block has no effect. " \
+              "The namespace and action are not updated for the active transaction." \
+              "Did you mean to use `Appsignal.instrument`? " \
+              "Update the 'Appsignal.monitor' call in: #{callers.first}"
+          return yield if block_given?
+
+          return
+        end
+
+        transaction =
+          if has_parent_transaction
+            Appsignal::Transaction.current
+          else
+            Appsignal::Transaction.create(namespace || Appsignal::Transaction::HTTP_REQUEST)
+          end
+
+        begin
+          yield if block_given?
+        rescue Exception => error # rubocop:disable Lint/RescueException
+          transaction.set_error(error)
+          raise error
+        ensure
+          transaction.set_action_if_nil(action.to_s) if action && action != :set_later
+          Appsignal::Transaction.complete_current!
+        end
+      end
+
+      # Instrument a block of code and stop AppSignal.
+      #
+      # Useful for cases such as one-off scripts where there is no long running
+      # process active and the data needs to be sent after the process exists.
+      #
+      # Acts the same way as {.monitor}. See that method for more
+      # documentation.
+      #
+      # @see monitor
+      def monitor_and_stop(action:, namespace: nil)
+        monitor(:namespace => namespace, :action => action)
+      ensure
+        Appsignal.stop("monitor_and_stop")
+      end
+
       # Creates an AppSignal transaction for the given block.
       #
       # If AppSignal is not {Appsignal.active?} it will still execute the
@@ -818,14 +973,11 @@ module Appsignal
         name,
         title = nil,
         body = nil,
-        body_format = Appsignal::EventFormatter::DEFAULT
+        body_format = Appsignal::EventFormatter::DEFAULT,
+        &block
       )
-        Appsignal::Transaction.current.start_event
-        yield if block_given?
-      ensure
-        Appsignal::Transaction
-          .current
-          .finish_event(name, title, body, body_format)
+        Appsignal::Transaction.current
+          .instrument(name, title, body, body_format, &block)
       end
 
       # Instrumentation helper for SQL queries.
