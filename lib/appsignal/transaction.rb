@@ -24,6 +24,9 @@ module Appsignal
     class << self
       # Create a new transaction and set it as the currently active
       # transaction.
+      #
+      # @param id_or_namespace [String] Namespace of the to be created transaction.
+      # @return [Transaction]
       def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
         if arg_namespace
           id = id_or_namespace
@@ -131,6 +134,8 @@ module Appsignal
 
     # Use {.create} to create new transactions.
     #
+    # @param transaction_id [String] ID of the to be created transaction.
+    # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @api private
     def initialize(transaction_id, namespace, request = nil, options = {})
@@ -171,14 +176,17 @@ module Appsignal
       @ext.complete
     end
 
+    # @api private
     def pause!
       @paused = true
     end
 
+    # @api private
     def resume!
       @paused = false
     end
 
+    # @api private
     def paused?
       @paused == true
     end
@@ -203,6 +211,7 @@ module Appsignal
       @store[key]
     end
 
+    # @api private
     def params
       parameters = @params || request_params
 
@@ -471,6 +480,7 @@ module Appsignal
       @ext.set_namespace(namespace)
     end
 
+    # @deprecated Use the {#set_action} helper.
     # @api private
     def set_http_or_background_action(from = request.params)
       return unless from
@@ -527,6 +537,7 @@ module Appsignal
       set_queue_start(start)
     end
 
+    # @api private
     def set_metadata(key, value)
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
@@ -610,12 +621,16 @@ module Appsignal
     end
     alias_method :add_exception, :set_error
 
+    # @see Helpers::Instrumentation#instrument
+    # @api private
     def start_event
       return if paused?
 
       @ext.start_event(0)
     end
 
+    # @see Helpers::Instrumentation#instrument
+    # @api private
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
@@ -628,6 +643,8 @@ module Appsignal
       )
     end
 
+    # @see Helpers::Instrumentation#instrument
+    # @api private
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
@@ -641,6 +658,7 @@ module Appsignal
       )
     end
 
+    # @see Helpers::Instrumentation#instrument
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
       yield if block_given?
@@ -684,7 +702,6 @@ module Appsignal
 
     private
 
-    # @api private
     def _set_sample_data(key, data)
       return unless key && data
 
@@ -712,7 +729,6 @@ module Appsignal
       end
     end
 
-    # @api private
     def _sample_data
       {
         :params => sanitized_params,

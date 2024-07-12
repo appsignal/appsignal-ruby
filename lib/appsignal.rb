@@ -163,10 +163,12 @@ module Appsignal
       Appsignal::Extension.start
     end
 
+    # @api private
     def get_server_state(key)
       Appsignal::Extension.get_server_state(key)
     end
 
+    # @api private
     def in_memory_logger
       @in_memory_logger ||=
         Appsignal::Utils::IntegrationMemoryLogger.new.tap do |l|
@@ -174,6 +176,7 @@ module Appsignal
         end
     end
 
+    # @api private
     def internal_logger
       @internal_logger ||= in_memory_logger
     end
