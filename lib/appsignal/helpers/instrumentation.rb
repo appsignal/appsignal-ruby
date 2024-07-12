@@ -213,6 +213,16 @@ module Appsignal
       # @return [Object] the value of the given block is returned.
       # @since 0.10.0
       def monitor_transaction(name, env = {}, &block)
+        stdout_and_logger_warning \
+          "The `Appsignal.monitor_transaction` helper is deprecated. " \
+            "Please use `Appsignal.monitor` and `Appsignal.instrument` instead. " \
+            "Read our instrumentation documentation: " \
+            "https://docs.appsignal.com/ruby/instrumentation/instrumentation.html"
+        _monitor_transaction(name, env, &block)
+      end
+
+      # @api private
+      def _monitor_transaction(name, env = {}, &block)
         # Always verify input, even when Appsignal is not active.
         # This makes it more likely invalid arguments get flagged in test/dev
         # environments.
@@ -258,6 +268,11 @@ module Appsignal
       #
       # @see monitor_transaction
       def monitor_single_transaction(name, env = {}, &block)
+        stdout_and_logger_warning \
+          "The `Appsignal.monitor_single_transaction` helper is deprecated. " \
+            "Please use `Appsignal.monitor_and_stop` and `Appsignal.instrument` instead. " \
+            "Read our instrumentation documentation: " \
+            "https://docs.appsignal.com/ruby/instrumentation/instrumentation.html"
         monitor_transaction(name, env, &block)
       ensure
         stop("monitor_single_transaction")
