@@ -361,12 +361,12 @@ describe Appsignal do
     describe ".monitor" do
       it "creates a transaction" do
         expect do
-          Appsignal.monitor
+          Appsignal.monitor(:action => "MyAction")
         end.to(change { created_transactions.count }.by(1))
 
         transaction = last_transaction
         expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction).to_not have_action
+        expect(transaction).to have_action("MyAction")
         expect(transaction).to_not have_error
         expect(transaction).to_not include_events
         expect(transaction).to_not have_queue_start
@@ -374,25 +374,31 @@ describe Appsignal do
       end
 
       it "returns the block's return value" do
-        expect(Appsignal.monitor { :return_value }).to eq(:return_value)
+        expect(Appsignal.monitor(:action => nil) { :return_value }).to eq(:return_value)
       end
 
       it "sets a custom namespace via the namespace argument" do
-        Appsignal.monitor(:namespace => "custom")
+        Appsignal.monitor(:namespace => "custom", :action => nil)
 
         expect(last_transaction).to have_namespace("custom")
       end
 
       it "doesn't overwrite custom namespace set in the block" do
-        Appsignal.monitor(:namespace => "custom") do
+        Appsignal.monitor(:namespace => "custom", :action => nil) do
           Appsignal.set_namespace("more custom")
         end
 
         expect(last_transaction).to have_namespace("more custom")
       end
 
-      it "sets a custom action via the action argument" do
+      it "sets the action via the action argument using a string" do
         Appsignal.monitor(:action => "custom")
+
+        expect(last_transaction).to have_action("custom")
+      end
+
+      it "sets the action via the action argument using a symbol" do
+        Appsignal.monitor(:action => :custom)
 
         expect(last_transaction).to have_action("custom")
       end
@@ -405,9 +411,21 @@ describe Appsignal do
         expect(last_transaction).to have_action("more custom")
       end
 
+      it "doesn't set the action when value is nil" do
+        Appsignal.monitor(:action => nil)
+
+        expect(last_transaction).to_not have_action
+      end
+
+      it "doesn't set the action when value is :set_later" do
+        Appsignal.monitor(:action => :set_later)
+
+        expect(last_transaction).to_not have_action
+      end
+
       it "reports exceptions that occur in the block" do
         expect do
-          Appsignal.monitor do
+          Appsignal.monitor :action => nil do
             raise ExampleException, "error message"
           end
         end.to raise_error(ExampleException, "error message")
@@ -430,7 +448,7 @@ describe Appsignal do
             logs =
               capture_logs do
                 capture_std_streams(std_stream, err_stream) do
-                  Appsignal.monitor
+                  Appsignal.monitor(:action => nil)
                 end
               end
           end.to_not(change { created_transactions.count })
@@ -441,7 +459,7 @@ describe Appsignal do
         end
 
         it "does not overwrite the parent transaction's namespace" do
-          silence { Appsignal.monitor(:namespace => "custom") }
+          silence { Appsignal.monitor(:namespace => "custom", :action => nil) }
 
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
         end
@@ -453,7 +471,7 @@ describe Appsignal do
         end
 
         it "doesn't complete the parent transaction" do
-          silence { Appsignal.monitor }
+          silence { Appsignal.monitor(:action => nil) }
 
           expect(transaction).to_not be_completed
         end

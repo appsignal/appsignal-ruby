@@ -27,6 +27,13 @@ module Appsignal
       #     # Some code
       #   end
       #
+      # @example Instrument a block of code using the default namespace
+      #   Appsignal.monitor(
+      #     :action => "MyClass#my_method"
+      #   ) do
+      #     # Some code
+      #   end
+      #
       # @example Instrument a block of code with an instrumentation event
       #   Appsignal.monitor(
       #     :namespace => "my_namespace",
@@ -39,7 +46,16 @@ module Appsignal
       #
       # @example Set the action name in the monitor block
       #   Appsignal.monitor(
-      #     :namespace => "my_namespace",
+      #     :action => nil
+      #   ) do
+      #     # Some code
+      #
+      #     Appsignal.set_action("GET /resource/:id")
+      #   end
+      #
+      # @example Set the action name in the monitor block
+      #   Appsignal.monitor(
+      #     :action => :set_later # Explicit placeholder
       #   ) do
       #     # Some code
       #
@@ -57,7 +73,7 @@ module Appsignal
       #     Appsignal.set_params(:param1 => "value1", :param2 => "value2")
       #   end
       #
-      # @example Call monitor within monitor (not recommended)
+      # @example Call monitor within monitor will do nothing
       #   Appsignal.monitor(
       #     :namespace => "my_namespace",
       #     :action => "MyClass#my_method"
@@ -79,11 +95,12 @@ module Appsignal
       #   Defaults to the 'web' namespace.
       #   This will not update the active transaction's namespace if
       #   {.monitor} is called when another transaction is already active.
-      # @param action [String/Symbol] The action name for the transaction.
+      # @param action [String, Symbol, NilClass]
+      #   The action name for the transaction.
       #   The action name is required to be set for the transaction to be
       #   reported.
-      #   The argument can be omitted only if the action is set within the
-      #   block with {#set_action}.
+      #   The argument can be set to `nil` or `:set_later` if the action is set
+      #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
       # @yield The block to monitor.
@@ -92,8 +109,7 @@ module Appsignal
       # @return [Object] The value of the given block is returned.
       # @since 3.11.0
       def monitor(
-        namespace: nil,
-        action: nil
+        action:, namespace: nil
       )
         return yield unless active?
 
@@ -124,7 +140,7 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          transaction.set_action_if_nil(action)
+          transaction.set_action_if_nil(action.to_s) if action && action != :set_later
           Appsignal::Transaction.complete_current!
         end
       end
@@ -138,7 +154,7 @@ module Appsignal
       # documentation.
       #
       # @see monitor
-      def monitor_and_stop(namespace: nil, action: nil)
+      def monitor_and_stop(action:, namespace: nil)
         monitor(:namespace => namespace, :action => action)
       ensure
         Appsignal.stop("monitor_and_stop")
