@@ -493,6 +493,43 @@ describe Appsignal do
     end
 
     describe ".monitor_transaction" do
+      it "prints a deprecation warning" do
+        err_stream = std_stream
+        capture_std_streams(std_stream, err_stream) do
+          Appsignal.monitor_transaction(
+            "perform_job.something",
+            :class => "BackgroundJob",
+            :method => "perform"
+          ) do
+            :return_value
+          end
+        end
+
+        expect(err_stream.read).to include(
+          "appsignal WARNING: The `Appsignal.monitor_transaction` helper is deprecated."
+        )
+      end
+
+      it "logs a deprecation warning" do
+        logs =
+          capture_logs do
+            silence do
+              Appsignal.monitor_transaction(
+                "perform_job.something",
+                :class => "BackgroundJob",
+                :method => "perform"
+              ) do
+                :return_value
+              end
+            end
+          end
+
+        expect(logs).to contains_log(
+          :warn,
+          "The `Appsignal.monitor_transaction` helper is deprecated."
+        )
+      end
+
       context "with a successful call" do
         it "instruments and completes for a background job" do
           return_value = nil
@@ -582,6 +619,43 @@ describe Appsignal do
     end
 
     describe ".monitor_single_transaction" do
+      it "prints a deprecation warning" do
+        err_stream = std_stream
+        capture_std_streams(std_stream, err_stream) do
+          Appsignal.monitor_single_transaction(
+            "perform_job.something",
+            :class => "BackgroundJob",
+            :method => "perform"
+          ) do
+            :return_value
+          end
+        end
+
+        expect(err_stream.read).to include(
+          "appsignal WARNING: The `Appsignal.monitor_single_transaction` helper is deprecated."
+        )
+      end
+
+      it "logs a deprecation warning" do
+        logs =
+          capture_logs do
+            silence do
+              Appsignal.monitor_single_transaction(
+                "perform_job.something",
+                :class => "BackgroundJob",
+                :method => "perform"
+              ) do
+                :return_value
+              end
+            end
+          end
+
+        expect(logs).to contains_log(
+          :warn,
+          "The `Appsignal.monitor_single_transaction` helper is deprecated."
+        )
+      end
+
       context "with a successful call" do
         it "calls monitor_transaction and Appsignal.stop" do
           expect(Appsignal).to receive(:stop)
