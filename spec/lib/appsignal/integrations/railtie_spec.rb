@@ -6,59 +6,121 @@ if DependencyHelper.rails_present?
 
     after { clear_rails_error_reporter! }
 
-    context "after initializing the app" do
-      it "should call initialize_appsignal" do
-        expect(Appsignal::Integrations::Railtie).to receive(:initialize_appsignal)
+    module RailtieHelper
+      def self.ensure_initialize!
+        return if @initialized
 
-        MyApp::Application.config.root = project_fixture_path
+        MyApp::Application.config.root = ConfigHelpers.project_fixture_path
         MyApp::Application.initialize!
+        @initialized = true
       end
     end
 
-    describe "#initialize_appsignal" do
+    def expect_middleware_to_match(middleware, klass, args)
+      expect(middleware.klass).to eq(klass)
+      expect(middleware.args).to match(args)
+    end
+
+    describe "on Rails app initialize!" do
+      it "starts AppSignal by calling its hooks" do
+        expect(Appsignal::Integrations::Railtie).to receive(:on_load).and_call_original
+        expect(Appsignal::Integrations::Railtie).to receive(:after_initialize).and_call_original
+
+        RailtieHelper.ensure_initialize!
+      end
+    end
+
+    describe "initializer" do
       let(:app) { MyApp::Application.new }
-
-      describe ".internal_logger" do
-        before  { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-        subject { Appsignal.internal_logger }
-
-        it { is_expected.to be_a Logger }
+      before do
+        RailtieHelper.ensure_initialize!
+        Appsignal.config = nil
       end
 
-      describe ".config" do
-        let(:config) { Appsignal.config }
+      def initialize_railtie(event)
+        MyApp::Application.config.root = project_fixture_path
+        case event
+        when :on_load
+          described_class.on_load(app)
+        when :after_initialize
+          described_class.after_initialize(app)
+        else
+          raise "Unsupported test event '#{event}'"
+        end
+      end
 
-        describe "basic configuration" do
-          before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
+      shared_examples "integrates with Rails" do
+        it "starts AppSignal" do
+          initialize_railtie(event)
 
-          it { expect(config).to be_a(Appsignal::Config) }
-
-          it "sets the root_path" do
-            expect(config.root_path).to eq Pathname.new(project_fixture_path)
-          end
-
-          it "sets the detected environment" do
-            expect(config.env).to eq "test"
-          end
-
-          it "loads the app name" do
-            expect(config[:name]).to eq "TestApp"
-          end
-
-          it "sets the log_path based on the root_path" do
-            expect(config[:log_path]).to eq Pathname.new(File.join(project_fixture_path, "log"))
-          end
+          expect(Appsignal.active?).to be_truthy
         end
 
-        context "with APPSIGNAL_APP_ENV ENV var set" do
-          before do
-            ENV["APPSIGNAL_APP_ENV"] = "env_test"
-            Appsignal::Integrations::Railtie.initialize_appsignal(app)
-          end
+        it "doesn't overwrite the config if a config is already present " do
+          Appsignal.config = Appsignal::Config.new(
+            Dir.pwd,
+            "my_env",
+            :some_config => "some value"
+          )
+          initialize_railtie(event)
 
-          it "uses the environment variable value as the environment" do
-            expect(config.env).to eq "env_test"
-          end
+          expect(Appsignal.config.env).to eq("my_env")
+          expect(Appsignal.config.root_path).to eq(Dir.pwd)
+          expect(Appsignal.config[:some_config]).to eq("some value")
+        end
+
+        it "sets the detected environment" do
+          initialize_railtie(event)
+
+          expect(Appsignal.config.env).to eq("test")
+        end
+
+        it "uses the APPSIGNAL_APP_ENV environment variable value as the environment" do
+          ENV["APPSIGNAL_APP_ENV"] = "env_test"
+          initialize_railtie(event)
+
+          expect(Appsignal.config.env).to eq "env_test"
+        end
+
+        it "sets the Rails app path as root_path" do
+          initialize_railtie(event)
+
+          expect(Appsignal.config.root_path).to eq(Pathname.new(project_fixture_path))
+        end
+
+        it "loads the Rails app name in the initial config" do
+          initialize_railtie(event)
+
+          expect(Appsignal.config.initial_config[:name]).to eq "MyApp"
+        end
+
+        it "loads the app name from the project's appsignal.yml file" do
+          initialize_railtie(event)
+
+          expect(Appsignal.config[:name]).to eq "TestApp"
+        end
+
+        it "sets the log_path based on the root_path" do
+          initialize_railtie(event)
+
+          expect(Appsignal.config[:log_path])
+            .to eq(Pathname.new(File.join(project_fixture_path, "log")))
+        end
+
+        it "adds the middleware" do
+          initialize_railtie(event)
+
+          middlewares = MyApp::Application.middleware
+          expect_middleware_to_match(
+            middlewares.find { |m| m.klass == ::Rack::Events },
+            ::Rack::Events,
+            [[instance_of(Appsignal::Rack::EventHandler)]]
+          )
+          expect_middleware_to_match(
+            middlewares.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },
+            Appsignal::Rack::RailsInstrumentation,
+            []
+          )
         end
 
         if Rails.respond_to?(:error)
@@ -82,7 +144,7 @@ if DependencyHelper.rails_present?
 
             context "when enable_rails_error_reporter is enabled" do
               it "subscribes to the error reporter" do
-                Appsignal::Integrations::Railtie.initialize_appsignal(app)
+                initialize_railtie(event)
 
                 expect(error_reporter.subscribers)
                   .to eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
@@ -92,7 +154,7 @@ if DependencyHelper.rails_present?
             context "when enable_rails_error_reporter is disabled" do
               it "does not subscribe to the error reporter" do
                 ENV["APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER"] = "false"
-                Appsignal::Integrations::Railtie.initialize_appsignal(app)
+                initialize_railtie(event)
 
                 expect(error_reporter.subscribers)
                   .to_not eq([Appsignal::Integrations::RailsErrorReporterSubscriber])
@@ -102,215 +164,237 @@ if DependencyHelper.rails_present?
         else
           context "when Rails does not listen to `error`" do
             it "does not error trying to subscribe to the error reporter" do
-              Appsignal::Integrations::Railtie.initialize_appsignal(app)
+              initialize_railtie(event)
             end
           end
         end
       end
 
-      describe ".initial_config" do
-        before { Appsignal::Integrations::Railtie.initialize_appsignal(app) }
-        let(:config) { Appsignal.config.initial_config }
+      describe ".on_load" do
+        let(:event) { :on_load }
 
-        it "returns the initial config" do
-          expect(config[:name]).to eq "MyApp"
+        context "when start_at == :on_load" do
+          include_examples "integrates with Rails"
+        end
+
+        context "when start_at == :after_initialize" do
+          it "does not start AppSignal" do
+            app.config.appsignal.start_at = :after_initialize
+            initialize_railtie(event)
+
+            expect(Appsignal.active?).to be_falsy
+            expect(Appsignal.config).to be_nil
+          end
         end
       end
 
-      describe "Rails listener middleware" do
-        it "adds the Rails listener middleware" do
-          expect(app.middleware).to receive(:insert_after).with(
-            ActionDispatch::DebugExceptions,
-            Appsignal::Rack::RailsInstrumentation
-          )
-          Appsignal::Integrations::Railtie.initialize_appsignal(app)
+      describe ".after_initialize" do
+        let(:event) { :after_initialize }
+
+        context "when start_at == :after_initialize" do
+          before do
+            app.config.appsignal.start_at = :after_initialize
+          end
+
+          include_examples "integrates with Rails"
+        end
+
+        context "when start_at == :on_load" do
+          it "does not start AppSignal" do
+            app.config.appsignal.start_at = :on_load
+            initialize_railtie(event)
+
+            expect(Appsignal.active?).to be_falsy
+            expect(Appsignal.config).to be_nil
+          end
         end
       end
+    end
 
-      if Rails.respond_to?(:error)
-        describe "Rails error reporter" do
-          before { start_agent }
-          around { |example| keep_transactions { example.run } }
+    if Rails.respond_to?(:error)
+      describe "Rails error reporter" do
+        before { start_agent }
+        around { |example| keep_transactions { example.run } }
 
-          context "when error is not handled (reraises the error)" do
-            it "does nothing" do
+        context "when error is not handled (reraises the error)" do
+          it "does nothing" do
+            with_rails_error_reporter do
+              expect do
+                Rails.error.record { raise ExampleStandardError, "error message" }
+              end.to raise_error(ExampleStandardError, "error message")
+            end
+
+            expect(created_transactions).to be_empty
+          end
+        end
+
+        context "when error is handled (not reraised)" do
+          context "when a transaction is active" do
+            it "duplicates the transaction namespace, action and tags" do
+              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
+              current_transaction.set_tags(
+                :duplicated_tag => "duplicated value"
+              )
+
               with_rails_error_reporter do
-                expect do
-                  Rails.error.record { raise ExampleStandardError, "error message" }
-                end.to raise_error(ExampleStandardError, "error message")
-              end
+                with_current_transaction current_transaction do
+                  Rails.error.handle { raise ExampleStandardError, "error message" }
 
-              expect(created_transactions).to be_empty
+                  transaction = last_transaction
+                  expect(transaction).to have_namespace("custom")
+                  expect(transaction).to have_action("CustomAction")
+                  expect(transaction).to have_error("ExampleStandardError", "error message")
+                  expect(transaction).to include_tags(
+                    "duplicated_tag" => "duplicated value",
+                    "severity" => "warning"
+                  )
+                end
+              end
             end
-          end
 
-          context "when error is handled (not reraised)" do
-            context "when a transaction is active" do
-              it "duplicates the transaction namespace, action and tags" do
-                current_transaction = http_request_transaction
-                current_transaction.set_namespace "custom"
-                current_transaction.set_action "CustomAction"
-                current_transaction.set_tags(
-                  :duplicated_tag => "duplicated value"
-                )
+            it "overwrites duplicated tags with tags from context" do
+              current_transaction = http_request_transaction
+              current_transaction.set_tags(:tag1 => "duplicated value")
 
-                with_rails_error_reporter do
-                  with_current_transaction current_transaction do
-                    Rails.error.handle { raise ExampleStandardError, "error message" }
+              with_rails_error_reporter do
+                with_current_transaction current_transaction do
+                  given_context = { :tag1 => "value1", :tag2 => "value2" }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
 
-                    transaction = last_transaction
-                    expect(transaction).to have_namespace("custom")
-                    expect(transaction).to have_action("CustomAction")
-                    expect(transaction).to have_error("ExampleStandardError", "error message")
-                    expect(transaction).to include_tags(
-                      "duplicated_tag" => "duplicated value",
-                      "severity" => "warning"
-                    )
-                  end
+                  expect(last_transaction).to include_tags(
+                    "tag1" => "value1",
+                    "tag2" => "value2",
+                    "severity" => "warning"
+                  )
                 end
               end
+            end
 
-              it "overwrites duplicated tags with tags from context" do
-                current_transaction = http_request_transaction
-                current_transaction.set_tags(:tag1 => "duplicated value")
+            it "sends tags stored in :appsignal -> :custom_data as custom data" do
+              current_transaction = http_request_transaction
 
-                with_rails_error_reporter do
-                  with_current_transaction current_transaction do
-                    given_context = { :tag1 => "value1", :tag2 => "value2" }
-                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-
-                    expect(last_transaction).to include_tags(
-                      "tag1" => "value1",
-                      "tag2" => "value2",
-                      "severity" => "warning"
-                    )
-                  end
-                end
-              end
-
-              it "sends tags stored in :appsignal -> :custom_data as custom data" do
-                current_transaction = http_request_transaction
-
-                with_rails_error_reporter do
-                  with_current_transaction current_transaction do
-                    given_context = {
-                      :appsignal => {
-                        :custom_data => {
-                          :array => [1, 2],
-                          :hash => { :one => 1, :two => 2 }
-                        }
+              with_rails_error_reporter do
+                with_current_transaction current_transaction do
+                  given_context = {
+                    :appsignal => {
+                      :custom_data => {
+                        :array => [1, 2],
+                        :hash => { :one => 1, :two => 2 }
                       }
                     }
-                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-
-                    transaction = last_transaction
-                    expect(transaction).to include_custom_data(
-                      "array" => [1, 2],
-                      "hash" => { "one" => 1, "two" => 2 }
-                    )
-                  end
-                end
-              end
-
-              it "overwrites duplicated namespace and action with custom from context" do
-                current_transaction = http_request_transaction
-                current_transaction.set_namespace "custom"
-                current_transaction.set_action "CustomAction"
-
-                with_rails_error_reporter do
-                  with_current_transaction current_transaction do
-                    given_context = {
-                      :appsignal => { :namespace => "context", :action => "ContextAction" }
-                    }
-                    Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-
-                    transaction = last_transaction
-                    expect(transaction).to have_namespace("context")
-                    expect(transaction).to have_action("ContextAction")
-                  end
-                end
-              end
-            end
-
-            context "when no transaction is active" do
-              class ExampleRailsRequestMock
-                def path
-                  "path"
-                end
-
-                def method
-                  "GET"
-                end
-
-                def filtered_parameters
-                  { :user_id => 123, :password => "[FILTERED]" }
-                end
-              end
-
-              class ExampleRailsControllerMock
-                def action_name
-                  "index"
-                end
-
-                def request
-                  @request ||= ExampleRailsRequestMock.new
-                end
-              end
-
-              class ExampleRailsJobMock
-              end
-
-              class ExampleRailsMailerMock < ActionMailer::MailDeliveryJob
-                def arguments
-                  ["ExampleRailsMailerMock", "send_mail"]
-                end
-              end
-
-              before do
-                clear_current_transaction!
-              end
-
-              it "fetches the action, path and method from the controller in the context" do
-                # The controller key is set by Rails when raised in a controller
-                given_context = { :controller => ExampleRailsControllerMock.new }
-                with_rails_error_reporter do
+                  }
                   Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+
+                  transaction = last_transaction
+                  expect(transaction).to include_custom_data(
+                    "array" => [1, 2],
+                    "hash" => { "one" => 1, "two" => 2 }
+                  )
                 end
-
-                transaction = last_transaction
-                expect(transaction).to have_action("ExampleRailsControllerMock#index")
-                expect(transaction).to include_metadata("path" => "path", "method" => "GET")
-                expect(transaction).to include_params("user_id" => 123, "password" => "[FILTERED]")
-              end
-
-              it "sets no action if no execution context is present" do
-                # The controller key is set by Rails when raised in a controller
-                with_rails_error_reporter do
-                  Rails.error.handle { raise ExampleStandardError }
-                end
-
-                expect(last_transaction).to_not have_action
               end
             end
 
-            it "sets the error context as tags" do
-              given_context = {
-                :controller => ExampleRailsControllerMock.new, # Not set as tag
-                :job => ExampleRailsJobMock.new, # Not set as tag
-                :appsignal => { :something => "not used" }, # Not set as tag
-                :tag1 => "value1",
-                :tag2 => "value2"
-              }
+            it "overwrites duplicated namespace and action with custom from context" do
+              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
+
+              with_rails_error_reporter do
+                with_current_transaction current_transaction do
+                  given_context = {
+                    :appsignal => { :namespace => "context", :action => "ContextAction" }
+                  }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+
+                  transaction = last_transaction
+                  expect(transaction).to have_namespace("context")
+                  expect(transaction).to have_action("ContextAction")
+                end
+              end
+            end
+          end
+
+          context "when no transaction is active" do
+            class ExampleRailsRequestMock
+              def path
+                "path"
+              end
+
+              def method
+                "GET"
+              end
+
+              def filtered_parameters
+                { :user_id => 123, :password => "[FILTERED]" }
+              end
+            end
+
+            class ExampleRailsControllerMock
+              def action_name
+                "index"
+              end
+
+              def request
+                @request ||= ExampleRailsRequestMock.new
+              end
+            end
+
+            class ExampleRailsJobMock
+            end
+
+            class ExampleRailsMailerMock < ActionMailer::MailDeliveryJob
+              def arguments
+                ["ExampleRailsMailerMock", "send_mail"]
+              end
+            end
+
+            before do
+              clear_current_transaction!
+            end
+
+            it "fetches the action, path and method from the controller in the context" do
+              # The controller key is set by Rails when raised in a controller
+              given_context = { :controller => ExampleRailsControllerMock.new }
               with_rails_error_reporter do
                 Rails.error.handle(:context => given_context) { raise ExampleStandardError }
               end
 
-              expect(last_transaction).to include_tags(
-                "tag1" => "value1",
-                "tag2" => "value2",
-                "severity" => "warning"
-              )
+              transaction = last_transaction
+              expect(transaction).to have_action("ExampleRailsControllerMock#index")
+              expect(transaction).to include_metadata("path" => "path", "method" => "GET")
+              expect(transaction).to include_params("user_id" => 123,
+                "password" => "[FILTERED]")
             end
+
+            it "sets no action if no execution context is present" do
+              # The controller key is set by Rails when raised in a controller
+              with_rails_error_reporter do
+                Rails.error.handle { raise ExampleStandardError }
+              end
+
+              expect(last_transaction).to_not have_action
+            end
+          end
+
+          it "sets the error context as tags" do
+            given_context = {
+              :controller => ExampleRailsControllerMock.new, # Not set as tag
+              :job => ExampleRailsJobMock.new, # Not set as tag
+              :appsignal => { :something => "not used" }, # Not set as tag
+              :tag1 => "value1",
+              :tag2 => "value2"
+            }
+            with_rails_error_reporter do
+              Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+            end
+
+            expect(last_transaction).to include_tags(
+              "tag1" => "value1",
+              "tag2" => "value2",
+              "severity" => "warning"
+            )
           end
         end
       end

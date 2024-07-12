@@ -9,23 +9,49 @@ module Appsignal
   module Integrations
     # @api private
     class Railtie < ::Rails::Railtie
+      config.appsignal = ActiveSupport::OrderedOptions.new
+      config.appsignal.start_at = :on_load
+
+      # Run after the Rails framework is loaded
       initializer "appsignal.configure_rails_initialization" do |app|
-        Appsignal::Integrations::Railtie.initialize_appsignal(app)
+        Appsignal::Integrations::Railtie.on_load(app)
+      end
+
+      # Run after the Rails app's initializers are run
+      config.after_initialize do |app|
+        Appsignal::Integrations::Railtie.after_initialize(app)
       end
 
       console do
         Appsignal::Probes.stop
       end
 
-      def self.initialize_appsignal(app)
-        # Load config
-        Appsignal.config = Appsignal::Config.new(
-          Rails.root,
-          Rails.env,
-          :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
-          :log_path => Rails.root.join("log")
-        )
+      def self.on_load(app)
+        Appsignal::Integrations::Railtie.add_instrumentation_middleware(app)
 
+        return unless app.config.appsignal.start_at == :on_load
+
+        Appsignal::Integrations::Railtie.start
+      end
+
+      def self.after_initialize(app)
+        Appsignal::Integrations::Railtie.start if app.config.appsignal.start_at == :after_initialize
+      end
+
+      def self.start
+        unless Appsignal.config
+          Appsignal.config = Appsignal::Config.new(
+            Rails.root,
+            Rails.env,
+            :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
+            :log_path => Rails.root.join("log")
+          )
+        end
+        Appsignal.start
+        initialize_error_reporter
+      end
+
+      def self.add_instrumentation_middleware(app)
         app.middleware.insert(
           0,
           ::Rack::Events,
@@ -35,10 +61,6 @@ module Appsignal
           ActionDispatch::DebugExceptions,
           Appsignal::Rack::RailsInstrumentation
         )
-
-        Appsignal.start
-
-        initialize_error_reporter
       end
 
       def self.initialize_error_reporter
