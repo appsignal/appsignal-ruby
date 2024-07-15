@@ -28,15 +28,7 @@ module Appsignal
       # @param id_or_namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
       def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
-        if arg_namespace
-          id = id_or_namespace
-          namespace = arg_namespace
-        else
-          id = SecureRandom.uuid
-          namespace = id_or_namespace
-        end
-
-        if id
+        if id_or_namespace && arg_namespace
           Appsignal.internal_logger.warn(
             "Appsignal::Transaction.create: " \
               "A new Transaction is created using the transaction ID argument. " \
@@ -66,6 +58,13 @@ module Appsignal
               "The options argument is deprecated without replacement."
           )
           Thread.current[:appsignal_transaction] = nil
+        end
+        if arg_namespace
+          id = id_or_namespace
+          namespace = arg_namespace
+        else
+          id = SecureRandom.uuid
+          namespace = id_or_namespace
         end
 
         # Check if we already have a running transaction
