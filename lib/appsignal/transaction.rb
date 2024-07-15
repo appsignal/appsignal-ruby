@@ -29,14 +29,14 @@ module Appsignal
       # @return [Transaction]
       def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
         if id_or_namespace && arg_namespace
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A new Transaction is created using the transaction ID argument. " \
               "This argument is deprecated without replacement."
           )
         end
         if arg_namespace
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the namespace argument. " \
               "Specify the namespace as the first argument to the 'create' " \
@@ -44,7 +44,7 @@ module Appsignal
           )
         end
         if request
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the request argument. " \
               "This argument is deprecated. Please use the `Appsignal.set_*` helpers instead."
@@ -52,7 +52,7 @@ module Appsignal
         end
         # Allow middleware to force a new transaction
         if options[:force]
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the `:force => true` option argument. " \
               "The options argument is deprecated without replacement."
