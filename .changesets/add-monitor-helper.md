@@ -30,3 +30,5 @@ end
 ```
 
 The `Appsignal.monitor_and_stop` helper can be used in the same scenarios as the `Appsignal.monitor_single_transaction` helper is used. One-off Ruby scripts that are not part of a long running process.
+
+Read our [instrumentation documentation](https://docs.appsignal.com/ruby/instrumentation/background-jobs.html) for more information about using the`Appsignal.monitor` helper.

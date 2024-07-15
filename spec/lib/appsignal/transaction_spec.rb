@@ -80,6 +80,36 @@ describe Appsignal::Transaction do
               "A Transaction is created using the `:force => true` option argument. "
           )
         end
+
+        it "prints deprecation warnings" do
+          err_stream = std_stream
+          capture_std_streams(std_stream, err_stream) do
+            legacy_create_transaction(
+              :id => "mock-id",
+              :namespace => "my_namespace",
+              :request => Appsignal::Transaction::InternalGenericRequest.new({}),
+              :options => { :force => true }
+            )
+          end
+
+          stderr = err_stream.read
+          expect(stderr).to include(
+            "appsignal WARNING: Appsignal::Transaction.create: " \
+              "A new Transaction is created using the transaction ID argument."
+          )
+          expect(stderr).to include(
+            "appsignal WARNING: Appsignal::Transaction.create: " \
+              "A Transaction is created using the namespace argument."
+          )
+          expect(stderr).to include(
+            "appsignal WARNING: Appsignal::Transaction.create: " \
+              "A Transaction is created using the request argument."
+          )
+          expect(stderr).to include(
+            "appsignal WARNING: Appsignal::Transaction.create: " \
+              "A Transaction is created using the `:force => true` option argument. "
+          )
+        end
       end
     end
 

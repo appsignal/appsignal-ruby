@@ -28,23 +28,15 @@ module Appsignal
       # @param id_or_namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
       def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
-        if arg_namespace
-          id = id_or_namespace
-          namespace = arg_namespace
-        else
-          id = SecureRandom.uuid
-          namespace = id_or_namespace
-        end
-
-        if id
-          Appsignal.internal_logger.warn(
+        if id_or_namespace && arg_namespace
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A new Transaction is created using the transaction ID argument. " \
               "This argument is deprecated without replacement."
           )
         end
         if arg_namespace
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the namespace argument. " \
               "Specify the namespace as the first argument to the 'create' " \
@@ -52,7 +44,7 @@ module Appsignal
           )
         end
         if request
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the request argument. " \
               "This argument is deprecated. Please use the `Appsignal.set_*` helpers instead."
@@ -60,12 +52,19 @@ module Appsignal
         end
         # Allow middleware to force a new transaction
         if options[:force]
-          Appsignal.internal_logger.warn(
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(
             "Appsignal::Transaction.create: " \
               "A Transaction is created using the `:force => true` option argument. " \
               "The options argument is deprecated without replacement."
           )
           Thread.current[:appsignal_transaction] = nil
+        end
+        if arg_namespace
+          id = id_or_namespace
+          namespace = arg_namespace
+        else
+          id = SecureRandom.uuid
+          namespace = id_or_namespace
         end
 
         # Check if we already have a running transaction
