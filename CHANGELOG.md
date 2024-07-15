@@ -1,5 +1,93 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.11.0
+
+_Published on 2024-07-15._
+
+### Added
+
+- Add `Appsignal.monitor` and `Appsignal.monitor_and_stop` instrumentation helpers. These helpers are a replacement for the `Appsignal.monitor_transaction` and `Appsignal.monitor_single_transaction` helpers.
+
+  Use these new helpers to create an AppSignal transaction and track any exceptions that occur within the instrumented block. This new helper supports custom namespaces and has a simpler way to set an action name. Use this helper in combination with our other `Appsignal.set_*` helpers to add more metadata to the transaction.
+
+  ```ruby
+  # New helper
+  Appsignal.monitor(
+    :namespace => "my_namespace",
+    :action => "MyClass#my_method"
+  ) do
+    # Track an instrumentation event
+    Appsignal.instrument("my_event.my_group") do
+      # Some code
+    end
+  end
+
+  # Old helper
+  Appsignal.monitor_transaction(
+    "process_action.my_group",
+    :class_name => "MyClass",
+    :action_name => "my_method"
+  ) do
+    # Some code
+  end
+  ```
+
+  The `Appsignal.monitor_and_stop` helper can be used in the same scenarios as the `Appsignal.monitor_single_transaction` helper is used. One-off Ruby scripts that are not part of a long running process.
+
+  Read our [instrumentation documentation](https://docs.appsignal.com/ruby/instrumentation/background-jobs.html) for more information about using the`Appsignal.monitor` helper.
+
+  (minor [f38f0cff](https://github.com/appsignal/appsignal-ruby/commit/f38f0cff978c7e7244beae347a8355fff19b13f1))
+- Add `Appsignal.set_session_data` helper. Set custom session data on the current transaction with the `Appsignal.set_session_data` helper. Note that this will overwrite any request session data that would be set automatically on the transaction. When this method is called multiple times, it will overwrite the previously set value.
+
+  ```ruby
+  Appsignal.set_session_data("data1" => "value1", "data2" => "value2")
+  ```
+
+  (patch [48c76635](https://github.com/appsignal/appsignal-ruby/commit/48c76635043a3777de79816bdb2154ad392c1b09))
+- Add `Appsignal.set_headers` helper. Set custom request headers on the current transaction with the `Appsignal.set_headers` helper. Note that this will overwrite any request headers that would be set automatically on the transaction. When this method is called multiple times, it will overwrite the previously set value.
+
+  ```ruby
+  Appsignal.set_headers("PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox")
+  ```
+
+  (patch [7d82dffd](https://github.com/appsignal/appsignal-ruby/commit/7d82dffd75a6c7c9a8b6a8fac7e6bbb70104b63c))
+- Report request headers for webmachine apps. (patch [fcfb7a0d](https://github.com/appsignal/appsignal-ruby/commit/fcfb7a0d2545a2144aa61efa61d445c0e11c7749))
+
+### Changed
+
+- Allow tags to have boolean (true/false) values.
+
+  ```ruby
+  Appsignal.set_tags("my_tag_is_amazing" => true)
+  Appsignal.set_tags("my_tag_is_false" => false)
+  ```
+
+  (patch [1b8e86cb](https://github.com/appsignal/appsignal-ruby/commit/1b8e86cba3472ebec78680ca6a2ed8aa76938724))
+- Optimize Sidekiq job arguments being recorded. Job arguments are only fetched and set when we sample the job transaction, which should decrease our overhead for all jobs we don't sample. (patch [3f957301](https://github.com/appsignal/appsignal-ruby/commit/3f95730145d6eef7eb13901853685e4d56d5495c))
+
+### Deprecated
+
+- Deprecate Transaction sample helpers: `Transaction#set_sample_data` and `Transaction#sample_data`. Please use one of the other sample data helpers instead. See our [sample data guide](https://docs.appsignal.com/guides/custom-data/sample-data.html). (patch [2d2e0e43](https://github.com/appsignal/appsignal-ruby/commit/2d2e0e43c9125b4566e3265b6e6ae85e4910652b))
+- Deprecate the `Appsignal::Transaction#set_http_or_background_queue_start` method. Use the `Appsignal::Transaction#set_queue_start` helper instead. (patch [d93e0370](https://github.com/appsignal/appsignal-ruby/commit/d93e0370ff4e37cf8d12652a6e5cca66651a5790))
+- Deprecate the `Appsignal.without_instrumentation` helper. Use the `Appsignal.ignore_instrumentation_events` helper instead. (patch [7cc3c0e4](https://github.com/appsignal/appsignal-ruby/commit/7cc3c0e41615394deec348d5e0a40b7a6c1fc1d9))
+- Deprecate the `Appsignal::Transaction::GenericRequest` class. Use the `Appsignal.set_*` helpers to set metadata on the Transaction instead. Read our [sample data guide](https://docs.appsignal.com/guides/custom-data/sample-data.html) for more information. (patch [1c69d3fd](https://github.com/appsignal/appsignal-ruby/commit/1c69d3fdf47959c240c4732f7e8551802a9eba63))
+- Deprecate the 'ID', 'request', and 'options' arguments for the `Transaction.create` and `Transaction.new` methods. To add metadata to the transaction, use the `Appsignal.set_*` helpers. Read our [sample data guide](https://docs.appsignal.com/guides/custom-data/sample-data.html) for more information on how to set metadata on transactions.
+
+  ```ruby
+  # Before
+  Appsignal::Transaction.create(
+    SecureRandom.uuid,
+    "my_namespace",
+    Appsignal::Transaction::GenericRequest.new(env) # env is a request env Hash
+  )
+
+  # After
+  Appsignal::Transaction.create("my_namespace")
+  ```
+
+  (patch [2fc2c617](https://github.com/appsignal/appsignal-ruby/commit/2fc2c617321bc6a520205cae0cfa42fb3c8fc5d8))
+- Deprecate the `Appsignal.monitor_transaction` and `Appsignal.monitor_single_transaction` helpers. See the entry about the replacement helpers `Appsignal.monitor` and `Appsignal.monitor_and_stop`. (patch [470d5813](https://github.com/appsignal/appsignal-ruby/commit/470d58132270115215093c9cffd16e52829ef4c4))
+
 ## 3.10.0
 
 _Published on 2024-07-08._
