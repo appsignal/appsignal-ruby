@@ -13,7 +13,7 @@ describe Appsignal::CLI::Demo do
     ENV.delete("RACK_ENV")
     stub_api_request config, "auth"
   end
-  after { Appsignal.config = nil }
+  after { Appsignal.clear_config! }
 
   def run
     run_within_dir project_fixture_path

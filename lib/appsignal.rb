@@ -37,6 +37,7 @@ module Appsignal
     # @return [Config, nil]
     # @see Config
     attr_accessor :config
+
     # Accessor for toggle if the AppSignal C-extension is loaded.
     #
     # Can be `nil` if extension has not been loaded yet. See

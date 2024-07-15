@@ -67,7 +67,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       capture_diagnatics_report_request
     end
     before(:send_report => :no_cli_option) { options["no-send-report"] = nil }
-    after { Appsignal.config = nil }
+    after { Appsignal.clear_config! }
 
     def capture_diagnatics_report_request
       stub_diagnostics_report_request.to_rack(DiagnosticsReportEndpoint)

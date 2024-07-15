@@ -29,7 +29,7 @@ describe Object do
           start_agent
           set_current_transaction(transaction)
         end
-        after { Appsignal.config = nil }
+        after { Appsignal.clear_config! }
 
         context "with different kind of arguments" do
           let(:klass) do
@@ -198,7 +198,7 @@ describe Object do
           Appsignal.config = project_fixture_config
           set_current_transaction(transaction)
         end
-        after { Appsignal.config = nil }
+        after { Appsignal.clear_config! }
 
         context "with different kind of arguments" do
           let(:klass) do
