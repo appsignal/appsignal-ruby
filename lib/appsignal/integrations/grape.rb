@@ -3,6 +3,13 @@
 require "appsignal"
 require "appsignal/rack/grape_middleware"
 
+Appsignal::Utils::StdoutAndLoggerMessage.warning(
+  "The 'require \"appsignal/integrations/grape\"' file require integration " \
+    "method is deprecated. " \
+    "Please follow the Grape setup guide in our docs for the new method: " \
+    "https://docs.appsignal.com/ruby/integrations/grape.html"
+)
+
 Appsignal.internal_logger.debug("Loading Grape integration")
 
 module Appsignal

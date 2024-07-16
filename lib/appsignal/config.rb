@@ -11,6 +11,16 @@ module Appsignal
     include Appsignal::Utils::StdoutAndLoggerMessage
 
     # @api private
+    def self.loader_defaults
+      @loader_defaults ||= []
+    end
+
+    # @api private
+    def self.add_loader_defaults(name, options)
+      loader_defaults << [name, options]
+    end
+
+    # @api private
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
@@ -223,6 +233,21 @@ module Appsignal
       # Set config based on the system
       @system_config = detect_from_system
       merge(system_config)
+
+      # Set defaults from loaders in reverse order so the first register
+      # loader's defaults overwrite all others
+      self.class.loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
+        defaults = loader_defaults.compact.dup
+        # Overwrite root path
+        loader_path = defaults.delete(:root_path)
+        @root_path = loader_path if loader_path
+        # Overwrite env
+        loader_env = defaults.delete(:env)
+        @env = loader_env.to_s if loader_env
+        # Merge with the config loaded so far
+        merge(defaults)
+      end
+
       # Initial config
       @initial_config = initial_config
       merge(initial_config)

@@ -11,9 +11,33 @@ module Appsignal
     end
   end
 
+  class Config
+    def self.clear_loader_defaults!
+      @loader_defaults = nil
+    end
+  end
+
+  module Loaders
+    def self.clear!
+      Appsignal::Config.clear_loader_defaults!
+      loaders.reject! do |key, _value|
+        Appsignal::Testing.registered_loaders.include?(key)
+      end
+      @instances = nil
+    end
+  end
+
   # @api private
   module Testing
     class << self
+      def store
+        @store ||= {}
+      end
+
+      def registered_loaders
+        @registered_loaders ||= Set.new
+      end
+
       def without_testing
         original_testing = Appsignal.testing?
         Appsignal.testing = false
@@ -27,7 +51,9 @@ module Appsignal
       end
 
       def clear!
+        store.clear
         transactions.clear
+        registered_loaders.clear
       end
 
       attr_writer :keep_transactions, :sample_transactions

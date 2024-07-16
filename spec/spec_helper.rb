@@ -66,6 +66,7 @@ RSpec.configure do |config|
   config.include ApiRequestHelper
   config.include SystemHelpers
   config.include LogHelpers
+  config.include LoaderHelper
   config.extend DependencyHelper
 
   config.example_status_persistence_file_path = "spec/examples.txt"
@@ -158,6 +159,7 @@ RSpec.configure do |config|
 
   config.after do
     Appsignal::Testing.clear!
+    Appsignal::Loaders.clear!
     clear_current_transaction!
     stop_minutely_probes
   end

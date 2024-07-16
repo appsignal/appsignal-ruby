@@ -113,6 +113,27 @@ describe Appsignal do
         end
       end
 
+      describe "loaders" do
+        it "starts loaded loaders" do
+          Appsignal::Testing.store[:loader_loaded] = 0
+          Appsignal::Testing.store[:loader_started] = 0
+          define_loader(:start_loader) do
+            def on_load
+              Appsignal::Testing.store[:loader_loaded] += 1
+            end
+
+            def on_start
+              Appsignal::Testing.store[:loader_started] += 1
+            end
+          end
+          Appsignal::Loaders.load(:start_loader)
+          Appsignal::Loaders.start
+
+          expect(Appsignal::Testing.store[:loader_loaded]).to eq(1)
+          expect(Appsignal::Testing.store[:loader_started]).to eq(1)
+        end
+      end
+
       describe "environment metadata" do
         before { capture_environment_metadata_report_calls }
 
@@ -134,6 +155,15 @@ describe Appsignal do
         Appsignal.start
         expect(Appsignal.internal_logger.level).to eq Logger::DEBUG
       end
+    end
+  end
+
+  describe ".load" do
+    it "loads a loader" do
+      expect(Appsignal::Loaders.instances).to be_empty
+      Appsignal.load(:loader_tester)
+      expect(Appsignal::Loaders.instances)
+        .to include(:loader_tester => instance_of(Appsignal::Loaders::LoaderTester))
     end
   end
 
