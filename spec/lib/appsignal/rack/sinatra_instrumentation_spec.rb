@@ -1,5 +1,5 @@
 if DependencyHelper.sinatra_present?
-  require "appsignal/integrations/sinatra"
+  require "appsignal/rack/sinatra_instrumentation"
 
   module SinatraRequestHelpers
     def make_request
