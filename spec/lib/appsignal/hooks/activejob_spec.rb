@@ -210,7 +210,7 @@ if DependencyHelper.active_job_present?
 
       context "with activejob_report_errors set to none" do
         it "does not report the error" do
-          Appsignal.config = project_fixture_config("production")
+          start_agent("production")
           Appsignal.config[:activejob_report_errors] = "none"
 
           allow(Appsignal).to receive(:increment_counter)
@@ -229,7 +229,7 @@ if DependencyHelper.active_job_present?
       if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
         context "with activejob_report_errors set to discard" do
           before do
-            Appsignal.config = project_fixture_config("production")
+            start_agent("production")
             Appsignal.config[:activejob_report_errors] = "discard"
           end
 
@@ -352,7 +352,7 @@ if DependencyHelper.active_job_present?
 
     context "with params" do
       it "filters the configured params" do
-        Appsignal.config = project_fixture_config("production")
+        start_agent("production")
         Appsignal.config[:filter_parameters] = ["foo"]
         queue_job(ActiveJobTestJob, method_given_args)
 

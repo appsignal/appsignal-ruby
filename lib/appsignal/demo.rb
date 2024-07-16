@@ -6,12 +6,7 @@ module Appsignal
   # {Appsignal::Demo} is a way to send demonstration / test samples for a
   # exception and a performance issue.
   #
-  # @example Loading config automatically
-  #   Appsignal::Demo.transmit
-  #
-  # @example With custom config
-  #   # If another configuration should be used, set it beforehand.
-  #   Appsignal.config = Appsignal::Config.new(Dir.pwd, "production")
+  # @example Send example transactions
   #   Appsignal::Demo.transmit
   #
   # @since 2.0.0

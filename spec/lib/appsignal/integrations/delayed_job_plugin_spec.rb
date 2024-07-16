@@ -83,7 +83,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
         context "with parameter filtering" do
           before do
-            Appsignal.config = project_fixture_config("production")
+            start_agent("production")
             Appsignal.config[:filter_parameters] = ["foo"]
           end
 
@@ -272,7 +272,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
             context "with parameter filtering" do
               before do
-                Appsignal.config = project_fixture_config("production")
+                start_agent("production")
                 Appsignal.config[:filter_parameters] = ["foo"]
               end
 

@@ -243,7 +243,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
 
   context "with parameter filtering" do
     before do
-      Appsignal.config = project_fixture_config("production")
+      start_agent("production")
       Appsignal.config[:filter_parameters] = ["foo"]
     end
 
@@ -384,7 +384,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       include RailsHelper
 
       it "reports the worker name as the action, copies the namespace and tags" do
-        Appsignal.config = project_fixture_config("production")
+        start_agent("production")
         with_rails_error_reporter do
           perform_sidekiq_job do
             Appsignal.tag_job("test_tag" => "value")

@@ -195,7 +195,7 @@ describe Object do
       context "when active" do
         let(:transaction) { http_request_transaction }
         before do
-          Appsignal.config = project_fixture_config
+          start_agent
           set_current_transaction(transaction)
         end
         after { Appsignal.clear_config! }

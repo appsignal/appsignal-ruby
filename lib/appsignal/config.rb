@@ -172,23 +172,13 @@ module Appsignal
     #   @return [Hash]
 
     # @api private
-    attr_reader :root_path, :env, :config_hash, :system_config,
-      :initial_config, :file_config, :env_config, :override_config
+    attr_accessor :root_path, :env, :config_hash
+    attr_reader :system_config, :initial_config, :file_config, :env_config,
+      :override_config, :dsl_config
     # @api private
     attr_accessor :logger
 
     # Initialize a new configuration object for AppSignal.
-    #
-    # If this is manually initialized, and not by {Appsignal.start}, it needs
-    # to be assigned to the {Appsignal.config} attribute.
-    #
-    # @example
-    #   require "appsignal"
-    #   Appsignal.config = Appsignal::Config.new(
-    #     app_path,
-    #     "production"
-    #   )
-    #   Appsignal.start
     #
     # @param root_path [String] Root path of the app.
     # @param env [String] The environment to load when AppSignal is started. It
@@ -203,32 +193,50 @@ module Appsignal
     # @param config_file [String] Custom config file location. Default
     #   `config/appsignal.yml`.
     #
+    # @api private
     # @see https://docs.appsignal.com/ruby/configuration/
     #   Configuration documentation
     # @see https://docs.appsignal.com/ruby/configuration/load-order.html
     #   Configuration load order
     # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
     #   How to integrate AppSignal manually
-    def initialize(
+    def initialize( # rubocop:disable Metrics/ParameterLists
       root_path,
-      env,
+      initial_env,
       initial_config = {},
       logger = Appsignal.internal_logger,
-      config_file = nil
+      config_file = nil,
+      load_on_new = true # rubocop:disable Style/OptionalBooleanParameter
     )
-      @config_file_error = false
       @root_path = root_path
+      @config_file_error = false
       @config_file = config_file
       @logger = logger
       @valid = false
-      @config_hash = DEFAULT_CONFIG.dup
-      env_loaded_from_initial = env.to_s
-      @env =
-        if ENV.key?("APPSIGNAL_APP_ENV")
-          env_loaded_from_env = ENV["APPSIGNAL_APP_ENV"]
-        else
-          env_loaded_from_initial
-        end
+
+      @initial_env = initial_env
+      @env = initial_env.to_s
+      @config_hash = {}
+      @system_config = {}
+      @initial_config = initial_config
+      @file_config = {}
+      @env_config = {}
+      @override_config = {}
+      @dsl_config = {} # Can be set using `Appsignal.configure`
+
+      return unless load_on_new
+
+      # Determine starting environment
+      @env = ENV["APPSIGNAL_APP_ENV"] if ENV.key?("APPSIGNAL_APP_ENV")
+      load_config
+      validate
+    end
+
+    # @api private
+    def load_config
+      # Set defaults
+      # Deep duplicate each frozen default value
+      merge(DEFAULT_CONFIG.transform_values(&:dup))
 
       # Set config based on the system
       @system_config = detect_from_system
@@ -248,25 +256,27 @@ module Appsignal
         merge(defaults)
       end
 
-      # Initial config
-      @initial_config = initial_config
       merge(initial_config)
+      # Track origin of env
+      @initial_config[:env] = @initial_env.to_s
+
       # Load the config file if it exists
       @file_config = load_from_disk || {}
       merge(file_config)
+
       # Load config from environment variables
       @env_config = load_from_environment
       merge(env_config)
+      # Track origin of env
+      env_loaded_from_env = ENV.fetch("APPSIGNAL_APP_ENV", nil)
+      @env_config[:env] = env_loaded_from_env if env_loaded_from_env
+
       # Load config overrides
       @override_config = determine_overrides
       merge(override_config)
+
       # Handle deprecated config options
       maintain_backwards_compatibility
-      # Validate that we have a correct config
-      validate
-      # Track origin of env
-      @initial_config[:env] = env_loaded_from_initial if env_loaded_from_initial
-      @env_config[:env] = env_loaded_from_env if env_loaded_from_env
     end
 
     # @api private
@@ -279,6 +289,7 @@ module Appsignal
       end
     end
 
+    # @api private
     def [](key)
       config_hash[key]
     end
@@ -383,6 +394,12 @@ module Appsignal
         ENV["_APPSIGNAL_WORKING_DIR_PATH"] = config_hash[:working_dir_path]
       end
       ENV["_APP_REVISION"] = config_hash[:revision].to_s
+    end
+
+    # @api private
+    def merge_dsl_options(options)
+      @dsl_options = options
+      merge(options)
     end
 
     # @api private
@@ -570,6 +587,82 @@ module Appsignal
     def inactive_on_config_file_error?
       value = ENV.fetch("APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR", false)
       ["1", "true"].include?(value)
+    end
+
+    # @api private
+    class ConfigDSL
+      attr_reader :dsl_options
+
+      def initialize(config)
+        @config = config
+        @dsl_options = {}
+      end
+
+      def app_path
+        @config.root_path
+      end
+
+      def app_path=(path)
+        @config.root_path = path
+      end
+
+      def env
+        @config.env
+      end
+
+      Appsignal::Config::ENV_STRING_KEYS.each_value do |option|
+        define_method(option) do
+          fetch_option(option)
+        end
+
+        define_method("#{option}=") do |value|
+          update_option(option, value.to_s)
+        end
+      end
+
+      Appsignal::Config::ENV_BOOLEAN_KEYS.each_value do |option|
+        define_method(option) do
+          fetch_option(option)
+        end
+
+        define_method("#{option}=") do |value|
+          update_option(option, !!value)
+        end
+      end
+
+      Appsignal::Config::ENV_ARRAY_KEYS.each_value do |option|
+        define_method(option) do
+          fetch_option(option)
+        end
+
+        define_method("#{option}=") do |value|
+          update_option(option, value.to_a)
+        end
+      end
+
+      Appsignal::Config::ENV_FLOAT_KEYS.each_value do |option|
+        define_method(option) do
+          fetch_option(option)
+        end
+
+        define_method("#{option}=") do |value|
+          update_option(option, value.to_f)
+        end
+      end
+
+      private
+
+      def fetch_option(key)
+        if @dsl_options.key?(key)
+          @dsl_options[key]
+        else
+          @dsl_options[key] = @config[key].dup
+        end
+      end
+
+      def update_option(key, value)
+        @dsl_options[key] = value
+      end
     end
   end
 end

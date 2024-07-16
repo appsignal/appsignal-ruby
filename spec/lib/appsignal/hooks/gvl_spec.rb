@@ -7,8 +7,8 @@ describe Appsignal::Hooks::GvlHook do
       end
     end
   else
-    before(:context) do
-      Appsignal.config = project_fixture_config
+    before do
+      start_agent
     end
 
     def expect_gvltools_require

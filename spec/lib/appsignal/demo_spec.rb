@@ -16,8 +16,7 @@ describe Appsignal::Demo do
     end
 
     context "with config" do
-      let(:config) { project_fixture_config("production") }
-      before { Appsignal.config = config }
+      before { start_agent }
 
       it "returns true" do
         expect(subject).to eq(true)
