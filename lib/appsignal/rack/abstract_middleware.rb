@@ -91,9 +91,10 @@ module Appsignal
       def call_app(env, transaction)
         status, headers, obody = @app.call(env)
         body =
-          if obody.is_a? Appsignal::Rack::BodyWrapper
+          if env[Appsignal::Rack::APPSIGNAL_RESPONSE_INSTRUMENTED]
             obody
           else
+            env[Appsignal::Rack::APPSIGNAL_RESPONSE_INSTRUMENTED] = true
             # Instrument response body and closing of the response body
             Appsignal::Rack::BodyWrapper.wrap(obody, transaction)
           end
