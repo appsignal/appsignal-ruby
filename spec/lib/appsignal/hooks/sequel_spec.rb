@@ -19,9 +19,9 @@ describe Appsignal::Hooks::SequelHook do
     end
 
     context "with a transaction" do
-      let(:transaction) { Appsignal::Transaction.current }
+      let(:transaction) { http_request_transaction }
       before do
-        Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
+        set_current_transaction(transaction)
         db.logger = Logger.new($stdout) # To test #log_duration call
       end
 

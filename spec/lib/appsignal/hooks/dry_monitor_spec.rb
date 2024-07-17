@@ -32,15 +32,12 @@ if DependencyHelper.dry_monitor_present?
   end
 
   describe "Dry Monitor Integration" do
-    before :context do
-      start_agent
-    end
-
-    let!(:transaction) do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-    end
-
     let(:notifications) { Dry::Monitor::Notifications.new(:test) }
+    let(:transaction) { http_request_transaction }
+    before do
+      start_agent
+      set_current_transaction(transaction)
+    end
 
     context "when is a dry-sql event" do
       let(:event_id) { :sql }

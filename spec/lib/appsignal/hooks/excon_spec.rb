@@ -27,9 +27,8 @@ describe Appsignal::Hooks::ExconHook do
     end
 
     describe "instrumentation" do
-      let!(:transaction) do
-        Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-      end
+      let(:transaction) { http_request_transaction }
+      before { set_current_transaction(transaction) }
       around { |example| keep_transactions { example.run } }
 
       it "instruments a http request" do

@@ -3,8 +3,10 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
   let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
 
   context "with transaction" do
-    let!(:transaction) do
-      Appsignal::Transaction.create("1", "http_request", {}, {})
+    let(:transaction) { http_request_transaction }
+    before do
+      start_agent
+      set_current_transaction(transaction)
     end
 
     describe "#started" do
