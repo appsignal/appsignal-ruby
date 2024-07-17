@@ -2,11 +2,6 @@
 
 module Appsignal
   module Rack
-    APPSIGNAL_TRANSACTION = "appsignal.transaction"
-    APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
-    APPSIGNAL_EVENT_HANDLER_HAS_ERROR = "appsignal.event_handler.error"
-    RACK_AFTER_REPLY = "rack.after_reply"
-
     # Instrumentation middleware using Rack's Events module.
     #
     # We recommend using this in combination with the

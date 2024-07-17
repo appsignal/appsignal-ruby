@@ -3,6 +3,12 @@
 module Appsignal
   # @api private
   module Rack
+    APPSIGNAL_TRANSACTION = "appsignal.transaction"
+    APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
+    APPSIGNAL_EVENT_HANDLER_HAS_ERROR = "appsignal.event_handler.error"
+    APPSIGNAL_RESPONSE_INSTRUMENTED = "appsignal.response_instrumentation_active"
+    RACK_AFTER_REPLY = "rack.after_reply"
+
     class Utils
       # Fetch the queue start time from the request environment.
       #

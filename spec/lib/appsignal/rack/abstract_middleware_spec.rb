@@ -400,11 +400,12 @@ describe Appsignal::Rack::AbstractMiddleware do
           expect(response_events).to eq(1)
         end
 
-        context "when response body is already a BodyWrapper subclass" do
+        context "when the response body is already instrumented" do
           let(:body) { Appsignal::Rack::BodyWrapper.wrap(["hello!"], transaction) }
           let(:app) { DummyApp.new { [200, {}, body] } }
 
           it "doesn't wrap the body again" do
+            env[Appsignal::Rack::APPSIGNAL_RESPONSE_INSTRUMENTED] = true
             _status, _headers, body = make_request
             expect(body).to eq(body)
 
