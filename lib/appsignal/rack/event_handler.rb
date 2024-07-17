@@ -56,6 +56,8 @@ module Appsignal
 
       # @api private
       def on_start(request, _response)
+        return unless Appsignal.active?
+
         event_handler = self
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_start") do
           request.env[APPSIGNAL_EVENT_HANDLER_ID] ||= id
@@ -90,6 +92,8 @@ module Appsignal
 
       # @api private
       def on_error(request, _response, error)
+        return unless Appsignal.active?
+
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_error") do
           return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 
@@ -103,6 +107,7 @@ module Appsignal
 
       # @api private
       def on_finish(request, response)
+        return unless Appsignal.active?
         return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 
         transaction = request.env[APPSIGNAL_TRANSACTION]

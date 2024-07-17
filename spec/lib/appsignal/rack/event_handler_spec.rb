@@ -40,6 +40,14 @@ describe Appsignal::Rack::EventHandler do
       expect(Appsignal::Transaction.current).to eq(transaction)
     end
 
+    context "when not active" do
+      it "does not create a new transaction" do
+        allow(Appsignal).to receive(:active?).and_return(false)
+
+        expect { on_start }.to_not(change { created_transactions.length })
+      end
+    end
+
     context "when the handler is nested in another EventHandler" do
       it "does not create a new transaction in the nested EventHandler" do
         on_start
@@ -131,6 +139,17 @@ describe Appsignal::Rack::EventHandler do
       expect(last_transaction).to have_error("ExampleStandardError", "the error")
     end
 
+    context "when not active" do
+      it "does not report the transaction" do
+        allow(Appsignal).to receive(:active?).and_return(false)
+
+        on_start
+        on_error(ExampleStandardError.new("the error"))
+
+        expect(last_transaction).to_not have_error
+      end
+    end
+
     context "when the handler is nested in another EventHandler" do
       it "does not report the error on the transaction" do
         on_start
@@ -173,6 +192,20 @@ describe Appsignal::Rack::EventHandler do
       expect(last_transaction).to_not include_events
       expect(last_transaction).to include("sample_data" => {})
       expect(last_transaction).to_not be_completed
+    end
+
+    context "when not active" do
+      it "doesn't do anything" do
+        allow(Appsignal).to receive(:active?).and_return(false)
+
+        request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = http_request_transaction
+        on_finish
+
+        expect(last_transaction).to_not have_action
+        expect(last_transaction).to_not include_events
+        expect(last_transaction).to include("sample_data" => {})
+        expect(last_transaction).to_not be_completed
+      end
     end
 
     it "sets params on the transaction" do
