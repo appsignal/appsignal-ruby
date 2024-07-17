@@ -4,13 +4,10 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
   if active_support_present?
     let(:notifier) { ActiveSupport::Notifications::Fanout.new }
     let(:as) { ActiveSupport::Notifications }
-    let!(:transaction) do
-      Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-    end
-    before :context do
-      start_agent
-    end
+    let(:transaction) { http_request_transaction }
     before do
+      start_agent
+      set_current_transaction(transaction)
       as.notifier = notifier
     end
 

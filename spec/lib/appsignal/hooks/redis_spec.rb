@@ -72,9 +72,8 @@ describe Appsignal::Hooks::RedisHook do
                 # track if it was installed already or not.
                 Appsignal::Hooks::RedisHook.new.install
               end
-              let!(:transaction) do
-                Appsignal::Transaction.create("uuid", Appsignal::Transaction::HTTP_REQUEST, "test")
-              end
+              let(:transaction) { http_request_transaction }
+              before { set_current_transaction(transaction) }
               around { |example| keep_transactions { example.run } }
 
               it "instrument a redis call" do
