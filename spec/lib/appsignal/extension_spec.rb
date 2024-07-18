@@ -100,6 +100,10 @@ describe Appsignal::Extension do
           subject.finish(0)
         end
 
+        it "should have a duplicate method" do
+          subject.duplicate("request_id")
+        end
+
         it "should have a complete method" do
           subject.complete
         end
