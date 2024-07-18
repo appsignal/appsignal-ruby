@@ -88,7 +88,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data
+      :breadcrumbs, :custom_data, :is_duplicate
 
     # Use {.create} to create new transactions.
     #
@@ -110,6 +110,7 @@ module Appsignal
       @session_data = nil
       @headers = nil
       @errors = []
+      @is_duplicate = false
 
       @ext = Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -129,24 +130,17 @@ module Appsignal
         return
       end
 
-      sample_data if !@duplicate && @ext.finish(0)
+      sample_data unless @is_duplicate
 
       transactions =
         @errors.each do |error|
-          # This part would be done in the extension like:
-          # transaction = @ext.duplicate_transaction
-
-          transaction = self.class.new(
-            SecureRandom.uuid,
-            namespace,
-            request,
-            options
-          )
-          transaction.ext = ext.duplicate
-          transaction.duplicate = true
-          transaction.set_error(error)
-          transaction.complete
+          transaction.duplicate do |transaction|
+            transaction.set_error(error)
+            transaction.complete
+          end
         end
+
+      @ext.finish(0)
       @ext.complete
 
       transactions.each(&:complete)
@@ -566,6 +560,10 @@ module Appsignal
     end
     alias_method :to_hash, :to_h
 
+    protected
+
+    attr_writer :ext, :is_duplicate
+
     private
 
     def set_sample_data(key, data)
@@ -605,6 +603,21 @@ module Appsignal
         :custom_data => custom_data
       }.each do |key, data|
         set_sample_data(key, data)
+      end
+    end
+
+    def duplicate
+      self.class.new(
+        SecureRandom.uuid,
+        namespace,
+        request,
+        options
+      ).tap do |transaction|
+        transaction.ext = ext.duplicate(
+          transaction.transaction_id
+        )
+
+        transaction.is_duplicate = true
       end
     end
 

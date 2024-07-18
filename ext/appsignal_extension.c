@@ -273,6 +273,30 @@ static VALUE finish_transaction(VALUE self, VALUE gc_duration_ms) {
   return sample == 1 ? Qtrue : Qfalse;
 }
 
+static VALUE duplicate_transaction(VALUE self, VALUE new_transaction_id) {
+  appsignal_transaction_t* transaction;
+  appsignal_transaction_t* duplicate_transaction;
+
+  Check_Type(new_transaction_id, T_STRING);
+  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+
+  duplicate_transaction = appsignal_duplicate_transaction(
+      transaction,
+      make_appsignal_string(new_transaction_id)
+  );
+
+  if (duplicate_transaction) {
+      return Data_Wrap_Struct(
+          Transaction,
+          NULL,
+          appsignal_free_transaction,
+          duplicate_transaction
+      );
+  } else {
+      return Qnil;
+  }
+}
+
 static VALUE complete_transaction(VALUE self) {
   appsignal_transaction_t* transaction;
 
@@ -858,6 +882,7 @@ void Init_appsignal_extension(void) {
   rb_define_method(Transaction, "set_queue_start", set_transaction_queue_start, 1);
   rb_define_method(Transaction, "set_metadata",    set_transaction_metadata,    2);
   rb_define_method(Transaction, "finish",          finish_transaction,          1);
+  rb_define_method(Transaction, "duplicate",       duplicate_transaction,       1);
   rb_define_method(Transaction, "complete",        complete_transaction,        0);
   rb_define_method(Transaction, "to_json",         transaction_to_json,         0);
 
