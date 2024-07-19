@@ -6,7 +6,7 @@ describe Appsignal::Probes::SidekiqProbe do
     let(:redis_hostname) { "localhost" }
     let(:expected_default_tags) { { :hostname => "localhost" } }
     before do
-      Appsignal.config = project_fixture_config
+      start_agent
 
       class SidekiqStats
         class << self

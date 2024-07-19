@@ -22,8 +22,8 @@ module Appsignal
     include Helpers::Instrumentation
     include Helpers::Metrics
 
-    # Accessor for the AppSignal configuration.
-    # Return the current AppSignal configuration.
+    # The loaded AppSignal configuration.
+    # Returns the current AppSignal configuration.
     #
     # Can return `nil` if no configuration has been set or automatically loaded
     # by an automatic integration or by calling {.start}.
@@ -31,12 +31,31 @@ module Appsignal
     # @example
     #   Appsignal.config
     #
-    # @example Setting the configuration
-    #   Appsignal.config = Appsignal::Config.new(Dir.pwd, "production")
-    #
     # @return [Config, nil]
+    # @see configure
     # @see Config
-    attr_accessor :config
+    attr_reader :config
+
+    # Set the AppSignal config.
+    #
+    # @deprecated Use {Appsignal.configure} instead.
+    # @param conf [Appsignal::Config]
+    # @return [void]
+    # @see Config
+    def config=(conf)
+      Appsignal::Utils::StdoutAndLoggerMessage.warning \
+        "Configuring AppSignal with `Appsignal.config=` is deprecated. " \
+          "Use `Appsignal.configure { |config| ... }` to configure AppSignal. " \
+          "https://docs.appsignal.com/ruby/configuration.html\n" \
+          "#{caller.first}"
+      @config = conf
+    end
+
+    # @api private
+    def _config=(conf)
+      @config = conf
+    end
+
     # Accessor for toggle if the AppSignal C-extension is loaded.
     #
     # Can be `nil` if extension has not been loaded yet. See
@@ -87,7 +106,9 @@ module Appsignal
     #   Appsignal.start
     #
     # @example with custom loaded configuration
-    #   Appsignal.config = Appsignal::Config.new(Dir.pwd, "production")
+    #   Appsignal.configure(:production) do |config|
+    #     config.ignore_actions = ["My action"]
+    #   end
     #   Appsignal.start
     #
     # @return [void]
@@ -154,6 +175,94 @@ module Appsignal
       end
       Appsignal::Extension.stop
       Appsignal::Probes.stop
+    end
+
+    # Configure the AppSignal Ruby gem using a DSL.
+    #
+    # Pass a block to the configure method to configure the Ruby gem.
+    #
+    # Each config option defined in our docs can be fetched, set and modified
+    # via a helper method in the given block.
+    #
+    # After AppSignal has started using {start}, the configuration can not be
+    # modified. Any calls to this helper will be ignored.
+    #
+    # This helper should not be used to configure multiple environments, like
+    # done in the YAML file. Configure the environment you want active when the
+    # application starts.
+    #
+    # @example Configure AppSignal for the application
+    #   Appsignal.configure do |config|
+    #     config.path = "/the/app/path"
+    #     config.active = ENV["APP_ACTIVE"] == "true"
+    #     config.push_api_key = File.read("appsignal_key.txt").chomp
+    #     config.ignore_actions = ENDPOINTS.select { |e| e.public? }.map(&:name)
+    #     config.request_headers << "MY_CUSTOM_HEADER"
+    #   end
+    #
+    # @example Configure AppSignal for the application and select the environment
+    #   Appsignal.configure(:production) do |config|
+    #     config.active = true
+    #   end
+    #
+    # @example Automatically detects the app environment
+    #   # Tries to determine the app environment automatically from the
+    #   # environment and the libraries it integrates with.
+    #   ENV["RACK_ENV"] = "production"
+    #
+    #   Appsignal.configure do |config|
+    #     config.env # => "production"
+    #   end
+    #
+    # @example Calling configure multiple times for different environments resets the configuration
+    #   Appsignal.configure(:development) do |config|
+    #     config.ignore_actions = ["My action"]
+    #   end
+    #
+    #   Appsignal.configure(:production) do |config|
+    #     config.ignore_actions # => []
+    #   end
+    #
+    # @example Load config without a block
+    #   # This will require either ENV vars being set
+    #   # or the config/appsignal.yml being present
+    #   Appsignal.configure
+    #   # Or for the environment given as an argument
+    #   Appsignal.configure(:production)
+    #
+    # @yield [Config] Gives the {Config} instance to the block.
+    # @return [void]
+    # @see config
+    # @see Config
+    # @see https://docs.appsignal.com/ruby/configuration.html Configuration guide
+    # @see https://docs.appsignal.com/ruby/configuration/options.html Configuration options
+    def configure(env = nil)
+      if Appsignal.active?
+        Appsignal.internal_logger
+          .warn("AppSignal is already active. Ignoring `Appsignal.configure` call.")
+        return
+      end
+
+      if config && config.env == env.to_s
+        config
+      else
+        self._config = Appsignal::Config.new(
+          Dir.pwd,
+          env || ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV.fetch("RACK_ENV", nil),
+          {},
+          Appsignal.internal_logger,
+          nil,
+          false
+        )
+        config.load_config
+      end
+
+      config_dsl = Appsignal::Config::ConfigDSL.new(config)
+      if block_given?
+        yield config_dsl
+        config.merge_dsl_options(config_dsl.dsl_options)
+      end
+      config.validate
     end
 
     def forked

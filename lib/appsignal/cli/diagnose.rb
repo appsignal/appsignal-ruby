@@ -194,7 +194,7 @@ module Appsignal
             initial_config[:log_path] = current_path.join("log")
           end
 
-          Appsignal.config = Appsignal::Config.new(
+          Appsignal._config = Appsignal::Config.new(
             current_path,
             options.fetch(:environment, ENV.fetch("RACK_ENV", ENV.fetch("RAILS_ENV", nil))),
             initial_config

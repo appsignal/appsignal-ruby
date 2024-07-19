@@ -4,7 +4,7 @@ require "appsignal/cli/diagnose/paths"
 
 describe Appsignal::CLI::Diagnose::Paths do
   describe "#paths" do
-    before { Appsignal.config = project_fixture_config }
+    before { start_agent }
 
     it "returns gem installation path as package_install_path" do
       expect(described_class.new.paths[:package_install_path]).to eq(

@@ -9,6 +9,11 @@ module Appsignal
       @testing = true unless defined?(@testing)
       @testing
     end
+
+    # @api private
+    def clear_config!
+      @config = nil
+    end
   end
 
   class Config

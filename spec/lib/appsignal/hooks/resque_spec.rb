@@ -83,7 +83,7 @@ describe Appsignal::Hooks::ResqueHook do
 
       context "with arguments" do
         before do
-          Appsignal.config = project_fixture_config("production")
+          start_agent("production")
           Appsignal.config[:filter_parameters] = ["foo"]
         end
 

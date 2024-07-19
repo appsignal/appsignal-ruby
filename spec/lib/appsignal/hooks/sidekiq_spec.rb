@@ -65,7 +65,7 @@ describe Appsignal::Hooks::SidekiqHook do
     end
 
     before do
-      Appsignal.config = project_fixture_config
+      start_agent
       stub_const "Sidekiq", SidekiqMock
     end
 

@@ -5,18 +5,211 @@ describe Appsignal do
   before do
     # Make sure we have a clean state because we want to test
     # initialization here.
-    Appsignal.config = nil
+    Appsignal.clear_config!
   end
 
   let(:transaction) { http_request_transaction }
 
   describe ".config=" do
-    it "should set the config" do
+    it "sets the config" do
       config = project_fixture_config
       expect(Appsignal.internal_logger).to_not receive(:level=)
 
-      Appsignal.config = config
+      silence { Appsignal.config = config }
       expect(Appsignal.config).to eq config
+    end
+
+    it "prints a deprecation warning" do
+      err_stream = std_stream
+      capture_std_streams(std_stream, err_stream) do
+        Appsignal.config = project_fixture_config
+      end
+      expect(err_stream.read).to include(
+        "appsignal WARNING: Configuring AppSignal with `Appsignal.config=` is deprecated."
+      )
+    end
+
+    it "logs a deprecation warning" do
+      logs = capture_logs { silence { Appsignal.config = project_fixture_config } }
+      expect(logs).to contains_log(
+        :warn,
+        "Configuring AppSignal with `Appsignal.config=` is deprecated."
+      )
+    end
+  end
+
+  describe ".configure" do
+    before do
+      Appsignal.clear_config!
+    end
+
+    context "when active" do
+      it "doesn't update the config" do
+        start_agent
+        Appsignal::Testing.store[:config_called] = false
+        expect do
+          Appsignal.configure do |_config|
+            Appsignal::Testing.store[:config_called] = true
+          end
+        end.to_not(change { [Appsignal.config, Appsignal.active?] })
+        expect(Appsignal::Testing.store[:config_called]).to be(false)
+      end
+
+      it "logs a warning" do
+        start_agent
+        logs =
+          capture_logs do
+            Appsignal.configure do |_config|
+              # Do something
+            end
+          end
+        expect(logs).to contains_log(
+          :warn,
+          "AppSignal is already active. Ignoring `Appsignal.configure` call."
+        )
+      end
+    end
+
+    context "with config but not started" do
+      it "reuses the already loaded config if the env is the same" do
+        Appsignal._config = Appsignal::Config.new(
+          project_fixture_path,
+          :my_env,
+          :ignore_actions => ["My action"]
+        )
+
+        Appsignal.configure(:my_env) do |config|
+          expect(config.ignore_actions).to eq(["My action"])
+          config.active = true
+          config.name = "My app"
+          config.push_api_key = "key"
+        end
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("my_env")
+        expect(Appsignal.config[:active]).to be(true)
+        expect(Appsignal.config[:name]).to eq("My app")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+
+      it "loads a new config if the env is not the same" do
+        Appsignal._config = Appsignal::Config.new(
+          project_fixture_path,
+          :my_env,
+          :name => "Some name",
+          :push_api_key => "Some key",
+          :ignore_actions => ["My action"]
+        )
+
+        Appsignal.configure(:my_env2) do |config|
+          expect(config.ignore_actions).to be_empty
+          config.active = true
+          config.name = "My app"
+          config.push_api_key = "key"
+        end
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("my_env2")
+        expect(Appsignal.config[:active]).to be(true)
+        expect(Appsignal.config[:name]).to eq("My app")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+    end
+
+    context "when not active" do
+      it "starts with the configured config" do
+        Appsignal.configure(:test) do |config|
+          config.push_api_key = "key"
+        end
+
+        Appsignal.start
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+
+      it "uses the given env" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        Appsignal.configure(:env_arg)
+
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("env_arg")
+      end
+
+      it "loads the config without a block being given" do
+        Dir.chdir project_fixture_path do
+          Appsignal.configure(:test)
+        end
+
+        expect(Appsignal.config.env).to eq("test")
+        expect(Appsignal.config[:push_api_key]).to eq("abc")
+      end
+
+      it "allows customization of config in the block" do
+        Appsignal.configure(:test) do |config|
+          config.push_api_key = "key"
+        end
+
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("test")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+
+      it "loads the default config" do
+        Appsignal.configure do |config|
+          Appsignal::Config::DEFAULT_CONFIG.each do |option, value|
+            expect(config.send(option)).to eq(value)
+          end
+        end
+      end
+
+      it "loads the config from the YAML file" do
+        Dir.chdir project_fixture_path do
+          Appsignal.configure(:test) do |config|
+            expect(config.name).to eq("TestApp")
+          end
+        end
+      end
+
+      it "recognizes valid config" do
+        Appsignal.configure(:my_env) do |config|
+          config.push_api_key = "key"
+        end
+
+        expect(Appsignal.config.valid?).to be(true)
+      end
+
+      it "recognizes invalid config" do
+        Appsignal.configure(:my_env) do |config|
+          config.push_api_key = ""
+        end
+
+        expect(Appsignal.config.valid?).to be(false)
+      end
+
+      it "sets the environment when given as an argument" do
+        Appsignal.configure(:my_env)
+
+        expect(Appsignal.config.env).to eq("my_env")
+      end
+
+      it "reads the environment from the environment" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        Appsignal.configure do |config|
+          expect(config.env).to eq("env_env")
+        end
+
+        expect(Appsignal.config.env).to eq("env_env")
+      end
+
+      it "allows modification of previously unset config options" do
+        expect do
+          Appsignal.configure do |config|
+            config.ignore_actions << "My action"
+            config.request_headers << "My allowed header"
+          end
+        end.to_not(change { Appsignal::Config::DEFAULT_CONFIG })
+
+        expect(Appsignal.config[:ignore_actions]).to eq(["My action"])
+        expect(Appsignal.config[:request_headers])
+          .to eq(Appsignal::Config::DEFAULT_CONFIG[:request_headers] + ["My allowed header"])
+      end
     end
   end
 
@@ -50,7 +243,7 @@ describe Appsignal do
     end
 
     context "when config is loaded" do
-      before { Appsignal.config = project_fixture_config }
+      before { Appsignal._config = project_fixture_config }
 
       it "should initialize logging" do
         Appsignal.start
@@ -149,7 +342,7 @@ describe Appsignal do
     end
 
     context "with debug logging" do
-      before { Appsignal.config = project_fixture_config("test") }
+      before { Appsignal._config = project_fixture_config("test") }
 
       it "should change the log level" do
         Appsignal.start
@@ -185,7 +378,7 @@ describe Appsignal do
 
     context "when active" do
       before do
-        Appsignal.config = project_fixture_config
+        Appsignal._config = project_fixture_config
       end
 
       it "starts the logger and extension" do
@@ -227,7 +420,7 @@ describe Appsignal do
 
     context "without config" do
       before do
-        Appsignal.config = nil
+        Appsignal.clear_config!
       end
 
       it { is_expected.to be_falsy }
@@ -235,7 +428,7 @@ describe Appsignal do
 
     context "with inactive config" do
       before do
-        Appsignal.config = project_fixture_config("nonsense")
+        Appsignal._config = project_fixture_config("nonsense")
       end
 
       it { is_expected.to be_falsy }
@@ -243,7 +436,7 @@ describe Appsignal do
 
     context "with active config" do
       before do
-        Appsignal.config = project_fixture_config
+        Appsignal._config = project_fixture_config
       end
 
       it { is_expected.to be_truthy }
@@ -269,7 +462,7 @@ describe Appsignal do
   end
 
   context "not active" do
-    before { Appsignal.config = project_fixture_config("not_active") }
+    before { Appsignal._config = project_fixture_config("not_active") }
 
     describe ".monitor_transaction" do
       it "does not create a transaction" do
@@ -1685,7 +1878,7 @@ describe Appsignal do
     after { FileUtils.rm_rf(log_path) }
 
     def initialize_config
-      Appsignal.config = project_fixture_config(
+      Appsignal._config = project_fixture_config(
         "production",
         :log_path => log_path,
         :log_level => log_level
@@ -1832,7 +2025,7 @@ describe Appsignal do
 
       context "when there is no config" do
         before do
-          Appsignal.config = nil
+          Appsignal.clear_config!
           capture_stdout(out_stream) do
             Appsignal._start_logger
           end

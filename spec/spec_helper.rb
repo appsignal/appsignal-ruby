@@ -166,7 +166,7 @@ RSpec.configure do |config|
 
   config.after :context do
     FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
-    Appsignal.config = nil
+    Appsignal.clear_config!
     Appsignal.internal_logger = nil
   end
 

@@ -1,6 +1,6 @@
 describe Appsignal::Hooks::RedisHook do
   before do
-    Appsignal.config = project_fixture_config
+    start_agent
   end
 
   if DependencyHelper.redis_present?

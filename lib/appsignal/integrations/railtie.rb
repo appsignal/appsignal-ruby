@@ -40,7 +40,7 @@ module Appsignal
 
       def self.start
         unless Appsignal.config
-          Appsignal.config = Appsignal::Config.new(
+          Appsignal._config = Appsignal::Config.new(
             Rails.root,
             Rails.env,
             :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,

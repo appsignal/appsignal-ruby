@@ -11,7 +11,7 @@ describe Appsignal::Config do
 
       context "when environment is given" do
         let(:env) { "my_env" }
-        let(:config) { described_class.new("", "my_env") }
+        let(:config) { described_class.new("/root/path", "my_env") }
 
         it "sets the environment" do
           expect(config.env).to eq(env)
@@ -20,6 +20,7 @@ describe Appsignal::Config do
         it "sets the environment as loaded through the initial_config" do
           expect(config.initial_config).to eq(:env => env)
           expect(config.config_hash).to_not have_key(:env)
+          expect(config.config_hash).to_not have_key(:root_path)
         end
 
         context "with APPSIGNAL_APP_ENV environment variable" do
@@ -34,6 +35,7 @@ describe Appsignal::Config do
             expect(config.initial_config).to eq(:env => env)
             expect(config.env_config).to eq(:env => env_env)
             expect(config.config_hash).to_not have_key(:env)
+            expect(config.config_hash).to_not have_key(:root_path)
           end
         end
       end
@@ -1327,6 +1329,86 @@ describe Appsignal::Config do
           is_expected.to eql(Logger::DEBUG)
         end
       end
+    end
+  end
+
+  describe Appsignal::Config::ConfigDSL do
+    let(:env) { :production }
+    let(:config) { project_fixture_config(env) }
+    let(:dsl) { described_class.new(config) }
+
+    describe "default options" do
+      let(:env) { :unknown_env }
+
+      it "returns default values for config options" do
+        Appsignal::Config::DEFAULT_CONFIG.each do |option, value|
+          expect(dsl.send(option)).to eq(value)
+        end
+      end
+    end
+
+    it "returns already set values for config options" do
+      ENV["APPSIGNAL_IGNORE_ERRORS"] = "my_error1,my_error2"
+      config[:push_api_key] = "my push key"
+      config[:ignore_actions] = ["My ignored action"]
+
+      expect(dsl.push_api_key).to eq("my push key")
+      expect(dsl.ignore_actions).to eq(["My ignored action"])
+      expect(dsl.ignore_errors).to eq(["my_error1", "my_error2"])
+    end
+
+    it "returns the env" do
+      expect(dsl.env).to eq("production")
+    end
+
+    it "sets config options" do
+      dsl.push_api_key = "my push key"
+      dsl.ignore_actions = ["My ignored action"]
+
+      expect(dsl.push_api_key).to eq("my push key")
+      expect(dsl.ignore_actions).to eq(["My ignored action"])
+    end
+
+    it "doesn't update the config object" do
+      dsl.push_api_key = "my push key"
+
+      expect(dsl.push_api_key).to eq("my push key")
+      expect(config[:push_api_key]).to eq("abc") # Loaded from file
+    end
+
+    it "casts strings to strings" do
+      dsl.activejob_report_errors = :all
+      dsl.sidekiq_report_errors = :all
+
+      expect(dsl.activejob_report_errors).to eq("all")
+      expect(dsl.sidekiq_report_errors).to eq("all")
+    end
+
+    it "casts booleans to booleans" do
+      dsl.active = :yes
+      dsl.enable_host_metrics = "An object representing a truthy value"
+      dsl.send_params = true
+      dsl.send_session_data = false
+
+      expect(dsl.active).to be(true)
+      expect(dsl.enable_host_metrics).to be(true)
+      expect(dsl.send_params).to be(true)
+      expect(dsl.send_session_data).to be(false)
+    end
+
+    it "casts arrays to arrays" do
+      ignore_actions = Set.new
+      ignore_actions << "my ignored action 1"
+      ignore_actions << "my ignored action 2"
+      dsl.ignore_actions = ignore_actions
+
+      expect(dsl.ignore_actions).to eq(["my ignored action 1", "my ignored action 2"])
+    end
+
+    it "casts floats to floats" do
+      dsl.cpu_count = 1
+
+      expect(dsl.cpu_count).to eq(1.0)
     end
   end
 end
