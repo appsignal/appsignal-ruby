@@ -491,8 +491,6 @@ module Appsignal
         causes << error
       end
 
-      return if causes.empty?
-
       causes_sample_data = causes.map do |e|
         {
           :name => e.class.name,

@@ -1203,6 +1203,20 @@ describe Appsignal::Transaction do
         allow(e2).to receive(:cause).and_return(e3)
         e
       end
+      context "when the error has multiple causes" do
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e2 = RuntimeError.new("cause message")
+          e3 = StandardError.new("cause message 2")
+          allow(e).to receive(:backtrace).and_return(["line 1"])
+          allow(e).to receive(:cause).and_return(e2)
+          allow(e2).to receive(:cause).and_return(e3)
+          e
+        end
+
+        let(:error_without_cause) do
+          ExampleStandardError.new("error without cause")
+        end
 
       it "sends the causes information as sample data" do
         transaction.set_error(error)
@@ -1224,6 +1238,19 @@ describe Appsignal::Transaction do
             }
           ]
         )
+      end
+
+      it "does not keep error causes from previously set errors" do
+        transaction.set_error(error)
+        transaction.set_error(error_without_cause)
+
+        expect(transaction).to have_error(
+          "ExampleStandardError",
+          "error without cause",
+          []
+        )
+
+        expect(transaction).to include_error_causes([])
       end
     end
 
