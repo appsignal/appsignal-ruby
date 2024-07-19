@@ -20,6 +20,7 @@ module Appsignal
     BREADCRUMB_LIMIT = 20
     # @api private
     ERROR_CAUSES_LIMIT = 10
+    ADDITIONAL_ERRORS_LIMIT = 10
 
     class << self
       # Create a new transaction and set it as the currently active
@@ -96,7 +97,7 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @api private
-    def initialize(transaction_id, namespace)
+    def initialize(transaction_id, namespace, ext: nil)
       @transaction_id = transaction_id
       @action = nil
       @namespace = namespace
@@ -113,7 +114,7 @@ module Appsignal
       @errors = []
       @is_duplicate = false
 
-      @ext = Appsignal::Extension.start_transaction(
+      @ext = ext || Appsignal::Extension.start_transaction(
         @transaction_id,
         @namespace,
         0
@@ -131,9 +132,20 @@ module Appsignal
         return
       end
 
+      # If the transaction does not have a set error, take the last of
+      # the additional errors, if one exists, and set it as the error
+      # for this transaction. This ensures that we do not report both
+      # a performance sample and a duplicate error sample.
       set_error(errors.pop) if !has_error && !errors.empty?
 
-      sample_data if ext.finish(0) && !is_duplicate
+      # If the transaction is a duplicate, we don't want to finish it,
+      # because we want its finish time to be the finish time of the
+      # original transaction, and we do not want to set its sample
+      # data, because it should keep the sample data it duplicated from
+      # the original transaction.
+      # On duplicate transactions, the value of the sample flag, which
+      # is set on finish, will be duplicated from the original transaction.
+      sample_data if !is_duplicate && ext.finish(0)
 
       errors.each do |error|
         duplicate.tap do |transaction|
@@ -452,6 +464,12 @@ module Appsignal
 
     def add_error(error)
       @errors << error
+      return unless @errors.length > ADDITIONAL_ERRORS_LIMIT
+
+      Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Transaction has more " \
+        "than #{ADDITIONAL_ERRORS_LIMIT} additional errors. Only the last " \
+        "#{ADDITIONAL_ERRORS_LIMIT} will be reported."
+      @errors = @errors.last(ADDITIONAL_ERRORS_LIMIT)
     end
 
     # @see Appsignal::Helpers::Instrumentation#set_error
@@ -606,16 +624,13 @@ module Appsignal
     end
 
     def duplicate
-      self.class.new(
-        SecureRandom.uuid,
-        namespace,
-        request,
-        options
-      ).tap do |transaction|
-        transaction.ext = ext.duplicate(
-          transaction.transaction_id
-        )
+      new_transaction_id = SecureRandom.uuid
 
+      self.class.new(
+        new_transaction_id,
+        namespace,
+        :ext => ext.duplicate(new_transaction_id)
+      ).tap do |transaction|
         transaction.is_duplicate = true
       end
     end
