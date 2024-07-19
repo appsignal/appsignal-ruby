@@ -69,9 +69,8 @@ module Appsignal
 
       def require_loader(name)
         require "appsignal/loaders/#{name}"
-        registered?(name)
       rescue LoadError
-        false
+        nil
       end
     end
 

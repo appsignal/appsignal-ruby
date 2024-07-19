@@ -159,11 +159,18 @@ describe Appsignal do
   end
 
   describe ".load" do
+    before do
+      TestLoader = define_loader(:appsignal_loader)
+    end
+    after do
+      Object.send(:remove_const, :TestLoader)
+    end
+
     it "loads a loader" do
       expect(Appsignal::Loaders.instances).to be_empty
-      Appsignal.load(:loader_tester)
+      Appsignal.load(:appsignal_loader)
       expect(Appsignal::Loaders.instances)
-        .to include(:loader_tester => instance_of(Appsignal::Loaders::LoaderTester))
+        .to include(:appsignal_loader => instance_of(TestLoader))
     end
   end
 
