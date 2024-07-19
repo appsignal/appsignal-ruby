@@ -121,6 +121,76 @@ describe Appsignal::Config do
     end
   end
 
+  describe "loader default config" do
+    let(:config) do
+      described_class.new("some-path", "production")
+    end
+    before do
+      class TestLoader < Appsignal::Loaders::Loader
+        register :test
+        def on_load
+          register_config_defaults(
+            :env => "new_env",
+            :root_path => "/some/path",
+            :my_option => "my_value",
+            :nil_option => nil
+          )
+        end
+      end
+      load_loader(:test)
+    end
+    after do
+      Object.send(:remove_const, :TestLoader)
+      unregister_loader(:first)
+    end
+
+    it "merges with the loader defaults" do
+      expect(config.config_hash).to include(:my_option => "my_value")
+    end
+
+    it "does not set any nil values" do
+      expect(config.config_hash).to_not have_key(:nil_option)
+    end
+
+    it "overwrites the env" do
+      expect(config.env).to eq("new_env")
+    end
+
+    it "overwrites the path" do
+      expect(config.root_path).to eq("/some/path")
+    end
+
+    context "with multiple loaders" do
+      before do
+        class SecondLoader < Appsignal::Loaders::Loader
+          register :second
+          def on_load
+            register_config_defaults(
+              :env => "second_env",
+              :root_path => "/second/path",
+              :my_option => "second_value",
+              :second_option => "second_value"
+            )
+          end
+        end
+        load_loader(:second)
+      end
+      after do
+        Object.send(:remove_const, :SecondLoader)
+        unregister_loader(:second)
+      end
+
+      it "makes the first loader's config leading" do
+        expect(config.config_hash).to include(
+          :my_option => "my_value",
+          :second_option => "second_value"
+        )
+        expect(config.env).to eq("new_env")
+        expect(config.root_path).to eq("/some/path")
+      end
+    end
+  end
+
   describe "initial config" do
     let(:initial_config) do
       {

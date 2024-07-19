@@ -1,48 +1,13 @@
 # frozen_string_literal: true
 
 require "appsignal"
-require "appsignal/rack/hanami_middleware"
 
-module Appsignal
-  module Integrations
-    # @api private
-    module HanamiPlugin
-      def self.init
-        Appsignal.internal_logger.debug("Loading Hanami integration")
+Appsignal::Utils::StdoutAndLoggerMessage.warning(
+  "The 'require \"appsignal/integrations/hanami\"' file require integration " \
+    "method is deprecated. " \
+    "Please follow the Hanami setup guide in our docs for the new method: " \
+    "https://docs.appsignal.com/ruby/integrations/hanami.html"
+)
 
-        hanami_app_config = ::Hanami.app.config
-
-        unless Appsignal.active?
-          Appsignal.config = Appsignal::Config.new(
-            hanami_app_config.root || Dir.pwd,
-            hanami_app_config.env
-          )
-          Appsignal.start
-        end
-
-        return unless Appsignal.active?
-
-        hanami_app_config.middleware.use(
-          ::Rack::Events,
-          [Appsignal::Rack::EventHandler.new]
-        )
-        hanami_app_config.middleware.use(Appsignal::Rack::HanamiMiddleware)
-
-        ::Hanami::Action.prepend Appsignal::Integrations::HanamiIntegration
-      end
-    end
-
-    # @api private
-    module HanamiIntegration
-      def call(env)
-        super
-      ensure
-        transaction = env[::Appsignal::Rack::APPSIGNAL_TRANSACTION]
-
-        transaction&.set_action_if_nil(self.class.name)
-      end
-    end
-  end
-end
-
-Appsignal::Integrations::HanamiPlugin.init unless Appsignal.testing?
+Appsignal.load(:hanami)
+Appsignal.start

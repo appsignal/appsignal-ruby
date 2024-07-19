@@ -114,6 +114,7 @@ module Appsignal
           config.write_to_environment
           Appsignal::Extension.start
           Appsignal::Hooks.load_hooks
+          Appsignal::Loaders.start
 
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
@@ -161,6 +162,38 @@ module Appsignal
       Appsignal._start_logger
       internal_logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
+    end
+
+    # Load an AppSignal integration.
+    #
+    # Load one of the supported integrations via our loader system.
+    # This will set config defaults and integratie with the library if
+    # AppSignal is active upon start.
+    #
+    # @example Load Sinatra integrations
+    #   # First load the integration
+    #   Appsignal.load(:sinatra)
+    #   # Start AppSignal
+    #   Appsignal.start
+    #
+    # @example Load Sinatra integrations and define custom config
+    #   # First load the integration
+    #   Appsignal.load(:sinatra)
+    #
+    #   # Customize config
+    #   Appsignal.configure do |config|
+    #     config.ignore_actions = ["GET /ping"]
+    #   end
+    #
+    #
+    #   # Start AppSignal
+    #   Appsignal.start
+    #
+    # @param integration_name [String, Symbol] Name of the integration to load.
+    # @return [void]
+    # @since 3.12.0
+    def load(integration_name)
+      Loaders.load(integration_name)
     end
 
     # @api private
@@ -314,6 +347,7 @@ module Appsignal
   end
 end
 
+require "appsignal/loaders"
 require "appsignal/environment"
 require "appsignal/system"
 require "appsignal/utils"

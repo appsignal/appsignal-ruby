@@ -1,24 +1,13 @@
 # frozen_string_literal: true
 
 require "appsignal"
-require "appsignal/rack/sinatra_instrumentation"
 
-Appsignal.internal_logger.debug("Loading Sinatra (#{Sinatra::VERSION}) integration")
+Appsignal::Utils::StdoutAndLoggerMessage.warning(
+  "The 'require \"appsignal/integrations/sinatra\"' file require integration " \
+    "method is deprecated. " \
+    "Please follow the Sinatra setup guide in our docs for the new method: " \
+    "https://docs.appsignal.com/ruby/integrations/sinatra.html"
+)
 
-unless Appsignal.active?
-  app_settings = ::Sinatra::Application.settings
-  Appsignal.config = Appsignal::Config.new(
-    app_settings.root || Dir.pwd,
-    app_settings.environment
-  )
-
-  Appsignal.start
-end
-
-if Appsignal.active?
-  ::Sinatra::Base.use(
-    ::Rack::Events,
-    [Appsignal::Rack::EventHandler.new]
-  )
-  ::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation)
-end
+Appsignal.load(:sinatra)
+Appsignal.start
