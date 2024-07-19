@@ -88,7 +88,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data, :is_duplicate
+      :breadcrumbs, :custom_data, :is_duplicate, :has_error, :errors
 
     # Use {.create} to create new transactions.
     #
@@ -109,6 +109,7 @@ module Appsignal
       @params = nil
       @session_data = nil
       @headers = nil
+      @has_error = false
       @errors = []
       @is_duplicate = false
 
@@ -130,20 +131,18 @@ module Appsignal
         return
       end
 
-      sample_data unless @is_duplicate
+      set_error(errors.pop) if !has_error && !errors.empty?
 
-      transactions =
-        @errors.each do |error|
-          transaction.duplicate do |transaction|
-            transaction.set_error(error)
-            transaction.complete
-          end
+      sample_data if ext.finish(0) && !is_duplicate
+
+      errors.each do |error|
+        duplicate.tap do |transaction|
+          transaction.set_error(error)
+          transaction.complete
         end
+      end
 
-      @ext.finish(0)
-      @ext.complete
-
-      transactions.each(&:complete)
+      ext.complete
     end
 
     # @api private
@@ -471,6 +470,8 @@ module Appsignal
         cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
+
+      @has_error = true
 
       root_cause_missing = false
 

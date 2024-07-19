@@ -200,6 +200,61 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    context "when a transaction has additional errors" do
+      let(:error) do
+        e = ExampleStandardError.new("test message")
+        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e
+      end
+
+      let(:other_error) do
+        e = ExampleStandardError.new("other test message")
+        allow(e).to receive(:backtrace).and_return(["line 2"])
+        e
+      end
+
+      context "when an error is already set on the transaction" do
+        it "reports additional errors as duplicate transactions" do
+          transaction.set_error(error)
+          transaction.add_error(other_error)
+
+          expect(transaction).to receive(:duplicate).and_wrap_original do |original_method|
+            duplicate_transaction = original_method.call
+            expect(duplicate_transaction).to receive(:set_error).with(other_error)
+            expect(duplicate_transaction).to receive(:complete)
+            duplicate_transaction
+          end
+
+          transaction.complete
+        end
+      end
+
+      context "when an error is not already set on the transaction" do
+        it "reports the last additional error in the original transaction" do
+          transaction.add_error(error)
+          transaction.add_error(other_error)
+
+          expect(transaction).to receive(:set_error).with(other_error)
+
+          transaction.complete
+        end
+
+        it "reports other additional errors as duplicate transactions" do
+          transaction.add_error(error)
+          transaction.add_error(other_error)
+
+          expect(transaction).to receive(:duplicate).and_wrap_original do |original_method|
+            duplicate_transaction = original_method.call
+            expect(duplicate_transaction).to receive(:set_error).with(error)
+            expect(duplicate_transaction).to receive(:complete)
+            duplicate_transaction
+          end
+
+          transaction.complete
+        end
+      end
+    end
   end
 
   context "pausing" do
@@ -1140,6 +1195,51 @@ describe Appsignal::Transaction do
     end
   end
 
+    describe "#add_error" do
+      let(:error) do
+        e = ExampleStandardError.new("test message")
+        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e
+      end
+
+      let(:other_error) do
+        e = ExampleStandardError.new("other test message")
+        allow(e).to receive(:backtrace).and_return(["line 2"])
+        e
+      end
+
+      it "stores an error in the errors array" do
+        transaction.add_error(error)
+
+        expect(transaction.errors).to eq([error])
+      end
+
+      it "does not set the error on the extension" do
+        transaction.add_error(error)
+
+        expect(transaction.to_h["error"]).to be_nil
+      end
+
+      it "does not set the has_error attribute to true" do
+        expect(transaction.has_error).to be_falsy
+
+        transaction.add_error(error)
+
+        expect(transaction.has_error).to be_falsy
+      end
+
+      it "does not override an error set with set_error" do
+        transaction.set_error(error)
+        transaction.add_error(other_error)
+
+        expect(transaction.to_h["error"]).to eq(
+          "name" => "ExampleStandardError",
+          "message" => "test message",
+          "backtrace" => ["line 1"].to_json
+        )
+      end
+    end
+
   describe "#set_error" do
     let(:transaction) { new_transaction }
     let(:env) { http_request_env_with_data }
@@ -1156,6 +1256,20 @@ describe Appsignal::Transaction do
 
       expect(transaction).to_not have_error
     end
+
+      it "does not add the error to the errors array" do
+        transaction.set_error(error)
+
+        expect(transaction.errors).to be_empty
+      end
+
+      it "sets the has_error attribute to true" do
+        expect(transaction.has_error).to be_falsy
+
+        transaction.set_error(error)
+
+        expect(transaction.has_error).to be_truthy
+      end
 
     context "when error argument is not an error" do
       let(:error) { Object.new }
@@ -1185,13 +1299,13 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the error has no causes" do
-      it "does not set the causes information as sample data" do
-        transaction.set_error(error)
+      context "when the error has no causes" do
+        it "should set an empty causes array as sample data" do
+          transaction.set_error(error)
 
-        expect(transaction).to_not include_error_causes
+          expect(transaction).to include_error_causes([])
+        end
       end
-    end
 
     context "when the error has multiple causes" do
       let(:error) do
@@ -1452,6 +1566,49 @@ describe Appsignal::Transaction do
   end
 
   # private
+
+    describe "#duplicate" do
+      let(:options) do
+        { :some => :option }
+      end
+
+      subject { transaction.send(:duplicate) }
+
+      it "returns a new transaction" do
+        is_expected.to be_a(Appsignal::Transaction)
+        is_expected.to_not be(transaction)
+      end
+
+      it "has a different transaction id" do
+        expect(subject.transaction_id).to_not eq(transaction.transaction_id)
+      end
+
+      it "copies the namespace, request and options" do
+        is_expected.to have_attributes(
+          :namespace => namespace,
+          :request => request,
+          :options => options
+        )
+      end
+
+      it "has is_duplicate set to true" do
+        expect(transaction).to have_attributes(:is_duplicate => false)
+        expect(subject).to have_attributes(:is_duplicate => true)
+      end
+
+      it "duplicates extension data" do
+        transaction.set_error(StandardError.new("oops"))
+        transaction.set_sample_data("key", "value")
+        transaction.set_metadata("key", "value")
+        transaction.start_event
+        transaction.finish_event("name", "title", "body", 1)
+
+        subject_hash = subject.to_h.tap { |h| h.delete("id") }
+        transaction_hash = transaction.to_h.tap { |h| h.delete("id") }
+
+        expect(subject_hash).to eq(transaction_hash)
+      end
+    end
 
   describe "#cleaned_backtrace" do
     let(:transaction) { new_transaction }
