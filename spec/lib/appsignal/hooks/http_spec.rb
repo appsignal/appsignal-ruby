@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 describe Appsignal::Hooks::HttpHook do
-  before :context do
-    start_agent
-  end
+  before { start_agent }
 
   if DependencyHelper.http_present?
     context "with instrument_http_rb set to true" do

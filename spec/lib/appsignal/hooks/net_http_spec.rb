@@ -1,5 +1,5 @@
 describe Appsignal::Hooks::NetHttpHook do
-  before(:context) { start_agent }
+  before { start_agent }
 
   describe "#dependencies_present?" do
     subject { described_class.new.dependencies_present? }

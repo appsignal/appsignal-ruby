@@ -12,7 +12,7 @@ describe Appsignal::Rack::AbstractMiddleware do
   let(:options) { {} }
   let(:middleware) { described_class.new(app, options) }
 
-  before(:context) { start_agent }
+  before { start_agent }
   around { |example| keep_transactions { example.run } }
 
   def make_request

@@ -1,9 +1,7 @@
 require "appsignal/span"
 
 describe Appsignal::Span do
-  before :context do
-    start_agent
-  end
+  before { start_agent }
 
   let(:namespace) { "web" }
   let(:root) { Appsignal::Span.new(namespace) }

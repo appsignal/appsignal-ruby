@@ -1,8 +1,10 @@
 describe Appsignal::Environment do
   include EnvironmentMetadataHelper
 
-  before(:context) { start_agent }
-  before { capture_environment_metadata_report_calls }
+  before do
+    start_agent
+    capture_environment_metadata_report_calls
+  end
 
   def report(key, &value_block)
     described_class.report(key, &value_block)

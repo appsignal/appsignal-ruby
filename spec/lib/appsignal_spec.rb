@@ -2,12 +2,6 @@ describe Appsignal do
   include EnvironmentMetadataHelper
   around { |example| keep_transactions { example.run } }
 
-  before do
-    # Make sure we have a clean state because we want to test
-    # initialization here.
-    Appsignal.clear_config!
-  end
-
   let(:transaction) { http_request_transaction }
 
   describe ".config=" do
@@ -39,10 +33,6 @@ describe Appsignal do
   end
 
   describe ".configure" do
-    before do
-      Appsignal.clear_config!
-    end
-
     context "when active" do
       it "doesn't update the config" do
         start_agent
@@ -1113,13 +1103,11 @@ describe Appsignal do
     end
 
     describe ".add_breadcrumb" do
-      around do |example|
-        start_agent
-        with_current_transaction(transaction) { example.run }
-      end
+      before { start_agent }
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
 
         it "adds the breadcrumb to the transaction" do
           Appsignal.add_breadcrumb(
@@ -2025,7 +2013,6 @@ describe Appsignal do
 
       context "when there is no config" do
         before do
-          Appsignal.clear_config!
           capture_stdout(out_stream) do
             Appsignal._start_logger
           end

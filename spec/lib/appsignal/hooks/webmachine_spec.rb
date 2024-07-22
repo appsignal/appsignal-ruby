@@ -2,7 +2,7 @@ describe Appsignal::Hooks::WebmachineHook do
   if DependencyHelper.webmachine_present?
     context "with webmachine" do
       let(:fsm) { Webmachine::Decision::FSM.new(double(:trace? => false), double, double) }
-      before(:context) { start_agent }
+      before { start_agent }
 
       describe "#dependencies_present?" do
         subject { described_class.new.dependencies_present? }

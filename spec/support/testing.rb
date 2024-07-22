@@ -14,6 +14,13 @@ module Appsignal
     def clear_config!
       @config = nil
     end
+
+    # @api private
+    def clear!
+      Appsignal.internal_logger = nil
+
+      clear_config!
+    end
   end
 
   class Config

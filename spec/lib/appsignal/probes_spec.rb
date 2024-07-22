@@ -408,13 +408,14 @@ describe Appsignal::Probes do
       end
 
       context "logger" do
-        let(:log_stream) { std_stream }
-        let(:log) { log_contents(log_stream) }
+        before { start_agent }
 
-        around { |example| use_logger_with(log_stream) { example.run } }
         it "logs a deprecation message" do
-          silence { collection.register :my_probe, lambda {} }
-          expect(log).to contains_log :warn,
+          logs =
+            capture_logs do
+              silence { collection.register :my_probe, lambda {} }
+            end
+          expect(logs).to contains_log :warn,
             "The method 'Appsignal::Probes.probes.register' is deprecated. " \
               "Use 'Appsignal::Probes.register' instead."
         end

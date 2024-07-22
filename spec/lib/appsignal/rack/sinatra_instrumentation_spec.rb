@@ -21,7 +21,7 @@ if DependencyHelper.sinatra_present?
     end
     let(:middleware) { Appsignal::Rack::SinatraInstrumentation.new(app) }
 
-    before(:context) { start_agent }
+    before { start_agent }
     around do |example|
       keep_transactions { example.run }
     end
@@ -54,7 +54,7 @@ if DependencyHelper.sinatra_present?
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
-    before(:context) { start_agent }
+    before { start_agent }
     around do |example|
       keep_transactions { example.run }
     end

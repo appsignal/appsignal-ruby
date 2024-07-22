@@ -76,9 +76,6 @@ RSpec.describe "Puma plugin" do
   let(:hostname) { Socket.gethostname }
   let(:expected_default_tags) { { "hostname" => hostname } }
   let(:stats_data) { { :backlog => 1 } }
-  before :context do
-    Appsignal.stop
-  end
   before do
     module Puma
       def self.stats
