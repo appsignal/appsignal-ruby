@@ -28,11 +28,9 @@ _Published on 2024-07-22._
   ```ruby
   # config/initializers/appsignal.rb
 
-  Appsignal.config = Appsignal::Config.new(
-    Rails.root,
-    Rails.env,
-    :ignore_actions => ["My action"]
-  )
+  Appsignal.configure do |config|
+    config.ignore_actions = ["My action"]
+  end
   ```
 
   Be aware that when `start_at` is set to `after_initialize`, AppSignal will not track any errors that occur when the initializers are run and the app fails to start.
