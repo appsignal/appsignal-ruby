@@ -55,7 +55,7 @@ describe Appsignal do
           end
         expect(logs).to contains_log(
           :warn,
-          "AppSignal is already active. Ignoring `Appsignal.configure` call."
+          "AppSignal is already started. Ignoring `Appsignal.configure` call."
         )
       end
     end
@@ -98,6 +98,27 @@ describe Appsignal do
         end
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env2")
+        expect(Appsignal.config[:active]).to be(true)
+        expect(Appsignal.config[:name]).to eq("My app")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+
+      it "calls configure if not started yet" do
+        Appsignal.configure(:my_env) do |config|
+          config.active = false
+          config.name = "Some name"
+        end
+        Appsignal.start
+        expect(Appsignal.started?).to be_falsy
+
+        Appsignal.configure(:my_env) do |config|
+          expect(config.ignore_actions).to be_empty
+          config.active = true
+          config.name = "My app"
+          config.push_api_key = "key"
+        end
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
         expect(Appsignal.config[:name]).to eq("My app")
         expect(Appsignal.config[:push_api_key]).to eq("key")
@@ -405,14 +426,28 @@ describe Appsignal do
     end
   end
 
+  describe ".started?" do
+    subject { Appsignal.started? }
+
+    context "when started with active config" do
+      before { start_agent }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context "when started with inactive config" do
+      before do
+        Appsignal._config = project_fixture_config("nonsense")
+      end
+
+      it { is_expected.to be_falsy }
+    end
+  end
+
   describe ".active?" do
     subject { Appsignal.active? }
 
     context "without config" do
-      before do
-        Appsignal.clear_config!
-      end
-
       it { is_expected.to be_falsy }
     end
 

@@ -130,6 +130,7 @@ module Appsignal
 
       if config.valid?
         if config.active?
+          @started = true
           internal_logger.info "Starting AppSignal #{Appsignal::VERSION} " \
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
           config.write_to_environment
@@ -237,9 +238,9 @@ module Appsignal
     # @see https://docs.appsignal.com/ruby/configuration.html Configuration guide
     # @see https://docs.appsignal.com/ruby/configuration/options.html Configuration options
     def configure(env = nil)
-      if Appsignal.active?
+      if Appsignal.started?
         Appsignal.internal_logger
-          .warn("AppSignal is already active. Ignoring `Appsignal.configure` call.")
+          .warn("AppSignal is already started. Ignoring `Appsignal.configure` call.")
         return
       end
 
@@ -378,6 +379,16 @@ module Appsignal
     # @since 1.0.0
     def extension_loaded?
       !!extension_loaded
+    end
+
+    # Returns if {.start} has been called before with a valid config to start
+    # AppSignal.
+    #
+    # @return [Boolean]
+    # @see Extension
+    # @since 3.12.0
+    def started?
+      defined?(@started) ? @started : false
     end
 
     # Returns the active state of the AppSignal integration.

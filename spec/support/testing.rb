@@ -11,6 +11,13 @@ module Appsignal
     end
 
     # @api private
+    def clear_started!
+      return unless instance_variable_defined?(:@started)
+
+      remove_instance_variable(:@started)
+    end
+
+    # @api private
     def clear_config!
       @config = nil
     end
@@ -19,6 +26,7 @@ module Appsignal
     def clear!
       Appsignal.internal_logger = nil
 
+      clear_started!
       clear_config!
     end
   end
