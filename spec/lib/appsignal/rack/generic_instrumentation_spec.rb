@@ -46,7 +46,7 @@ describe "Appsignal::Rack::GenericInstrumentation" do
     let(:env) { Rack::MockRequest.env_for("/some/path") }
     let(:middleware) { Appsignal::Rack::GenericInstrumentation.new(app, {}) }
 
-    before(:context) { start_agent }
+    before { start_agent }
     around { |example| keep_transactions { example.run } }
 
     def make_request(env)

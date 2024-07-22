@@ -19,7 +19,7 @@ if DependencyHelper.grape_present?
     end
     let(:middleware) { Appsignal::Rack::GrapeMiddleware.new(api_endpoint) }
     let(:transaction) { http_request_transaction }
-    before(:context) { start_agent }
+    before { start_agent }
     around do |example|
       GrapeExample = Module.new
       GrapeExample.send(:const_set, :Api, app)

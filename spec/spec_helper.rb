@@ -93,6 +93,10 @@ RSpec.configure do |config|
   end
 
   config.before do
+    Appsignal.clear!
+    Appsignal::Testing.clear!
+    Appsignal::Loaders.clear!
+    clear_current_transaction!
     stop_minutely_probes
     ENV["RAILS_ENV"] ||= "test"
     ENV["RACK_ENV"] ||= "test"
@@ -158,16 +162,11 @@ RSpec.configure do |config|
   end
 
   config.after do
-    Appsignal::Testing.clear!
-    Appsignal::Loaders.clear!
-    clear_current_transaction!
     stop_minutely_probes
   end
 
   config.after :context do
     FileUtils.rm_f(File.join(project_fixture_path, "log/appsignal.log"))
-    Appsignal.clear_config!
-    Appsignal.internal_logger = nil
   end
 
   def stop_minutely_probes

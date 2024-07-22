@@ -8,9 +8,7 @@ describe Appsignal::Hooks::SequelHook do
       end
     end
 
-    before :context do
-      start_agent
-    end
+    before { start_agent }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

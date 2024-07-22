@@ -1,7 +1,5 @@
 describe Appsignal::Hooks::RedisHook do
-  before do
-    start_agent
-  end
+  before { start_agent }
 
   if DependencyHelper.redis_present?
     context "with redis" do

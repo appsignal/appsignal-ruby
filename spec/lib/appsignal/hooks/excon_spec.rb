@@ -1,7 +1,5 @@
 describe Appsignal::Hooks::ExconHook do
-  before :context do
-    start_agent
-  end
+  before { start_agent }
 
   context "with Excon" do
     before(:context) do

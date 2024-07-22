@@ -2,7 +2,7 @@ require "appsignal/integrations/net_http"
 
 describe Appsignal::Integrations::NetHttpIntegration do
   let(:transaction) { http_request_transaction }
-  before(:context) { start_agent }
+  before { start_agent }
   before { set_current_transaction transaction }
   around { |example| keep_transactions { example.run } }
 

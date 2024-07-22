@@ -527,6 +527,15 @@ if DependencyHelper.active_job_present?
       end
     end
     around do |example|
+      with_rails_error_reporter do
+        keep_transactions do
+          Sidekiq::Testing.fake! do
+            example.run
+          end
+        end
+      end
+    end
+    before do
       start_agent
       Appsignal.internal_logger = test_logger(log)
       ActiveJob::Base.queue_adapter = :sidekiq
@@ -550,13 +559,6 @@ if DependencyHelper.active_job_present?
       # We test somewhere else if the middleware is installed properly.
       Sidekiq::Testing.server_middleware do |chain|
         chain.add Appsignal::Integrations::SidekiqMiddleware
-      end
-      with_rails_error_reporter do
-        keep_transactions do
-          Sidekiq::Testing.fake! do
-            example.run
-          end
-        end
       end
     end
     after do

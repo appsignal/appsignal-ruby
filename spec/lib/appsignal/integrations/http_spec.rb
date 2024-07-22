@@ -9,12 +9,8 @@ if DependencyHelper.http_present?
     around do |example|
       keep_transactions { example.run }
     end
-
-    before :context do
-      start_agent
-    end
-
     before do
+      start_agent
       set_current_transaction(transaction)
     end
 

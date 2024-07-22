@@ -1,10 +1,12 @@
 describe Appsignal::Transaction do
   let(:time) { Time.at(fixed_time) }
 
-  before { Timecop.freeze(time) }
+  before do
+    start_agent
+    Timecop.freeze(time)
+  end
   after { Timecop.return }
   around do |example|
-    start_agent
     keep_transactions do
       example.run
     end

@@ -33,7 +33,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     let(:process_group) { Etc.getgrgid(Process.gid).name }
     before(:context) { Appsignal.stop }
     before do
-      Appsignal.clear_config!
       # Clear previous reports
       DiagnosticsReportEndpoint.clear_report!
       if cli_class.instance_variable_defined? :@data

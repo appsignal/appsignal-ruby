@@ -12,7 +12,7 @@ if DependencyHelper.hanami2_present?
     end
     let(:middleware) { Appsignal::Rack::HanamiMiddleware.new(app, {}) }
 
-    before(:context) { start_agent }
+    before { start_agent }
     around { |example| keep_transactions { example.run } }
 
     def make_request(env)
