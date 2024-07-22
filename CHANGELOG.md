@@ -1,5 +1,114 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.0
+
+_Published on 2024-07-22._
+
+### Added
+
+- Add a Rails configuration option to start AppSignal after Rails is initialized. By default, AppSignal will start before the Rails initializers are run. This way it is not possible to configure AppSignal in a Rails initializer using Ruby. To configure AppSignal in a Rails initializer, configure Rails to start AppSignal after it is initialized.
+
+  ```ruby
+  # config/application.rb
+
+  # ...
+
+  module MyApp
+    class Application < Rails::Application
+      # Add this line
+      config.appsignal.start_at = :after_initialize
+
+      # Other config
+    end
+  end
+  ```
+
+  Then, in the initializer:
+
+  ```ruby
+  # config/initializers/appsignal.rb
+
+  Appsignal.config = Appsignal::Config.new(
+    Rails.root,
+    Rails.env,
+    :ignore_actions => ["My action"]
+  )
+  ```
+
+  Be aware that when `start_at` is set to `after_initialize`, AppSignal will not track any errors that occur when the initializers are run and the app fails to start.
+
+  See [our Rails documentation](https://docs.appsignal.com/ruby/integrations/rails.html) for more information.
+
+  (minor [b84a6a36](https://github.com/appsignal/appsignal-ruby/commit/b84a6a3695259b365cde6f69165818a1e1b99197))
+- Add a new method of configuring AppSignal: `Appsignal.configure`. This new method allows apps to configure AppSignal in Ruby.
+
+  ```ruby
+  # The environment will be auto detected
+  Appsignal.configure do |config|
+    config.activejob_report_errors = "discard"
+    config.sidekiq_report_errors = :discard
+    config.ignore_actions = ["My ignored action", "My other ignored action"]
+    config.request_headers << "MY_HTTP_HEADER"
+    config.send_params = true
+    config.enable_host_metrics = false
+  end
+
+  # Explicitly define which environment to start
+  Appsignal.configure(:production) do |config|
+    # Some config
+  end
+  ```
+
+  This new method can be used to update config in Ruby. We still recommend to use the `config/appsignal.yml` file to configure AppSignal whenever possible. Apps that use the `Appsignal.config = Appsignal::Config.new(...)` way of configuring AppSignal, should be updated to use the new `Appsignal.configure` method. The `Appsignal::Config.new` method would overwrite the given "initial config" with the config file's config and config read from environment variables. The `Appsignal.configure` method is leading. The config file, environment variables and `Appsignal.configure` methods can all be mixed.
+
+  See [our configuration guide](https://docs.appsignal.com/ruby/configuration.html) for more information.
+
+  (minor [ba60fff9](https://github.com/appsignal/appsignal-ruby/commit/ba60fff9fa5087c78e171a0608beba882e1a4c92))
+
+### Changed
+
+- Update the Sinatra, Padrino, Grape and Hanami integration setup for applications. Before this change a "appsignal/integrations/sinatra" file would need to be required to load the AppSignal integration for Sinatra. Similar requires exist for other libraries. This has changed to a new integration load mechanism.
+
+  This new load mechanism makes starting AppSignal more predictable when loading multiple integrations, like those for Sinatra, Padrino, Grape and Hanami.
+
+  ```ruby
+  # Sinatra example
+  # Before
+  require "appsignal/integrations/sinatra"
+
+  # After
+  require "appsignal"
+
+  Appsignal.load(:sinatra)
+  Appsignal.start
+  ```
+
+  The `require "appsignal/integrations/sinatra"` will still work, but is deprecated in this release.
+
+  See the documentation for the specific libraries for the latest on how to integrate AppSignal.
+
+  - [Grape](https://docs.appsignal.com/ruby/integrations/grape.html)
+  - [Hanami](https://docs.appsignal.com/ruby/integrations/hanami.html)
+  - [Padrino](https://docs.appsignal.com/ruby/integrations/padrino.html)
+  - [Sinatra](https://docs.appsignal.com/ruby/integrations/sinatra.html)
+
+  When using a combination of the libraries listed above, read our [integration guide](https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html) on how to load and configure AppSignal for multiple integrations at once.
+
+  (minor [35fff8cb](https://github.com/appsignal/appsignal-ruby/commit/35fff8cb135bf024b3bcf95e497af7dcc0a4cc02))
+- Disable the AppSignal Rack EventHandler when AppSignal is not active. It would still trigger our instrumentation when AppSignal is not active. This reduces the instrumentation overhead when AppSignal is not active. (patch [03e7c1b2](https://github.com/appsignal/appsignal-ruby/commit/03e7c1b221caa00af1599ae94e1d4055835c94a7))
+
+### Deprecated
+
+- Deprecate the `Appsignal.config = Appsignal::Config.new(...)` method of configuring AppSignal. See the changelog entry about `Appsignal.configure { ... }` for the new way to configure AppSignal in Ruby. (minor [ba60fff9](https://github.com/appsignal/appsignal-ruby/commit/ba60fff9fa5087c78e171a0608beba882e1a4c92))
+- Deprecate the Hanami integration require: `require "appsignal/integrations/hanami"`. Use the new `Appsignal.load(:hanami)` method instead. Read our [Hanami docs](https://docs.appsignal.com/ruby/integrations/hanami.html) for more information. (patch)
+- Deprecate the Padrino integration require: `require "appsignal/integrations/padrino"`. Use the new `Appsignal.load(:padrino)` method instead. Read our [Padrino docs](https://docs.appsignal.com/ruby/integrations/padrino.html) for more information. (patch)
+- Deprecate the Sinatra integration require: `require "appsignal/integrations/sinatra"`. Use the new `Appsignal.load(:sinatra)` method instead. Read our [Sinatra docs](https://docs.appsignal.com/ruby/integrations/sinatra.html) for more information. (patch)
+- Deprecate the Grape integration require: `require "appsignal/integrations/grape"`. Use the new `Appsignal.load(:grape)` method instead. Read our [Grape docs](https://docs.appsignal.com/ruby/integrations/grape.html) for more information. (patch)
+
+### Fixed
+
+- Fix instrumentation events for response bodies appearing twice. When multiple instrumentation middleware were mounted in an application, it would create duplicate `process_response_body.rack` events. (patch [24b16517](https://github.com/appsignal/appsignal-ruby/commit/24b16517f3bf5e2911345d5d825a1febb3c7aed7))
+
 ## 3.11.0
 
 _Published on 2024-07-15._
