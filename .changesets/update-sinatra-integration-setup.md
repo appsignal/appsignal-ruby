@@ -3,9 +3,9 @@ bump: minor
 type: change
 ---
 
-Update the Sinatra, Padrino, Grape and Hanami integration setup for applications. Before this change a "appsignal/integrations/sinatra" file would need to be required to load the AppSignal integration for Sinatra. Similar requires exist for other libraries. This has changed to a new DSL.
+Update the Sinatra, Padrino, Grape and Hanami integration setup for applications. Before this change a "appsignal/integrations/sinatra" file would need to be required to load the AppSignal integration for Sinatra. Similar requires exist for other libraries. This has changed to a new integration load mechanism.
 
-This new DSL makes starting AppSignal more predictable when loading multiple integrations, like those for Sinatra, Padrino, Grape and Hanami.
+This new load mechanism makes starting AppSignal more predictable when loading multiple integrations, like those for Sinatra, Padrino, Grape and Hanami.
 
 ```ruby
 # Sinatra example
