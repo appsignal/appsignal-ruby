@@ -4,31 +4,13 @@ describe Appsignal do
 
   let(:transaction) { http_request_transaction }
 
-  describe ".config=" do
+  describe "._config=" do
     it "sets the config" do
       config = project_fixture_config
       expect(Appsignal.internal_logger).to_not receive(:level=)
 
-      silence { Appsignal.config = config }
+      Appsignal._config = config
       expect(Appsignal.config).to eq config
-    end
-
-    it "prints a deprecation warning" do
-      err_stream = std_stream
-      capture_std_streams(std_stream, err_stream) do
-        Appsignal.config = project_fixture_config
-      end
-      expect(err_stream.read).to include(
-        "appsignal WARNING: Configuring AppSignal with `Appsignal.config=` is deprecated."
-      )
-    end
-
-    it "logs a deprecation warning" do
-      logs = capture_logs { silence { Appsignal.config = project_fixture_config } }
-      expect(logs).to contains_log(
-        :warn,
-        "Configuring AppSignal with `Appsignal.config=` is deprecated."
-      )
     end
   end
 
@@ -489,47 +471,6 @@ describe Appsignal do
   context "not active" do
     before { Appsignal._config = project_fixture_config("not_active") }
 
-    describe ".monitor_transaction" do
-      it "does not create a transaction" do
-        object = double(:some_method => 1)
-
-        expect do
-          Appsignal.monitor_transaction("perform_job.nothing") do
-            object.some_method
-          end
-        end.to_not(change { created_transactions.count })
-      end
-
-      it "returns the block's return value" do
-        object = double(:some_method => 1)
-
-        return_value = Appsignal.monitor_transaction("perform_job.nothing") do
-          object.some_method
-        end
-        expect(return_value).to eq 1
-      end
-
-      context "with an unknown event type" do
-        it "yields the given block" do
-          expect do |blk|
-            Appsignal.monitor_transaction("unknown.sidekiq", &blk)
-          end.to yield_control
-        end
-
-        it "logs an error" do
-          logs =
-            capture_logs do
-              Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
-            end
-          expect(logs).to contains_log(
-            :error,
-            "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
-              "(for jobs and tasks) or 'process_action' (for HTTP requests)"
-          )
-        end
-      end
-    end
-
     describe ".listen_for_error" do
       let(:error) { ExampleException.new("specific error") }
 
@@ -744,211 +685,6 @@ describe Appsignal do
         expect(transaction).to be_completed
 
         expect(Appsignal).to have_received(:stop).with("monitor_and_stop")
-      end
-    end
-
-    describe ".monitor_transaction" do
-      it "prints a deprecation warning" do
-        err_stream = std_stream
-        capture_std_streams(std_stream, err_stream) do
-          Appsignal.monitor_transaction(
-            "perform_job.something",
-            :class => "BackgroundJob",
-            :method => "perform"
-          ) do
-            :return_value
-          end
-        end
-
-        expect(err_stream.read).to include(
-          "appsignal WARNING: The `Appsignal.monitor_transaction` helper is deprecated."
-        )
-      end
-
-      it "logs a deprecation warning" do
-        logs =
-          capture_logs do
-            silence do
-              Appsignal.monitor_transaction(
-                "perform_job.something",
-                :class => "BackgroundJob",
-                :method => "perform"
-              ) do
-                :return_value
-              end
-            end
-          end
-
-        expect(logs).to contains_log(
-          :warn,
-          "The `Appsignal.monitor_transaction` helper is deprecated."
-        )
-      end
-
-      context "with a successful call" do
-        it "instruments and completes for a background job" do
-          return_value = nil
-          expect do
-            return_value =
-              Appsignal.monitor_transaction(
-                "perform_job.something",
-                {
-                  :class => "BackgroundJob",
-                  :method => "perform",
-                  :queue_start => fixed_time.to_i
-                }
-              ) do
-                :return_value
-              end
-          end.to(change { created_transactions.count }.by(1))
-          expect(return_value).to eq(:return_value)
-
-          transaction = last_transaction
-          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-          expect(transaction).to have_action("BackgroundJob#perform")
-          expect(transaction).to include_event("name" => "perform_job.something")
-          expect(transaction).to have_queue_start(1_389_783_600_000)
-          expect(transaction).to be_completed
-        end
-
-        it "instruments and completes for a http request" do
-          return_value = nil
-          expect do
-            return_value =
-              Appsignal.monitor_transaction(
-                "process_action.something",
-                {
-                  :controller => "BlogPostsController",
-                  :action => "show",
-                  "HTTP_X_REQUEST_START" => "t=#{fixed_time.to_i * 1000}"
-                }
-              ) do
-                :return_value
-              end
-          end.to(change { created_transactions.count }.by(1))
-          expect(return_value).to eq(:return_value)
-
-          transaction = last_transaction
-          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(transaction).to have_action("BlogPostsController#show")
-          expect(transaction).to include_event("name" => "process_action.something")
-          expect(transaction).to have_queue_start(1_389_783_600_000)
-          expect(transaction).to be_completed
-        end
-      end
-
-      context "with an erroring call" do
-        let(:error) { ExampleException.new("error message") }
-
-        it "adds the error to the current transaction and complete" do
-          expect do
-            Appsignal.monitor_transaction("perform_job.something") do
-              raise error
-            end
-          end.to raise_error(error)
-
-          expect(last_transaction).to have_error("ExampleException", "error message")
-          expect(last_transaction).to be_completed
-        end
-      end
-
-      context "with an unknown event type" do
-        it "yields the given block" do
-          expect do |blk|
-            Appsignal.monitor_transaction("unknown.sidekiq", &blk)
-          end.to yield_control
-        end
-
-        it "logs an error" do
-          logs =
-            capture_logs do
-              Appsignal.monitor_transaction("unknown.sidekiq") {} # rubocop:disable Lint/EmptyBlock
-            end
-          expect(logs).to contains_log(
-            :error,
-            "Unrecognized name 'unknown.sidekiq': names must start with either 'perform_job' " \
-              "(for jobs and tasks) or 'process_action' (for HTTP requests)"
-          )
-        end
-      end
-    end
-
-    describe ".monitor_single_transaction" do
-      it "prints a deprecation warning" do
-        err_stream = std_stream
-        capture_std_streams(std_stream, err_stream) do
-          Appsignal.monitor_single_transaction(
-            "perform_job.something",
-            :class => "BackgroundJob",
-            :method => "perform"
-          ) do
-            :return_value
-          end
-        end
-
-        expect(err_stream.read).to include(
-          "appsignal WARNING: The `Appsignal.monitor_single_transaction` helper is deprecated."
-        )
-      end
-
-      it "logs a deprecation warning" do
-        logs =
-          capture_logs do
-            silence do
-              Appsignal.monitor_single_transaction(
-                "perform_job.something",
-                :class => "BackgroundJob",
-                :method => "perform"
-              ) do
-                :return_value
-              end
-            end
-          end
-
-        expect(logs).to contains_log(
-          :warn,
-          "The `Appsignal.monitor_single_transaction` helper is deprecated."
-        )
-      end
-
-      context "with a successful call" do
-        it "calls monitor_transaction and Appsignal.stop" do
-          expect(Appsignal).to receive(:stop)
-
-          Appsignal.monitor_single_transaction(
-            "perform_job.something",
-            :controller => :my_controller,
-            :action => :my_action
-          ) do
-            # nothing
-          end
-
-          transaction = last_transaction
-          expect(transaction).to have_action("my_controller#my_action")
-          expect(transaction).to include_event("name" => "perform_job.something")
-        end
-      end
-
-      context "with an erroring call" do
-        let(:error) { ExampleException.new }
-
-        it "calls monitor_transaction and stop and re-raises the error" do
-          expect(Appsignal).to receive(:stop)
-
-          expect do
-            Appsignal.monitor_single_transaction(
-              "perform_job.something",
-              :controller => :my_controller,
-              :action => :my_action
-            ) do
-              raise error
-            end
-          end.to raise_error(error)
-
-          transaction = last_transaction
-          expect(transaction).to have_action("my_controller#my_action")
-          expect(transaction).to include_event("name" => "perform_job.something")
-        end
       end
     end
 
@@ -1208,50 +944,6 @@ describe Appsignal do
         end
       end
 
-      describe ".set_host_gauge" do
-        let(:err_stream) { std_stream }
-        let(:stderr) { err_stream.read }
-        let(:log_stream) { StringIO.new }
-        let(:logs) { log_contents(log_stream) }
-        let(:deprecation_message) do
-          "The `set_host_gauge` method has been deprecated. " \
-            "Calling this method has no effect. " \
-            "Please remove method call in the following file to remove " \
-            "this message."
-        end
-        before do
-          Appsignal.internal_logger = test_logger(log_stream)
-          capture_std_streams(std_stream, err_stream) { Appsignal.set_host_gauge("key", 0.1) }
-        end
-
-        it "logs a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
-
-      describe ".set_process_gauge" do
-        let(:err_stream) { std_stream }
-        let(:stderr) { err_stream.read }
-        let(:log_stream) { StringIO.new }
-        let(:logs) { log_contents(log_stream) }
-        let(:deprecation_message) do
-          "The `set_process_gauge` method has been deprecated. " \
-            "Calling this method has no effect. " \
-            "Please remove method call in the following file to remove " \
-            "this message."
-        end
-        before do
-          Appsignal.internal_logger = test_logger(log_stream)
-          capture_std_streams(std_stream, err_stream) { Appsignal.set_process_gauge("key", 0.1) }
-        end
-
-        it "logs a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
-
       describe ".increment_counter" do
         it "should call increment_counter on the extension with a string key" do
           expect(Appsignal::Extension).to receive(:increment_counter)
@@ -1387,56 +1079,6 @@ describe Appsignal do
         end
       end
 
-      context "with tags" do
-        let(:tags) { { :a => "a", :b => "b" } }
-
-        it "prints a deprecation warning and tags the transaction" do
-          logs = capture_logs do
-            expect do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.send_error(error, tags)
-              end
-            end.to change { created_transactions.count }.by(1)
-          end
-
-          expect(last_transaction).to include_tags("a" => "a", "b" => "b")
-
-          message = "The tags argument for `Appsignal.send_error` is deprecated. " \
-            "Please use the block method to set tags instead.\n\n" \
-            "  Appsignal.send_error(error) do |transaction|\n" \
-            "    transaction.set_tags(#{tags.inspect})\n" \
-            "  end\n\n" \
-            "Appsignal.send_error called on location: #{__FILE__}:"
-          expect(stderr).to include("appsignal WARNING: #{message}")
-          expect(logs).to include(message)
-        end
-      end
-
-      context "with namespace" do
-        let(:namespace) { "admin" }
-
-        it "prints a deprecation warning and sets the namespace on the transaction" do
-          logs = capture_logs do
-            expect do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.send_error(error, nil, namespace)
-              end
-            end.to change { created_transactions.count }.by(1)
-          end
-
-          expect(last_transaction).to have_namespace(namespace)
-
-          message = "The namespace argument for `Appsignal.send_error` is deprecated. " \
-            "Please use the block method to set the namespace instead.\n\n" \
-            "  Appsignal.send_error(error) do |transaction|\n" \
-            "    transaction.set_namespace(#{namespace.inspect})\n" \
-            "  end\n\n" \
-            "Appsignal.send_error called on location: #{__FILE__}:"
-          expect(stderr).to include("appsignal WARNING: #{message}")
-          expect(logs).to include(message)
-        end
-      end
-
       context "when given a block" do
         it "yields the transaction and allows additional metadata to be set" do
           keep_transactions do
@@ -1542,68 +1184,6 @@ describe Appsignal do
               "Appsignal.set_error: Cannot set error. " \
                 "The given value is not an exception: #{error.inspect}"
             )
-          end
-        end
-
-        context "with tags" do
-          let(:tags) { { "foo" => "bar" } }
-
-          it "tags the transaction" do
-            silence(:allowed => ["set_error", "The tags argument for"]) do
-              Appsignal.set_error(error, tags)
-            end
-
-            transaction._sample
-            expect(transaction).to have_error(error)
-            expect(transaction).to include_tags(tags)
-          end
-
-          it "prints a deprecation warning and tags the transaction" do
-            logs = capture_logs do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.set_error(error, tags)
-              end
-            end
-
-            message = "The tags argument for `Appsignal.set_error` is deprecated. " \
-              "Please use the block method to set tags instead.\n\n" \
-              "  Appsignal.set_error(error) do |transaction|\n" \
-              "    transaction.set_tags(#{tags.inspect})\n" \
-              "  end\n\n" \
-              "Appsignal.set_error called on location: #{__FILE__}:"
-            expect(stderr).to include("appsignal WARNING: #{message}")
-            expect(logs).to include(message)
-          end
-        end
-
-        context "with namespace" do
-          let(:namespace) { "admin" }
-
-          it "sets the namespace on the transaction" do
-            silence(:allowed => ["set_error", "The namespace argument for"]) do
-              Appsignal.set_error(error, nil, namespace)
-            end
-
-            expect(transaction).to have_error("ExampleException", "I am an exception")
-            expect(transaction).to have_namespace(namespace)
-            expect(transaction).to_not include_tags
-          end
-
-          it "prints a deprecation warning andsets the namespace on the transaction" do
-            logs = capture_logs do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.set_error(error, nil, namespace)
-              end
-            end
-
-            message = "The namespace argument for `Appsignal.set_error` is deprecated. " \
-              "Please use the block method to set the namespace instead.\n\n" \
-              "  Appsignal.set_error(error) do |transaction|\n" \
-              "    transaction.set_namespace(#{namespace.inspect})\n" \
-              "  end\n\n" \
-              "Appsignal.set_error called on location: #{__FILE__}:"
-            expect(stderr).to include("appsignal WARNING: #{message}")
-            expect(logs).to include(message)
           end
         end
 
@@ -1829,30 +1409,6 @@ describe Appsignal do
           expect(transaction).to include_event("name" => "register.this.event")
           expect(transaction).to_not include_event("name" => "dont.register.this.event")
         end
-
-        it "has a without_instrumentation alias that prints a deprecation warning" do
-          Appsignal.instrument("register.this.event") { :do_nothing }
-          err_stream = std_stream
-          logs =
-            capture_logs do
-              capture_std_streams(std_stream, err_stream) do
-                Appsignal.without_instrumentation do
-                  Appsignal.instrument("dont.register.this.event") { :do_nothing }
-                end
-              end
-            end
-
-          expect(transaction).to include_event("name" => "register.this.event")
-          expect(transaction).to_not include_event("name" => "dont.register.this.event")
-
-          expect(logs).to contains_log(
-            :warn,
-            "The `Appsignal.without_instrumentation` helper is deprecated."
-          )
-          expect(err_stream.read).to include(
-            "appsignal WARNING: The `Appsignal.without_instrumentation` helper is deprecated."
-          )
-        end
       end
 
       context "without current transaction" do
@@ -1862,24 +1418,6 @@ describe Appsignal do
           Appsignal.ignore_instrumentation_events { :do_nothing }
         end
       end
-    end
-  end
-
-  describe ".start_logger" do
-    let(:stderr_stream) { std_stream }
-    let(:stderr) { stderr_stream.read }
-    let(:log_stream) { std_stream }
-    let(:log) { log_contents(log_stream) }
-
-    it "prints and logs a deprecation warning" do
-      use_logger_with(log_stream) do
-        capture_std_streams(std_stream, stderr_stream) do
-          Appsignal.start_logger
-        end
-      end
-      expect(stderr)
-        .to include("appsignal WARNING: Calling 'Appsignal.start_logger' is deprecated.")
-      expect(log).to contains_log(:warn, "Calling 'Appsignal.start_logger' is deprecated.")
     end
   end
 

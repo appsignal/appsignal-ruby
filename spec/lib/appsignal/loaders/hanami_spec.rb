@@ -1,7 +1,5 @@
 if DependencyHelper.hanami_present?
   describe "Appsignal::Loaders::HanamiLoader" do
-    before { Appsignal.config = nil }
-
     describe "#on_load" do
       it "registers Hanami default config" do
         load_loader(:hanami)

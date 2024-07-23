@@ -32,87 +32,6 @@ describe Appsignal::Transaction do
         transaction = create_transaction
         expect(transaction).to eq current_transaction
       end
-
-      context "with legacy arguments" do
-        it "returns the created transaction" do
-          transaction_id = "mock-id"
-          namespace = "my_namespace"
-          transaction = legacy_create_transaction(
-            :id => transaction_id,
-            :namespace => namespace
-          )
-          expect(transaction).to be_a(Appsignal::Transaction)
-
-          expect(transaction).to have_id(transaction_id)
-          expect(transaction.transaction_id).to eq(transaction_id)
-
-          expect(transaction).to have_namespace(namespace)
-          expect(transaction.namespace).to eq(namespace)
-        end
-
-        it "logs deprecation warnings" do
-          logs =
-            capture_logs do
-              legacy_create_transaction(
-                :id => "mock-id",
-                :namespace => "my_namespace",
-                :request => Appsignal::Transaction::InternalGenericRequest.new({}),
-                :options => { :force => true }
-              )
-            end
-
-          expect(logs).to contains_log(
-            :warn,
-            "Appsignal::Transaction.create: " \
-              "A new Transaction is created using the transaction ID argument."
-          )
-          expect(logs).to contains_log(
-            :warn,
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the namespace argument."
-          )
-          expect(logs).to contains_log(
-            :warn,
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the request argument."
-          )
-          expect(logs).to contains_log(
-            :warn,
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the `:force => true` option argument. "
-          )
-        end
-
-        it "prints deprecation warnings" do
-          err_stream = std_stream
-          capture_std_streams(std_stream, err_stream) do
-            legacy_create_transaction(
-              :id => "mock-id",
-              :namespace => "my_namespace",
-              :request => Appsignal::Transaction::InternalGenericRequest.new({}),
-              :options => { :force => true }
-            )
-          end
-
-          stderr = err_stream.read
-          expect(stderr).to include(
-            "appsignal WARNING: Appsignal::Transaction.create: " \
-              "A new Transaction is created using the transaction ID argument."
-          )
-          expect(stderr).to include(
-            "appsignal WARNING: Appsignal::Transaction.create: " \
-              "A Transaction is created using the namespace argument."
-          )
-          expect(stderr).to include(
-            "appsignal WARNING: Appsignal::Transaction.create: " \
-              "A Transaction is created using the request argument."
-          )
-          expect(stderr).to include(
-            "appsignal WARNING: Appsignal::Transaction.create: " \
-              "A Transaction is created using the `:force => true` option argument. "
-          )
-        end
-      end
     end
 
     context "when a transaction is already running" do
@@ -137,28 +56,9 @@ describe Appsignal::Transaction do
         logs = capture_logs { create_transaction }
 
         expect(logs).to contains_log :warn,
-          "Trying to start new transaction with id 'transaction_id_2', but a " \
-            "transaction with id 'transaction_id_1' is already " \
-            "running. Using transaction 'transaction_id_1'."
-      end
-
-      context "with option :force => true" do
-        it "returns the newly created (and current) transaction" do
-          original_transaction = create_transaction
-
-          expect(original_transaction).to be_a(Appsignal::Transaction)
-          expect(current_transaction).to have_id("transaction_id_1")
-
-          new_transaction = legacy_create_transaction(
-            :id => "transaction_id_2",
-            :options => { :force => true }
-          )
-
-          expect(new_transaction).to be_a(Appsignal::Transaction)
-          expect(new_transaction).to_not eq(original_transaction)
-          expect(new_transaction).to have_id("transaction_id_2")
-          expect(current_transaction).to eq(new_transaction)
-        end
+          "Trying to start new transaction, but a transaction with id " \
+            "'transaction_id_1' is already running. " \
+            "Using transaction 'transaction_id_1'."
       end
     end
   end
@@ -363,48 +263,8 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "transaction id" do
-      before do
-        allow(SecureRandom).to receive(:uuid).and_return("mock_transaction_id")
-      end
-
-      it "sets the transaction id" do
-        expect(transaction).to have_id("mock_transaction_id")
-      end
-    end
-
     it "sets the namespace to http_request" do
       expect(transaction.namespace).to eq "http_request"
-    end
-
-    it "sets the request" do
-      expect(transaction.request).to be_a(Appsignal::Transaction::InternalGenericRequest)
-    end
-
-    it "sets the request not to paused" do
-      expect(transaction.paused?).to be_falsy
-    end
-
-    it "sets no tags by default" do
-      expect(transaction.tags).to be_empty
-    end
-
-    describe "#options" do
-      let(:options) { transaction.options }
-
-      it "sets the default :params_method" do
-        expect(options[:params_method]).to eq :params
-      end
-
-      context "with overridden options" do
-        let(:transaction) do
-          legacy_new_transaction(:options => { :params_method => :filtered_params })
-        end
-
-        it "sets the overridden :params_method" do
-          expect(options[:params_method]).to eq :filtered_params
-        end
-      end
     end
   end
 
@@ -423,76 +283,6 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#params" do
-    let(:transaction) { new_transaction }
-    let(:params) { transaction.params }
-
-    context "with custom params set on transaction" do
-      before { transaction.set_params(:foo => "bar") }
-
-      it "returns custom parameters" do
-        expect(params).to eq(:foo => "bar")
-      end
-
-      context "when params is a callable object" do
-        it "calls the params object and sets the return value as parametesr" do
-          transaction.set_params { { "param1" => "value1" } }
-
-          expect(params).to eq("param1" => "value1")
-        end
-      end
-    end
-
-    context "without custom params set on transaction" do
-      let(:transaction) do
-        legacy_new_transaction(
-          :request => legacy_request(
-            :params => {
-              "action" => "show",
-              "controller" => "blog_posts",
-              "id" => "1"
-
-            }
-          )
-        )
-      end
-
-      it "returns parameters from request" do
-        expect(params).to eq(
-          "action" => "show",
-          "controller" => "blog_posts",
-          "id" => "1"
-        )
-      end
-    end
-  end
-
-  describe "#params=" do
-    let(:transaction) { new_transaction }
-
-    it "sets params on the transaction" do
-      params = { "foo" => "bar" }
-      silence { transaction.params = params }
-
-      transaction._sample
-      expect(transaction.params).to eq(params)
-      expect(transaction).to include_params(params)
-    end
-
-    it "logs a deprecation warning" do
-      logs =
-        capture_logs do
-          transaction.params = { "foo" => "bar" }
-        end
-
-      expect(logs).to contains_log(
-        :warn,
-        "Transaction#params= is deprecated." \
-          "Use Transaction#set_params or #set_params_if_nil instead."
-      )
-    end
-  end
-
   describe "#set_params" do
     let(:transaction) { new_transaction }
 
@@ -502,7 +292,6 @@ describe Appsignal::Transaction do
         transaction.set_params(params)
 
         transaction._sample
-        expect(transaction.params).to eq(params)
         expect(transaction).to include_params(params)
       end
 
@@ -511,7 +300,6 @@ describe Appsignal::Transaction do
         transaction.set_params { params }
 
         transaction._sample
-        expect(transaction.params).to eq(params)
         expect(transaction).to include_params(params)
       end
 
@@ -521,7 +309,6 @@ describe Appsignal::Transaction do
         transaction.set_params(arg_params) { block_params }
 
         transaction._sample
-        expect(transaction.params).to eq(arg_params)
         expect(transaction).to include_params(arg_params)
       end
 
@@ -534,6 +321,17 @@ describe Appsignal::Transaction do
           "Exception while fetching params: RuntimeError: uh oh"
         )
       end
+
+      context "with AppSignal filtering" do
+        before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
+
+        it "returns sanitized custom params" do
+          transaction.set_params("foo" => "value", "baz" => "bat")
+
+          transaction._sample
+          expect(transaction).to include_params("foo" => "[FILTERED]", "baz" => "bat")
+        end
+      end
     end
 
     context "when the given params is nil" do
@@ -543,7 +341,6 @@ describe Appsignal::Transaction do
         transaction.set_params(nil)
 
         transaction._sample
-        expect(transaction.params).to eq(params)
         expect(transaction).to include_params(params)
       end
     end
@@ -558,7 +355,6 @@ describe Appsignal::Transaction do
         transaction.set_params_if_nil(params)
 
         transaction._sample
-        expect(transaction.params).to eq(params)
         expect(transaction).to include_params(params)
       end
 
@@ -567,7 +363,6 @@ describe Appsignal::Transaction do
         transaction.set_params_if_nil { params }
 
         transaction._sample
-        expect(transaction.params).to eq(params)
         expect(transaction).to include_params(params)
       end
 
@@ -577,7 +372,6 @@ describe Appsignal::Transaction do
         transaction.set_params_if_nil(arg_params) { block_params }
 
         transaction._sample
-        expect(transaction.params).to eq(arg_params)
         expect(transaction).to include_params(arg_params)
       end
 
@@ -588,7 +382,6 @@ describe Appsignal::Transaction do
           transaction.set_params_if_nil(nil)
 
           transaction._sample
-          expect(transaction.params).to eq(params)
           expect(transaction).to include_params(params)
         end
       end
@@ -602,7 +395,6 @@ describe Appsignal::Transaction do
         transaction.set_params_if_nil(params)
 
         transaction._sample
-        expect(transaction.params).to eq(preset_params)
         expect(transaction).to include_params(preset_params)
       end
 
@@ -613,7 +405,6 @@ describe Appsignal::Transaction do
         transaction.set_params_if_nil { params }
 
         transaction._sample
-        expect(transaction.params).to eq(preset_params)
         expect(transaction).to include_params(preset_params)
       end
     end
@@ -1150,42 +941,6 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_http_or_background_action" do
-    let(:transaction) { new_transaction }
-
-    context "for a hash with controller and action" do
-      it "sets the action" do
-        transaction.set_http_or_background_action(
-          :controller => "HomeController",
-          :action => "show"
-        )
-        expect(transaction).to have_action("HomeController#show")
-      end
-    end
-
-    context "for a hash with just action" do
-      it "sets the action" do
-        transaction.set_http_or_background_action(:action => "show")
-        expect(transaction).to have_action("show")
-      end
-    end
-
-    context "for a hash with class and method" do
-      it "sets the action" do
-        transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
-        expect(transaction).to have_action("Worker#perform")
-      end
-    end
-
-    context "when action is already set" do
-      it "does not overwrite the set action" do
-        transaction.set_action("MyCustomAction#perform")
-        transaction.set_http_or_background_action(:class => "Worker", :method => "perform")
-        expect(transaction).to have_action("MyCustomAction#perform")
-      end
-    end
-  end
-
   describe "#set_queue_start" do
     let(:transaction) { new_transaction }
 
@@ -1207,75 +962,6 @@ describe Appsignal::Transaction do
       expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
 
       transaction.set_queue_start(10)
-    end
-  end
-
-  describe "#set_http_or_background_queue_start" do
-    let(:transaction) { legacy_new_transaction(:request => legacy_request(env)) }
-    let(:err_stream) { std_stream }
-    let(:stderr) { err_stream.read }
-    let(:header_factor) { 1_000 }
-    let(:env_queue_start) { fixed_time + 20 } # in seconds
-
-    def set_http_or_background_queue_start
-      capture_std_streams(std_stream, err_stream) do
-        transaction.set_http_or_background_queue_start
-      end
-    end
-
-    context "when a queue time is found in a request header" do
-      let(:header_time) { ((fixed_time + 10) * header_factor).to_i } # in milliseconds
-      let(:env) { { "HTTP_X_REQUEST_START" => "t=#{header_time}" } }
-
-      it "sets the http header value in milliseconds on the transaction" do
-        set_http_or_background_queue_start
-
-        expect(transaction).to have_queue_start(1_389_783_610_000)
-      end
-
-      it "logs a deprecation message" do
-        logs = capture_logs { set_http_or_background_queue_start }
-
-        expect(logs).to contains_log(
-          :warn,
-          "The Appsignal::Transaction#set_http_or_background_queue_start " \
-            "method has been deprecated."
-        )
-      end
-
-      it "prints a deprecation message" do
-        set_http_or_background_queue_start
-
-        expect(stderr).to include(
-          "The Appsignal::Transaction#set_http_or_background_queue_start " \
-            "method has been deprecated."
-        )
-      end
-
-      context "when a :queue_start key is found in the transaction environment" do
-        let(:env) do
-          {
-            "HTTP_X_REQUEST_START" => "t=#{header_time}",
-            :queue_start => env_queue_start
-          }
-        end
-
-        it "sets the http header value in milliseconds on the transaction" do
-          set_http_or_background_queue_start
-
-          expect(transaction).to have_queue_start(1_389_783_610_000)
-        end
-      end
-    end
-
-    context "when a :queue_start key is found in the transaction environment" do
-      let(:env) { { :queue_start => env_queue_start } } # in seconds
-
-      it "sets the :queue_start value in milliseconds on the transaction" do
-        set_http_or_background_queue_start
-
-        expect(transaction).to have_queue_start(1_389_783_620_000)
-      end
     end
   end
 
@@ -1400,7 +1086,8 @@ describe Appsignal::Transaction do
 
     it "updates the sample data on the transaction" do
       silence do
-        transaction.set_sample_data(
+        transaction.send(
+          :set_sample_data,
           "params",
           :controller => "blog_posts",
           :action     => "show",
@@ -1419,7 +1106,7 @@ describe Appsignal::Transaction do
       it "does not update the sample data on the transaction" do
         logs =
           capture_logs do
-            silence { transaction.set_sample_data("params", "string") }
+            silence { transaction.send(:set_sample_data, "params", "string") }
           end
 
         expect(transaction.to_h["sample_data"]).to eq({})
@@ -1437,62 +1124,13 @@ describe Appsignal::Transaction do
         end
         logs =
           capture_logs do
-            silence { transaction.set_sample_data("params", klass.new => 1) }
+            silence { transaction.send(:set_sample_data, "params", klass.new => 1) }
           end
 
         expect(transaction).to_not include_params
         expect(logs).to contains_log :error,
           "Error generating data (RuntimeError: foo) for"
       end
-    end
-  end
-
-  describe "#sample_data" do
-    let(:transaction) { legacy_new_transaction(:request => rack_request(env)) }
-    let(:env) do
-      Rack::MockRequest.env_for(
-        "/blog",
-        "REQUEST_METHOD" => "GET",
-        "SERVER_NAME" => "example.org",
-        "SERVER_PORT" => "80",
-        "PATH_INFO" => "/blog",
-        "rack.session" => { "session" => "value" },
-        :params => {
-          "controller" => "blog_posts",
-          "action" => "show",
-          "id" => "1"
-        }
-      ).merge(
-        :metadata => { "metadata" => "value" }
-      )
-    end
-
-    it "sets sample data from request" do
-      transaction.set_tags "tag" => "value"
-      transaction.add_breadcrumb "category", "action", "message", "key" => "value"
-      silence { transaction.sample_data }
-
-      expect(transaction).to include_environment(
-        "REQUEST_METHOD" => "GET",
-        "SERVER_NAME" => "example.org",
-        "SERVER_PORT" => "80",
-        "PATH_INFO" => "/blog"
-      )
-      expect(transaction).to include_session_data("session" => "value")
-      expect(transaction).to include_params(
-        "controller" => "blog_posts",
-        "action" => "show",
-        "id" => "1"
-      )
-      expect(transaction).to include_sample_metadata("metadata" => "value")
-      expect(transaction).to include_tags("tag" => "value")
-      expect(transaction).to include_breadcrumb(
-        "action",
-        "category",
-        "message",
-        { "key" => "value" },
-        kind_of(Integer)
-      )
     end
   end
 
@@ -1791,432 +1429,7 @@ describe Appsignal::Transaction do
     end
   end
 
-  context "GenericRequest" do
-    let(:env) { {} }
-    subject { Appsignal::Transaction::GenericRequest.new(env) }
-
-    it "prints a deprecation warning on use" do
-      err_stream = std_stream
-      capture_std_streams(std_stream, err_stream) { subject }
-
-      expect(err_stream.read).to include(
-        "appsignal WARNING: The use of Appsignal::Transaction::GenericRequest is deprecated."
-      )
-    end
-
-    it "logs a deprecation warning on use" do
-      logs = capture_logs { silence { subject } }
-
-      expect(logs).to contains_log(
-        :warn,
-        "The use of Appsignal::Transaction::GenericRequest is deprecated."
-      )
-    end
-
-    it "initializes with an empty env" do
-      expect(subject.env).to be_empty
-    end
-
-    context "when given an env" do
-      let(:env) do
-        {
-          :params => { :id => 1 },
-          :queue_start => 10
-        }
-      end
-
-      it "sets the given env" do
-        expect(subject.env).to eq env
-      end
-
-      it "sets the params present in the env" do
-        expect(subject.params).to eq(:id => 1)
-      end
-    end
-  end
-
   # private
-
-  describe "#background_queue_start" do
-    let(:transaction) { legacy_new_transaction(:request => request) }
-    let(:request) { rack_request(env) }
-    let(:env) { {} }
-    subject { transaction.send(:background_queue_start) }
-
-    context "when request is nil" do
-      let(:request) { nil }
-
-      it { is_expected.to eq nil }
-    end
-
-    context "when env is nil" do
-      before { expect(request).to receive(:env).and_return(nil) }
-
-      it { is_expected.to eq nil }
-    end
-
-    context "when queue start is nil" do
-      it { is_expected.to eq nil }
-    end
-
-    context "when queue start is set" do
-      before do
-        env[:queue_start] = fixed_time
-      end
-
-      it { is_expected.to eq 1_389_783_600_000 }
-    end
-  end
-
-  describe "#http_queue_start" do
-    let(:transaction) { legacy_new_transaction(:request => request) }
-    let(:request) { rack_request(env) }
-    let(:env) { {} }
-    let(:slightly_earlier_time) { fixed_time - 0.4 }
-    let(:slightly_earlier_time_value) { (slightly_earlier_time * factor).to_i }
-    subject { transaction.send(:http_queue_start) }
-
-    shared_examples "http queue start" do
-      context "when request is nil" do
-        let(:request) { nil }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "when env is nil" do
-        before { expect(request).to receive(:env).and_return(nil) }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "with no relevant header set" do
-        let(:env) { {} }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "with the HTTP_X_REQUEST_START header set" do
-        let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}" } }
-
-        it { is_expected.to eq 1_389_783_599_600 }
-
-        context "with unparsable content" do
-          let(:env) { { "HTTP_X_REQUEST_START" => "something" } }
-
-          it { is_expected.to be_nil }
-        end
-
-        context "with unparsable content at the end" do
-          let(:env) { { "HTTP_X_REQUEST_START" => "t=#{slightly_earlier_time_value}aaaa" } }
-
-          it { is_expected.to eq 1_389_783_599_600 }
-        end
-
-        context "with a really low number" do
-          let(:env) { { "HTTP_X_REQUEST_START" => "t=100" } }
-
-          it { is_expected.to be_nil }
-        end
-
-        context "with the alternate HTTP_X_QUEUE_START header set" do
-          let(:env) { { "HTTP_X_QUEUE_START" => "t=#{slightly_earlier_time_value}" } }
-
-          it { is_expected.to eq 1_389_783_599_600 }
-        end
-      end
-    end
-
-    context "time in milliseconds" do
-      let(:factor) { 1_000 }
-
-      it_should_behave_like "http queue start"
-    end
-
-    context "time in microseconds" do
-      let(:factor) { 1_000_000 }
-
-      it_should_behave_like "http queue start"
-    end
-  end
-
-  describe "#sanitized_params" do
-    let(:transaction) { new_transaction }
-    subject { transaction.send(:sanitized_params) }
-
-    context "with params" do
-      before do
-        transaction.set_params(:foo => "bar", :baz => :bat)
-      end
-
-      it "returns params" do
-        is_expected.to eq(:foo => "bar", :baz => :bat)
-      end
-
-      context "with AppSignal filtering" do
-        before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
-        after { Appsignal.config.config_hash[:filter_parameters] = [] }
-
-        it "returns sanitized custom params" do
-          expect(subject).to eq(:foo => "[FILTERED]", :baz => :bat)
-        end
-      end
-    end
-
-    context "params from request" do
-      let(:transaction) { legacy_new_transaction(:request => request, :options => options) }
-      let(:options) { {} }
-      let(:request) { rack_request(env) }
-      let(:env) { {} }
-
-      context "without request params" do
-        before { allow(transaction.request).to receive(:params).and_return(nil) }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "when request params crashes" do
-        before { expect(request).to receive(:params).and_raise(NoMethodError) }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "when request params method does not exist" do
-        let(:options) { { :params_method => :nonsense } }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "when not sending params" do
-        before { Appsignal.config.config_hash[:send_params] = false }
-        after { Appsignal.config.config_hash[:send_params] = true }
-
-        it { is_expected.to be_nil }
-      end
-
-      context "with an array" do
-        let(:request) { legacy_request(:params => %w[arg1 arg2]) }
-
-        it { is_expected.to eq %w[arg1 arg2] }
-
-        context "with AppSignal filtering" do
-          before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
-          after { Appsignal.config.config_hash[:filter_parameters] = [] }
-
-          it { is_expected.to eq %w[arg1 arg2] }
-        end
-      end
-
-      context "with env" do
-        context "with sanitization" do
-          let(:request) { legacy_request(:params => { :foo => :bar }) }
-
-          it "should call the params sanitizer" do
-            expect(subject).to eq(:foo => :bar)
-          end
-        end
-
-        context "with AppSignal filtering" do
-          let(:request) { legacy_request(:params => { :foo => :bar, :baz => :bat }) }
-          before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
-          after { Appsignal.config.config_hash[:filter_parameters] = [] }
-
-          it "should call the params sanitizer with filtering" do
-            expect(subject).to eq(:foo => "[FILTERED]", :baz => :bat)
-          end
-        end
-      end
-    end
-  end
-
-  describe "#sanitized_environment" do
-    let(:transaction) { legacy_new_transaction(:request => request) }
-    let(:request) { rack_request(env) }
-    let(:env) { {} }
-    let(:allowlisted_keys) { Appsignal.config[:request_headers] }
-    subject { transaction.send(:sanitized_environment) }
-
-    context "when request is nil" do
-      let(:request) { nil }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when env is nil" do
-      before { expect(request).to receive(:env).and_return(nil) }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when env is present" do
-      let(:env) do
-        {}.tap do |hash|
-          allowlisted_keys.each { |o| hash[o] = 1 } # use all allowlisted keys
-          hash[allowlisted_keys] = nil # don't add if nil
-          hash[:not_allowlisted] = "I will be sanitized"
-        end
-      end
-
-      it "only sets allowlisted keys" do
-        expect(subject.keys).to match_array(allowlisted_keys)
-      end
-
-      context "with configured request_headers" do
-        before do
-          Appsignal.config.config_hash[:request_headers] = %w[CONTENT_LENGTH]
-        end
-
-        it "only sets allowlisted keys" do
-          expect(subject.keys).to match_array(%w[CONTENT_LENGTH])
-        end
-      end
-    end
-  end
-
-  describe "#sanitized_session_data" do
-    let(:transaction) { legacy_new_transaction(:request => request) }
-    let(:request) { rack_request(env) }
-    let(:env) { {} }
-    subject { transaction.send(:sanitized_session_data) }
-
-    context "when request is nil" do
-      let(:request) { nil }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when session is nil" do
-      before { expect(transaction.request).to receive(:session).and_return(nil) }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when session is empty" do
-      before { expect(transaction.request).to receive(:session).and_return({}) }
-
-      it { is_expected.to eq({}) }
-    end
-
-    context "when request class does not have a session method" do
-      let(:request) { Appsignal::Transaction::GenericRequest.new({}) }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "with a session" do
-      let(:session_data_filter) { [] }
-      before { Appsignal.config[:filter_session_data] = session_data_filter }
-      after { Appsignal.config[:filter_session_data] = [] }
-
-      context "with generic session object" do
-        before do
-          expect(transaction).to respond_to(:request)
-          allow(transaction).to receive_message_chain(
-            :request,
-            :session => { :foo => :bar, :abc => :def }
-          )
-          allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
-        end
-
-        context "without session filtering" do
-          it "keeps the session data intact" do
-            expect(subject).to eq(:foo => :bar, :abc => :def)
-          end
-        end
-
-        context "with session filtering" do
-          let(:session_data_filter) { %w[foo] }
-
-          it "filters the session data" do
-            expect(subject).to eq(:foo => "[FILTERED]", :abc => :def)
-          end
-        end
-      end
-
-      if defined? ActionDispatch::Request::Session
-        context "with ActionDispatch::Request::Session" do
-          let(:action_dispatch_session) do
-            store = Class.new do
-              def load_session(_env)
-                [1, { :foo => :bar, :abc => :def }]
-              end
-
-              def session_exists?(_env)
-                true
-              end
-            end.new
-            ActionDispatch::Request::Session.create(store,
-              ActionDispatch::Request.new("rack.input" => StringIO.new), {})
-          end
-          before do
-            expect(transaction).to respond_to(:request)
-            allow(transaction).to receive_message_chain(
-              :request,
-              :session => action_dispatch_session
-            )
-            allow(transaction).to receive_message_chain(:request, :fullpath => :bar)
-          end
-
-          context "without session filtering" do
-            it "keeps the session data intact" do
-              expect(subject).to eq("foo" => :bar, "abc" => :def)
-            end
-          end
-
-          context "with session filtering" do
-            let(:session_data_filter) { %w[foo] }
-
-            it "filters the session data" do
-              expect(subject).to eq("foo" => "[FILTERED]", "abc" => :def)
-            end
-          end
-        end
-      end
-
-      context "when not sending session data" do
-        before { Appsignal.config[:send_session_data] = false }
-
-        it "does not set any session data on the transaction" do
-          expect(subject).to be_nil
-        end
-      end
-    end
-  end
-
-  describe "#sanitized_metadata" do
-    let(:transaction) { legacy_new_transaction(:request => request) }
-    let(:request) { rack_request(env) }
-    let(:env) { {} }
-    subject { transaction.send(:sanitized_metadata) }
-
-    context "when request is nil" do
-      let(:request) { nil }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when env is nil" do
-      before { expect(request).to receive(:env).and_return(nil) }
-
-      it { is_expected.to be_nil }
-    end
-
-    context "when env is present" do
-      let(:env) { { :metadata => { "key" => "value" } } }
-
-      it do
-        is_expected.to eq("key" => "value")
-      end
-
-      context "with filter_metadata option set" do
-        before { Appsignal.config[:filter_metadata] = ["key"] }
-        after { Appsignal.config[:filter_metadata] = [] }
-
-        it "filters out keys listed in the filter_metadata option" do
-          expect(subject.keys).to_not include("key")
-        end
-      end
-    end
-  end
 
   describe "#cleaned_backtrace" do
     let(:transaction) { new_transaction }
@@ -2324,7 +1537,7 @@ describe Appsignal::Transaction do
   describe Appsignal::Transaction::NilTransaction do
     subject { Appsignal::Transaction::NilTransaction.new }
 
-    it "should have method stubs" do
+    it "has method stubs" do
       subject.complete
       subject.pause!
       subject.resume!

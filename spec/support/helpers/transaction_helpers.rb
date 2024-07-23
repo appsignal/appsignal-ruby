@@ -19,28 +19,6 @@ module TransactionHelpers
     Appsignal::Transaction.new(SecureRandom.uuid, namespace)
   end
 
-  def legacy_create_transaction(
-    id: "mock_transaction_id",
-    namespace: "mock_namespace",
-    request: legacy_request,
-    options: {}
-  )
-    Appsignal::Transaction.create(id, namespace, request, options)
-  end
-
-  def legacy_new_transaction(
-    id: "mock_transaction_id",
-    namespace: "mock_namespace",
-    request: legacy_request,
-    options: {}
-  )
-    Appsignal::Transaction.new(id, namespace, request, options)
-  end
-
-  def legacy_request(env = {})
-    Appsignal::Transaction::InternalGenericRequest.new(env)
-  end
-
   def rack_request(env)
     Rack::Request.new(env)
   end

@@ -3,13 +3,7 @@ if DependencyHelper.rails_present?
     class MockController; end
 
     let(:log) { StringIO.new }
-    let(:transaction) do
-      Appsignal::Transaction.new(
-        "transaction_id",
-        Appsignal::Transaction::HTTP_REQUEST,
-        Rack::Request.new(env)
-      )
-    end
+    let(:transaction) { new_transaction }
     let(:app) { DummyApp.new }
     let(:params) do
       {

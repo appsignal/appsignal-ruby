@@ -212,7 +212,6 @@ describe Appsignal::Config do
         :active                         => true,
         :activejob_report_errors        => "all",
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
-        :debug                          => false,
         :dns_servers                    => [],
         :enable_allocation_tracking     => true,
         :enable_gvl_global_timer        => true,
@@ -245,8 +244,7 @@ describe Appsignal::Config do
         :send_environment_metadata      => true,
         :send_params                    => true,
         :send_session_data              => true,
-        :sidekiq_report_errors          => "all",
-        :transaction_debug_mode         => false
+        :sidekiq_report_errors          => "all"
       )
     end
 
@@ -478,7 +476,6 @@ describe Appsignal::Config do
         :bind_address => "0.0.0.0",
         :ca_file_path => "/some/path",
         :cpu_count => 1.5,
-        :debug => true,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :enable_allocation_tracking => false,
         :enable_gvl_global_timer => false,
@@ -518,10 +515,7 @@ describe Appsignal::Config do
         :send_params => false,
         :send_session_data => false,
         :sidekiq_report_errors => "all",
-        :skip_session_data => false,
         :statsd_port => "7890",
-        :transaction_debug_mode => false,
-        :working_dir_path => "/some/path",
         :working_directory_path => working_directory_path
       }
     end
@@ -544,12 +538,10 @@ describe Appsignal::Config do
         "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => "all",
         "APPSIGNAL_STATSD_PORT" => "7890",
         "APPSIGNAL_WORKING_DIRECTORY_PATH" => working_directory_path,
-        "APPSIGNAL_WORKING_DIR_PATH" => "/some/path",
         "APP_REVISION" => "v2.5.1",
 
         # Booleans
         "APPSIGNAL_ACTIVE" => "true",
-        "APPSIGNAL_DEBUG" => "true",
         "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => "false",
         "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => "false",
         "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => "false",
@@ -568,8 +560,6 @@ describe Appsignal::Config do
         "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => "false",
         "APPSIGNAL_SEND_PARAMS" => "false",
         "APPSIGNAL_SEND_SESSION_DATA" => "false",
-        "APPSIGNAL_SKIP_SESSION_DATA" => "false",
-        "APPSIGNAL_TRANSACTION_DEBUG_MODE" => "false",
 
         # Arrays
         "APPSIGNAL_DNS_SERVERS" => "8.8.8.8,8.8.4.4",
@@ -657,78 +647,6 @@ describe Appsignal::Config do
     let(:logs) { log_contents(log_stream) }
     let(:config) do
       described_class.new(Dir.pwd, "production", config_options, logger)
-    end
-
-    describe "skip_session_data" do
-      let(:err_stream) { std_stream }
-      let(:stderr) { err_stream.read }
-      let(:deprecation_message) do
-        "The `skip_session_data` config option is deprecated. Please use " \
-          "`send_session_data` instead."
-      end
-      before do
-        capture_std_streams(std_stream, err_stream) { config }
-      end
-
-      context "when not set" do
-        let(:config_options) { {} }
-
-        it "sets the default send_session_data value" do
-          expect(config[:skip_session_data]).to be_nil
-          expect(config[:send_session_data]).to eq(true)
-          expect(config.override_config[:send_session_data]).to eq(true)
-        end
-
-        it "does not print a deprecation warning" do
-          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to_not include(deprecation_message)
-        end
-      end
-
-      context "when set to true" do
-        let(:config_options) { { :skip_session_data => true } }
-
-        it "sets send_session_data if send_session_data is not set by the user" do
-          expect(config[:skip_session_data]).to eq(true)
-          expect(config[:send_session_data]).to eq(false)
-          expect(config.override_config[:send_session_data]).to eq(false)
-        end
-
-        it "prints a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
-
-      context "when set to false" do
-        let(:config_options) { { :skip_session_data => false } }
-
-        it "sets send_session_data if send_session_data is not set by the user" do
-          expect(config[:skip_session_data]).to eq(false)
-          expect(config[:send_session_data]).to eq(true)
-          expect(config.override_config[:send_session_data]).to eq(true)
-        end
-
-        it "prints a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
-
-      context "when skip_session_data and send_session_data are both set" do
-        let(:config_options) { { :skip_session_data => true, :send_session_data => true } }
-
-        it "does not overwrite the send_session_data value" do
-          expect(config[:skip_session_data]).to eq(true)
-          expect(config[:send_session_data]).to eq(true)
-          expect(config.override_config[:send_session_data]).to be_nil
-        end
-
-        it "prints a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
     end
 
     if DependencyHelper.rails_present?
@@ -885,7 +803,6 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_AGENT_PATH", nil)).to end_with("/ext")
       expect(ENV.fetch("_APPSIGNAL_BIND_ADDRESS", nil)).to eq("0.0.0.0")
       expect(ENV.fetch("_APPSIGNAL_CPU_COUNT", nil)).to eq("1.5")
-      expect(ENV.fetch("_APPSIGNAL_DEBUG_LOGGING", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_LOG", nil)).to eq "stdout"
       expect(ENV.fetch("_APPSIGNAL_LOG_FILE_PATH", nil)).to end_with("/tmp/appsignal.log")
       expect(ENV.fetch("_APPSIGNAL_LOGGING_ENDPOINT", nil)).to eq "http://localhost:123"
@@ -909,13 +826,11 @@ describe Appsignal::Config do
         .to eq File.join(resources_dir, "cacert.pem")
       expect(ENV.fetch("_APPSIGNAL_DNS_SERVERS", nil)).to eq "8.8.8.8,8.8.4.4"
       expect(ENV.fetch("_APPSIGNAL_FILES_WORLD_ACCESSIBLE", nil)).to eq "true"
-      expect(ENV.fetch("_APPSIGNAL_TRANSACTION_DEBUG_MODE", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_SEND_ENVIRONMENT_METADATA", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_FILTER_PARAMETERS", nil)).to eq "password,confirm_password"
       expect(ENV.fetch("_APPSIGNAL_FILTER_SESSION_DATA", nil)).to eq "key1,key2"
       expect(ENV.fetch("_APP_REVISION", nil)).to eq "v2.5.1"
-      expect(ENV).to_not have_key("_APPSIGNAL_WORKING_DIR_PATH")
       expect(ENV).to_not have_key("_APPSIGNAL_WORKING_DIRECTORY_PATH")
     end
 
@@ -938,17 +853,6 @@ describe Appsignal::Config do
 
       it "sets the modified :host_role" do
         expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq "host role"
-      end
-    end
-
-    context "with :working_dir_path" do
-      before do
-        config[:working_dir_path] = "/tmp/appsignal2"
-        config.write_to_environment
-      end
-
-      it "sets the modified :working_dir_path" do
-        expect(ENV.fetch("_APPSIGNAL_WORKING_DIR_PATH", nil)).to eq "/tmp/appsignal2"
       end
     end
 
@@ -1161,54 +1065,6 @@ describe Appsignal::Config do
     end
   end
 
-  describe "#maintain_backwards_compatibility" do
-    let(:log_stream) { StringIO.new }
-    let(:logger) { test_logger(log_stream) }
-    let(:logs) { log_contents(log_stream) }
-    let(:config) do
-      described_class.new(Dir.pwd, "production", config_options, logger)
-    end
-
-    describe "working_dir_path" do
-      let(:err_stream) { std_stream }
-      let(:stderr) { err_stream.read }
-      let(:deprecation_message) do
-        "The `working_dir_path` option is deprecated, please use " \
-          "`working_directory_path` instead and specify the " \
-          "full path to the working directory"
-      end
-      before do
-        capture_std_streams(std_stream, err_stream) { config }
-      end
-
-      context "when not set" do
-        let(:config_options) { {} }
-
-        it "sets the default working_dir_path value" do
-          expect(config[:working_dir_path]).to be_nil
-        end
-
-        it "does not print a deprecation warning" do
-          expect(stderr).to_not include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to_not include(deprecation_message)
-        end
-      end
-
-      context "when set" do
-        let(:config_options) { { :working_dir_path => "/tmp/appsignal2" } }
-
-        it "sets the default working_dir_path value" do
-          expect(config[:working_dir_path]).to eq("/tmp/appsignal2")
-        end
-
-        it "does not print a deprecation warning" do
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-          expect(logs).to include(deprecation_message)
-        end
-      end
-    end
-  end
-
   describe "#validate" do
     subject { config.valid? }
     let(:config) do
@@ -1264,16 +1120,6 @@ describe Appsignal::Config do
       end
     end
 
-    context "with debug set to true" do
-      let(:options) { { :debug => true } }
-      it { is_expected.to eq(Logger::DEBUG) }
-    end
-
-    context "with transaction_debug_mode set to true" do
-      let(:options) { { :transaction_debug_mode => true } }
-      it { is_expected.to eq(Logger::DEBUG) }
-    end
-
     context "with log_level set to error" do
       let(:options) { { :log_level => "error" } }
       it { is_expected.to eq(Logger::ERROR) }
@@ -1320,14 +1166,6 @@ describe Appsignal::Config do
 
       it "prints a warning and doesn't use the log_level" do
         is_expected.to eql(Logger::INFO)
-      end
-
-      context "with debug option set to true" do
-        let(:options) { { :log_level => "fatal", :debug => true } }
-
-        it "prints a warning and sets it to debug" do
-          is_expected.to eql(Logger::DEBUG)
-        end
       end
     end
   end

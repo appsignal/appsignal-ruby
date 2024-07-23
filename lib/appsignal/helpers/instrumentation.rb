@@ -3,8 +3,6 @@
 module Appsignal
   module Helpers
     module Instrumentation
-      include Appsignal::Utils::StdoutAndLoggerMessage
-
       # Monitor a block of code with AppSignal.
       #
       # This is a helper to create an AppSignal transaction, track any errors
@@ -160,124 +158,6 @@ module Appsignal
         Appsignal.stop("monitor_and_stop")
       end
 
-      # Creates an AppSignal transaction for the given block.
-      #
-      # If AppSignal is not {Appsignal.active?} it will still execute the
-      # block, but not create a transaction for it.
-      #
-      # A event is created for this transaction with the name given in the
-      # `name` argument. The event name must start with either `perform_job` or
-      # `process_action` to differentiate between the "web" and "background"
-      # namespace. Custom namespaces are not supported by this helper method.
-      #
-      # This helper method also captures any exception that occurs in the given
-      # block.
-      #
-      # @example
-      #   Appsignal.monitor_transaction("perform_job.nightly_update") do
-      #     # your code
-      #   end
-      #
-      # @example with an environment
-      #   Appsignal.monitor_transaction(
-      #     "perform_job.nightly_update",
-      #     :metadata => { "user_id" => 1 }
-      #   ) do
-      #     # your code
-      #   end
-      #
-      # @param name [String] main event name.
-      # @param env [Hash<Symbol, Object>]
-      # @option env [Hash<Symbol/String, Object>] :params Params for the
-      #   monitored request/job, see {Appsignal::Transaction#params=} for more
-      #   information.
-      # @option env [String] :controller name of the controller in which the
-      #   transaction was recorded.
-      # @option env [String] :class name of the Ruby class in which the
-      #   transaction was recorded. If `:controller` is also given,
-      #   `:controller` is used instead.
-      # @option env [String] :action name of the controller action in which the
-      #   transaction was recorded.
-      # @option env [String] :method name of the Ruby method in which the
-      #   transaction was recorded. If `:action` is also given, `:action`
-      #   is used instead.
-      # @option env [Integer] :queue_start the moment the request/job was
-      #   queued. Used to track how long requests/jobs were queued before being
-      #   executed.
-      # @option env [Hash<Symbol/String, String/Fixnum>] :metadata Additional
-      #   metadata for the transaction, see
-      #   {Appsignal::Transaction#set_metadata} for more information.
-      # @yield the block to monitor.
-      # @raise [Exception] any exception that occurs within the given block is
-      #   re-raised by this method.
-      # @return [Object] the value of the given block is returned.
-      # @since 0.10.0
-      def monitor_transaction(name, env = {}, &block)
-        stdout_and_logger_warning \
-          "The `Appsignal.monitor_transaction` helper is deprecated. " \
-            "Please use `Appsignal.monitor` and `Appsignal.instrument` instead. " \
-            "Read our instrumentation documentation: " \
-            "https://docs.appsignal.com/ruby/instrumentation/instrumentation.html"
-        _monitor_transaction(name, env, &block)
-      end
-
-      # @api private
-      def _monitor_transaction(name, env = {}, &block)
-        # Always verify input, even when Appsignal is not active.
-        # This makes it more likely invalid arguments get flagged in test/dev
-        # environments.
-        if name.start_with?("perform_job")
-          namespace = Appsignal::Transaction::BACKGROUND_JOB
-          request   = Appsignal::Transaction::InternalGenericRequest.new(env)
-        elsif name.start_with?("process_action")
-          namespace = Appsignal::Transaction::HTTP_REQUEST
-          request   = ::Rack::Request.new(env)
-        else
-          internal_logger.error "Unrecognized name '#{name}': names must " \
-            "start with either 'perform_job' (for jobs and tasks) or " \
-            "'process_action' (for HTTP requests)"
-          return yield
-        end
-
-        return yield unless active?
-
-        transaction = Appsignal::Transaction.create(
-          SecureRandom.uuid,
-          namespace,
-          request
-        )
-        begin
-          Appsignal.instrument(name, &block)
-        rescue Exception => error # rubocop:disable Lint/RescueException
-          transaction.set_error(error)
-          raise error
-        ensure
-          transaction.set_http_or_background_action(request.env)
-          queue_start = Appsignal::Rack::Utils.queue_start_from(request.env) ||
-            (env[:queue_start]&.to_i&.* 1_000)
-          transaction.set_queue_start(queue_start) if queue_start
-          Appsignal::Transaction.complete_current!
-        end
-      end
-
-      # Monitor a transaction, stop AppSignal and wait for this single
-      # transaction to be flushed.
-      #
-      # Useful for cases such as Rake tasks and Resque-like systems where a
-      # process is forked and immediately exits after the transaction finishes.
-      #
-      # @see monitor_transaction
-      def monitor_single_transaction(name, env = {}, &block)
-        stdout_and_logger_warning \
-          "The `Appsignal.monitor_single_transaction` helper is deprecated. " \
-            "Please use `Appsignal.monitor_and_stop` and `Appsignal.instrument` instead. " \
-            "Read our instrumentation documentation: " \
-            "https://docs.appsignal.com/ruby/instrumentation/instrumentation.html"
-        monitor_transaction(name, env, &block)
-      ensure
-        stop("monitor_single_transaction")
-      end
-
       # Listen for an error to occur and send it to AppSignal.
       #
       # Uses {.send_error} to directly send the error in a separate
@@ -339,13 +219,6 @@ module Appsignal
       #     Appsignal.send_error(e)
       #   end
       #
-      # @example Send an exception with tags. Deprecated method.
-      #   begin
-      #     raise "oh no!"
-      #   rescue => e
-      #     Appsignal.send_error(e, :key => "value")
-      #   end
-      #
       # @example Add more metadata to transaction
       #   Appsignal.send_error(e) do |transaction|
       #     transaction.set_params(:search_query => params[:search_query])
@@ -355,12 +228,6 @@ module Appsignal
       #   end
       #
       # @param error [Exception] The error to send to AppSignal.
-      # @param tags [Hash{String, Symbol => String, Symbol, Integer}]
-      #   Additional tags to add to the error. See also {.tag_request}.
-      #   This parameter is deprecated. Use the block argument instead.
-      # @param namespace [String] The namespace in which the error occurred.
-      #   See also {.set_namespace}.
-      #   This parameter is deprecated. Use the block argument instead.
       # @yield [transaction] yields block to allow modification of the
       #   transaction before it's send.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -373,31 +240,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       # @since 0.6.0
-      def send_error(
-        error,
-        tags = nil,
-        namespace = nil
-      )
-        if tags
-          call_location = caller(1..1).first
-          stdout_and_logger_warning \
-            "The tags argument for `Appsignal.send_error` is deprecated. " \
-              "Please use the block method to set tags instead.\n\n" \
-              "  Appsignal.send_error(error) do |transaction|\n" \
-              "    transaction.set_tags(#{tags})\n" \
-              "  end\n\n" \
-              "Appsignal.send_error called on location: #{call_location}"
-        end
-        if namespace
-          call_location = caller(1..1).first
-          stdout_and_logger_warning \
-            "The namespace argument for `Appsignal.send_error` is deprecated. " \
-              "Please use the block method to set the namespace instead.\n\n" \
-              "  Appsignal.send_error(error) do |transaction|\n" \
-              "    transaction.set_namespace(#{namespace.inspect})\n" \
-              "  end\n\n" \
-              "Appsignal.send_error called on location: #{call_location}"
-        end
+      def send_error(error)
         return unless active?
 
         unless error.is_a?(Exception)
@@ -407,9 +250,8 @@ module Appsignal
         end
         transaction = Appsignal::Transaction.new(
           SecureRandom.uuid,
-          namespace || Appsignal::Transaction::HTTP_REQUEST
+          Appsignal::Transaction::HTTP_REQUEST
         )
-        transaction.set_tags(tags) if tags
         transaction.set_error(error)
         yield transaction if block_given?
         transaction.complete
@@ -453,12 +295,6 @@ module Appsignal
       #
       # @param exception [Exception] The error to add to the current
       #   transaction.
-      # @param tags [Hash{String, Symbol => String, Symbol, Integer}]
-      #   Additional tags to add to the error. See also {.tag_request}.
-      #   This parameter is deprecated. Use the block argument instead.
-      # @param namespace [String] The namespace in which the error occurred.
-      #   See also {.set_namespace}.
-      #   This parameter is deprecated. Use the block argument instead.
       # @yield [transaction] yields block to allow modification of the
       #   transaction.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -470,27 +306,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @since 0.6.6
-      def set_error(exception, tags = nil, namespace = nil)
-        if tags
-          call_location = caller(1..1).first
-          stdout_and_logger_warning \
-            "The tags argument for `Appsignal.set_error` is deprecated. " \
-              "Please use the block method to set tags instead.\n\n" \
-              "  Appsignal.set_error(error) do |transaction|\n" \
-              "    transaction.set_tags(#{tags})\n" \
-              "  end\n\n" \
-              "Appsignal.set_error called on location: #{call_location}"
-        end
-        if namespace
-          call_location = caller(1..1).first
-          stdout_and_logger_warning \
-            "The namespace argument for `Appsignal.set_error` is deprecated. " \
-              "Please use the block method to set the namespace instead.\n\n" \
-              "  Appsignal.set_error(error) do |transaction|\n" \
-              "    transaction.set_namespace(#{namespace.inspect})\n" \
-              "  end\n\n" \
-              "Appsignal.set_error called on location: #{call_location}"
-        end
+      def set_error(exception)
         unless exception.is_a?(Exception)
           internal_logger.error "Appsignal.set_error: Cannot set error. " \
             "The given value is not an exception: #{exception.inspect}"
@@ -500,8 +316,6 @@ module Appsignal
 
         transaction = Appsignal::Transaction.current
         transaction.set_error(exception)
-        transaction.set_tags(tags) if tags
-        transaction.set_namespace(namespace) if namespace
         yield transaction if block_given?
       end
       alias :set_exception :set_error
@@ -1067,15 +881,6 @@ module Appsignal
         yield
       ensure
         Appsignal::Transaction.current&.resume!
-      end
-
-      # @deprecated Use {.ignore_instrumentation_events} instead.
-      # @since 0.8.7
-      def without_instrumentation(&block)
-        stdout_and_logger_warning \
-          "The `Appsignal.without_instrumentation` helper is deprecated. " \
-            "Please use `Appsignal.ignore_instrumentation_events` instead."
-        ignore_instrumentation_events(&block)
       end
     end
   end

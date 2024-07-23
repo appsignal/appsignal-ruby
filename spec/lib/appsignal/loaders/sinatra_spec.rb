@@ -1,7 +1,5 @@
 if DependencyHelper.sinatra_present?
   describe "Appsignal::Loaders::SinatraLoader" do
-    before { Appsignal.config = nil }
-
     describe "#on_load" do
       it "registers Sinatra default config" do
         ::Sinatra::Application.settings.root = "/some/path"
