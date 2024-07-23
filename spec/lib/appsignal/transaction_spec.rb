@@ -1,8 +1,9 @@
 describe Appsignal::Transaction do
+  let(:options) { {} }
   let(:time) { Time.at(fixed_time) }
 
   before do
-    start_agent
+    start_agent(:options => options)
     Timecop.freeze(time)
   end
   after { Timecop.return }
@@ -323,7 +324,7 @@ describe Appsignal::Transaction do
       end
 
       context "with AppSignal filtering" do
-        before { Appsignal.config.config_hash[:filter_parameters] = %w[foo] }
+        let(:options) { { :filter_parameters => %w[foo] } }
 
         it "returns sanitized custom params" do
           transaction.set_params("foo" => "value", "baz" => "bat")
@@ -439,12 +440,15 @@ describe Appsignal::Transaction do
         expect(transaction).to include_session_data(arg_data)
       end
 
-      it "does not include filtered out session data" do
-        Appsignal.config[:filter_session_data] = ["filtered_key"]
-        transaction.set_session_data("data" => "value1", "filtered_key" => "filtered_value")
+      context "with filter_session_data" do
+        let(:options) { { :filter_session_data => ["filtered_key"] } }
 
-        transaction._sample
-        expect(transaction).to include_session_data("data" => "value1")
+        it "does not include filtered out session data" do
+          transaction.set_session_data("data" => "value1", "filtered_key" => "filtered_value")
+
+          transaction._sample
+          expect(transaction).to include_session_data("data" => "value1")
+        end
       end
 
       it "logs an error if an error occurred storing the session data" do
@@ -563,12 +567,15 @@ describe Appsignal::Transaction do
         expect(transaction).to include_environment(arg_data)
       end
 
-      it "does not include filtered out headers" do
-        Appsignal.config[:request_headers] = ["MY_HEADER"]
-        transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+      context "with request_headers options" do
+        let(:options) { { :request_headers => ["MY_HEADER"] } }
 
-        transaction._sample
-        expect(transaction).to include_environment("MY_HEADER" => "value1")
+        it "does not include filtered out headers" do
+          transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+
+          transaction._sample
+          expect(transaction).to include_environment("MY_HEADER" => "value1")
+        end
       end
 
       it "logs an error if an error occurred storing the headers" do
@@ -975,8 +982,7 @@ describe Appsignal::Transaction do
     end
 
     context "when filter_metadata includes metadata key" do
-      before { Appsignal.config[:filter_metadata] = ["filter_key"] }
-      after { Appsignal.config[:filter_metadata] = [] }
+      let(:options) { { :filter_metadata => ["filter_key"] } }
 
       it "does not set the metadata on the transaction" do
         transaction.set_metadata(:filter_key, "filtered value")

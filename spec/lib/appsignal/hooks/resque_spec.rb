@@ -25,8 +25,9 @@ describe Appsignal::Hooks::ResqueHook do
 
       let(:queue) { "default" }
       let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
+      let(:options) { {} }
       before do
-        start_agent
+        start_agent(:options => options)
 
         class ResqueTestJob
           def self.perform(*_args)
@@ -82,10 +83,7 @@ describe Appsignal::Hooks::ResqueHook do
       end
 
       context "with arguments" do
-        before do
-          start_agent("production")
-          Appsignal.config[:filter_parameters] = ["foo"]
-        end
+        let(:options) { { :filter_parameters => ["foo"] } }
 
         it "filters out configured arguments" do
           perform_rescue_job(

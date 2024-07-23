@@ -1,5 +1,6 @@
 describe Appsignal::Hooks::RedisHook do
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
 
   if DependencyHelper.redis_present?
     context "with redis" do
@@ -22,9 +23,7 @@ describe Appsignal::Hooks::RedisHook do
           end
 
           describe "integration" do
-            before do
-              Appsignal.config.config_hash[:instrument_redis] = true
-            end
+            let(:options) { { :instrument_redis => true } }
 
             context "install" do
               before do
@@ -103,9 +102,7 @@ describe Appsignal::Hooks::RedisHook do
         end
 
         context "with instrumentation disabled" do
-          before do
-            Appsignal.config.config_hash[:instrument_redis] = false
-          end
+          let(:options) { { :instrument_redis => false } }
 
           describe "#dependencies_present?" do
             subject { described_class.new.dependencies_present? }

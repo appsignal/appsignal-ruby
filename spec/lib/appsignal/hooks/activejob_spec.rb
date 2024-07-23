@@ -72,10 +72,11 @@ if DependencyHelper.active_job_present?
         ["perform_start.active_job", "perform.active_job"]
       end
     end
+    let(:options) { {} }
     before do
       ActiveJob::Base.queue_adapter = :inline
 
-      start_agent
+      start_agent(:options => options)
       Appsignal.internal_logger = test_logger(log)
       class ActiveJobTestJob < ActiveJob::Base
         def perform(*_args)
@@ -209,10 +210,9 @@ if DependencyHelper.active_job_present?
       end
 
       context "with activejob_report_errors set to none" do
-        it "does not report the error" do
-          start_agent("production")
-          Appsignal.config[:activejob_report_errors] = "none"
+        let(:options) { { :activejob_report_errors => "none" } }
 
+        it "does not report the error" do
           allow(Appsignal).to receive(:increment_counter)
           tags = { :queue => queue }
           expect(Appsignal).to receive(:increment_counter)
@@ -228,10 +228,7 @@ if DependencyHelper.active_job_present?
 
       if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
         context "with activejob_report_errors set to discard" do
-          before do
-            start_agent("production")
-            Appsignal.config[:activejob_report_errors] = "discard"
-          end
+          let(:options) { { :activejob_report_errors => "discard" } }
 
           it "does not report error on first failure" do
             with_test_adapter do
@@ -351,9 +348,9 @@ if DependencyHelper.active_job_present?
     end
 
     context "with params" do
+      let(:options) { { :filter_parameters => ["foo"] } }
+
       it "filters the configured params" do
-        start_agent("production")
-        Appsignal.config[:filter_parameters] = ["foo"]
         queue_job(ActiveJobTestJob, method_given_args)
 
         transaction = last_transaction
