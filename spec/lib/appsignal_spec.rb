@@ -248,6 +248,27 @@ describe Appsignal do
         Appsignal.start
       end
 
+      it "freezes the config" do
+        Appsignal.start
+
+        expect_frozen_error do
+          Appsignal.config[:ignore_actions] << "my action"
+        end
+        expect_frozen_error do
+          Appsignal.config.config_hash[:ignore_actions] << "my action"
+        end
+        expect_frozen_error do
+          Appsignal.config.config_hash.merge!(:option => :value)
+        end
+        expect_frozen_error do
+          Appsignal.config[:ignore_actions] = "my action"
+        end
+      end
+
+      def expect_frozen_error(&block)
+        expect(&block).to raise_error(FrozenError)
+      end
+
       context "when allocation tracking has been enabled" do
         before do
           Appsignal.config.config_hash[:enable_allocation_tracking] = true
