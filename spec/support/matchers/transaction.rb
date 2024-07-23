@@ -59,6 +59,7 @@ define_transaction_sample_matcher_for(:environment)
 define_transaction_sample_matcher_for(:session_data)
 define_transaction_sample_matcher_for(:tags)
 define_transaction_sample_matcher_for(:custom_data)
+define_transaction_sample_matcher_for(:error_causes)
 
 RSpec::Matchers.define :be_completed do
   match(:notify_expectation_failures => true) do |transaction|
@@ -66,14 +67,14 @@ RSpec::Matchers.define :be_completed do
   end
 end
 
-RSpec::Matchers.define :have_error do |error_class, error_message|
+RSpec::Matchers.define :have_error do |error_class, error_message, error_backtrace|
   match(:notify_expectation_failures => true) do |transaction|
     transaction_error = transaction.to_h["error"]
     if error_class && error_message
       expect(transaction_error).to include(
         "name" => error_class,
         "message" => error_message,
-        "backtrace" => kind_of(String)
+        "backtrace" => error_backtrace ? JSON.dump(error_backtrace) : kind_of(String)
       )
     else
       expect(transaction_error).to be_any
