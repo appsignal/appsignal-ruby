@@ -58,7 +58,7 @@ describe Appsignal::Hooks::RakeHook do
 
           transaction = last_transaction
           expect(transaction).to have_id
-          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_namespace("rake")
           expect(transaction).to have_action("task:name")
           expect(transaction).to_not have_error
           expect(transaction).to include_params("foo" => "bar")
@@ -91,7 +91,7 @@ describe Appsignal::Hooks::RakeHook do
 
         transaction = last_transaction
         expect(transaction).to have_id
-        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(transaction).to have_namespace("rake")
         expect(transaction).to have_action("task:name")
         expect(transaction).to have_error("ExampleException", "error message")
         expect(transaction).to include_params("foo" => "bar")
