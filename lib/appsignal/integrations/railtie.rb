@@ -79,14 +79,19 @@ module Appsignal
     class RailsErrorReporterSubscriber
       class << self
         def report(error, handled:, severity:, context: {}, source: nil)
+          is_rails_runner = source == "application.runner.railties"
           # Ignore not handled errors. They are reraised by the error reporter
           # and are caught and recorded by our Rails middleware.
-          return unless handled
+          return if !handled && !is_rails_runner
 
           Appsignal.send_error(error) do |transaction|
             namespace, action_name, path, method, params, tags, custom_data =
               context_for(context.dup)
-            transaction.set_namespace(namespace) if namespace
+            if namespace
+              transaction.set_namespace(namespace)
+            elsif is_rails_runner
+              transaction.set_namespace("runner")
+            end
             transaction.set_action(action_name) if action_name
             transaction.set_metadata("path", path)
             transaction.set_metadata("method", method)

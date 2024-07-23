@@ -225,6 +225,26 @@ if DependencyHelper.rails_present?
 
             expect(created_transactions).to be_empty
           end
+
+          if DependencyHelper.rails7_1_present?
+            it "reports the error if the source is the Rails runner" do
+              expect do
+                with_rails_error_reporter do
+                  expect do
+                    Rails.error.record(:source => "application.runner.railties") do
+                      raise ExampleStandardError, "error message"
+                    end
+                  end.to raise_error(ExampleStandardError, "error message")
+                end
+              end.to change { created_transactions.count }.by(1)
+
+              transaction = last_transaction
+              expect(transaction).to have_namespace("runner")
+              expect(transaction).to_not have_action
+              expect(transaction).to have_error("ExampleStandardError", "error message")
+              expect(transaction).to include_tags("source" => "application.runner.railties")
+            end
+          end
         end
 
         context "when error is handled (not reraised)" do
