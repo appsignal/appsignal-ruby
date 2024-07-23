@@ -782,7 +782,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "initial" => { "env" => "" },
               "file" => {},
               "env" => {},
-              "override" => { "send_session_data" => true }
+              "override" => {}
             },
             "modifiers" => {
               "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""
@@ -880,7 +880,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             context "when the source is only default" do
               it "does not print a source" do
-                expect(output).to include("debug: #{Appsignal.config[:debug]}\n")
+                expect(output)
+                  .to include("enable_host_metrics: #{Appsignal.config[:enable_host_metrics]}\n")
               end
             end
           end
@@ -961,7 +962,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               ),
               "file" => hash_with_string_keys(config.file_config),
               "env" => {},
-              "override" => { "send_session_data" => true }
+              "override" => {}
             },
             "modifiers" => {
               "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""
@@ -992,7 +993,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               "initial" => hash_with_string_keys(config.initial_config),
               "file" => hash_with_string_keys(config.file_config),
               "env" => {},
-              "override" => { "send_session_data" => true }
+              "override" => {}
             },
             "modifiers" => {
               "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR" => ""

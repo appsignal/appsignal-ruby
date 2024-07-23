@@ -25,64 +25,23 @@ module Appsignal
       # Create a new transaction and set it as the currently active
       # transaction.
       #
-      # @param id_or_namespace [String] Namespace of the to be created transaction.
+      # @param namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
-      def create(id_or_namespace, arg_namespace = nil, request = nil, options = {})
-        if id_or_namespace && arg_namespace
-          Appsignal::Utils::StdoutAndLoggerMessage.warning(
-            "Appsignal::Transaction.create: " \
-              "A new Transaction is created using the transaction ID argument. " \
-              "This argument is deprecated without replacement."
-          )
-        end
-        if arg_namespace
-          Appsignal::Utils::StdoutAndLoggerMessage.warning(
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the namespace argument. " \
-              "Specify the namespace as the first argument to the 'create' " \
-              "method without the ID argument."
-          )
-        end
-        if request
-          Appsignal::Utils::StdoutAndLoggerMessage.warning(
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the request argument. " \
-              "This argument is deprecated. Please use the `Appsignal.set_*` helpers instead."
-          )
-        end
-        # Allow middleware to force a new transaction
-        if options[:force]
-          Appsignal::Utils::StdoutAndLoggerMessage.warning(
-            "Appsignal::Transaction.create: " \
-              "A Transaction is created using the `:force => true` option argument. " \
-              "The options argument is deprecated without replacement."
-          )
-          Thread.current[:appsignal_transaction] = nil
-        end
-        if arg_namespace
-          id = id_or_namespace
-          namespace = arg_namespace
-        else
-          id = SecureRandom.uuid
-          namespace = id_or_namespace
-        end
-
+      def create(namespace)
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
           Thread.current[:appsignal_transaction] =
             Appsignal::Transaction.new(
-              id,
-              namespace,
-              request,
-              options
+              SecureRandom.uuid,
+              namespace
             )
         else
           # Otherwise, log the issue about trying to start another transaction
           Appsignal.internal_logger.warn(
-            "Trying to start new transaction with id " \
-              "'#{id}', but a transaction with id '#{current.transaction_id}' " \
-              "is already running. Using transaction '#{current.transaction_id}'."
+            "Trying to start new transaction, but a transaction " \
+              "with id '#{current.transaction_id}' is already running. " \
+              "Using transaction '#{current.transaction_id}'."
           )
 
           # And return the current transaction instead
@@ -137,19 +96,16 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @api private
-    def initialize(transaction_id, namespace, request = nil, options = {})
+    def initialize(transaction_id, namespace)
       @transaction_id = transaction_id
       @action = nil
       @namespace = namespace
-      @request = request || InternalGenericRequest.new({})
       @paused = false
       @discarded = false
       @tags = {}
       @custom_data = nil
       @breadcrumbs = []
       @store = Hash.new({})
-      @options = options
-      @options[:params_method] ||= :params
       @params = nil
       @session_data = nil
       @headers = nil
@@ -171,7 +127,7 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      _sample_data if @ext.finish(0)
+      sample_data if @ext.finish(0)
       @ext.complete
     end
 
@@ -210,20 +166,6 @@ module Appsignal
       @store[key]
     end
 
-    # @api private
-    def params
-      parameters = @params || request_params
-
-      if parameters.respond_to? :call
-        parameters.call
-      else
-        parameters
-      end
-    rescue => e
-      Appsignal.internal_logger.error("Exception while fetching params: #{e.class}: #{e}")
-      nil
-    end
-
     # Set parameters on the transaction.
     #
     # When no parameters are set this way, the transaction will look for
@@ -244,15 +186,6 @@ module Appsignal
     def set_params(given_params = nil, &block)
       @params = block if block
       @params = given_params if given_params
-    end
-
-    # @deprecated Use {#set_params} or {#set_params_if_nil} instead.
-    def params=(given_params)
-      Appsignal::Utils::StdoutAndLoggerMessage.warning(
-        "Transaction#params= is deprecated." \
-          "Use Transaction#set_params or #set_params_if_nil instead."
-      )
-      set_params(given_params)
     end
 
     # Set parameters on the transaction if not already set
@@ -479,18 +412,6 @@ module Appsignal
       @ext.set_namespace(namespace)
     end
 
-    # @deprecated Use the {#set_action} helper.
-    # @api private
-    def set_http_or_background_action(from = request.params)
-      return unless from
-
-      group_and_action = [
-        from[:controller] || from[:class],
-        from[:action] || from[:method]
-      ]
-      set_action_if_nil(group_and_action.compact.join("#"))
-    end
-
     # Set queue start time for transaction.
     #
     # @param start [Integer] Queue start time in milliseconds.
@@ -507,63 +428,12 @@ module Appsignal
       Appsignal.internal_logger.warn("Queue start value #{start} is too big")
     end
 
-    # Set the queue time based on the HTTP header or `:queue_start` env key
-    # value.
-    #
-    # This method will first try to read the queue time from the HTTP headers
-    # `X-Request-Start` or `X-Queue-Start`. Which are parsed by Rack as
-    # `HTTP_X_QUEUE_START` and `HTTP_X_REQUEST_START`.
-    # The header value is parsed by AppSignal as either milliseconds or
-    # microseconds.
-    #
-    # If no headers are found, or the value could not be parsed, it falls back
-    # on the `:queue_start` env key on this Transaction's {request} environment
-    # (called like `request.env[:queue_start]`). This value is parsed by
-    # AppSignal as seconds.
-    #
-    # @see https://docs.appsignal.com/ruby/instrumentation/request-queue-time.html
-    # @deprecated Use {#set_queue_start} instead.
-    # @return [void]
-    def set_http_or_background_queue_start
-      Appsignal::Utils::StdoutAndLoggerMessage.warning \
-        "The Appsignal::Transaction#set_http_or_background_queue_start " \
-          "method has been deprecated. " \
-          "Please use the Appsignal::Transaction#set_queue_start method instead."
-
-      start = http_queue_start || background_queue_start
-      return unless start
-
-      set_queue_start(start)
-    end
-
     # @api private
     def set_metadata(key, value)
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
       @ext.set_metadata(key, value)
-    end
-
-    # @deprecated Use one of the set_tags, set_params, set_session_data,
-    #   set_params or set_custom_data helpers instead.
-    # @api private
-    def set_sample_data(key, data)
-      Appsignal::Utils::StdoutAndLoggerMessage.warning(
-        "Appsignal::Transaction#set_sample_data is deprecated. " \
-          "Please use one of the instrumentation helpers: set_tags, " \
-          "set_params, set_session_data, set_params or set_custom_data."
-      )
-      _set_sample_data(key, data)
-    end
-
-    # @deprecated No replacement.
-    # @api private
-    def sample_data
-      Appsignal::Utils::StdoutAndLoggerMessage.warning(
-        "Appsignal::Transaction#sample_data is deprecated. " \
-          "Please remove any calls to this method."
-      )
-      _sample_data
     end
 
     # @see Appsignal::Helpers::Instrumentation#set_error
@@ -613,7 +483,7 @@ module Appsignal
 
       causes_sample_data.last[:is_root_cause] = false if root_cause_missing
 
-      _set_sample_data(
+      set_sample_data(
         "error_causes",
         causes_sample_data
       )
@@ -671,37 +541,9 @@ module Appsignal
     end
     alias_method :to_hash, :to_h
 
-    # @api private
-    class InternalGenericRequest
-      attr_reader :env
-
-      def initialize(env)
-        @env = env
-      end
-
-      def params
-        env[:params]
-      end
-    end
-
-    # @deprecated Use the instrumentation helpers to set metadata on the
-    #   transaction, rather than rely on the GenericRequest automation. See the
-    #   {Helpers::Instrumentation} module for a list of helpers.
-    # @api private
-    class GenericRequest < InternalGenericRequest
-      def initialize(_env)
-        Appsignal::Utils::StdoutAndLoggerMessage.warning(
-          "The use of Appsignal::Transaction::GenericRequest is deprecated. " \
-            "Use the `Appsignal.set_*` helpers instead. " \
-            "https://docs.appsignal.com/guides/custom-data/sample-data.html"
-        )
-        super
-      end
-    end
-
     private
 
-    def _set_sample_data(key, data)
+    def set_sample_data(key, data)
       return unless key && data
 
       if !data.is_a?(Array) && !data.is_a?(Hash)
@@ -728,44 +570,31 @@ module Appsignal
       end
     end
 
-    def _sample_data
+    def sample_data
       {
         :params => sanitized_params,
-        :environment => sanitized_environment,
+        :environment => sanitized_request_headers,
         :session_data => sanitized_session_data,
-        :metadata => sanitized_metadata,
         :tags => sanitized_tags,
         :breadcrumbs => breadcrumbs,
         :custom_data => custom_data
       }.each do |key, data|
-        _set_sample_data(key, data)
+        set_sample_data(key, data)
       end
     end
 
-    # Returns calculated background queue start time in milliseconds, based on
-    # environment values.
-    #
-    # @return [nil] if no {#environment} is present.
-    # @return [nil] if there is no `:queue_start` in the {#environment}.
-    # @return [Integer] `:queue_start` time (in seconds) converted to milliseconds
-    def background_queue_start
-      env = environment
-      return unless env
+    # @api private
+    def params
+      return unless @params
 
-      queue_start = env[:queue_start]
-      return unless queue_start
-
-      (queue_start.to_f * 1000.0).to_i # Convert seconds to milliseconds
-    end
-
-    # Returns HTTP queue start time in milliseconds.
-    #
-    # @return [nil] if no queue start time is found.
-    # @return [nil] if begin time is too low to be plausible.
-    # @return [Integer] queue start in milliseconds.
-    def http_queue_start
-      env = environment
-      Appsignal::Rack::Utils.queue_start_from(env)
+      if @params.respond_to? :call
+        @params.call
+      else
+        @params
+      end
+    rescue => e
+      Appsignal.internal_logger.error("Exception while fetching params: #{e.class}: #{e}")
+      nil
     end
 
     def sanitized_params
@@ -787,14 +616,12 @@ module Appsignal
     end
 
     def session_data
-      if @session_data
-        if @session_data.respond_to? :call
-          @session_data.call
-        else
-          @session_data
-        end
-      elsif request.respond_to?(:session)
-        request.session
+      return unless @session_data
+
+      if @session_data.respond_to? :call
+        @session_data.call
+      else
+        @session_data
       end
     rescue => e
       Appsignal.internal_logger.error \
@@ -818,30 +645,11 @@ module Appsignal
       )
     end
 
-    # Returns sanitized metadata set on the request environment.
-    #
-    # @return [Hash<String, Object>]
-    def sanitized_metadata
-      env = environment
-      return unless env
-
-      metadata = env[:metadata]
-      return unless metadata
-
-      metadata
-        .transform_keys(&:to_s)
-        .reject { |key, _value| Appsignal.config[:filter_metadata].include?(key) }
-    end
-
-    def environment
-      if @headers
-        if @headers.respond_to? :call
-          @headers.call
-        else
-          @headers
-        end
-      elsif request.respond_to?(:env)
-        request.env
+    def request_headers
+      if @headers.respond_to? :call
+        @headers.call
+      else
+        @headers
       end
     rescue => e
       Appsignal.internal_logger.error \
@@ -856,15 +664,13 @@ module Appsignal
     #
     # @return [nil] if no environment is present.
     # @return [Hash<String, Object>]
-    def sanitized_environment
-      env = environment
-      return unless env
-      return unless env.respond_to?(:empty?)
-      return if env.empty?
+    def sanitized_request_headers
+      headers = request_headers
+      return unless headers
 
       {}.tap do |out|
         Appsignal.config[:request_headers].each do |key|
-          out[key] = env[key] if env[key]
+          out[key] = headers[key] if headers[key]
         end
       end
     end

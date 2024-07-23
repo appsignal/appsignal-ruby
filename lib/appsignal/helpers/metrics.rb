@@ -14,22 +14,6 @@ module Appsignal
           .warn("Gauge value #{value} for key '#{key}' is too big")
       end
 
-      def set_host_gauge(_key, _value)
-        Appsignal::Utils::StdoutAndLoggerMessage.warning \
-          "The `set_host_gauge` method has been deprecated. " \
-            "Calling this method has no effect. " \
-            "Please remove method call in the following file to remove " \
-            "this message.\n#{caller.first}"
-      end
-
-      def set_process_gauge(_key, _value)
-        Appsignal::Utils::StdoutAndLoggerMessage.warning \
-          "The `set_process_gauge` method has been deprecated. " \
-            "Calling this method has no effect. " \
-            "Please remove method call in the following file to remove " \
-            "this message.\n#{caller.first}"
-      end
-
       def increment_counter(key, value = 1.0, tags = {})
         Appsignal::Extension.increment_counter(
           key.to_s,

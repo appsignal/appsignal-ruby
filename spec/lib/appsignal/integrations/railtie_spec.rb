@@ -34,7 +34,6 @@ if DependencyHelper.rails_present?
       let(:app) { MyApp::Application.new }
       before do
         RailtieHelper.ensure_initialize!
-        Appsignal.config = nil
       end
 
       def initialize_railtie(event)
@@ -57,7 +56,7 @@ if DependencyHelper.rails_present?
         end
 
         it "doesn't overwrite the config if a config is already present " do
-          Appsignal.config = Appsignal::Config.new(
+          Appsignal._config = Appsignal::Config.new(
             Dir.pwd,
             "my_env",
             :some_config => "some value"

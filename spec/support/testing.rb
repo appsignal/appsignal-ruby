@@ -171,7 +171,7 @@ module AppsignalTest
       # transactions are created on the {Appsignal::Testing.transactions} list.
       #
       # @see TransactionHelpers#last_transaction
-      def new(*_args)
+      def new(...)
         transaction = super
         Appsignal::Testing.transactions << transaction
         transaction
@@ -180,7 +180,7 @@ module AppsignalTest
 
     module InstanceMethods
       def _sample
-        _sample_data
+        sample_data
       end
     end
   end

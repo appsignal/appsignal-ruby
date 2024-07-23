@@ -36,21 +36,6 @@ module Appsignal
     # @see Config
     attr_reader :config
 
-    # Set the AppSignal config.
-    #
-    # @deprecated Use {Appsignal.configure} instead.
-    # @param conf [Appsignal::Config]
-    # @return [void]
-    # @see Config
-    def config=(conf)
-      Appsignal::Utils::StdoutAndLoggerMessage.warning \
-        "Configuring AppSignal with `Appsignal.config=` is deprecated. " \
-          "Use `Appsignal.configure { |config| ... }` to configure AppSignal. " \
-          "https://docs.appsignal.com/ruby/configuration.html\n" \
-          "#{caller.first}"
-      @config = conf
-    end
-
     # @api private
     def _config=(conf)
       @config = conf
@@ -333,18 +318,6 @@ module Appsignal
       end
     end
 
-    # @deprecated Only {.start} has to be called.
-    # @return [void]
-    # @since 0.7.0
-    def start_logger
-      callers = caller
-      Appsignal::Utils::StdoutAndLoggerMessage.warning \
-        "Calling 'Appsignal.start_logger' is deprecated. " \
-          "The logger will be started when calling 'Appsignal.start'. " \
-          "Remove the 'Appsignal.start_logger' call in the following file to " \
-          "remove this message.\n#{callers.first}"
-    end
-
     # Start the AppSignal internal logger.
     #
     # Sets the log level and sets the logger. Uses a file-based logger or the
@@ -447,22 +420,6 @@ module Appsignal
         end
       end
       Appsignal::Environment.report_supported_gems
-    end
-
-    # Alias constants that have moved with a warning message that points to the
-    # place to update the reference.
-    def const_missing(name)
-      case name
-      when :Minutely
-        callers = caller
-        Appsignal::Utils::StdoutAndLoggerMessage.warning \
-          "The constant Appsignal::Minutely has been deprecated. " \
-            "Please update the constant name to Appsignal::Probes " \
-            "in the following file to remove this message.\n#{callers.first}"
-        Appsignal::Probes
-      else
-        super
-      end
     end
   end
 end

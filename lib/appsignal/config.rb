@@ -8,8 +8,6 @@ require "tmpdir"
 
 module Appsignal
   class Config
-    include Appsignal::Utils::StdoutAndLoggerMessage
-
     # @api private
     def self.loader_defaults
       @loader_defaults ||= []
@@ -24,7 +22,6 @@ module Appsignal
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
-      :debug => false,
       :dns_servers => [],
       :enable_allocation_tracking => true,
       :enable_host_metrics => true,
@@ -59,8 +56,8 @@ module Appsignal
       ],
       :send_environment_metadata => true,
       :send_params => true,
-      :sidekiq_report_errors => "all",
-      :transaction_debug_mode => false
+      :send_session_data => true,
+      :sidekiq_report_errors => "all"
     }.freeze
 
     # @api private
@@ -96,13 +93,11 @@ module Appsignal
       "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => :sidekiq_report_errors,
       "APPSIGNAL_STATSD_PORT" => :statsd_port,
       "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
-      "APPSIGNAL_WORKING_DIR_PATH" => :working_dir_path,
       "APP_REVISION" => :revision
     }.freeze
     # @api private
     ENV_BOOLEAN_KEYS = {
       "APPSIGNAL_ACTIVE" => :active,
-      "APPSIGNAL_DEBUG" => :debug,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
       "APPSIGNAL_ENABLE_HOST_METRICS" => :enable_host_metrics,
       "APPSIGNAL_ENABLE_MINUTELY_PROBES" => :enable_minutely_probes,
@@ -121,9 +116,7 @@ module Appsignal
       "APPSIGNAL_RUNNING_IN_CONTAINER" => :running_in_container,
       "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
       "APPSIGNAL_SEND_PARAMS" => :send_params,
-      "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data,
-      "APPSIGNAL_SKIP_SESSION_DATA" => :skip_session_data,
-      "APPSIGNAL_TRANSACTION_DEBUG_MODE" => :transaction_debug_mode
+      "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data
     }.freeze
     # @api private
     ENV_ARRAY_KEYS = {
@@ -274,9 +267,6 @@ module Appsignal
       # Load config overrides
       @override_config = determine_overrides
       merge(override_config)
-
-      # Handle deprecated config options
-      maintain_backwards_compatibility
     end
 
     # @api private
@@ -306,12 +296,12 @@ module Appsignal
 
     # @api private
     def log_level
-      level = ::Logger::DEBUG if config_hash[:debug] || config_hash[:transaction_debug_mode]
       option = config_hash[:log_level]
-      if option
-        log_level_option = LOG_LEVEL_MAP[option]
-        level = log_level_option if log_level_option
-      end
+      level =
+        if option
+          log_level_option = LOG_LEVEL_MAP[option]
+          log_level_option
+        end
       level.nil? ? Appsignal::Config::DEFAULT_LOG_LEVEL : level
     end
 
@@ -359,7 +349,6 @@ module Appsignal
       ENV["_APPSIGNAL_BIND_ADDRESS"]                 = config_hash[:bind_address].to_s
       ENV["_APPSIGNAL_CA_FILE_PATH"]                 = config_hash[:ca_file_path].to_s
       ENV["_APPSIGNAL_CPU_COUNT"]                    = config_hash[:cpu_count].to_s
-      ENV["_APPSIGNAL_DEBUG_LOGGING"]                = config_hash[:debug].to_s
       ENV["_APPSIGNAL_DNS_SERVERS"]                  = config_hash[:dns_servers].join(",")
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
       ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
@@ -386,12 +375,8 @@ module Appsignal
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
       ENV["_APPSIGNAL_STATSD_PORT"]                  = config_hash[:statsd_port].to_s
-      ENV["_APPSIGNAL_TRANSACTION_DEBUG_MODE"]       = config_hash[:transaction_debug_mode].to_s
       if config_hash[:working_directory_path]
         ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"] = config_hash[:working_directory_path]
-      end
-      if config_hash[:working_dir_path]
-        ENV["_APPSIGNAL_WORKING_DIR_PATH"] = config_hash[:working_dir_path]
       end
       ENV["_APP_REVISION"] = config_hash[:revision].to_s
     end
@@ -476,27 +461,6 @@ module Appsignal
       nil
     end
 
-    # Maintain backwards compatibility with deprecated config options.
-    #
-    # Add warnings for deprecated config options here if they have no
-    # replacement, or should be non-functional.
-    #
-    # Add them to {determine_overrides} if replacement config options should be
-    # set instead.
-    #
-    # Make sure to remove the contents of this method in the next major
-    # version, but the method itself with an empty body can stick around as a
-    # structure for future deprecations.
-    def maintain_backwards_compatibility
-      return unless config_hash.key?(:working_dir_path)
-
-      stdout_and_logger_warning \
-        "The `working_dir_path` option is deprecated, please use " \
-          "`working_directory_path` instead and specify the " \
-          "full path to the working directory",
-        logger
-    end
-
     def load_from_environment
       config = {}
 
@@ -536,11 +500,7 @@ module Appsignal
     end
 
     # Set config options based on the final user config. Fix any conflicting
-    # config or set new config options based on deprecated config options.
-    #
-    # Make sure to remove behavior for deprecated config options in this method
-    # in the next major version, but the method itself with an empty body can
-    # stick around as a structure for future deprecations.
+    # config.
     def determine_overrides
       config = {}
       # If an error was detected during config file reading/parsing and the new
@@ -549,19 +509,6 @@ module Appsignal
       # TODO: Make default behavior in next major version. Remove
       # `inactive_on_config_file_error?` call.
       config[:active] = false if @config_file_error && inactive_on_config_file_error?
-      skip_session_data = config_hash[:skip_session_data]
-      send_session_data = config_hash[:send_session_data]
-      if skip_session_data.nil? # Deprecated option is not set
-        if send_session_data.nil? # Not configured by user
-          config[:send_session_data] = true # Set default value
-        end
-      else
-        stdout_and_logger_warning "The `skip_session_data` config option is " \
-          "deprecated. Please use `send_session_data` instead.",
-          logger
-        # Not configured by user
-        config[:send_session_data] = !skip_session_data if send_session_data.nil?
-      end
 
       if config_hash[:activejob_report_errors] == "discard" &&
           !Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?

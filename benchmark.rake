@@ -58,11 +58,9 @@ namespace :benchmark do
 end
 
 def start_agent
-  Appsignal.config = Appsignal::Config.new(
-    Dir.pwd,
-    "production",
-    :endpoint => "http://localhost:8080"
-  )
+  Appsignal.configure(:production) do |config|
+    config.endpoint = "http://localhost:8080"
+  end
   Appsignal.start
 end
 

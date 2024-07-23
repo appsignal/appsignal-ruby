@@ -1,7 +1,5 @@
 if DependencyHelper.padrino_present?
   describe "Appsignal::Loaders::PadrinoLoader" do
-    before { Appsignal.config = nil }
-
     describe "#on_load" do
       it "registers Padrino default config" do
         load_loader(:padrino)
@@ -70,7 +68,6 @@ if DependencyHelper.padrino_present?
       # TODO: use an instance double
       let(:settings) { double(:name => "TestApp") }
       around { |example| keep_transactions { example.run } }
-      before { Appsignal.config = nil }
 
       describe "routes" do
         let(:env) do

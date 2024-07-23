@@ -29,15 +29,6 @@ module Appsignal
         probes[key]
       end
 
-      # @deprecated Use {Appsignal::Probes.register} instead.
-      def register(name, probe)
-        Appsignal::Utils::StdoutAndLoggerMessage.warning(
-          "The method 'Appsignal::Probes.probes.register' is deprecated. " \
-            "Use 'Appsignal::Probes.register' instead."
-        )
-        Appsignal::Probes.register(name, probe)
-      end
-
       # @api private
       def internal_register(name, probe)
         if probes.key?(name)

@@ -3,38 +3,6 @@ describe Appsignal::Probes do
 
   before { Appsignal::Probes.probes.clear }
 
-  context "Minutely constant" do
-    let(:err_stream) { std_stream }
-    let(:stderr) { err_stream.read }
-
-    it "returns the Probes constant calling the Minutely constant" do
-      silence { expect(Appsignal::Minutely).to be(Appsignal::Probes) }
-    end
-
-    it "prints a deprecation warning to STDERR" do
-      capture_std_streams(std_stream, err_stream) do
-        expect(Appsignal::Minutely).to be(Appsignal::Probes)
-      end
-
-      expect(stderr)
-        .to include("appsignal WARNING: The constant Appsignal::Minutely has been deprecated.")
-    end
-
-    it "logs a warning" do
-      logs =
-        capture_logs do
-          silence do
-            expect(Appsignal::Minutely).to be(Appsignal::Probes)
-          end
-        end
-
-      expect(logs).to contains_log(
-        :warn,
-        "The constant Appsignal::Minutely has been deprecated."
-      )
-    end
-  end
-
   it "returns a ProbeCollection" do
     expect(Appsignal::Probes.probes)
       .to be_instance_of(Appsignal::Probes::ProbeCollection)
@@ -398,45 +366,6 @@ describe Appsignal::Probes do
       end
     end
 
-    describe "#register" do
-      it "adds the probe by key" do
-        expect(Appsignal::Probes).to receive(:probes).and_return(collection)
-
-        probe = lambda {}
-        silence { collection.register :my_probe, probe }
-        expect(collection[:my_probe]).to eql(probe)
-      end
-
-      context "logger" do
-        before { start_agent }
-
-        it "logs a deprecation message" do
-          logs =
-            capture_logs do
-              silence { collection.register :my_probe, lambda {} }
-            end
-          expect(logs).to contains_log :warn,
-            "The method 'Appsignal::Probes.probes.register' is deprecated. " \
-              "Use 'Appsignal::Probes.register' instead."
-        end
-      end
-
-      context "stderr" do
-        let(:err_stream) { std_stream }
-        let(:stderr) { err_stream.read }
-
-        it "prints a deprecation warning" do
-          capture_std_streams(std_stream, err_stream) do
-            collection.register :my_probe, lambda {}
-          end
-          deprecation_message =
-            "The method 'Appsignal::Probes.probes.register' is deprecated. " \
-              "Use 'Appsignal::Probes.register' instead."
-          expect(stderr).to include("appsignal WARNING: #{deprecation_message}")
-        end
-      end
-    end
-
     describe "#internal_register" do
       let(:log_stream) { std_stream }
       let(:log) { log_contents(log_stream) }
@@ -463,10 +392,8 @@ describe Appsignal::Probes do
 
     describe "#unregister" do
       it "removes the probe from the collection" do
-        expect(Appsignal::Probes).to receive(:probes).and_return(collection)
-
         probe = lambda {}
-        silence { collection.register :my_probe, probe }
+        silence { collection.internal_register :my_probe, probe }
         expect(collection[:my_probe]).to eql(probe)
 
         silence { collection.unregister :my_probe }
