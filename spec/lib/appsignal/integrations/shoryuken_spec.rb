@@ -9,7 +9,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   let(:queue) { "some-funky-queue-name" }
   let(:sqs_msg) { double(:message_id => "msg1", :attributes => {}) }
   let(:body) { {} }
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
   around { |example| keep_transactions { example.run } }
 
   def perform_shoryuken_job(&block)
@@ -60,10 +61,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
       end
 
       context "with parameter filtering" do
-        before do
-          start_agent("production")
-          Appsignal.config[:filter_parameters] = ["foo"]
-        end
+        let(:options) { { :filter_parameters => ["foo"] } }
 
         it "filters selected arguments" do
           perform_shoryuken_job

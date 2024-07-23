@@ -7,8 +7,9 @@ describe Appsignal::Hooks::GvlHook do
       end
     end
   else
+    let(:options) { {} }
     before do
-      start_agent
+      start_agent(:options => options)
     end
 
     def expect_gvltools_require
@@ -100,8 +101,9 @@ describe Appsignal::Hooks::GvlHook do
 
       describe "#install" do
         context "with enable_gvl_global_timer" do
+          let(:options) { { :enable_gvl_global_timer => true } }
+
           it "enables the GVL global timer" do
-            Appsignal.config[:enable_gvl_global_timer] = true
             expect(::GVLTools::GlobalTimer).to receive(:enable)
 
             described_class.new.install
@@ -109,8 +111,9 @@ describe Appsignal::Hooks::GvlHook do
         end
 
         context "without enable_gvl_global_timer" do
+          let(:options) { { :enable_gvl_global_timer => false } }
+
           it "does not enable the GVL global timer" do
-            Appsignal.config[:enable_gvl_global_timer] = false
             expect(::GVLTools::GlobalTimer).not_to receive(:enable)
 
             described_class.new.install
@@ -118,8 +121,9 @@ describe Appsignal::Hooks::GvlHook do
         end
 
         context "with enable_gvl_waiting_threads" do
+          let(:options) { { :enable_gvl_waiting_threads => true } }
+
           it "enables the GVL waiting threads" do
-            Appsignal.config[:enable_gvl_global_timer] = true
             expect(::GVLTools::WaitingThreads).to receive(:enable)
 
             described_class.new.install
@@ -127,8 +131,9 @@ describe Appsignal::Hooks::GvlHook do
         end
 
         context "without enable_gvl_waiting_threads" do
+          let(:options) { { :enable_gvl_waiting_threads => false } }
+
           it "does not enable the GVL waiting threads" do
-            Appsignal.config[:enable_gvl_waiting_threads] = false
             expect(::GVLTools::WaitingThreads).not_to receive(:enable)
 
             described_class.new.install

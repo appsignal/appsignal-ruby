@@ -1,6 +1,7 @@
 describe Appsignal::Hooks::RedisClientHook do
+  let(:options) { {} }
   before do
-    start_agent
+    start_agent(:options => options)
   end
 
   if DependencyHelper.redis_client_present?
@@ -30,9 +31,7 @@ describe Appsignal::Hooks::RedisClientHook do
 
         context "with rest-client gem" do
           describe "integration" do
-            before do
-              Appsignal.config.config_hash[:instrument_redis] = true
-            end
+            let(:options) { { :instrument_redis => true } }
 
             context "install" do
               before do
@@ -115,9 +114,7 @@ describe Appsignal::Hooks::RedisClientHook do
         if DependencyHelper.hiredis_client_present?
           context "with hiredis driver" do
             describe "integration" do
-              before do
-                Appsignal.config.config_hash[:instrument_redis] = true
-              end
+              let(:options) { { :instrument_redis => true } }
 
               context "install" do
                 before do
@@ -200,9 +197,7 @@ describe Appsignal::Hooks::RedisClientHook do
       end
 
       context "with instrumentation disabled" do
-        before do
-          Appsignal.config.config_hash[:instrument_redis] = false
-        end
+        let(:options) { { :instrument_redis => false } }
 
         describe "#dependencies_present?" do
           subject { described_class.new.dependencies_present? }

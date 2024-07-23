@@ -15,7 +15,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
     require "appsignal/integrations/delayed_job_plugin"
   end
   after(:context) { Object.send(:remove_const, :Delayed) }
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
 
   # We haven't found a way to test the hooks, we'll have to do that manually
 
@@ -82,10 +83,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
         end
 
         context "with parameter filtering" do
-          before do
-            start_agent("production")
-            Appsignal.config[:filter_parameters] = ["foo"]
-          end
+          let(:options) { { :filter_parameters => ["foo"] } }
 
           it "filters selected arguments" do
             perform
@@ -271,10 +269,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
             end
 
             context "with parameter filtering" do
-              before do
-                start_agent("production")
-                Appsignal.config[:filter_parameters] = ["foo"]
-              end
+              let(:options) { { :filter_parameters => ["foo"] } }
 
               it "filters selected arguments" do
                 perform

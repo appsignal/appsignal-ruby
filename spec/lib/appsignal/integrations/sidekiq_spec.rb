@@ -1,7 +1,11 @@
 require "appsignal/integrations/sidekiq"
 
 describe Appsignal::Integrations::SidekiqDeathHandler do
-  before { start_agent }
+  let(:options) { {} }
+  before do
+    stub_const("Sidekiq::VERSION", "7.1.0")
+    start_agent(:options => options)
+  end
   around { |example| keep_transactions { example.run } }
 
   let(:exception) do
@@ -28,10 +32,8 @@ describe Appsignal::Integrations::SidekiqDeathHandler do
   end
 
   context "when sidekiq_report_errors = none" do
-    before do
-      Appsignal.config[:sidekiq_report_errors] = "none"
-      call_handler
-    end
+    let(:options) { { :sidekiq_report_errors => "none" } }
+    before { call_handler }
 
     it "doesn't track the error on the transaction" do
       expect_no_error_on_transaction
@@ -39,10 +41,8 @@ describe Appsignal::Integrations::SidekiqDeathHandler do
   end
 
   context "when sidekiq_report_errors = all" do
-    before do
-      Appsignal.config[:sidekiq_report_errors] = "all"
-      call_handler
-    end
+    let(:options) { { :sidekiq_report_errors => "all" } }
+    before { call_handler }
 
     it "doesn't track the error on the transaction" do
       expect_no_error_on_transaction
@@ -50,10 +50,8 @@ describe Appsignal::Integrations::SidekiqDeathHandler do
   end
 
   context "when sidekiq_report_errors = discard" do
-    before do
-      Appsignal.config[:sidekiq_report_errors] = "discard"
-      call_handler
-    end
+    let(:options) { { :sidekiq_report_errors => "discard" } }
+    before { call_handler }
 
     it "records each occurrence of the error on the transaction" do
       expect_error_on_transaction
@@ -62,7 +60,8 @@ describe Appsignal::Integrations::SidekiqDeathHandler do
 end
 
 describe Appsignal::Integrations::SidekiqErrorHandler do
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
   around { |example| keep_transactions { example.run } }
 
   let(:exception) do
@@ -96,7 +95,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = none" do
-      before { Appsignal.config[:sidekiq_report_errors] = "none" }
+      let(:options) { { :sidekiq_report_errors => "none" } }
 
       it "tracks the error on a new transaction" do
         expect_report_internal_error
@@ -104,7 +103,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = all" do
-      before { Appsignal.config[:sidekiq_report_errors] = "all" }
+      let(:options) { { :sidekiq_report_errors => "all" } }
 
       it "tracks the error on a new transaction" do
         expect_report_internal_error
@@ -112,7 +111,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = discard" do
-      before { Appsignal.config[:sidekiq_report_errors] = "discard" }
+      let(:options) { { :sidekiq_report_errors => "discard" } }
 
       it "tracks the error on a new transaction" do
         expect_report_internal_error
@@ -143,10 +142,8 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = none" do
-      before do
-        Appsignal.config[:sidekiq_report_errors] = "none"
-        call_handler
-      end
+      let(:options) { { :sidekiq_report_errors => "none" } }
+      before { call_handler }
 
       it "doesn't track the error on the transaction" do
         expect_no_error_on_transaction
@@ -155,10 +152,8 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = all" do
-      before do
-        Appsignal.config[:sidekiq_report_errors] = "all"
-        call_handler
-      end
+      let(:options) { { :sidekiq_report_errors => "all" } }
+      before { call_handler }
 
       it "records each occurrence of the error on the transaction" do
         expect_error_on_transaction
@@ -167,10 +162,8 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
     end
 
     context "when sidekiq_report_errors = discard" do
-      before do
-        Appsignal.config[:sidekiq_report_errors] = "discard"
-        call_handler
-      end
+      let(:options) { { :sidekiq_report_errors => "discard" } }
+      before { call_handler }
 
       it "doesn't track the error on the transaction" do
         expect_no_error_on_transaction
@@ -222,8 +215,9 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
   end
   let(:plugin) { Appsignal::Integrations::SidekiqMiddleware.new }
   let(:log) { StringIO.new }
+  let(:options) { {} }
   before do
-    start_agent
+    start_agent(:options => options)
     Appsignal.internal_logger = test_logger(log)
   end
   around { |example| keep_transactions { example.run } }
@@ -242,10 +236,7 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
   end
 
   context "with parameter filtering" do
-    before do
-      start_agent("production")
-      Appsignal.config[:filter_parameters] = ["foo"]
-    end
+    let(:options) { { :filter_parameters => ["foo"] } }
 
     it "filters selected arguments" do
       perform_sidekiq_job
@@ -384,7 +375,6 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       include RailsHelper
 
       it "reports the worker name as the action, copies the namespace and tags" do
-        start_agent("production")
         with_rails_error_reporter do
           perform_sidekiq_job do
             Appsignal.tag_job("test_tag" => "value")

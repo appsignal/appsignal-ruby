@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 describe Appsignal::Hooks::HttpHook do
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
 
   if DependencyHelper.http_present?
     context "with instrument_http_rb set to true" do
@@ -18,8 +19,7 @@ describe Appsignal::Hooks::HttpHook do
     end
 
     context "with instrument_http_rb set to false" do
-      before { Appsignal.config.config_hash[:instrument_http_rb] = false }
-      after { Appsignal.config.config_hash[:instrument_http_rb] = true }
+      let(:options) { { :instrument_http_rb => false } }
 
       describe "#dependencies_present?" do
         subject { described_class.new.dependencies_present? }

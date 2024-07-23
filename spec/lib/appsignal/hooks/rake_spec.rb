@@ -4,8 +4,9 @@ describe Appsignal::Hooks::RakeHook do
   let(:helper) { Appsignal::Integrations::RakeIntegrationHelper }
   let(:task) { Rake::Task.new("task:name", Rake::Application.new) }
   let(:arguments) { Rake::TaskArguments.new(["foo"], ["bar"]) }
+  let(:options) { {} }
   before do
-    start_agent
+    start_agent(:options => options)
     allow(Kernel).to receive(:at_exit)
   end
   around { |example| keep_transactions { example.run } }
@@ -30,9 +31,7 @@ describe Appsignal::Hooks::RakeHook do
       end
 
       context "with :enable_rake_performance_instrumentation == false" do
-        before do
-          Appsignal.config[:enable_rake_performance_instrumentation] = false
-        end
+        let(:options) { { :enable_rake_performance_instrumentation => false } }
 
         it "creates no transaction" do
           expect { perform }.to_not(change { created_transactions.count })
@@ -49,9 +48,7 @@ describe Appsignal::Hooks::RakeHook do
       end
 
       context "with :enable_rake_performance_instrumentation == true" do
-        before do
-          Appsignal.config[:enable_rake_performance_instrumentation] = true
-        end
+        let(:options) { { :enable_rake_performance_instrumentation => true } }
 
         it "creates a transaction" do
           expect { perform }.to(change { created_transactions.count }.by(1))
