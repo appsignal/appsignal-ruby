@@ -440,20 +440,9 @@ module Appsignal
         nil
       end
     rescue => e
-      # TODO: Remove in the next major version
       @config_file_error = true
-      extra_message =
-        if inactive_on_config_file_error?
-          "Not starting AppSignal because " \
-            "APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR is set."
-        else
-          "Skipping file config. In future versions AppSignal will not start " \
-            "on a config file error. To opt-in to this new behavior set " \
-            "'APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR=1' in your system " \
-            "environment."
-        end
       message = "An error occurred while loading the AppSignal config file. " \
-        "#{extra_message}\n" \
+        "Not starting AppSignal.\n" \
         "File: #{config_file.inspect}\n" \
         "#{e.class.name}: #{e}"
       Kernel.warn "appsignal: #{message}"
@@ -506,9 +495,7 @@ module Appsignal
       # If an error was detected during config file reading/parsing and the new
       # behavior is enabled to not start AppSignal on incomplete config, do not
       # start AppSignal.
-      # TODO: Make default behavior in next major version. Remove
-      # `inactive_on_config_file_error?` call.
-      config[:active] = false if @config_file_error && inactive_on_config_file_error?
+      config[:active] = false if @config_file_error
 
       if config_hash[:activejob_report_errors] == "discard" &&
           !Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
@@ -528,12 +515,6 @@ module Appsignal
         @logger.debug("Config key '#{key}' is being overwritten") unless config_hash[key].nil?
         config_hash[key] = value
       end
-    end
-
-    # Does it use the new behavior?
-    def inactive_on_config_file_error?
-      value = ENV.fetch("APPSIGNAL_INACTIVE_ON_CONFIG_FILE_ERROR", false)
-      ["1", "true"].include?(value)
     end
 
     # @api private
