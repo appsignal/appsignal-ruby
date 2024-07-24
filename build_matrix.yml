@@ -172,7 +172,6 @@ matrix:
           - "jruby-9.4.7.0"
     - gem: "sequel"
     - gem: "sinatra"
-    - gem: "webmachine1"
     - gem: "webmachine2"
     - gem: "redis-4"
     - gem: "redis-5"
