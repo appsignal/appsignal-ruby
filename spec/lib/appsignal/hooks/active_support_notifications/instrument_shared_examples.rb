@@ -88,12 +88,12 @@ shared_examples "activesupport instrument override" do
 
   context "when a transaction is completed in an instrumented block" do
     it "does not complete the ActiveSupport::Notifications.instrument event" do
-      expect(transaction).to receive(:complete)
       as.instrument("sql.active_record", :sql => "SQL") do
         Appsignal::Transaction.complete_current!
       end
 
       expect(transaction).to_not include_events
+      expect(transaction).to be_completed
     end
   end
 end

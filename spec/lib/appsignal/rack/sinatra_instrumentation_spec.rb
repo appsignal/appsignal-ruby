@@ -51,13 +51,12 @@ if DependencyHelper.sinatra_present?
     let(:env) do
       Rack::MockRequest.env_for("/path", "sinatra.route" => "GET /path", "REQUEST_METHOD" => "GET")
     end
+    let(:appsignal_env) { :default }
     let(:options) { {} }
     let(:middleware) { Appsignal::Rack::SinatraBaseInstrumentation.new(app, options) }
 
-    before { start_agent }
-    around do |example|
-      keep_transactions { example.run }
-    end
+    before { start_agent(:env => appsignal_env) }
+    around { |example| keep_transactions { example.run } }
 
     describe "#initialize" do
       context "with no settings method in the Sinatra app" do
@@ -97,7 +96,7 @@ if DependencyHelper.sinatra_present?
       before { allow(middleware).to receive(:raw_payload).and_return({}) }
 
       context "when appsignal is not active" do
-        before { allow(Appsignal).to receive(:active?).and_return(false) }
+        let(:appsignal_env) { :inactive_env }
 
         it "does not instrument requests" do
           expect { make_request }.to_not(change { created_transactions.count })
