@@ -1345,7 +1345,7 @@ describe Appsignal do
           logs = capture_logs { Appsignal.report_error(error) }
           expect(logs).to contains_log(
             :error,
-            "Appsignal.report_error: Cannot set error. " \
+            "Appsignal.report_error: Cannot add error. " \
               "The given value is not an exception: #{error.inspect}"
           )
         end
@@ -1392,7 +1392,7 @@ describe Appsignal do
           expect(last_transaction).to eq(transaction)
           transaction._sample
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(transaction).to have_error("ExampleException", "error message")
+          expect(transaction.errors).to eq([error])
         end
 
         it "does not complete the transaction" do
@@ -1412,7 +1412,7 @@ describe Appsignal do
             transaction._sample
             expect(transaction).to have_namespace("my_namespace")
             expect(transaction).to have_action("my_action")
-            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction.errors).to eq([error])
             expect(transaction).to include_tags("tag1" => "value1")
             expect(transaction).to_not be_completed
           end

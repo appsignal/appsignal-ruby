@@ -362,7 +362,7 @@ module Appsignal
       # @since 3.10.0
       def report_error(exception)
         unless exception.is_a?(Exception)
-          internal_logger.error "Appsignal.report_error: Cannot set error. " \
+          internal_logger.error "Appsignal.report_error: Cannot add error. " \
             "The given value is not an exception: #{exception.inspect}"
           return
         end
@@ -379,7 +379,7 @@ module Appsignal
             )
           end
 
-        transaction.set_error(exception)
+        transaction.add_error(exception)
         yield transaction if block_given?
 
         return if has_parent_transaction
