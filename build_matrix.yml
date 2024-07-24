@@ -138,7 +138,6 @@ matrix:
           - "3.0.5"
           - "2.7.8"
     - gem: "que"
-    - gem: "que_beta"
     - gem: "rails-6.0"
       only:
         ruby:
