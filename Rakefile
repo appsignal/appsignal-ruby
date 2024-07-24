@@ -20,11 +20,14 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
-def build_job(ruby_version, ruby_gem = nil)
+def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
+  name = "Ruby #{ruby_version}"
+  name = "#{name} - #{ruby_gem}" if ruby_gem
+  name = "#{name} (#{runs_on})" if runs_on != DEFAULT_RUNS_ON
   {
-    "name" => "Ruby #{ruby_version}#{" - #{ruby_gem}" if ruby_gem}",
+    "name" => name,
     "needs" => "validation",
-    "runs-on" => "ubuntu-latest",
+    "runs-on" => runs_on,
     "steps" => [
       {
         "name" => "Check out repository",
@@ -54,9 +57,10 @@ def build_job(ruby_version, ruby_gem = nil)
   }
 end
 
-def build_matrix_key(ruby_version, ruby_gem = nil)
+def build_matrix_key(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
   base = "ruby_#{ruby_version}"
   base = "#{base}__#{ruby_gem}" if ruby_gem
+  base = "#{base}_#{runs_on}"
   base.downcase.gsub(/\W/, "-")
 end
 
@@ -65,6 +69,8 @@ def gems_with_gemfiles
 end
 
 GITHUB_ACTION_WORKFLOW_FILE = ".github/workflows/ci.yml"
+PRIMARY_JOB_GEMSET = "no_dependencies"
+DEFAULT_RUNS_ON = "ubuntu-latest"
 
 namespace :build_matrix do
   namespace :github do
@@ -79,12 +85,12 @@ namespace :build_matrix do
         gemset_for_ruby(ruby, matrix).each do |ruby_gem|
           next unless included_for_ruby?(matrix, ruby_gem, ruby)
 
-          is_primary_job = ruby_gem["gem"] == "no_dependencies"
+          is_primary_job = ruby_gem["gem"] == PRIMARY_JOB_GEMSET
           job =
             if is_primary_job
               build_job(ruby_version)
             else
-              build_job(ruby_version, ruby_gem["gem"])
+              build_job(ruby_version, :ruby_gem => ruby_gem["gem"])
             end
           job["env"] = matrix["env"]
             .merge("BUNDLE_GEMFILE" => "gemfiles/#{ruby_gem["gem"]}.gemfile")
@@ -105,10 +111,28 @@ namespace :build_matrix do
           else
             job["needs"] = build_matrix_key(ruby["ruby"])
             job["steps"] << test_step
-            builds[build_matrix_key(ruby["ruby"], ruby_gem["gem"])] = job
+            builds[build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])] = job
           end
         end
+
+        # Add build for macOS
+        ruby_gem = PRIMARY_JOB_GEMSET
+        runs_on = "macos-14"
+        job = build_job(ruby_version, :runs_on => runs_on)
+        job["env"] = matrix["env"]
+          .merge("BUNDLE_GEMFILE" => "gemfiles/#{ruby_gem}.gemfile")
+
+        job["steps"] << {
+          "name" => "Run tests",
+          "run" => "./support/bundler_wrapper exec rake test"
+        }
+        job["steps"] << {
+          "name" => "Run tests without extension",
+          "run" => "./support/bundler_wrapper exec rake test:failure"
+        }
+        builds[build_matrix_key(ruby["ruby"], :runs_on => runs_on)] = job
       end
+
       github["jobs"] = github["jobs"].merge(builds)
 
       job_count = github["jobs"].count

@@ -6,7 +6,11 @@ describe Appsignal::Extension, :extension_installation_failure do
       expect(stderr).to include("ERROR: AppSignal failed to load extension")
       error_message =
         if DependencyHelper.running_jruby?
-          "cannot open shared object file"
+          if DependencyHelper.macos?
+            "Could not open library"
+          else
+            "cannot open shared object file"
+          end
         else
           "LoadError: cannot load such file"
         end
