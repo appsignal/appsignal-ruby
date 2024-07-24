@@ -41,6 +41,10 @@ module DependencyHelper
     rails_present? && rails_version >= Gem::Version.new("7.0.0")
   end
 
+  def rails7_1_present?
+    rails_present? && rails_version >= Gem::Version.new("7.1.0")
+  end
+
   def active_job_wraps_args?
     rails7_present? || (ruby_3_1_or_newer? && rails6_1_present? && !rails6_1_5_present?)
   end
