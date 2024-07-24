@@ -70,7 +70,7 @@ def monitor_transaction(transaction_id)
     Appsignal::Transaction::HTTP_REQUEST
   )
   transaction.set_action("HomeController#show")
-  transaction.set_params(:id => 1)
+  transaction.add_params(:id => 1)
 
   Appsignal.instrument("process_action.action_controller") do
     Appsignal.instrument_sql(

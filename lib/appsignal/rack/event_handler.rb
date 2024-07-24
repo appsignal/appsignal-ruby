@@ -110,9 +110,9 @@ module Appsignal
 
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction.finish_event("process_request.rack", "", "")
-          transaction.set_params_if_nil { request.params }
-          transaction.set_headers_if_nil { request.env }
-          transaction.set_session_data_if_nil do
+          transaction.add_params_if_nil { request.params }
+          transaction.add_headers_if_nil { request.env }
+          transaction.add_session_data_if_nil do
             request.session if request.respond_to?(:session)
           end
           queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
@@ -124,7 +124,7 @@ module Appsignal
               500
             end
           if response_status
-            transaction.set_tags(:response_status => response_status)
+            transaction.add_tags(:response_status => response_status)
             Appsignal.increment_counter(
               :response_status,
               1,

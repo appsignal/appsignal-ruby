@@ -918,30 +918,37 @@ describe Appsignal do
       end
     end
 
-    describe ".set_params" do
+    describe ".add_params" do
       before { start_agent }
+
+      it "has a .set_params alias" do
+        expect(Appsignal.method(:add_params)).to eq(Appsignal.method(:set_params))
+      end
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
         before { set_current_transaction(transaction) }
 
-        it "sets parameters on the transaction" do
-          Appsignal.set_params("param1" => "value1")
+        it "adds parameters to the transaction" do
+          Appsignal.add_params("param1" => "value1")
 
           transaction._sample
           expect(transaction).to include_params("param1" => "value1")
         end
 
-        it "overwrites the params if called multiple times" do
-          Appsignal.set_params("param1" => "value1")
-          Appsignal.set_params("param2" => "value2")
+        it "merges the params if called multiple times" do
+          Appsignal.add_params("param1" => "value1")
+          Appsignal.add_params("param2" => "value2")
 
           transaction._sample
-          expect(transaction).to include_params("param2" => "value2")
+          expect(transaction).to include_params(
+            "param1" => "value1",
+            "param2" => "value2"
+          )
         end
 
-        it "sets parameters with a block on the transaction" do
-          Appsignal.set_params { { "param1" => "value1" } }
+        it "adds parameters with a block to the transaction" do
+          Appsignal.add_params { { "param1" => "value1" } }
 
           transaction._sample
           expect(transaction).to include_params("param1" => "value1")
@@ -949,37 +956,44 @@ describe Appsignal do
       end
 
       context "without transaction" do
-        it "does not set tags on the transaction" do
-          Appsignal.set_params("a" => "b")
+        it "does not add tags to any transaction" do
+          Appsignal.add_params("a" => "b")
 
-          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_params)
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_params)
         end
       end
     end
 
-    describe ".set_session_data" do
+    describe ".add_session_data" do
       before { start_agent }
+
+      it "has a .set_session_data alias" do
+        expect(Appsignal.method(:add_session_data)).to eq(Appsignal.method(:set_session_data))
+      end
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
         before { set_current_transaction(transaction) }
 
-        it "sets session data on the transaction" do
-          Appsignal.set_session_data("data" => "value1")
+        it "adds session data to the transaction" do
+          Appsignal.add_session_data("data" => "value1")
 
           transaction._sample
           expect(transaction).to include_session_data("data" => "value1")
         end
 
-        it "overwrites the session data if called multiple times" do
-          Appsignal.set_session_data("data" => "value1")
-          Appsignal.set_session_data("data" => "value2")
+        it "merges the session data if called multiple times" do
+          Appsignal.set_session_data("data1" => "value1")
+          Appsignal.set_session_data("data2" => "value2")
 
           transaction._sample
-          expect(transaction).to include_session_data("data" => "value2")
+          expect(transaction).to include_session_data(
+            "data1" => "value1",
+            "data2" => "value2"
+          )
         end
 
-        it "sets session data with a block on the transaction" do
+        it "adds session data with a block to the transaction" do
           Appsignal.set_session_data { { "data" => "value1" } }
 
           transaction._sample
@@ -988,38 +1002,45 @@ describe Appsignal do
       end
 
       context "without transaction" do
-        it "does not set session data on the transaction" do
+        it "does not add session data to any transaction" do
           Appsignal.set_session_data("a" => "b")
 
-          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_session_data)
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_session_data)
         end
       end
     end
 
-    describe ".set_headers" do
+    describe ".add_headers" do
       before { start_agent }
+
+      it "has a .set_headers alias" do
+        expect(Appsignal.method(:add_headers)).to eq(Appsignal.method(:set_headers))
+      end
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
         before { set_current_transaction(transaction) }
 
-        it "sets request headers on the transaction" do
-          Appsignal.set_headers("PATH_INFO" => "/some-path")
+        it "adds request headers to the transaction" do
+          Appsignal.add_headers("PATH_INFO" => "/some-path")
 
           transaction._sample
           expect(transaction).to include_environment("PATH_INFO" => "/some-path")
         end
 
-        it "overwrites the request headers if called multiple times" do
-          Appsignal.set_headers("PATH_INFO" => "/some-path1")
-          Appsignal.set_headers("PATH_INFO" => "/some-path2")
+        it "merges the request headers if called multiple times" do
+          Appsignal.add_headers("PATH_INFO" => "/some-path")
+          Appsignal.add_headers("REQUEST_METHOD" => "GET")
 
           transaction._sample
-          expect(transaction).to include_environment("PATH_INFO" => "/some-path2")
+          expect(transaction).to include_environment(
+            "PATH_INFO" => "/some-path",
+            "REQUEST_METHOD" => "GET"
+          )
         end
 
-        it "sets request headers with a block on the transaction" do
-          Appsignal.set_headers { { "PATH_INFO" => "/some-path" } }
+        it "adds request headers with a block to the transaction" do
+          Appsignal.add_headers { { "PATH_INFO" => "/some-path" } }
 
           transaction._sample
           expect(transaction).to include_environment("PATH_INFO" => "/some-path")
@@ -1027,23 +1048,27 @@ describe Appsignal do
       end
 
       context "without transaction" do
-        it "does not set request headers on the transaction" do
-          Appsignal.set_headers("PATH_INFO" => "/some-path")
+        it "does not add request headers to any transaction" do
+          Appsignal.add_headers("PATH_INFO" => "/some-path")
 
-          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_headers)
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_headers)
         end
       end
     end
 
-    describe ".set_custom_data" do
+    describe ".add_custom_data" do
       before { start_agent }
+
+      it "has a .set_custom_data alias" do
+        expect(Appsignal.method(:add_custom_data)).to eq(Appsignal.method(:set_custom_data))
+      end
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
         before { set_current_transaction transaction }
 
-        it "sets custom data on the current transaction" do
-          Appsignal.set_custom_data(
+        it "adds custom data to the current transaction" do
+          Appsignal.add_custom_data(
             :user => { :id => 123 },
             :organization => { :slug => "appsignal" }
           )
@@ -1054,16 +1079,27 @@ describe Appsignal do
             "organization" => { "slug" => "appsignal" }
           )
         end
+
+        it "merges the custom data if called multiple times" do
+          Appsignal.add_custom_data(:abc => "value")
+          Appsignal.add_custom_data(:def => "value")
+
+          transaction._sample
+          expect(transaction).to include_custom_data(
+            "abc" => "value",
+            "def" => "value"
+          )
+        end
       end
 
       context "without transaction" do
-        it "does not set tags on the transaction" do
-          Appsignal.set_custom_data(
+        it "does not add tags any the transaction" do
+          Appsignal.add_custom_data(
             :user => { :id => 123 },
             :organization => { :slug => "appsignal" }
           )
 
-          expect_any_instance_of(Appsignal::Transaction).to_not receive(:set_custom_data)
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_custom_data)
         end
       end
     end
@@ -1104,7 +1140,7 @@ describe Appsignal do
       end
     end
 
-    describe "custom stats" do
+    describe "custom metrics" do
       let(:tags) { { :foo => "bar" } }
 
       describe ".set_gauge" do

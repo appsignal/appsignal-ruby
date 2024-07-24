@@ -67,8 +67,8 @@ module Appsignal
       #   ) do
       #     # Some code
       #
-      #     Appsignal.set_tags(:tag1 => "value1", :tag2 => "value2")
-      #     Appsignal.set_params(:param1 => "value1", :param2 => "value2")
+      #     Appsignal.add_tags(:tag1 => "value1", :tag2 => "value2")
+      #     Appsignal.add_params(:param1 => "value1", :param2 => "value2")
       #   end
       #
       # @example Call monitor within monitor will do nothing
@@ -180,10 +180,10 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.send_error(e) do |transaction|
-      #     transaction.set_params(:search_query => params[:search_query])
-      #     transaction.set_action("my_action_name")
-      #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
+      #     transaction.set_action("my_action_name")
+      #     transaction.add_params(:search_query => params[:search_query])
+      #     transaction.add_tags(:key => "value")
       #   end
       #
       # @param error [Exception] The error to send to AppSignal.
@@ -246,10 +246,10 @@ module Appsignal
       #
       # @example Add more metadata to transaction
       #   Appsignal.set_error(e) do |transaction|
-      #     transaction.set_params(:search_query => params[:search_query])
-      #     transaction.set_action("my_action_name")
-      #     transaction.set_tags(:key => "value")
       #     transaction.set_namespace("my_namespace")
+      #     transaction.set_action("my_action_name")
+      #     transaction.add_params(:search_query => params[:search_query])
+      #     transaction.add_tags(:key => "value")
       #   end
       #
       # @param exception [Exception] The error to add to the current
@@ -304,8 +304,8 @@ module Appsignal
       #   Appsignal.report_error(error) do |transaction|
       #     transaction.set_namespace("my_namespace")
       #     transaction.set_action("my_action_name")
-      #     transaction.set_params(:search_query => params[:search_query])
-      #     transaction.set_tags(:key => "value")
+      #     transaction.add_params(:search_query => params[:search_query])
+      #     transaction.add_tags(:key => "value")
       #   end
       #
       # @param exception [Exception] The error to add to the current
@@ -414,36 +414,56 @@ module Appsignal
         Appsignal::Transaction.current.set_namespace(namespace)
       end
 
-      # Set custom data on the current transaction.
+      # Add custom data to the current transaction.
       #
       # Add extra information about the request or background that cannot be
       # expressed in tags, like nested data structures.
       #
-      # When this method is called multiple times, it will overwrite the
-      # previously set value.
+      # If the root data type changes between calls of this method, the last
+      # method call is stored.
       #
-      # @example
-      #   Appsignal.set_custom_data(:user => { :locale => "en" })
-      #   Appsignal.set_custom_data([
+      # @example Add Hash data
+      #   Appsignal.add_custom_data(:user => { :locale => "en" })
+      #
+      # @example Merges Hash data
+      #   Appsignal.add_custom_data(:abc => "def")
+      #   Appsignal.add_custom_data(:xyz => "...")
+      #   # The custom data is: { :abc => "def", :xyz => "..." }
+      #
+      # @example Add Array data
+      #   Appsignal.add_custom_data([
       #     "array with data",
+      #     "other value",
       #     :options => { :verbose => true }
       #   ])
       #
-      # @since 3.10.0
-      # @see Transaction#set_custom_data
+      # @example Merges Array data
+      #   Appsignal.add_custom_data([1, 2, 3])
+      #   Appsignal.add_custom_data([4, 5, 6])
+      #   # The custom data is: [1, 2, 3, 4, 5, 6]
+      #
+      # @example Mixing of root data types is not supported
+      #   Appsignal.add_custom_data(:abc => "def")
+      #   Appsignal.add_custom_data([1, 2, 3])
+      #   # The custom data is: [1, 2, 3]
+      #
+      # @since 4.0.0
+      # @param data [Hash/Array] Custom data to add to the transaction.
+      # @return [void]
+      #
+      # @see Transaction#add_custom_data
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
-      # @param data [Hash/Array]
-      # @return [void]
-      def set_custom_data(data)
+      def add_custom_data(data)
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_custom_data(data)
+        transaction.add_custom_data(data)
       end
+      alias :set_custom_data :add_custom_data
 
-      # Set tags on the current transaction.
+      # Add tags to the current transaction.
       #
       # Tags are extra bits of information that are added to transaction and
       # appear on sample details pages on AppSignal.com.
@@ -451,221 +471,169 @@ module Appsignal
       # When this method is called multiple times, it will merge the tags.
       #
       # @example
-      #   Appsignal.tag_request(:locale => "en", :user_id => 1)
-      #   Appsignal.tag_request("locale" => "en")
-      #   Appsignal.tag_request("user_id" => 1)
+      #   Appsignal.add_tags(:locale => "en", :user_id => 1)
+      #   Appsignal.add_tags("locale" => "en")
+      #   Appsignal.add_tags("user_id" => 1)
       #
       # @example Nested hashes are not supported
       #   # Bad
-      #   Appsignal.tag_request(:user => { :locale => "en" })
+      #   Appsignal.add_tags(:user => { :locale => "en" })
       #
       # @example in a Rails controller
       #   class SomeController < ApplicationController
-      #     before_action :set_appsignal_tags
+      #     before_action :add_appsignal_tags
       #
-      #     def set_appsignal_tags
-      #       Appsignal.tag_request(:locale => I18n.locale)
+      #     def add_appsignal_tags
+      #       Appsignal.add_tags(:locale => I18n.locale)
       #     end
       #   end
       #
-      # @param tags [Hash] Collection of tags.
+      # @since 4.0.0
+      # @param tags [Hash] Collection of tags to add to the transaction.
       # @option tags [String, Symbol, Integer] :any
       #   The name of the tag as a Symbol.
       # @option tags [String, Symbol, Integer] "any"
       #   The name of the tag as a String.
       # @return [void]
       #
-      # @see Transaction.set_tags
+      # @see Transaction#add_tags
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
-      def tag_request(tags = {})
+      def add_tags(tags = {})
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_tags(tags)
+        transaction.add_tags(tags)
       end
-      alias :tag_job :tag_request
-      alias :set_tags :tag_request
+      alias :tag_request :add_tags
+      alias :tag_job :add_tags
+      alias :set_tags :add_tags
 
-      # Set parameters on the current transaction.
+      # Add parameters to the current transaction.
       #
-      # Parameters are automatically set by most of our integrations. It should
-      # not be necessary to call this method unless you want to report
+      # Parameters are automatically added by most of our integrations. It
+      # should not be necessary to call this method unless you want to report
       # different parameters.
       #
       # To filter parameters, see our parameter filtering guide.
       #
-      # When this method is called multiple times, it will overwrite the
-      # previously set value.
-      #
-      # When no parameters are set this way, the transaction will look for
-      # parameters in its request environment.
-      #
-      # A block can be given to this method to defer the fetching and parsing
-      # of the parameters until and only when the transaction is sampled.
-      #
       # When both the `params` argument and a block is given to this method,
-      # the `params` argument is leading and the block will _not_ be called.
+      # the block is leading and the argument will _not_ be used.
       #
-      # @example Set parameters
-      #   Appsignal.set_params("param1" => "value1")
+      # @example Add parameters
+      #   Appsignal.add_params("param1" => "value1")
+      #   # The parameters include: { "param1" => "value1" }
       #
-      # @example Calling `set_params` multiple times will only keep the last call
-      #   Appsignal.set_params("param1" => "value1")
-      #   Appsignal.set_params("param2" => "value2")
-      #   # The parameters are: { "param2" => "value2" }
+      # @example Calling `add_params` multiple times will merge the values
+      #   Appsignal.add_params("param1" => "value1")
+      #   Appsignal.add_params("param2" => "value2")
+      #   # The parameters include:
+      #   # { "param1" => "value1", "param2" => "value2" }
       #
-      # @example Calling `set_params` with a block
-      #   Appsignal.set_params do
-      #     # Some slow code to parse parameters
-      #     JSON.parse('{"param1": "value1"}')
-      #   end
-      #   # The parameters are: { "param1" => "value1" }
-      #
-      # @example Calling `set_params` with a parameter and a block
-      #   Appsignal.set_params("argument" => "argument value") do
-      #     # Some slow code to parse parameters
-      #     JSON.parse('{"param1": "value1"}')
-      #   end
-      #   # The parameters are: { "argument" => "argument value" }
-      #
-      # @since 3.10.0
-      # @param params [Hash] The parameters to set on the transaction.
+      # @since 4.0.0
+      # @param params [Hash] The parameters to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new parameters.
+      # @return [void]
+      #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-parameters.html
       #   Parameter filtering guide
-      # @see Transaction#set_params
-      # @return [void]
-      def set_params(params = nil, &block)
+      # @see Transaction#add_params
+      def add_params(params = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_params(params, &block)
+        transaction.add_params(params, &block)
       end
+      alias :set_params :add_params
 
-      # Set session data on the current transaction.
+      # Add session data to the current transaction.
       #
-      # Session data is automatically set by most of our integrations. It
+      # Session data is automatically added by most of our integrations. It
       # should not be necessary to call this method unless you want to report
       # different session data.
       #
       # To filter session data, see our session data filtering guide.
       #
-      # When this method is called multiple times, it will overwrite the
-      # previously set value.
-      #
-      # A block can be given to this method to defer the fetching and parsing
-      # of the session data until and only when the transaction is sampled.
-      #
       # When both the `session_data` argument and a block is given to this
-      # method, the `session_data` argument is leading and the block will _not_
-      # be called.
+      # method, the bock is leading and the argument will _not_ be used.
       #
-      # @example Set session data
-      #   Appsignal.set_session_data("data" => "value")
+      # @example Add session data
+      #   Appsignal.add_session_data("session" => "data")
+      #   # The session data will include:
+      #   # { "session" => "data" }
       #
-      # @example Calling `set_session_data` multiple times will only keep the last call
-      #   Appsignal.set_session_data("data1" => "value1")
-      #   Appsignal.set_session_data("data2" => "value2")
-      #   # The session data is: { "data2" => "value2" }
+      # @example Calling `add_session_data` multiple times merge the values
+      #   Appsignal.add_session_data("session" => "data")
+      #   Appsignal.add_session_data("other" => "value")
+      #   # The session data will include:
+      #   # { "session" => "data", "other" => "value" }
       #
-      # @example Calling `set_session_data` with a block
-      #   Appsignal.set_session_data do
-      #     # Some slow code to parse session data
-      #     JSON.parse('{"data": "value"}')
-      #   end
-      #   # The session data is: { "data" => "value" }
-      #
-      # @example Calling `set_session_data` with a session_data argument and a block
-      #   Appsignal.set_session_data("argument" => "argument value") do
-      #     # Some slow code to parse session data
-      #     JSON.parse('{"data": "value"}')
-      #   end
-      #   # The session data is: { "argument" => "argument value" }
-      #
-      # @since 3.11.0
-      # @param session_data [Hash] The session data to set on the transaction.
+      # @since 4.0.0
+      # @param session_data [Hash] The session data to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new session data.
+      # @return [void]
+      #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-session-data.html
       #   Session data filtering guide
-      # @see Transaction#set_session_data
-      # @return [void]
-      def set_session_data(session_data = nil, &block)
+      # @see Transaction#add_session_data
+      def add_session_data(session_data = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_session_data(session_data, &block)
+        transaction.add_session_data(session_data, &block)
       end
+      alias :set_session_data :add_session_data
 
-      # Set request headers on the current transaction.
+      # Add request headers to the current transaction.
       #
-      # Request headers are automatically set by most of our integrations. It
-      # should not be necessary to call this method unless you want to report
-      # different request headers.
+      # Request headers are automatically added by most of our integrations. It
+      # should not be necessary to call this method unless you want to also
+      # report different request headers.
       #
-      # To filter request headers, see our session data filtering guide.
-      #
-      # When this method is called multiple times, it will overwrite the
-      # previously set value.
-      #
-      # A block can be given to this method to defer the fetching and parsing
-      # of the request headers until and only when the transaction is sampled.
+      # To filter request headers, see our request header filtering guide.
       #
       # When both the `request_headers` argument and a block is given to this
-      # method, the `request_headers` argument is leading and the block will
-      # _not_ be called.
+      # method, the block is leading and the argument will _not_ be used.
       #
-      # @example Set request headers
-      #   Appsignal.set_headers(
-      #     "PATH_INFO" => "/some-path",
-      #     "HTTP_USER_AGENT" => "Firefox"
-      #   )
+      # @example Add request headers
+      #   Appsignal.add_headers("PATH_INFO" => "/some-path")
+      #   # The request headers will include:
+      #   # { "PATH_INFO" => "/some-path" }
       #
-      # @example Calling `set_headers` multiple times will only keep the last call
-      #   Appsignal.set_headers("PATH_INFO" => "/some-path")
-      #   Appsignal.set_headers("HTTP_USER_AGENT" => "Firefox")
-      #   # The request headers are: { "HTTP_USER_AGENT" => "Firefox" }
+      # @example Calling `add_headers` multiple times merge the values
+      #   Appsignal.add_headers("PATH_INFO" => "/some-path")
+      #   Appsignal.add_headers("HTTP_USER_AGENT" => "Firefox")
+      #   # The request headers will include:
+      #   # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
       #
-      # @example Calling `set_headers` with a block
-      #   Appsignal.set_headers do
-      #     # Some slow code to parse request headers
-      #     JSON.parse('{"PATH_INFO": "/some-path"}')
-      #   end
-      #   # The session data is: { "PATH_INFO" => "/some-path" }
-      #
-      # @example Calling `set_headers` with a headers argument and a block
-      #   Appsignal.set_headers("PATH_INFO" => "/some-path") do
-      #     # Some slow code to parse session data
-      #     JSON.parse('{"PATH_INFO": "/block-path"}')
-      #   end
-      #   # The session data is: { "PATH_INFO" => "/some-path" }
-      #
-      # @since 3.11.0
-      # @param headers [Hash] The request headers to set on the transaction.
+      # @since 4.0.0
+      # @param headers [Hash] The request headers to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new request headers.
+      # @return [void]
+      #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html
       #   Request headers filtering guide
-      # @see Transaction#set_headers
-      # @return [void]
-      def set_headers(headers = nil, &block)
+      # @see Transaction#add_headers
+      def add_headers(headers = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
-        transaction.set_headers(headers, &block)
+        transaction.add_headers(headers, &block)
       end
+      alias :set_headers :add_headers
 
       # Add breadcrumbs to the transaction.
       #

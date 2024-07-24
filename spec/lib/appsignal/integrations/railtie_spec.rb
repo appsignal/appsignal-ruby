@@ -253,7 +253,7 @@ if DependencyHelper.rails_present?
               current_transaction = http_request_transaction
               current_transaction.set_namespace "custom"
               current_transaction.set_action "CustomAction"
-              current_transaction.set_tags(
+              current_transaction.add_tags(
                 :duplicated_tag => "duplicated value"
               )
 
@@ -275,7 +275,7 @@ if DependencyHelper.rails_present?
 
             it "overwrites duplicated tags with tags from context" do
               current_transaction = http_request_transaction
-              current_transaction.set_tags(:tag1 => "duplicated value")
+              current_transaction.add_tags(:tag1 => "duplicated value")
 
               with_rails_error_reporter do
                 with_current_transaction current_transaction do

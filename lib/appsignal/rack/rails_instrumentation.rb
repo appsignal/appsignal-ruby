@@ -19,7 +19,7 @@ module Appsignal
         transaction.set_action_if_nil("#{controller.class}##{controller.action_name}") if controller
 
         request_id = request.env["action_dispatch.request_id"]
-        transaction.set_tags(:request_id => request_id) if request_id
+        transaction.add_tags(:request_id => request_id) if request_id
 
         super
       end
