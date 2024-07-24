@@ -15,8 +15,9 @@ describe Appsignal::Rack::EventHandler do
   let(:log_stream) { StringIO.new }
   let(:log) { log_contents(log_stream) }
   let(:event_handler_instance) { described_class.new }
+  let(:appsignal_env) { :default }
   before do
-    start_agent
+    start_agent(:env => appsignal_env)
     Appsignal.internal_logger = test_logger(log_stream)
   end
   around { |example| keep_transactions { example.run } }
@@ -41,9 +42,9 @@ describe Appsignal::Rack::EventHandler do
     end
 
     context "when not active" do
-      it "does not create a new transaction" do
-        allow(Appsignal).to receive(:active?).and_return(false)
+      let(:appsignal_env) { :inactive_env }
 
+      it "does not create a new transaction" do
         expect { on_start }.to_not(change { created_transactions.length })
       end
     end
@@ -140,9 +141,9 @@ describe Appsignal::Rack::EventHandler do
     end
 
     context "when not active" do
-      it "does not report the transaction" do
-        allow(Appsignal).to receive(:active?).and_return(false)
+      let(:appsignal_env) { :inactive_env }
 
+      it "does not report the transaction" do
         on_start
         on_error(ExampleStandardError.new("the error"))
 
@@ -195,9 +196,9 @@ describe Appsignal::Rack::EventHandler do
     end
 
     context "when not active" do
-      it "doesn't do anything" do
-        allow(Appsignal).to receive(:active?).and_return(false)
+      let(:appsignal_env) { :inactive_env }
 
+      it "doesn't do anything" do
         request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = http_request_transaction
         on_finish
 

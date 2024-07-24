@@ -9,10 +9,11 @@ describe Appsignal::Rack::AbstractMiddleware do
       "rack.session" => { "session" => "data", "user_id" => 123 }
     )
   end
-  let(:options) { {} }
   let(:middleware) { described_class.new(app, options) }
 
-  before { start_agent }
+  let(:appsignal_env) { :default }
+  let(:options) { {} }
+  before { start_agent(:env => appsignal_env) }
   around { |example| keep_transactions { example.run } }
 
   def make_request
@@ -25,7 +26,7 @@ describe Appsignal::Rack::AbstractMiddleware do
 
   describe "#call" do
     context "when not active" do
-      before { allow(Appsignal).to receive(:active?).and_return(false) }
+      let(:appsignal_env) { :inactive_env }
 
       it "does not instrument the request" do
         expect { make_request }.to_not(change { created_transactions.count })
@@ -38,8 +39,6 @@ describe Appsignal::Rack::AbstractMiddleware do
     end
 
     context "when appsignal is active" do
-      before { allow(Appsignal).to receive(:active?).and_return(true) }
-
       it "creates a transaction for the request" do
         expect { make_request }.to(change { created_transactions.count }.by(1))
 

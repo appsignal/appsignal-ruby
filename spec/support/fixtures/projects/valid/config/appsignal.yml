@@ -51,3 +51,7 @@ rack_env:
 
 rails_env:
   <<: *defaults
+
+inactive_env:
+  <<: *defaults
+  active: false
