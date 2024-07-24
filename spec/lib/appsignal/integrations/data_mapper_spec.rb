@@ -7,11 +7,11 @@ describe Appsignal::Hooks::DataMapperLogListener do
   end
 
   describe "#log" do
-    let(:transaction) { double }
+    let(:transaction) { http_request_transaction }
     let(:message) do
       double(
         :query    => "SELECT * from users",
-        :duration => 100
+        :duration => 100_000_000 # nanoseconds
       )
     end
     let(:connection_class) do
@@ -24,20 +24,30 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end
       end
     end
+    before do
+      start_agent
+      set_current_transaction(transaction)
+    end
+    around { |example| keep_transactions { example.run } }
 
-    before { allow(Appsignal::Transaction).to receive(:current) { transaction } }
+    def log_message
+      connection_class.new.log(message)
+    end
 
-    it "should record the log entry in an event" do
-      expect(transaction).to receive(:record_event).with(
-        "query.data_mapper",
-        "DataMapper Query",
-        "SELECT * from users",
-        100,
-        Appsignal::EventFormatter::SQL_BODY_FORMAT
+    it "records the log entry in an event" do
+      log_message
+
+      expect(transaction).to include_event(
+        "name" => "query.data_mapper",
+        "title" => "DataMapper Query",
+        "body" => "SELECT * from users",
+        "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+        "count" => 0,
+        "duration" => 100.0
       )
     end
 
-    context "when scheme is not sql-like" do
+    context "when the scheme is not sql-like" do
       let(:connection_class) do
         module DataObjects
           module MongoDB
@@ -49,17 +59,18 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end
       end
 
-      it "should record the log entry in an event without body" do
-        expect(transaction).to receive(:record_event).with(
-          "query.data_mapper",
-          "DataMapper Query",
-          "",
-          100,
-          Appsignal::EventFormatter::DEFAULT
+      it "records the log entry in an event without body" do
+        log_message
+
+        expect(transaction).to include_event(
+          "name" => "query.data_mapper",
+          "title" => "DataMapper Query",
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "count" => 0,
+          "duration" => 100.0
         )
       end
     end
-
-    after { connection_class.new.log(message) }
   end
 end
