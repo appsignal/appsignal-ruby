@@ -1,6 +1,10 @@
 module DependencyHelper
   module_function
 
+  def macos?
+    RbConfig::CONFIG["host_os"].include?("darwin")
+  end
+
   def ruby_version
     Gem::Version.new(RUBY_VERSION)
   end

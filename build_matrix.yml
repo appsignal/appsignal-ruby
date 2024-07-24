@@ -138,7 +138,6 @@ matrix:
           - "3.0.5"
           - "2.7.8"
     - gem: "que"
-    - gem: "que_beta"
     - gem: "rails-6.0"
       only:
         ruby:
@@ -173,7 +172,6 @@ matrix:
           - "jruby-9.4.7.0"
     - gem: "sequel"
     - gem: "sinatra"
-    - gem: "webmachine1"
     - gem: "webmachine2"
     - gem: "redis-4"
     - gem: "redis-5"
