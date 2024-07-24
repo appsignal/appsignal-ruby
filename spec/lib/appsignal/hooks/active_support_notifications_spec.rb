@@ -10,6 +10,7 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
       set_current_transaction(transaction)
       as.notifier = notifier
     end
+    around { |example| keep_transactions { example.run } }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

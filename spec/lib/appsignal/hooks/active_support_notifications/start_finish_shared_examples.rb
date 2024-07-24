@@ -36,13 +36,12 @@ shared_examples "activesupport start finish override" do
 
   context "when a transaction is completed in an instrumented block" do
     it "does not complete the ActiveSupport::Notifications.instrument event" do
-      expect(transaction).to receive(:complete)
-
       instrumenter.start("sql.active_record", {})
       Appsignal::Transaction.complete_current!
       instrumenter.finish("sql.active_record", {})
 
       expect(transaction).to_not include_events
+      expect(transaction).to be_completed
     end
   end
 end
