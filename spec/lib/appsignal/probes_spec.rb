@@ -96,12 +96,10 @@ describe Appsignal::Probes do
     context "with probe class" do
       it "creates an instance of the class and call that every <wait time>" do
         probe = MockProbe
-        probe_instance = MockProbe.new
-        expect(probe).to receive(:new).and_return(probe_instance)
         Appsignal::Probes.register :my_probe, probe
         Appsignal::Probes.start
 
-        wait_for("enough probe calls") { probe_instance.calls >= 2 }
+        wait_for("enough probe calls") { Appsignal::Testing.store[:mock_probe_call] >= 2 }
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
       end
@@ -110,15 +108,13 @@ describe Appsignal::Probes do
         it "does not initialize the probe" do
           # Working probe which we can use to wait for X ticks
           working_probe = ProbeWithoutDependency
-          working_probe_instance = working_probe.new
-          expect(working_probe).to receive(:new).and_return(working_probe_instance)
           Appsignal::Probes.register :probe_without_dep, working_probe
 
           probe = ProbeWithMissingDependency
           Appsignal::Probes.register :probe_with_missing_dep, probe
           Appsignal::Probes.start
 
-          wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
+          wait_for("enough probe calls") { Appsignal::Testing.store[:mock_probe_call] >= 2 }
           # Only counts initialized probes
           expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
           expect(log).to contains_log :debug, "Skipping 'probe_with_missing_dep' probe, " \
@@ -130,15 +126,13 @@ describe Appsignal::Probes do
         it "logs an error" do
           # Working probe which we can use to wait for X ticks
           working_probe = ProbeWithoutDependency
-          working_probe_instance = working_probe.new
-          expect(working_probe).to receive(:new).and_return(working_probe_instance)
           Appsignal::Probes.register :probe_without_dep, working_probe
 
           probe = BrokenProbeOnInitialize
           Appsignal::Probes.register :broken_probe_on_initialize, probe
           Appsignal::Probes.start
 
-          wait_for("enough probe calls") { working_probe_instance.calls >= 2 }
+          wait_for("enough probe calls") { Appsignal::Testing.store[:mock_probe_call] >= 2 }
           # Only counts initialized probes
           expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
           # Logs error
