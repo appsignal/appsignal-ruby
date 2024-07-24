@@ -25,6 +25,7 @@ module Appsignal
           params, _ = args
           params = params.to_hash if params.respond_to?(:to_hash)
           transaction.set_params_if_nil(params)
+          transaction.set_params_if_nil(params)
           transaction.set_action(name)
           transaction.complete
         end
@@ -33,7 +34,7 @@ module Appsignal
       private
 
       def _appsignal_create_transaction
-        Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        Appsignal::Transaction.create("rake")
       end
     end
 
