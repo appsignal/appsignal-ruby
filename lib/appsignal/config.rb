@@ -409,6 +409,17 @@ module Appsignal
       end
     end
 
+    # Deep freeze the config object so it cannot be modified during the runtime
+    # of the Ruby app.
+    #
+    # @api private
+    # @since 4.0.0
+    def freeze
+      super
+      config_hash.freeze
+      config_hash.transform_values(&:freeze)
+    end
+
     private
 
     def config_file

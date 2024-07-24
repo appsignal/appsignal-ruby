@@ -131,6 +131,7 @@ module Appsignal
           Appsignal::Probes.start if config[:enable_minutely_probes]
 
           collect_environment_metadata
+          @config.freeze
         else
           internal_logger.info("Not starting, not active for #{config.env}")
         end
