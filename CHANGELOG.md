@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.2
+
+_Published on 2024-07-25._
+
+### Fixed
+
+- Fix the default env and root path for the integrations using loader mechanism. If `APPSIGNAL_APP_ENV` is set when using `Appsignal.load(...)`, the AppSignal env set in `APPSIGNAL_APP_ENV` is now leading again. (patch [b2d1c7ee](https://github.com/appsignal/appsignal-ruby/commit/b2d1c7ee082e6865d9dc8d23ef060ecec9197a0e))
+
 ## 3.12.1
 
 _Published on 2024-07-25._
