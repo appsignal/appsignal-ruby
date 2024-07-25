@@ -132,12 +132,6 @@ module Appsignal
         return
       end
 
-      # If the transaction does not have a set error, take the last of
-      # the additional errors, if one exists, and set it as the error
-      # for this transaction. This ensures that we do not report both
-      # a performance sample and a duplicate error sample.
-      set_error(errors.pop) if !has_error && !errors.empty?
-
       # If the transaction is a duplicate, we don't want to finish it,
       # because we want its finish time to be the finish time of the
       # original transaction, and we do not want to set its sample
@@ -462,7 +456,19 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
+    # @see Appsignal::Helpers::Instrumentation#add_error
     def add_error(error)
+      unless error.is_a?(Exception)
+        Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
+          "The given value is not an exception: #{error.inspect}"
+        return
+      end
+
+      return unless error
+      return unless Appsignal.active?
+
+      return _set_error(error) unless @has_error
+
       @errors << error
       return unless @errors.length > ADDITIONAL_ERRORS_LIMIT
 
@@ -472,59 +478,9 @@ module Appsignal
       @errors = @errors.last(ADDITIONAL_ERRORS_LIMIT)
     end
 
-    # @see Appsignal::Helpers::Instrumentation#set_error
-    def set_error(error)
-      unless error.is_a?(Exception)
-        Appsignal.internal_logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
-          "The given value is not an exception: #{error.inspect}"
-        return
-      end
-      return unless error
-      return unless Appsignal.active?
+    alias :set_error :add_error
 
-      backtrace = cleaned_backtrace(error.backtrace)
-      @ext.set_error(
-        error.class.name,
-        cleaned_error_message(error),
-        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
-      )
-
-      @has_error = true
-
-      root_cause_missing = false
-
-      causes = []
-      while error
-        error = error.cause
-
-        break unless error
-
-        if causes.length >= ERROR_CAUSES_LIMIT
-          Appsignal.internal_logger.debug "Appsignal::Transaction#set_error: Error has more " \
-            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
-            "will be reported."
-          root_cause_missing = true
-          break
-        end
-
-        causes << error
-      end
-
-      causes_sample_data = causes.map do |e|
-        {
-          :name => e.class.name,
-          :message => cleaned_error_message(e)
-        }
-      end
-
-      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
-
-      set_sample_data(
-        "error_causes",
-        causes_sample_data
-      )
-    end
-    alias_method :add_exception, :set_error
+    alias_method :add_exception, :add_error
 
     # @see Helpers::Instrumentation#instrument
     # @api private
@@ -582,6 +538,50 @@ module Appsignal
     attr_writer :ext, :is_duplicate
 
     private
+
+    def _set_error(error)
+      backtrace = cleaned_backtrace(error.backtrace)
+      @ext.set_error(
+        error.class.name,
+        cleaned_error_message(error),
+        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
+      )
+
+      @has_error = true
+
+      root_cause_missing = false
+
+      causes = []
+      while error
+        error = error.cause
+
+        break unless error
+
+        if causes.length >= ERROR_CAUSES_LIMIT
+          Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Error has more " \
+            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
+            "will be reported."
+          root_cause_missing = true
+          break
+        end
+
+        causes << error
+      end
+
+      causes_sample_data = causes.map do |e|
+        {
+          :name => e.class.name,
+          :message => cleaned_error_message(e)
+        }
+      end
+
+      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
+
+      set_sample_data(
+        "error_causes",
+        causes_sample_data
+      )
+    end
 
     def set_sample_data(key, data)
       return unless key && data
