@@ -1386,13 +1386,32 @@ describe Appsignal do
         let(:transaction) { http_request_transaction }
         before { set_current_transaction(transaction) }
 
-        it "adds the error to the active transaction" do
+        it "sets the error in the active transaction" do
           Appsignal.report_error(error)
 
           expect(last_transaction).to eq(transaction)
           transaction._sample
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(transaction.errors).to eq([error])
+          expect(transaction).to have_error("ExampleException", "error message")
+        end
+
+        context "when the active transaction already has an error" do
+          let(:other_error) { ExampleException.new("previous error message") }
+
+          before { transaction.set_error(other_error) }
+
+          it "does not overwrite the existing set error" do
+            Appsignal.report_error(error)
+
+            transaction._sample
+            expect(transaction).to have_error("ExampleException", "previous error message")
+          end
+
+          it "adds the error to the additional errors array" do
+            Appsignal.report_error(error)
+
+            expect(transaction.errors).to eq([error])
+          end
         end
 
         it "does not complete the transaction" do
@@ -1412,7 +1431,10 @@ describe Appsignal do
             transaction._sample
             expect(transaction).to have_namespace("my_namespace")
             expect(transaction).to have_action("my_action")
-            expect(transaction.errors).to eq([error])
+            expect(transaction).to have_error(
+              "ExampleException",
+              "error message"
+            )
             expect(transaction).to include_tags("tag1" => "value1")
             expect(transaction).to_not be_completed
           end
