@@ -209,6 +209,52 @@ describe Appsignal do
         expect(Appsignal.config.env).to eq("env_env")
       end
 
+      it "reads the environment from a loader default" do
+        clear_integration_env_vars!
+        define_loader(:loader_env) do
+          def on_load
+            register_config_defaults(
+              :env => "loader_env"
+            )
+          end
+        end
+        load_loader(:loader_env)
+
+        Appsignal.configure do |config|
+          expect(config.env).to eq("loader_env")
+        end
+
+        expect(Appsignal.config.env).to eq("loader_env")
+      end
+
+      it "reads the root_path from a loader default" do
+        clear_integration_env_vars!
+        define_loader(:loader_path) do
+          def on_load
+            register_config_defaults(
+              :root_path => "/loader_path"
+            )
+          end
+        end
+        load_loader(:loader_path)
+
+        Appsignal.configure do |config|
+          expect(config.app_path).to eq("/loader_path")
+        end
+
+        expect(Appsignal.config.root_path).to eq("/loader_path")
+      end
+
+      it "considers the given env leading above APPSIGNAL_APP_ENV" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+
+        Appsignal.configure(:dsl_env) do |config|
+          expect(config.env).to eq("dsl_env")
+        end
+
+        expect(Appsignal.config.env).to eq("dsl_env")
+      end
+
       it "allows modification of previously unset config options" do
         expect do
           Appsignal.configure do |config|
@@ -250,6 +296,48 @@ describe Appsignal do
         expect(Appsignal.config[:push_api_key]).to eq("something")
         expect(stderr).to_not include("[ERROR]")
         expect(stdout).to_not include("[ERROR]")
+      end
+
+      it "reads the environment from the loader defaults" do
+        clear_integration_env_vars!
+        define_loader(:loader_env) do
+          def on_load
+            register_config_defaults(:env => "loader_env")
+          end
+        end
+        load_loader(:loader_env)
+
+        Appsignal.start
+
+        expect(Appsignal.config.env).to eq("loader_env")
+      end
+
+      it "reads the root_path from the loader defaults" do
+        define_loader(:loader_path) do
+          def on_load
+            register_config_defaults(:root_path => "/loader_path")
+          end
+        end
+        load_loader(:loader_path)
+
+        Appsignal.start
+
+        expect(Appsignal.config.root_path).to eq("/loader_path")
+      end
+
+      it "chooses APPSIGNAL_APP_ENV over the loader defaults as the default env" do
+        clear_integration_env_vars!
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        define_loader(:loader_env) do
+          def on_load
+            register_config_defaults(:env => "loader_env")
+          end
+        end
+        load_loader(:loader_env)
+
+        Appsignal.start
+
+        expect(Appsignal.config.env).to eq("env_env")
       end
     end
 
