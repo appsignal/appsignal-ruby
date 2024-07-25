@@ -227,26 +227,54 @@ describe Appsignal::Transaction do
           transaction.set_error(error)
           transaction.add_error(other_error)
 
-          expect(transaction).to receive(:duplicate).and_wrap_original do |original_method|
-            duplicate_transaction = original_method.call
-            expect(duplicate_transaction).to receive(:set_error).with(other_error)
-            expect(duplicate_transaction).to receive(:complete)
-            duplicate_transaction
-          end
+          expect do
+            transaction.complete
+          end.to change { created_transactions.count }.from(1).to(2)
 
-          transaction.complete
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction).to have_error(
+            "ExampleStandardError",
+            "test message",
+            ["line 1"]
+          )
+          expect(original_transaction).to be_completed
+
+          expect(duplicate_transaction).to have_error(
+            "ExampleStandardError",
+            "other test message",
+            ["line 2"]
+          )
+          expect(duplicate_transaction).to be_completed
         end
       end
 
-      context "when an error is not already set on the transaction" do
+      context "when no error is set on the transaction" do
         it "reports the last additional error in the original transaction" do
           transaction.add_error(error)
           transaction.add_error(other_error)
 
-          expect(transaction).to receive(:set_error).with(other_error)
+          expect do
+            transaction.complete
+          end.to change { created_transactions.count }.from(1).to(2)
 
-          transaction.complete
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction).to have_error(
+            "ExampleStandardError",
+            "other test message",
+            ["line 2"]
+          )
+          expect(original_transaction).to be_completed
+
+          expect(duplicate_transaction).to have_error(
+            "ExampleStandardError",
+            "test message",
+            ["line 1"]
+          )
+          expect(duplicate_transaction).to be_completed
         end
+      end
 
         it "reports other additional errors as duplicate transactions" do
           transaction.add_error(error)
