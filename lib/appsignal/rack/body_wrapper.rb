@@ -3,6 +3,9 @@
 module Appsignal
   module Rack
     # @api private
+    IGNORED_ERRORS = ["Puma::ConnectionError"].freeze
+
+    # @api private
     class BodyWrapper
       def self.wrap(original_body, appsignal_transaction)
         # The logic of how Rack treats a response body differs based on which methods
@@ -50,8 +53,14 @@ module Appsignal
         end
         @body_already_closed = true
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        @transaction.set_error(error) if accepted_error?(error)
         raise error
+      end
+
+      private
+
+      def accepted_error?(error)
+        !IGNORED_ERRORS.include?(error.class.name)
       end
     end
 
@@ -76,7 +85,7 @@ module Appsignal
           @body.each(&blk)
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        @transaction.set_error(error) if accepted_error?(error)
         raise error
       end
     end
@@ -95,7 +104,7 @@ module Appsignal
           @body.call(stream)
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        @transaction.set_error(error) if accepted_error?(error)
         raise error
       end
     end
@@ -119,7 +128,7 @@ module Appsignal
           @body.to_ary
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        @transaction.set_error(error) if accepted_error?(error)
         raise error
       end
     end
@@ -135,7 +144,7 @@ module Appsignal
           @body.to_path
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        @transaction.set_error(error) if accepted_error?(error)
         raise error
       end
     end
