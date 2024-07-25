@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.1
+
+_Published on 2024-07-25._
+
+### Fixed
+
+- Fix `Appsignal.monitor_and_stop` block passing. It would error with a `LocalJumpError`. Thanks to @cwaider. (patch [150569ff](https://github.com/appsignal/appsignal-ruby/commit/150569ff49e54ab743ed3db16d109abcf5719e30))
+
 ## 3.12.0
 
 _Published on 2024-07-22._

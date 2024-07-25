@@ -707,6 +707,12 @@ describe Appsignal do
 
         expect(Appsignal).to have_received(:stop).with("monitor_and_stop")
       end
+
+      it "passes the block to Appsignal.monitor" do
+        expect do |blk|
+          Appsignal.monitor_and_stop(:action => "My action", &blk)
+        end.to yield_control
+      end
     end
 
     describe ".tag_request" do

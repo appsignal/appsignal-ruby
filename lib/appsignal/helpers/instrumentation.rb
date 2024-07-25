@@ -152,8 +152,8 @@ module Appsignal
       # documentation.
       #
       # @see monitor
-      def monitor_and_stop(action:, namespace: nil)
-        monitor(:namespace => namespace, :action => action)
+      def monitor_and_stop(action:, namespace: nil, &block)
+        monitor(:namespace => namespace, :action => action, &block)
       ensure
         Appsignal.stop("monitor_and_stop")
       end
