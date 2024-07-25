@@ -28,4 +28,10 @@ module ConfigHelpers
     Appsignal._config = project_fixture_config(env, options)
     Appsignal.start
   end
+
+  def clear_integration_env_vars!
+    ENV.delete("RAILS_ENV")
+    ENV.delete("RACK_ENV")
+    ENV.delete("PADRINO_ENV")
+  end
 end
