@@ -276,18 +276,65 @@ describe Appsignal::Transaction do
         end
       end
 
-        it "reports other additional errors as duplicate transactions" do
+      describe "metadata" do
+        let(:tags) { { "tag" => "value" } }
+        let(:params) { { "param" => "value" } }
+        let(:headers) { { "REQUEST_METHOD" => "value" } }
+        let(:session_data) { { "session_data" => "value" } }
+        let(:custom_data) { { "custom_data" => "value" } }
+        before do
+          transaction.set_namespace("My namespace")
+          transaction.set_action("My action")
+          transaction.set_metadata("path", "/some/path")
+          transaction.set_metadata("method", "GET")
+          transaction.set_tags(tags)
+          transaction.set_params(params)
+          transaction.set_headers(headers)
+          transaction.set_session_data(session_data)
+          transaction.set_custom_data(custom_data)
+          transaction.add_breadcrumb("category", "action", "message", { "meta" => "data" })
+
+          transaction.start_event
+          transaction.finish_event("name", "title", "body", 1)
+
           transaction.add_error(error)
           transaction.add_error(other_error)
 
-          expect(transaction).to receive(:duplicate).and_wrap_original do |original_method|
-            duplicate_transaction = original_method.call
-            expect(duplicate_transaction).to receive(:set_error).with(error)
-            expect(duplicate_transaction).to receive(:complete)
-            duplicate_transaction
-          end
-
           transaction.complete
+        end
+
+        it "copies the transaction metadata and sample data on the duplicate transaction" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          duplicate_hash = duplicate_transaction.to_h.tap do |h|
+            h.delete("id")
+            h.delete("error")
+          end
+          original_hash = original_transaction.to_h.tap do |h|
+            h.delete("id")
+            h.delete("error")
+          end
+          expect(duplicate_hash).to eq(original_hash)
+        end
+
+        it "the duplicate transaction has a different transaction id" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.transaction_id)
+            .to_not eq(duplicate_transaction.transaction_id)
+        end
+
+        it "the duplicate transaction has a different extension transaction than the original" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.ext).to_not eq(duplicate_transaction.ext)
+        end
+
+        it "sets is_duplicate set to true on the duplicate transaction" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.is_duplicate).to be(false)
+          expect(duplicate_transaction.is_duplicate).to be(true)
         end
       end
     end
@@ -1595,50 +1642,6 @@ describe Appsignal::Transaction do
 
   # private
 
-  describe "#duplicate" do
-    let(:transaction) { new_transaction }
-
-    subject { transaction.send(:duplicate) }
-
-    it "returns a new transaction" do
-      is_expected.to be_a(Appsignal::Transaction)
-      is_expected.to_not be(transaction)
-    end
-
-    it "has a different transaction id" do
-      expect(subject.transaction_id).to_not eq(transaction.transaction_id)
-    end
-
-    it "copies the namespace and request" do
-      expect(subject.namespace).to eq(transaction.namespace)
-      expect(subject.request).to eq(transaction.request)
-    end
-
-    it "has a different extension transaction than the original" do
-      expect(subject.ext).to be_a(Appsignal::Extension::Transaction)
-      expect(subject.ext).to_not be(transaction.ext)
-    end
-
-    it "has is_duplicate set to true" do
-      expect(transaction).to have_attributes(:is_duplicate => false)
-      expect(subject).to have_attributes(:is_duplicate => true)
-    end
-
-    it "duplicates extension data" do
-      transaction.set_error(StandardError.new("oops"))
-      transaction.set_custom_data({ :key => "value" })
-      transaction.set_metadata("key", "value")
-      transaction.start_event
-      transaction.finish_event("name", "title", "body", 1)
-      # Simulate sample data being written to the extension on complete
-      transaction.send(:sample_data)
-
-      subject_hash = subject.to_h.tap { |h| h.delete("id") }
-      transaction_hash = transaction.to_h.tap { |h| h.delete("id") }
-
-      expect(subject_hash).to eq(transaction_hash)
-    end
-  end
   describe "#cleaned_backtrace" do
     let(:transaction) { new_transaction }
     subject { transaction.send(:cleaned_backtrace, ["line 1", "line 2"]) }
