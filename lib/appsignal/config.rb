@@ -20,6 +20,35 @@ module Appsignal
       loader_defaults << [name, options]
     end
 
+    # Determine which env AppSignal should initialize with.
+    # @api private
+    def self.determine_env(initial_env = nil)
+      [
+        initial_env,
+        ENV.fetch("APPSIGNAL_APP_ENV", nil),
+        ENV.fetch("RAILS_ENV", nil),
+        ENV.fetch("RACK_ENV", nil)
+      ].compact.each do |env|
+        return env if env
+      end
+
+      loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
+        env = loader_defaults[:env]
+        return env if env
+      end
+    end
+
+    # Determine which root path AppSignal should initialize with.
+    # @api private
+    def self.determine_root_path
+      loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
+        root_path = loader_defaults[:root_path]
+        return root_path if root_path
+      end
+
+      Dir.pwd
+    end
+
     # @api private
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
@@ -226,7 +255,9 @@ module Appsignal
 
       return unless load_on_new
 
-      # Determine starting environment
+      # Always override environment if set via this env var.
+      # TODO: This is legacy behavior. In the `Appsignal.configure` method the
+      # env argument is leading.
       @env = ENV["APPSIGNAL_APP_ENV"] if ENV.key?("APPSIGNAL_APP_ENV")
       load_config
       validate
@@ -242,20 +273,7 @@ module Appsignal
       @system_config = detect_from_system
       merge(system_config)
 
-      # Set defaults from loaders in reverse order so the first register
-      # loader's defaults overwrite all others
-      self.class.loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
-        defaults = loader_defaults.compact.dup
-        # Overwrite root path
-        loader_path = defaults.delete(:root_path)
-        @root_path = loader_path if loader_path
-        # Overwrite env
-        loader_env = defaults.delete(:env)
-        @env = loader_env.to_s if loader_env
-        # Merge with the config loaded so far
-        merge(defaults)
-      end
-
+      # Merge initial config
       merge(initial_config)
       # Track origin of env
       @initial_config[:env] = @initial_env.to_s

@@ -121,10 +121,7 @@ module Appsignal
 
       internal_logger.debug("Loading AppSignal gem")
 
-      @config ||= Config.new(
-        Dir.pwd,
-        ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV.fetch("RACK_ENV", nil)
-      )
+      @config ||= Config.new(Config.determine_root_path, Config.determine_env)
 
       _start_logger
 
@@ -247,9 +244,9 @@ module Appsignal
       if config && config.env == env.to_s
         config
       else
-        self._config = Appsignal::Config.new(
-          Dir.pwd,
-          env || ENV["APPSIGNAL_APP_ENV"] || ENV["RAILS_ENV"] || ENV.fetch("RACK_ENV", nil),
+        @config = Config.new(
+          Config.determine_root_path,
+          Config.determine_env(env),
           {},
           Appsignal.internal_logger,
           nil,

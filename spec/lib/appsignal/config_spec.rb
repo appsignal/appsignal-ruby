@@ -1,4 +1,99 @@
 describe Appsignal::Config do
+  describe ".determine_env" do
+    context "with env argument" do
+      before { clear_integration_env_vars! }
+
+      it "considers the given env leading" do
+        expect(described_class.determine_env("given_env")).to eq("given_env")
+      end
+
+      it "considers the given env leading over APPSIGNAL_APP_ENV" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        expect(described_class.determine_env("given_env")).to eq("given_env")
+      end
+
+      it "considers the given env leading over other env vars" do
+        ENV["RAILS_ENV"] = "rails_env"
+        ENV["RACK_ENV"] = "rack_env"
+        expect(described_class.determine_env("given_env")).to eq("given_env")
+      end
+
+      it "considers the given env leading over loader defaults" do
+        define_loader(:env_loader) do
+          def on_load
+            register_config_defaults(:env => "loader_env")
+          end
+        end
+        load_loader(:env_loader)
+        expect(described_class.determine_env("given_env")).to eq("given_env")
+      end
+    end
+
+    context "without env argument" do
+      before { clear_integration_env_vars! }
+
+      it "considers the APPSIGNAL_APP_ENV leading" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        ENV["RAILS_ENV"] = "rails_env"
+        ENV["RACK_ENV"] = "rack_env"
+        expect(described_class.determine_env).to eq("env_env")
+      end
+
+      it "considers the RAILS_ENV leading over other env vars" do
+        ENV["RAILS_ENV"] = "rails_env"
+        ENV["RACK_ENV"] = "rack_env"
+        expect(described_class.determine_env).to eq("rails_env")
+      end
+
+      it "reads from the RACK_ENV env last" do
+        ENV["RACK_ENV"] = "rack_env"
+        expect(described_class.determine_env).to eq("rack_env")
+      end
+
+      it "falls back on the first loader env" do
+        define_loader(:env_loader1) do
+          def on_load
+            register_config_defaults(:env => "loader_env1")
+          end
+        end
+        load_loader(:env_loader1)
+
+        define_loader(:env_loader2) do
+          def on_load
+            register_config_defaults(:env => "loader_env2")
+          end
+        end
+        load_loader(:env_loader2)
+
+        expect(described_class.determine_env).to eq("loader_env2")
+      end
+    end
+  end
+
+  describe ".determine_root_path" do
+    it "reads the root path from the first loader if any" do
+      define_loader(:path_loader1) do
+        def on_load
+          register_config_defaults(:root_path => "/loader_path1")
+        end
+      end
+      load_loader(:path_loader1)
+
+      define_loader(:path_loader2) do
+        def on_load
+          register_config_defaults(:root_path => "/loader_path2")
+        end
+      end
+      load_loader(:path_loader2)
+
+      expect(described_class.determine_root_path).to eq("/loader_path2")
+    end
+
+    it "falls back on the current working directory" do
+      expect(described_class.determine_root_path).to eq(Dir.pwd)
+    end
+  end
+
   describe "#initialize" do
     describe "environment" do
       context "when environment is nil" do
@@ -119,76 +214,6 @@ describe Appsignal::Config do
         it "does not set log as loaded through the system" do
           expect(config.system_config).to_not have_key(:log)
         end
-      end
-    end
-  end
-
-  describe "loader default config" do
-    let(:config) do
-      described_class.new("some-path", "production")
-    end
-    before do
-      class TestLoader < Appsignal::Loaders::Loader
-        register :test
-        def on_load
-          register_config_defaults(
-            :env => "new_env",
-            :root_path => "/some/path",
-            :my_option => "my_value",
-            :nil_option => nil
-          )
-        end
-      end
-      load_loader(:test)
-    end
-    after do
-      Object.send(:remove_const, :TestLoader)
-      unregister_loader(:first)
-    end
-
-    it "merges with the loader defaults" do
-      expect(config.config_hash).to include(:my_option => "my_value")
-    end
-
-    it "does not set any nil values" do
-      expect(config.config_hash).to_not have_key(:nil_option)
-    end
-
-    it "overwrites the env" do
-      expect(config.env).to eq("new_env")
-    end
-
-    it "overwrites the path" do
-      expect(config.root_path).to eq("/some/path")
-    end
-
-    context "with multiple loaders" do
-      before do
-        class SecondLoader < Appsignal::Loaders::Loader
-          register :second
-          def on_load
-            register_config_defaults(
-              :env => "second_env",
-              :root_path => "/second/path",
-              :my_option => "second_value",
-              :second_option => "second_value"
-            )
-          end
-        end
-        load_loader(:second)
-      end
-      after do
-        Object.send(:remove_const, :SecondLoader)
-        unregister_loader(:second)
-      end
-
-      it "makes the first loader's config leading" do
-        expect(config.config_hash).to include(
-          :my_option => "my_value",
-          :second_option => "second_value"
-        )
-        expect(config.env).to eq("new_env")
-        expect(config.root_path).to eq("/some/path")
       end
     end
   end
