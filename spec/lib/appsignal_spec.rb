@@ -12,6 +12,35 @@ describe Appsignal do
       Appsignal._config = config
       expect(Appsignal.config).to eq config
     end
+
+    context "when already started" do
+      it "doesn't set the config" do
+        Appsignal._config = Appsignal::Config.new(
+          "/first/path", "first env",
+          :active => true,
+          :push_api_key => "something"
+        )
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("first env")
+        expect(Appsignal.config.root_path).to eq("/first/path")
+
+        logs =
+          capture_logs do
+            Appsignal._config = Appsignal::Config.new(
+              "/other/path", "other env",
+              :active => true,
+              :push_api_key => "something"
+            )
+          end
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("first env")
+        expect(Appsignal.config.root_path).to eq("/first/path")
+        expect(logs).to contains_log(
+          :warn,
+          "Ignoring `Appsignal._config=` call after AppSignal has started"
+        )
+      end
+    end
   end
 
   describe ".configure" do
@@ -440,6 +469,19 @@ describe Appsignal do
             expect_environment_metadata("ruby_engine_version", RUBY_ENGINE_VERSION)
           end
         end
+      end
+    end
+
+    context "when already started" do
+      it "doesn't start again" do
+        start_agent
+
+        expect(Appsignal::Extension).to_not receive(:start)
+        logs = capture_logs { Appsignal.start }
+        expect(logs).to contains_log(
+          :warn,
+          "Ignoring call to Appsignal.start after AppSignal has started"
+        )
       end
     end
 
