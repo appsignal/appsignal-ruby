@@ -209,7 +209,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when a transaction has additional errors" do
+    context "when a transaction has errors" do
       let(:error) do
         e = ExampleStandardError.new("test message")
         allow(e).to receive(:backtrace).and_return(["line 1"])
@@ -223,7 +223,7 @@ describe Appsignal::Transaction do
       end
 
       context "when an error is already set on the transaction" do
-        it "reports additional errors as duplicate transactions" do
+        it "reports errors as duplicate transactions" do
           transaction.set_error(error)
           transaction.add_error(other_error)
 
@@ -250,7 +250,7 @@ describe Appsignal::Transaction do
       end
 
       context "when no error is set on the transaction" do
-        it "reports the first additional error in the original transaction" do
+        it "reports the first error in the original transaction" do
           transaction.add_error(error)
           transaction.add_error(other_error)
 
@@ -1323,10 +1323,10 @@ describe Appsignal::Transaction do
         )
       end
 
-      it "does not store the error in the additional errors array" do
+      it "does stores the error in the errors array" do
         transaction.add_error(error)
 
-        expect(transaction.errors).to be_empty
+        expect(transaction.errors).to eq([error])
       end
     end
 
@@ -1339,10 +1339,10 @@ describe Appsignal::Transaction do
 
       before { transaction.set_error(other_error) }
 
-      it "stores an error in the additional errors array" do
+      it "stores an error in the errors array" do
         transaction.add_error(error)
 
-        expect(transaction.errors).to eq([error])
+        expect(transaction.errors).to eq([other_error, error])
       end
 
       it "does not set the error on the extension" do
@@ -1356,16 +1356,28 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the additional errors array is at the limit" do
+    context "when the error has already been added" do
+      before { transaction.add_error(error) }
+
+      it "does not add the error to the errors array" do
+        expect(transaction.errors).to eq([error])
+
+        transaction.add_error(error)
+
+        expect(transaction.errors).to eq([error])
+      end
+    end
+
+    context "when the errors array is at the limit" do
       before do
         10.times do |i|
           transaction.add_error(ExampleStandardError.new("error #{i}"))
         end
       end
 
-      it "does not add the error to the additional errors array" do
+      it "does not add the error to the errors array" do
         expect(transaction).to have_error("ExampleStandardError", "error 0", [])
-        expect(transaction.errors.length).to eq(9)
+        expect(transaction.errors.length).to eq(10)
         expected_errors = transaction.errors.dup
 
         transaction.add_error(error)
@@ -1379,8 +1391,8 @@ describe Appsignal::Transaction do
 
         expect(logs).to contains_log(
           :warn,
-          "Appsignal::Transaction#add_error: Transaction has more than 10 errors. " \
-            "Only the first 10 errors will be reported."
+          "Appsignal::Transaction#add_error: Transaction has more than 10 distinct errors. " \
+            "Only the first 10 distinct errors will be reported."
         )
       end
     end
@@ -1399,14 +1411,6 @@ describe Appsignal::Transaction do
       transaction.send(:_set_error, error)
 
       expect(transaction.errors).to be_empty
-    end
-
-    it "sets the has_error attribute to true" do
-      expect(transaction.has_error).to be_falsy
-
-      transaction.send(:_set_error, error)
-
-      expect(transaction.has_error).to be_truthy
     end
 
     context "for a http request" do

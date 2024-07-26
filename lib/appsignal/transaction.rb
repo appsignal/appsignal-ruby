@@ -89,7 +89,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data, :is_duplicate, :has_error, :errors
+      :breadcrumbs, :custom_data, :is_duplicate, :errors
 
     # Use {.create} to create new transactions.
     #
@@ -110,7 +110,6 @@ module Appsignal
       @params = nil
       @session_data = nil
       @headers = nil
-      @has_error = false
       @errors = []
       @is_duplicate = false
 
@@ -141,7 +140,9 @@ module Appsignal
       # is set on finish, will be duplicated from the original transaction.
       sample_data if !is_duplicate && ext.finish(0)
 
-      errors.each do |error|
+      # Ignore the first error as it is already set in the original
+      # transaction.
+      errors.drop(1).each do |error|
         duplicate.tap do |transaction|
           transaction.set_error(error)
           transaction.complete
@@ -467,14 +468,14 @@ module Appsignal
       return unless error
       return unless Appsignal.active?
 
-      return _set_error(error) unless @has_error
+      _set_error(error) if @errors.empty?
 
-      # Subtract one from the limit to account for the first error,
-      # which is not stored in the errors array.
-      if @errors.length >= (ERRORS_LIMIT - 1)
+      return if @errors.include?(error)
+
+      if @errors.length >= ERRORS_LIMIT
         Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
-          "than #{ERRORS_LIMIT} errors. Only the first " \
-          "#{ERRORS_LIMIT} errors will be reported."
+          "than #{ERRORS_LIMIT} distinct errors. Only the first " \
+          "#{ERRORS_LIMIT} distinct errors will be reported."
         return
       end
 
@@ -549,8 +550,6 @@ module Appsignal
         cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
-
-      @has_error = true
 
       root_cause_missing = false
 

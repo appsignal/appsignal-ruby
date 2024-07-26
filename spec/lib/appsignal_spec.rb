@@ -1410,7 +1410,7 @@ describe Appsignal do
           it "adds the error to the additional errors array" do
             Appsignal.report_error(error)
 
-            expect(transaction.errors).to eq([error])
+            expect(transaction.errors).to eq([other_error, error])
           end
         end
 
