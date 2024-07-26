@@ -443,6 +443,19 @@ describe Appsignal do
       end
     end
 
+    context "when already started" do
+      it "doesn't start again" do
+        start_agent
+
+        expect(Appsignal::Extension).to_not receive(:start)
+        logs = capture_logs { Appsignal.start }
+        expect(logs).to contains_log(
+          :warn,
+          "Ignoring call to Appsignal.start after AppSignal has started"
+        )
+      end
+    end
+
     context "with debug logging" do
       before { Appsignal._config = project_fixture_config("test") }
 

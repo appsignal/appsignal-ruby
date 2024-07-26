@@ -99,6 +99,11 @@ module Appsignal
     # @return [void]
     # @since 0.7.0
     def start
+      if started?
+        internal_logger.warn("Ignoring call to Appsignal.start after AppSignal has started")
+        return
+      end
+
       unless extension_loaded?
         internal_logger.info("Not starting AppSignal, extension is not loaded")
         return
