@@ -38,6 +38,11 @@ module Appsignal
 
     # @api private
     def _config=(conf)
+      if started?
+        internal_logger.warn("Ignoring `Appsignal._config=` call after AppSignal has started")
+        return
+      end
+
       @config = conf
     end
 

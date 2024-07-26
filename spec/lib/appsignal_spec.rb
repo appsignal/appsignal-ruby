@@ -12,6 +12,35 @@ describe Appsignal do
       Appsignal._config = config
       expect(Appsignal.config).to eq config
     end
+
+    context "when already started" do
+      it "doesn't set the config" do
+        Appsignal._config = Appsignal::Config.new(
+          "/first/path", "first env",
+          :active => true,
+          :push_api_key => "something"
+        )
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("first env")
+        expect(Appsignal.config.root_path).to eq("/first/path")
+
+        logs =
+          capture_logs do
+            Appsignal._config = Appsignal::Config.new(
+              "/other/path", "other env",
+              :active => true,
+              :push_api_key => "something"
+            )
+          end
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("first env")
+        expect(Appsignal.config.root_path).to eq("/first/path")
+        expect(logs).to contains_log(
+          :warn,
+          "Ignoring `Appsignal._config=` call after AppSignal has started"
+        )
+      end
+    end
   end
 
   describe ".configure" do
