@@ -84,9 +84,10 @@ module Appsignal
           # and are caught and recorded by our Rails middleware.
           return if !handled && !is_rails_runner
 
+          namespace, action_name, path, method, params, tags, custom_data =
+            context_for(context.dup)
+
           Appsignal.send_error(error) do |transaction|
-            namespace, action_name, path, method, params, tags, custom_data =
-              context_for(context.dup)
             if namespace
               transaction.set_namespace(namespace)
             elsif is_rails_runner
