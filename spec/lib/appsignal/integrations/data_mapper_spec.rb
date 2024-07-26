@@ -42,7 +42,6 @@ describe Appsignal::Hooks::DataMapperLogListener do
         "title" => "DataMapper Query",
         "body" => "SELECT * from users",
         "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
-        "count" => 0,
         "duration" => 100.0
       )
     end
@@ -67,7 +66,6 @@ describe Appsignal::Hooks::DataMapperLogListener do
           "title" => "DataMapper Query",
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
-          "count" => 0,
           "duration" => 100.0
         )
       end
