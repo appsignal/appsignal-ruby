@@ -1323,7 +1323,7 @@ describe Appsignal::Transaction do
         )
       end
 
-      it "does not store the error in the errors array" do
+      it "does not store the error in the additional errors array" do
         transaction.add_error(error)
 
         expect(transaction.errors).to be_empty
@@ -1339,7 +1339,7 @@ describe Appsignal::Transaction do
 
       before { transaction.set_error(other_error) }
 
-      it "stores an error in the errors array" do
+      it "stores an error in the additional errors array" do
         transaction.add_error(error)
 
         expect(transaction.errors).to eq([error])
@@ -1352,6 +1352,35 @@ describe Appsignal::Transaction do
           "ExampleStandardError",
           "other test message",
           ["line 2"]
+        )
+      end
+    end
+
+    context "when the additional errors array is at the limit" do
+      before do
+        10.times do |i|
+          transaction.add_error(ExampleStandardError.new("error #{i}"))
+        end
+      end
+
+      it "does not add the error to the additional errors array" do
+        expect(transaction).to have_error("ExampleStandardError", "error 0", [])
+        expect(transaction.errors.length).to eq(9)
+        expected_errors = transaction.errors.dup
+
+        transaction.add_error(error)
+
+        expect(transaction).to have_error("ExampleStandardError", "error 0", [])
+        expect(transaction.errors).to eq(expected_errors)
+      end
+
+      it "logs a debug message" do
+        logs = capture_logs { transaction.add_error(error) }
+
+        expect(logs).to contains_log(
+          :warn,
+          "Appsignal::Transaction#add_error: Transaction has more than 10 errors. " \
+            "Only the first 10 errors will be reported."
         )
       end
     end

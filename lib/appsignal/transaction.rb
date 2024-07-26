@@ -20,7 +20,7 @@ module Appsignal
     BREADCRUMB_LIMIT = 20
     # @api private
     ERROR_CAUSES_LIMIT = 10
-    ADDITIONAL_ERRORS_LIMIT = 10
+    ERRORS_LIMIT = 10
 
     class << self
       # Create a new transaction and set it as the currently active
@@ -469,13 +469,16 @@ module Appsignal
 
       return _set_error(error) unless @has_error
 
-      @errors << error
-      return unless @errors.length > ADDITIONAL_ERRORS_LIMIT
+      # Subtract one from the limit to account for the first error,
+      # which is not stored in the errors array.
+      if @errors.length >= (ERRORS_LIMIT - 1)
+        Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
+          "than #{ERRORS_LIMIT} errors. Only the first " \
+          "#{ERRORS_LIMIT} errors will be reported."
+        return
+      end
 
-      Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Transaction has more " \
-        "than #{ADDITIONAL_ERRORS_LIMIT} additional errors. Only the last " \
-        "#{ADDITIONAL_ERRORS_LIMIT} will be reported."
-      @errors = @errors.last(ADDITIONAL_ERRORS_LIMIT)
+      @errors << error
     end
 
     alias :set_error :add_error
