@@ -85,6 +85,14 @@ module Appsignal
       def clear_current_transaction!
         Thread.current[:appsignal_transaction] = nil
       end
+
+      # @api private
+      def last_errors
+        @last_errors ||= []
+      end
+
+      # @api private
+      attr_writer :last_errors
     end
 
     # @api private
@@ -139,6 +147,8 @@ module Appsignal
       # On duplicate transactions, the value of the sample flag, which
       # is set on finish, will be duplicated from the original transaction.
       sample_data if !is_duplicate && ext.finish(0)
+
+      self.class.last_errors = errors unless is_duplicate
 
       # Ignore the first error as it is already set in the original
       # transaction.

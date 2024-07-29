@@ -72,6 +72,7 @@ module Appsignal
   end
 end
 
+require "appsignal/hooks/at_exit"
 require "appsignal/hooks/action_cable"
 require "appsignal/hooks/action_mailer"
 require "appsignal/hooks/active_job"

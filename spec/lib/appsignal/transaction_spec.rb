@@ -276,6 +276,14 @@ describe Appsignal::Transaction do
         end
       end
 
+      it "stores the last reported errors" do
+        transaction.add_error(error)
+        transaction.add_error(other_error)
+        transaction.complete
+
+        expect(Appsignal::Transaction.last_errors).to contain_exactly(error, other_error)
+      end
+
       describe "metadata" do
         let(:tags) { { "tag" => "value" } }
         let(:params) { { "param" => "value" } }
