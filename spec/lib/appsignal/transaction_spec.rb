@@ -35,6 +35,14 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when an explicit extension transaction is passed in the initialiser" do
+      let(:ext) { "some_ext" }
+
+      it "assigns the extension transaction to the transaction" do
+        expect(new_transaction(:ext => ext).ext).to be(ext)
+      end
+    end
+
     context "when a transaction is already running" do
       before do
         allow(SecureRandom).to receive(:uuid)
@@ -197,6 +205,136 @@ describe Appsignal::Transaction do
           transaction.complete
 
           expect(transaction).to be_completed
+        end
+      end
+    end
+
+    context "when a transaction has errors" do
+      let(:error) do
+        e = ExampleStandardError.new("test message")
+        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e
+      end
+
+      let(:other_error) do
+        e = ExampleStandardError.new("other test message")
+        allow(e).to receive(:backtrace).and_return(["line 2"])
+        e
+      end
+
+      context "when an error is already set on the transaction" do
+        it "reports errors as duplicate transactions" do
+          transaction.set_error(error)
+          transaction.add_error(other_error)
+
+          expect do
+            transaction.complete
+          end.to change { created_transactions.count }.from(1).to(2)
+
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction).to have_error(
+            "ExampleStandardError",
+            "test message",
+            ["line 1"]
+          )
+          expect(original_transaction).to be_completed
+
+          expect(duplicate_transaction).to have_error(
+            "ExampleStandardError",
+            "other test message",
+            ["line 2"]
+          )
+          expect(duplicate_transaction).to be_completed
+        end
+      end
+
+      context "when no error is set on the transaction" do
+        it "reports the first error in the original transaction" do
+          transaction.add_error(error)
+          transaction.add_error(other_error)
+
+          expect do
+            transaction.complete
+          end.to change { created_transactions.count }.from(1).to(2)
+
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction).to have_error(
+            "ExampleStandardError",
+            "test message",
+            ["line 1"]
+          )
+          expect(original_transaction).to be_completed
+
+          expect(duplicate_transaction).to have_error(
+            "ExampleStandardError",
+            "other test message",
+            ["line 2"]
+          )
+          expect(duplicate_transaction).to be_completed
+        end
+      end
+
+      describe "metadata" do
+        let(:tags) { { "tag" => "value" } }
+        let(:params) { { "param" => "value" } }
+        let(:headers) { { "REQUEST_METHOD" => "value" } }
+        let(:session_data) { { "session_data" => "value" } }
+        let(:custom_data) { { "custom_data" => "value" } }
+        before do
+          transaction.set_namespace("My namespace")
+          transaction.set_action("My action")
+          transaction.set_metadata("path", "/some/path")
+          transaction.set_metadata("method", "GET")
+          transaction.set_tags(tags)
+          transaction.set_params(params)
+          transaction.set_headers(headers)
+          transaction.set_session_data(session_data)
+          transaction.set_custom_data(custom_data)
+          transaction.add_breadcrumb("category", "action", "message", { "meta" => "data" })
+
+          transaction.start_event
+          transaction.finish_event("name", "title", "body", 1)
+
+          transaction.add_error(error)
+          transaction.add_error(other_error)
+
+          transaction.complete
+        end
+
+        it "copies the transaction metadata and sample data on the duplicate transaction" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          duplicate_hash = duplicate_transaction.to_h.tap do |h|
+            h.delete("id")
+            h.delete("error")
+          end
+          original_hash = original_transaction.to_h.tap do |h|
+            h.delete("id")
+            h.delete("error")
+          end
+          expect(duplicate_hash).to eq(original_hash)
+        end
+
+        it "the duplicate transaction has a different transaction id" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.transaction_id)
+            .to_not eq(duplicate_transaction.transaction_id)
+        end
+
+        it "the duplicate transaction has a different extension transaction than the original" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.ext).to_not eq(duplicate_transaction.ext)
+        end
+
+        it "sets is_duplicate set to true on the duplicate transaction" do
+          original_transaction, duplicate_transaction = created_transactions
+
+          expect(original_transaction.is_duplicate).to be(false)
+          expect(duplicate_transaction.is_duplicate).to be(true)
         end
       end
     end
@@ -1140,7 +1278,127 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_error" do
+  describe "#add_error" do
+    let(:transaction) { create_transaction }
+
+    let(:error) do
+      e = ExampleStandardError.new("test message")
+      allow(e).to receive(:backtrace).and_return(["line 1"])
+      e
+    end
+
+    context "when error argument is not an error" do
+      let(:error) { Object.new }
+
+      it "does not add the error" do
+        logs = capture_logs { transaction.add_error(error) }
+
+        expect(transaction).to_not have_error
+        expect(logs).to contains_log(
+          :error,
+          "Appsignal::Transaction#add_error: Cannot add error. " \
+            "The given value is not an exception: #{error.inspect}"
+        )
+      end
+    end
+
+    context "when AppSignal is not active" do
+      it "does not add the error" do
+        allow(Appsignal).to receive(:active?).and_return(false)
+
+        transaction.add_error(error)
+
+        expect(transaction).to_not have_error
+      end
+    end
+
+    context "when no error is set in the transaction" do
+      it "sets the error on the transaction" do
+        transaction.add_error(error)
+
+        expect(transaction).to have_error(
+          "ExampleStandardError",
+          "test message",
+          ["line 1"]
+        )
+      end
+
+      it "does stores the error in the errors array" do
+        transaction.add_error(error)
+
+        expect(transaction.errors).to eq([error])
+      end
+    end
+
+    context "when an error is already set in the transaction" do
+      let(:other_error) do
+        e = ExampleStandardError.new("other test message")
+        allow(e).to receive(:backtrace).and_return(["line 2"])
+        e
+      end
+
+      before { transaction.set_error(other_error) }
+
+      it "stores an error in the errors array" do
+        transaction.add_error(error)
+
+        expect(transaction.errors).to eq([other_error, error])
+      end
+
+      it "does not set the error on the extension" do
+        transaction.add_error(error)
+
+        expect(transaction).to have_error(
+          "ExampleStandardError",
+          "other test message",
+          ["line 2"]
+        )
+      end
+    end
+
+    context "when the error has already been added" do
+      before { transaction.add_error(error) }
+
+      it "does not add the error to the errors array" do
+        expect(transaction.errors).to eq([error])
+
+        transaction.add_error(error)
+
+        expect(transaction.errors).to eq([error])
+      end
+    end
+
+    context "when the errors array is at the limit" do
+      before do
+        10.times do |i|
+          transaction.add_error(ExampleStandardError.new("error #{i}"))
+        end
+      end
+
+      it "does not add the error to the errors array" do
+        expect(transaction).to have_error("ExampleStandardError", "error 0", [])
+        expect(transaction.errors.length).to eq(10)
+        expected_errors = transaction.errors.dup
+
+        transaction.add_error(error)
+
+        expect(transaction).to have_error("ExampleStandardError", "error 0", [])
+        expect(transaction.errors).to eq(expected_errors)
+      end
+
+      it "logs a debug message" do
+        logs = capture_logs { transaction.add_error(error) }
+
+        expect(logs).to contains_log(
+          :warn,
+          "Appsignal::Transaction#add_error: Transaction has more than 10 distinct errors. " \
+            "Only the first 10 distinct errors will be reported."
+        )
+      end
+    end
+  end
+
+  describe "#_set_error" do
     let(:transaction) { new_transaction }
     let(:env) { http_request_env_with_data }
     let(:error) { ExampleStandardError.new("test message") }
@@ -1149,33 +1407,16 @@ describe Appsignal::Transaction do
       expect(transaction).to respond_to(:add_exception)
     end
 
-    it "does not add the error if not active" do
-      allow(Appsignal).to receive(:active?).and_return(false)
+    it "does not add the error to the errors array" do
+      transaction.send(:_set_error, error)
 
-      transaction.set_error(error)
-
-      expect(transaction).to_not have_error
-    end
-
-    context "when error argument is not an error" do
-      let(:error) { Object.new }
-
-      it "does not add the error" do
-        logs = capture_logs { transaction.set_error(error) }
-
-        expect(transaction).to_not have_error
-        expect(logs).to contains_log(
-          :error,
-          "Appsignal::Transaction#set_error: Cannot set error. " \
-            "The given value is not an exception: #{error.inspect}"
-        )
-      end
+      expect(transaction.errors).to be_empty
     end
 
     context "for a http request" do
       it "sets an error on the transaction" do
         allow(error).to receive(:backtrace).and_return(["line 1"])
-        transaction.set_error(error)
+        transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
           "ExampleStandardError",
@@ -1186,10 +1427,10 @@ describe Appsignal::Transaction do
     end
 
     context "when the error has no causes" do
-      it "does not set the causes information as sample data" do
-        transaction.set_error(error)
+      it "should set an empty causes array as sample data" do
+        transaction.send(:_set_error, error)
 
-        expect(transaction).to_not include_error_causes
+        expect(transaction).to include_error_causes([])
       end
     end
 
@@ -1204,8 +1445,12 @@ describe Appsignal::Transaction do
         e
       end
 
+      let(:error_without_cause) do
+        ExampleStandardError.new("error without cause")
+      end
+
       it "sends the causes information as sample data" do
-        transaction.set_error(error)
+        transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
           "ExampleStandardError",
@@ -1224,6 +1469,19 @@ describe Appsignal::Transaction do
             }
           ]
         )
+      end
+
+      it "does not keep error causes from previously set errors" do
+        transaction.send(:_set_error, error)
+        transaction.send(:_set_error, error_without_cause)
+
+        expect(transaction).to have_error(
+          "ExampleStandardError",
+          "error without cause",
+          []
+        )
+
+        expect(transaction).to include_error_causes([])
       end
     end
 
@@ -1251,7 +1509,7 @@ describe Appsignal::Transaction do
           end
         expected_error_causes.last["is_root_cause"] = false
 
-        logs = capture_logs { transaction.set_error(error) }
+        logs = capture_logs { transaction.send(:_set_error, error) }
 
         expect(transaction).to have_error(
           "ExampleStandardError",
@@ -1261,7 +1519,7 @@ describe Appsignal::Transaction do
         expect(transaction).to include_error_causes(expected_error_causes)
         expect(logs).to contains_log(
           :debug,
-          "Appsignal::Transaction#set_error: Error has more " \
+          "Appsignal::Transaction#add_error: Error has more " \
             "than 10 error causes. Only the first 10 " \
             "will be reported."
         )
@@ -1277,11 +1535,11 @@ describe Appsignal::Transaction do
       end
 
       it "does not raise an error" do
-        transaction.set_error(error)
+        transaction.send(:_set_error, error)
       end
 
       it "sets an error on the transaction without an error message" do
-        transaction.set_error(error)
+        transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
           "ExampleStandardError",

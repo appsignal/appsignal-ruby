@@ -132,6 +132,9 @@ module Appsignal
         attach_function :appsignal_complete_transaction,
           [:pointer],
           :void
+        attach_function :appsignal_duplicate_transaction,
+          [:pointer, :appsignal_string],
+          :pointer
         attach_function :appsignal_transaction_to_json,
           [:pointer],
           :appsignal_string
@@ -430,6 +433,17 @@ module Appsignal
 
         def finish(gc_duration_ms)
           Extension.appsignal_finish_transaction(pointer, gc_duration_ms)
+        end
+
+        def duplicate(new_transaction_id)
+          duplicate_transaction = Extension.appsignal_duplicate_transaction(
+            pointer,
+            make_appsignal_string(new_transaction_id)
+          )
+
+          return if !duplicate_transaction || duplicate_transaction.null?
+
+          Transaction.new(duplicate_transaction)
         end
 
         def complete

@@ -20,6 +20,7 @@ module Appsignal
     BREADCRUMB_LIMIT = 20
     # @api private
     ERROR_CAUSES_LIMIT = 10
+    ERRORS_LIMIT = 10
 
     class << self
       # Create a new transaction and set it as the currently active
@@ -88,7 +89,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data
+      :breadcrumbs, :custom_data, :is_duplicate, :errors
 
     # Use {.create} to create new transactions.
     #
@@ -96,7 +97,7 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @api private
-    def initialize(transaction_id, namespace)
+    def initialize(transaction_id, namespace, ext: nil)
       @transaction_id = transaction_id
       @action = nil
       @namespace = namespace
@@ -109,8 +110,10 @@ module Appsignal
       @params = nil
       @session_data = nil
       @headers = nil
+      @errors = []
+      @is_duplicate = false
 
-      @ext = Appsignal::Extension.start_transaction(
+      @ext = ext || Appsignal::Extension.start_transaction(
         @transaction_id,
         @namespace,
         0
@@ -127,8 +130,26 @@ module Appsignal
           "because it was manually discarded."
         return
       end
-      sample_data if @ext.finish(0)
-      @ext.complete
+
+      # If the transaction is a duplicate, we don't want to finish it,
+      # because we want its finish time to be the finish time of the
+      # original transaction, and we do not want to set its sample
+      # data, because it should keep the sample data it duplicated from
+      # the original transaction.
+      # On duplicate transactions, the value of the sample flag, which
+      # is set on finish, will be duplicated from the original transaction.
+      sample_data if !is_duplicate && ext.finish(0)
+
+      # Ignore the first error as it is already set in the original
+      # transaction.
+      errors.drop(1).each do |error|
+        duplicate.tap do |transaction|
+          transaction.set_error(error)
+          transaction.complete
+        end
+      end
+
+      ext.complete
     end
 
     # @api private
@@ -436,59 +457,34 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
-    # @see Appsignal::Helpers::Instrumentation#set_error
-    def set_error(error)
+    # @see Appsignal::Helpers::Instrumentation#add_error
+    def add_error(error)
       unless error.is_a?(Exception)
-        Appsignal.internal_logger.error "Appsignal::Transaction#set_error: Cannot set error. " \
+        Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
           "The given value is not an exception: #{error.inspect}"
         return
       end
+
       return unless error
       return unless Appsignal.active?
 
-      backtrace = cleaned_backtrace(error.backtrace)
-      @ext.set_error(
-        error.class.name,
-        cleaned_error_message(error),
-        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
-      )
+      _set_error(error) if @errors.empty?
 
-      root_cause_missing = false
+      return if @errors.include?(error)
 
-      causes = []
-      while error
-        error = error.cause
-
-        break unless error
-
-        if causes.length >= ERROR_CAUSES_LIMIT
-          Appsignal.internal_logger.debug "Appsignal::Transaction#set_error: Error has more " \
-            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
-            "will be reported."
-          root_cause_missing = true
-          break
-        end
-
-        causes << error
+      if @errors.length >= ERRORS_LIMIT
+        Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
+          "than #{ERRORS_LIMIT} distinct errors. Only the first " \
+          "#{ERRORS_LIMIT} distinct errors will be reported."
+        return
       end
 
-      return if causes.empty?
-
-      causes_sample_data = causes.map do |e|
-        {
-          :name => e.class.name,
-          :message => cleaned_error_message(e)
-        }
-      end
-
-      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
-
-      set_sample_data(
-        "error_causes",
-        causes_sample_data
-      )
+      @errors << error
     end
-    alias_method :add_exception, :set_error
+
+    alias :set_error :add_error
+
+    alias_method :add_exception, :add_error
 
     # @see Helpers::Instrumentation#instrument
     # @api private
@@ -541,7 +537,53 @@ module Appsignal
     end
     alias_method :to_hash, :to_h
 
+    protected
+
+    attr_writer :is_duplicate
+
     private
+
+    def _set_error(error)
+      backtrace = cleaned_backtrace(error.backtrace)
+      @ext.set_error(
+        error.class.name,
+        cleaned_error_message(error),
+        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
+      )
+
+      root_cause_missing = false
+
+      causes = []
+      while error
+        error = error.cause
+
+        break unless error
+
+        if causes.length >= ERROR_CAUSES_LIMIT
+          Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Error has more " \
+            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
+            "will be reported."
+          root_cause_missing = true
+          break
+        end
+
+        causes << error
+      end
+
+      causes_sample_data = causes.map do |e|
+        {
+          :name => e.class.name,
+          :message => cleaned_error_message(e)
+        }
+      end
+
+      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
+
+      set_sample_data(
+        "error_causes",
+        causes_sample_data
+      )
+    end
 
     def set_sample_data(key, data)
       return unless key && data
@@ -580,6 +622,18 @@ module Appsignal
         :custom_data => custom_data
       }.each do |key, data|
         set_sample_data(key, data)
+      end
+    end
+
+    def duplicate
+      new_transaction_id = SecureRandom.uuid
+
+      self.class.new(
+        new_transaction_id,
+        namespace,
+        :ext => ext.duplicate(new_transaction_id)
+      ).tap do |transaction|
+        transaction.is_duplicate = true
       end
     end
 

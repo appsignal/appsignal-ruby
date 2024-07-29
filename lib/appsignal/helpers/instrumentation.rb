@@ -362,15 +362,16 @@ module Appsignal
       # @since 3.10.0
       def report_error(exception)
         unless exception.is_a?(Exception)
-          internal_logger.error "Appsignal.report_error: Cannot set error. " \
+          internal_logger.error "Appsignal.report_error: Cannot add error. " \
             "The given value is not an exception: #{exception.inspect}"
           return
         end
         return unless active?
 
         has_parent_transaction = Appsignal::Transaction.current?
+        should_use_parent_transaction = has_parent_transaction && !block_given?
         transaction =
-          if has_parent_transaction
+          if should_use_parent_transaction
             Appsignal::Transaction.current
           else
             Appsignal::Transaction.new(
@@ -379,10 +380,10 @@ module Appsignal
             )
           end
 
-        transaction.set_error(exception)
+        transaction.add_error(exception)
         yield transaction if block_given?
 
-        return if has_parent_transaction
+        return if should_use_parent_transaction
 
         transaction.complete
       end
