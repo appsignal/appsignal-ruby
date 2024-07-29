@@ -1407,7 +1407,7 @@ describe Appsignal do
             expect(transaction).to have_error("ExampleException", "previous error message")
           end
 
-          it "adds the error to the additional errors array" do
+          it "adds the error to the errors array" do
             Appsignal.report_error(error)
 
             expect(transaction.errors).to eq([other_error, error])
@@ -1421,22 +1421,32 @@ describe Appsignal do
         end
 
         context "when given a block" do
-          it "yields the transaction and allows additional metadata to be set" do
+          before do
             Appsignal.report_error(error) do |t|
               t.set_action("my_action")
               t.set_namespace("my_namespace")
               t.set_tags(:tag1 => "value1")
             end
+          end
 
+          it "does not modify the current transaction" do
             transaction._sample
-            expect(transaction).to have_namespace("my_namespace")
-            expect(transaction).to have_action("my_action")
-            expect(transaction).to have_error(
-              "ExampleException",
-              "error message"
-            )
-            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to_not have_namespace("my_namespace")
+            expect(transaction).to_not have_action("my_action")
+            expect(transaction).to_not include_tags("tag1" => "value1")
+            expect(transaction).to_not have_error
             expect(transaction).to_not be_completed
+          end
+
+          it "creates a new transaction and allows additional metadata to be set" do
+            expect(last_transaction).to_not be(transaction)
+
+            last_transaction._sample
+            expect(last_transaction).to have_namespace("my_namespace")
+            expect(last_transaction).to have_action("my_action")
+            expect(last_transaction).to include_tags("tag1" => "value1")
+            expect(last_transaction).to have_error
+            expect(last_transaction).to be_completed
           end
         end
       end

@@ -539,7 +539,7 @@ module Appsignal
 
     protected
 
-    attr_writer :ext, :is_duplicate
+    attr_writer :is_duplicate
 
     private
 
