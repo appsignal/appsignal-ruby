@@ -237,7 +237,7 @@ module Appsignal
         return
       end
 
-      if config && config.env == env.to_s
+      if config && (env.nil? || config.env == env.to_s)
         config
       else
         @config = Config.new(

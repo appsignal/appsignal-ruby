@@ -72,6 +72,28 @@ describe Appsignal do
     end
 
     context "with config but not started" do
+      it "reuses the already loaded config if no env arg is given" do
+        Appsignal._config = Appsignal::Config.new(
+          project_fixture_path,
+          :my_env,
+          :ignore_actions => ["My action"]
+        )
+
+        Appsignal.configure do |config|
+          expect(config.env).to eq("my_env")
+          expect(config.ignore_actions).to eq(["My action"])
+
+          config.active = true
+          config.name = "My app"
+          config.push_api_key = "key"
+        end
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("my_env")
+        expect(Appsignal.config[:name]).to eq("My app")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+        expect(Appsignal.config[:ignore_actions]).to eq(["My action"])
+      end
+
       it "reuses the already loaded config if the env is the same" do
         Appsignal._config = Appsignal::Config.new(
           project_fixture_path,
