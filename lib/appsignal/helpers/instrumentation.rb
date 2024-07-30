@@ -115,7 +115,7 @@ module Appsignal
         if has_parent_transaction
           callers = caller
           Appsignal::Utils::StdoutAndLoggerMessage.warning \
-            "An active transaction around this 'Appsignal.monitor' call. " \
+            "A transaction is active around this 'Appsignal.monitor' call. " \
               "Calling `Appsignal.monitor` in another `Appsignal.monitor` block has no effect. " \
               "The namespace and action are not updated for the active transaction." \
               "Did you mean to use `Appsignal.instrument`? " \

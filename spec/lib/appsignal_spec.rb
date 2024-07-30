@@ -822,7 +822,7 @@ describe Appsignal do
               end
           end.to_not(change { created_transactions.count })
 
-          warning = "An active transaction around this 'Appsignal.monitor' call."
+          warning = "A transaction is active around this 'Appsignal.monitor' call."
           expect(logs).to contains_log(:warn, warning)
           expect(stderr).to include("appsignal WARNING: #{warning}")
         end
