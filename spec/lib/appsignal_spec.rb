@@ -1460,9 +1460,9 @@ describe Appsignal do
         end
 
         context "when the active transaction already has an error" do
-          let(:other_error) { ExampleException.new("previous error message") }
+          let(:previous_error) { ExampleException.new("previous error message") }
 
-          before { transaction.set_error(other_error) }
+          before { transaction.set_error(previous_error) }
 
           it "does not overwrite the existing set error" do
             Appsignal.report_error(error)
@@ -1471,10 +1471,26 @@ describe Appsignal do
             expect(transaction).to have_error("ExampleException", "previous error message")
           end
 
-          it "adds the error to the errors array" do
+          it "adds the error to the errors" do
             Appsignal.report_error(error)
 
-            expect(transaction.errors).to eq([other_error, error])
+            expect(transaction.error_blocks).to eq({ error => [], previous_error => [] })
+          end
+
+          context "when given a block" do
+            it "only applies the block to the transaction for that error" do
+              Appsignal.report_error(error) do |t|
+                t.set_action("my_action")
+              end
+
+              transaction.complete
+              expect(transaction).to have_error("ExampleException", "previous error message")
+              expect(transaction).not_to have_action("my_action")
+
+              expect(last_transaction).to_not be(transaction)
+              expect(last_transaction).to have_error("ExampleException", "error message")
+              expect(last_transaction).to have_action("my_action")
+            end
           end
         end
 
@@ -1493,24 +1509,43 @@ describe Appsignal do
             end
           end
 
-          it "does not modify the current transaction" do
-            transaction._sample
-            expect(transaction).to_not have_namespace("my_namespace")
-            expect(transaction).to_not have_action("my_action")
-            expect(transaction).to_not include_tags("tag1" => "value1")
-            expect(transaction).to_not have_error
-            expect(transaction).to_not be_completed
+          it "applies the block to the error transaction when completed" do
+            expect(transaction).not_to have_namespace("my_namespace")
+            expect(transaction).not_to have_action("my_action")
+            expect(transaction).not_to include_tags("tag1" => "value1")
+            expect(transaction).to have_error
+            expect(transaction).not_to be_completed
+
+            transaction.complete
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to have_error
+            expect(transaction).to be_completed
           end
 
-          it "creates a new transaction and allows additional metadata to be set" do
-            expect(last_transaction).to_not be(transaction)
+          it "does not apply the block to other error transactions" do
+            Appsignal.report_error(StandardError.new("another error"))
 
-            last_transaction._sample
-            expect(last_transaction).to have_namespace("my_namespace")
-            expect(last_transaction).to have_action("my_action")
-            expect(last_transaction).to include_tags("tag1" => "value1")
-            expect(last_transaction).to have_error
+            transaction.complete
+            expect(created_transactions.count).to eq(2)
+
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction).to be_completed
+
+            expect(last_transaction).not_to be(transaction)
+            expect(last_transaction).not_to have_namespace("my_namespace")
+            expect(last_transaction).not_to have_action("my_action")
+            expect(last_transaction).not_to include_tags("tag1" => "value1")
+            expect(last_transaction).to have_error("StandardError", "another error")
             expect(last_transaction).to be_completed
+          end
+
+          it "does not create a new transaction" do
+            expect(created_transactions).to eq([transaction])
           end
         end
       end

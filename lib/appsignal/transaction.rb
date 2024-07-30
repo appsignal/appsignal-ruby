@@ -97,7 +97,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data, :is_duplicate, :errors
+      :breadcrumbs, :custom_data, :is_duplicate, :error_blocks
 
     # Use {.create} to create new transactions.
     #
@@ -118,8 +118,9 @@ module Appsignal
       @params = nil
       @session_data = nil
       @headers = nil
-      @errors = []
+      @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
+      @error_set = nil
 
       @ext = ext || Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -141,24 +142,34 @@ module Appsignal
 
       # If the transaction is a duplicate, we don't want to finish it,
       # because we want its finish time to be the finish time of the
-      # original transaction, and we do not want to set its sample
-      # data, because it should keep the sample data it duplicated from
-      # the original transaction.
-      # On duplicate transactions, the value of the sample flag, which
-      # is set on finish, will be duplicated from the original transaction.
-      sample_data if !is_duplicate && ext.finish(0)
+      # original transaction.
+      # Duplicate transactions should always be sampled, as we only
+      # create duplicates for errors, which are always sampled.
+      should_sample = true
 
-      self.class.last_errors = errors unless is_duplicate
+      unless is_duplicate
+        self.class.last_errors = @error_blocks.keys
+        should_sample = ext.finish(0)
+      end
 
-      # Ignore the first error as it is already set in the original
-      # transaction.
-      errors.drop(1).each do |error|
+      @error_blocks.each do |error, blocks|
+        # Ignore the error that is already set in this transaction.
+        next if error == @error_set
+
         duplicate.tap do |transaction|
-          transaction.set_error(error)
+          # In the duplicate transaction for each error, set an error
+          # with a block that calls all the blocks set for that error
+          # in the original transaction.
+          transaction.set_error(error) do
+            blocks.each { |block| block.call(transaction) }
+          end
+
           transaction.complete
         end
       end
 
+      @error_blocks[@error_set].each { |block| block.call(self) } if @error_set
+      sample_data if should_sample
       ext.complete
     end
 
@@ -468,7 +479,7 @@ module Appsignal
     end
 
     # @see Appsignal::Helpers::Instrumentation#add_error
-    def add_error(error)
+    def add_error(error, &block)
       unless error.is_a?(Exception)
         Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
           "The given value is not an exception: #{error.inspect}"
@@ -478,18 +489,17 @@ module Appsignal
       return unless error
       return unless Appsignal.active?
 
-      _set_error(error) if @errors.empty?
+      _set_error(error) if @error_blocks.empty?
 
-      return if @errors.include?(error)
-
-      if @errors.length >= ERRORS_LIMIT
+      if !@error_blocks.include?(error) && @error_blocks.length >= ERRORS_LIMIT
         Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
           "than #{ERRORS_LIMIT} distinct errors. Only the first " \
           "#{ERRORS_LIMIT} distinct errors will be reported."
         return
       end
 
-      @errors << error
+      @error_blocks[error] << block
+      @error_blocks[error].compact!
     end
 
     alias :set_error :add_error
@@ -549,7 +559,7 @@ module Appsignal
 
     protected
 
-    attr_writer :is_duplicate
+    attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params, :session_data, :headers
 
     private
 
@@ -560,6 +570,7 @@ module Appsignal
         cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
       )
+      @error_set = error
 
       root_cause_missing = false
 
@@ -644,6 +655,12 @@ module Appsignal
         :ext => ext.duplicate(new_transaction_id)
       ).tap do |transaction|
         transaction.is_duplicate = true
+        transaction.tags = @tags.dup
+        transaction.custom_data = @custom_data.dup
+        transaction.breadcrumbs = @breadcrumbs.dup
+        transaction.params = @params.dup
+        transaction.session_data = @session_data.dup
+        transaction.headers = @headers.dup
       end
     end
 
