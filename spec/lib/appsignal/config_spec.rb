@@ -67,6 +67,10 @@ describe Appsignal::Config do
 
         expect(described_class.determine_env).to eq("loader_env2")
       end
+
+      it "returns nil if no env was found" do
+        expect(described_class.determine_env).to be_nil
+      end
     end
   end
 

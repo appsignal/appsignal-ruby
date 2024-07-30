@@ -36,6 +36,8 @@ module Appsignal
         env = loader_defaults[:env]
         return env if env
       end
+
+      nil
     end
 
     # Determine which root path AppSignal should initialize with.
