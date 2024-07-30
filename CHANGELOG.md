@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.3
+
+_Published on 2024-07-30._
+
+### Fixed
+
+- Fix the application environment being reported as "[]" when no valid environment could be found. (patch [cf081253](https://github.com/appsignal/appsignal-ruby/commit/cf0812536e0651ee5b62427847a4244d4640e22b))
+- Fix `Appsignal.configure` call without `env` argument not reusing the previously configured configuration. (patch [65d5428c](https://github.com/appsignal/appsignal-ruby/commit/65d5428c4d41f683a796b67b0ae339a0d213c802))
+
 ## 3.12.2
 
 _Published on 2024-07-25._
