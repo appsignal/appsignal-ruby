@@ -105,7 +105,7 @@ describe Appsignal::CLI::Install do
         run
 
         expect(output).to include "Problem encountered:",
-          "No push API key entered"
+          "No Push API key entered"
       end
     end
 
@@ -120,7 +120,7 @@ describe Appsignal::CLI::Install do
           choose_environment_config
           run
 
-          expect(output).to include("Validating API key...", "API key valid")
+          expect(output).to include("Validating Push API key...", "Push API key valid")
         end
       end
 
@@ -129,7 +129,7 @@ describe Appsignal::CLI::Install do
 
         it "prints an error" do
           run
-          expect(output).to include "API key 'my_key' is not valid"
+          expect(output).to include "Push API key 'my_key' is not valid"
         end
       end
 
@@ -140,7 +140,7 @@ describe Appsignal::CLI::Install do
 
         it "prints an error" do
           run
-          expect(output).to include "There was an error validating your API key"
+          expect(output).to include "There was an error validating your Push API key"
         end
       end
     end

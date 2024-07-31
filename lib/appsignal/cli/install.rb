@@ -27,7 +27,7 @@ module Appsignal
           puts
           unless push_api_key
             puts colorize "Problem encountered:", :red
-            puts "  No push API key entered."
+            puts "  No Push API key entered."
             puts "  - Sign up for AppSignal and follow the instructions"
             puts "  - Already signed up? Click 'Add app' on the account overview page"
             puts
@@ -37,22 +37,25 @@ module Appsignal
           config = new_config
           config[:push_api_key] = push_api_key
 
-          print "Validating API key"
+          print "Validating Push API key"
           periods
           puts
           begin
             auth_check = Appsignal::AuthCheck.new(config)
             unless auth_check.perform == "200"
-              puts "\n  API key '#{config[:push_api_key]}' is not valid, please get a new one on https://appsignal.com"
+              print colorize("  Error:", :red)
+              puts " Push API key '#{config[:push_api_key]}' is not valid. " \
+                "Please get a new one at https://appsignal.com/accounts"
               return
             end
           rescue => e
-            puts "  There was an error validating your API key:"
+            print colorize("  Error:", :red)
+            puts "There was an error validating your Push API key:"
             puts colorize "'#{e}'", :red
-            puts "  Please try again"
+            puts "  Please check the Push API key and try again"
             return
           end
-          puts colorize "  API key valid!", :green
+          puts colorize "  Push API key valid!", :green
           puts
 
           if installed_frameworks.include?(:rails)
