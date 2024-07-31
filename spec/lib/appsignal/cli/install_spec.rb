@@ -465,8 +465,10 @@ describe Appsignal::CLI::Install do
         let(:installation_instructions) do
           [
             "Installing for Sinatra",
-            "Sinatra requires some manual configuration.",
-            "require 'appsignal/integrations/sinatra'",
+            "Sinatra apps requires some manual setup.",
+            %(require "appsignal"),
+            "Appsignal.load(:sinatra)",
+            "Appsignal.start",
             "https://docs.appsignal.com/ruby/integrations/sinatra.html"
           ]
         end
@@ -533,7 +535,10 @@ describe Appsignal::CLI::Install do
         let(:installation_instructions) do
           [
             "Installing for Padrino",
-            "Padrino requires some manual configuration.",
+            "Padrino apps requires some manual setup.",
+            %(require "appsignal"),
+            "Appsignal.load(:padrino)",
+            "Appsignal.start",
             "https://docs.appsignal.com/ruby/integrations/padrino.html"
           ]
         end
@@ -600,7 +605,7 @@ describe Appsignal::CLI::Install do
         let(:installation_instructions) do
           [
             "Installing for Grape",
-            "Manual Grape configuration needed",
+            "Grape apps require some manual setup.",
             "https://docs.appsignal.com/ruby/integrations/grape.html"
           ]
         end
@@ -624,6 +629,7 @@ describe Appsignal::CLI::Install do
           it "completes the installation" do
             run
 
+            puts output
             expect(output).to include(*installation_instructions)
             expect(output).to include_complete_install
           end
@@ -667,7 +673,10 @@ describe Appsignal::CLI::Install do
         let(:installation_instructions) do
           [
             "Installing for Hanami",
-            "Hanami requires some manual configuration.",
+            "Hanami apps requires some manual setup.",
+            %(require "appsignal"),
+            "Appsignal.load(:hanami)",
+            "Appsignal.start",
             "https://docs.appsignal.com/ruby/integrations/hanami.html"
           ]
         end

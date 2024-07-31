@@ -119,11 +119,18 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Sinatra configuration"
-          puts "  Sinatra requires some manual configuration."
-          puts "  Add this line beneath require 'sinatra':"
+          puts "Sinatra installation"
+          puts "  Sinatra apps requires some manual setup."
+          puts "  Update the `config.ru` (or the application's main file) to " \
+            "look like this:"
           puts
-          puts "  require 'appsignal/integrations/sinatra'"
+          puts %(require "appsignal")
+          puts %(require "sinatra" # or require "sinatra/base")
+          puts
+          puts "Appsignal.load(:sinatra) # Load the Sinatra integration"
+          puts "Appsignal.start # Start AppSignal"
+          puts
+          puts "# Rest of the config.ru file"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/sinatra.html"
@@ -137,11 +144,14 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Padrino installation"
-          puts "  Padrino requires some manual configuration."
-          puts "  After installing the gem, add the following line to /config/boot.rb:"
+          puts "Padrino installation"
+          puts "  Padrino apps requires some manual setup."
+          puts "  After installing the gem, add the following lines to `config/boot.rb`:"
           puts
-          puts "  require 'appsignal/integrations/padrino"
+          puts %(require "appsignal")
+          puts
+          puts "Appsignal.load(:padrino) # Load the Padrino integration"
+          puts "Appsignal.start # Start AppSignal"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/padrino.html"
@@ -157,7 +167,8 @@ module Appsignal
 
           configure(config, %w[development production staging], true)
 
-          puts "Manual Grape configuration needed"
+          puts "Grape installation"
+          puts "  Grape apps require some manual setup."
           puts "  See the installation instructions at:"
           puts "  https://docs.appsignal.com/ruby/integrations/grape.html"
           press_any_key
@@ -170,11 +181,17 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Hanami installation"
-          puts "  Hanami requires some manual configuration."
-          puts "  After installing the gem, add the following line to config.ru:"
+          puts "Hanami installation"
+          puts "  Hanami apps requires some manual setup."
+          puts "  Update the config.ru file to include the following:"
           puts
-          puts "  require 'appsignal/integrations/hanami'"
+          puts %(  require "appsignal")
+          puts %(  require "hanami/boot")
+          puts
+          puts "Appsignal.load(:hanami) # Load the Hanami integration"
+          puts "Appsignal.start # Start AppSignal"
+          puts
+          puts "# Rest of the config.ru file"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/hanami.html"
