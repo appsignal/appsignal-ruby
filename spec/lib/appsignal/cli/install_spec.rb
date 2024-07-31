@@ -30,7 +30,7 @@ describe Appsignal::CLI::Install do
 
   define :include_complete_install do
     match do |actual|
-      actual.include?("AppSignal installation complete")
+      actual.include?("Please return to your browser and follow the instructions.")
     end
   end
 
@@ -419,14 +419,16 @@ describe Appsignal::CLI::Install do
           expect(File.exist?(File.join(config_dir, "application.rb"))).to eql(false)
         end
 
-        it "fails the installation" do
+        it "falls back on the unknown framework installation" do
+          enter_app_name app_name
+          choose_environment_config
           run
 
-          expect(output).to include("We could not detect which framework you are using.")
+          expect(output)
+            .to include("\e[31mWarning: We could not detect which framework you are using\e[0m")
           expect(output).to_not include("Installing for Ruby on Rails")
+          expect(output).to include_env_push_api_key(push_api_key)
           expect(output).to include_complete_install
-
-          expect(File.exist?(config_file_path)).to be(false)
         end
       end
 
@@ -737,53 +739,109 @@ describe Appsignal::CLI::Install do
       !hanami2_present?
     context "with unknown framework" do
       let(:push_api_key) { "my_key" }
+      let(:app_name) { "Test app" }
 
-      it_behaves_like "windows installation"
       it_behaves_like "push_api_key validation"
-      it_behaves_like "demo data"
+      it_behaves_like "requires an application name"
 
-      context "without color options" do
-        let(:options) { {} }
+      describe "unknown framework specific tests" do
+        let(:installation_instructions) do
+          [
+            "Installing",
+            "\e[31mWarning: We could not detect which framework you are using\e[0m",
+            "Some manual installation is most likely required.",
+            "https://docs.appsignal.com/ruby/integrations.html"
+          ]
+        end
+        before { enter_app_name app_name }
 
-        it "prints the instructions in color" do
-          run
-          expect(output).to have_colorized_text(
-            :green,
-            "## Starting AppSignal Installer           ##"
-          )
+        describe "configuration with environment variables" do
+          before { choose_environment_config }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "prints environment variables" do
+            run
+
+            expect(output).to include_env_push_api_key(push_api_key)
+            expect(output).to include_env_app_name(app_name)
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a configuration file" do
+          before { choose_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+            expect(output).to include_file_config
+            expect(config_file).to configure_app_name(app_name)
+            expect(config_file).to configure_push_api_key(push_api_key)
+            expect(config_file).to configure_environment("development")
+            expect(config_file).to configure_environment("staging")
+            expect(config_file).to configure_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
         end
       end
 
-      context "with --color option" do
-        let(:options) { { "color" => nil } }
-
-        it "prints the instructions in color" do
-          run
-          expect(output).to have_colorized_text(
-            :green,
-            "## Starting AppSignal Installer           ##"
-          )
+      describe "color flag" do
+        before do
+          enter_app_name "Test app"
+          choose_environment_config
         end
-      end
 
-      context "with --no-color option" do
-        let(:options) { { "no-color" => nil } }
+        context "without color options" do
+          let(:options) { {} }
 
-        it "prints the instructions without special colors" do
-          run
-          expect(output).to include("## Starting AppSignal Installer           ##")
-          expect(output).to_not have_color_markers
+          it "prints the instructions in color" do
+            run
+            expect(output).to have_colorized_text(
+              :green,
+              "## Starting AppSignal Installer           ##"
+            )
+          end
         end
-      end
 
-      it "prints a message about unknown framework" do
-        run
+        context "with --color option" do
+          let(:options) { { "color" => nil } }
 
-        expect(output).to include \
-          "\e[31mWarning:\e[0m We could not detect which framework you are using."
-        expect(output).to_not include_env_push_api_key
-        expect(output).to_not include_env_app_name
-        expect(File.exist?(config_file_path)).to be_falsy
+          it "prints the instructions in color" do
+            run
+            expect(output).to have_colorized_text(
+              :green,
+              "## Starting AppSignal Installer           ##"
+            )
+          end
+        end
+
+        context "with --no-color option" do
+          let(:options) { { "no-color" => nil } }
+
+          it "prints the instructions without special colors" do
+            run
+            expect(output).to include("## Starting AppSignal Installer           ##")
+            expect(output).to_not have_color_markers
+          end
+        end
       end
     end
   end

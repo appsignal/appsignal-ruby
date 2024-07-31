@@ -66,12 +66,7 @@ module Appsignal
           elsif installed_frameworks.include?(:sinatra)
             install_for_sinatra(config)
           else
-            print colorize "Warning:", :red
-            puts " We could not detect which framework you are using. " \
-              "We'd be very grateful if you email us on support@appsignal.com " \
-              "with information about your setup."
-            puts
-            done_notice
+            install_for_unknown_framework(config)
           end
         end
 
@@ -214,6 +209,23 @@ module Appsignal
           puts
         end
 
+        def install_for_unknown_framework(config)
+          puts "Installing"
+          config[:name] = required_input("  Enter application name: ")
+          puts
+          configure(config, %w[development production staging], true)
+
+          puts colorize "Warning: We could not detect which framework you are using", :red
+          puts "  Some manual installation is most likely required."
+          puts "  Please check our documentation for supported libraries: "
+          puts "  https://docs.appsignal.com/ruby/integrations.html"
+          puts
+          puts "  We'd be very grateful if you email us on " \
+            "support@appsignal.com with information about your setup."
+          press_any_key
+          done_notice
+        end
+
         def configure(config, environments, name_overwritten)
           install_for_capistrano
 
@@ -257,29 +269,27 @@ module Appsignal
         end
 
         def done_notice
-          sleep 0.3
-          puts colorize "#####################################", :green
-          puts colorize "## AppSignal installation complete ##", :green
-          puts colorize "#####################################", :green
-          sleep 0.3
-          puts
           if Gem.win_platform?
-            puts "The AppSignal agent currently does not work on Microsoft " \
+            print colorize "Warning:", :red
+            puts " The AppSignal agent currently does not work on Microsoft " \
               "Windows. Please push these changes to your staging/production " \
               "environment and make sure some actions are performed. " \
-              "AppSignal should pick up your app after a few minutes."
+              "AppSignal will pick up your app after a few minutes."
           else
-            puts "  Sending example data to AppSignal..."
+            puts "Sending example data to AppSignal..."
             if Appsignal::Demo.transmit
               puts "  Example data sent!"
               puts "  It may take about a minute for the data to appear on https://appsignal.com/accounts"
-              puts
-              puts "  Please return to your browser and follow the instructions."
             else
-              puts "  Couldn't start the AppSignal agent and send example data to AppSignal.com"
-              puts "  Please use `appsignal diagnose` to debug your configuration."
+              print colorize "Error:", :red
+              puts " Couldn't start the AppSignal agent and send example data to AppSignal.com"
+              puts "  Please contact us at support@appsignal.com and " \
+                "send us a diagnose report using `appsignal diagnose`."
+              return
             end
           end
+          puts
+          puts "Please return to your browser and follow the instructions."
         end
 
         def installed_frameworks
