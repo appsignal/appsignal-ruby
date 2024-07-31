@@ -281,7 +281,7 @@ module Appsignal
         def framework_available?(framework_file)
           require framework_file
           true
-        rescue LoadError
+        rescue LoadError, NameError
           false
         end
 
