@@ -18,12 +18,12 @@ module Appsignal
           $stdout.sync = true
 
           puts
-          puts colorize "#######################################", :green
-          puts colorize "## Starting AppSignal Installer      ##", :green
-          puts colorize "## --------------------------------- ##", :green
-          puts colorize "## Need help?  support@appsignal.com ##", :green
-          puts colorize "## Docs?       docs.appsignal.com    ##", :green
-          puts colorize "#######################################", :green
+          puts colorize "############################################", :green
+          puts colorize "## Starting AppSignal Installer           ##", :green
+          puts colorize "## -------------------------------------- ##", :green
+          puts colorize "## Need help?  support@appsignal.com      ##", :green
+          puts colorize "## Docs:       https://docs.appsignal.com ##", :green
+          puts colorize "############################################", :green
           puts
           unless push_api_key
             puts colorize "Problem encountered:", :red

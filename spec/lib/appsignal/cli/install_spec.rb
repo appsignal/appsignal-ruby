@@ -738,7 +738,10 @@ describe Appsignal::CLI::Install do
 
         it "prints the instructions in color" do
           run
-          expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+          expect(output).to have_colorized_text(
+            :green,
+            "## Starting AppSignal Installer           ##"
+          )
         end
       end
 
@@ -747,7 +750,10 @@ describe Appsignal::CLI::Install do
 
         it "prints the instructions in color" do
           run
-          expect(output).to have_colorized_text(:green, "## Starting AppSignal Installer      ##")
+          expect(output).to have_colorized_text(
+            :green,
+            "## Starting AppSignal Installer           ##"
+          )
         end
       end
 
@@ -756,7 +762,7 @@ describe Appsignal::CLI::Install do
 
         it "prints the instructions without special colors" do
           run
-          expect(output).to include("Starting AppSignal Installer")
+          expect(output).to include("## Starting AppSignal Installer           ##")
           expect(output).to_not have_color_markers
         end
       end
