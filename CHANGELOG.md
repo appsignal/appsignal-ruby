@@ -1,5 +1,29 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.5
+
+_Published on 2024-08-01._
+
+### Changed
+
+- Improve sanitization of INSERT INTO ... VALUES with multiple groups by removing additional repeated groups.
+
+  This makes the query easier to read, and mitigates an issue where processing many events with slightly distinct queries would cause some event details to de discarded.
+
+  (patch [45a20433](https://github.com/appsignal/appsignal-ruby/commit/45a20433fc7ead962d998f4218d0904cfb501a7c))
+
+### Fixed
+
+- Fix issue sanitizing SQL queries containing TRUE and FALSE values in an INSERT INTO ... VALUES clause. (patch [45a20433](https://github.com/appsignal/appsignal-ruby/commit/45a20433fc7ead962d998f4218d0904cfb501a7c))
+
+## 3.12.4
+
+_Published on 2024-08-01._
+
+### Fixed
+
+- Fix an issue where, depending on the relative order of the `appsignal` and `view_component` dependencies in the Gemfile, the ViewComponent instrumentation would not load. (patch [0f37fa30](https://github.com/appsignal/appsignal-ruby/commit/0f37fa30dec66cccb68755d332e835487e8fd039))
+
 ## 3.12.3
 
 _Published on 2024-07-30._

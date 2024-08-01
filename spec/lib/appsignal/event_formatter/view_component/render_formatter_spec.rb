@@ -1,9 +1,7 @@
 describe Appsignal::EventFormatter::ViewComponent::RenderFormatter do
   let(:klass) { Appsignal::EventFormatter::ViewComponent::RenderFormatter }
 
-  if DependencyHelper.rails_present? && DependencyHelper.view_component_present?
-    require "view_component"
-
+  if DependencyHelper.rails_present?
     context "when in a Rails app" do
       let(:formatter) { klass.new }
       before { allow(Rails.root).to receive(:to_s).and_return("/var/www/app/20130101") }
@@ -31,7 +29,7 @@ describe Appsignal::EventFormatter::ViewComponent::RenderFormatter do
       end
     end
   else
-    context "when not in a Rails app with the ViewComponent gem" do
+    context "when not in a Rails app" do
       it "does not register the event formatter" do
         expect(Appsignal::EventFormatter.registered?("render.view_component",
           klass)).to be_falsy
