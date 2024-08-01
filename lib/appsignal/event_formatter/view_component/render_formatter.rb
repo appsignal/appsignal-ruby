@@ -21,7 +21,7 @@ module Appsignal
   end
 end
 
-if defined?(Rails) && defined?(ViewComponent)
+if defined?(Rails)
   Appsignal::EventFormatter.register(
     "render.view_component",
     Appsignal::EventFormatter::ViewComponent::RenderFormatter

@@ -136,10 +136,6 @@ module DependencyHelper
     hanami_present? && Gem.loaded_specs["hanami"].version >= Gem::Version.new("2.0")
   end
 
-  def view_component_present?
-    dependency_present? "view_component"
-  end
-
   def dependency_present?(dependency_file)
     Gem.loaded_specs.key? dependency_file
   end
