@@ -189,8 +189,9 @@ describe Appsignal::CheckIn::Cron do
   describe "#start" do
     it "should send a cron check-in start" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "cron-checkin-name",
-        :kind => "start"
+        :identifier => "cron-checkin-name",
+        :kind => "start",
+        :check_in_type => "cron"
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
@@ -203,8 +204,9 @@ describe Appsignal::CheckIn::Cron do
 
     it "should log an error if it fails" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "cron-checkin-name",
-        :kind => "start"
+        :identifier => "cron-checkin-name",
+        :kind => "start",
+        :check_in_type => "cron"
       )).and_return(Net::HTTPResponse.new(nil, "499", nil))
 
       expect(Appsignal.internal_logger).not_to receive(:debug)
@@ -219,8 +221,9 @@ describe Appsignal::CheckIn::Cron do
   describe "#finish" do
     it "should send a cron check-in finish" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "cron-checkin-name",
-        :kind => "finish"
+        :identifier => "cron-checkin-name",
+        :kind => "finish",
+        :check_in_type => "cron"
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
@@ -233,8 +236,9 @@ describe Appsignal::CheckIn::Cron do
 
     it "should log an error if it fails" do
       expect(transmitter).to receive(:transmit).with(hash_including(
-        :name => "cron-checkin-name",
-        :kind => "finish"
+        :identifier => "cron-checkin-name",
+        :kind => "finish",
+        :check_in_type => "cron"
       )).and_return(Net::HTTPResponse.new(nil, "499", nil))
 
       expect(Appsignal.internal_logger).not_to receive(:debug)
@@ -251,12 +255,14 @@ describe Appsignal::CheckIn::Cron do
       it "should send a cron check-in start and finish and return the block output" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "start",
-          :name => "cron-checkin-with-block"
+          :identifier => "cron-checkin-with-block",
+          :check_in_type => "cron"
         )).and_return(nil)
 
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "cron-checkin-with-block"
+          :identifier => "cron-checkin-with-block",
+          :check_in_type => "cron"
         )).and_return(nil)
 
         output = Appsignal::CheckIn.cron("cron-checkin-with-block") { "output" }
@@ -266,12 +272,14 @@ describe Appsignal::CheckIn::Cron do
       it "should not send a cron check-in finish event when an error is raised" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "start",
-          :name => "cron-checkin-with-block"
+          :identifier => "cron-checkin-with-block",
+          :check_in_type => "cron"
         )).and_return(nil)
 
         expect(transmitter).not_to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "cron-checkin-with-block"
+          :identifier => "cron-checkin-with-block",
+          :check_in_type => "cron"
         ))
 
         expect do
@@ -284,7 +292,8 @@ describe Appsignal::CheckIn::Cron do
       it "should only send a cron check-in finish event" do
         expect(transmitter).to receive(:transmit).with(hash_including(
           :kind => "finish",
-          :name => "cron-checkin-without-block"
+          :identifier => "cron-checkin-without-block",
+          :check_in_type => "cron"
         )).and_return(nil)
 
         Appsignal::CheckIn.cron("cron-checkin-without-block")

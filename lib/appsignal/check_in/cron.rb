@@ -7,7 +7,7 @@ module Appsignal
         # @api private
         def transmitter
           @transmitter ||= Appsignal::Transmitter.new(
-            "#{Appsignal.config[:logging_endpoint]}/checkins/cron/json"
+            "#{Appsignal.config[:logging_endpoint]}/check_ins/json"
           )
         end
       end
@@ -31,10 +31,11 @@ module Appsignal
 
       def event(kind)
         {
-          :name => name,
-          :id => @id,
+          :identifier => name,
+          :digest => @id,
           :kind => kind,
-          :timestamp => Time.now.utc.to_i
+          :timestamp => Time.now.utc.to_i,
+          :check_in_type => "cron"
         }
       end
 
