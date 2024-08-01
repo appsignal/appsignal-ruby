@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.4
+
+_Published on 2024-08-01._
+
+### Fixed
+
+- Fix an issue where, depending on the relative order of the `appsignal` and `view_component` dependencies in the Gemfile, the ViewComponent instrumentation would not load. (patch [0f37fa30](https://github.com/appsignal/appsignal-ruby/commit/0f37fa30dec66cccb68755d332e835487e8fd039))
+
 ## 3.12.3
 
 _Published on 2024-07-30._
