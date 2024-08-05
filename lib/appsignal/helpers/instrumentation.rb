@@ -309,6 +309,11 @@ module Appsignal
         tags = nil,
         namespace = Appsignal::Transaction::HTTP_REQUEST
       )
+        stdout_and_logger_warning \
+          "The `Appsignal.listen_for_error` helper is deprecated. " \
+            "Please use `rescue => error` and `Appsignal.report_error` instead. " \
+            "Read our exception handling documentation: " \
+            "https://docs.appsignal.com/ruby/instrumentation/exception-handling.html"
         yield
       rescue Exception => error # rubocop:disable Lint/RescueException
         send_error(error) do |transaction|
