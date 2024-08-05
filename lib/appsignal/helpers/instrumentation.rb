@@ -158,55 +158,6 @@ module Appsignal
         Appsignal.stop("monitor_and_stop")
       end
 
-      # Listen for an error to occur and send it to AppSignal.
-      #
-      # Uses {.send_error} to directly send the error in a separate
-      # transaction. Does not add the error to the current transaction.
-      #
-      # Make sure that AppSignal is integrated in your application beforehand.
-      # AppSignal won't record errors unless {Appsignal.active?} is `true`.
-      #
-      # @example
-      #   # my_app.rb
-      #   # setup AppSignal beforehand
-      #
-      #   Appsignal.listen_for_error do
-      #     # my code
-      #     raise "foo"
-      #   end
-      #
-      # @see Transaction.set_tags
-      # @see Transaction.set_namespace
-      # @see .send_error
-      # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
-      #   AppSignal integration guide
-      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
-      #   Exception handling guide
-      #
-      # @deprecated Use `rescue => error` with {.report_error} instead.
-      # @param tags [Hash, nil]
-      # @param namespace [String] the namespace for this error.
-      # @yield yields the given block.
-      # @return [Object] returns the return value of the given block.
-      def listen_for_error(
-        tags = nil,
-        namespace = Appsignal::Transaction::HTTP_REQUEST
-      )
-        stdout_and_logger_warning \
-          "The `Appsignal.listen_for_error` helper is deprecated. " \
-            "Please use `rescue => error` and `Appsignal.report_error` instead. " \
-            "Read our exception handling documentation: " \
-            "https://docs.appsignal.com/ruby/instrumentation/exception-handling.html"
-        yield
-      rescue Exception => error # rubocop:disable Lint/RescueException
-        send_error(error) do |transaction|
-          transaction.set_tags(tags) if tags
-          transaction.set_namespace(namespace) if namespace
-        end
-        raise error
-      end
-      alias :listen_for_exception :listen_for_error
-
       # Send an error to AppSignal regardless of the context.
       #
       # Records and send the exception to AppSignal.
