@@ -68,8 +68,11 @@ module Appsignal
 
     def merge_values(value_original, value_new)
       unless value_new.instance_of?(value_original.class)
-        # TODO: add log warning
-        # Value types don't match. The block is leading so overwrite the value
+        Appsignal.internal_logger.warn(
+          "The sample data '#{@key}' changed type from " \
+            "'#{value_original.class}' to '#{value_new.class}'. " \
+            "These types can not be merged. Using new '#{value_new.class}' type."
+        )
         return value_new
       end
 

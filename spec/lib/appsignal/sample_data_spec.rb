@@ -50,6 +50,12 @@ describe Appsignal::SampleData do
 
       data.add(["abc"])
       expect(data.value).to eq(["abc"])
+
+      logs = capture_logs { data.value }
+      expect(logs).to contains_log(
+        :warn,
+        "The sample data 'data_key' changed type from 'Hash' to 'Array'."
+      )
     end
 
     it "ignores invalid values" do
