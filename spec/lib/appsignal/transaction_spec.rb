@@ -161,7 +161,7 @@ describe Appsignal::Transaction do
 
     context "when transaction is being sampled" do
       it "samples data" do
-        transaction.set_tags(:foo => "bar")
+        transaction.add_tags(:foo => "bar")
         keep_transactions { transaction.complete }
         expect(transaction).to include_tags("foo" => "bar")
       end
@@ -295,11 +295,11 @@ describe Appsignal::Transaction do
           transaction.set_action("My action")
           transaction.set_metadata("path", "/some/path")
           transaction.set_metadata("method", "GET")
-          transaction.set_tags(tags)
-          transaction.set_params(params)
-          transaction.set_headers(headers)
-          transaction.set_session_data(session_data)
-          transaction.set_custom_data(custom_data)
+          transaction.add_tags(tags)
+          transaction.add_params(params)
+          transaction.add_headers(headers)
+          transaction.add_session_data(session_data)
+          transaction.add_custom_data(custom_data)
           transaction.add_breadcrumb("category", "action", "message", { "meta" => "data" })
 
           transaction.start_event
@@ -344,6 +344,168 @@ describe Appsignal::Transaction do
           expect(original_transaction.is_duplicate).to be(false)
           expect(duplicate_transaction.is_duplicate).to be(true)
         end
+      end
+
+      it "merges sample data from the original transaction in the duplicate transaction" do
+        transaction.add_tags("root" => "tag")
+        transaction.add_params("root" => "param")
+        transaction.add_session_data("root" => "session")
+        transaction.add_headers("REQUEST_METHOD" => "root")
+        transaction.add_custom_data("root" => "custom")
+        transaction.add_breadcrumb("root", "breadcrumb")
+        Appsignal.report_error(error) do |t|
+          t.add_tags("original" => "tag")
+          t.add_params("original" => "param")
+          t.add_session_data("original" => "session")
+          t.add_headers("REQUEST_PATH" => "/original")
+          t.add_custom_data("original" => "custom")
+          t.add_breadcrumb("original", "breadcrumb")
+        end
+        Appsignal.report_error(other_error) do |t|
+          t.add_tags("duplicate" => "tag")
+          t.add_params("duplicate" => "param")
+          t.add_session_data("duplicate" => "session")
+          t.add_headers("HTTP_ACCEPT" => "duplicate")
+          t.add_custom_data("duplicate" => "custom")
+          t.add_breadcrumb("duplicate", "breadcrumb")
+        end
+        transaction.add_tags("root2" => "tag")
+        transaction.add_params("root2" => "param")
+        transaction.add_session_data("root2" => "session")
+        transaction.add_headers("PATH_INFO" => "/root2")
+        transaction.add_custom_data("root2" => "custom")
+        transaction.add_breadcrumb("root2", "breadcrumb")
+        transaction.complete
+
+        original_transaction, duplicate_transaction = created_transactions
+        # Original
+        expect(original_transaction).to include_tags(
+          "root" => "tag",
+          "original" => "tag",
+          "root2" => "tag"
+        )
+        expect(original_transaction).to_not include_tags("duplicate" => anything)
+        expect(original_transaction).to include_params(
+          "root" => "param",
+          "original" => "param",
+          "root2" => "param"
+        )
+        expect(original_transaction).to_not include_params("duplicate" => anything)
+        expect(original_transaction).to include_session_data(
+          "root" => "session",
+          "original" => "session",
+          "root2" => "session"
+        )
+        expect(original_transaction).to_not include_session_data("duplicate" => anything)
+        expect(original_transaction).to include_environment(
+          "REQUEST_METHOD" => "root",
+          "REQUEST_PATH" => "/original",
+          "PATH_INFO" => "/root2"
+        )
+        expect(original_transaction).to_not include_environment("HTTP_ACCEPT" => anything)
+        expect(original_transaction).to include_custom_data(
+          "root" => "custom",
+          "original" => "custom",
+          "root2" => "custom"
+        )
+        expect(original_transaction).to_not include_custom_data("duplicate" => anything)
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "root")
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "original")
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "root2")
+        expect(original_transaction).to_not include_breadcrumb("breadcrumb", "duplicate")
+
+        # Duplicate
+        expect(duplicate_transaction).to include_tags(
+          "root" => "tag",
+          "duplicate" => "tag",
+          "root2" => "tag"
+        )
+        expect(duplicate_transaction).to_not include_tags("original" => anything)
+        expect(duplicate_transaction).to include_params(
+          "root" => "param",
+          "duplicate" => "param",
+          "root2" => "param"
+        )
+        expect(duplicate_transaction).to_not include_params("original" => anything)
+        expect(duplicate_transaction).to include_session_data(
+          "root" => "session",
+          "duplicate" => "session",
+          "root2" => "session"
+        )
+        expect(duplicate_transaction).to_not include_session_data("original" => anything)
+        expect(duplicate_transaction).to include_environment(
+          "PATH_INFO" => "/root2",
+          "HTTP_ACCEPT" => "duplicate",
+          "REQUEST_METHOD" => "root"
+        )
+        expect(duplicate_transaction).to_not include_environment("REQUEST_PATH" => anything)
+        expect(duplicate_transaction).to include_custom_data(
+          "root" => "custom",
+          "duplicate" => "custom",
+          "root2" => "custom"
+        )
+        expect(duplicate_transaction).to_not include_custom_data("original" => anything)
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "root")
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "duplicate")
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "root2")
+        expect(duplicate_transaction).to_not include_breadcrumb("breadcrumb", "original")
+      end
+
+      it "overrides sample data from the original transaction in the duplicate transaction" do
+        transaction.add_tags("changeme" => "tag")
+        transaction.add_params("changeme" => "param")
+        transaction.add_session_data("changeme" => "session")
+        transaction.add_headers("REQUEST_METHOD" => "root")
+        transaction.add_custom_data("changeme" => "custom")
+        Appsignal.report_error(error)
+        Appsignal.report_error(other_error) do |t|
+          t.add_tags("changeme" => "duplicate_tag")
+          t.add_params("changeme" => "duplicate_param")
+          t.add_session_data("changeme" => "duplicate_session")
+          t.add_headers("REQUEST_METHOD" => "duplicate")
+          t.add_custom_data("changeme" => "duplicate_custom")
+        end
+        transaction.add_tags("changeme" => "changed_tag")
+        transaction.add_params("changeme" => "changed_param")
+        transaction.add_session_data("changeme" => "changed_session")
+        transaction.add_headers("REQUEST_METHOD" => "changed")
+        transaction.add_custom_data("changeme" => "changed_custom")
+        transaction.complete
+
+        original_transaction, duplicate_transaction = created_transactions
+        # Original
+        expect(original_transaction).to include_tags(
+          "changeme" => "changed_tag"
+        )
+        expect(original_transaction).to include_params(
+          "changeme" => "changed_param"
+        )
+        expect(original_transaction).to include_session_data(
+          "changeme" => "changed_session"
+        )
+        expect(original_transaction).to include_environment(
+          "REQUEST_METHOD" => "changed"
+        )
+        expect(original_transaction).to include_custom_data(
+          "changeme" => "changed_custom"
+        )
+
+        # Duplicate
+        expect(duplicate_transaction).to include_tags(
+          "changeme" => "duplicate_tag"
+        )
+        expect(duplicate_transaction).to include_params(
+          "changeme" => "duplicate_param"
+        )
+        expect(duplicate_transaction).to include_session_data(
+          "changeme" => "duplicate_session"
+        )
+        expect(duplicate_transaction).to include_environment(
+          "REQUEST_METHOD" => "duplicate"
+        )
+        expect(duplicate_transaction).to include_custom_data(
+          "changeme" => "duplicate_custom"
+        )
       end
     end
   end
@@ -430,107 +592,122 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_params" do
+  describe "#add_params" do
     let(:transaction) { new_transaction }
 
-    context "when the params are set" do
-      it "updates the params on the transaction" do
-        params = { "key" => "value" }
-        transaction.set_params(params)
-
-        transaction._sample
-        expect(transaction).to include_params(params)
-      end
-
-      it "updates the params on the transaction with a block" do
-        params = { "key" => "value" }
-        transaction.set_params { params }
-
-        transaction._sample
-        expect(transaction).to include_params(params)
-      end
-
-      it "updates with the params argument when both an argument and block are given" do
-        arg_params = { "argument" => "value" }
-        block_params = { "block" => "value" }
-        transaction.set_params(arg_params) { block_params }
-
-        transaction._sample
-        expect(transaction).to include_params(arg_params)
-      end
-
-      it "logs an error if an error occurred storing the params" do
-        transaction.set_params { raise "uh oh" }
-
-        logs = capture_logs { transaction._sample }
-        expect(logs).to contains_log(
-          :error,
-          "Exception while fetching params: RuntimeError: uh oh"
-        )
-      end
-
-      context "with AppSignal filtering" do
-        let(:options) { { :filter_parameters => %w[foo] } }
-
-        it "returns sanitized custom params" do
-          transaction.set_params("foo" => "value", "baz" => "bat")
-
-          transaction._sample
-          expect(transaction).to include_params("foo" => "[FILTERED]", "baz" => "bat")
-        end
-      end
+    it "has a #set_params alias" do
+      expect(transaction.method(:add_params)).to eq(transaction.method(:set_params))
     end
 
-    context "when the given params is nil" do
-      it "does not update the params on the transaction" do
-        params = { "key" => "value" }
-        transaction.set_params(params)
-        transaction.set_params(nil)
+    it "adds the params to the transaction" do
+      params = { "key" => "value" }
+      transaction.add_params(params)
+
+      transaction._sample
+      expect(transaction).to include_params(params)
+    end
+
+    it "merges the params on the transaction" do
+      transaction.add_params("abc" => "value")
+      transaction.add_params("def" => "value")
+      transaction.add_params { { "xyz" => "value" } }
+
+      transaction._sample
+      expect(transaction).to include_params(
+        "abc" => "value",
+        "def" => "value",
+        "xyz" => "value"
+      )
+    end
+
+    it "adds the params to the transaction with a block" do
+      params = { "key" => "value" }
+      transaction.add_params { params }
+
+      transaction._sample
+      expect(transaction).to include_params(params)
+    end
+
+    it "adds the params block value when both an argument and block are given" do
+      arg_params = { "argument" => "value" }
+      block_params = { "block" => "value" }
+      transaction.add_params(arg_params) { block_params }
+
+      transaction._sample
+      expect(transaction).to include_params(block_params)
+    end
+
+    it "logs an error if an error occurred storing the params" do
+      transaction.add_params { raise "uh oh" }
+
+      logs = capture_logs { transaction._sample }
+      expect(logs).to contains_log(
+        :error,
+        "Exception while fetching params: RuntimeError: uh oh"
+      )
+    end
+
+    it "does not update the params on the transaction if the given value is nil" do
+      params = { "key" => "value" }
+      transaction.add_params(params)
+      transaction.add_params(nil)
+
+      transaction._sample
+      expect(transaction).to include_params(params)
+    end
+
+    context "with AppSignal filtering" do
+      let(:options) { { :filter_parameters => %w[foo] } }
+
+      it "returns sanitized custom params" do
+        transaction.add_params("foo" => "value", "baz" => "bat")
 
         transaction._sample
-        expect(transaction).to include_params(params)
+        expect(transaction).to include_params("foo" => "[FILTERED]", "baz" => "bat")
       end
     end
   end
 
-  describe "#set_params_if_nil" do
+  describe "#add_params_if_nil" do
     let(:transaction) { new_transaction }
 
+    it "has a #set_params_if_nil alias" do
+      expect(transaction.method(:add_params_if_nil)).to eq(transaction.method(:set_params_if_nil))
+    end
+
     context "when the params are not set" do
-      it "sets the params on the transaction" do
+      it "adds the params to the transaction" do
         params = { "key" => "value" }
-        transaction.set_params_if_nil(params)
+        transaction.add_params_if_nil(params)
 
         transaction._sample
         expect(transaction).to include_params(params)
       end
 
-      it "updates the params on the transaction with a block" do
+      it "adds the params to the transaction with a block" do
         params = { "key" => "value" }
-        transaction.set_params_if_nil { params }
+        transaction.add_params_if_nil { params }
 
         transaction._sample
         expect(transaction).to include_params(params)
       end
 
-      it "updates with the params argument when both an argument and block are given" do
+      it "adds the params block value when both an argument and block are given" do
         arg_params = { "argument" => "value" }
         block_params = { "block" => "value" }
-        transaction.set_params_if_nil(arg_params) { block_params }
+        transaction.add_params_if_nil(arg_params) { block_params }
 
         transaction._sample
-        expect(transaction).to include_params(arg_params)
+        expect(transaction).to include_params(block_params)
       end
 
-      context "when the given params is nil" do
-        it "does not update the params on the transaction" do
-          params = { "key" => "value" }
-          transaction.set_params(params)
-          transaction.set_params_if_nil(nil)
+      it "does not update the params on the transaction if the given value is nil" do
+        params = { "key" => "value" }
+        transaction.add_params(params)
+        transaction.add_params_if_nil(nil)
 
-          transaction._sample
-          expect(transaction).to include_params(params)
-        end
+        transaction._sample
+        expect(transaction).to include_params(params)
       end
     end
 
@@ -538,8 +715,8 @@ describe Appsignal::Transaction do
       it "does not update the params on the transaction" do
         preset_params = { "other" => "params" }
         params = { "key" => "value" }
-        transaction.set_params(preset_params)
-        transaction.set_params_if_nil(params)
+        transaction.add_params(preset_params)
+        transaction.add_params_if_nil(params)
 
         transaction._sample
         expect(transaction).to include_params(preset_params)
@@ -548,8 +725,8 @@ describe Appsignal::Transaction do
       it "does not update the params with a block on the transaction" do
         preset_params = { "other" => "params" }
         params = { "key" => "value" }
-        transaction.set_params(preset_params)
-        transaction.set_params_if_nil { params }
+        transaction.add_params(preset_params)
+        transaction.add_params_if_nil { params }
 
         transaction._sample
         expect(transaction).to include_params(preset_params)
@@ -557,13 +734,89 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_session_data" do
+  describe "#add_session_data" do
     let(:transaction) { new_transaction }
 
-    context "when the session data is set" do
-      it "updates the session data on the transaction" do
+    it "has a #set_session_data alias" do
+      expect(transaction.method(:add_session_data)).to eq(transaction.method(:set_session_data))
+    end
+
+    it "adds the session data to the transaction" do
+      data = { "key" => "value" }
+      transaction.add_session_data(data)
+
+      transaction._sample
+      expect(transaction).to include_session_data(data)
+    end
+
+    it "merges the session data on the transaction" do
+      transaction.add_session_data("abc" => "value")
+      transaction.add_session_data("def" => "value")
+      transaction.add_session_data { { "xyz" => "value" } }
+
+      transaction._sample
+      expect(transaction).to include_session_data(
+        "abc" => "value",
+        "def" => "value",
+        "xyz" => "value"
+      )
+    end
+
+    it "adds the session data to the transaction with a block" do
+      data = { "key" => "value" }
+      transaction.add_session_data { data }
+
+      transaction._sample
+      expect(transaction).to include_session_data(data)
+    end
+
+    it "adds the session data block value when both an argument and block are given" do
+      arg_data = { "argument" => "value" }
+      block_data = { "block" => "value" }
+      transaction.add_session_data(arg_data) { block_data }
+
+      transaction._sample
+      expect(transaction).to include_session_data(block_data)
+    end
+
+    it "logs an error if an error occurred storing the session data" do
+      transaction.add_session_data { raise "uh oh" }
+
+      logs = capture_logs { transaction._sample }
+      expect(logs).to contains_log(
+        :error,
+        "Exception while fetching session data: RuntimeError: uh oh"
+      )
+    end
+
+    it "does not update the session data on the transaction if the given value is nil" do
+      data = { "key" => "value" }
+      transaction.add_session_data(data)
+      transaction.add_session_data(nil)
+
+      transaction._sample
+      expect(transaction).to include_session_data(data)
+    end
+
+    context "with filter_session_data" do
+      let(:options) { { :filter_session_data => ["filtered_key"] } }
+
+      it "does not include filtered out session data" do
+        transaction.add_session_data("data" => "value1", "filtered_key" => "filtered_value")
+
+        transaction._sample
+        expect(transaction).to include_session_data("data" => "value1")
+      end
+    end
+  end
+
+  describe "#add_session_data_if_nil" do
+    let(:transaction) { new_transaction }
+
+    context "when the session data is not set" do
+      it "sets the session data on the transaction" do
         data = { "key" => "value" }
-        transaction.set_session_data(data)
+        transaction.add_session_data_if_nil(data)
 
         transaction._sample
         expect(transaction).to include_session_data(data)
@@ -571,112 +824,47 @@ describe Appsignal::Transaction do
 
       it "updates the session data on the transaction with a block" do
         data = { "key" => "value" }
-        transaction.set_session_data { data }
+        transaction.add_session_data_if_nil { data }
 
         transaction._sample
         expect(transaction).to include_session_data(data)
       end
 
-      it "updates with the session data argument when both an argument and block are given" do
+      it "updates with the session data block when both an argument and block are given" do
         arg_data = { "argument" => "value" }
         block_data = { "block" => "value" }
-        transaction.set_session_data(arg_data) { block_data }
+        transaction.add_session_data_if_nil(arg_data) { block_data }
 
         transaction._sample
-        expect(transaction).to include_session_data(arg_data)
+        expect(transaction).to include_session_data(block_data)
       end
 
-      context "with filter_session_data" do
-        let(:options) { { :filter_session_data => ["filtered_key"] } }
+      it "does not update the session data on the transaction if the given value is nil" do
+        data = { "key" => "value" }
+        transaction.add_session_data(data)
+        transaction.add_session_data_if_nil(nil)
 
-        it "does not include filtered out session data" do
-          transaction.set_session_data("data" => "value1", "filtered_key" => "filtered_value")
-
-          transaction._sample
-          expect(transaction).to include_session_data("data" => "value1")
-        end
-      end
-
-      it "logs an error if an error occurred storing the session data" do
-        transaction.set_session_data { raise "uh oh" }
-
-        logs = capture_logs { transaction._sample }
-        expect(logs).to contains_log(
-          :error,
-          "Exception while fetching session data: RuntimeError: uh oh"
-        )
+        transaction._sample
+        expect(transaction).to include_session_data(data)
       end
     end
 
-    context "when the given session data is nil" do
+    context "when the session data are set" do
       it "does not update the session data on the transaction" do
-        data = { "key" => "value" }
-        transaction.set_session_data(data)
-        transaction.set_session_data(nil)
-
-        transaction._sample
-        expect(transaction).to include_session_data(data)
-      end
-    end
-  end
-
-  describe "#set_session_data_if_nil" do
-    let(:transaction) { new_transaction }
-
-    context "when the params are not set" do
-      it "sets the params on the transaction" do
-        data = { "key" => "value" }
-        transaction.set_session_data_if_nil(data)
-
-        transaction._sample
-        expect(transaction).to include_session_data(data)
-      end
-
-      it "updates the params on the transaction with a block" do
-        data = { "key" => "value" }
-        transaction.set_session_data_if_nil { data }
-
-        transaction._sample
-        expect(transaction).to include_session_data(data)
-      end
-
-      it "updates with the params argument when both an argument and block are given" do
-        arg_data = { "argument" => "value" }
-        block_data = { "block" => "value" }
-        transaction.set_session_data_if_nil(arg_data) { block_data }
-
-        transaction._sample
-        expect(transaction).to include_session_data(arg_data)
-      end
-
-      context "when the given params is nil" do
-        it "does not update the params on the transaction" do
-          data = { "key" => "value" }
-          transaction.set_session_data(data)
-          transaction.set_session_data_if_nil(nil)
-
-          transaction._sample
-          expect(transaction).to include_session_data(data)
-        end
-      end
-    end
-
-    context "when the params are set" do
-      it "does not update the params on the transaction" do
         preset_data = { "other" => "data" }
         data = { "key" => "value" }
-        transaction.set_session_data(preset_data)
-        transaction.set_session_data_if_nil(data)
+        transaction.add_session_data(preset_data)
+        transaction.add_session_data_if_nil(data)
 
         transaction._sample
         expect(transaction).to include_session_data(preset_data)
       end
 
-      it "does not update the params with a block on the transaction" do
+      it "does not update the session data with a block on the transaction" do
         preset_data = { "other" => "data" }
         data = { "key" => "value" }
-        transaction.set_session_data(preset_data)
-        transaction.set_session_data_if_nil { data }
+        transaction.add_session_data(preset_data)
+        transaction.add_session_data_if_nil { data }
 
         transaction._sample
         expect(transaction).to include_session_data(preset_data)
@@ -684,126 +872,141 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_headers" do
+  describe "#add_headers" do
     let(:transaction) { new_transaction }
+
+    it "has a #set_headers alias" do
+      expect(transaction.method(:add_headers)).to eq(transaction.method(:set_headers))
+    end
+
+    it "adds the headers to the transaction" do
+      headers = { "PATH_INFO" => "value" }
+      transaction.add_headers(headers)
+
+      transaction._sample
+      expect(transaction).to include_environment(headers)
+    end
+
+    it "merges the headers on the transaction" do
+      transaction.add_headers("PATH_INFO" => "value")
+      transaction.add_headers("REQUEST_METHOD" => "value")
+      transaction.add_headers { { "HTTP_ACCEPT" => "value" } }
+
+      transaction._sample
+      expect(transaction).to include_environment(
+        "PATH_INFO" => "value",
+        "REQUEST_METHOD" => "value",
+        "HTTP_ACCEPT" => "value"
+      )
+    end
+
+    it "adds the headers to the transaction with a block" do
+      headers = { "PATH_INFO" => "value" }
+      transaction.add_headers { headers }
+
+      transaction._sample
+      expect(transaction).to include_environment(headers)
+    end
+
+    it "adds the headers block value when both an argument and block are given" do
+      arg_data = { "PATH_INFO" => "/arg-path" }
+      block_data = { "PATH_INFO" => "/block-path" }
+      transaction.add_headers(arg_data) { block_data }
+
+      transaction._sample
+      expect(transaction).to include_environment(block_data)
+    end
+
+    it "logs an error if an error occurred storing the headers" do
+      transaction.add_headers { raise "uh oh" }
+
+      logs = capture_logs { transaction._sample }
+      expect(logs).to contains_log(
+        :error,
+        "Exception while fetching headers: RuntimeError: uh oh"
+      )
+    end
+
+    it "does not update the headers on the transaction if the given value is nil" do
+      headers = { "PATH_INFO" => "value" }
+      transaction.add_headers(headers)
+      transaction.add_headers(nil)
+
+      transaction._sample
+      expect(transaction).to include_environment(headers)
+    end
+
+    context "with request_headers options" do
+      let(:options) { { :request_headers => ["MY_HEADER"] } }
+
+      it "does not include filtered out headers" do
+        transaction.add_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+
+        transaction._sample
+        expect(transaction).to include_environment("MY_HEADER" => "value1")
+      end
+    end
+  end
+
+  describe "#add_headers_if_nil" do
+    let(:transaction) { new_transaction }
+
+    it "has a #set_headers_if_nil alias" do
+      expect(transaction.method(:add_headers_if_nil)).to eq(transaction.method(:set_headers_if_nil))
+    end
+
+    context "when the headers are not set" do
+      it "adds the headers to the transaction" do
+        headers = { "PATH_INFO" => "value" }
+        transaction.add_headers_if_nil(headers)
+
+        transaction._sample
+        expect(transaction).to include_environment(headers)
+      end
+
+      it "adds the headers to the transaction with a block" do
+        headers = { "PATH_INFO" => "value" }
+        transaction.add_headers_if_nil { headers }
+
+        transaction._sample
+        expect(transaction).to include_environment(headers)
+      end
+
+      it "adds the headers block value when both an argument and block are given" do
+        arg_data = { "PATH_INFO" => "/arg-path" }
+        block_data = { "PATH_INFO" => "/block-path" }
+        transaction.add_headers_if_nil(arg_data) { block_data }
+
+        transaction._sample
+        expect(transaction).to include_environment(block_data)
+      end
+
+      it "does not update the headers on the transaction if the given value is nil" do
+        headers = { "PATH_INFO" => "value" }
+        transaction.add_headers(headers)
+        transaction.add_headers_if_nil(nil)
+
+        transaction._sample
+        expect(transaction).to include_environment(headers)
+      end
+    end
 
     context "when the headers are set" do
-      it "updates the headers on the transaction" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.set_headers(headers)
-
-        transaction._sample
-        expect(transaction).to include_environment(headers)
-      end
-
-      it "updates the headers on the transaction with a block" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.set_headers { headers }
-
-        transaction._sample
-        expect(transaction).to include_environment(headers)
-      end
-
-      it "updates with the headers argument when both an argument and block are given" do
-        arg_data = { "PATH_INFO" => "/arg-path" }
-        block_data = { "PATH_INFO" => "/block-path" }
-        transaction.set_headers(arg_data) { block_data }
-
-        transaction._sample
-        expect(transaction).to include_environment(arg_data)
-      end
-
-      context "with request_headers options" do
-        let(:options) { { :request_headers => ["MY_HEADER"] } }
-
-        it "does not include filtered out headers" do
-          transaction.set_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
-
-          transaction._sample
-          expect(transaction).to include_environment("MY_HEADER" => "value1")
-        end
-      end
-
-      it "logs an error if an error occurred storing the headers" do
-        transaction.set_headers { raise "uh oh" }
-
-        logs = capture_logs { transaction._sample }
-        expect(logs).to contains_log(
-          :error,
-          "Exception while fetching headers: RuntimeError: uh oh"
-        )
-      end
-    end
-
-    context "when the given headers is nil" do
       it "does not update the headers on the transaction" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.set_headers(headers)
-        transaction.set_headers(nil)
-
-        transaction._sample
-        expect(transaction).to include_environment(headers)
-      end
-    end
-  end
-
-  describe "#set_headers_if_nil" do
-    let(:transaction) { new_transaction }
-
-    context "when the params are not set" do
-      it "sets the params on the transaction" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.set_headers_if_nil(headers)
-
-        transaction._sample
-        expect(transaction).to include_environment(headers)
-      end
-
-      it "updates the params on the transaction with a block" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.set_headers_if_nil { headers }
-
-        transaction._sample
-        expect(transaction).to include_environment(headers)
-      end
-
-      it "updates with the params argument when both an argument and block are given" do
-        arg_data = { "PATH_INFO" => "/arg-path" }
-        block_data = { "PATH_INFO" => "/block-path" }
-        transaction.set_headers_if_nil(arg_data) { block_data }
-
-        transaction._sample
-        expect(transaction).to include_environment(arg_data)
-      end
-
-      context "when the given params is nil" do
-        it "does not update the params on the transaction" do
-          headers = { "PATH_INFO" => "value" }
-          transaction.set_headers(headers)
-          transaction.set_headers_if_nil(nil)
-
-          transaction._sample
-          expect(transaction).to include_environment(headers)
-        end
-      end
-    end
-
-    context "when the params are set" do
-      it "does not update the params on the transaction" do
         preset_headers = { "PATH_INFO" => "/first-path" }
         headers = { "PATH_INFO" => "/other-path" }
-        transaction.set_headers(preset_headers)
-        transaction.set_headers_if_nil(headers)
+        transaction.add_headers(preset_headers)
+        transaction.add_headers_if_nil(headers)
 
         transaction._sample
         expect(transaction).to include_environment(preset_headers)
       end
 
-      it "does not update the params with a block on the transaction" do
+      it "does not update the headers with a block on the transaction" do
         preset_headers = { "PATH_INFO" => "/first-path" }
         headers = { "PATH_INFO" => "/other-path" }
-        transaction.set_headers(preset_headers)
-        transaction.set_headers_if_nil { headers }
+        transaction.add_headers(preset_headers)
+        transaction.add_headers_if_nil { headers }
 
         transaction._sample
         expect(transaction).to include_environment(preset_headers)
@@ -811,12 +1014,12 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_tags" do
+  describe "#add_tags" do
     let(:transaction) { new_transaction }
     let(:long_string) { "a" * 10_001 }
 
     it "stores tags on the transaction" do
-      transaction.set_tags(
+      transaction.add_tags(
         :valid_key => "valid_value",
         "valid_string_key" => "valid_value",
         :both_symbols => :valid_value,
@@ -844,8 +1047,8 @@ describe Appsignal::Transaction do
     end
 
     it "merges the tags when called multiple times" do
-      transaction.set_tags(:key1 => "value1")
-      transaction.set_tags(:key2 => "value2")
+      transaction.add_tags(:key1 => "value1")
+      transaction.add_tags(:key2 => "value2")
       transaction._sample
 
       expect(transaction).to include_tags(
@@ -855,11 +1058,15 @@ describe Appsignal::Transaction do
     end
   end
 
-  describe "#set_custom_data" do
+  describe "#add_custom_data" do
     let(:transaction) { new_transaction }
 
-    it "stores custom Hash data on the transaction" do
-      transaction.set_custom_data(
+    it "has a #add_custom_data alias" do
+      expect(transaction.method(:add_custom_data)).to eq(transaction.method(:set_custom_data))
+    end
+
+    it "adds a custom Hash data to the transaction" do
+      transaction.add_custom_data(
         :user => {
           :id => 123,
           :locale => "abc"
@@ -883,8 +1090,8 @@ describe Appsignal::Transaction do
       )
     end
 
-    it "stores custom Array data on the transaction" do
-      transaction.set_custom_data([
+    it "adds a custom Array data to the transaction" do
+      transaction.add_custom_data([
         [123, "abc"],
         ["appsignal", "enterprise"]
       ])
@@ -899,39 +1106,42 @@ describe Appsignal::Transaction do
     it "does not store non Hash or Array custom data" do
       logs =
         capture_logs do
-          transaction.set_custom_data("abc")
+          transaction.add_custom_data("abc")
           transaction._sample
           expect(transaction).to_not include_custom_data
 
-          transaction.set_custom_data(123)
+          transaction.add_custom_data(123)
           transaction._sample
           expect(transaction).to_not include_custom_data
 
-          transaction.set_custom_data(Object.new)
+          transaction.add_custom_data(Object.new)
           transaction._sample
           expect(transaction).to_not include_custom_data
         end
 
       expect(logs).to contains_log(
         :error,
-        "set_custom_data: Unsupported data type String received."
+        %(Sample data 'custom_data': Unsupported data type 'String' received: "abc")
       )
       expect(logs).to contains_log(
         :error,
-        "set_custom_data: Unsupported data type Integer received."
+        %(Sample data 'custom_data': Unsupported data type 'Integer' received: 123)
       )
       expect(logs).to contains_log(
         :error,
-        "set_custom_data: Unsupported data type String received."
+        %(Sample data 'custom_data': Unsupported data type 'Object' received: #<Object:)
       )
     end
 
-    it "overwrites the custom data if called multiple times" do
-      transaction.set_custom_data("user" => { "id" => 123 })
-      transaction.set_custom_data("user" => { "id" => 456 })
+    it "merges the custom data if called multiple times" do
+      transaction.add_custom_data("abc" => "value")
+      transaction.add_custom_data("def" => "value")
 
       transaction._sample
-      expect(transaction).to include_custom_data("user" => { "id" => 456 })
+      expect(transaction).to include_custom_data(
+        "abc" => "value",
+        "def" => "value"
+      )
     end
   end
 
@@ -1201,14 +1411,22 @@ describe Appsignal::Transaction do
           expect(transaction).to_not include_params
         end
 
-      expect(logs).to contains_log :error,
-        %(Invalid sample data for 'params'. Value is not an Array or Hash: '"some string"')
-      expect(logs).to contains_log :error,
-        %(Invalid sample data for 'params'. Value is not an Array or Hash: '123')
-      expect(logs).to contains_log :error,
-        %(Invalid sample data for 'params'. Value is not an Array or Hash: '"#<Class>"')
-      expect(logs).to contains_log :error,
-        %(Invalid sample data for 'params'. Value is not an Array or Hash: '"#<Set>"')
+      expect(logs).to contains_log(
+        :error,
+        %(Sample data 'params': Unsupported data type 'String' received: "some string")
+      )
+      expect(logs).to contains_log(
+        :error,
+        %(Sample data 'params': Unsupported data type 'Integer' received: 123)
+      )
+      expect(logs).to contains_log(
+        :error,
+        %(Sample data 'params': Unsupported data type 'Class' received: #<Class)
+      )
+      expect(logs).to contains_log(
+        :error,
+        %(Sample data 'params': Unsupported data type 'Set' received: #<Set: {"some value"}>)
+      )
     end
 
     it "does not store data that can't be converted to JSON" do
@@ -1861,7 +2079,7 @@ describe Appsignal::Transaction do
       subject.resume!
       subject.paused?
       subject.store(:key)
-      subject.set_tags(:tag => 1)
+      subject.add_tags(:tag => 1)
       subject.set_action("action")
       subject.set_http_or_background_action
       subject.set_queue_start(1)

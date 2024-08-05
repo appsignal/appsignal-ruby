@@ -141,13 +141,14 @@ module Appsignal
         request_method = request_method_for(request)
         transaction.set_metadata("method", request_method) if request_method
 
-        transaction.set_params_if_nil { params_for(request) }
-        transaction.set_session_data_if_nil do
+        transaction.add_params { params_for(request) }
+        transaction.add_session_data do
           request.session if request.respond_to?(:session)
         end
-        transaction.set_headers_if_nil do
+        transaction.add_headers do
           request.env if request.respond_to?(:env)
         end
+
         queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
         transaction.set_queue_start(queue_start) if queue_start
       end

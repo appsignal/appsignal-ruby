@@ -24,9 +24,8 @@ module Appsignal
           # Format given arguments and cast to hash if possible
           params, _ = args
           params = params.to_hash if params.respond_to?(:to_hash)
-          transaction.set_params_if_nil(params)
-          transaction.set_params_if_nil(params)
           transaction.set_action(name)
+          transaction.add_params_if_nil(params)
           transaction.complete
         end
       end

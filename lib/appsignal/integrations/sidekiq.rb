@@ -41,7 +41,7 @@ module Appsignal
           transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
-          transaction.set_params_if_nil(:jobstr => sidekiq_context[:jobstr])
+          transaction.add_params_if_nil(:jobstr => sidekiq_context[:jobstr])
           transaction.set_error(exception)
         end
 
@@ -73,10 +73,10 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          transaction.set_params_if_nil { parse_arguments(item) }
+          transaction.add_params_if_nil { parse_arguments(item) }
           queue_start = (item["enqueued_at"].to_f * 1000.0).to_i # Convert seconds to milliseconds
           transaction.set_queue_start(queue_start)
-          transaction.set_tags(:request_id => item["jid"])
+          transaction.add_tags(:request_id => item["jid"])
           Appsignal::Transaction.complete_current! unless exception
 
           queue = item["queue"] || "unknown"

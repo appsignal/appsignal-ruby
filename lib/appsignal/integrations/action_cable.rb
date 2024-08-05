@@ -19,11 +19,11 @@ module Appsignal
           transaction.set_error(exception)
           raise exception
         ensure
-          transaction.set_params_if_nil(args.first)
           transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
+          transaction.add_params_if_nil(args.first)
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", "websocket")
-          transaction.set_tags(:request_id => request_id) if request_id
+          transaction.add_tags(:request_id => request_id) if request_id
           Appsignal::Transaction.complete_current!
         end
       end

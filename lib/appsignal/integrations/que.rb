@@ -16,8 +16,8 @@ module Appsignal
         ensure
           local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
           transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
-          transaction.set_params_if_nil(local_attrs[:args])
-          transaction.set_tags(
+          transaction.add_params_if_nil(local_attrs[:args])
+          transaction.add_tags(
             "id" => local_attrs[:job_id] || local_attrs[:id],
             "queue" => local_attrs[:queue],
             "run_at" => local_attrs[:run_at].to_s,

@@ -15,10 +15,10 @@ module Appsignal
         batch = sqs_msg.is_a?(Array)
         attributes = fetch_attributes(batch, sqs_msg)
         transaction.set_action_if_nil("#{worker_instance.class.name}#perform")
-        transaction.set_params_if_nil { fetch_args(batch, sqs_msg, body) }
-        transaction.set_tags(attributes)
-        transaction.set_tags("queue" => queue)
-        transaction.set_tags("batch" => true) if batch
+        transaction.add_params_if_nil { fetch_args(batch, sqs_msg, body) }
+        transaction.add_tags(attributes)
+        transaction.add_tags("queue" => queue)
+        transaction.add_tags("batch" => true) if batch
 
         if attributes.key?("SentTimestamp")
           transaction.set_queue_start(Time.at(attributes["SentTimestamp"].to_i).to_i)

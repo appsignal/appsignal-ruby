@@ -21,8 +21,8 @@ module Appsignal
               ResqueHelpers.arguments(payload),
               Appsignal.config[:filter_parameters]
             )
-          transaction.set_params_if_nil(args)
-          transaction.set_tags("queue" => queue)
+          transaction.add_params_if_nil(args)
+          transaction.add_tags("queue" => queue)
 
           Appsignal::Transaction.complete_current!
         end

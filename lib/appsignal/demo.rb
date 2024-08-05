@@ -70,14 +70,14 @@ module Appsignal
       end
 
       def add_params_to(transaction)
-        transaction.set_params(
+        transaction.add_params(
           "controller" => "demo",
           "action" => "hello"
         )
       end
 
       def add_headers_to(transaction)
-        transaction.set_headers(
+        transaction.add_headers(
           "REMOTE_ADDR" => "127.0.0.1",
           "REQUEST_METHOD" => "GET",
           "SERVER_NAME" => "localhost",

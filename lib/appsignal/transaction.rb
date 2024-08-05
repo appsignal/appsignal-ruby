@@ -95,7 +95,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :custom_data, :is_duplicate, :error_blocks
+      :breadcrumbs, :is_duplicate, :error_blocks
 
     # Use {.create} to create new transactions.
     #
@@ -110,15 +110,16 @@ module Appsignal
       @paused = false
       @discarded = false
       @tags = {}
-      @custom_data = nil
       @breadcrumbs = []
       @store = Hash.new({})
-      @params = nil
-      @session_data = nil
-      @headers = nil
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
       @error_set = nil
+
+      @params = Appsignal::SampleData.new(:params)
+      @session_data = Appsignal::SampleData.new(:session_data, Hash)
+      @headers = Appsignal::SampleData.new(:headers, Hash)
+      @custom_data = Appsignal::SampleData.new(:custom_data)
 
       @ext = ext || Appsignal::Extension.start_transaction(
         @transaction_id,
@@ -206,46 +207,40 @@ module Appsignal
       @store[key]
     end
 
-    # Set parameters on the transaction.
+    # Add parameters to the transaction.
     #
-    # When no parameters are set this way, the transaction will look for
-    # parameters on the {#request} environment.
-    #
-    # The parameters set using {#set_params} are leading over those extracted
-    # from a request's environment.
+    # When this method is called multiple times, it will merge the request parameters.
     #
     # When both the `given_params` and a block is given to this method, the
-    # `given_params` argument is leading and the block will _not_ be called.
+    # block is leading and the argument will _not_ be used.
     #
-    # @since 3.9.1
+    # @since 4.0.0
     # @param given_params [Hash] The parameters to set on the transaction.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
-    # @see Helpers::Instrumentation#set_params
-    def set_params(given_params = nil, &block)
-      @params = block if block
-      @params = given_params if given_params
+    # @see Helpers::Instrumentation#add_params
+    def add_params(given_params = nil, &block)
+      @params.add(given_params, &block)
     end
+    alias :set_params :add_params
 
-    # Set parameters on the transaction if not already set
+    # Add parameters to the transaction if not already set.
     #
-    # When no parameters are set this way, the transaction will look for
-    # parameters on the {#request} environment.
-    #
-    # @since 3.9.1
+    # @api private
+    # @since 4.0.0
     # @param given_params [Hash] The parameters to set on the transaction if none are already set.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
     #
-    # @see #set_params
-    # @see Helpers::Instrumentation#set_params_if_nil
-    def set_params_if_nil(given_params = nil, &block)
-      set_params(given_params, &block) unless @params
+    # @see #add_params
+    def add_params_if_nil(given_params = nil, &block)
+      add_params(given_params, &block) unless @params.value?
     end
+    alias :set_params_if_nil :add_params_if_nil
 
-    # Set tags on the transaction.
+    # Add tags to the transaction.
     #
     # When this method is called multiple times, it will merge the tags.
     #
@@ -256,32 +251,34 @@ module Appsignal
     #   The name of the tag as a String.
     # @return [void]
     #
-    # @see Helpers::Instrumentation#tag_request
+    # @see Helpers::Instrumentation#add_tags
     # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
     #   Tagging guide
-    def set_tags(given_tags = {})
+    def add_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
+    alias :set_tags add_tags
 
-    # Set session data on the transaction.
+    # Add session data to the transaction.
+    #
+    # When this method is called multiple times, it will merge the session data.
     #
     # When both the `given_session_data` and a block is given to this method,
-    # the `given_session_data` argument is leading and the block will _not_ be
-    # called.
+    # the block is leading and the argument will _not_ be used.
     #
     # @param given_session_data [Hash] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
     # @return [void]
     #
-    # @since 3.10.1
-    # @see Helpers::Instrumentation#set_session_data
+    # @since 4.0.0
+    # @see Helpers::Instrumentation#add_session_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
-    def set_session_data(given_session_data = nil, &block)
-      @session_data = block if block
-      @session_data = given_session_data if given_session_data
+    def add_session_data(given_session_data = nil, &block)
+      @session_data.add(given_session_data, &block)
     end
+    alias :set_session_data :add_session_data
 
     # Set session data on the transaction if not already set.
     #
@@ -294,73 +291,64 @@ module Appsignal
     #   return value will become the new session data.
     # @return [void]
     #
-    # @since 3.10.1
-    # @see #set_session_data
+    # @api private
+    # @since 4.0.0
+    # @see #add_session_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
-    def set_session_data_if_nil(given_session_data = nil, &block)
-      set_session_data(given_session_data, &block) unless @session_data
+    def add_session_data_if_nil(given_session_data = nil, &block)
+      add_session_data(given_session_data, &block) unless @session_data.value?
     end
+    alias :set_session_data_if_nil :add_session_data_if_nil
 
-    # Set headers on the transaction.
-    #
-    # When both the `given_headers` and a block is given to this method,
-    # the `given_headers` argument is leading and the block will _not_ be
-    # called.
+    # Add headers to the transaction.
     #
     # @param given_headers [Hash] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
     # @return [void]
     #
-    # @since 3.10.1
-    # @see Helpers::Instrumentation#set_headers
+    # @since 4.0.0
+    # @see Helpers::Instrumentation#add_headers
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
-    def set_headers(given_headers = nil, &block)
-      @headers = block if block
-      @headers = given_headers if given_headers
+    def add_headers(given_headers = nil, &block)
+      @headers.add(given_headers, &block)
     end
+    alias :set_headers :add_headers
 
-    # Set headers on the transaction if not already set.
+    # Add headers to the transaction if not already set.
     #
     # When both the `given_headers` and a block is given to this method,
-    # the `given_headers` argument is leading and the block will _not_ be
-    # called.
+    # the block is leading and the argument will _not_ be used.
     #
     # @param given_headers [Hash] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
     # @return [void]
     #
-    # @since 3.10.1
-    # @see #set_headers
+    # @api private
+    # @since 4.0.0
+    # @see #add_headers
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
-    def set_headers_if_nil(given_headers = nil, &block)
-      set_headers(given_headers, &block) unless @headers
+    def add_headers_if_nil(given_headers = nil, &block)
+      add_headers(given_headers, &block) unless @headers.value?
     end
+    alias :set_headers_if_nil :add_headers_if_nil
 
-    # Set custom data on the transaction.
+    # Add custom data to the transaction.
     #
-    # When this method is called multiple times, it will overwrite the
-    # previously set value.
-    #
-    # @since 3.10.0
-    # @see Appsignal.set_custom_data
+    # @since 4.0.0
+    # @see Helpers::Instrumentation#add_custom_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     # @param data [Hash/Array]
     # @return [void]
-    def set_custom_data(data)
-      case data
-      when Array, Hash
-        @custom_data = data
-      else
-        Appsignal.internal_logger
-          .error("set_custom_data: Unsupported data type #{data.class} received.")
-      end
+    def add_custom_data(data)
+      @custom_data.add(data)
     end
+    alias :set_custom_data :add_custom_data
 
     # Add breadcrumbs to the transaction.
     #
@@ -664,13 +652,7 @@ module Appsignal
 
     # @api private
     def params
-      return unless @params
-
-      if @params.respond_to? :call
-        @params.call
-      else
-        @params
-      end
+      @params.value
     rescue => e
       Appsignal.internal_logger.error("Exception while fetching params: #{e.class}: #{e}")
       nil
@@ -683,25 +665,8 @@ module Appsignal
       Appsignal::Utils::HashSanitizer.sanitize params, filter_keys
     end
 
-    def request_params
-      return unless request.respond_to?(options[:params_method])
-
-      begin
-        request.send options[:params_method]
-      rescue => e
-        Appsignal.internal_logger.warn "Exception while getting params: #{e}"
-        nil
-      end
-    end
-
     def session_data
-      return unless @session_data
-
-      if @session_data.respond_to? :call
-        @session_data.call
-      else
-        @session_data
-      end
+      @session_data.value
     rescue => e
       Appsignal.internal_logger.error \
         "Exception while fetching session data: #{e.class}: #{e}"
@@ -720,16 +685,12 @@ module Appsignal
       return unless Appsignal.config[:send_session_data]
 
       Appsignal::Utils::HashSanitizer.sanitize(
-        session_data&.to_hash, Appsignal.config[:filter_session_data]
+        session_data, Appsignal.config[:filter_session_data]
       )
     end
 
     def request_headers
-      if @headers.respond_to? :call
-        @headers.call
-      else
-        @headers
-      end
+      @headers.value
     rescue => e
       Appsignal.internal_logger.error \
         "Exception while fetching headers: #{e.class}: #{e}"
@@ -773,6 +734,13 @@ module Appsignal
       else
         backtrace
       end
+    end
+
+    def custom_data
+      @custom_data.value
+    rescue => e
+      Appsignal.internal_logger.error("Exception while fetching custom data: #{e.class}: #{e}")
+      nil
     end
 
     # Clean error messages that are known to potentially contain user data.

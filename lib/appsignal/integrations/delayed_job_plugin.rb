@@ -32,14 +32,14 @@ module Appsignal
           # ActiveJob
           job_data = payload.job_data
           transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
-          transaction.set_params_if_nil(job_data.fetch("arguments", {}))
+          transaction.add_params_if_nil(job_data.fetch("arguments", {}))
         else
           # Delayed Job
           transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
-          transaction.set_params_if_nil(extract_value(payload, :args, {}))
+          transaction.add_params_if_nil(extract_value(payload, :args, {}))
         end
 
-        transaction.set_tags(
+        transaction.add_tags(
           :id => extract_value(job, :id, nil, true),
           :queue => extract_value(job, :queue),
           :priority => extract_value(job, :priority, 0),

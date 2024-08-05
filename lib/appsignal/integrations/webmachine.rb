@@ -12,14 +12,14 @@ module Appsignal
           else
             Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
           end
+        transaction.add_params_if_nil { request.query }
+        transaction.add_headers_if_nil { request.headers if request.respond_to?(:headers) }
 
         Appsignal.instrument("process_action.webmachine") do
           super
         end
       ensure
         transaction.set_action_if_nil("#{resource.class.name}##{request.method}")
-        transaction.set_params_if_nil(request.query)
-        transaction.set_headers_if_nil { request.headers if request.respond_to?(:headers) }
 
         Appsignal::Transaction.complete_current! unless has_parent_transaction
       end
