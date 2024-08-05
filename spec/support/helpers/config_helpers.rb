@@ -11,6 +11,7 @@ module ConfigHelpers
       File.join(File.dirname(__FILE__), "../fixtures/projects/valid_with_rails_app")
     )
   end
+  module_function :rails_project_fixture_path
 
   def project_fixture_config( # rubocop:disable Metrics/ParameterLists
     env = "production",
