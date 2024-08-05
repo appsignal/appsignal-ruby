@@ -42,6 +42,10 @@ if DependencyHelper.rails_present?
         when :on_load
           described_class.on_load(app)
         when :after_initialize
+          # Must call both so no steps are missed
+          described_class.on_load(app)
+          described_class.after_initialize(app)
+        when :only_after_initialize
           described_class.after_initialize(app)
         else
           raise "Unsupported test event '#{event}'"
@@ -90,7 +94,11 @@ if DependencyHelper.rails_present?
         it "loads the Rails app name in the initial config" do
           initialize_railtie(event)
 
-          expect(Appsignal.config.initial_config[:name]).to eq "MyApp"
+          rails_defaults = Appsignal::Config.loader_defaults
+            .find { |loader| loader[:name] == :rails }
+          expect(rails_defaults[:options][:name]).to eq("MyApp")
+          expect(rails_defaults[:options][:log_path])
+            .to eq(Pathname.new(File.join(project_fixture_path, "log")))
         end
 
         it "loads the app name from the project's appsignal.yml file" do
@@ -181,7 +189,7 @@ if DependencyHelper.rails_present?
             app.config.appsignal.start_at = :after_initialize
             initialize_railtie(event)
 
-            expect(Appsignal.active?).to be_falsy
+            expect(Appsignal.started?).to be_falsy
             expect(Appsignal.config).to be_nil
           end
         end
@@ -199,11 +207,16 @@ if DependencyHelper.rails_present?
         end
 
         context "when start_at == :on_load" do
+          before do
+            Appsignal.clear_started!
+            Appsignal.clear_config!
+          end
+
           it "does not start AppSignal" do
             app.config.appsignal.start_at = :on_load
-            initialize_railtie(event)
+            initialize_railtie(:only_after_initialize)
 
-            expect(Appsignal.active?).to be_falsy
+            expect(Appsignal.started?).to be_falsy
             expect(Appsignal.config).to be_nil
           end
         end
