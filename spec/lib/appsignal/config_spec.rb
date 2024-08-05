@@ -1448,7 +1448,7 @@ describe Appsignal::Config do
         end
 
         expect(err_stream.read).to include(
-          "appsignal WARNING: The `Appsignal.configure`'s `app_path=` writer is deprecated."
+          "appsignal WARNING: The `Appsignal.configure`'s `app_path=` writer is deprecated"
         )
       end
 
@@ -1459,7 +1459,7 @@ describe Appsignal::Config do
 
         expect(logs).to contains_log(
           :warn,
-          "The `Appsignal.configure`'s `app_path=` writer is deprecated."
+          "The `Appsignal.configure`'s `app_path=` writer is deprecated"
         )
       end
     end
