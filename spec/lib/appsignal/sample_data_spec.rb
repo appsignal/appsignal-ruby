@@ -105,6 +105,21 @@ describe Appsignal::SampleData do
     end
   end
 
+  describe "#value" do
+    it "caches the block value after calling it once" do
+      Appsignal::Testing.store[:block_call] = 0
+      data.add do
+        Appsignal::Testing.store[:block_call] += 1
+        { :key => "value" }
+      end
+
+      expect(data.value).to eq(:key => "value")
+      data.value
+
+      expect(Appsignal::Testing.store[:block_call]).to eq(1)
+    end
+  end
+
   describe "#value?" do
     it "returns true when value is set" do
       data.add(["abc"])

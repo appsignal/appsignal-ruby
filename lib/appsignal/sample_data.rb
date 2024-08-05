@@ -21,12 +21,10 @@ module Appsignal
 
     def value
       value = nil
-      @blocks.each_with_index do |block_or_value, index|
+      @blocks.map! do |block_or_value|
         new_value =
           if block_or_value.respond_to?(:call)
-            v = block_or_value.call
-            @blocks[index] = v
-            v
+            block_or_value.call
           else
             block_or_value
           end
@@ -36,6 +34,7 @@ module Appsignal
         end
 
         value = merge_values(value, new_value)
+        new_value
       end
 
       value
