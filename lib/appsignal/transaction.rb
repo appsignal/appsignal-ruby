@@ -9,8 +9,6 @@ module Appsignal
     # @api private
     ACTION_CABLE   = "action_cable"
     # @api private
-    FRONTEND       = "frontend"
-    # @api private
     BLANK          = ""
     # @api private
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
