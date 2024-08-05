@@ -165,6 +165,16 @@ describe Appsignal do
         expect(Appsignal.config.env).to eq("env_arg")
       end
 
+      it "uses the given root path to read the config file" do
+        Appsignal.configure(:test, :path => project_fixture_path)
+
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("test")
+        expect(Appsignal.config[:push_api_key]).to eq("abc")
+        # Ensure it loads from the config file in the given path
+        expect(Appsignal.config.file_config).to_not be_empty
+      end
+
       it "loads the config without a block being given" do
         Dir.chdir project_fixture_path do
           Appsignal.configure(:test)
@@ -172,6 +182,8 @@ describe Appsignal do
 
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
+        # Ensure it loads from the config file in the current working directory
+        expect(Appsignal.config.file_config).to_not be_empty
       end
 
       it "allows customization of config in the block" do

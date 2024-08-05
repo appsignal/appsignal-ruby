@@ -622,8 +622,11 @@ module Appsignal
         @config.root_path
       end
 
-      def app_path=(path)
-        @config.root_path = path
+      def app_path=(_path)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning \
+          "The `Appsignal.configure`'s `app_path=` writer is deprecated. " \
+            "Use the `Appsignal.configure`'s method `path` keyword argument " \
+            "to set the root path."
       end
 
       def env

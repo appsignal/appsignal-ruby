@@ -234,18 +234,18 @@ module Appsignal
     # @see Config
     # @see https://docs.appsignal.com/ruby/configuration.html Configuration guide
     # @see https://docs.appsignal.com/ruby/configuration/options.html Configuration options
-    def configure(env = nil)
+    def configure(env = nil, path: nil)
       if Appsignal.started?
         Appsignal.internal_logger
           .warn("AppSignal is already started. Ignoring `Appsignal.configure` call.")
         return
       end
 
-      if config && (env.nil? || config.env == env.to_s)
+      if config && ((env.nil? || config.env == env.to_s) && (path.nil? || config.root_path == path))
         config
       else
         @config = Config.new(
-          Config.determine_root_path,
+          path || Config.determine_root_path,
           Config.determine_env(env),
           {},
           Appsignal.internal_logger,
