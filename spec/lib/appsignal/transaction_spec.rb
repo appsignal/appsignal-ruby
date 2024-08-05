@@ -346,7 +346,7 @@ describe Appsignal::Transaction do
         end
       end
 
-      it "merges metadata from from the original transaction in the duplicate transaction" do
+      it "merges sample data from the original transaction in the duplicate transaction" do
         transaction.add_tags("root" => "tag")
         transaction.add_params("root" => "param")
         transaction.add_session_data("root" => "session")
@@ -449,6 +449,63 @@ describe Appsignal::Transaction do
         expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "duplicate")
         expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "root2")
         expect(duplicate_transaction).to_not include_breadcrumb("breadcrumb", "original")
+      end
+
+      it "overrides sample data from the original transaction in the duplicate transaction" do
+        transaction.add_tags("changeme" => "tag")
+        transaction.add_params("changeme" => "param")
+        transaction.add_session_data("changeme" => "session")
+        transaction.add_headers("REQUEST_METHOD" => "root")
+        transaction.add_custom_data("changeme" => "custom")
+        Appsignal.report_error(error)
+        Appsignal.report_error(other_error) do |t|
+          t.add_tags("changeme" => "duplicate_tag")
+          t.add_params("changeme" => "duplicate_param")
+          t.add_session_data("changeme" => "duplicate_session")
+          t.add_headers("REQUEST_METHOD" => "duplicate")
+          t.add_custom_data("changeme" => "duplicate_custom")
+        end
+        transaction.add_tags("changeme" => "changed_tag")
+        transaction.add_params("changeme" => "changed_param")
+        transaction.add_session_data("changeme" => "changed_session")
+        transaction.add_headers("REQUEST_METHOD" => "changed")
+        transaction.add_custom_data("changeme" => "changed_custom")
+        transaction.complete
+
+        original_transaction, duplicate_transaction = created_transactions
+        # Original
+        expect(original_transaction).to include_tags(
+          "changeme" => "changed_tag"
+        )
+        expect(original_transaction).to include_params(
+          "changeme" => "changed_param"
+        )
+        expect(original_transaction).to include_session_data(
+          "changeme" => "changed_session"
+        )
+        expect(original_transaction).to include_environment(
+          "REQUEST_METHOD" => "changed"
+        )
+        expect(original_transaction).to include_custom_data(
+          "changeme" => "changed_custom"
+        )
+
+        # Duplicate
+        expect(duplicate_transaction).to include_tags(
+          "changeme" => "duplicate_tag"
+        )
+        expect(duplicate_transaction).to include_params(
+          "changeme" => "duplicate_param"
+        )
+        expect(duplicate_transaction).to include_session_data(
+          "changeme" => "duplicate_session"
+        )
+        expect(duplicate_transaction).to include_environment(
+          "REQUEST_METHOD" => "duplicate"
+        )
+        expect(duplicate_transaction).to include_custom_data(
+          "changeme" => "duplicate_custom"
+        )
       end
     end
   end
