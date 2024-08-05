@@ -1,4 +1,81 @@
 describe Appsignal::Config do
+  describe ".add_loader_defaults" do
+    it "adds loader defaults to the list" do
+      described_class.add_loader_defaults(:loader1)
+
+      expect(described_class.loader_defaults).to include(
+        :name => :loader1,
+        :root_path => nil,
+        :env => nil,
+        :options => {}
+      )
+    end
+
+    it "registers multiple loaders in order of registration" do
+      described_class.add_loader_defaults(:loader1)
+      described_class.add_loader_defaults(:loader2)
+
+      expect(described_class.loader_defaults).to eq([
+        {
+          :name => :loader1,
+          :root_path => nil,
+          :env => nil,
+          :options => {}
+        },
+        {
+          :name => :loader2,
+          :root_path => nil,
+          :env => nil,
+          :options => {}
+        }
+      ])
+    end
+
+    it "adds loader with env and root_path" do
+      described_class.add_loader_defaults(
+        :loader1,
+        :root_path => "/some-path",
+        :env => "loader_env1"
+      )
+
+      expect(described_class.loader_defaults).to include(
+        :name => :loader1,
+        :root_path => "/some-path",
+        :env => "loader_env1",
+        :options => {}
+      )
+    end
+
+    it "adds loader with options" do
+      described_class.add_loader_defaults(
+        :loader1,
+        :my_option1 => "some value1",
+        :my_option2 => "some value2"
+      )
+
+      expect(described_class.loader_defaults).to include(
+        :name => :loader1,
+        :root_path => nil,
+        :env => nil,
+        :options => {
+          :my_option1 => "some value1",
+          :my_option2 => "some value2"
+        }
+      )
+    end
+
+    it "does not set any nil options" do
+      described_class.add_loader_defaults(:loader1, :nil_option => nil)
+
+      expect(described_class.loader_defaults).to include(
+        :name => :loader1,
+        :root_path => nil,
+        :env => nil,
+        :options => {}
+      )
+    end
+  end
+
   describe ".determine_env" do
     context "with env argument" do
       before { clear_integration_env_vars! }
