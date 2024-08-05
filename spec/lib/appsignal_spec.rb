@@ -125,6 +125,28 @@ describe Appsignal do
         expect(Appsignal.config[:push_api_key]).to eq("key")
       end
 
+      it "loads a new config if the path is not the same" do
+        Appsignal._config = Appsignal::Config.new(
+          "/some/path",
+          :my_env,
+          :name => "Some name",
+          :push_api_key => "Some key",
+          :ignore_actions => ["My action"]
+        )
+
+        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+          expect(config.ignore_actions).to be_empty
+          config.active = true
+          config.name = "My app"
+          config.push_api_key = "key"
+        end
+        expect(Appsignal.config.valid?).to be(true)
+        expect(Appsignal.config.env).to eq("my_env")
+        expect(Appsignal.config[:active]).to be(true)
+        expect(Appsignal.config[:name]).to eq("My app")
+        expect(Appsignal.config[:push_api_key]).to eq("key")
+      end
+
       it "calls configure if not started yet" do
         Appsignal.configure(:my_env) do |config|
           config.active = false
@@ -165,6 +187,16 @@ describe Appsignal do
         expect(Appsignal.config.env).to eq("env_arg")
       end
 
+      it "uses the given root path to read the config file" do
+        Appsignal.configure(:test, :root_path => project_fixture_path)
+
+        Appsignal.start
+        expect(Appsignal.config.env).to eq("test")
+        expect(Appsignal.config[:push_api_key]).to eq("abc")
+        # Ensure it loads from the config file in the given path
+        expect(Appsignal.config.file_config).to_not be_empty
+      end
+
       it "loads the config without a block being given" do
         Dir.chdir project_fixture_path do
           Appsignal.configure(:test)
@@ -172,6 +204,8 @@ describe Appsignal do
 
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
+        # Ensure it loads from the config file in the current working directory
+        expect(Appsignal.config.file_config).to_not be_empty
       end
 
       it "allows customization of config in the block" do

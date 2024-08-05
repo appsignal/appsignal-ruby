@@ -212,7 +212,7 @@ module Appsignal
     # Initialize a new configuration object for AppSignal.
     #
     # @param root_path [String] Root path of the app.
-    # @param env [String] The environment to load when AppSignal is started. It
+    # @param initial_env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
     # @param initial_config [Hash<String, Object>] The initial configuration to
@@ -622,8 +622,12 @@ module Appsignal
         @config.root_path
       end
 
-      def app_path=(path)
-        @config.root_path = path
+      def app_path=(_path)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning \
+          "The `Appsignal.configure`'s `app_path=` writer is deprecated " \
+            "and can no longer be used to set the root path. " \
+            "Use the `Appsignal.configure`'s method `root_path` keyword argument " \
+            "to set the root path."
       end
 
       def env
