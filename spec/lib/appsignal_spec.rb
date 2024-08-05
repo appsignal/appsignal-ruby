@@ -678,24 +678,6 @@ describe Appsignal do
   context "not active" do
     before { Appsignal._config = project_fixture_config("not_active") }
 
-    describe ".listen_for_error" do
-      let(:error) { ExampleException.new("specific error") }
-
-      it "reraises the error" do
-        expect do
-          Appsignal.listen_for_error { raise error }
-        end.to raise_error(error)
-      end
-
-      it "does not create a transaction" do
-        expect do
-          expect do
-            Appsignal.listen_for_error { raise error }
-          end.to raise_error(error)
-        end.to_not(change { created_transactions.count })
-      end
-    end
-
     describe ".send_error" do
       let(:error) { ExampleException.new("specific error") }
 
@@ -1303,77 +1285,6 @@ describe Appsignal do
           expect(last_transaction).to have_namespace("my_namespace")
           expect(last_transaction).to have_action("my_action")
           expect(last_transaction).to have_error("StandardError", "my_error")
-        end
-      end
-    end
-
-    describe ".listen_for_error" do
-      around { |example| keep_transactions { example.run } }
-
-      it "prints and logs a deprecation warning" do
-        err_stream = std_stream
-        logs =
-          capture_logs do
-            capture_std_streams(std_stream, err_stream) do
-              Appsignal.listen_for_error do
-                # Do nothing
-              end
-            end
-          end
-        expect(err_stream.read)
-          .to include("appsignal WARNING: The `Appsignal.listen_for_error` helper is deprecated.")
-        expect(logs).to contains_log(
-          :warn,
-          "The `Appsignal.listen_for_error` helper is deprecated."
-        )
-      end
-
-      it "records the error and re-raise it" do
-        expect do
-          expect do
-            Appsignal.listen_for_error do
-              raise ExampleException, "I am an exception"
-            end
-          end.to raise_error(ExampleException, "I am an exception")
-        end.to change { created_transactions.count }.by(1)
-
-        # Default namespace
-        expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(last_transaction).to have_error("ExampleException", "I am an exception")
-        expect(last_transaction).to_not include_tags
-      end
-
-      context "with tags" do
-        it "adds tags to the transaction" do
-          expect do
-            expect do
-              Appsignal.listen_for_error("foo" => "bar") do
-                raise ExampleException, "I am an exception"
-              end
-            end.to raise_error(ExampleException, "I am an exception")
-          end.to change { created_transactions.count }.by(1)
-
-          # Default namespace
-          expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(last_transaction).to have_error("ExampleException", "I am an exception")
-          expect(last_transaction).to include_tags("foo" => "bar")
-        end
-      end
-
-      context "with a custom namespace" do
-        it "adds the namespace to the transaction" do
-          expect do
-            expect do
-              Appsignal.listen_for_error(nil, "custom_namespace") do
-                raise ExampleException, "I am an exception"
-              end
-            end.to raise_error(ExampleException, "I am an exception")
-          end.to change { created_transactions.count }.by(1)
-
-          # Default namespace
-          expect(last_transaction).to have_namespace("custom_namespace")
-          expect(last_transaction).to have_error("ExampleException", "I am an exception")
-          expect(last_transaction).to_not include_tags
         end
       end
     end
