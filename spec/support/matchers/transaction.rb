@@ -171,9 +171,9 @@ RSpec::Matchers.define :include_breadcrumb do |action, category, message, metada
     {
       "action" => action,
       "category" => category,
-      "message" => message,
-      "metadata" => metadata,
-      "time" => time
+      "message" => message || "",
+      "metadata" => metadata || {},
+      "time" => time || kind_of(Integer)
     }
   end
 end

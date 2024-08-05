@@ -120,4 +120,34 @@ describe Appsignal::SampleData do
       expect(data.value?).to be_falsey
     end
   end
+
+  describe "#duplicate" do
+    it "duplicates the internal Hash state without modifying the original" do
+      data = described_class.new(:my_key, Hash)
+      data.add(:abc => :value)
+
+      duplicate = data.dup
+      duplicate.add(:def => :value)
+
+      expect(data.value).to eq(:abc => :value)
+      expect(duplicate.value).to eq(:abc => :value, :def => :value)
+
+      expect(duplicate.instance_variable_get(:@key)).to eq(:my_key)
+      expect(duplicate.instance_variable_get(:@accepted_type)).to eq(Hash)
+    end
+
+    it "duplicates the internal Array state without modifying the original" do
+      data = described_class.new(:my_key, Array)
+      data.add([:abc])
+
+      duplicate = data.dup
+      duplicate.add([:def])
+
+      expect(data.value).to eq([:abc])
+      expect(duplicate.value).to eq([:abc, :def])
+
+      expect(duplicate.instance_variable_get(:@key)).to eq(:my_key)
+      expect(duplicate.instance_variable_get(:@accepted_type)).to eq(Array)
+    end
+  end
 end

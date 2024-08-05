@@ -296,10 +296,10 @@ describe Appsignal::Transaction do
           transaction.set_metadata("path", "/some/path")
           transaction.set_metadata("method", "GET")
           transaction.add_tags(tags)
-          transaction.set_params(params)
-          transaction.set_headers(headers)
-          transaction.set_session_data(session_data)
-          transaction.set_custom_data(custom_data)
+          transaction.add_params(params)
+          transaction.add_headers(headers)
+          transaction.add_session_data(session_data)
+          transaction.add_custom_data(custom_data)
           transaction.add_breadcrumb("category", "action", "message", { "meta" => "data" })
 
           transaction.start_event
@@ -344,6 +344,111 @@ describe Appsignal::Transaction do
           expect(original_transaction.is_duplicate).to be(false)
           expect(duplicate_transaction.is_duplicate).to be(true)
         end
+      end
+
+      it "merges metadata from from the original transaction in the duplicate transaction" do
+        transaction.add_tags("root" => "tag")
+        transaction.add_params("root" => "param")
+        transaction.add_session_data("root" => "session")
+        transaction.add_headers("REQUEST_METHOD" => "root")
+        transaction.add_custom_data("root" => "custom")
+        transaction.add_breadcrumb("root", "breadcrumb")
+        Appsignal.report_error(error) do |t|
+          t.add_tags("original" => "tag")
+          t.add_params("original" => "param")
+          t.add_session_data("original" => "session")
+          t.add_headers("REQUEST_PATH" => "/original")
+          t.add_custom_data("original" => "custom")
+          t.add_breadcrumb("original", "breadcrumb")
+        end
+        Appsignal.report_error(other_error) do |t|
+          t.add_tags("duplicate" => "tag")
+          t.add_params("duplicate" => "param")
+          t.add_session_data("duplicate" => "session")
+          t.add_headers("HTTP_ACCEPT" => "duplicate")
+          t.add_custom_data("duplicate" => "custom")
+          t.add_breadcrumb("duplicate", "breadcrumb")
+        end
+        transaction.add_tags("root2" => "tag")
+        transaction.add_params("root2" => "param")
+        transaction.add_session_data("root2" => "session")
+        transaction.add_headers("PATH_INFO" => "/root2")
+        transaction.add_custom_data("root2" => "custom")
+        transaction.add_breadcrumb("root2", "breadcrumb")
+        transaction.complete
+
+        original_transaction, duplicate_transaction = created_transactions
+        # Original
+        expect(original_transaction).to include_tags(
+          "root" => "tag",
+          "original" => "tag",
+          "root2" => "tag"
+        )
+        expect(original_transaction).to_not include_tags("duplicate" => anything)
+        expect(original_transaction).to include_params(
+          "root" => "param",
+          "original" => "param",
+          "root2" => "param"
+        )
+        expect(original_transaction).to_not include_params("duplicate" => anything)
+        expect(original_transaction).to include_session_data(
+          "root" => "session",
+          "original" => "session",
+          "root2" => "session"
+        )
+        expect(original_transaction).to_not include_session_data("duplicate" => anything)
+        expect(original_transaction).to include_environment(
+          "REQUEST_METHOD" => "root",
+          "REQUEST_PATH" => "/original",
+          "PATH_INFO" => "/root2"
+        )
+        expect(original_transaction).to_not include_environment("HTTP_ACCEPT" => anything)
+        expect(original_transaction).to include_custom_data(
+          "root" => "custom",
+          "original" => "custom",
+          "root2" => "custom"
+        )
+        expect(original_transaction).to_not include_custom_data("duplicate" => anything)
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "root")
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "original")
+        expect(original_transaction).to include_breadcrumb("breadcrumb", "root2")
+        expect(original_transaction).to_not include_breadcrumb("breadcrumb", "duplicate")
+
+        # Duplicate
+        expect(duplicate_transaction).to include_tags(
+          "root" => "tag",
+          "duplicate" => "tag",
+          "root2" => "tag"
+        )
+        expect(duplicate_transaction).to_not include_tags("original" => anything)
+        expect(duplicate_transaction).to include_params(
+          "root" => "param",
+          "duplicate" => "param",
+          "root2" => "param"
+        )
+        expect(duplicate_transaction).to_not include_params("original" => anything)
+        expect(duplicate_transaction).to include_session_data(
+          "root" => "session",
+          "duplicate" => "session",
+          "root2" => "session"
+        )
+        expect(duplicate_transaction).to_not include_session_data("original" => anything)
+        expect(duplicate_transaction).to include_environment(
+          "PATH_INFO" => "/root2",
+          "HTTP_ACCEPT" => "duplicate",
+          "REQUEST_METHOD" => "root"
+        )
+        expect(duplicate_transaction).to_not include_environment("REQUEST_PATH" => anything)
+        expect(duplicate_transaction).to include_custom_data(
+          "root" => "custom",
+          "duplicate" => "custom",
+          "root2" => "custom"
+        )
+        expect(duplicate_transaction).to_not include_custom_data("original" => anything)
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "root")
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "duplicate")
+        expect(duplicate_transaction).to include_breadcrumb("breadcrumb", "root2")
+        expect(duplicate_transaction).to_not include_breadcrumb("breadcrumb", "original")
       end
     end
   end

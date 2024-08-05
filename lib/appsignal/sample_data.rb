@@ -45,7 +45,19 @@ module Appsignal
       @blocks.any?
     end
 
+    protected
+
+    attr_reader :blocks
+
     private
+
+    # Method called by `dup` and `clone` to create a duplicate instance.
+    # Make sure the `@blocks` variable is also properly duplicated.
+    def initialize_copy(original)
+      super
+
+      @blocks = original.blocks.dup
+    end
 
     def accepted_type?(value)
       if @accepted_type
