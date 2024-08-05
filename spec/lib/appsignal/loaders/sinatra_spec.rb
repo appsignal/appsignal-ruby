@@ -5,13 +5,12 @@ if DependencyHelper.sinatra_present?
         ::Sinatra::Application.settings.root = "/some/path"
         load_loader(:sinatra)
 
-        expect(Appsignal::Config.loader_defaults).to include([
-          :sinatra,
-          {
-            :env => :test,
-            :root_path => "/some/path"
-          }
-        ])
+        expect(Appsignal::Config.loader_defaults).to include(
+          :name => :sinatra,
+          :root_path => "/some/path",
+          :env => :test,
+          :options => {}
+        )
       end
     end
 

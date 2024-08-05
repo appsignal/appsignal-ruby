@@ -4,13 +4,12 @@ if DependencyHelper.hanami_present?
       it "registers Hanami default config" do
         load_loader(:hanami)
 
-        expect(Appsignal::Config.loader_defaults).to include([
-          :hanami,
-          {
-            :env => :test,
-            :root_path => Dir.pwd
-          }
-        ])
+        expect(Appsignal::Config.loader_defaults).to include(
+          :name => :hanami,
+          :root_path => Dir.pwd,
+          :env => :test,
+          :options => {}
+        )
       end
     end
 

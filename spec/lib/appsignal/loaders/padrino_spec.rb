@@ -4,13 +4,12 @@ if DependencyHelper.padrino_present?
       it "registers Padrino default config" do
         load_loader(:padrino)
 
-        expect(Appsignal::Config.loader_defaults).to include([
-          :padrino,
-          {
-            :env => :test,
-            :root_path => Padrino.mounted_root
-          }
-        ])
+        expect(Appsignal::Config.loader_defaults).to include(
+          :name => :padrino,
+          :root_path => Padrino.mounted_root,
+          :env => :test,
+          :options => {}
+        )
       end
     end
 

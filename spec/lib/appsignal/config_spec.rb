@@ -222,6 +222,63 @@ describe Appsignal::Config do
     end
   end
 
+  describe "loader default config" do
+    let(:config) { described_class.new("some-path", "production") }
+    before do
+      define_loader(:options_loader) do
+        def on_load
+          register_config_defaults(
+            :env => "loader_env",
+            :root_path => "loader-path",
+            :ignore_actions => ["loader-action"],
+            :my_option => "my_value",
+            :nil_option => nil
+          )
+        end
+      end
+      load_loader(:options_loader)
+    end
+
+    it "overrides the default config option values" do
+      expect(config[:ignore_actions]).to eq(["loader-action"])
+    end
+
+    it "does not set any nil values" do
+      expect(config.config_hash).to_not have_key(:nil_option)
+    end
+
+    it "does not set the env" do
+      # This is done by Config.determine_env
+      expect(config.env).to eq("production")
+    end
+
+    it "does not set the root_path" do
+      # This is done by Config.determine_root_path
+      expect(config.root_path).to eq("some-path")
+    end
+
+    context "with multiple loaders" do
+      before do
+        define_loader(:options_loader2) do
+          def on_load
+            register_config_defaults(
+              :my_option => "second_value",
+              :second_option => "second_value"
+            )
+          end
+        end
+        load_loader(:options_loader2)
+      end
+
+      it "makes the first loader's config leading" do
+        expect(config.config_hash).to include(
+          :my_option => "my_value",
+          :second_option => "second_value"
+        )
+      end
+    end
+  end
+
   describe "initial config" do
     let(:initial_config) do
       {
@@ -317,6 +374,28 @@ describe Appsignal::Config do
           end
         end
       end
+    end
+  end
+
+  describe "overriding loader config" do
+    let(:config) do
+      described_class.new(
+        "non-existing-path",
+        "production",
+        :my_option => "initial value"
+      )
+    end
+    before do
+      define_loader(:test_loader) do
+        def on_load
+          register_config_defaults(:my_option => "loader value")
+        end
+      end
+      load_loader(:test_loader)
+    end
+
+    it "overrides loader config" do
+      expect(config[:my_option]).to eq("initial value")
     end
   end
 
