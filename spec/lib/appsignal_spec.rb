@@ -1571,6 +1571,24 @@ describe Appsignal do
     describe ".listen_for_error" do
       around { |example| keep_transactions { example.run } }
 
+      it "prints and logs a deprecation warning" do
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Appsignal.listen_for_error do
+                # Do nothing
+              end
+            end
+          end
+        expect(err_stream.read)
+          .to include("appsignal WARNING: The `Appsignal.listen_for_error` helper is deprecated.")
+        expect(logs).to contains_log(
+          :warn,
+          "The `Appsignal.listen_for_error` helper is deprecated."
+        )
+      end
+
       it "records the error and re-raise it" do
         expect do
           expect do
