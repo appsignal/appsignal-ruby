@@ -243,6 +243,7 @@ describe Appsignal::Config do
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :enable_allocation_tracking     => true,
+        :enable_at_exit_reporter        => true,
         :enable_gvl_global_timer        => true,
         :enable_gvl_waiting_threads     => true,
         :enable_host_metrics            => true,
@@ -482,6 +483,7 @@ describe Appsignal::Config do
         :cpu_count => 1.5,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :enable_allocation_tracking => false,
+        :enable_at_exit_reporter => false,
         :enable_gvl_global_timer => false,
         :enable_gvl_waiting_threads => false,
         :enable_host_metrics => false,
@@ -547,6 +549,7 @@ describe Appsignal::Config do
         # Booleans
         "APPSIGNAL_ACTIVE" => "true",
         "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => "false",
+        "APPSIGNAL_ENABLE_AT_EXIT_REPORTER" => "false",
         "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => "false",
         "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => "false",
         "APPSIGNAL_ENABLE_HOST_METRICS" => "false",
