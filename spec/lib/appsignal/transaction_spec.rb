@@ -1320,6 +1320,18 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when a block is given" do
+      it "stores the block in the error blocks" do
+        block = proc { "block" }
+
+        transaction.add_error(error, &block)
+
+        expect(transaction.error_blocks).to eq({
+          error => [block]
+        })
+      end
+    end
+
     context "when no error is set in the transaction" do
       it "sets the error on the transaction" do
         transaction.add_error(error)
@@ -1331,10 +1343,10 @@ describe Appsignal::Transaction do
         )
       end
 
-      it "does stores the error in the errors array" do
+      it "does store the error in the errors" do
         transaction.add_error(error)
 
-        expect(transaction.errors).to eq([error])
+        expect(transaction.error_blocks).to eq({ error => [] })
       end
     end
 
@@ -1347,10 +1359,13 @@ describe Appsignal::Transaction do
 
       before { transaction.set_error(other_error) }
 
-      it "stores an error in the errors array" do
+      it "stores an error in the errors" do
         transaction.add_error(error)
 
-        expect(transaction.errors).to eq([other_error, error])
+        expect(transaction.error_blocks).to eq({
+          other_error => [],
+          error => []
+        })
       end
 
       it "does not set the error on the extension" do
@@ -1367,31 +1382,45 @@ describe Appsignal::Transaction do
     context "when the error has already been added" do
       before { transaction.add_error(error) }
 
-      it "does not add the error to the errors array" do
-        expect(transaction.errors).to eq([error])
+      it "does not add the error to the errors" do
+        expect(transaction.error_blocks).to eq({ error => [] })
 
         transaction.add_error(error)
 
-        expect(transaction.errors).to eq([error])
+        expect(transaction.error_blocks).to eq({ error => [] })
+      end
+
+      context "when a block is given" do
+        it "adds the block to the error blocks" do
+          block = proc { "block" }
+
+          transaction.add_error(error, &block)
+
+          expect(transaction.error_blocks).to eq({ error => [block] })
+        end
       end
     end
 
-    context "when the errors array is at the limit" do
+    context "when the errors is at the limit" do
+      let(:seen_error) { ExampleStandardError.new("error 0") }
+
       before do
-        10.times do |i|
+        transaction.add_error(seen_error)
+
+        9.times do |i|
           transaction.add_error(ExampleStandardError.new("error #{i}"))
         end
       end
 
-      it "does not add the error to the errors array" do
+      it "does not add a new error to the errors" do
         expect(transaction).to have_error("ExampleStandardError", "error 0", [])
-        expect(transaction.errors.length).to eq(10)
-        expected_errors = transaction.errors.dup
+        expect(transaction.error_blocks.length).to eq(10)
+        expected_error_blocks = transaction.error_blocks.dup
 
         transaction.add_error(error)
 
         expect(transaction).to have_error("ExampleStandardError", "error 0", [])
-        expect(transaction.errors).to eq(expected_errors)
+        expect(transaction.error_blocks).to eq(expected_error_blocks)
       end
 
       it "logs a debug message" do
@@ -1402,6 +1431,34 @@ describe Appsignal::Transaction do
           "Appsignal::Transaction#add_error: Transaction has more than 10 distinct errors. " \
             "Only the first 10 distinct errors will be reported."
         )
+      end
+
+      context "when the error has already been added" do
+        it "does not add the error to the errors" do
+          expect(transaction.error_blocks.length).to eq(10)
+
+          transaction.add_error(seen_error)
+
+          expect(transaction.error_blocks.length).to eq(10)
+        end
+
+        it "does add the block to the error blocks" do
+          block = proc { "block" }
+
+          transaction.add_error(seen_error, &block)
+
+          expect(transaction.error_blocks[seen_error]).to eq([block])
+        end
+
+        it "does not log a debug message" do
+          logs = capture_logs { transaction.add_error(seen_error) }
+
+          expect(logs).to_not contains_log(
+            :warn,
+            "Appsignal::Transaction#add_error: Transaction has more than 10 distinct errors. " \
+              "Only the first 10 distinct errors will be reported."
+          )
+        end
       end
     end
   end
@@ -1415,10 +1472,10 @@ describe Appsignal::Transaction do
       expect(transaction).to respond_to(:add_exception)
     end
 
-    it "does not add the error to the errors array" do
+    it "does not add the error to the errors" do
       transaction.send(:_set_error, error)
 
-      expect(transaction.errors).to be_empty
+      expect(transaction.error_blocks).to be_empty
     end
 
     context "for a http request" do

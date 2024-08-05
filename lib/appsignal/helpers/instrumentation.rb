@@ -115,7 +115,7 @@ module Appsignal
         if has_parent_transaction
           callers = caller
           Appsignal::Utils::StdoutAndLoggerMessage.warning \
-            "An active transaction around this 'Appsignal.monitor' call. " \
+            "A transaction is active around this 'Appsignal.monitor' call. " \
               "Calling `Appsignal.monitor` in another `Appsignal.monitor` block has no effect. " \
               "The namespace and action are not updated for the active transaction." \
               "Did you mean to use `Appsignal.instrument`? " \
@@ -240,7 +240,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       # @since 0.6.0
-      def send_error(error)
+      def send_error(error, &block)
         return unless active?
 
         unless error.is_a?(Exception)
@@ -248,12 +248,12 @@ module Appsignal
             "The given value is not an exception: #{error.inspect}"
           return
         end
+
         transaction = Appsignal::Transaction.new(
           SecureRandom.uuid,
           Appsignal::Transaction::HTTP_REQUEST
         )
-        transaction.set_error(error)
-        yield transaction if block_given?
+        transaction.set_error(error, &block)
         transaction.complete
       end
       alias :send_exception :send_error
@@ -360,7 +360,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       # @since 3.10.0
-      def report_error(exception)
+      def report_error(exception, &block)
         unless exception.is_a?(Exception)
           internal_logger.error "Appsignal.report_error: Cannot add error. " \
             "The given value is not an exception: #{exception.inspect}"
@@ -369,9 +369,8 @@ module Appsignal
         return unless active?
 
         has_parent_transaction = Appsignal::Transaction.current?
-        should_use_parent_transaction = has_parent_transaction && !block_given?
         transaction =
-          if should_use_parent_transaction
+          if has_parent_transaction
             Appsignal::Transaction.current
           else
             Appsignal::Transaction.new(
@@ -380,12 +379,9 @@ module Appsignal
             )
           end
 
-        transaction.add_error(exception)
-        yield transaction if block_given?
+        transaction.add_error(exception, &block)
 
-        return if should_use_parent_transaction
-
-        transaction.complete
+        transaction.complete unless has_parent_transaction
       end
       alias :report_exception :report_error
 
