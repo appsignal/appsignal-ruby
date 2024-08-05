@@ -18,16 +18,16 @@ module Appsignal
           $stdout.sync = true
 
           puts
-          puts colorize "#######################################", :green
-          puts colorize "## Starting AppSignal Installer      ##", :green
-          puts colorize "## --------------------------------- ##", :green
-          puts colorize "## Need help?  support@appsignal.com ##", :green
-          puts colorize "## Docs?       docs.appsignal.com    ##", :green
-          puts colorize "#######################################", :green
+          puts colorize "############################################", :green
+          puts colorize "## Starting AppSignal Installer           ##", :green
+          puts colorize "## -------------------------------------- ##", :green
+          puts colorize "## Need help?  support@appsignal.com      ##", :green
+          puts colorize "## Docs:       https://docs.appsignal.com ##", :green
+          puts colorize "############################################", :green
           puts
           unless push_api_key
             puts colorize "Problem encountered:", :red
-            puts "  No push API key entered."
+            puts "  No Push API key entered."
             puts "  - Sign up for AppSignal and follow the instructions"
             puts "  - Already signed up? Click 'Add app' on the account overview page"
             puts
@@ -37,22 +37,25 @@ module Appsignal
           config = new_config
           config[:push_api_key] = push_api_key
 
-          print "Validating API key"
+          print "Validating Push API key"
           periods
           puts
           begin
             auth_check = Appsignal::AuthCheck.new(config)
             unless auth_check.perform == "200"
-              puts "\n  API key '#{config[:push_api_key]}' is not valid, please get a new one on https://appsignal.com"
+              print colorize("  Error:", :red)
+              puts " Push API key '#{config[:push_api_key]}' is not valid. " \
+                "Please get a new one at https://appsignal.com/accounts"
               return
             end
           rescue => e
-            puts "  There was an error validating your API key:"
+            print colorize("  Error:", :red)
+            puts "There was an error validating your Push API key:"
             puts colorize "'#{e}'", :red
-            puts "  Please try again"
+            puts "  Please check the Push API key and try again"
             return
           end
-          puts colorize "  API key valid!", :green
+          puts colorize "  Push API key valid!", :green
           puts
 
           if installed_frameworks.include?(:rails)
@@ -66,12 +69,7 @@ module Appsignal
           elsif installed_frameworks.include?(:sinatra)
             install_for_sinatra(config)
           else
-            print colorize "Warning:", :red
-            puts " We could not detect which framework you are using. " \
-              "We'd be very grateful if you email us on support@appsignal.com " \
-              "with information about your setup."
-            puts
-            done_notice
+            install_for_unknown_framework(config)
           end
         end
 
@@ -119,11 +117,18 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Sinatra configuration"
-          puts "  Sinatra requires some manual configuration."
-          puts "  Add this line beneath require 'sinatra':"
+          puts "Sinatra installation"
+          puts "  Sinatra apps requires some manual setup."
+          puts "  Update the `config.ru` (or the application's main file) to " \
+            "look like this:"
           puts
-          puts "  require 'appsignal/integrations/sinatra'"
+          puts %(require "appsignal")
+          puts %(require "sinatra" # or require "sinatra/base")
+          puts
+          puts "Appsignal.load(:sinatra) # Load the Sinatra integration"
+          puts "Appsignal.start # Start AppSignal"
+          puts
+          puts "# Rest of the config.ru file"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/sinatra.html"
@@ -137,11 +142,14 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Padrino installation"
-          puts "  Padrino requires some manual configuration."
-          puts "  After installing the gem, add the following line to /config/boot.rb:"
+          puts "Padrino installation"
+          puts "  Padrino apps requires some manual setup."
+          puts "  After installing the gem, add the following lines to `config/boot.rb`:"
           puts
-          puts "  require 'appsignal/integrations/padrino"
+          puts %(require "appsignal")
+          puts
+          puts "Appsignal.load(:padrino) # Load the Padrino integration"
+          puts "Appsignal.start # Start AppSignal"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/padrino.html"
@@ -157,7 +165,8 @@ module Appsignal
 
           configure(config, %w[development production staging], true)
 
-          puts "Manual Grape configuration needed"
+          puts "Grape installation"
+          puts "  Grape apps require some manual setup."
           puts "  See the installation instructions at:"
           puts "  https://docs.appsignal.com/ruby/integrations/grape.html"
           press_any_key
@@ -170,11 +179,17 @@ module Appsignal
           puts
           configure(config, %w[development production staging], true)
 
-          puts "Finish Hanami installation"
-          puts "  Hanami requires some manual configuration."
-          puts "  After installing the gem, add the following line to config.ru:"
+          puts "Hanami installation"
+          puts "  Hanami apps requires some manual setup."
+          puts "  Update the config.ru file to include the following:"
           puts
-          puts "  require 'appsignal/integrations/hanami'"
+          puts %(  require "appsignal")
+          puts %(  require "hanami/boot")
+          puts
+          puts "Appsignal.load(:hanami) # Load the Hanami integration"
+          puts "Appsignal.start # Start AppSignal"
+          puts
+          puts "# Rest of the config.ru file"
           puts
           puts "  You can find more information in the documentation:"
           puts "  https://docs.appsignal.com/ruby/integrations/hanami.html"
@@ -195,6 +210,23 @@ module Appsignal
           periods
           puts
           puts
+        end
+
+        def install_for_unknown_framework(config)
+          puts "Installing"
+          config[:name] = required_input("  Enter application name: ")
+          puts
+          configure(config, %w[development production staging], true)
+
+          puts colorize "Warning: We could not detect which framework you are using", :red
+          puts "  Some manual installation is most likely required."
+          puts "  Please check our documentation for supported libraries: "
+          puts "  https://docs.appsignal.com/ruby/integrations.html"
+          puts
+          puts "  We'd be very grateful if you email us on " \
+            "support@appsignal.com with information about your setup."
+          press_any_key
+          done_notice
         end
 
         def configure(config, environments, name_overwritten)
@@ -240,29 +272,27 @@ module Appsignal
         end
 
         def done_notice
-          sleep 0.3
-          puts colorize "#####################################", :green
-          puts colorize "## AppSignal installation complete ##", :green
-          puts colorize "#####################################", :green
-          sleep 0.3
-          puts
           if Gem.win_platform?
-            puts "The AppSignal agent currently does not work on Microsoft " \
+            print colorize "Warning:", :red
+            puts " The AppSignal agent currently does not work on Microsoft " \
               "Windows. Please push these changes to your staging/production " \
               "environment and make sure some actions are performed. " \
-              "AppSignal should pick up your app after a few minutes."
+              "AppSignal will pick up your app after a few minutes."
           else
-            puts "  Sending example data to AppSignal..."
+            puts "Sending example data to AppSignal..."
             if Appsignal::Demo.transmit
               puts "  Example data sent!"
               puts "  It may take about a minute for the data to appear on https://appsignal.com/accounts"
-              puts
-              puts "  Please return to your browser and follow the instructions."
             else
-              puts "  Couldn't start the AppSignal agent and send example data to AppSignal.com"
-              puts "  Please use `appsignal diagnose` to debug your configuration."
+              print colorize "Error:", :red
+              puts " Couldn't start the AppSignal agent and send example data to AppSignal.com"
+              puts "  Please contact us at support@appsignal.com and " \
+                "send us a diagnose report using `appsignal diagnose`."
+              return
             end
           end
+          puts
+          puts "Please return to your browser and follow the instructions."
         end
 
         def installed_frameworks
@@ -281,7 +311,7 @@ module Appsignal
         def framework_available?(framework_file)
           require framework_file
           true
-        rescue LoadError
+        rescue LoadError, NameError
           false
         end
 
