@@ -18,6 +18,7 @@ _Published on 2024-08-05._
     raise "some error"
   end
 
+  # After
   begin
     raise "some error"
   rescue => error
