@@ -180,7 +180,10 @@ module Appsignal
       # @see .send_error
       # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
       #   AppSignal integration guide
+      # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
+      #   Exception handling guide
       #
+      # @deprecated Use `rescue => error` with {.report_error} instead.
       # @param tags [Hash, nil]
       # @param namespace [String] the namespace for this error.
       # @yield yields the given block.
