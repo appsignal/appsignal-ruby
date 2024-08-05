@@ -224,24 +224,28 @@ module Appsignal
     #   # Or for the environment given as an argument
     #   Appsignal.configure(:production)
     #
+    # @param env [String, Symbol] The environment to load.
+    # @param root_path [String] The path to look the `config/appsignal.yml` config file in.
+    #   Defaults to the current working directory.
     # @yield [Config] Gives the {Config} instance to the block.
     # @return [void]
     # @see config
     # @see Config
     # @see https://docs.appsignal.com/ruby/configuration.html Configuration guide
     # @see https://docs.appsignal.com/ruby/configuration/options.html Configuration options
-    def configure(env = nil)
+    def configure(env = nil, root_path: nil)
       if Appsignal.started?
         Appsignal.internal_logger
           .warn("AppSignal is already started. Ignoring `Appsignal.configure` call.")
         return
       end
 
-      if config && (env.nil? || config.env == env.to_s)
+      if config && ((env.nil? || config.env == env.to_s) &&
+          (root_path.nil? || config.root_path == root_path))
         config
       else
         @config = Config.new(
-          Config.determine_root_path,
+          root_path || Config.determine_root_path,
           Config.determine_env(env),
           {},
           Appsignal.internal_logger,

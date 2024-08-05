@@ -1,5 +1,41 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.12.6
+
+_Published on 2024-08-05._
+
+### Changed
+
+- Configure AppSignal with the install CLI when no known frameworks is found. Automate the configure step so that this doesn't have to be done manually along with the manual setup for the app. (patch [a9c546fa](https://github.com/appsignal/appsignal-ruby/commit/a9c546fa86afbec290cd8439a559bf60cad21fc8))
+
+### Deprecated
+
+- Deprecate the `Appsignal.listen_for_error` helper. Use a manual error rescue with `Appsignal.report_error`. This method allows for more customization of the reported error.
+
+  ```ruby
+  # Before
+  Appsignal.listen_for_error do
+    raise "some error"
+  end
+
+  # After
+  begin
+    raise "some error"
+  rescue => error
+    Appsignal.report_error(error)
+  end
+  ```
+
+  Read our [Exception handling guide](https://docs.appsignal.com/ruby/instrumentation/exception-handling.html) for more information.
+
+  (patch [14bd8882](https://github.com/appsignal/appsignal-ruby/commit/14bd88824dea2993cb0165bbbed0def29d69f72a))
+- Deprecate the `Appsignal.configure`'s `app_path` writer. Use the `Appsignal.configure`'s `root_path` keyword argument to configure the path. (patch [c79f46c3](https://github.com/appsignal/appsignal-ruby/commit/c79f46c3cd96ac51726a963f38999bfb3c246d52))
+
+### Fixed
+
+- Fix an error on the Padrino require in the installer CLI. The latest Padrino version will crash the installer on load. Ignore the error when it fails to load. (patch [dfe23707](https://github.com/appsignal/appsignal-ruby/commit/dfe23707f769ff818714ee7cf14340f9472ce2e4))
+- Fix the `Appsignal.configure` path config not being customizable. It's now possible to pass a `root_path` keyword argument to `Appsignal.configure` to customize the path from which AppSignal reads the config file, `config/appsignal.yml`. (patch [c79f46c3](https://github.com/appsignal/appsignal-ruby/commit/c79f46c3cd96ac51726a963f38999bfb3c246d52))
+
 ## 3.12.5
 
 _Published on 2024-08-01._
