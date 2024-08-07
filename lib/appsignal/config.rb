@@ -14,8 +14,13 @@ module Appsignal
     end
 
     # @api private
-    def self.add_loader_defaults(name, options)
-      loader_defaults << [name, options]
+    def self.add_loader_defaults(name, env: nil, root_path: nil, **options)
+      loader_defaults << {
+        :name => name,
+        :env => env,
+        :root_path => root_path,
+        :options => options.compact
+      }
     end
 
     # Determine which env AppSignal should initialize with.
@@ -30,7 +35,7 @@ module Appsignal
         return env if env
       end
 
-      loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
+      loader_defaults.reverse.each do |loader_defaults|
         env = loader_defaults[:env]
         return env if env
       end
@@ -41,7 +46,7 @@ module Appsignal
     # Determine which root path AppSignal should initialize with.
     # @api private
     def self.determine_root_path
-      loader_defaults.reverse.each do |(_loader_name, loader_defaults)|
+      loader_defaults.reverse.each do |loader_defaults|
         root_path = loader_defaults[:root_path]
         return root_path if root_path
       end
@@ -269,6 +274,13 @@ module Appsignal
       # Set config based on the system
       @system_config = detect_from_system
       merge(system_config)
+
+      # Set defaults from loaders in reverse order so the first register
+      # loader's defaults overwrite all others
+      self.class.loader_defaults.reverse.each do |loader_defaults|
+        defaults = loader_defaults[:options]
+        merge(defaults)
+      end
 
       # Merge initial config
       merge(initial_config)

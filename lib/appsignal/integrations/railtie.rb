@@ -27,6 +27,13 @@ module Appsignal
       end
 
       def self.on_load(app)
+        Appsignal::Config.add_loader_defaults(
+          :rails,
+          :root_path => Rails.root,
+          :env => Rails.env,
+          :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
+          :log_path => Rails.root.join("log")
+        )
         Appsignal::Integrations::Railtie.add_instrumentation_middleware(app)
 
         return unless app.config.appsignal.start_at == :on_load
@@ -39,14 +46,6 @@ module Appsignal
       end
 
       def self.start
-        unless Appsignal.config
-          Appsignal._config = Appsignal::Config.new(
-            Rails.root,
-            Rails.env,
-            :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
-            :log_path => Rails.root.join("log")
-          )
-        end
         Appsignal.start
         initialize_error_reporter
       end

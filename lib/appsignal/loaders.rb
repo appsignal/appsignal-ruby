@@ -85,7 +85,7 @@ module Appsignal
       end
 
       def register_config_defaults(options)
-        Appsignal::Config.add_loader_defaults(self.class.loader_name, options)
+        Appsignal::Config.add_loader_defaults(self.class.loader_name, **options)
       end
     end
   end

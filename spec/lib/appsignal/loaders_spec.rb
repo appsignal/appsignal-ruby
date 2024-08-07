@@ -50,7 +50,14 @@ describe Appsignal::Loaders do
       end
       Appsignal::Loaders.load(:test_loader)
 
-      expect(Appsignal::Config.loader_defaults).to eq([[:test_loader, { :my_option => true }]])
+      expect(Appsignal::Config.loader_defaults).to eq([
+        {
+          :name => :test_loader,
+          :env => nil,
+          :root_path => nil,
+          :options => { :my_option => true }
+        }
+      ])
     end
 
     it "does not load errors that aren't registered" do
