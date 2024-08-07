@@ -24,9 +24,22 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
   describe ".run" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:config) { project_fixture_config }
+    let(:root_path) { project_fixture_path }
+    let(:app_name) { "TestApp" }
+    let(:push_api_key) { "abc" }
+    let(:environment) { "production" }
+    let(:config) do
+      {
+        :root_path => root_path,
+        :environment => environment.to_s,
+        :name => app_name,
+        :endpoint => Appsignal::Config::DEFAULT_CONFIG[:endpoint],
+        :push_api_key => push_api_key,
+        :hostname => nil
+      }
+    end
     let(:cli_class) { described_class }
-    let(:options) { { :environment => config.env } }
+    let(:options) { { :environment => environment } }
     let(:gem_path) { Bundler::CLI::Common.select_spec("appsignal").full_gem_path.strip }
     let(:received_report) { DiagnosticsReportEndpoint.received_report }
     let(:process_user) { Etc.getpwuid(Process.uid).name }
@@ -43,7 +56,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       if DependencyHelper.rails_present?
-        allow(Rails).to receive(:root).and_return(Pathname.new(config.root_path))
+        allow(Rails).to receive(:root).and_return(Pathname.new(config[:root_path]))
       end
     end
     around do |example|
@@ -87,7 +100,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       stub_request(:post, "https://appsignal.com/diag").with(
         :query => {
           :api_key => config[:push_api_key],
-          :environment => config.env,
+          :environment => config[:environment],
           :gem_version => Appsignal::VERSION,
           :hostname => config[:hostname],
           :name => config[:name]
@@ -114,7 +127,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
     it "logs to the log file" do
       run
-      log_contents = File.read(config.log_file_path)
+      log_contents = File.read(Appsignal.config.log_file_path)
       expect(log_contents).to contains_log :info, "Starting AppSignal diagnose"
     end
 
@@ -741,7 +754,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
     describe "configuration" do
       context "without environment" do
-        let(:config) { project_fixture_config(nil) }
+        let(:app_name) { nil }
+        let(:environment) { nil }
+        let(:push_api_key) { nil }
         let(:options) { {} }
         let(:warning_message) do
           "    Warning: No environment set, no config loaded!\n" \
@@ -800,13 +815,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
             it "outputs the label source after the value" do
               expect(output).to include(
-                %(environment: "#{Appsignal.config.env}" (Loaded from: initial)\n)
+                %(environment: "#{environment}" (Loaded from: initial)\n)
               )
             end
           end
 
           context "when the source is the RACK_ENV env variable", :send_report => :no_cli_option do
-            let(:config) { project_fixture_config("rack_env") }
+            let(:environment) { "rack_env" }
             let(:options) { {} }
             before do
               ENV["RACK_ENV"] = "rack_env"
@@ -822,7 +837,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           context "when the source is the RAILS_ENV env variable", :send_report => :no_cli_option do
-            let(:config) { project_fixture_config("rails_env") }
+            let(:environment) { "rails_env" }
             let(:options) { {} }
             before do
               ENV.delete("RACK_ENV")
@@ -918,24 +933,24 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         it "transmits config in report" do
           run
           additional_initial_config = {}
+          final_config = Appsignal.config.config_hash
+            .merge(:env => "production")
           if DependencyHelper.rails_present?
+            final_config.merge!(:log_path => Appsignal.config[:log_path].to_s)
             additional_initial_config = {
               :name => "MyApp",
-              :log_path => File.join(Rails.root, "log")
+              :log_path => File.join(Rails.root, "log").to_s
             }
           end
-          final_config = { "env" => "production" }
-            .merge(additional_initial_config)
-            .merge(config.config_hash)
-          expect(received_report["config"]).to match(
+          expect(received_report["config"]).to include(
             "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
               "initial" => hash_with_string_keys(
-                config.initial_config.merge(additional_initial_config)
+                Appsignal.config.initial_config.merge(additional_initial_config)
               ),
-              "file" => hash_with_string_keys(config.file_config),
+              "file" => hash_with_string_keys(Appsignal.config.file_config),
               "env" => {},
               "override" => {}
             }
@@ -944,7 +959,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       context "with unconfigured environment" do
-        let(:config) { project_fixture_config("foobar") }
+        let(:app_name) { nil }
+        let(:push_api_key) { nil }
+        let(:environment) { "foobar" }
         before { run_within_dir tmp_dir }
 
         it "outputs environment" do
@@ -958,12 +975,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits config in report" do
           expect(received_report["config"]).to match(
-            "options" => hash_with_string_keys(config.config_hash).merge("env" => "foobar"),
+            "options" => hash_with_string_keys(
+              Appsignal.config.config_hash.merge("env" => "foobar")
+            ),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
-              "initial" => hash_with_string_keys(config.initial_config),
-              "file" => hash_with_string_keys(config.file_config),
+              "initial" => hash_with_string_keys(Appsignal.config.initial_config),
+              "file" => hash_with_string_keys(Appsignal.config.file_config),
               "env" => {},
               "override" => {}
             }
@@ -1078,18 +1097,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     end
 
     describe "paths" do
-      let(:config) { Appsignal::Config.new(root_path, "production") }
-      let(:root_path) { tmp_dir }
-      let(:system_tmp_dir) { Appsignal::Config.system_tmp_dir }
-      before do
-        FileUtils.mkdir_p(root_path)
-        FileUtils.mkdir_p(system_tmp_dir)
-      end
-      after { FileUtils.rm_rf([root_path, system_tmp_dir]) }
-
       describe "report" do
         it "adds paths to the report" do
-          run_within_dir root_path
+          run
           expect(received_report["paths"].keys).to match_array(
             %w[
               package_install_path root_path working_dir log_dir_path
@@ -1099,15 +1109,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         describe "working_dir" do
-          before { run_within_dir root_path }
+          before { run }
 
           it "outputs current path" do
-            expect(output).to include %(Current working directory\n    Path: "#{tmp_dir}")
+            expect(output).to include %(Current working directory\n    Path: "#{root_path}")
           end
 
           it "transmits path data in report" do
             expect(received_report["paths"]["working_dir"]).to match(
-              "path" => tmp_dir,
+              "path" => root_path,
               "exists" => true,
               "type" => "directory",
               "mode" => kind_of(String),
@@ -1123,7 +1133,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         describe "root_path" do
-          before { run_within_dir root_path }
+          before { run }
 
           it "outputs root path" do
             expect(output).to include %(Root path\n    Path: "#{root_path}")
@@ -1147,7 +1157,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         describe "package_install_path" do
-          before { run_within_dir root_path }
+          before { run }
 
           it "outputs gem install path" do
             expect(output).to match %(AppSignal gem path\n    Path: "#{gem_path}")
@@ -1171,15 +1181,16 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         describe "log_dir_path" do
-          before { run_within_dir root_path }
+          let(:log_path) { File.dirname(Appsignal.config.log_file_path) }
+          before { run }
 
           it "outputs log directory path" do
-            expect(output).to match %(Log directory\n    Path: "#{system_tmp_dir}")
+            expect(output).to match %(Log directory\n    Path: "#{log_path}")
           end
 
           it "transmits path data in report" do
             expect(received_report["paths"]["log_dir_path"]).to match(
-              "path" => system_tmp_dir,
+              "path" => log_path,
               "exists" => true,
               "type" => "directory",
               "mode" => kind_of(String),
@@ -1197,15 +1208,16 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       context "when a directory does not exist" do
         let(:root_path) { tmp_dir }
+        let(:environment) { nil }
+        let(:push_api_key) { nil }
+        let(:app_name) { nil }
+        let(:options) { {} }
         let(:execution_path) { File.join(tmp_dir, "not_existing_dir") }
-        let(:config) do
-          silence(:allowed => ["Push api key not set after loading config"]) do
-            Appsignal::Config.new(execution_path, "production")
-          end
-        end
         before do
+          clear_integration_env_vars!
           allow(Dir).to receive(:pwd).and_return(execution_path)
-          run_within_dir tmp_dir
+          FileUtils.rm_rf(execution_path)
+          run_within_dir root_path
         end
 
         it "outputs not existing path" do
@@ -1222,7 +1234,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       context "when not writable" do
         let(:root_path) { File.join(tmp_dir, "not_writable_path") }
+        let(:environment) { nil }
+        let(:push_api_key) { nil }
+        let(:app_name) { nil }
+        let(:options) { {} }
         before do
+          clear_integration_env_vars!
+          FileUtils.mkdir_p(root_path)
           FileUtils.chmod(0o555, root_path)
           run_within_dir root_path
         end
@@ -1250,7 +1268,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       context "when writable" do
         let(:root_path) { File.join(tmp_dir, "writable_path") }
+        let(:environment) { nil }
+        let(:push_api_key) { nil }
+        let(:app_name) { nil }
+        let(:options) { {} }
         before do
+          clear_integration_env_vars!
+          FileUtils.mkdir_p(root_path)
           FileUtils.chmod(0o755, root_path)
           run_within_dir root_path
         end
@@ -1277,6 +1301,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       describe "ownership" do
+        let(:environment) { nil }
+        let(:push_api_key) { nil }
+        let(:app_name) { nil }
+        let(:options) { {} }
+        before do
+          clear_integration_env_vars!
+          FileUtils.mkdir_p(root_path)
+        end
+
         context "when a directory is owned by the current user" do
           let(:root_path) { File.join(tmp_dir, "owned_path") }
           before { run_within_dir root_path }
