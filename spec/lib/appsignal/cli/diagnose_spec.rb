@@ -907,25 +907,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
               run
             end
 
-            if DependencyHelper.rails_present?
-              it "outputs a list of sources with their values" do
-                expect(output).to include(
-                  "  name: \"MyApp\"\n" \
-                    "    Sources:\n" \
-                    "      initial: \"MyApp\"\n" \
-                    "      file:    \"TestApp\"\n" \
-                    "      env:     \"MyApp\"\n"
-                )
-              end
-            else
-              it "outputs a list of sources with their values" do
-                expect(output).to include(
-                  "  name: \"MyApp\"\n" \
-                    "    Sources:\n" \
-                    "      file: \"TestApp\"\n" \
-                    "      env:  \"MyApp\"\n"
-                )
-              end
+            it "outputs a list of sources with their values" do
+              expect(output).to include(
+                "  name: \"MyApp\"\n" \
+                  "    Sources:\n" \
+                  "      file: \"TestApp\"\n" \
+                  "      env:  \"MyApp\"\n"
+              )
             end
           end
         end
@@ -935,13 +923,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           additional_initial_config = {}
           final_config = Appsignal.config.config_hash
             .merge(:env => "production")
-          if DependencyHelper.rails_present?
-            final_config.merge!(:log_path => Appsignal.config[:log_path].to_s)
-            additional_initial_config = {
-              :name => "MyApp",
-              :log_path => File.join(Rails.root, "log").to_s
-            }
-          end
           expect(received_report["config"]).to include(
             "options" => hash_with_string_keys(final_config),
             "sources" => {
