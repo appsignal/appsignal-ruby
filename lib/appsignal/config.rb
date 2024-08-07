@@ -204,8 +204,8 @@ module Appsignal
 
     # @api private
     attr_accessor :root_path, :env, :config_hash
-    attr_reader :system_config, :initial_config, :file_config, :env_config,
-      :override_config, :dsl_config
+    attr_reader :system_config, :loaders_config, :initial_config, :file_config,
+      :env_config, :override_config, :dsl_config
     # @api private
     attr_accessor :logger
 
@@ -249,6 +249,7 @@ module Appsignal
       @env = initial_env.to_s
       @config_hash = {}
       @system_config = {}
+      @loaders_config = {}
       @initial_config = initial_config
       @file_config = {}
       @env_config = {}
@@ -279,6 +280,10 @@ module Appsignal
       # loader's defaults overwrite all others
       self.class.loader_defaults.reverse.each do |loader_defaults|
         defaults = loader_defaults[:options]
+        @loaders_config.merge!(defaults.merge(
+          :root_path => loader_defaults[:root_path],
+          :env => loader_defaults[:env]
+        ))
         merge(defaults)
       end
 

@@ -794,10 +794,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "sources" => {
               "default" => default_config,
               "system" => {},
+              "loaders" => {},
               "initial" => { "env" => "" },
               "file" => {},
               "env" => {},
-              "override" => {}
+              "override" => {},
+              "dsl" => {}
             }
           )
         end
@@ -954,10 +956,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
+              "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
               "file" => hash_with_string_keys(Appsignal.config.file_config),
               "env" => {},
-              "override" => {}
+              "override" => {},
+              "dsl" => {}
             }
           )
         end
@@ -986,10 +990,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
+              "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
               "file" => hash_with_string_keys(Appsignal.config.file_config),
               "env" => {},
-              "override" => {}
+              "override" => {},
+              "dsl" => {}
             }
           )
         end

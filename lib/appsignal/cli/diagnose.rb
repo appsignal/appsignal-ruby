@@ -473,10 +473,12 @@ module Appsignal
             :sources => {
               :default => Appsignal::Config::DEFAULT_CONFIG,
               :system => config.system_config,
+              :loaders => config.loaders_config,
               :initial => config.initial_config,
               :file => config.file_config,
               :env => config.env_config,
-              :override => config.override_config
+              :override => config.override_config,
+              :dsl => config.dsl_config
             }
           }
           print_config_options(config)
