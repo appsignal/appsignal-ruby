@@ -899,31 +899,46 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           context "when the source is multiple sources" do
+            let(:app_name) { "MyApp" }
             before do
-              ENV["APPSIGNAL_APP_NAME"] = "MyApp"
-              config[:name] = ENV.fetch("APPSIGNAL_APP_NAME", nil)
-              stub_api_request(config, "auth").to_return(:status => 200)
-              capture_diagnatics_report_request
+              ENV["APPSIGNAL_APP_NAME"] = app_name
               run
             end
 
-            if DependencyHelper.rails_present?
-              it "outputs a list of sources with their values" do
+            it "outputs a list of sources with their values" do
+              expect(output).to include(
+                "  name: \"MyApp\"\n" \
+                  "    Sources:\n" \
+                  "      file: \"TestApp\"\n" \
+                  "      env:  \"MyApp\"\n"
+              )
+            end
+          end
+
+          if DependencyHelper.rails_present?
+            context "when is a Rails app" do
+              let(:root_path) { rails_project_fixture_path }
+              let(:app_name) { "TestApp" }
+              let(:environment) { "test" }
+              let(:options) { {} }
+              before { run_within_dir(root_path) }
+
+              it "outputs Rails default config with their values" do
                 expect(output).to include(
-                  "  name: \"MyApp\"\n" \
+                  "  name: \"TestApp\"\n" \
                     "    Sources:\n" \
                     "      initial: \"MyApp\"\n" \
-                    "      file:    \"TestApp\"\n" \
-                    "      env:     \"MyApp\"\n"
+                    "      file:    \"TestApp\"\n"
                 )
               end
-            else
-              it "outputs a list of sources with their values" do
-                expect(output).to include(
-                  "  name: \"MyApp\"\n" \
-                    "    Sources:\n" \
-                    "      file: \"TestApp\"\n" \
-                    "      env:  \"MyApp\"\n"
+
+              it "transmits config in report with Rails defaults" do
+                expect(received_report["config"]["sources"]).to include(
+                  "initial" => {
+                    "env" => "test",
+                    "log_path" => File.join(rails_project_fixture_path, "log"),
+                    "name" => "MyApp"
+                  }
                 )
               end
             end
@@ -932,24 +947,14 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits config in report" do
           run
-          additional_initial_config = {}
           final_config = Appsignal.config.config_hash
             .merge(:env => "production")
-          if DependencyHelper.rails_present?
-            final_config.merge!(:log_path => Appsignal.config[:log_path].to_s)
-            additional_initial_config = {
-              :name => "MyApp",
-              :log_path => File.join(Rails.root, "log").to_s
-            }
-          end
-          expect(received_report["config"]).to include(
+          expect(received_report["config"]).to match(
             "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
               "system" => {},
-              "initial" => hash_with_string_keys(
-                Appsignal.config.initial_config.merge(additional_initial_config)
-              ),
+              "initial" => hash_with_string_keys(Appsignal.config.initial_config),
               "file" => hash_with_string_keys(Appsignal.config.file_config),
               "env" => {},
               "override" => {}

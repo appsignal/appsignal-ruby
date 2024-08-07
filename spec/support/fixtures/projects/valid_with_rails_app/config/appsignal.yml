@@ -1,0 +1,56 @@
+default: &defaults
+  push_api_key: "abc"
+  name: "TestApp"
+  enable_minutely_probes: false
+
+production:
+  <<: *defaults
+  active: true
+
+development:
+  <<: *defaults
+  active: true
+
+test:
+  <<: *defaults
+  log_level: debug
+  active: true
+
+old_config:
+  api_key: "def"
+  active: true
+  ignore_exceptions:
+    - StandardError
+  request_headers: [
+    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",
+    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",
+    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",
+    "REQUEST_METHOD", "REQUEST_PATH", "SERVER_NAME", "SERVER_PORT",
+    "SERVER_PROTOCOL", "HTTP_USER_AGENT"
+  ]
+
+old_config_mixed_with_new_config:
+  push_api_key: "ghi"
+  api_key: "def"
+  active: true
+  ignore_errors:
+    - NoMethodError
+  ignore_exceptions:
+    - StandardError
+  request_headers: [
+    "HTTP_ACCEPT", "HTTP_ACCEPT_CHARSET", "HTTP_ACCEPT_ENCODING",
+    "HTTP_ACCEPT_LANGUAGE", "HTTP_CACHE_CONTROL", "HTTP_CONNECTION",
+    "CONTENT_LENGTH", "PATH_INFO", "HTTP_RANGE", "HTTP_REFERER",
+    "REQUEST_METHOD", "REQUEST_PATH", "SERVER_NAME", "SERVER_PORT",
+    "SERVER_PROTOCOL", "HTTP_USER_AGENT"
+  ]
+
+rack_env:
+  <<: *defaults
+
+rails_env:
+  <<: *defaults
+
+inactive_env:
+  <<: *defaults
+  active: false
