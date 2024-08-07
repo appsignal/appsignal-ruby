@@ -4,7 +4,7 @@ module ApiRequestHelper
       :query => {
         :api_key => config[:push_api_key],
         :name => config[:name],
-        :environment => config.env,
+        :environment => config.respond_to?(:env) ? config.env : config[:environment],
         :hostname => config[:hostname],
         :gem_version => Appsignal::VERSION
       },
