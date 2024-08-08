@@ -622,9 +622,7 @@ describe Appsignal::Config do
     let(:config) do
       described_class.new(
         "non-existing-path",
-        "production",
-        :running_in_container => true,
-        :debug => true
+        "production"
       )
     end
     let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
@@ -787,12 +785,12 @@ describe Appsignal::Config do
 
     context "with mixed case `true` env variables values" do
       before do
-        ENV["APPSIGNAL_DEBUG"] = "TRUE"
+        ENV["APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION"] = "TRUE"
         ENV["APPSIGNAL_INSTRUMENT_SEQUEL"] = "True"
       end
 
       it "accepts mixed case `true` values" do
-        expect(config[:debug]).to eq(true)
+        expect(config[:enable_rake_performance_instrumentation]).to eq(true)
         expect(config[:instrument_sequel]).to eq(true)
       end
     end
