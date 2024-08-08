@@ -257,10 +257,6 @@ module Appsignal
 
       return unless load_on_new
 
-      # Always override environment if set via this env var.
-      # TODO: This is legacy behavior. In the `Appsignal.configure` method the
-      # env argument is leading.
-      @env = ENV["APPSIGNAL_APP_ENV"] if ENV.key?("APPSIGNAL_APP_ENV")
       load_config
       validate
     end

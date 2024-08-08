@@ -203,15 +203,8 @@ describe Appsignal::Config do
           let(:env_env) { "my_env_env" }
           before { ENV["APPSIGNAL_APP_ENV"] = env_env }
 
-          it "uses the environment variable" do
-            expect(config.env).to eq(env_env)
-          end
-
           it "sets the environment as loaded through the env_config" do
-            expect(config.initial_config).to eq(:env => env)
             expect(config.env_config).to eq(:env => env_env)
-            expect(config.config_hash).to_not have_key(:env)
-            expect(config.config_hash).to_not have_key(:root_path)
           end
         end
       end
