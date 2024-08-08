@@ -34,7 +34,6 @@ if DependencyHelper.active_job_present?
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }
-    let(:log) { StringIO.new }
     let(:parameterized_given_args) do
       {
         :foo => "Foo",
@@ -77,7 +76,6 @@ if DependencyHelper.active_job_present?
       ActiveJob::Base.queue_adapter = :inline
 
       start_agent(:options => options)
-      Appsignal.internal_logger = test_logger(log)
       class ActiveJobTestJob < ActiveJob::Base
         def perform(*_args)
         end

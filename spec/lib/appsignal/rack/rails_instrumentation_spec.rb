@@ -2,7 +2,6 @@ if DependencyHelper.rails_present?
   describe Appsignal::Rack::RailsInstrumentation do
     class MockController; end
 
-    let(:log) { StringIO.new }
     let(:transaction) { new_transaction }
     let(:app) { DummyApp.new }
     let(:params) do
@@ -30,7 +29,6 @@ if DependencyHelper.rails_present?
     around { |example| keep_transactions { example.run } }
     before do
       start_agent
-      Appsignal.internal_logger = test_logger(log)
       env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
     end
 
@@ -105,10 +103,10 @@ if DependencyHelper.rails_present?
       it "does not store the invalid HTTP request method" do
         env[:request_method] = "FOO"
         env["REQUEST_METHOD"] = "FOO"
-        make_request
+        logs = capture_logs { make_request }
 
         expect(last_transaction).to_not include_metadata("method" => anything)
-        expect(log_contents(log)).to contains_log(
+        expect(logs).to contains_log(
           :error,
           "Exception while fetching the HTTP request method: "
         )
