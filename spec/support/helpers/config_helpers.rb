@@ -13,18 +13,16 @@ module ConfigHelpers
   end
   module_function :rails_project_fixture_path
 
-  def project_fixture_config( # rubocop:disable Metrics/ParameterLists
+  def project_fixture_config(
     env = "production",
     initial_config = {},
-    logger = Appsignal.internal_logger,
-    config_file = nil
+    logger = Appsignal.internal_logger
   )
     Appsignal::Config.new(
       project_fixture_path,
       env,
       initial_config,
-      logger,
-      config_file
+      logger
     )
   end
   module_function :project_fixture_config, :project_fixture_path
