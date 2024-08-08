@@ -32,7 +32,11 @@ module ConfigHelpers
   def start_agent(env: "production", options: {})
     env = "production" if env == :default
     env ||= "production"
-    Appsignal._config = project_fixture_config(env, options)
+    Appsignal.configure(env, :root_path => project_fixture_path) do |config|
+      options.each do |option, value|
+        config.send("#{option}=", value)
+      end
+    end
     Appsignal.start
   end
 

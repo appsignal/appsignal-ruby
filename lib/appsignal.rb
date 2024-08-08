@@ -36,16 +36,6 @@ module Appsignal
     # @see Config
     attr_reader :config
 
-    # @api private
-    def _config=(conf)
-      if started?
-        internal_logger.warn("Ignoring `Appsignal._config=` call after AppSignal has started")
-        return
-      end
-
-      @config = conf
-    end
-
     # Accessor for toggle if the AppSignal C-extension is loaded.
     #
     # Can be `nil` if extension has not been loaded yet. See
