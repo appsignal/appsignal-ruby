@@ -293,10 +293,6 @@ module Appsignal
       # Track origin of env
       env_loaded_from_env = ENV.fetch("APPSIGNAL_APP_ENV", nil)
       @env_config[:env] = env_loaded_from_env if env_loaded_from_env
-
-      # Load config overrides
-      @override_config = determine_overrides
-      merge(override_config)
     end
 
     # @api private
@@ -419,6 +415,10 @@ module Appsignal
 
     # @api private
     def validate
+      # Apply any overrides for invalid settings.
+      @override_config = determine_overrides
+      merge(override_config)
+
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.
       # TODO: Move to its own method, maybe in `#[]=`?

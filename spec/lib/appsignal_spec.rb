@@ -46,6 +46,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:name]).to eq("My app")
@@ -64,6 +66,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -84,6 +88,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env2")
         expect(Appsignal.config[:active]).to be(true)
@@ -104,6 +110,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -125,6 +133,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -138,23 +148,23 @@ describe Appsignal do
         Appsignal.configure(:test) do |config|
           config.push_api_key = "key"
         end
-
         Appsignal.start
+
         expect(Appsignal.config[:push_api_key]).to eq("key")
       end
 
       it "uses the given env" do
         ENV["APPSIGNAL_APP_ENV"] = "env_env"
         Appsignal.configure(:env_arg)
-
         Appsignal.start
+
         expect(Appsignal.config.env).to eq("env_arg")
       end
 
       it "uses the given root path to read the config file" do
         Appsignal.configure(:test, :root_path => project_fixture_path)
-
         Appsignal.start
+
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the given path
@@ -165,6 +175,7 @@ describe Appsignal do
         Dir.chdir project_fixture_path do
           Appsignal.configure(:test)
         end
+        Appsignal.start
 
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
@@ -176,6 +187,7 @@ describe Appsignal do
         Appsignal.configure(:test) do |config|
           config.push_api_key = "key"
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("test")
@@ -202,6 +214,7 @@ describe Appsignal do
         Appsignal.configure(:my_env) do |config|
           config.push_api_key = "key"
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(true)
       end
@@ -210,6 +223,7 @@ describe Appsignal do
         Appsignal.configure(:my_env) do |config|
           config.push_api_key = ""
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(false)
       end
@@ -532,6 +546,7 @@ describe Appsignal do
     context "when active" do
       before do
         Appsignal.configure(:production, :root_path => project_fixture_path)
+        Appsignal.start
       end
 
       it "starts the logger and extension" do
@@ -592,13 +607,19 @@ describe Appsignal do
     end
 
     context "with inactive config" do
-      before { Appsignal.configure(:nonsense, :root_path => project_fixture_path) }
+      before do
+        Appsignal.configure(:nonsense, :root_path => project_fixture_path)
+        Appsignal.start
+      end
 
       it { is_expected.to be_falsy }
     end
 
     context "with active config" do
-      before { Appsignal.configure(:production, :root_path => project_fixture_path) }
+      before do
+        Appsignal.configure(:production, :root_path => project_fixture_path)
+        Appsignal.start
+      end
 
       it { is_expected.to be_truthy }
     end
@@ -623,7 +644,10 @@ describe Appsignal do
   end
 
   context "not active" do
-    before { Appsignal.configure(:not_active, :root_path => project_fixture_path) }
+    before do
+      Appsignal.configure(:not_active, :root_path => project_fixture_path)
+      Appsignal.start
+    end
 
     describe ".send_error" do
       let(:error) { ExampleException.new("specific error") }
