@@ -244,7 +244,6 @@ module Appsignal
           Config.determine_env(env),
           {},
           Appsignal.internal_logger,
-          nil,
           false
         )
         config.load_config
