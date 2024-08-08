@@ -111,7 +111,8 @@ module Appsignal
 
       internal_logger.debug("Loading AppSignal gem")
 
-      @config ||= Config.new(Config.determine_root_path, Config.determine_env).tap(&:validate)
+      @config ||= Config.new(Config.determine_root_path, Config.determine_env)
+      @config.validate
 
       _start_logger
 
@@ -248,11 +249,10 @@ module Appsignal
       end
 
       config_dsl = Appsignal::Config::ConfigDSL.new(config)
-      if block_given?
-        yield config_dsl
-        config.merge_dsl_options(config_dsl.dsl_options)
-      end
-      config.validate
+      return unless block_given?
+
+      yield config_dsl
+      config.merge_dsl_options(config_dsl.dsl_options)
     end
 
     def forked
