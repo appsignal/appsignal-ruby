@@ -593,7 +593,7 @@ describe Appsignal::Config do
       described_class.new(
         "non-existing-path",
         "production"
-      )
+      ).tap(&:validate)
     end
     let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
     let(:env_config) do
