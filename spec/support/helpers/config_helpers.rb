@@ -23,7 +23,7 @@ module ConfigHelpers
       env,
       initial_config,
       logger
-    )
+    ).tap(&:validate)
   end
   module_function :project_fixture_config, :project_fixture_path
 

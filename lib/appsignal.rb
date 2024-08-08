@@ -111,7 +111,7 @@ module Appsignal
 
       internal_logger.debug("Loading AppSignal gem")
 
-      @config ||= Config.new(Config.determine_root_path, Config.determine_env)
+      @config ||= Config.new(Config.determine_root_path, Config.determine_env).tap(&:validate)
 
       _start_logger
 
@@ -243,10 +243,8 @@ module Appsignal
           root_path || Config.determine_root_path,
           Config.determine_env(env),
           {},
-          Appsignal.internal_logger,
-          false
+          Appsignal.internal_logger
         )
-        config.load_config
       end
 
       config_dsl = Appsignal::Config::ConfigDSL.new(config)

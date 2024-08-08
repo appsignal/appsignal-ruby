@@ -235,8 +235,7 @@ module Appsignal
       root_path,
       initial_env,
       initial_config = {},
-      logger = Appsignal.internal_logger,
-      load_on_new = true # rubocop:disable Style/OptionalBooleanParameter
+      logger = Appsignal.internal_logger
     )
       @root_path = root_path
       @config_file_error = false
@@ -255,10 +254,7 @@ module Appsignal
       @override_config = {}
       @dsl_config = {} # Can be set using `Appsignal.configure`
 
-      return unless load_on_new
-
       load_config
-      validate
     end
 
     # @api private
