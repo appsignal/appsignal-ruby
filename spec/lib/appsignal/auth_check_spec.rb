@@ -1,5 +1,5 @@
 describe Appsignal::AuthCheck do
-  let(:config) { project_fixture_config }
+  let(:config) { build_config }
   let(:auth_check) { Appsignal::AuthCheck.new(config) }
   let(:auth_url) do
     query = build_uri_query_string(

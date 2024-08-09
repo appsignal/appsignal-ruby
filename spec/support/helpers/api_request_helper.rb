@@ -14,6 +14,7 @@ module ApiRequestHelper
     }
     body = Appsignal::Utils::JSON.generate(body) if body.is_a? Hash
     options[:body] = body if body
-    stub_request(:post, "#{config[:endpoint]}/1/#{path}").with(options)
+    endpoint = config[:endpoint] || Appsignal::Config::DEFAULT_CONFIG[:endpoint]
+    stub_request(:post, "#{endpoint}/1/#{path}").with(options)
   end
 end

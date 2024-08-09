@@ -5,7 +5,9 @@ if DependencyHelper.capistrano3_present?
 
   describe "Capistrano 3 integration" do
     let(:capistrano) { Class.new.extend(Capistrano::DSL) }
-    let(:config) { project_fixture_config }
+    let(:env) { :production }
+    let(:options) { {} }
+    let(:config) { build_config(:env => env, :options => options) }
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
     let(:logger) { Logger.new(out_stream) }
@@ -50,7 +52,7 @@ if DependencyHelper.capistrano3_present?
       end
 
       context "config" do
-        let(:env) { "production" }
+        let(:options) { { :name => "AppName" } }
         before do
           capistrano_config.set(
             :appsignal_config,
@@ -58,9 +60,6 @@ if DependencyHelper.capistrano3_present?
             :active => true,
             :push_api_key => "abc"
           )
-          config[:name] = "AppName"
-          config.instance_variable_set(:@env, env)
-          stub_marker_request.to_return(:status => 200)
         end
 
         context "when rack_env is the only env set" do
@@ -71,6 +70,11 @@ if DependencyHelper.capistrano3_present?
           end
 
           it "uses the rack_env as the env" do
+            stub_marker_request(
+              :environment => env.to_s,
+              :name => "AppName",
+              :push_api_key => "abc"
+            ).to_return(:status => 200)
             original_new = Appsignal::Marker.method(:new)
 
             expect(Appsignal::Marker).to receive(:new) do |data, given_config|
@@ -90,6 +94,11 @@ if DependencyHelper.capistrano3_present?
           end
 
           it "prefers the Capistrano stage rather than rails_env and rack_env" do
+            stub_marker_request(
+              :environment => env.to_s,
+              :name => "AppName",
+              :push_api_key => "abc"
+            ).to_return(:status => 200)
             original_new = Appsignal::Marker.method(:new)
 
             expect(Appsignal::Marker).to receive(:new) do |data, given_config|
@@ -104,15 +113,19 @@ if DependencyHelper.capistrano3_present?
         context "when `appsignal_config` is set" do
           before do
             ENV["APPSIGNAL_APP_NAME"] = "EnvName"
-            capistrano_config.set(:appsignal_config, :name => "AppName")
-            config[:name] = "AppName"
+            capistrano_config.set(:appsignal_config, :name => "CapName")
           end
 
           it "overrides the default config with the custom appsignal_config" do
+            stub_marker_request(
+              :environment => env.to_s,
+              :name => "CapName",
+              :push_api_key => "abc"
+            ).to_return(:status => 200)
             original_new = Appsignal::Marker.method(:new)
 
             expect(Appsignal::Marker).to receive(:new) do |data, given_config|
-              expect(given_config[:name]).to eq("AppName")
+              expect(given_config[:name]).to eq("CapName")
               original_new.call(data, given_config)
             end
 
@@ -141,6 +154,11 @@ if DependencyHelper.capistrano3_present?
           end
 
           it "prefers the appsignal_env rather than stage, rails_env and rack_env" do
+            stub_marker_request(
+              :environment => env.to_s,
+              :name => "AppName",
+              :push_api_key => "abc"
+            ).to_return(:status => 200)
             original_new = Appsignal::Marker.method(:new)
 
             expect(Appsignal::Marker).to receive(:new) do |data, given_config|
@@ -156,7 +174,11 @@ if DependencyHelper.capistrano3_present?
       describe "markers" do
         context "when active for this environment" do
           it "transmits marker" do
-            stub_marker_request.to_return(:status => 200)
+            stub_marker_request(
+              :environment => env.to_s,
+              :name => "TestApp",
+              :push_api_key => "abc"
+            ).to_return(:status => 200)
             run
 
             expect(output).to include \
@@ -168,7 +190,14 @@ if DependencyHelper.capistrano3_present?
           context "with overridden revision" do
             before do
               capistrano_config.set(:appsignal_revision, "abc123")
-              stub_marker_request(:revision => "abc123").to_return(:status => 200)
+              stub_marker_request(
+                {
+                  :environment => env.to_s,
+                  :name => "TestApp",
+                  :push_api_key => "abc"
+                },
+                :revision => "abc123"
+              ).to_return(:status => 200)
               run
             end
 
@@ -182,7 +211,14 @@ if DependencyHelper.capistrano3_present?
           context "with overridden deploy user" do
             before do
               capistrano_config.set(:appsignal_user, "robin")
-              stub_marker_request(:user => "robin").to_return(:status => 200)
+              stub_marker_request(
+                {
+                  :environment => env.to_s,
+                  :name => "TestApp",
+                  :push_api_key => "abc"
+                },
+                :user => "robin"
+              ).to_return(:status => 200)
               run
             end
 
@@ -209,7 +245,11 @@ if DependencyHelper.capistrano3_present?
 
           context "with failed request" do
             before do
-              stub_marker_request.to_return(:status => 500)
+              stub_marker_request(
+                :environment => env.to_s,
+                :name => "TestApp",
+                :push_api_key => "abc"
+              ).to_return(:status => 500)
               run
             end
 
@@ -238,7 +278,7 @@ if DependencyHelper.capistrano3_present?
     end
   end
 
-  def stub_marker_request(data = {})
+  def stub_marker_request(config = {}, data = {})
     stub_api_request config, "markers", marker_data.merge(data)
   end
 end

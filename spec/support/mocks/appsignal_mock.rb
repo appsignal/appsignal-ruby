@@ -7,9 +7,9 @@ class AppsignalMock
   end
 
   def config
-    ConfigHelpers.project_fixture_config.tap do |conf|
-      conf[:hostname] = @hostname if @hostname
-    end
+    options = {}
+    options[:hostname] = @hostname if @hostname
+    ConfigHelpers.build_config(:options => options)
   end
 
   def set_gauge(*args)
