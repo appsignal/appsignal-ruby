@@ -349,126 +349,6 @@ describe Appsignal::Config do
     end
   end
 
-  describe "initial config" do
-    let(:initial_config) do
-      {
-        :push_api_key => "abc",
-        :name => "TestApp",
-        :active => true,
-        :revision => "v2.5.1",
-        :request_headers => []
-      }
-    end
-    let(:config) do
-      described_class.new("non-existing-path", "production", initial_config)
-    end
-
-    it "merges with the default config" do
-      expect(config.config_hash).to eq(
-        :active                         => true,
-        :activejob_report_errors        => "all",
-        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
-        :dns_servers                    => [],
-        :enable_allocation_tracking     => true,
-        :enable_at_exit_reporter        => true,
-        :enable_gvl_global_timer        => true,
-        :enable_gvl_waiting_threads     => true,
-        :enable_host_metrics            => true,
-        :enable_minutely_probes         => true,
-        :enable_statsd                  => true,
-        :enable_nginx_metrics           => false,
-        :enable_rails_error_reporter    => true,
-        :enable_rake_performance_instrumentation => false,
-        :endpoint                       => "https://push.appsignal.com",
-        :files_world_accessible         => true,
-        :filter_metadata                => [],
-        :filter_parameters              => [],
-        :filter_session_data            => [],
-        :ignore_actions                 => [],
-        :ignore_errors                  => [],
-        :ignore_logs                    => [],
-        :ignore_namespaces              => [],
-        :instrument_http_rb             => true,
-        :instrument_net_http            => true,
-        :instrument_redis               => true,
-        :instrument_sequel              => true,
-        :log                            => "file",
-        :logging_endpoint               => "https://appsignal-endpoint.net",
-        :name                           => "TestApp",
-        :push_api_key                   => "abc",
-        :request_headers                => [],
-        :revision                       => "v2.5.1",
-        :send_environment_metadata      => true,
-        :send_params                    => true,
-        :send_session_data              => true,
-        :sidekiq_report_errors          => "all"
-      )
-    end
-
-    it "sets the initial_config" do
-      expect(config.initial_config).to eq(initial_config)
-    end
-
-    describe "overriding system detected config" do
-      describe ":running_in_container" do
-        let(:config) do
-          described_class.new(
-            "non-existing-path",
-            "production",
-            :running_in_container => true
-          )
-        end
-        subject { config[:running_in_container] }
-
-        it "overrides system detected config" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      describe ":active" do
-        subject { config[:active] }
-
-        context "with APPSIGNAL_PUSH_API_KEY env variable" do
-          let(:config) do
-            described_class.new(
-              "non-existing-path",
-              "production",
-              :active => false,
-              :request_headers => []
-            )
-          end
-          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
-
-          it "sets given config rather than env variable" do
-            expect(subject).to be_falsy
-          end
-        end
-      end
-    end
-  end
-
-  describe "overriding loader config" do
-    let(:config) do
-      described_class.new(
-        "non-existing-path",
-        "production",
-        :my_option => "initial value"
-      )
-    end
-    before do
-      define_loader(:test_loader) do
-        def on_load
-          register_config_defaults(:my_option => "loader value")
-        end
-      end
-      load_loader(:test_loader)
-    end
-
-    it "overrides loader config" do
-      expect(config[:my_option]).to eq("initial value")
-    end
-  end
-
   context "when root path is nil" do
     let(:config) { described_class.new(nil, "production") }
 
@@ -543,12 +423,14 @@ describe Appsignal::Config do
 
     describe "overriding system and defaults config" do
       let(:config) do
-        described_class.new(
-          "non-existing-path",
-          "production",
-          :running_in_container => true,
-          :debug => true,
-          :log_level => "debug"
+        build_config(
+          :root_path => "non-existing-path",
+          :env => "production",
+          :options => {
+            :running_in_container => true,
+            :debug => true,
+            :log_level => "debug"
+          }
         )
       end
 
@@ -767,6 +649,117 @@ describe Appsignal::Config do
 
     it "sets the env_config" do
       expect(config.env_config).to eq(env_config)
+    end
+  end
+
+  describe "DSL config" do
+    let(:dsl_config) do
+      {
+        :push_api_key => "abc",
+        :name => "TestApp",
+        :active => true,
+        :revision => "v2.5.1",
+        :request_headers => []
+      }
+    end
+    let(:config) do
+      build_config(
+        :root_path => "non-existing-path",
+        :env => "production",
+        :options => dsl_config
+      )
+    end
+
+    it "merges with the default config" do
+      expect(config.config_hash).to eq(
+        :active                         => true,
+        :activejob_report_errors        => "all",
+        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :dns_servers                    => [],
+        :enable_allocation_tracking     => true,
+        :enable_at_exit_reporter        => true,
+        :enable_gvl_global_timer        => true,
+        :enable_gvl_waiting_threads     => true,
+        :enable_host_metrics            => true,
+        :enable_minutely_probes         => true,
+        :enable_statsd                  => true,
+        :enable_nginx_metrics           => false,
+        :enable_rails_error_reporter    => true,
+        :enable_rake_performance_instrumentation => false,
+        :endpoint                       => "https://push.appsignal.com",
+        :files_world_accessible         => true,
+        :filter_metadata                => [],
+        :filter_parameters              => [],
+        :filter_session_data            => [],
+        :ignore_actions                 => [],
+        :ignore_errors                  => [],
+        :ignore_logs                    => [],
+        :ignore_namespaces              => [],
+        :instrument_http_rb             => true,
+        :instrument_net_http            => true,
+        :instrument_redis               => true,
+        :instrument_sequel              => true,
+        :log                            => "file",
+        :logging_endpoint               => "https://appsignal-endpoint.net",
+        :name                           => "TestApp",
+        :push_api_key                   => "abc",
+        :request_headers                => [],
+        :revision                       => "v2.5.1",
+        :send_environment_metadata      => true,
+        :send_params                    => true,
+        :send_session_data              => true,
+        :sidekiq_report_errors          => "all"
+      )
+    end
+
+    it "sets the dsl_config" do
+      expect(config.dsl_config).to eq(dsl_config)
+    end
+
+    describe "overriding system detected config" do
+      describe ":running_in_container" do
+        let(:dsl_config) { { :running_in_container => true } }
+        subject { config[:running_in_container] }
+
+        it "overrides system detected config" do
+          expect(subject).to be_truthy
+        end
+      end
+
+      describe ":active" do
+        subject { config[:active] }
+
+        context "with APPSIGNAL_PUSH_API_KEY env variable" do
+          let(:dsl_config) { { :active => false } }
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
+
+          it "sets given config rather than env variable" do
+            expect(subject).to be_falsy
+          end
+        end
+      end
+    end
+
+    describe "overriding loader config" do
+      let(:config) do
+        build_config(
+          :root_path => "non-existing-path",
+          :env => "production",
+          :options => { :my_option => "initial value" }
+        )
+      end
+      before do
+        define_loader(:test_loader) do
+          def on_load
+            register_config_defaults(:my_option => "loader value")
+          end
+        end
+        load_loader(:test_loader)
+      end
+
+      it "overrides loader config" do
+        expect(config[:my_option]).to eq("initial value")
+      end
     end
   end
 

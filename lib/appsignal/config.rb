@@ -178,11 +178,6 @@ module Appsignal
     #   Used in diagnose report.
     #   @api private
     #   @return [Hash]
-    # @!attribute [r] initial_config
-    #   Config detected on the system level.
-    #   Used in diagnose report.
-    #   @api private
-    #   @return [Hash]
     # @!attribute [r] file_config
     #   Config loaded from `config/appsignal.yml` config file.
     #   Used in diagnose report.
@@ -195,8 +190,8 @@ module Appsignal
     #   @return [Hash]
     # @!attribute [r] config_hash
     #   Config used by the AppSignal gem.
-    #   Combined Hash of the {system_config}, {initial_config}, {file_config},
-    #   {env_config} attributes.
+    #   Combined Hash of the {system_config}, {file_config}, {env_config}
+    #   attributes.
     #   @see #[]
     #   @see #[]=
     #   @api private
@@ -215,9 +210,6 @@ module Appsignal
     # @param initial_env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
-    # @param initial_config [Hash<String, Object>] The initial configuration to
-    #   use. This will be overwritten by the file config and environment
-    #   variables config.
     # @param logger [Logger] The logger to use for the AppSignal gem. This is
     #   used by the configuration class only. Default:
     #   {Appsignal.internal_logger}. See also {Appsignal.start}.
@@ -234,7 +226,6 @@ module Appsignal
     def initialize(
       root_path,
       initial_env,
-      initial_config = {},
       logger = Appsignal.internal_logger
     )
       @root_path = root_path
@@ -248,7 +239,7 @@ module Appsignal
       @config_hash = {}
       @system_config = {}
       @loaders_config = {}
-      @initial_config = initial_config
+      @initial_config = {}
       @file_config = {}
       @env_config = {}
       @override_config = {}
@@ -278,8 +269,6 @@ module Appsignal
         merge(defaults)
       end
 
-      # Merge initial config
-      merge(initial_config)
       # Track origin of env
       @initial_config[:env] = @initial_env.to_s
 

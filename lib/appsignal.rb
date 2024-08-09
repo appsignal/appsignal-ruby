@@ -243,7 +243,6 @@ module Appsignal
         @config = Config.new(
           root_path || Config.determine_root_path,
           Config.determine_env(env),
-          {},
           Appsignal.internal_logger
         )
       end
