@@ -179,11 +179,11 @@ module Appsignal
       #   end
       #
       # @example Add more metadata to transaction
-      #   Appsignal.send_error(e) do |transaction|
-      #     transaction.set_namespace("my_namespace")
-      #     transaction.set_action("my_action_name")
-      #     transaction.add_params(:search_query => params[:search_query])
-      #     transaction.add_tags(:key => "value")
+      #   Appsignal.send_error(e) do
+      #     Appsignal.set_namespace("my_namespace")
+      #     Appsignal.set_action("my_action_name")
+      #     Appsignal.add_params(:search_query => params[:search_query])
+      #     Appsignal.add_tags(:key => "value")
       #   end
       #
       # @param error [Exception] The error to send to AppSignal.
@@ -213,6 +213,7 @@ module Appsignal
           Appsignal::Transaction::HTTP_REQUEST
         )
         transaction.set_error(error, &block)
+
         transaction.complete
       end
       alias :send_exception :send_error
@@ -245,11 +246,11 @@ module Appsignal
       #   end
       #
       # @example Add more metadata to transaction
-      #   Appsignal.set_error(e) do |transaction|
-      #     transaction.set_namespace("my_namespace")
-      #     transaction.set_action("my_action_name")
-      #     transaction.add_params(:search_query => params[:search_query])
-      #     transaction.add_tags(:key => "value")
+      #   Appsignal.set_error(e) do
+      #     Appsignal.set_namespace("my_namespace")
+      #     Appsignal.set_action("my_action_name")
+      #     Appsignal.add_params(:search_query => params[:search_query])
+      #     Appsignal.add_tags(:key => "value")
       #   end
       #
       # @param exception [Exception] The error to add to the current
@@ -301,11 +302,11 @@ module Appsignal
       #   end
       #
       # @example Add more metadata to transaction
-      #   Appsignal.report_error(error) do |transaction|
-      #     transaction.set_namespace("my_namespace")
-      #     transaction.set_action("my_action_name")
-      #     transaction.add_params(:search_query => params[:search_query])
-      #     transaction.add_tags(:key => "value")
+      #   Appsignal.report_error(error) do
+      #     Appsignal.set_namespace("my_namespace")
+      #     Appsignal.set_action("my_action_name")
+      #     Appsignal.add_params(:search_query => params[:search_query])
+      #     Appsignal.add_tags(:key => "value")
       #   end
       #
       # @param exception [Exception] The error to add to the current

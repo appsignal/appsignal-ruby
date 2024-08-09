@@ -30,11 +30,9 @@ module Appsignal
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
-          Thread.current[:appsignal_transaction] =
-            Appsignal::Transaction.new(
-              SecureRandom.uuid,
-              namespace
-            )
+          set_current_transaction(
+            Appsignal::Transaction.new(SecureRandom.uuid, namespace)
+          )
         else
           # Otherwise, log the issue about trying to start another transaction
           Appsignal.internal_logger.warn(
@@ -46,6 +44,23 @@ module Appsignal
           # And return the current transaction instead
           current
         end
+      end
+
+      # @api private
+      def set_current_transaction(transaction)
+        Thread.current[:appsignal_transaction] = transaction
+      end
+
+      # Set the current for the duration of the given block.
+      # It restores the original transaction (if any) when the block has executed.
+      #
+      # @api private
+      def with_transaction(transaction)
+        original_transaction = current if current?
+        set_current_transaction(transaction)
+        yield
+      ensure
+        set_current_transaction(original_transaction)
       end
 
       # Returns currently active transaction or a {NilTransaction} if none is
@@ -167,7 +182,13 @@ module Appsignal
         end
       end
 
-      @error_blocks[@error_set].each { |block| block.call(self) } if @error_set
+      if @error_set && @error_blocks[@error_set].any?
+        self.class.with_transaction(self) do
+          @error_blocks[@error_set].each do |block|
+            block.call(self)
+          end
+        end
+      end
       sample_data if should_sample
       ext.complete
     end

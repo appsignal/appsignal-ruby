@@ -1312,15 +1312,50 @@ describe Appsignal do
 
       context "when given a block" do
         it "yields the transaction and allows additional metadata to be set" do
-          keep_transactions do
-            Appsignal.send_error(StandardError.new("my_error")) do |transaction|
-              transaction.set_action("my_action")
-              transaction.set_namespace("my_namespace")
-            end
+          Appsignal.send_error(StandardError.new("my_error")) do |transaction|
+            transaction.set_action("my_action")
+            transaction.set_namespace("my_namespace")
           end
+
           expect(last_transaction).to have_namespace("my_namespace")
           expect(last_transaction).to have_action("my_action")
           expect(last_transaction).to have_error("StandardError", "my_error")
+        end
+
+        it "yields and allows additional metadata to be set with global helpers" do
+          Appsignal.send_error(StandardError.new("my_error")) do
+            Appsignal.set_action("my_action")
+            Appsignal.set_namespace("my_namespace")
+          end
+
+          expect(last_transaction).to have_namespace("my_namespace")
+          expect(last_transaction).to have_action("my_action")
+          expect(last_transaction).to have_error("StandardError", "my_error")
+        end
+
+        it "yields to set metadata and doesn't modify the active transaction" do
+          active_transaction = http_request_transaction
+          active_transaction.set_action("active action")
+          active_transaction.set_namespace("active namespace")
+          set_current_transaction(active_transaction)
+          expect(current_transaction).to eq(active_transaction)
+
+          Appsignal.send_error(StandardError.new("my_error")) do
+            Appsignal.set_action("my_action")
+            Appsignal.set_namespace("my_namespace")
+          end
+
+          # Restores the active_transaction as the current transaction
+          expect(current_transaction).to eq(active_transaction)
+
+          expect(last_transaction).to have_namespace("my_namespace")
+          expect(last_transaction).to have_action("my_action")
+          expect(last_transaction).to have_error("StandardError", "my_error")
+          expect(last_transaction).to be_completed
+
+          expect(active_transaction).to have_namespace("active namespace")
+          expect(active_transaction).to have_action("active action")
+          expect(active_transaction).to_not be_completed
         end
       end
     end
@@ -1442,6 +1477,21 @@ describe Appsignal do
             expect(transaction).to include_tags("tag1" => "value1")
             expect(transaction).to be_completed
           end
+
+          it "yields and allows additional metadata to be set with the global helpers" do
+            Appsignal.report_error(error) do
+              Appsignal.set_action("my_action")
+              Appsignal.set_namespace("my_namespace")
+              Appsignal.set_tags(:tag1 => "value1")
+            end
+
+            transaction = last_transaction
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction).to include_tags("tag1" => "value1")
+            expect(transaction).to be_completed
+          end
         end
       end
 
@@ -1545,6 +1595,22 @@ describe Appsignal do
 
           it "does not create a new transaction" do
             expect(created_transactions).to eq([transaction])
+          end
+
+          it "yields and allows additional metadata to be set with the global helpers" do
+            Appsignal.report_error(error) do
+              Appsignal.set_action("my_action")
+              Appsignal.set_namespace("my_namespace")
+              Appsignal.set_tags(:tag1 => "value1")
+            end
+
+            expect(transaction).to_not be_completed
+
+            transaction.complete
+            expect(transaction).to have_namespace("my_namespace")
+            expect(transaction).to have_action("my_action")
+            expect(transaction).to have_error("ExampleException", "error message")
+            expect(transaction).to include_tags("tag1" => "value1")
           end
         end
       end
