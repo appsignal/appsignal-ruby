@@ -1,5 +1,5 @@
 describe Appsignal::Marker do
-  let(:config) { project_fixture_config }
+  let(:config) { build_config }
   let(:marker) do
     described_class.new(
       {

@@ -212,7 +212,7 @@ describe Appsignal::Config do
   end
 
   describe "config based on the system" do
-    let(:config) { silence { project_fixture_config(:none) } }
+    let(:config) { silence { build_config(:env => :none) } }
 
     describe ":active" do
       subject { config[:active] }
@@ -488,7 +488,7 @@ describe Appsignal::Config do
   end
 
   context "with a config file" do
-    let(:config) { project_fixture_config("production") }
+    let(:config) { build_config(:env => "production") }
 
     context "with valid config" do
       it "is valid and active" do
@@ -560,7 +560,7 @@ describe Appsignal::Config do
     end
 
     context "with the env name as a symbol" do
-      let(:config) { project_fixture_config(:production) }
+      let(:config) { build_config(:env => :production) }
 
       it "loads the config" do
         expect(config.valid?).to be_truthy
@@ -571,7 +571,7 @@ describe Appsignal::Config do
     end
 
     context "without the selected env" do
-      let(:config) { project_fixture_config("nonsense") }
+      let(:config) { build_config(:env => :nonsense) }
 
       it "is not valid or active" do
         expect(config.valid?).to be_falsy
@@ -771,13 +771,13 @@ describe Appsignal::Config do
   end
 
   describe "config keys" do
+    let(:config) { build_config(:options => options) }
+
     describe ":endpoint" do
       subject { config[:endpoint] }
 
       context "with an pre-0.12-style endpoint" do
-        let(:config) do
-          project_fixture_config("production", :endpoint => "https://push.appsignal.com/1")
-        end
+        let(:options) { { :endpoint => "https://push.appsignal.com/1" } }
 
         it "strips off the path" do
           expect(subject).to eq "https://push.appsignal.com"
@@ -785,7 +785,7 @@ describe Appsignal::Config do
       end
 
       context "with a non-standard port" do
-        let(:config) { project_fixture_config("production", :endpoint => "http://localhost:4567") }
+        let(:options) { { :endpoint => "http://localhost:4567" } }
 
         it "keeps the port" do
           expect(subject).to eq "http://localhost:4567"
@@ -797,7 +797,7 @@ describe Appsignal::Config do
       subject { config[:logging_endpoint] }
 
       context "with a non-standard port" do
-        let(:config) { project_fixture_config("production", :logging_endpoint => "http://localhost:4567") }
+        let(:options) { { :logging_endpoint => "http://localhost:4567" } }
 
         it "keeps the port" do
           expect(subject).to eq "http://localhost:4567"
@@ -807,7 +807,9 @@ describe Appsignal::Config do
   end
 
   describe "#[]" do
-    let(:config) { project_fixture_config(:none, :push_api_key => "foo", :request_headers => []) }
+    let(:config) do
+      build_config(:env => :none, :options => { :push_api_key => "foo", :request_headers => [] })
+    end
 
     context "with existing key" do
       it "gets the value" do
@@ -823,7 +825,7 @@ describe Appsignal::Config do
   end
 
   describe "#[]=" do
-    let(:config) { project_fixture_config(:none) }
+    let(:config) { build_config(:env => :none) }
 
     context "with existing key" do
       it "changes the value" do
@@ -843,7 +845,7 @@ describe Appsignal::Config do
   end
 
   describe "#write_to_environment" do
-    let(:config) { project_fixture_config(:production) }
+    let(:config) { build_config }
     before do
       config[:bind_address] = "0.0.0.0"
       config[:cpu_count] = 1.5
@@ -951,7 +953,7 @@ describe Appsignal::Config do
   describe "#log_file_path" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:config) { project_fixture_config("production", :log_path => log_path) }
+    let(:config) { build_config(:options => { :log_path => log_path }) }
 
     def log_file_path
       capture_stdout(out_stream) { config.log_file_path }
@@ -1137,7 +1139,7 @@ describe Appsignal::Config do
   describe "#validate" do
     subject { config.valid? }
     let(:config) do
-      described_class.new(Dir.pwd, "production", config_options)
+      build_config(:root_path => Dir.pwd, :env => "production", :options => config_options)
     end
 
     if DependencyHelper.rails_present?
@@ -1231,7 +1233,7 @@ describe Appsignal::Config do
 
   describe "#log_level" do
     let(:options) { {} }
-    let(:config) { described_class.new("", nil, options) }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
     subject { config.log_level }
 
     context "without any config" do
@@ -1292,7 +1294,7 @@ describe Appsignal::Config do
 
   describe Appsignal::Config::ConfigDSL do
     let(:env) { :production }
-    let(:config) { project_fixture_config(env) }
+    let(:config) { build_config(:env => env) }
     let(:dsl) { described_class.new(config) }
 
     describe "default options" do

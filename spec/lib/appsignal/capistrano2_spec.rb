@@ -6,7 +6,7 @@ if DependencyHelper.capistrano2_present?
   describe "Capistrano 2 integration" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:config) { project_fixture_config }
+    let(:config) { build_config }
     let(:capistrano_config) do
       Capistrano::Configuration.new.tap do |c|
         c.set(:rails_env, "production")

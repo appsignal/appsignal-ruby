@@ -15,17 +15,38 @@ module ConfigHelpers
 
   def project_fixture_config(
     env = "production",
-    initial_config = {},
+    options = {},
     logger = Appsignal.internal_logger
   )
     Appsignal::Config.new(
       project_fixture_path,
       env,
-      initial_config,
+      {},
       logger
-    ).tap(&:validate)
+    ).tap do |c|
+      c.merge_dsl_options(options)
+      c.validate
+    end
   end
-  module_function :project_fixture_config, :project_fixture_path
+  module_function :project_fixture_config
+
+  def build_config(
+    root_path: project_fixture_path,
+    env: "production",
+    options: {},
+    logger: Appsignal.internal_logger
+  )
+    Appsignal::Config.new(
+      root_path,
+      env,
+      {},
+      logger
+    ).tap do |c|
+      c.merge_dsl_options(options) if options.any?
+      c.validate
+    end
+  end
+  module_function :build_config
 
   def start_agent(env: "production", options: {})
     env = "production" if env == :default
