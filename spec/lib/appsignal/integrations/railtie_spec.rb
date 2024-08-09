@@ -228,56 +228,84 @@ if DependencyHelper.rails_present?
         before { start_agent }
         around { |example| keep_transactions { example.run } }
 
-        context "when error is not handled (reraises the error)" do
-          it "does nothing" do
-            with_rails_error_reporter do
-              expect do
-                Rails.error.record { raise ExampleStandardError, "error message" }
-              end.to raise_error(ExampleStandardError, "error message")
-            end
-
-            expect(created_transactions).to be_empty
+        it "reports the error when the error is not handled (reraises the error)" do
+          with_rails_error_reporter do
+            expect do
+              Rails.error.record { raise ExampleStandardError, "error message" }
+            end.to raise_error(ExampleStandardError, "error message")
           end
 
-          if DependencyHelper.rails7_1_present?
-            it "reports the error if the source is the Rails runner" do
+          expect(last_transaction).to have_error("ExampleStandardError", "error message")
+        end
+
+        it "reports the error when the error is handled (not reraised)" do
+          with_rails_error_reporter do
+            Rails.error.handle { raise ExampleStandardError, "error message" }
+          end
+
+          expect(last_transaction).to have_error("ExampleStandardError", "error message")
+        end
+
+        context "when no transaction is active" do
+          it "reports the error on a new transaction" do
+            with_rails_error_reporter do
               expect do
-                with_rails_error_reporter do
-                  expect do
-                    Rails.error.record(:source => "application.runner.railties") do
-                      raise ExampleStandardError, "error message"
-                    end
-                  end.to raise_error(ExampleStandardError, "error message")
-                end
+                Rails.error.handle { raise ExampleStandardError, "error message" }
               end.to change { created_transactions.count }.by(1)
 
               transaction = last_transaction
-              expect(transaction).to have_namespace("runner")
+              expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
               expect(transaction).to_not have_action
               expect(transaction).to have_error("ExampleStandardError", "error message")
-              expect(transaction).to include_tags("source" => "application.runner.railties")
             end
           end
         end
 
-        context "when error is handled (not reraised)" do
-          context "when a transaction is active" do
-            it "duplicates the transaction namespace, action and tags" do
+        context "when a transaction is active" do
+          it "reports the error on the transaction when a transaction is active" do
+            current_transaction = http_request_transaction
+            current_transaction.set_namespace "custom"
+            current_transaction.set_action "CustomAction"
+            current_transaction.add_tags(:duplicated_tag => "duplicated value")
+
+            with_rails_error_reporter do
+              with_current_transaction current_transaction do
+                Rails.error.handle { raise ExampleStandardError, "error message" }
+                expect do
+                  current_transaction.complete
+                end.to_not(change { created_transactions.count })
+
+                transaction = current_transaction
+                expect(transaction).to have_namespace("custom")
+                expect(transaction).to have_action("CustomAction")
+                expect(transaction).to have_error("ExampleStandardError", "error message")
+                expect(transaction).to include_tags(
+                  "duplicated_tag" => "duplicated value",
+                  "severity" => "warning"
+                )
+              end
+            end
+          end
+
+          context "when the current transaction has an error" do
+            it "reports the error on a new transaction" do
               current_transaction = http_request_transaction
               current_transaction.set_namespace "custom"
               current_transaction.set_action "CustomAction"
-              current_transaction.add_tags(
-                :duplicated_tag => "duplicated value"
-              )
+              current_transaction.add_tags(:duplicated_tag => "duplicated value")
+              current_transaction.add_error(ExampleStandardError.new("error message"))
 
               with_rails_error_reporter do
                 with_current_transaction current_transaction do
-                  Rails.error.handle { raise ExampleStandardError, "error message" }
+                  Rails.error.handle { raise ExampleStandardError, "other message" }
+                  expect do
+                    current_transaction.complete
+                  end.to change { created_transactions.count }.by(1)
 
                   transaction = last_transaction
                   expect(transaction).to have_namespace("custom")
                   expect(transaction).to have_action("CustomAction")
-                  expect(transaction).to have_error("ExampleStandardError", "error message")
+                  expect(transaction).to have_error("ExampleStandardError", "other message")
                   expect(transaction).to include_tags(
                     "duplicated_tag" => "duplicated value",
                     "severity" => "warning"
@@ -286,148 +314,127 @@ if DependencyHelper.rails_present?
               end
             end
 
-            it "overwrites duplicated tags with tags from context" do
+            it "reports the error on a new transaction with the given context" do
               current_transaction = http_request_transaction
-              current_transaction.add_tags(:tag1 => "duplicated value")
-
-              with_rails_error_reporter do
-                with_current_transaction current_transaction do
-                  given_context = { :tag1 => "value1", :tag2 => "value2" }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-
-                  expect(last_transaction).to include_tags(
-                    "tag1" => "value1",
-                    "tag2" => "value2",
-                    "severity" => "warning"
-                  )
-                end
-              end
-            end
-
-            it "sends tags stored in :appsignal -> :custom_data as custom data" do
-              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
+              current_transaction.add_tags(:duplicated_tag => "duplicated value")
+              current_transaction.add_custom_data(:original => "custom value")
+              current_transaction.add_error(ExampleStandardError.new("error message"))
 
               with_rails_error_reporter do
                 with_current_transaction current_transaction do
                   given_context = {
                     :appsignal => {
-                      :custom_data => {
-                        :array => [1, 2],
-                        :hash => { :one => 1, :two => 2 }
-                      }
+                      :namespace => "context",
+                      :action => "ContextAction",
+                      :custom_data => { :context => "context data" }
+
                     }
                   }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-
-                  transaction = last_transaction
-                  expect(transaction).to include_custom_data(
-                    "array" => [1, 2],
-                    "hash" => { "one" => 1, "two" => 2 }
-                  )
-                end
-              end
-            end
-
-            it "overwrites duplicated namespace and action with custom from context" do
-              current_transaction = http_request_transaction
-              current_transaction.set_namespace "custom"
-              current_transaction.set_action "CustomAction"
-
-              with_rails_error_reporter do
-                with_current_transaction current_transaction do
-                  given_context = {
-                    :appsignal => { :namespace => "context", :action => "ContextAction" }
-                  }
-                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                  Rails.error.handle(:context => given_context) do
+                    raise ExampleStandardError, "other message"
+                  end
+                  expect do
+                    current_transaction.complete
+                  end.to change { created_transactions.count }.by(1)
 
                   transaction = last_transaction
                   expect(transaction).to have_namespace("context")
                   expect(transaction).to have_action("ContextAction")
+                  expect(transaction).to have_error("ExampleStandardError", "other message")
+                  expect(transaction).to include_tags(
+                    "duplicated_tag" => "duplicated value",
+                    "severity" => "warning"
+                  )
+                  expect(transaction).to include_custom_data(
+                    "original" => "custom value",
+                    "context" => "context data"
+                  )
                 end
               end
             end
           end
 
-          context "when no transaction is active" do
-            class ExampleRailsRequestMock
-              def path
-                "path"
-              end
+          it "overwrites duplicate tags with tags from context" do
+            current_transaction = http_request_transaction
+            current_transaction.add_tags(:tag1 => "duplicated value")
 
-              def method
-                "GET"
-              end
-
-              def filtered_parameters
-                { :user_id => 123, :password => "[FILTERED]" }
-              end
-            end
-
-            class ExampleRailsControllerMock
-              def action_name
-                "index"
-              end
-
-              def request
-                @request ||= ExampleRailsRequestMock.new
-              end
-            end
-
-            class ExampleRailsJobMock
-            end
-
-            class ExampleRailsMailerMock < ActionMailer::MailDeliveryJob
-              def arguments
-                ["ExampleRailsMailerMock", "send_mail"]
-              end
-            end
-
-            before do
-              clear_current_transaction!
-            end
-
-            it "fetches the action, path and method from the controller in the context" do
-              # The controller key is set by Rails when raised in a controller
-              given_context = { :controller => ExampleRailsControllerMock.new }
-              with_rails_error_reporter do
-                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-              end
-
-              transaction = last_transaction
-              expect(transaction).to have_action("ExampleRailsControllerMock#index")
-              expect(transaction).to include_metadata("path" => "path", "method" => "GET")
-              expect(transaction).to include_params("user_id" => 123,
-                "password" => "[FILTERED]")
-            end
-
-            it "sets no action if no execution context is present" do
-              # The controller key is set by Rails when raised in a controller
-              with_rails_error_reporter do
-                Rails.error.handle { raise ExampleStandardError }
-              end
-
-              expect(last_transaction).to_not have_action
-            end
-          end
-
-          it "sets the error context as tags" do
-            given_context = {
-              :controller => ExampleRailsControllerMock.new, # Not set as tag
-              :job => ExampleRailsJobMock.new, # Not set as tag
-              :appsignal => { :something => "not used" }, # Not set as tag
-              :tag1 => "value1",
-              :tag2 => "value2"
-            }
             with_rails_error_reporter do
-              Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-            end
+              with_current_transaction current_transaction do
+                given_context = { :tag1 => "value1", :tag2 => "value2" }
+                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                current_transaction.complete
 
-            expect(last_transaction).to include_tags(
-              "tag1" => "value1",
-              "tag2" => "value2",
-              "severity" => "warning"
-            )
+                expect(current_transaction).to include_tags(
+                  "tag1" => "value1",
+                  "tag2" => "value2",
+                  "severity" => "warning"
+                )
+              end
+            end
           end
+
+          it "sets namespace, action and custom data with values from context" do
+            current_transaction = http_request_transaction
+            current_transaction.set_namespace "custom"
+            current_transaction.set_action "CustomAction"
+
+            with_rails_error_reporter do
+              with_current_transaction current_transaction do
+                given_context = {
+                  :appsignal => {
+                    :namespace => "context",
+                    :action => "ContextAction",
+                    :custom_data => { :data => "context data" }
+                  }
+                }
+                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                current_transaction.complete
+
+                expect(current_transaction).to have_namespace("context")
+                expect(current_transaction).to have_action("ContextAction")
+                expect(current_transaction).to include_custom_data("data" => "context data")
+              end
+            end
+          end
+        end
+
+        if DependencyHelper.rails7_1_present?
+          it "sets the namespace to 'runner' if the source is the Rails runner" do
+            expect do
+              with_rails_error_reporter do
+                expect do
+                  Rails.error.record(:source => "application.runner.railties") do
+                    raise ExampleStandardError, "error message"
+                  end
+                end.to raise_error(ExampleStandardError, "error message")
+              end
+            end.to change { created_transactions.count }.by(1)
+
+            transaction = last_transaction
+            expect(transaction).to have_namespace("runner")
+            expect(transaction).to_not have_action
+            expect(transaction).to have_error("ExampleStandardError", "error message")
+            expect(transaction).to include_tags("source" => "application.runner.railties")
+          end
+        end
+
+        it "sets the error context as tags" do
+          given_context = {
+            :appsignal => { :something => "not used" }, # Not set as tag
+            :tag1 => "value1",
+            :tag2 => "value2"
+          }
+          with_rails_error_reporter do
+            Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+          end
+
+          expect(last_transaction).to include_tags(
+            "tag1" => "value1",
+            "tag2" => "value2",
+            "severity" => "warning"
+          )
         end
       end
     end
