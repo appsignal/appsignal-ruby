@@ -173,7 +173,7 @@ describe Appsignal::Integrations::SidekiqErrorHandler do
   end
 end
 
-describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => false do
+describe Appsignal::Integrations::SidekiqMiddleware do
   class DelayedTestClass; end
 
   let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
@@ -214,15 +214,14 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
     }
   end
   let(:plugin) { Appsignal::Integrations::SidekiqMiddleware.new }
-  let(:log) { StringIO.new }
   let(:options) { {} }
   before do
     start_agent(:options => options)
-    Appsignal.internal_logger = test_logger(log)
   end
   around { |example| keep_transactions { example.run } }
-  after :with_yaml_parse_error => false do
-    expect(log_contents(log)).to_not contains_log(:warn, "Unable to load YAML")
+
+  def expect_no_yaml_parse_error(logs)
+    expect(logs).to_not contains_log(:warn, "Unable to load YAML")
   end
 
   describe "internal Sidekiq job values" do
@@ -290,15 +289,15 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       expect(transaction).to include_params(["bar" => "baz"])
     end
 
-    context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
+    context "when job arguments is a malformed YAML object" do
       before { item["args"] = [] }
 
       it "logs a warning and uses the default argument" do
-        perform_sidekiq_job
+        logs = capture_logs { perform_sidekiq_job }
 
         expect(transaction).to have_action("Sidekiq::Extensions::DelayedClass#perform")
         expect(transaction).to include_params([])
-        expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
+        expect(logs).to contains_log(:warn, "Unable to load YAML")
       end
     end
   end
@@ -326,15 +325,15 @@ describe Appsignal::Integrations::SidekiqMiddleware, :with_yaml_parse_error => f
       expect(transaction).to include_params(["bar" => "baz"])
     end
 
-    context "when job arguments is a malformed YAML object", :with_yaml_parse_error => true do
+    context "when job arguments is a malformed YAML object" do
       before { item["args"] = [] }
 
       it "logs a warning and uses the default argument" do
-        perform_sidekiq_job
+        logs = capture_logs { perform_sidekiq_job }
 
         expect(transaction).to have_action("Sidekiq::Extensions::DelayedModel#perform")
         expect(transaction).to include_params([])
-        expect(log_contents(log)).to contains_log(:warn, "Unable to load YAML")
+        expect(logs).to contains_log(:warn, "Unable to load YAML")
       end
     end
   end

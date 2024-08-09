@@ -538,7 +538,7 @@ describe Appsignal::Config do
           File.join(File.dirname(__FILE__), "../../support/fixtures/projects/broken")
         )
       end
-      let(:config) { Appsignal::Config.new(config_path, "foo") }
+      let(:config) { described_class.new(config_path, "production") }
 
       it "does not start AppSignal, logs & prints an error" do
         stdout = std_stream
@@ -602,8 +602,6 @@ describe Appsignal::Config do
 
     context "without the selected env" do
       let(:config) { project_fixture_config("nonsense") }
-      let(:log_stream) { std_stream }
-      let(:log) { log_contents(log_stream) }
 
       it "is not valid or active" do
         expect(config.valid?).to be_falsy
@@ -611,10 +609,10 @@ describe Appsignal::Config do
       end
 
       it "logs an error" do
-        use_logger_with(log_stream) { config }
-        expect(log)
+        logs = capture_logs { config }
+        expect(logs)
           .to contains_log(:error, "Not loading from config file: config for 'nonsense' not found")
-        expect(log)
+        expect(logs)
           .to contains_log(:error, "Push API key not set after loading config")
       end
     end
@@ -624,9 +622,7 @@ describe Appsignal::Config do
     let(:config) do
       described_class.new(
         "non-existing-path",
-        "production",
-        :running_in_container => true,
-        :debug => true
+        "production"
       )
     end
     let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
@@ -789,12 +785,12 @@ describe Appsignal::Config do
 
     context "with mixed case `true` env variables values" do
       before do
-        ENV["APPSIGNAL_DEBUG"] = "TRUE"
+        ENV["APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION"] = "TRUE"
         ENV["APPSIGNAL_INSTRUMENT_SEQUEL"] = "True"
       end
 
       it "accepts mixed case `true` values" do
-        expect(config[:debug]).to eq(true)
+        expect(config[:enable_rake_performance_instrumentation]).to eq(true)
         expect(config[:instrument_sequel]).to eq(true)
       end
     end
@@ -805,11 +801,8 @@ describe Appsignal::Config do
   end
 
   describe "with config based on overrides" do
-    let(:log_stream) { StringIO.new }
-    let(:logger) { test_logger(log_stream) }
-    let(:logs) { log_contents(log_stream) }
     let(:config) do
-      described_class.new(Dir.pwd, "production", config_options, logger)
+      described_class.new(Dir.pwd, "production", config_options)
     end
 
     if DependencyHelper.rails_present?
@@ -1425,9 +1418,10 @@ describe Appsignal::Config do
       end
 
       it "logs a deprecation warning" do
-        logs = capture_logs do
-          silence { dsl.app_path = "foo" }
-        end
+        logs =
+          capture_logs do
+            silence { dsl.app_path = "foo" }
+          end
 
         expect(logs).to contains_log(
           :warn,

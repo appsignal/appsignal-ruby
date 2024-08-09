@@ -13,7 +13,7 @@ describe Appsignal::Rack::EventHandler do
   let(:request) { Rack::Request.new(env) }
   let(:response) { nil }
   let(:log_stream) { StringIO.new }
-  let(:log) { log_contents(log_stream) }
+  let(:logs) { log_contents(log_stream) }
   let(:event_handler_instance) { described_class.new }
   let(:appsignal_env) { :default }
   before do
@@ -96,7 +96,7 @@ describe Appsignal::Rack::EventHandler do
       end
 
       it "logs an error" do
-        expect(log).to contains_log(
+        expect(logs).to contains_log(
           :error,
           "Error occurred in Appsignal::Rack::EventHandler's after_reply: " \
             "ExampleStandardError: oh no"
@@ -113,7 +113,7 @@ describe Appsignal::Rack::EventHandler do
       callback = request.env[Appsignal::Rack::RACK_AFTER_REPLY].first
       callback.call
 
-      expect(log).to contains_log(
+      expect(logs).to contains_log(
         :error,
         "Error occurred in Appsignal::Rack::EventHandler's after_reply: ExampleStandardError: oh no"
       )
@@ -125,7 +125,7 @@ describe Appsignal::Rack::EventHandler do
 
       on_start
 
-      expect(log).to contains_log(
+      expect(logs).to contains_log(
         :error,
         "Error occurred in Appsignal::Rack::EventHandler#on_start: ExampleStandardError: oh no"
       )
@@ -168,7 +168,7 @@ describe Appsignal::Rack::EventHandler do
 
       on_error(ExampleStandardError.new("the error"))
 
-      expect(log).to contains_log(
+      expect(logs).to contains_log(
         :error,
         "Error occurred in Appsignal::Rack::EventHandler#on_error: ExampleStandardError: oh no"
       )
@@ -354,8 +354,10 @@ describe Appsignal::Rack::EventHandler do
       end
 
       it "logs an error" do
-        expect(log).to contains_log(:error,
-          "Error occurred in Appsignal::Rack::EventHandler#on_finish: ExampleStandardError: oh no")
+        expect(logs).to contains_log(
+          :error,
+          "Error occurred in Appsignal::Rack::EventHandler#on_finish: ExampleStandardError: oh no"
+        )
       end
     end
 
@@ -430,7 +432,7 @@ describe Appsignal::Rack::EventHandler do
       on_start
       on_finish
 
-      expect(log).to contains_log(
+      expect(logs).to contains_log(
         :error,
         "Error occurred in Appsignal::Rack::EventHandler#on_finish: ExampleStandardError: oh no"
       )
