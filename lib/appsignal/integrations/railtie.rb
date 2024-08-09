@@ -70,32 +70,22 @@ module Appsignal
       end
     end
 
-    # Report errors reported by the Rails error reporter.
+    # Report errors reported by the Rails error reporter using {Appsignal.report_error}.
     #
-    # We only report that are not reraised by the error reporter, using
-    # `Rails.error.handle`.
     # @api private
     class RailsErrorReporterSubscriber
       class << self
-        def report(error, handled:, severity:, context: {}, source: nil)
+        def report(error, handled:, severity:, context: {}, source: nil) # rubocop:disable Lint/UnusedMethodArgument
           is_rails_runner = source == "application.runner.railties"
-          # Ignore not handled errors. They are reraised by the error reporter
-          # and are caught and recorded by our Rails middleware.
-          return if !handled && !is_rails_runner
+          namespace, action_name, tags, custom_data = context_for(context.dup)
 
-          namespace, action_name, path, method, params, tags, custom_data =
-            context_for(context.dup)
-
-          Appsignal.send_error(error) do |transaction|
+          Appsignal.report_error(error) do |transaction|
             if namespace
               transaction.set_namespace(namespace)
             elsif is_rails_runner
               transaction.set_namespace("runner")
             end
             transaction.set_action(action_name) if action_name
-            transaction.set_metadata("path", path)
-            transaction.set_metadata("method", method)
-            transaction.add_params_if_nil(params)
             transaction.add_custom_data(custom_data) if custom_data
 
             tags[:severity] = severity
@@ -108,40 +98,8 @@ module Appsignal
 
         def context_for(context)
           tags = {}
-          custom_data = nil
 
           appsignal_context = context.delete(:appsignal)
-          # Fetch the namespace and action name based on the Rails execution
-          # context.
-          controller = context.delete(:controller)
-          path = nil
-          method = nil
-          params = nil
-          if controller
-            namespace = Appsignal::Transaction::HTTP_REQUEST
-            action_name = "#{controller.class.name}##{controller.action_name}"
-            unless controller.request.nil?
-              path = controller.request.path
-              method = controller.request.method
-              params = controller.request.filtered_parameters
-            end
-          end
-          # ActiveJob transaction naming relies on the current AppSignal
-          # transaction namespace and action name copying done after this.
-          context.delete(:job)
-
-          # Copy the transaction action name, namespace and other data from
-          # the currently active transaction, if not already set.
-          if Appsignal::Transaction.current?
-            current_transaction = Appsignal::Transaction.current
-            namespace = current_transaction.namespace
-
-            transaction_action = current_transaction.action
-            action_name = current_transaction.action if transaction_action
-
-            current_tags = current_transaction.tags
-            tags.merge!(current_tags) if current_tags
-          end
 
           # Use the user override set in the context
           if appsignal_context
@@ -156,7 +114,7 @@ module Appsignal
           end
           tags.merge!(context)
 
-          [namespace, action_name, path, method, params, tags, custom_data]
+          [namespace, action_name, tags, custom_data]
         end
       end
     end
