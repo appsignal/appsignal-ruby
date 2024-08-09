@@ -203,15 +203,8 @@ describe Appsignal::Config do
           let(:env_env) { "my_env_env" }
           before { ENV["APPSIGNAL_APP_ENV"] = env_env }
 
-          it "uses the environment variable" do
-            expect(config.env).to eq(env_env)
-          end
-
           it "sets the environment as loaded through the env_config" do
-            expect(config.initial_config).to eq(:env => env)
             expect(config.env_config).to eq(:env => env_env)
-            expect(config.config_hash).to_not have_key(:env)
-            expect(config.config_hash).to_not have_key(:root_path)
           end
         end
       end
@@ -219,7 +212,7 @@ describe Appsignal::Config do
   end
 
   describe "config based on the system" do
-    let(:config) { silence { project_fixture_config(:none) } }
+    let(:config) { silence { build_config(:env => :none) } }
 
     describe ":active" do
       subject { config[:active] }
@@ -356,126 +349,6 @@ describe Appsignal::Config do
     end
   end
 
-  describe "initial config" do
-    let(:initial_config) do
-      {
-        :push_api_key => "abc",
-        :name => "TestApp",
-        :active => true,
-        :revision => "v2.5.1",
-        :request_headers => []
-      }
-    end
-    let(:config) do
-      described_class.new("non-existing-path", "production", initial_config)
-    end
-
-    it "merges with the default config" do
-      expect(config.config_hash).to eq(
-        :active                         => true,
-        :activejob_report_errors        => "all",
-        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
-        :dns_servers                    => [],
-        :enable_allocation_tracking     => true,
-        :enable_at_exit_reporter        => true,
-        :enable_gvl_global_timer        => true,
-        :enable_gvl_waiting_threads     => true,
-        :enable_host_metrics            => true,
-        :enable_minutely_probes         => true,
-        :enable_statsd                  => true,
-        :enable_nginx_metrics           => false,
-        :enable_rails_error_reporter    => true,
-        :enable_rake_performance_instrumentation => false,
-        :endpoint                       => "https://push.appsignal.com",
-        :files_world_accessible         => true,
-        :filter_metadata                => [],
-        :filter_parameters              => [],
-        :filter_session_data            => [],
-        :ignore_actions                 => [],
-        :ignore_errors                  => [],
-        :ignore_logs                    => [],
-        :ignore_namespaces              => [],
-        :instrument_http_rb             => true,
-        :instrument_net_http            => true,
-        :instrument_redis               => true,
-        :instrument_sequel              => true,
-        :log                            => "file",
-        :logging_endpoint               => "https://appsignal-endpoint.net",
-        :name                           => "TestApp",
-        :push_api_key                   => "abc",
-        :request_headers                => [],
-        :revision                       => "v2.5.1",
-        :send_environment_metadata      => true,
-        :send_params                    => true,
-        :send_session_data              => true,
-        :sidekiq_report_errors          => "all"
-      )
-    end
-
-    it "sets the initial_config" do
-      expect(config.initial_config).to eq(initial_config)
-    end
-
-    describe "overriding system detected config" do
-      describe ":running_in_container" do
-        let(:config) do
-          described_class.new(
-            "non-existing-path",
-            "production",
-            :running_in_container => true
-          )
-        end
-        subject { config[:running_in_container] }
-
-        it "overrides system detected config" do
-          expect(subject).to be_truthy
-        end
-      end
-
-      describe ":active" do
-        subject { config[:active] }
-
-        context "with APPSIGNAL_PUSH_API_KEY env variable" do
-          let(:config) do
-            described_class.new(
-              "non-existing-path",
-              "production",
-              :active => false,
-              :request_headers => []
-            )
-          end
-          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
-
-          it "sets given config rather than env variable" do
-            expect(subject).to be_falsy
-          end
-        end
-      end
-    end
-  end
-
-  describe "overriding loader config" do
-    let(:config) do
-      described_class.new(
-        "non-existing-path",
-        "production",
-        :my_option => "initial value"
-      )
-    end
-    before do
-      define_loader(:test_loader) do
-        def on_load
-          register_config_defaults(:my_option => "loader value")
-        end
-      end
-      load_loader(:test_loader)
-    end
-
-    it "overrides loader config" do
-      expect(config[:my_option]).to eq("initial value")
-    end
-  end
-
   context "when root path is nil" do
     let(:config) { described_class.new(nil, "production") }
 
@@ -495,7 +368,7 @@ describe Appsignal::Config do
   end
 
   context "with a config file" do
-    let(:config) { project_fixture_config("production") }
+    let(:config) { build_config(:env => "production") }
 
     context "with valid config" do
       it "is valid and active" do
@@ -506,29 +379,6 @@ describe Appsignal::Config do
       it "does not log an error" do
         log = capture_logs { config }
         expect(log).to_not contains_log(:error)
-      end
-    end
-
-    context "with an overridden config file" do
-      let(:config) do
-        project_fixture_config("production", {}, Appsignal.internal_logger,
-          File.join(project_fixture_path, "config", "appsignal.yml"))
-      end
-
-      it "is valid and active" do
-        expect(config.valid?).to be_truthy
-        expect(config.active?).to be_truthy
-      end
-
-      context "with an invalid overridden config file" do
-        let(:config) do
-          project_fixture_config("production", {}, Appsignal.internal_logger,
-            File.join(project_fixture_path, "config", "missing.yml"))
-        end
-
-        it "is not valid" do
-          expect(config.valid?).to be_falsy
-        end
       end
     end
 
@@ -573,12 +423,14 @@ describe Appsignal::Config do
 
     describe "overriding system and defaults config" do
       let(:config) do
-        described_class.new(
-          "non-existing-path",
-          "production",
-          :running_in_container => true,
-          :debug => true,
-          :log_level => "debug"
+        build_config(
+          :root_path => "non-existing-path",
+          :env => "production",
+          :options => {
+            :running_in_container => true,
+            :debug => true,
+            :log_level => "debug"
+          }
         )
       end
 
@@ -590,7 +442,7 @@ describe Appsignal::Config do
     end
 
     context "with the env name as a symbol" do
-      let(:config) { project_fixture_config(:production) }
+      let(:config) { build_config(:env => :production) }
 
       it "loads the config" do
         expect(config.valid?).to be_truthy
@@ -601,7 +453,7 @@ describe Appsignal::Config do
     end
 
     context "without the selected env" do
-      let(:config) { project_fixture_config("nonsense") }
+      let(:config) { build_config(:env => :nonsense) }
 
       it "is not valid or active" do
         expect(config.valid?).to be_falsy
@@ -623,7 +475,7 @@ describe Appsignal::Config do
       described_class.new(
         "non-existing-path",
         "production"
-      )
+      ).tap(&:validate)
     end
     let(:working_directory_path) { File.join(tmp_dir, "test_working_directory_path") }
     let(:env_config) do
@@ -800,71 +652,125 @@ describe Appsignal::Config do
     end
   end
 
-  describe "with config based on overrides" do
+  describe "DSL config" do
+    let(:dsl_config) do
+      {
+        :push_api_key => "abc",
+        :name => "TestApp",
+        :active => true,
+        :revision => "v2.5.1",
+        :request_headers => []
+      }
+    end
     let(:config) do
-      described_class.new(Dir.pwd, "production", config_options)
+      build_config(
+        :root_path => "non-existing-path",
+        :env => "production",
+        :options => dsl_config
+      )
     end
 
-    if DependencyHelper.rails_present?
-      require "active_job"
+    it "merges with the default config" do
+      expect(config.config_hash).to eq(
+        :active                         => true,
+        :activejob_report_errors        => "all",
+        :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :dns_servers                    => [],
+        :enable_allocation_tracking     => true,
+        :enable_at_exit_reporter        => true,
+        :enable_gvl_global_timer        => true,
+        :enable_gvl_waiting_threads     => true,
+        :enable_host_metrics            => true,
+        :enable_minutely_probes         => true,
+        :enable_statsd                  => true,
+        :enable_nginx_metrics           => false,
+        :enable_rails_error_reporter    => true,
+        :enable_rake_performance_instrumentation => false,
+        :endpoint                       => "https://push.appsignal.com",
+        :files_world_accessible         => true,
+        :filter_metadata                => [],
+        :filter_parameters              => [],
+        :filter_session_data            => [],
+        :ignore_actions                 => [],
+        :ignore_errors                  => [],
+        :ignore_logs                    => [],
+        :ignore_namespaces              => [],
+        :instrument_http_rb             => true,
+        :instrument_net_http            => true,
+        :instrument_redis               => true,
+        :instrument_sequel              => true,
+        :log                            => "file",
+        :logging_endpoint               => "https://appsignal-endpoint.net",
+        :name                           => "TestApp",
+        :push_api_key                   => "abc",
+        :request_headers                => [],
+        :revision                       => "v2.5.1",
+        :send_environment_metadata      => true,
+        :send_params                    => true,
+        :send_session_data              => true,
+        :sidekiq_report_errors          => "all"
+      )
+    end
 
-      context "activejob_report_errors" do
-        let(:config_options) { { :activejob_report_errors => "discard" } }
+    it "sets the dsl_config" do
+      expect(config.dsl_config).to eq(dsl_config)
+    end
 
-        if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
-          context "when Active Job >= 7.1 and 'discard'" do
-            it "does not override the activejob_report_errors value" do
-              expect(config[:activejob_report_errors]).to eq("discard")
-              expect(config.override_config[:activejob_report_errors]).to be_nil
-            end
-          end
-        else
-          context "when Active Job < 7.1 and 'discard'" do
-            it "sets activejob_report_errors to 'all'" do
-              expect(config[:activejob_report_errors]).to eq("all")
-              expect(config.override_config[:activejob_report_errors]).to eq("all")
-            end
+    describe "overriding system detected config" do
+      describe ":running_in_container" do
+        let(:dsl_config) { { :running_in_container => true } }
+        subject { config[:running_in_container] }
+
+        it "overrides system detected config" do
+          expect(subject).to be_truthy
+        end
+      end
+
+      describe ":active" do
+        subject { config[:active] }
+
+        context "with APPSIGNAL_PUSH_API_KEY env variable" do
+          let(:dsl_config) { { :active => false } }
+          before { ENV["APPSIGNAL_PUSH_API_KEY"] = "abc" }
+
+          it "sets given config rather than env variable" do
+            expect(subject).to be_falsy
           end
         end
       end
     end
 
-    context "sidekiq_report_errors" do
-      let(:config_options) { { :sidekiq_report_errors => "discard" } }
+    describe "overriding loader config" do
+      let(:config) do
+        build_config(
+          :root_path => "non-existing-path",
+          :env => "production",
+          :options => { :my_option => "initial value" }
+        )
+      end
       before do
-        if Appsignal::Hooks::SidekiqHook.instance_variable_defined?(:@version_5_1_or_higher)
-          Appsignal::Hooks::SidekiqHook.remove_instance_variable(:@version_5_1_or_higher)
+        define_loader(:test_loader) do
+          def on_load
+            register_config_defaults(:my_option => "loader value")
+          end
         end
+        load_loader(:test_loader)
       end
 
-      context "when Sidekiq >= 5.1 and 'discard'" do
-        before { stub_const("Sidekiq::VERSION", "5.1.0") }
-
-        it "does not override the sidekiq_report_errors value" do
-          expect(config[:sidekiq_report_errors]).to eq("discard")
-          expect(config.override_config[:sidekiq_report_errors]).to be_nil
-        end
-      end
-
-      context "when Sidekiq < 5.1 and 'discard'" do
-        before { stub_const("Sidekiq::VERSION", "5.0.0") }
-
-        it "sets sidekiq_report_errors to 'all'" do
-          expect(config[:sidekiq_report_errors]).to eq("all")
-          expect(config.override_config[:sidekiq_report_errors]).to eq("all")
-        end
+      it "overrides loader config" do
+        expect(config[:my_option]).to eq("initial value")
       end
     end
   end
 
   describe "config keys" do
+    let(:config) { build_config(:options => options) }
+
     describe ":endpoint" do
       subject { config[:endpoint] }
 
       context "with an pre-0.12-style endpoint" do
-        let(:config) do
-          project_fixture_config("production", :endpoint => "https://push.appsignal.com/1")
-        end
+        let(:options) { { :endpoint => "https://push.appsignal.com/1" } }
 
         it "strips off the path" do
           expect(subject).to eq "https://push.appsignal.com"
@@ -872,7 +778,7 @@ describe Appsignal::Config do
       end
 
       context "with a non-standard port" do
-        let(:config) { project_fixture_config("production", :endpoint => "http://localhost:4567") }
+        let(:options) { { :endpoint => "http://localhost:4567" } }
 
         it "keeps the port" do
           expect(subject).to eq "http://localhost:4567"
@@ -884,7 +790,7 @@ describe Appsignal::Config do
       subject { config[:logging_endpoint] }
 
       context "with a non-standard port" do
-        let(:config) { project_fixture_config("production", :logging_endpoint => "http://localhost:4567") }
+        let(:options) { { :logging_endpoint => "http://localhost:4567" } }
 
         it "keeps the port" do
           expect(subject).to eq "http://localhost:4567"
@@ -894,7 +800,9 @@ describe Appsignal::Config do
   end
 
   describe "#[]" do
-    let(:config) { project_fixture_config(:none, :push_api_key => "foo", :request_headers => []) }
+    let(:config) do
+      build_config(:env => :none, :options => { :push_api_key => "foo", :request_headers => [] })
+    end
 
     context "with existing key" do
       it "gets the value" do
@@ -910,7 +818,7 @@ describe Appsignal::Config do
   end
 
   describe "#[]=" do
-    let(:config) { project_fixture_config(:none) }
+    let(:config) { build_config(:env => :none) }
 
     context "with existing key" do
       it "changes the value" do
@@ -930,7 +838,7 @@ describe Appsignal::Config do
   end
 
   describe "#write_to_environment" do
-    let(:config) { project_fixture_config(:production) }
+    let(:config) { build_config }
     before do
       config[:bind_address] = "0.0.0.0"
       config[:cpu_count] = 1.5
@@ -1038,7 +946,7 @@ describe Appsignal::Config do
   describe "#log_file_path" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:config) { project_fixture_config("production", :log_path => log_path) }
+    let(:config) { build_config(:options => { :log_path => log_path }) }
 
     def log_file_path
       capture_stdout(out_stream) { config.log_file_path }
@@ -1224,7 +1132,58 @@ describe Appsignal::Config do
   describe "#validate" do
     subject { config.valid? }
     let(:config) do
-      described_class.new(Dir.pwd, "production", config_options)
+      build_config(:root_path => Dir.pwd, :env => "production", :options => config_options)
+    end
+
+    if DependencyHelper.rails_present?
+      require "active_job"
+
+      context "activejob_report_errors" do
+        let(:config_options) { { :activejob_report_errors => "discard" } }
+
+        if DependencyHelper.rails_version >= Gem::Version.new("7.1.0")
+          context "when Active Job >= 7.1 and 'discard'" do
+            it "does not override the activejob_report_errors value" do
+              expect(config[:activejob_report_errors]).to eq("discard")
+              expect(config.override_config[:activejob_report_errors]).to be_nil
+            end
+          end
+        else
+          context "when Active Job < 7.1 and 'discard'" do
+            it "sets activejob_report_errors to 'all'" do
+              expect(config[:activejob_report_errors]).to eq("all")
+              expect(config.override_config[:activejob_report_errors]).to eq("all")
+            end
+          end
+        end
+      end
+    end
+
+    context "sidekiq_report_errors" do
+      let(:config_options) { { :sidekiq_report_errors => "discard" } }
+      before do
+        if Appsignal::Hooks::SidekiqHook.instance_variable_defined?(:@version_5_1_or_higher)
+          Appsignal::Hooks::SidekiqHook.remove_instance_variable(:@version_5_1_or_higher)
+        end
+      end
+
+      context "when Sidekiq >= 5.1 and 'discard'" do
+        before { stub_const("Sidekiq::VERSION", "5.1.0") }
+
+        it "does not override the sidekiq_report_errors value" do
+          expect(config[:sidekiq_report_errors]).to eq("discard")
+          expect(config.override_config[:sidekiq_report_errors]).to be_nil
+        end
+      end
+
+      context "when Sidekiq < 5.1 and 'discard'" do
+        before { stub_const("Sidekiq::VERSION", "5.0.0") }
+
+        it "sets sidekiq_report_errors to 'all'" do
+          expect(config[:sidekiq_report_errors]).to eq("all")
+          expect(config.override_config[:sidekiq_report_errors]).to eq("all")
+        end
+      end
     end
 
     describe "push_api_key" do
@@ -1267,7 +1226,7 @@ describe Appsignal::Config do
 
   describe "#log_level" do
     let(:options) { {} }
-    let(:config) { described_class.new("", nil, options) }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
     subject { config.log_level }
 
     context "without any config" do
@@ -1328,7 +1287,7 @@ describe Appsignal::Config do
 
   describe Appsignal::Config::ConfigDSL do
     let(:env) { :production }
-    let(:config) { project_fixture_config(env) }
+    let(:config) { build_config(:env => env) }
     let(:dsl) { described_class.new(config) }
 
     describe "default options" do

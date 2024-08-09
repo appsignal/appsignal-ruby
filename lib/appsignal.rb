@@ -36,16 +36,6 @@ module Appsignal
     # @see Config
     attr_reader :config
 
-    # @api private
-    def _config=(conf)
-      if started?
-        internal_logger.warn("Ignoring `Appsignal._config=` call after AppSignal has started")
-        return
-      end
-
-      @config = conf
-    end
-
     # Accessor for toggle if the AppSignal C-extension is loaded.
     #
     # Can be `nil` if extension has not been loaded yet. See
@@ -122,6 +112,7 @@ module Appsignal
       internal_logger.debug("Loading AppSignal gem")
 
       @config ||= Config.new(Config.determine_root_path, Config.determine_env)
+      @config.validate
 
       _start_logger
 
@@ -252,20 +243,15 @@ module Appsignal
         @config = Config.new(
           root_path || Config.determine_root_path,
           Config.determine_env(env),
-          {},
-          Appsignal.internal_logger,
-          nil,
-          false
+          Appsignal.internal_logger
         )
-        config.load_config
       end
 
       config_dsl = Appsignal::Config::ConfigDSL.new(config)
-      if block_given?
-        yield config_dsl
-        config.merge_dsl_options(config_dsl.dsl_options)
-      end
-      config.validate
+      return unless block_given?
+
+      yield config_dsl
+      config.merge_dsl_options(config_dsl.dsl_options)
     end
 
     def forked

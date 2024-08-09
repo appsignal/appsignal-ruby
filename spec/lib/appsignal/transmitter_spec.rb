@@ -1,12 +1,10 @@
 describe Appsignal::Transmitter do
-  let(:config) { project_fixture_config }
+  let(:config) do
+    build_config(:options => { :hostname => "app1.local" }, :logger => Logger.new(log))
+  end
   let(:base_uri) { "action" }
   let(:log) { StringIO.new }
   let(:instance) { Appsignal::Transmitter.new(base_uri, config) }
-  before do
-    config.config_hash[:hostname] = "app1.local"
-    config.logger = Logger.new(log)
-  end
 
   describe "#uri" do
     let(:uri) { instance.uri }
@@ -123,7 +121,7 @@ describe Appsignal::Transmitter do
     subject { instance.send(:http_client) }
 
     context "with a http uri" do
-      let(:config) { project_fixture_config("test") }
+      let(:config) { build_config(:env => :test) }
 
       it { expect(subject).to be_instance_of(Net::HTTP) }
       it { expect(subject.proxy?).to be_falsy }
@@ -131,7 +129,7 @@ describe Appsignal::Transmitter do
     end
 
     context "with a https uri" do
-      let(:config) { project_fixture_config("production") }
+      let(:config) { build_config(:env => :production) }
 
       it { expect(subject).to be_instance_of(Net::HTTP) }
       it { expect(subject.proxy?).to be_falsy }
@@ -141,7 +139,7 @@ describe Appsignal::Transmitter do
     end
 
     context "with a proxy" do
-      let(:config) { project_fixture_config("production", :http_proxy => "http://localhost:8080") }
+      let(:config) { build_config(:options => { :http_proxy => "http://localhost:8080" }) }
 
       it "is of Net::HTTP class" do
         expect(subject).to be_instance_of(Net::HTTP)
