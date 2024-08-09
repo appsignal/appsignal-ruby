@@ -22,9 +22,7 @@ module Appsignal
                 {},
                 Appsignal::Utils::IntegrationLogger.new(StringIO.new)
               ).tap do |c|
-                fetch(:appsignal_config, {}).each do |key, value|
-                  c[key] = value
-                end
+                c.merge_dsl_options(fetch(:appsignal_config, {}))
                 c.validate
               end
 
