@@ -11,7 +11,6 @@ namespace :appsignal do
     appsignal_config = Appsignal::Config.new(
       Dir.pwd,
       appsignal_env,
-      {},
       Logger.new(StringIO.new)
     ).tap do |c|
       c.merge_dsl_options(fetch(:appsignal_config, {}))

@@ -21,7 +21,6 @@ module ConfigHelpers
     Appsignal::Config.new(
       project_fixture_path,
       env,
-      {},
       logger
     ).tap do |c|
       c.merge_dsl_options(options)
@@ -39,7 +38,6 @@ module ConfigHelpers
     Appsignal::Config.new(
       root_path,
       env,
-      {},
       logger
     ).tap do |c|
       c.merge_dsl_options(options) if options.any?
