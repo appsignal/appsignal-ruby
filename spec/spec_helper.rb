@@ -25,9 +25,7 @@ Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].sort.each 
   require f
 end
 if DependencyHelper.rails_present?
-  Dir[File.join(DirectoryHelper.support_dir, "rails", "*.rb")].sort.each do |f|
-    require f
-  end
+  require File.join(ConfigHelpers.rails_project_fixture_path, "config/application.rb")
 end
 if DependencyHelper.hanami2_present?
   Dir[File.join(DirectoryHelper.support_dir, "hanami", "*.rb")].sort.each do |f|

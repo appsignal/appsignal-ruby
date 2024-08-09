@@ -1,10 +1,10 @@
 module RailsHelper
-  def with_railtie(app)
-    clear_rails_error_reporter! if Rails.respond_to? :error
-    Appsignal::Integrations::Railtie.initialize_appsignal(app)
-    yield
-  ensure
-    clear_rails_error_reporter!
+  def run_appsignal_railtie
+    app = MyApp::Application.new
+    Appsignal::Integrations::Railtie.initializers.each do |initializer|
+      initializer.run(app)
+    end
+    ActiveSupport.run_load_hooks(:after_initialize, app)
   end
 
   def with_rails_error_reporter

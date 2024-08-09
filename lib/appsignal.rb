@@ -103,7 +103,12 @@ module Appsignal
     #
     # @return [void]
     # @since 0.7.0
-    def start
+    def start # rubocop:disable Metrics/AbcSize
+      if ENV.fetch("_APPSIGNAL_DIAGNOSE", false)
+        internal_logger.warn("Skipping start in diagnose context")
+        return
+      end
+
       if started?
         internal_logger.warn("Ignoring call to Appsignal.start after AppSignal has started")
         return

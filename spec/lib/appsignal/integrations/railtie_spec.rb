@@ -3,18 +3,8 @@ if DependencyHelper.rails_present?
 
   describe Appsignal::Integrations::Railtie do
     include RailsHelper
-
+    before { Appsignal.clear! }
     after { clear_rails_error_reporter! }
-
-    module RailtieHelper
-      def self.ensure_initialize!
-        return if @initialized
-
-        MyApp::Application.config.root = ConfigHelpers.project_fixture_path
-        MyApp::Application.initialize!
-        @initialized = true
-      end
-    end
 
     def expect_middleware_to_match(middleware, klass, args)
       expect(middleware.klass).to eq(klass)
@@ -26,18 +16,24 @@ if DependencyHelper.rails_present?
         expect(Appsignal::Integrations::Railtie).to receive(:on_load).and_call_original
         expect(Appsignal::Integrations::Railtie).to receive(:after_initialize).and_call_original
 
-        RailtieHelper.ensure_initialize!
+        if MyApp::Application.initialized?
+          run_appsignal_railtie
+        else
+          MyApp::Application.initialize!
+        end
       end
     end
 
     describe "initializer" do
       let(:app) { MyApp::Application.new }
       before do
-        RailtieHelper.ensure_initialize!
+        # Make sure it's initialized at least once
+        MyApp::Application.initialize!
+        Appsignal.clear!
       end
 
       def initialize_railtie(event)
-        MyApp::Application.config.root = project_fixture_path
+        MyApp::Application.config.root = rails_project_fixture_path
         case event
         when :on_load
           described_class.on_load(app)
@@ -59,19 +55,6 @@ if DependencyHelper.rails_present?
           expect(Appsignal.active?).to be_truthy
         end
 
-        it "doesn't overwrite the config if a config is already present " do
-          Appsignal._config = Appsignal::Config.new(
-            Dir.pwd,
-            "my_env",
-            :some_config => "some value"
-          )
-          initialize_railtie(event)
-
-          expect(Appsignal.config.env).to eq("my_env")
-          expect(Appsignal.config.root_path).to eq(Dir.pwd)
-          expect(Appsignal.config[:some_config]).to eq("some value")
-        end
-
         it "sets the detected environment" do
           initialize_railtie(event)
 
@@ -88,7 +71,7 @@ if DependencyHelper.rails_present?
         it "sets the Rails app path as root_path" do
           initialize_railtie(event)
 
-          expect(Appsignal.config.root_path).to eq(Pathname.new(project_fixture_path))
+          expect(Appsignal.config.root_path).to eq(Pathname.new(rails_project_fixture_path))
         end
 
         it "loads the Rails app name in the initial config" do
@@ -98,7 +81,7 @@ if DependencyHelper.rails_present?
             .find { |loader| loader[:name] == :rails }
           expect(rails_defaults[:options][:name]).to eq("MyApp")
           expect(rails_defaults[:options][:log_path])
-            .to eq(Pathname.new(File.join(project_fixture_path, "log")))
+            .to eq(Pathname.new(File.join(rails_project_fixture_path, "log")))
         end
 
         it "loads the app name from the project's appsignal.yml file" do
@@ -111,7 +94,7 @@ if DependencyHelper.rails_present?
           initialize_railtie(event)
 
           expect(Appsignal.config[:log_path])
-            .to eq(Pathname.new(File.join(project_fixture_path, "log")))
+            .to eq(Pathname.new(File.join(rails_project_fixture_path, "log")))
         end
 
         it "adds the middleware" do

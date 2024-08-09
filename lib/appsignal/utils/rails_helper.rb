@@ -15,6 +15,10 @@ module Appsignal
       def self.application_config_path
         File.expand_path(File.join(Dir.pwd, "config/application.rb"))
       end
+
+      def self.environment_config_path
+        File.expand_path(File.join(Dir.pwd, "config/environment.rb"))
+      end
     end
   end
 end
