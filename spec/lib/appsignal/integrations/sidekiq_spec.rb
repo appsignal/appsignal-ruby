@@ -374,27 +374,24 @@ describe Appsignal::Integrations::SidekiqMiddleware do
       include RailsHelper
 
       it "reports the worker name as the action, copies the namespace and tags" do
-        with_rails_error_reporter do
-          perform_sidekiq_job do
-            Appsignal.tag_job("test_tag" => "value")
-            Rails.error.handle do
-              raise ExampleStandardError, "uh oh"
+        expect do
+          with_rails_error_reporter do
+            perform_sidekiq_job do
+              Appsignal.tag_job("test_tag" => "value")
+              Rails.error.handle do
+                raise ExampleStandardError, "error message"
+              end
             end
           end
-        end
+        end.to change { created_transactions.count }.by(1)
 
-        expect(created_transactions.count).to eq(2)
         tags = { "test_tag" => "value" }
-        sidekiq_transaction = created_transactions.first
-        error_reporter_transaction = created_transactions.last
+        transaction = last_transaction
 
-        expect(sidekiq_transaction).to have_namespace("background_job")
-        expect(sidekiq_transaction).to have_action("TestClass#perform")
-        expect(sidekiq_transaction).to include_tags(tags)
-
-        expect(error_reporter_transaction).to have_namespace("background_job")
-        expect(error_reporter_transaction).to have_action("TestClass#perform")
-        expect(error_reporter_transaction).to include_tags(tags)
+        expect(transaction).to have_namespace("background_job")
+        expect(transaction).to have_action("TestClass#perform")
+        expect(transaction).to have_error("ExampleStandardError", "error message")
+        expect(transaction).to include_tags(tags)
       end
     end
   end
