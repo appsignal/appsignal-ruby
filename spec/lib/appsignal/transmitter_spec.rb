@@ -52,11 +52,39 @@ describe Appsignal::Transmitter do
         }
       ).to_return(:status => 200)
     end
-    let(:response) { instance.transmit(:the => :payload) }
+
+    let(:response) { instance.transmit({ :the => :payload }) }
 
     it "returns Net::HTTP response" do
       expect(response).to be_kind_of(Net::HTTPResponse)
       expect(response.code).to eq "200"
+    end
+
+    describe "with :ndjson format" do
+      before do
+        stub_request(:post, "https://push.appsignal.com/1/action").with(
+          :query => {
+            :api_key => "abc",
+            :environment => "production",
+            :gem_version => Appsignal::VERSION,
+            :hostname => config[:hostname],
+            :name => "TestApp"
+          },
+          :body => "{\"the\":\"payload\"}\n{\"part\":\"two\"}",
+          :headers => {
+            "Content-Type" => "application/x-ndjson; charset=UTF-8"
+          }
+        ).to_return(:status => 200)
+      end
+
+      let(:response) do
+        instance.transmit([{ :the => :payload }, { :part => :two }], :format => :ndjson)
+      end
+
+      it "returns Net::HTTP response" do
+        expect(response).to be_kind_of(Net::HTTPResponse)
+        expect(response.code).to eq "200"
+      end
     end
 
     context "with ca_file_path config option set" do
@@ -106,7 +134,7 @@ describe Appsignal::Transmitter do
   end
 
   describe "#http_post" do
-    subject { instance.send(:http_post, "the" => "payload") }
+    subject { instance.send(:http_post, { "the" => "payload" }, :format => :json) }
 
     it "sets the path" do
       expect(subject.path).to eq instance.uri.request_uri
@@ -114,6 +142,24 @@ describe Appsignal::Transmitter do
 
     it "sets the correct headers" do
       expect(subject["Content-Type"]).to eq "application/json; charset=UTF-8"
+    end
+
+    it "serialises the payload to JSON" do
+      expect(subject.body).to eq "{\"the\":\"payload\"}"
+    end
+
+    describe "with :ndjson format" do
+      subject do
+        instance.send(:http_post, [{ "the" => "payload" }, { "part" => "two" }], :format => :ndjson)
+      end
+
+      it "sets the correct headers" do
+        expect(subject["Content-Type"]).to eq "application/x-ndjson; charset=UTF-8"
+      end
+
+      it "serialises the payload to NDJSON" do
+        expect(subject.body).to eq "{\"the\":\"payload\"}\n{\"part\":\"two\"}"
+      end
     end
   end
 

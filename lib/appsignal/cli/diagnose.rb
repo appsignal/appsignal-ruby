@@ -150,7 +150,7 @@ module Appsignal
             ENV.fetch("APPSIGNAL_DIAGNOSE_ENDPOINT", DIAGNOSE_ENDPOINT),
             Appsignal.config
           )
-          response = transmitter.transmit(:diagnose => data)
+          response = transmitter.transmit({ :diagnose => data })
 
           unless response.code == "200"
             puts "  Error: Something went wrong while submitting the report " \

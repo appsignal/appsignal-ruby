@@ -163,6 +163,7 @@ module Appsignal
       end
       Appsignal::Extension.stop
       Appsignal::Probes.stop
+      Appsignal::CheckIn.stop
     end
 
     # Configure the AppSignal Ruby gem using a DSL.

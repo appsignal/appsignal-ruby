@@ -9,7 +9,8 @@ require "json"
 module Appsignal
   # @api private
   class Transmitter
-    CONTENT_TYPE = "application/json; charset=UTF-8"
+    JSON_CONTENT_TYPE = "application/json; charset=UTF-8"
+    NDJSON_CONTENT_TYPE = "application/x-ndjson; charset=UTF-8"
 
     HTTP_ERRORS = [
       EOFError,
@@ -53,17 +54,39 @@ module Appsignal
       end
     end
 
-    def transmit(payload)
-      config.logger.debug "Transmitting payload to #{uri}"
-      http_client.request(http_post(payload))
+    def transmit(payload, format: :json)
+      Appsignal.internal_logger.debug "Transmitting payload to #{uri}"
+      http_client.request(http_post(payload, :format => format))
     end
 
     private
 
-    def http_post(payload)
+    def http_post(payload, format: :json)
       Net::HTTP::Post.new(uri.request_uri).tap do |request|
-        request["Content-Type"] = CONTENT_TYPE
-        request.body = Appsignal::Utils::JSON.generate(payload)
+        request["Content-Type"] = content_type_for(format)
+        request.body = generate_body_for(format, payload)
+      end
+    end
+
+    def content_type_for(format)
+      case format
+      when :json
+        JSON_CONTENT_TYPE
+      when :ndjson
+        NDJSON_CONTENT_TYPE
+      else
+        raise ArgumentError, "Unknown Content-Type header for format: #{format}"
+      end
+    end
+
+    def generate_body_for(format, payload)
+      case format
+      when :json
+        Appsignal::Utils::JSON.generate(payload)
+      when :ndjson
+        Appsignal::Utils::NDJSON.generate(payload)
+      else
+        raise ArgumentError, "Unknown body generator for format: #{format}"
       end
     end
 

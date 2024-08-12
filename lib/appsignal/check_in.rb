@@ -39,8 +39,26 @@ module Appsignal
         cron.finish
         output
       end
+
+      # @api private
+      def transmitter
+        @transmitter ||= Transmitter.new(
+          "#{Appsignal.config[:logging_endpoint]}/check_ins/json"
+        )
+      end
+
+      # @api private
+      def scheduler
+        @scheduler ||= Scheduler.new
+      end
+
+      # @api private
+      def stop
+        scheduler&.stop
+      end
     end
   end
 end
 
+require "appsignal/check_in/scheduler"
 require "appsignal/check_in/cron"
