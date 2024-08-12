@@ -195,7 +195,7 @@ describe Appsignal::CheckIn::Cron do
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.id}) start event"
+        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.digest}) start event"
       )
       expect(Appsignal.internal_logger).not_to receive(:error)
 
@@ -227,7 +227,7 @@ describe Appsignal::CheckIn::Cron do
       )).and_return(Net::HTTPResponse.new(nil, "200", nil))
 
       expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.id}) finish event"
+        "Transmitted cron check-in `cron-checkin-name` (#{cron_checkin.digest}) finish event"
       )
       expect(Appsignal.internal_logger).not_to receive(:error)
 
@@ -250,7 +250,7 @@ describe Appsignal::CheckIn::Cron do
     end
   end
 
-  describe ".cron_checkin" do
+  describe ".cron" do
     describe "when a block is given" do
       it "should send a cron check-in start and finish and return the block output" do
         expect(transmitter).to receive(:transmit).with(hash_including(
@@ -298,6 +298,45 @@ describe Appsignal::CheckIn::Cron do
 
         Appsignal::CheckIn.cron("cron-checkin-without-block")
       end
+    end
+  end
+
+  describe "#initialize" do
+    describe "when initialised with deprecated heartbeat keyword names" do
+      let(:err_stream) { std_stream }
+
+      after do
+        described_class.instance_variable_set(:@initializer_deprecation_warning_emitted, false)
+      end
+
+      it "can be initialised" do
+        cron_checkin = described_class.new(:name => "cron-checkin-name")
+        expect(cron_checkin.identifier).to eq("cron-checkin-name")
+      end
+
+      it "logs a deprecation warning" do
+        capture_std_streams(std_stream, err_stream) do
+          expect(described_class.new(:name => "cron-checkin-name"))
+            .to be_a(Appsignal::CheckIn::Cron)
+        end
+
+        expect(err_stream.read)
+          .to include(
+            "appsignal WARNING: Passing a `name` keyword argument to " \
+              "`Appsignal::CheckIn::Cron.new` is deprecated."
+          )
+      end
+    end
+
+    it "can be initialised with cron check-in keyword names" do
+      cron_checkin = described_class.new(:identifier => "cron-checkin-name")
+      expect(cron_checkin.identifier).to eq("cron-checkin-name")
+    end
+
+    it "raises an error when no identifier is given" do
+      expect do
+        described_class.new
+      end.to raise_error(ArgumentError, "missing keyword: :identifier")
     end
   end
 end

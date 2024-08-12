@@ -27,8 +27,8 @@ module Appsignal
       # @return [void]
       # @since 3.12.7
       # @see https://docs.appsignal.com/check-ins/cron
-      def cron(name)
-        cron = Appsignal::CheckIn::Cron.new(:name => name)
+      def cron(identifier)
+        cron = Appsignal::CheckIn::Cron.new(:identifier => identifier)
         output = nil
 
         if block_given?
