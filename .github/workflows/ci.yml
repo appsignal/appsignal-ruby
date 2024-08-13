@@ -73,8 +73,8 @@ jobs:
       working-directory: spec/integration/diagnose
       env:
         LANGUAGE: ruby
-  ruby_3-3-1_ubuntu-latest:
-    name: Ruby 3.3.1
+  ruby_3-3-4_ubuntu-latest:
+    name: Ruby 3.3.4
     needs: validation
     runs-on: ubuntu-latest
     steps:
@@ -83,7 +83,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -102,9 +102,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-3-1__capistrano2_ubuntu-latest:
-    name: Ruby 3.3.1 - capistrano2
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__capistrano2_ubuntu-latest:
+    name: Ruby 3.3.4 - capistrano2
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -112,7 +112,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -129,9 +129,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano2.gemfile
-  ruby_3-3-1__capistrano3_ubuntu-latest:
-    name: Ruby 3.3.1 - capistrano3
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__capistrano3_ubuntu-latest:
+    name: Ruby 3.3.4 - capistrano3
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -139,7 +139,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -156,9 +156,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano3.gemfile
-  ruby_3-3-1__dry-monitor_ubuntu-latest:
-    name: Ruby 3.3.1 - dry-monitor
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__dry-monitor_ubuntu-latest:
+    name: Ruby 3.3.4 - dry-monitor
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -166,7 +166,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -183,9 +183,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/dry-monitor.gemfile
-  ruby_3-3-1__grape_ubuntu-latest:
-    name: Ruby 3.3.1 - grape
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__grape_ubuntu-latest:
+    name: Ruby 3.3.4 - grape
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -193,7 +193,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -210,9 +210,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/grape.gemfile
-  ruby_3-3-1__hanami-2-0_ubuntu-latest:
-    name: Ruby 3.3.1 - hanami-2.0
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__hanami-2-0_ubuntu-latest:
+    name: Ruby 3.3.4 - hanami-2.0
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -220,7 +220,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -237,9 +237,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.0.gemfile
-  ruby_3-3-1__hanami-2-1_ubuntu-latest:
-    name: Ruby 3.3.1 - hanami-2.1
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__hanami-2-1_ubuntu-latest:
+    name: Ruby 3.3.4 - hanami-2.1
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -247,7 +247,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -264,9 +264,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.1.gemfile
-  ruby_3-3-1__http5_ubuntu-latest:
-    name: Ruby 3.3.1 - http5
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__http5_ubuntu-latest:
+    name: Ruby 3.3.4 - http5
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -274,7 +274,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -291,9 +291,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/http5.gemfile
-  ruby_3-3-1__padrino_ubuntu-latest:
-    name: Ruby 3.3.1 - padrino
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__padrino_ubuntu-latest:
+    name: Ruby 3.3.4 - padrino
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -301,7 +301,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -318,9 +318,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/padrino.gemfile
-  ruby_3-3-1__psych-3_ubuntu-latest:
-    name: Ruby 3.3.1 - psych-3
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__psych-3_ubuntu-latest:
+    name: Ruby 3.3.4 - psych-3
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -328,7 +328,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -345,9 +345,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-3.gemfile
-  ruby_3-3-1__psych-4_ubuntu-latest:
-    name: Ruby 3.3.1 - psych-4
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__psych-4_ubuntu-latest:
+    name: Ruby 3.3.4 - psych-4
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -355,7 +355,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -372,9 +372,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-3-1__que_ubuntu-latest:
-    name: Ruby 3.3.1 - que
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__que_ubuntu-latest:
+    name: Ruby 3.3.4 - que
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -382,7 +382,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -399,9 +399,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/que.gemfile
-  ruby_3-3-1__rails-6-1_ubuntu-latest:
-    name: Ruby 3.3.1 - rails-6.1
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__rails-6-1_ubuntu-latest:
+    name: Ruby 3.3.4 - rails-6.1
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -409,7 +409,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -426,9 +426,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.1.gemfile
-  ruby_3-3-1__rails-7-0_ubuntu-latest:
-    name: Ruby 3.3.1 - rails-7.0
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__rails-7-0_ubuntu-latest:
+    name: Ruby 3.3.4 - rails-7.0
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -436,7 +436,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -453,9 +453,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
-  ruby_3-3-1__rails-7-1_ubuntu-latest:
-    name: Ruby 3.3.1 - rails-7.1
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__rails-7-1_ubuntu-latest:
+    name: Ruby 3.3.4 - rails-7.1
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -463,7 +463,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -480,9 +480,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
-  ruby_3-3-1__sequel_ubuntu-latest:
-    name: Ruby 3.3.1 - sequel
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__sequel_ubuntu-latest:
+    name: Ruby 3.3.4 - sequel
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -490,7 +490,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -507,9 +507,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-3-1__sinatra_ubuntu-latest:
-    name: Ruby 3.3.1 - sinatra
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__sinatra_ubuntu-latest:
+    name: Ruby 3.3.4 - sinatra
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -517,7 +517,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -534,9 +534,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sinatra.gemfile
-  ruby_3-3-1__webmachine2_ubuntu-latest:
-    name: Ruby 3.3.1 - webmachine2
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__webmachine2_ubuntu-latest:
+    name: Ruby 3.3.4 - webmachine2
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -544,7 +544,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -561,9 +561,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/webmachine2.gemfile
-  ruby_3-3-1__redis-4_ubuntu-latest:
-    name: Ruby 3.3.1 - redis-4
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__redis-4_ubuntu-latest:
+    name: Ruby 3.3.4 - redis-4
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -571,7 +571,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -588,9 +588,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-4.gemfile
-  ruby_3-3-1__redis-5_ubuntu-latest:
-    name: Ruby 3.3.1 - redis-5
-    needs: ruby_3-3-1_ubuntu-latest
+  ruby_3-3-4__redis-5_ubuntu-latest:
+    name: Ruby 3.3.4 - redis-5
+    needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -598,7 +598,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -615,8 +615,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_3-3-1_macos-14:
-    name: Ruby 3.3.1 (macos-14)
+  ruby_3-3-4_macos-14:
+    name: Ruby 3.3.4 (macos-14)
     needs: validation
     runs-on: macos-14
     steps:
@@ -625,7 +625,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.3.1
+        ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -644,8 +644,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-2-1_ubuntu-latest:
-    name: Ruby 3.2.1
+  ruby_3-2-5_ubuntu-latest:
+    name: Ruby 3.2.5
     needs: validation
     runs-on: ubuntu-latest
     steps:
@@ -654,7 +654,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -673,9 +673,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-2-1__capistrano2_ubuntu-latest:
-    name: Ruby 3.2.1 - capistrano2
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__capistrano2_ubuntu-latest:
+    name: Ruby 3.2.5 - capistrano2
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -683,7 +683,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -700,9 +700,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano2.gemfile
-  ruby_3-2-1__capistrano3_ubuntu-latest:
-    name: Ruby 3.2.1 - capistrano3
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__capistrano3_ubuntu-latest:
+    name: Ruby 3.2.5 - capistrano3
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -710,7 +710,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -727,9 +727,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano3.gemfile
-  ruby_3-2-1__dry-monitor_ubuntu-latest:
-    name: Ruby 3.2.1 - dry-monitor
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__dry-monitor_ubuntu-latest:
+    name: Ruby 3.2.5 - dry-monitor
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -737,7 +737,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -754,9 +754,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/dry-monitor.gemfile
-  ruby_3-2-1__grape_ubuntu-latest:
-    name: Ruby 3.2.1 - grape
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__grape_ubuntu-latest:
+    name: Ruby 3.2.5 - grape
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -764,7 +764,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -781,9 +781,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/grape.gemfile
-  ruby_3-2-1__hanami-2-0_ubuntu-latest:
-    name: Ruby 3.2.1 - hanami-2.0
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__hanami-2-0_ubuntu-latest:
+    name: Ruby 3.2.5 - hanami-2.0
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -791,7 +791,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -808,9 +808,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.0.gemfile
-  ruby_3-2-1__hanami-2-1_ubuntu-latest:
-    name: Ruby 3.2.1 - hanami-2.1
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__hanami-2-1_ubuntu-latest:
+    name: Ruby 3.2.5 - hanami-2.1
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -818,7 +818,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -835,9 +835,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.1.gemfile
-  ruby_3-2-1__http5_ubuntu-latest:
-    name: Ruby 3.2.1 - http5
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__http5_ubuntu-latest:
+    name: Ruby 3.2.5 - http5
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -845,7 +845,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -862,9 +862,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/http5.gemfile
-  ruby_3-2-1__padrino_ubuntu-latest:
-    name: Ruby 3.2.1 - padrino
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__padrino_ubuntu-latest:
+    name: Ruby 3.2.5 - padrino
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -872,7 +872,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -889,9 +889,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/padrino.gemfile
-  ruby_3-2-1__psych-3_ubuntu-latest:
-    name: Ruby 3.2.1 - psych-3
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__psych-3_ubuntu-latest:
+    name: Ruby 3.2.5 - psych-3
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -899,7 +899,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -916,9 +916,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-3.gemfile
-  ruby_3-2-1__psych-4_ubuntu-latest:
-    name: Ruby 3.2.1 - psych-4
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__psych-4_ubuntu-latest:
+    name: Ruby 3.2.5 - psych-4
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -926,7 +926,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -943,9 +943,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-2-1__que_ubuntu-latest:
-    name: Ruby 3.2.1 - que
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__que_ubuntu-latest:
+    name: Ruby 3.2.5 - que
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -953,7 +953,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -970,9 +970,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/que.gemfile
-  ruby_3-2-1__rails-6-1_ubuntu-latest:
-    name: Ruby 3.2.1 - rails-6.1
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__rails-6-1_ubuntu-latest:
+    name: Ruby 3.2.5 - rails-6.1
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -980,7 +980,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -997,9 +997,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.1.gemfile
-  ruby_3-2-1__rails-7-0_ubuntu-latest:
-    name: Ruby 3.2.1 - rails-7.0
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__rails-7-0_ubuntu-latest:
+    name: Ruby 3.2.5 - rails-7.0
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1007,7 +1007,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1024,9 +1024,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
-  ruby_3-2-1__rails-7-1_ubuntu-latest:
-    name: Ruby 3.2.1 - rails-7.1
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__rails-7-1_ubuntu-latest:
+    name: Ruby 3.2.5 - rails-7.1
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1034,7 +1034,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1051,9 +1051,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
-  ruby_3-2-1__sequel_ubuntu-latest:
-    name: Ruby 3.2.1 - sequel
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__sequel_ubuntu-latest:
+    name: Ruby 3.2.5 - sequel
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1061,7 +1061,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1078,9 +1078,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-2-1__sinatra_ubuntu-latest:
-    name: Ruby 3.2.1 - sinatra
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__sinatra_ubuntu-latest:
+    name: Ruby 3.2.5 - sinatra
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1088,7 +1088,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1105,9 +1105,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sinatra.gemfile
-  ruby_3-2-1__webmachine2_ubuntu-latest:
-    name: Ruby 3.2.1 - webmachine2
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__webmachine2_ubuntu-latest:
+    name: Ruby 3.2.5 - webmachine2
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1115,7 +1115,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1132,9 +1132,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/webmachine2.gemfile
-  ruby_3-2-1__redis-4_ubuntu-latest:
-    name: Ruby 3.2.1 - redis-4
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__redis-4_ubuntu-latest:
+    name: Ruby 3.2.5 - redis-4
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1142,7 +1142,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1159,9 +1159,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-4.gemfile
-  ruby_3-2-1__redis-5_ubuntu-latest:
-    name: Ruby 3.2.1 - redis-5
-    needs: ruby_3-2-1_ubuntu-latest
+  ruby_3-2-5__redis-5_ubuntu-latest:
+    name: Ruby 3.2.5 - redis-5
+    needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1169,7 +1169,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1186,8 +1186,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_3-2-1_macos-14:
-    name: Ruby 3.2.1 (macos-14)
+  ruby_3-2-5_macos-14:
+    name: Ruby 3.2.5 (macos-14)
     needs: validation
     runs-on: macos-14
     steps:
@@ -1196,7 +1196,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.2.1
+        ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1215,8 +1215,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-1-3_ubuntu-latest:
-    name: Ruby 3.1.3
+  ruby_3-1-6_ubuntu-latest:
+    name: Ruby 3.1.6
     needs: validation
     runs-on: ubuntu-latest
     steps:
@@ -1225,7 +1225,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1244,9 +1244,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-1-3__capistrano2_ubuntu-latest:
-    name: Ruby 3.1.3 - capistrano2
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__capistrano2_ubuntu-latest:
+    name: Ruby 3.1.6 - capistrano2
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1254,7 +1254,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1271,9 +1271,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano2.gemfile
-  ruby_3-1-3__capistrano3_ubuntu-latest:
-    name: Ruby 3.1.3 - capistrano3
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__capistrano3_ubuntu-latest:
+    name: Ruby 3.1.6 - capistrano3
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1281,7 +1281,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1298,9 +1298,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano3.gemfile
-  ruby_3-1-3__dry-monitor_ubuntu-latest:
-    name: Ruby 3.1.3 - dry-monitor
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__dry-monitor_ubuntu-latest:
+    name: Ruby 3.1.6 - dry-monitor
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1308,7 +1308,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1325,9 +1325,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/dry-monitor.gemfile
-  ruby_3-1-3__grape_ubuntu-latest:
-    name: Ruby 3.1.3 - grape
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__grape_ubuntu-latest:
+    name: Ruby 3.1.6 - grape
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1335,7 +1335,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1352,9 +1352,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/grape.gemfile
-  ruby_3-1-3__hanami-2-0_ubuntu-latest:
-    name: Ruby 3.1.3 - hanami-2.0
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__hanami-2-0_ubuntu-latest:
+    name: Ruby 3.1.6 - hanami-2.0
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1362,7 +1362,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1379,9 +1379,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.0.gemfile
-  ruby_3-1-3__hanami-2-1_ubuntu-latest:
-    name: Ruby 3.1.3 - hanami-2.1
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__hanami-2-1_ubuntu-latest:
+    name: Ruby 3.1.6 - hanami-2.1
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1389,7 +1389,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1406,9 +1406,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.1.gemfile
-  ruby_3-1-3__http5_ubuntu-latest:
-    name: Ruby 3.1.3 - http5
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__http5_ubuntu-latest:
+    name: Ruby 3.1.6 - http5
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1416,7 +1416,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1433,9 +1433,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/http5.gemfile
-  ruby_3-1-3__padrino_ubuntu-latest:
-    name: Ruby 3.1.3 - padrino
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__padrino_ubuntu-latest:
+    name: Ruby 3.1.6 - padrino
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1443,7 +1443,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1460,9 +1460,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/padrino.gemfile
-  ruby_3-1-3__psych-3_ubuntu-latest:
-    name: Ruby 3.1.3 - psych-3
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__psych-3_ubuntu-latest:
+    name: Ruby 3.1.6 - psych-3
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1470,7 +1470,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1487,9 +1487,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-3.gemfile
-  ruby_3-1-3__psych-4_ubuntu-latest:
-    name: Ruby 3.1.3 - psych-4
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__psych-4_ubuntu-latest:
+    name: Ruby 3.1.6 - psych-4
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1497,7 +1497,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1514,9 +1514,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-1-3__que_ubuntu-latest:
-    name: Ruby 3.1.3 - que
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__que_ubuntu-latest:
+    name: Ruby 3.1.6 - que
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1524,7 +1524,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1541,9 +1541,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/que.gemfile
-  ruby_3-1-3__rails-6-1_ubuntu-latest:
-    name: Ruby 3.1.3 - rails-6.1
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__rails-6-1_ubuntu-latest:
+    name: Ruby 3.1.6 - rails-6.1
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1551,7 +1551,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1568,9 +1568,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.1.gemfile
-  ruby_3-1-3__rails-7-0_ubuntu-latest:
-    name: Ruby 3.1.3 - rails-7.0
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__rails-7-0_ubuntu-latest:
+    name: Ruby 3.1.6 - rails-7.0
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1578,7 +1578,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1595,9 +1595,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
-  ruby_3-1-3__rails-7-1_ubuntu-latest:
-    name: Ruby 3.1.3 - rails-7.1
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__rails-7-1_ubuntu-latest:
+    name: Ruby 3.1.6 - rails-7.1
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1605,7 +1605,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1622,9 +1622,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
-  ruby_3-1-3__sequel_ubuntu-latest:
-    name: Ruby 3.1.3 - sequel
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__sequel_ubuntu-latest:
+    name: Ruby 3.1.6 - sequel
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1632,7 +1632,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1649,9 +1649,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-1-3__sinatra_ubuntu-latest:
-    name: Ruby 3.1.3 - sinatra
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__sinatra_ubuntu-latest:
+    name: Ruby 3.1.6 - sinatra
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1659,7 +1659,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1676,9 +1676,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sinatra.gemfile
-  ruby_3-1-3__webmachine2_ubuntu-latest:
-    name: Ruby 3.1.3 - webmachine2
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__webmachine2_ubuntu-latest:
+    name: Ruby 3.1.6 - webmachine2
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1686,7 +1686,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1703,9 +1703,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/webmachine2.gemfile
-  ruby_3-1-3__redis-4_ubuntu-latest:
-    name: Ruby 3.1.3 - redis-4
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__redis-4_ubuntu-latest:
+    name: Ruby 3.1.6 - redis-4
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1713,7 +1713,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1730,9 +1730,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-4.gemfile
-  ruby_3-1-3__redis-5_ubuntu-latest:
-    name: Ruby 3.1.3 - redis-5
-    needs: ruby_3-1-3_ubuntu-latest
+  ruby_3-1-6__redis-5_ubuntu-latest:
+    name: Ruby 3.1.6 - redis-5
+    needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1740,7 +1740,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1757,8 +1757,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_3-1-3_macos-14:
-    name: Ruby 3.1.3 (macos-14)
+  ruby_3-1-6_macos-14:
+    name: Ruby 3.1.6 (macos-14)
     needs: validation
     runs-on: macos-14
     steps:
@@ -1767,7 +1767,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.1.3
+        ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1786,8 +1786,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-0-5_ubuntu-latest:
-    name: Ruby 3.0.5
+  ruby_3-0-7_ubuntu-latest:
+    name: Ruby 3.0.7
     needs: validation
     runs-on: ubuntu-latest
     steps:
@@ -1796,7 +1796,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1815,9 +1815,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
-  ruby_3-0-5__capistrano2_ubuntu-latest:
-    name: Ruby 3.0.5 - capistrano2
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__capistrano2_ubuntu-latest:
+    name: Ruby 3.0.7 - capistrano2
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1825,7 +1825,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1842,9 +1842,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano2.gemfile
-  ruby_3-0-5__capistrano3_ubuntu-latest:
-    name: Ruby 3.0.5 - capistrano3
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__capistrano3_ubuntu-latest:
+    name: Ruby 3.0.7 - capistrano3
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1852,7 +1852,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1869,9 +1869,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/capistrano3.gemfile
-  ruby_3-0-5__dry-monitor_ubuntu-latest:
-    name: Ruby 3.0.5 - dry-monitor
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__dry-monitor_ubuntu-latest:
+    name: Ruby 3.0.7 - dry-monitor
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1879,7 +1879,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1896,9 +1896,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/dry-monitor.gemfile
-  ruby_3-0-5__grape_ubuntu-latest:
-    name: Ruby 3.0.5 - grape
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__grape_ubuntu-latest:
+    name: Ruby 3.0.7 - grape
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1906,7 +1906,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1923,9 +1923,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/grape.gemfile
-  ruby_3-0-5__hanami-2-0_ubuntu-latest:
-    name: Ruby 3.0.5 - hanami-2.0
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__hanami-2-0_ubuntu-latest:
+    name: Ruby 3.0.7 - hanami-2.0
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1933,7 +1933,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1950,9 +1950,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.0.gemfile
-  ruby_3-0-5__hanami-2-1_ubuntu-latest:
-    name: Ruby 3.0.5 - hanami-2.1
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__hanami-2-1_ubuntu-latest:
+    name: Ruby 3.0.7 - hanami-2.1
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1960,7 +1960,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -1977,9 +1977,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/hanami-2.1.gemfile
-  ruby_3-0-5__http5_ubuntu-latest:
-    name: Ruby 3.0.5 - http5
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__http5_ubuntu-latest:
+    name: Ruby 3.0.7 - http5
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -1987,7 +1987,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2004,9 +2004,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/http5.gemfile
-  ruby_3-0-5__padrino_ubuntu-latest:
-    name: Ruby 3.0.5 - padrino
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__padrino_ubuntu-latest:
+    name: Ruby 3.0.7 - padrino
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2014,7 +2014,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2031,9 +2031,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/padrino.gemfile
-  ruby_3-0-5__psych-3_ubuntu-latest:
-    name: Ruby 3.0.5 - psych-3
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__psych-3_ubuntu-latest:
+    name: Ruby 3.0.7 - psych-3
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2041,7 +2041,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2058,9 +2058,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-3.gemfile
-  ruby_3-0-5__psych-4_ubuntu-latest:
-    name: Ruby 3.0.5 - psych-4
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__psych-4_ubuntu-latest:
+    name: Ruby 3.0.7 - psych-4
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2068,7 +2068,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2085,9 +2085,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-0-5__que_ubuntu-latest:
-    name: Ruby 3.0.5 - que
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__que_ubuntu-latest:
+    name: Ruby 3.0.7 - que
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2095,7 +2095,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2112,9 +2112,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/que.gemfile
-  ruby_3-0-5__rails-6-0_ubuntu-latest:
-    name: Ruby 3.0.5 - rails-6.0
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__rails-6-0_ubuntu-latest:
+    name: Ruby 3.0.7 - rails-6.0
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2122,7 +2122,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2139,9 +2139,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.0.gemfile
-  ruby_3-0-5__rails-6-1_ubuntu-latest:
-    name: Ruby 3.0.5 - rails-6.1
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__rails-6-1_ubuntu-latest:
+    name: Ruby 3.0.7 - rails-6.1
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2149,7 +2149,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2166,9 +2166,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-6.1.gemfile
-  ruby_3-0-5__rails-7-0_ubuntu-latest:
-    name: Ruby 3.0.5 - rails-7.0
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__rails-7-0_ubuntu-latest:
+    name: Ruby 3.0.7 - rails-7.0
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2176,7 +2176,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2193,9 +2193,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
-  ruby_3-0-5__rails-7-1_ubuntu-latest:
-    name: Ruby 3.0.5 - rails-7.1
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__rails-7-1_ubuntu-latest:
+    name: Ruby 3.0.7 - rails-7.1
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2203,7 +2203,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2220,9 +2220,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
-  ruby_3-0-5__sequel_ubuntu-latest:
-    name: Ruby 3.0.5 - sequel
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__sequel_ubuntu-latest:
+    name: Ruby 3.0.7 - sequel
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2230,7 +2230,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2247,9 +2247,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-0-5__sinatra_ubuntu-latest:
-    name: Ruby 3.0.5 - sinatra
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__sinatra_ubuntu-latest:
+    name: Ruby 3.0.7 - sinatra
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2257,7 +2257,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2274,9 +2274,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sinatra.gemfile
-  ruby_3-0-5__webmachine2_ubuntu-latest:
-    name: Ruby 3.0.5 - webmachine2
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__webmachine2_ubuntu-latest:
+    name: Ruby 3.0.7 - webmachine2
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2284,7 +2284,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2301,9 +2301,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/webmachine2.gemfile
-  ruby_3-0-5__redis-4_ubuntu-latest:
-    name: Ruby 3.0.5 - redis-4
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__redis-4_ubuntu-latest:
+    name: Ruby 3.0.7 - redis-4
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2311,7 +2311,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2328,9 +2328,9 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-4.gemfile
-  ruby_3-0-5__redis-5_ubuntu-latest:
-    name: Ruby 3.0.5 - redis-5
-    needs: ruby_3-0-5_ubuntu-latest
+  ruby_3-0-7__redis-5_ubuntu-latest:
+    name: Ruby 3.0.7 - redis-5
+    needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
     - name: Check out repository
@@ -2338,7 +2338,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
@@ -2355,8 +2355,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_3-0-5_macos-14:
-    name: Ruby 3.0.5 (macos-14)
+  ruby_3-0-7_macos-14:
+    name: Ruby 3.0.7 (macos-14)
     needs: validation
     runs-on: macos-14
     steps:
@@ -2365,7 +2365,7 @@ jobs:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.0.5
+        ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
       run: "./support/bundler_wrapper exec rake extension:install"
