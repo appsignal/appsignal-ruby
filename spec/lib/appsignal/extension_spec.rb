@@ -49,7 +49,7 @@ describe Appsignal::Extension do
 
     context "with a valid config" do
       before do
-        project_fixture_config.write_to_environment
+        build_config.write_to_environment
       end
 
       it "should have a start and stop method" do

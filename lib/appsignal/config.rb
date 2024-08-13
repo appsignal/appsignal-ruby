@@ -178,11 +178,6 @@ module Appsignal
     #   Used in diagnose report.
     #   @api private
     #   @return [Hash]
-    # @!attribute [r] initial_config
-    #   Config detected on the system level.
-    #   Used in diagnose report.
-    #   @api private
-    #   @return [Hash]
     # @!attribute [r] file_config
     #   Config loaded from `config/appsignal.yml` config file.
     #   Used in diagnose report.
@@ -195,8 +190,8 @@ module Appsignal
     #   @return [Hash]
     # @!attribute [r] config_hash
     #   Config used by the AppSignal gem.
-    #   Combined Hash of the {system_config}, {initial_config}, {file_config},
-    #   {env_config} attributes.
+    #   Combined Hash of the {system_config}, {file_config}, {env_config}
+    #   attributes.
     #   @see #[]
     #   @see #[]=
     #   @api private
@@ -215,9 +210,6 @@ module Appsignal
     # @param initial_env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
-    # @param initial_config [Hash<String, Object>] The initial configuration to
-    #   use. This will be overwritten by the file config and environment
-    #   variables config.
     # @param logger [Logger] The logger to use for the AppSignal gem. This is
     #   used by the configuration class only. Default:
     #   {Appsignal.internal_logger}. See also {Appsignal.start}.
@@ -231,13 +223,10 @@ module Appsignal
     #   Configuration load order
     # @see https://docs.appsignal.com/ruby/instrumentation/integrating-appsignal.html
     #   How to integrate AppSignal manually
-    def initialize( # rubocop:disable Metrics/ParameterLists
+    def initialize(
       root_path,
       initial_env,
-      initial_config = {},
-      logger = Appsignal.internal_logger,
-      config_file = nil,
-      load_on_new = true # rubocop:disable Style/OptionalBooleanParameter
+      logger = Appsignal.internal_logger
     )
       @root_path = root_path
       @config_file_error = false
@@ -250,20 +239,13 @@ module Appsignal
       @config_hash = {}
       @system_config = {}
       @loaders_config = {}
-      @initial_config = initial_config
+      @initial_config = {}
       @file_config = {}
       @env_config = {}
       @override_config = {}
       @dsl_config = {} # Can be set using `Appsignal.configure`
 
-      return unless load_on_new
-
-      # Always override environment if set via this env var.
-      # TODO: This is legacy behavior. In the `Appsignal.configure` method the
-      # env argument is leading.
-      @env = ENV["APPSIGNAL_APP_ENV"] if ENV.key?("APPSIGNAL_APP_ENV")
       load_config
-      validate
     end
 
     # @api private
@@ -287,8 +269,6 @@ module Appsignal
         merge(defaults)
       end
 
-      # Merge initial config
-      merge(initial_config)
       # Track origin of env
       @initial_config[:env] = @initial_env.to_s
 
@@ -302,10 +282,6 @@ module Appsignal
       # Track origin of env
       env_loaded_from_env = ENV.fetch("APPSIGNAL_APP_ENV", nil)
       @env_config[:env] = env_loaded_from_env if env_loaded_from_env
-
-      # Load config overrides
-      @override_config = determine_overrides
-      merge(override_config)
     end
 
     # @api private
@@ -428,6 +404,10 @@ module Appsignal
 
     # @api private
     def validate
+      # Apply any overrides for invalid settings.
+      @override_config = determine_overrides
+      merge(override_config)
+
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.
       # TODO: Move to its own method, maybe in `#[]=`?

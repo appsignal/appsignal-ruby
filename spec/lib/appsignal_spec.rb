@@ -4,45 +4,6 @@ describe Appsignal do
 
   let(:transaction) { http_request_transaction }
 
-  describe "._config=" do
-    it "sets the config" do
-      config = project_fixture_config
-      expect(Appsignal.internal_logger).to_not receive(:level=)
-
-      Appsignal._config = config
-      expect(Appsignal.config).to eq config
-    end
-
-    context "when already started" do
-      it "doesn't set the config" do
-        Appsignal._config = Appsignal::Config.new(
-          "/first/path", "first env",
-          :active => true,
-          :push_api_key => "something"
-        )
-        Appsignal.start
-        expect(Appsignal.config.env).to eq("first env")
-        expect(Appsignal.config.root_path).to eq("/first/path")
-
-        logs =
-          capture_logs do
-            Appsignal._config = Appsignal::Config.new(
-              "/other/path", "other env",
-              :active => true,
-              :push_api_key => "something"
-            )
-          end
-        Appsignal.start
-        expect(Appsignal.config.env).to eq("first env")
-        expect(Appsignal.config.root_path).to eq("/first/path")
-        expect(logs).to contains_log(
-          :warn,
-          "Ignoring `Appsignal._config=` call after AppSignal has started"
-        )
-      end
-    end
-  end
-
   describe ".configure" do
     context "when active" do
       it "doesn't update the config" do
@@ -73,11 +34,9 @@ describe Appsignal do
 
     context "with config but not started" do
       it "reuses the already loaded config if no env arg is given" do
-        Appsignal._config = Appsignal::Config.new(
-          project_fixture_path,
-          :my_env,
-          :ignore_actions => ["My action"]
-        )
+        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+          config.ignore_actions = ["My action"]
+        end
 
         Appsignal.configure do |config|
           expect(config.env).to eq("my_env")
@@ -87,6 +46,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:name]).to eq("My app")
@@ -95,11 +56,9 @@ describe Appsignal do
       end
 
       it "reuses the already loaded config if the env is the same" do
-        Appsignal._config = Appsignal::Config.new(
-          project_fixture_path,
-          :my_env,
-          :ignore_actions => ["My action"]
-        )
+        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+          config.ignore_actions = ["My action"]
+        end
 
         Appsignal.configure(:my_env) do |config|
           expect(config.ignore_actions).to eq(["My action"])
@@ -107,6 +66,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -115,13 +76,11 @@ describe Appsignal do
       end
 
       it "loads a new config if the env is not the same" do
-        Appsignal._config = Appsignal::Config.new(
-          project_fixture_path,
-          :my_env,
-          :name => "Some name",
-          :push_api_key => "Some key",
-          :ignore_actions => ["My action"]
-        )
+        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+          config.name = "Some name"
+          config.push_api_key = "Some key"
+          config.ignore_actions = ["My action"]
+        end
 
         Appsignal.configure(:my_env2) do |config|
           expect(config.ignore_actions).to be_empty
@@ -129,6 +88,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env2")
         expect(Appsignal.config[:active]).to be(true)
@@ -137,13 +98,11 @@ describe Appsignal do
       end
 
       it "loads a new config if the path is not the same" do
-        Appsignal._config = Appsignal::Config.new(
-          "/some/path",
-          :my_env,
-          :name => "Some name",
-          :push_api_key => "Some key",
-          :ignore_actions => ["My action"]
-        )
+        Appsignal.configure(:my_env, :root_path => "/some/path") do |config|
+          config.name = "Some name"
+          config.push_api_key = "Some key"
+          config.ignore_actions = ["My action"]
+        end
 
         Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
           expect(config.ignore_actions).to be_empty
@@ -151,6 +110,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -172,6 +133,8 @@ describe Appsignal do
           config.name = "My app"
           config.push_api_key = "key"
         end
+        Appsignal.start
+
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:active]).to be(true)
@@ -185,23 +148,23 @@ describe Appsignal do
         Appsignal.configure(:test) do |config|
           config.push_api_key = "key"
         end
-
         Appsignal.start
+
         expect(Appsignal.config[:push_api_key]).to eq("key")
       end
 
       it "uses the given env" do
         ENV["APPSIGNAL_APP_ENV"] = "env_env"
         Appsignal.configure(:env_arg)
-
         Appsignal.start
+
         expect(Appsignal.config.env).to eq("env_arg")
       end
 
       it "uses the given root path to read the config file" do
         Appsignal.configure(:test, :root_path => project_fixture_path)
-
         Appsignal.start
+
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the given path
@@ -212,6 +175,7 @@ describe Appsignal do
         Dir.chdir project_fixture_path do
           Appsignal.configure(:test)
         end
+        Appsignal.start
 
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
@@ -223,6 +187,7 @@ describe Appsignal do
         Appsignal.configure(:test) do |config|
           config.push_api_key = "key"
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(true)
         expect(Appsignal.config.env).to eq("test")
@@ -249,6 +214,7 @@ describe Appsignal do
         Appsignal.configure(:my_env) do |config|
           config.push_api_key = "key"
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(true)
       end
@@ -257,6 +223,7 @@ describe Appsignal do
         Appsignal.configure(:my_env) do |config|
           config.push_api_key = ""
         end
+        Appsignal.start
 
         expect(Appsignal.config.valid?).to be(false)
       end
@@ -409,7 +376,7 @@ describe Appsignal do
     end
 
     context "when config is loaded" do
-      before { Appsignal._config = project_fixture_config }
+      before { Appsignal.configure(:production, :root_path => project_fixture_path) }
 
       it "should initialize logging" do
         Appsignal.start
@@ -542,7 +509,7 @@ describe Appsignal do
     end
 
     context "with debug logging" do
-      before { Appsignal._config = project_fixture_config("test") }
+      before { Appsignal.configure(:test, :root_path => project_fixture_path) }
 
       it "should change the log level" do
         Appsignal.start
@@ -578,7 +545,8 @@ describe Appsignal do
 
     context "when active" do
       before do
-        Appsignal._config = project_fixture_config
+        Appsignal.configure(:production, :root_path => project_fixture_path)
+        Appsignal.start
       end
 
       it "starts the logger and extension" do
@@ -625,9 +593,7 @@ describe Appsignal do
     end
 
     context "when started with inactive config" do
-      before do
-        Appsignal._config = project_fixture_config("nonsense")
-      end
+      before { Appsignal.configure(:nonsense, :root_path => project_fixture_path) }
 
       it { is_expected.to be_falsy }
     end
@@ -642,7 +608,8 @@ describe Appsignal do
 
     context "with inactive config" do
       before do
-        Appsignal._config = project_fixture_config("nonsense")
+        Appsignal.configure(:nonsense, :root_path => project_fixture_path)
+        Appsignal.start
       end
 
       it { is_expected.to be_falsy }
@@ -650,7 +617,8 @@ describe Appsignal do
 
     context "with active config" do
       before do
-        Appsignal._config = project_fixture_config
+        Appsignal.configure(:production, :root_path => project_fixture_path)
+        Appsignal.start
       end
 
       it { is_expected.to be_truthy }
@@ -676,7 +644,10 @@ describe Appsignal do
   end
 
   context "not active" do
-    before { Appsignal._config = project_fixture_config("not_active") }
+    before do
+      Appsignal.configure(:not_active, :root_path => project_fixture_path)
+      Appsignal.start
+    end
 
     describe ".send_error" do
       let(:error) { ExampleException.new("specific error") }
@@ -1750,11 +1721,10 @@ describe Appsignal do
     after { FileUtils.rm_rf(log_path) }
 
     def initialize_config
-      Appsignal._config = project_fixture_config(
-        "production",
-        :log_path => log_path,
-        :log_level => log_level
-      )
+      Appsignal.configure(:production, :root_path => project_fixture_path) do |config|
+        config.log_path = log_path
+        config.log_level = log_level
+      end
       Appsignal.internal_logger.error("Log in memory line 1")
       Appsignal.internal_logger.debug("Log in memory line 2")
       expect(Appsignal.in_memory_logger.messages).to_not be_empty
