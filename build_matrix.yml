@@ -84,6 +84,7 @@ matrix:
       - "rails-6.1"
       - "rails-7.0"
       - "rails-7.1"
+      - "rails-7.2"
 
   ruby:
     - ruby: "3.3.4"
@@ -169,6 +170,13 @@ matrix:
           - "3.2.5"
           - "3.1.6"
           - "3.0.7"
+          - "jruby-9.4.7.0"
+    - gem: "rails-7.2"
+      only:
+        ruby:
+          - "3.3.4"
+          - "3.2.5"
+          - "3.1.6"
           - "jruby-9.4.7.0"
     - gem: "sequel"
     - gem: "sinatra"
