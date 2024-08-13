@@ -938,6 +938,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     "      file:    \"TestApp\"\n"
                 )
 
+                expect(received_report["app"]["rails"]).to be(true)
                 expect(received_report["config"]["sources"]).to include(
                   "loaders" => {
                     "root_path" => root_path,

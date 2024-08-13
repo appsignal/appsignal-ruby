@@ -634,6 +634,8 @@ module Appsignal
         def require_rails_app_if_present
           # Try and load the Rails gem
           require "rails"
+          # Mark app as Rails app
+          data[:app][:rails] = true
           # Manually require the railtie, because it wasn't loaded when the CLI
           # started and AppSignal loaded, because the `Rails` constant wasn't
           # present.
