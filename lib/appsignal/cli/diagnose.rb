@@ -77,6 +77,10 @@ module Appsignal
         # @return [void]
         # @api private
         def run(options = {})
+          # Do not start AppSignal on `Appsignal.start` and run the extension
+          # and agent in diagnose mode.
+          ENV["_APPSIGNAL_DIAGNOSE"] = "true"
+
           self.coloring = options.delete(:color) { true }
           $stdout.sync = true
           header
@@ -184,21 +188,13 @@ module Appsignal
         end
 
         def configure_appsignal(options)
-          current_path = Dir.pwd
-          initial_config = {}
-          if rails_app?
-            data[:app][:rails] = true
-            current_path = Rails.root
-            initial_config[:name] =
-              Appsignal::Utils::RailsHelper.detected_rails_app_name
-            initial_config[:log_path] = current_path.join("log")
-          end
+          # Try and load the Rails app, if any.
+          # This will configure AppSignal through the config file or an
+          # initializer.
+          require_rails_app_if_present
 
-          Appsignal._config = Appsignal::Config.new(
-            current_path,
-            options.fetch(:environment, ENV.fetch("RACK_ENV", ENV.fetch("RAILS_ENV", nil))),
-            initial_config
-          )
+          # If no config was found by loading the app, load with the defaults.
+          Appsignal.configure(options.fetch(:environment, nil))
           Appsignal.config.write_to_environment
           Appsignal._start_logger
           Appsignal.internal_logger.info("Starting AppSignal diagnose")
@@ -211,9 +207,9 @@ module Appsignal
             return
           end
 
-          ENV["_APPSIGNAL_DIAGNOSE"] = "true"
+          # Requires _APPSIGNAL_DIAGNOSE to be set. This is set at the
+          # beginning of the diagnose CLI.
           diagnostics_report_string = Appsignal::Extension.diagnose
-          ENV.delete("_APPSIGNAL_DIAGNOSE")
 
           begin
             report = JSON.parse(diagnostics_report_string)
@@ -635,9 +631,29 @@ module Appsignal
           puts "\n"
         end
 
-        def rails_app?
+        def require_rails_app_if_present
+          return unless rails_present?
+
+          # Mark app as Rails app
+          data[:app][:rails] = true
+          # Manually require the railtie, because it wasn't loaded when the CLI
+          # started and AppSignal loaded, because the `Rails` constant wasn't
+          # present.
+          require "appsignal/integrations/railtie"
+          # Start the Rails app, including railties and initializers.
+          require Appsignal::Utils::RailsHelper.environment_config_path
+        rescue LoadError, StandardError => error
+          print_empty_line
+          puts "ERROR: Error encountered while loading the Rails app"
+          puts "#{error.class}: #{error.message}"
+          puts error.backtrace
+          data[:app][:load_error] =
+            "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+        end
+
+        def rails_present?
+          # Try and load the Rails gem
           require "rails"
-          require File.expand_path(File.join(Dir.pwd, "config", "application.rb"))
           true
         rescue LoadError
           false
