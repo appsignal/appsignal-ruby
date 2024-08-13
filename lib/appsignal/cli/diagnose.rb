@@ -632,8 +632,8 @@ module Appsignal
         end
 
         def require_rails_app_if_present
-          # Try and load the Rails gem
-          require "rails"
+          return unless rails_present?
+
           # Mark app as Rails app
           data[:app][:rails] = true
           # Manually require the railtie, because it wasn't loaded when the CLI
@@ -642,8 +642,21 @@ module Appsignal
           require "appsignal/integrations/railtie"
           # Start the Rails app, including railties and initializers.
           require Appsignal::Utils::RailsHelper.environment_config_path
+        rescue LoadError, StandardError => error
+          print_empty_line
+          puts "ERROR: Error encountered while loading the Rails app"
+          puts "#{error.class}: #{error.message}"
+          puts error.backtrace
+          data[:app][:load_error] =
+            "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+        end
+
+        def rails_present?
+          # Try and load the Rails gem
+          require "rails"
+          true
         rescue LoadError
-          nil
+          false
         end
       end
     end

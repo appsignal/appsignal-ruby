@@ -948,6 +948,26 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                   }
                 )
               end
+
+              context "when there's a problem loading the app" do
+                before do
+                  # A spot where we can mock an error raise
+                  expect(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+                    .and_raise(ExampleStandardError, "error message", ["line 1", "line 2"])
+                  run_within_dir(root_path)
+                end
+
+                it "includes a load error" do
+                  expect(output).to include(
+                    "ERROR: Error encountered while loading the Rails app\n" \
+                      "ExampleStandardError: error message"
+                  )
+
+                  pp received_report["app"]
+                  expect(received_report["app"]["load_error"])
+                    .to eq("ExampleStandardError: error message\nline 1\nline 2")
+                end
+              end
             end
           end
         end
