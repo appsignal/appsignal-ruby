@@ -67,27 +67,6 @@ if DependencyHelper.http_present?
       end
     end
 
-    context "with an HTTP exception" do
-      let(:error) { ExampleException.new("oh no!") }
-
-      it "reports the exception and re-raises it" do
-        stub_request(:get, "https://www.google.com").and_raise(error)
-
-        expect do
-          HTTP.get("https://www.google.com")
-        end.to raise_error(ExampleException)
-
-        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction).to include_event(
-          "body" => "",
-          "body_format" => Appsignal::EventFormatter::DEFAULT,
-          "name" => "request.http_rb",
-          "title" => "GET https://www.google.com"
-        )
-        expect(transaction).to have_error(error.class.name, error.message)
-      end
-    end
-
     context "with various URI objects" do
       it "parses an object responding to #to_s" do
         request_uri = Struct.new(:uri) do

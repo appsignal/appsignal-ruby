@@ -1,5 +1,42 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.13.0
+
+_Published on 2024-08-14._
+
+### Changed
+
+- Remove the HTTP gem's exception handling. Errors from the HTTP gem will no longer always be reported. The error will be reported only when an HTTP request is made in an instrumented context. This gives applications the opportunity to add their own custom exception handling.
+
+  ```ruby
+  begin
+    HTTP.get("https://appsignal.com/error")
+  rescue => error
+    # Either handle the error or report it to AppSignal
+  end
+  ```
+
+  (minor [2a452ff0](https://github.com/appsignal/appsignal-ruby/commit/2a452ff07e0b0938b1623fa8846af6ef37917ec2))
+- Rename heartbeats to cron check-ins. Calls to `Appsignal.heartbeat` and `Appsignal::Heartbeat` should be replaced with calls to `Appsignal::CheckIn.cron` and `Appsignal::CheckIn::Cron`, for example:
+
+  ```ruby
+  # Before
+  Appsignal.heartbeat("do_something") do
+    do_something
+  end
+
+  # After
+  Appsignal::CheckIn.cron("do_something") do
+    do_something
+  end
+  ```
+
+  (patch [2f686cd0](https://github.com/appsignal/appsignal-ruby/commit/2f686cd00d5daa6e0854a8cacfe0e874a3a7c146))
+
+### Deprecated
+
+- Calls to `Appsignal.heartbeat` and `Appsignal::Heartbeat` will emit a deprecation warning. (patch [2f686cd0](https://github.com/appsignal/appsignal-ruby/commit/2f686cd00d5daa6e0854a8cacfe0e874a3a7c146))
+
 ## 3.12.6
 
 _Published on 2024-08-05._

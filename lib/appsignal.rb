@@ -6,7 +6,7 @@ require "stringio"
 
 require "appsignal/logger"
 require "appsignal/utils/stdout_and_logger_message"
-require "appsignal/helpers/heartbeats"
+require "appsignal/helpers/heartbeat"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
 
@@ -18,7 +18,7 @@ require "appsignal/helpers/metrics"
 # {Appsignal::Helpers::Metrics}) for ease of use.
 module Appsignal
   class << self
-    include Helpers::Heartbeats
+    include Helpers::Heartbeat
     include Helpers::Instrumentation
     include Helpers::Metrics
 
@@ -424,6 +424,25 @@ module Appsignal
       end
       Appsignal::Environment.report_supported_gems
     end
+
+    # Alias constants that have moved with a warning message that points to the
+    # place to update the reference.
+    def const_missing(name)
+      case name
+      when :Heartbeat
+        unless @heartbeat_constant_deprecation_warning_emitted
+          callers = caller
+          Appsignal::Utils::StdoutAndLoggerMessage.warning \
+            "The constant Appsignal::Heartbeat has been deprecated. " \
+              "Please update the constant name to Appsignal::CheckIn::Cron " \
+              "in the following file and elsewhere to remove this message.\n#{callers.first}"
+          @heartbeat_constant_deprecation_warning_emitted = true
+        end
+        Appsignal::CheckIn::Cron
+      else
+        super
+      end
+    end
   end
 end
 
@@ -449,4 +468,4 @@ require "appsignal/integrations/railtie" if defined?(::Rails)
 require "appsignal/transaction"
 require "appsignal/version"
 require "appsignal/transmitter"
-require "appsignal/heartbeat"
+require "appsignal/check_in"
