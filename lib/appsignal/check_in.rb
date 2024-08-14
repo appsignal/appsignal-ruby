@@ -25,7 +25,7 @@ module Appsignal
       # @param name [String] name of the cron check-in to report.
       # @yield the block to monitor.
       # @return [void]
-      # @since 3.12.7
+      # @since 3.13.0
       # @see https://docs.appsignal.com/check-ins/cron
       def cron(identifier)
         cron = Appsignal::CheckIn::Cron.new(:identifier => identifier)
