@@ -264,7 +264,7 @@ module Appsignal
               puts "  export APPSIGNAL_APP_NAME=#{config[:name]}" if name_overwritten
               puts
               puts "  See the documentation for more configuration options:"
-              puts "  https://docs.appsignal.com/gem-settings/configuration.html"
+              puts "  https://docs.appsignal.com/ruby/configuration.html"
               press_any_key
               break
             end
