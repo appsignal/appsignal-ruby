@@ -3,7 +3,7 @@ bump: major
 type: change
 ---
 
-The transaction sample data is now merged by default. Previously, the sample data (except for tags) would be overwritten when an `Appsignal.set_*` helper was called.
+The transaction sample data is now merged by default. Previously, the sample data (except for tags) would be overwritten when a sample data helper was called.
 
 ```ruby
 # Old behavior

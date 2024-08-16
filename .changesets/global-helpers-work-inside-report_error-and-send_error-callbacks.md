@@ -3,7 +3,7 @@ bump: major
 type: change
 ---
 
-Global transaction metadata helpers now work inside the `Appsignal.report_error` and `Appsignal.send_error` callbacks. The transaction yield parameter will continue to work, but we recommend using the global `Appsignal.set_*` helpers.
+Global transaction metadata helpers now work inside the `Appsignal.report_error` and `Appsignal.send_error` callbacks. The transaction yield parameter will continue to work, but we recommend using the global `Appsignal.set_*` and `Appsignal.add_*` helpers.
 
 ```ruby
 # Before
