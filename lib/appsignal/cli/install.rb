@@ -237,6 +237,10 @@ module Appsignal
           puts "How do you want to configure AppSignal?"
           puts "  (1) a config file"
           puts "  (2) environment variables"
+          puts
+          puts "  See our docs for information on the different configuration methods: "
+          puts "  https://docs.appsignal.com/ruby/configuration.html"
+          puts
           loop do
             print "  Choose (1/2): "
             case ask_for_input
@@ -264,7 +268,7 @@ module Appsignal
               puts "  export APPSIGNAL_APP_NAME=#{config[:name]}" if name_overwritten
               puts
               puts "  See the documentation for more configuration options:"
-              puts "  https://docs.appsignal.com/gem-settings/configuration.html"
+              puts "  https://docs.appsignal.com/ruby/configuration.html"
               press_any_key
               break
             end
