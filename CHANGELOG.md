@@ -1,5 +1,118 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.0.beta.1
+
+_Published on 2024-08-19._
+
+### Added
+
+- Add an `at_exit` callback error reporter. By default, AppSignal will now report any unhandled errors that crash the process as long as Appsignal started beforehand.
+
+  ```ruby
+  require "appsignal"
+
+  Appsignal.start
+
+  raise "oh no!"
+
+  # Will report the error StandardError "oh no!"
+  ```
+
+  To disable this behavior, set the `enable_at_exit_reporter` config option to `false`.
+
+  (major [5124b0e9](https://github.com/appsignal/appsignal-ruby/commit/5124b0e903f04a5aff5bfaeaa7ff174170b413e7))
+- Report errors from Rails runners. When a Rails runner reports an unhandled error, it will now report the error in the "runner" namespace. (minor [4d6add1d](https://github.com/appsignal/appsignal-ruby/commit/4d6add1d92255b8e1e6c8187f70258477dc05027))
+- Support adding multiple errors to a transaction.
+
+  Using the `Appsignal.report_error` helper, you can now report more than one error within the same transaction context, up to a maximum of ten errors per transaction. Each error will be reported as a separate sample in the AppSignal UI.
+
+  Before this change, using `Appsignal.report_error` or `Appsignal.set_error` helpers, adding a new error within the same transaction would overwrite the previous one.
+
+  (patch [70ffc00a](https://github.com/appsignal/appsignal-ruby/commit/70ffc00ad31b19c2b91a915f58e3db4c9857201b))
+
+### Changed
+
+- Change the default Rake task namespace to "rake". Previously, Rake tasks were reported in the "background" namespace. (major [7673b13c](https://github.com/appsignal/appsignal-ruby/commit/7673b13c933f1944d94d780bb6943cb2c7036a4d))
+- Do not start AppSignal when the config file raises an error. Previously, the file source would be ignored. (major [17933fd9](https://github.com/appsignal/appsignal-ruby/commit/17933fd90e9236ca1f825bb76f849b0daf066498))
+- Freeze the config after AppSignal has started. Prevent the config from being modified after AppSignal has started to avoid the expectation that modifying the config after starting AppSignal has any effect. (major [46f23f15](https://github.com/appsignal/appsignal-ruby/commit/46f23f15035e0bb56fd099f4c304960437e5afce))
+- Do not start Appsignal multiple times if `Appsignal.start` is called more than once. The configuration can no longer be modified after AppSignal has started. (major [fbc2410a](https://github.com/appsignal/appsignal-ruby/commit/fbc2410a9a7e0d9b40240fc3e7e7557ed0a001c0))
+- The transaction sample data is now merged by default. Previously, the sample data (except for tags) would be overwritten when a sample data helper was called.
+
+  ```ruby
+  # Old behavior
+  Appsignal.set_params("param1" => "value")
+  Appsignal.set_params("param2" => "value")
+  # The parameters are:
+  # { "param2" => "value" }
+
+
+  # New behavior
+  Appsignal.add_params("param1" => "value")
+  Appsignal.add_params("param2" => "value")
+  # The parameters are:
+  # {  "param1" => "value", "param2" => "value" }
+  ```
+
+  New helpers have been added:
+
+  - `Appsignal.add_tags`
+  - `Appsignal.add_params`
+  - `Appsignal.add_session_data`
+  - `Appsignal.add_headers`
+  - `Appsignal.add_custom_data`
+
+  The old named helpers that start with `set_` will still work. They will also use the new merging behavior.
+
+  (major [272f18cb](https://github.com/appsignal/appsignal-ruby/commit/272f18cb0fde6c77fce8b9fa32b4888216e55381))
+- Set the Rails config defaults for `Appsignal.configure` when used in a Rails initializer. Now when using `Appsignal.configure` in a Rails initializer, the Rails env and root path are set on the AppSignal config as default values and do not need to be manually set. (major [378bbc3e](https://github.com/appsignal/appsignal-ruby/commit/378bbc3e0d809f238f6a8a77ee401f73f0b9bd89))
+- Global transaction metadata helpers now work inside the `Appsignal.report_error` and `Appsignal.send_error` callbacks. The transaction yield parameter will continue to work, but we recommend using the global `Appsignal.set_*` and `Appsignal.add_*` helpers.
+
+  ```ruby
+  # Before
+  Appsignal.report_error(error) do |transaction|
+    transaction.set_namespace("my namespace")
+    transaction.set_action("my action")
+    transaction.add_tags(:tag_a => "value", :tag_b => "value")
+    # etc.
+  end
+  Appsignal.send_error(error) do |transaction|
+    transaction.set_namespace("my namespace")
+    transaction.set_action("my action")
+    transaction.add_tags(:tag_a => "value", :tag_b => "value")
+    # etc.
+  end
+
+  # After
+  Appsignal.report_error(error) do
+    Appsignal.set_namespace("my namespace")
+    Appsignal.set_action("my action")
+    Appsignal.add_tags(:tag_a => "value", :tag_b => "value")
+    # etc.
+  end
+  Appsignal.send_error(error) do
+    Appsignal.set_namespace("my namespace")
+    Appsignal.set_action("my action")
+    Appsignal.add_tags(:tag_a => "value", :tag_b => "value")
+    # etc.
+  end
+  ```
+
+  (major [7ca6ce21](https://github.com/appsignal/appsignal-ruby/commit/7ca6ce215844f43e9d1277dcce18921f2e716158))
+- Include the Rails app config in diagnose report. If AppSignal is configured in a Rails initializer, this config is now included in the diagnose report. (minor [5439d5cb](https://github.com/appsignal/appsignal-ruby/commit/5439d5cbc6661c705da0d1feb08738c933f56939))
+- Include the config options from the loaders config defaults and the `Appsignal.configure` helper in diagnose report. The sources for config option values will include the loaders and `Appsignal.configure` helper in the output and the JSON report sent to our severs, when opted-in. (patch [a7b34110](https://github.com/appsignal/appsignal-ruby/commit/a7b34110ac47e200a6f136c3706e31fe93d37122))
+- Calculate error rate by transactions with an error, not the number of errors on a transaction. This limits the error rate to a maximum of 100%. (patch [da4975cd](https://github.com/appsignal/appsignal-ruby/commit/da4975cd0dda27e3966266f1a686787609fbbcd2))
+
+### Removed
+
+- Remove all deprecated components. Please follow [our Ruby gem 4 upgrade guide](https://docs.appsignal.com/ruby/installation/upgrade-from-3-to-4.html) when upgrading to this version to avoid any errors from calling removed components, methods and helpers. (major [f65bee8d](https://github.com/appsignal/appsignal-ruby/commit/f65bee8d508feae4cba88bd938b297e15269726f))
+- Remove the `Appsignal.listen_for_error` helper. Use manual exception handling using `rescue => error` with the `Appsignal.report_error` helper instead. (major [7c232925](https://github.com/appsignal/appsignal-ruby/commit/7c23292568035eace8d04e3fb53e8d4861b671e6))
+- Remove (private) `Appsignal::Transaction::FRONTEND` constant. This was previously used for the built-in front-end integration, but this has been absent since version 3 of the Ruby gem. (major [c12188e7](https://github.com/appsignal/appsignal-ruby/commit/c12188e7cf5f9adccb485a5930f3bdbbe1b6cc58))
+- Remove the `Appsignal.config=` writer. Use the `Appsignal.configure` helper to configure AppSignal. (major [f4fdf91b](https://github.com/appsignal/appsignal-ruby/commit/f4fdf91b5ead5c5221f5dbad6d8c45069ee2dc98))
+
+### Fixed
+
+- Fix an issue where, when setting several errors for the same transaction, error causes from a different error would be shown for an error that has no causes. (patch [d54ce8b9](https://github.com/appsignal/appsignal-ruby/commit/d54ce8b947c9316756c4191155e8d255a8e25a8c))
+
 ## 3.13.0
 
 _Published on 2024-08-14._
