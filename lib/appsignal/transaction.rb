@@ -246,6 +246,14 @@ module Appsignal
     end
     alias :set_params :add_params
 
+    # @api private
+    # @since 4.0.0
+    # @return [void]
+    # @see Helpers::Instrumentation#set_empty_params!
+    def set_empty_params!
+      @params.set_empty_value!
+    end
+
     # Add parameters to the transaction if not already set.
     #
     # @api private
@@ -257,7 +265,7 @@ module Appsignal
     #
     # @see #add_params
     def add_params_if_nil(given_params = nil, &block)
-      add_params(given_params, &block) unless @params.value?
+      add_params(given_params, &block) if !@params.value? && !@params.empty?
     end
     alias :set_params_if_nil :add_params_if_nil
 

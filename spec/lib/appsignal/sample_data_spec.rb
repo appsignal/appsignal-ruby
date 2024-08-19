@@ -142,6 +142,45 @@ describe Appsignal::SampleData do
     end
   end
 
+  describe "#set_empty_value!" do
+    it "clears the set values" do
+      data.add(["abc"])
+      data.add(["def"])
+      data.set_empty_value!
+
+      expect(data.value).to be_nil
+    end
+
+    it "allows values to be added afterwards" do
+      data.add(["abc"])
+      data.set_empty_value!
+
+      expect(data.value).to be_nil
+
+      data.add(["def"])
+      expect(data.value).to eq(["def"])
+    end
+  end
+
+  describe "#cleared?" do
+    it "returns false if not cleared" do
+      expect(data.empty?).to be(false)
+    end
+
+    it "returns true if cleared" do
+      data.set_empty_value!
+
+      expect(data.empty?).to be(true)
+    end
+
+    it "returns false if cleared and then new values were added" do
+      data.set_empty_value!
+      data.add(["abc"])
+
+      expect(data.empty?).to be(false)
+    end
+  end
+
   describe "#duplicate" do
     it "duplicates the internal Hash state without modifying the original" do
       data = described_class.new(:my_key, Hash)

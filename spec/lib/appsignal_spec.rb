@@ -935,6 +935,23 @@ describe Appsignal do
       end
     end
 
+    describe ".set_empty_params!" do
+      before { start_agent }
+
+      context "with transaction" do
+        let(:transaction) { http_request_transaction }
+        before { set_current_transaction(transaction) }
+
+        it "marks parameters to be sent as an empty value" do
+          Appsignal.add_params("key1" => "value")
+          Appsignal.set_empty_params!
+
+          transaction._sample
+          expect(transaction).to_not include_params
+        end
+      end
+    end
+
     describe ".add_session_data" do
       before { start_agent }
 

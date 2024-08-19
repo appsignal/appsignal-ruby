@@ -732,6 +732,17 @@ describe Appsignal::Transaction do
         expect(transaction).to include_params(preset_params)
       end
     end
+
+    context "when the params were set as an empty value" do
+      it "does not set params on the transaction" do
+        transaction.add_params("key1" => "value")
+        transaction.set_empty_params!
+        transaction.add_params_if_nil("key2" => "value")
+
+        transaction._sample
+        expect(transaction).to_not include_params
+      end
+    end
   end
 
   describe "#add_session_data" do

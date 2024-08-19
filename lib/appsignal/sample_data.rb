@@ -7,9 +7,11 @@ module Appsignal
       @key = key
       @accepted_type = accepted_type
       @blocks = []
+      @empty = false
     end
 
     def add(data = nil, &block)
+      @empty = false
       if block_given?
         @blocks << block
       elsif accepted_type?(data)
@@ -17,6 +19,12 @@ module Appsignal
       else
         log_unsupported_data_type(data)
       end
+    end
+
+    # @api private
+    def set_empty_value!
+      @empty = true
+      @blocks.clear
     end
 
     def value
@@ -42,6 +50,11 @@ module Appsignal
 
     def value?
       @blocks.any?
+    end
+
+    # @api private
+    def empty?
+      @empty
     end
 
     protected
