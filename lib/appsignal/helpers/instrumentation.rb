@@ -552,6 +552,20 @@ module Appsignal
       end
       alias :set_params :add_params
 
+      # Mark the parameters sample data to be set as an empty value.
+      #
+      # @api private
+      # @since 4.0.0
+      # @return [void]
+      # @see Helpers::Instrumentation#set_empty_params!
+      def set_empty_params!
+        return unless active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.set_empty_params!
+      end
+
       # Add session data to the current transaction.
       #
       # Session data is automatically added by most of our integrations. It
