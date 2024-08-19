@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.0.beta.2
+
+_Published on 2024-08-19._
+
+### Added
+
+- Add a helper for parameters sample data to be unset. This is a private method until we stabilize it. (patch [e9336363](https://github.com/appsignal/appsignal-ruby/commit/e9336363fa869c88ab925f57e86ead45e8e18c29))
+
 ## 4.0.0.beta.1
 
 _Published on 2024-08-19._
