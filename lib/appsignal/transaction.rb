@@ -30,9 +30,7 @@ module Appsignal
         # Check if we already have a running transaction
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
-          set_current_transaction(
-            Appsignal::Transaction.new(SecureRandom.uuid, namespace)
-          )
+          set_current_transaction(Appsignal::Transaction.new(namespace))
         else
           # Otherwise, log the issue about trying to start another transaction
           Appsignal.internal_logger.warn(
@@ -109,17 +107,16 @@ module Appsignal
     end
 
     # @api private
-    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :breadcrumbs, :is_duplicate, :error_blocks
+    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused,
+      :tags, :options, :breadcrumbs, :is_duplicate, :error_blocks
 
     # Use {.create} to create new transactions.
     #
-    # @param transaction_id [String] ID of the to be created transaction.
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @api private
-    def initialize(transaction_id, namespace, ext: nil)
-      @transaction_id = transaction_id
+    def initialize(namespace, id: SecureRandom.uuid, ext: nil)
+      @transaction_id = id
       @action = nil
       @namespace = namespace
       @paused = false
@@ -574,7 +571,8 @@ module Appsignal
 
     protected
 
-    attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params, :session_data, :headers
+    attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params,
+      :session_data, :headers
 
     private
 
@@ -663,10 +661,9 @@ module Appsignal
 
     def duplicate
       new_transaction_id = SecureRandom.uuid
-
       self.class.new(
-        new_transaction_id,
         namespace,
+        :id => new_transaction_id,
         :ext => ext.duplicate(new_transaction_id)
       ).tap do |transaction|
         transaction.is_duplicate = true

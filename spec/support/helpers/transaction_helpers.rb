@@ -16,7 +16,7 @@ module TransactionHelpers
   end
 
   def new_transaction(namespace = default_namespace, ext: nil)
-    Appsignal::Transaction.new(SecureRandom.uuid, namespace, :ext => ext)
+    Appsignal::Transaction.new(namespace, :ext => ext)
   end
 
   def rack_request(env)
