@@ -590,6 +590,13 @@ describe Appsignal::Transaction do
 
       expect(transaction.store("test")).to eql("transaction" => "value")
     end
+
+    it "has a default value of a Hash for store values" do
+      transaction.store("abc")["def"] = "123"
+
+      expect(transaction.store("abc")).to eq("def" => "123")
+      expect(transaction.store("xyz")).to eq({})
+    end
   end
 
   describe "#add_params" do

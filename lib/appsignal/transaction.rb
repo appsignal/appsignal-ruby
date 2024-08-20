@@ -123,7 +123,7 @@ module Appsignal
       @discarded = false
       @tags = {}
       @breadcrumbs = []
-      @store = Hash.new({})
+      @store = Hash.new { |hash, key| hash[key] = {} }
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
       @error_set = nil
