@@ -208,10 +208,8 @@ module Appsignal
           return
         end
 
-        transaction = Appsignal::Transaction.new(
-          SecureRandom.uuid,
-          Appsignal::Transaction::HTTP_REQUEST
-        )
+        transaction =
+          Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
         transaction.set_error(error, &block)
 
         transaction.complete
@@ -333,10 +331,7 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.new(
-              SecureRandom.uuid,
-              Appsignal::Transaction::HTTP_REQUEST
-            )
+            Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
           end
 
         transaction.add_error(exception, &block)

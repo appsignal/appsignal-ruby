@@ -39,7 +39,7 @@ describe Appsignal::Transaction do
       let(:ext) { "some_ext" }
 
       it "assigns the extension transaction to the transaction" do
-        expect(new_transaction(:ext => ext).ext).to be(ext)
+        expect(described_class.new("web", :ext => ext).ext).to be(ext)
       end
     end
 
