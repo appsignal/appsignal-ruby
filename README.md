@@ -42,7 +42,7 @@ request.
 begin
   config = File.read("config.yml")
 rescue => e
-  Appsignal.set_error(e)
+  Appsignal.report_error(e)
   # Load alternative config
   config = { :name => ENV["NAME"] }
 end
@@ -56,9 +56,9 @@ Need more information with errors and performance issues? Add tags to your
 requests to identify common factors for problems.
 
 ```ruby
-Appsignal.tag_request(
-  user: current_user.id,
-  locale: I18n.locale
+Appsignal.add_tags(
+  :user => current_user.id,
+  :locale => I18n.locale
 )
 ```
 
@@ -142,11 +142,6 @@ anything.
 
 For more detailed information and examples please visit our
 [integrations] page.
-
-### Front-end monitoring (Beta)
-
-We have a [Front-end monitoring program][front-end-monitoring] running in Beta
-currently. Be sure to check it out!
 
 ## Supported systems
 
@@ -304,11 +299,11 @@ Also see our [SUPPORT.md file](SUPPORT.md).
 [ruby-doc]: https://www.rubydoc.info/gems/appsignal
 [contributing-guide]: https://docs.appsignal.com/appsignal/contributing.html
 [supported-systems]: https://docs.appsignal.com/support/operating-systems.html
-[integrations]: https://docs.appsignal.com/ruby/integrations/index.html
-[custom-instrumentation]: https://docs.appsignal.com/ruby/instrumentation/
-[front-end-monitoring]: https://docs.appsignal.com/front-end/error-handling.html
+[integrations]: https://docs.appsignal.com/ruby/integrations.html
+[custom-instrumentation]: https://docs.appsignal.com/ruby/instrumentation.html
+[front-end-monitoring]: https://docs.appsignal.com/front-end.html
 [exception-handling]: https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
-[tagging]: https://docs.appsignal.com/ruby/instrumentation/tagging.html
+[tagging]: https://docs.appsignal.com/guides/custom-data/tagging-request.html
 [host-metrics]: https://docs.appsignal.com/metrics/host.html
 [custom-metrics]: https://docs.appsignal.com/metrics/custom.html
 
