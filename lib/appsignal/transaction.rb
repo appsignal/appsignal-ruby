@@ -140,10 +140,12 @@ module Appsignal
       ) || Appsignal::Extension::MockTransaction.new
     end
 
+    # @api private
     def nil_transaction?
       false
     end
 
+    # @api private
     def complete
       if discarded?
         Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
@@ -237,7 +239,10 @@ module Appsignal
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
+    #
     # @see Helpers::Instrumentation#add_params
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
     def add_params(given_params = nil, &block)
       @params.add(given_params, &block)
     end
@@ -246,6 +251,7 @@ module Appsignal
     # @api private
     # @since 4.0.0
     # @return [void]
+    #
     # @see Helpers::Instrumentation#set_empty_params!
     def set_empty_params!
       @params.set_empty_value!
@@ -270,6 +276,7 @@ module Appsignal
     #
     # When this method is called multiple times, it will merge the tags.
     #
+    # @since 4.0.0
     # @param given_tags [Hash] Collection of tags.
     # @option given_tags [String, Symbol, Integer] :any
     #   The name of the tag as a Symbol.
@@ -292,12 +299,12 @@ module Appsignal
     # When both the `given_session_data` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
+    # @since 4.0.0
     # @param given_session_data [Hash] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
     # @return [void]
     #
-    # @since 4.0.0
     # @see Helpers::Instrumentation#add_session_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
@@ -312,13 +319,13 @@ module Appsignal
     # the `given_session_data` argument is leading and the block will _not_ be
     # called.
     #
+    # @api private
+    # @since 4.0.0
     # @param given_session_data [Hash] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
     # @return [void]
     #
-    # @api private
-    # @since 4.0.0
     # @see #add_session_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
@@ -329,12 +336,12 @@ module Appsignal
 
     # Add headers to the transaction.
     #
+    # @since 4.0.0
     # @param given_headers [Hash] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
     # @return [void]
     #
-    # @since 4.0.0
     # @see Helpers::Instrumentation#add_headers
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
@@ -348,13 +355,13 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
+    # @api private
+    # @since 4.0.0
     # @param given_headers [Hash] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
     # @return [void]
     #
-    # @api private
-    # @since 4.0.0
     # @see #add_headers
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
@@ -366,11 +373,12 @@ module Appsignal
     # Add custom data to the transaction.
     #
     # @since 4.0.0
+    # @param data [Hash/Array]
+    # @return [void]
+    #
     # @see Helpers::Instrumentation#add_custom_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
-    # @param data [Hash/Array]
-    # @return [void]
     def add_custom_data(data)
       @custom_data.add(data)
     end
@@ -412,11 +420,11 @@ module Appsignal
     # An action name is used to identify the location of a certain sample;
     # error and performance issues.
     #
+    # @since 2.2.0
     # @param action [String] the action name to set.
     # @return [void]
-    # @see Appsignal.set_action
-    # @see #set_action_if_nil
-    # @since 2.2.0
+    #
+    # @see Appsignal::Helpers::Instrumentation#set_action
     def set_action(action)
       return unless action
 
@@ -434,10 +442,12 @@ module Appsignal
     #   Appsignal.set_action_if_nil("bar")
     #   # Transaction action will be "foo"
     #
+    # @api private
+    # @since 2.2.0
     # @param action [String]
     # @return [void]
+    #
     # @see #set_action
-    # @since 2.2.0
     def set_action_if_nil(action)
       return if @action
 
@@ -456,9 +466,13 @@ module Appsignal
     # @example
     #   transaction.set_namespace("background")
     #
+    # @since 2.2.0
     # @param namespace [String] namespace name to use for this transaction.
     # @return [void]
-    # @since 2.2.0
+    #
+    # @see Appsignal::Helpers::Instrumentation#set_namespace
+    # @see https://docs.appsignal.com/guides/namespaces.html
+    #   Grouping with namespaces guide
     def set_namespace(namespace)
       return unless namespace
 
@@ -490,7 +504,8 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
-    # @see Appsignal::Helpers::Instrumentation#add_error
+    # @api private
+    # @see Appsignal::Helpers::Instrumentation#report_error
     def add_error(error, &block)
       unless error.is_a?(Exception)
         Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
@@ -513,21 +528,19 @@ module Appsignal
       @error_blocks[error] << block
       @error_blocks[error].compact!
     end
-
     alias :set_error :add_error
-
     alias_method :add_exception, :add_error
 
-    # @see Helpers::Instrumentation#instrument
     # @api private
+    # @see Helpers::Instrumentation#instrument
     def start_event
       return if paused?
 
       @ext.start_event(0)
     end
 
-    # @see Helpers::Instrumentation#instrument
     # @api private
+    # @see Helpers::Instrumentation#instrument
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
@@ -540,8 +553,8 @@ module Appsignal
       )
     end
 
-    # @see Helpers::Instrumentation#instrument
     # @api private
+    # @see Helpers::Instrumentation#instrument
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
@@ -555,6 +568,7 @@ module Appsignal
       )
     end
 
+    # @api private
     # @see Helpers::Instrumentation#instrument
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
@@ -676,7 +690,6 @@ module Appsignal
       end
     end
 
-    # @api private
     def params
       @params.value
     rescue => e

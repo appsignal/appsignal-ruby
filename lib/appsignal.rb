@@ -44,6 +44,7 @@ module Appsignal
     # @see Extension
     # @see extension_loaded?
     attr_accessor :extension_loaded
+
     # @!attribute [rw] internal_logger
     #   Accessor for the internal AppSignal logger.
     #
