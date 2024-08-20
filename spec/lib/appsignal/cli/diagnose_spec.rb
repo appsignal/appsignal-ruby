@@ -937,6 +937,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     "      loaders: \"MyApp\"\n" \
                     "      file:    \"TestApp\"\n"
                 )
+                # Outputs values from the DSL
+                expect(output).to include(
+                  "  ignore_actions: [\"Action from DSL\"]\n" \
+                    "    Sources:\n" \
+                    "      default: []\n" \
+                    "      dsl:     [\"Action from DSL\"]\n"
+                )
 
                 expect(received_report["app"]["rails"]).to be(true)
                 expect(received_report["config"]["sources"]).to include(
@@ -945,6 +952,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     "env" => "test",
                     "log_path" => File.join(rails_project_fixture_path, "log"),
                     "name" => "MyApp"
+                  }
+                )
+                # Includes values from the DSL
+                expect(received_report["config"]["sources"]).to include(
+                  "dsl" => {
+                    "ignore_actions" => ["Action from DSL"]
                   }
                 )
               end
@@ -963,7 +976,6 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                       "ExampleStandardError: error message"
                   )
 
-                  pp received_report["app"]
                   expect(received_report["app"]["load_error"])
                     .to eq("ExampleStandardError: error message\nline 1\nline 2")
                 end
