@@ -1157,7 +1157,7 @@ describe Appsignal do
             Appsignal::Extension.data_map_new
           ).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
-            .with("Gauge value 10 for key 'key' is too big")
+            .with("The gauge value '10' for metric 'key' is too big")
 
           Appsignal.set_gauge("key", 10)
         end
@@ -1192,7 +1192,7 @@ describe Appsignal do
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
-            .with("Counter value 10 for key 'key' is too big")
+            .with("The counter value '10' for metric 'key' is too big")
 
           Appsignal.increment_counter("key", 10)
         end
@@ -1221,7 +1221,7 @@ describe Appsignal do
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
-            .with("Distribution value 10 for key 'key' is too big")
+            .with("The distribution value '10' for metric 'key' is too big")
 
           Appsignal.add_distribution_value("key", 10)
         end

@@ -88,6 +88,7 @@ module Appsignal
       #     end
       #   end
       #
+      # @since 3.11.0
       # @param namespace [String/Symbol] The namespace to set on the new
       #   transaction.
       #   Defaults to the 'web' namespace.
@@ -105,10 +106,10 @@ module Appsignal
       # @raise [Exception] Any exception that occurs within the given block is
       #   re-raised by this method.
       # @return [Object] The value of the given block is returned.
-      # @since 3.11.0
-      def monitor(
-        action:, namespace: nil
-      )
+      #
+      # @see https://docs.appsignal.com/ruby/instrumentation/background-jobs.html
+      #   Monitor guide
+      def monitor(action:, namespace: nil)
         return yield unless active?
 
         has_parent_transaction = Appsignal::Transaction.current?
@@ -160,6 +161,8 @@ module Appsignal
 
       # Send an error to AppSignal regardless of the context.
       #
+      # **We recommend using the {#report_error} helper instead.**
+      #
       # Records and send the exception to AppSignal.
       #
       # This instrumentation helper does not require a transaction to be
@@ -186,6 +189,7 @@ module Appsignal
       #     Appsignal.add_tags(:key => "value")
       #   end
       #
+      # @since 0.6.0
       # @param error [Exception] The error to send to AppSignal.
       # @yield [transaction] yields block to allow modification of the
       #   transaction before it's send.
@@ -193,12 +197,8 @@ module Appsignal
       #   used to send the error.
       # @return [void]
       #
-      # @see Transaction#report_error
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
-      #   Tagging guide
-      # @since 0.6.0
       def send_error(error, &block)
         return unless active?
 
@@ -217,6 +217,8 @@ module Appsignal
       alias :send_exception :send_error
 
       # Set an error on the current transaction.
+      #
+      # **We recommend using the {#report_error} helper instead.**
       #
       # **Note**: Does not do anything if AppSignal is not active, no
       # transaction is currently active or when the "error" is not a class
@@ -251,6 +253,7 @@ module Appsignal
       #     Appsignal.add_tags(:key => "value")
       #   end
       #
+      # @since 0.6.6
       # @param exception [Exception] The error to add to the current
       #   transaction.
       # @yield [transaction] yields block to allow modification of the
@@ -259,11 +262,8 @@ module Appsignal
       #   used to store the error.
       # @return [void]
       #
-      # @see Transaction#set_error
-      # @see Transaction#report_error
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      # @since 0.6.6
       def set_error(exception)
         unless exception.is_a?(Exception)
           internal_logger.error "Appsignal.set_error: Cannot set error. " \
@@ -279,11 +279,20 @@ module Appsignal
       alias :set_exception :set_error
       alias :add_exception :set_error
 
-      # Report an error.
+      # Report an error to AppSignal.
       #
       # If a transaction is currently active, it will report the error on the
       # current transaction. If no transaction is active, it will report the
       # error on a new transaction.
+      #
+      # If a transaction is active and the transaction already has an error
+      # reported on it, it will report multiple errors, up to a maximum of 10
+      # errors.
+      #
+      # If a block is given to this method, the metadata set in this block will
+      # only be applied to the transaction created for the given error. The
+      # block will be called when the transaction is completed, which can be
+      # much later than when {#report_error} is called.
       #
       # **Note**: If AppSignal is not active, no error is reported.
       #
@@ -307,6 +316,7 @@ module Appsignal
       #     Appsignal.add_tags(:key => "value")
       #   end
       #
+      # @since 4.0.0
       # @param exception [Exception] The error to add to the current
       #   transaction.
       # @yield [transaction] yields block to allow modification of the
@@ -317,7 +327,6 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      # @since 3.10.0
       def report_error(exception, &block)
         unless exception.is_a?(Exception)
           internal_logger.error "Appsignal.report_error: Cannot add error. " \
@@ -358,10 +367,9 @@ module Appsignal
       #     end
       #   end
       #
+      # @since 2.2.0
       # @param action [String]
       # @return [void]
-      # @see Transaction#set_action
-      # @since 2.2.0
       def set_action(action)
         return if !active? ||
           !Appsignal::Transaction.current? ||
@@ -398,10 +406,12 @@ module Appsignal
       #     end
       #   end
       #
+      # @since 2.2.0
       # @param namespace [String]
       # @return [void]
-      # @see Transaction#set_namespace
-      # @since 2.2.0
+      #
+      # @see https://docs.appsignal.com/guides/namespaces.html
+      #   Grouping with namespaces guide
       def set_namespace(namespace)
         return if !active? ||
           !Appsignal::Transaction.current? ||
@@ -447,7 +457,6 @@ module Appsignal
       # @param data [Hash/Array] Custom data to add to the transaction.
       # @return [void]
       #
-      # @see Transaction#add_custom_data
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       def add_custom_data(data)
@@ -492,7 +501,6 @@ module Appsignal
       #   The name of the tag as a String.
       # @return [void]
       #
-      # @see Transaction#add_tags
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       def add_tags(tags = {})
@@ -537,7 +545,6 @@ module Appsignal
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-parameters.html
       #   Parameter filtering guide
-      # @see Transaction#add_params
       def add_params(params = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
@@ -552,6 +559,7 @@ module Appsignal
       # @api private
       # @since 4.0.0
       # @return [void]
+      #
       # @see Helpers::Instrumentation#set_empty_params!
       def set_empty_params!
         return unless active?
@@ -593,7 +601,6 @@ module Appsignal
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-session-data.html
       #   Session data filtering guide
-      # @see Transaction#add_session_data
       def add_session_data(session_data = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
@@ -635,7 +642,6 @@ module Appsignal
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html
       #   Request headers filtering guide
-      # @see Transaction#add_headers
       def add_headers(headers = nil, &block)
         return unless active?
         return unless Appsignal::Transaction.current?
@@ -672,6 +678,7 @@ module Appsignal
       #     "User closed modal without actions"
       #   )
       #
+      # @since 2.12.0
       # @param category [String] category of breadcrumb
       #   e.g. "UI", "Network", "Navigation", "Console".
       # @param action [String] name of breadcrumb
@@ -681,10 +688,8 @@ module Appsignal
       # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
       # @return [void]
       #
-      # @see Transaction#add_breadcrumb
       # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
       #   Breadcrumb reference
-      # @since 2.12.0
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
         return unless active?
         return unless Appsignal::Transaction.current?
@@ -712,6 +717,7 @@ module Appsignal
       #     # To be instrumented code
       #   end
       #
+      # @since 1.3.0
       # @param name [String] Name of the instrumented event. Read our event
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
@@ -725,13 +731,11 @@ module Appsignal
       #   event.
       # @return [Object] Returns the block's return value.
       #
-      # @see Appsignal::Transaction#instrument
       # @see .instrument_sql
       # @see https://docs.appsignal.com/ruby/instrumentation/instrumentation.html
       #   AppSignal custom instrumentation guide
       # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
-      # @since 1.3.0
       def instrument(
         name,
         title = nil,
@@ -759,6 +763,7 @@ module Appsignal
       #     # query value will replace 'foo..' with a question mark `?`.
       #   end
       #
+      # @since 2.0.0
       # @param name [String] Name of the instrumented event. Read our event
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
@@ -772,7 +777,6 @@ module Appsignal
       #   AppSignal custom instrumentation guide
       # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
-      # @since 2.0.0
       def instrument_sql(name, title = nil, body = nil, &block)
         instrument(
           name,
@@ -805,9 +809,10 @@ module Appsignal
       #
       #   # Only the "my_event.my_group" instrumentation event is reported.
       #
+      # @since 3.10.0
       # @yield block of code that shouldn't be instrumented.
       # @return [Object] Returns the return value of the block.
-      # @since 3.10.0
+      #
       # @see https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html
       #   Ignore instrumentation guide
       def ignore_instrumentation_events
