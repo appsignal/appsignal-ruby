@@ -108,7 +108,7 @@ module Appsignal
 
     # @api private
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused,
-      :tags, :options, :breadcrumbs, :is_duplicate, :error_blocks
+      :tags, :breadcrumbs, :is_duplicate, :error_blocks
 
     # Use {.create} to create new transactions.
     #
