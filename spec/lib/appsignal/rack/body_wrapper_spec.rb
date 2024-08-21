@@ -72,6 +72,18 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to have_error("ExampleException", "error message")
     end
 
+    it "doesn't report EPIPE error" do
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
+    end
+
     it "closes the body and tracks an instrumentation event when it gets closed" do
       fake_body = double(:close => nil)
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -132,6 +144,17 @@ describe Appsignal::Rack::BodyWrapper do
       end.to raise_error(ExampleException, "error message")
 
       expect(transaction).to have_error("ExampleException", "error message")
+    end
+
+    it "doesn't report EPIPE error" do
+      expect(fake_body).to receive(:each).once.and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
     end
 
     it "reads out the body in full using to_ary" do
@@ -207,6 +230,17 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to have_error("ExampleException", "error message")
     end
 
+    it "doesn't report EPIPE error" do
+      expect(fake_body).to receive(:to_path).once.and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_path
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
+    end
+
     it "exposes to_path to the sender" do
       allow(fake_body).to receive(:to_path).and_return("/tmp/file.bin")
 
@@ -258,6 +292,20 @@ describe Appsignal::Rack::BodyWrapper do
       end.to raise_error(ExampleException, "error message")
 
       expect(transaction).to have_error("ExampleException", "error message")
+    end
+
+    it "doesn't report EPIPE error" do
+      fake_rack_stream = double
+      expect(fake_body).to receive(:call)
+        .with(fake_rack_stream)
+        .and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.call(fake_rack_stream)
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
     end
   end
 end
