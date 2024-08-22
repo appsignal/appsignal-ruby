@@ -167,6 +167,10 @@ end
 module AppsignalTest
   module Transaction
     module ClassMethods
+      def self.extended(base)
+        base.attr_reader :ext
+      end
+
       # Override the {Appsignal::Transaction.new} method so we can track which
       # transactions are created on the {Appsignal::Testing.transactions} list.
       #

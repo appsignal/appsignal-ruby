@@ -107,7 +107,7 @@ module Appsignal
     end
 
     # @api private
-    attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused,
+    attr_reader :transaction_id, :action, :namespace, :request, :paused,
       :tags, :breadcrumbs, :is_duplicate, :error_blocks
 
     # Use {.create} to create new transactions.
@@ -162,7 +162,7 @@ module Appsignal
 
       unless is_duplicate
         self.class.last_errors = @error_blocks.keys
-        should_sample = ext.finish(0)
+        should_sample = @ext.finish(0)
       end
 
       @error_blocks.each do |error, blocks|
@@ -189,7 +189,7 @@ module Appsignal
         end
       end
       sample_data if should_sample
-      ext.complete
+      @ext.complete
     end
 
     # @api private
@@ -678,7 +678,7 @@ module Appsignal
       self.class.new(
         namespace,
         :id => new_transaction_id,
-        :ext => ext.duplicate(new_transaction_id)
+        :ext => @ext.duplicate(new_transaction_id)
       ).tap do |transaction|
         transaction.is_duplicate = true
         transaction.tags = @tags.dup
