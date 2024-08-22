@@ -107,8 +107,7 @@ module Appsignal
     end
 
     # @api private
-    attr_reader :transaction_id, :action, :namespace, :tags, :breadcrumbs,
-      :error_blocks
+    attr_reader :transaction_id, :action, :namespace, :tags, :error_blocks
 
     # Use {.create} to create new transactions.
     #
@@ -594,6 +593,8 @@ module Appsignal
       :session_data, :headers
 
     private
+
+    attr_reader :breadcrumbs
 
     def _set_error(error)
       backtrace = cleaned_backtrace(error.backtrace)
