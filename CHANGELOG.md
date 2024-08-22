@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.13.1.alpha.1
+
+_Published on 2024-08-22._
+
+### Changed
+
+- Ignore `Errno::EPIPE` errors when instrumenting response bodies. We've noticed this error gets reported when the connection is broken between server and client. This happens in normal scenarios so we'll ignore this error in this scenario to avoid error reports from errors that cannot be resolved. (patch [8ad8a057](https://github.com/appsignal/appsignal-ruby/commit/8ad8a05787dcb12a5c7febc64559e7f145a59096))
+
 ## 3.13.0
 
 _Published on 2024-08-14._
