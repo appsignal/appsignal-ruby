@@ -517,7 +517,7 @@ describe Appsignal::Transaction do
       it "changes the pause flag to true" do
         expect do
           transaction.pause!
-        end.to change(transaction, :paused).from(false).to(true)
+        end.to change(transaction, :paused?).from(false).to(true)
       end
     end
 
@@ -527,7 +527,7 @@ describe Appsignal::Transaction do
       it "changes the pause flag to false" do
         expect do
           transaction.resume!
-        end.to change(transaction, :paused).from(true).to(false)
+        end.to change(transaction, :paused?).from(true).to(false)
       end
     end
 

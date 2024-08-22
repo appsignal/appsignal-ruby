@@ -107,8 +107,8 @@ module Appsignal
     end
 
     # @api private
-    attr_reader :transaction_id, :action, :namespace, :paused, :tags,
-      :breadcrumbs, :error_blocks
+    attr_reader :transaction_id, :action, :namespace, :tags, :breadcrumbs,
+      :error_blocks
 
     # Use {.create} to create new transactions.
     #
@@ -295,7 +295,7 @@ module Appsignal
     def add_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
-    alias :set_tags add_tags
+    alias :set_tags :add_tags
 
     # Add session data to the transaction.
     #
