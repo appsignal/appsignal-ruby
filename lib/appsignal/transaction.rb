@@ -108,7 +108,7 @@ module Appsignal
 
     # @api private
     attr_reader :transaction_id, :action, :namespace, :request, :paused,
-      :tags, :breadcrumbs, :is_duplicate, :error_blocks
+      :tags, :breadcrumbs, :error_blocks
 
     # Use {.create} to create new transactions.
     #
@@ -141,6 +141,11 @@ module Appsignal
     end
 
     # @api private
+    def duplicate?
+      @is_duplicate
+    end
+
+    # @api private
     def nil_transaction?
       false
     end
@@ -160,7 +165,7 @@ module Appsignal
       # create duplicates for errors, which are always sampled.
       should_sample = true
 
-      unless is_duplicate
+      unless duplicate?
         self.class.last_errors = @error_blocks.keys
         should_sample = @ext.finish(0)
       end
