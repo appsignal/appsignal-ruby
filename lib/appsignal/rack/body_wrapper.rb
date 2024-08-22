@@ -4,6 +4,8 @@ module Appsignal
   module Rack
     # @api private
     class BodyWrapper
+      IGNORED_ERRORS = [Errno::EPIPE].freeze
+
       def self.wrap(original_body, appsignal_transaction)
         # The logic of how Rack treats a response body differs based on which methods
         # the body responds to. This means that to support the Rack 3.x spec in full
@@ -49,6 +51,8 @@ module Appsignal
           Appsignal.instrument("close_response_body.rack") { @body.close }
         end
         @body_already_closed = true
+      rescue *IGNORED_ERRORS # Do not report
+        raise
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -75,6 +79,8 @@ module Appsignal
         Appsignal.instrument("process_response_body.rack", "Process Rack response body (#each)") do
           @body.each(&blk)
         end
+      rescue *IGNORED_ERRORS # Do not report
+        raise
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -94,6 +100,8 @@ module Appsignal
         Appsignal.instrument("process_response_body.rack", "Process Rack response body (#call)") do
           @body.call(stream)
         end
+      rescue *IGNORED_ERRORS # Do not report
+        raise
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -118,6 +126,8 @@ module Appsignal
         ) do
           @body.to_ary
         end
+      rescue *IGNORED_ERRORS # Do not report
+        raise
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
@@ -134,6 +144,8 @@ module Appsignal
         ) do
           @body.to_path
         end
+      rescue *IGNORED_ERRORS # Do not report
+        raise
       rescue Exception => error # rubocop:disable Lint/RescueException
         @transaction.set_error(error)
         raise error
