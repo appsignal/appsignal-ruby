@@ -107,7 +107,7 @@ module Appsignal
     end
 
     # @api private
-    attr_reader :transaction_id, :action, :namespace, :error_blocks
+    attr_reader :transaction_id, :action, :namespace
 
     # Use {.create} to create new transactions.
     #

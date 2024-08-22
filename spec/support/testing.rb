@@ -168,7 +168,7 @@ module AppsignalTest
   module Transaction
     module ClassMethods
       def self.extended(base)
-        base.attr_reader :ext
+        base.attr_reader :ext, :error_blocks
       end
 
       # Override the {Appsignal::Transaction.new} method so we can track which
