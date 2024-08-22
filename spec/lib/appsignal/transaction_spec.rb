@@ -338,11 +338,11 @@ describe Appsignal::Transaction do
           expect(original_transaction.ext).to_not eq(duplicate_transaction.ext)
         end
 
-        it "sets is_duplicate set to true on the duplicate transaction" do
+        it "marks transaction as duplicate on the duplicate transaction" do
           original_transaction, duplicate_transaction = created_transactions
 
-          expect(original_transaction.is_duplicate).to be(false)
-          expect(duplicate_transaction.is_duplicate).to be(true)
+          expect(original_transaction.duplicate?).to be(false)
+          expect(duplicate_transaction.duplicate?).to be(true)
         end
       end
 
@@ -517,7 +517,7 @@ describe Appsignal::Transaction do
       it "changes the pause flag to true" do
         expect do
           transaction.pause!
-        end.to change(transaction, :paused).from(false).to(true)
+        end.to change(transaction, :paused?).from(false).to(true)
       end
     end
 
@@ -527,7 +527,7 @@ describe Appsignal::Transaction do
       it "changes the pause flag to false" do
         expect do
           transaction.resume!
-        end.to change(transaction, :paused).from(true).to(false)
+        end.to change(transaction, :paused?).from(true).to(false)
       end
     end
 
