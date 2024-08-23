@@ -103,7 +103,8 @@ module Appsignal
         private
 
         IGNORED_ERRORS = [
-          # We don't need to alert every Sidekiq job skip error
+          # We don't need to alert Sidekiq job skip errors.
+          # This is an internal Sidekiq error.
           "Sidekiq::JobRetry::Skip"
         ].freeze
 
