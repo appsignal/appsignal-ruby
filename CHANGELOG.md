@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.0
+
+_Published on 2024-08-23._
+
+### Changed
+
+- Release the final package version. See the pre-release changelog entries for the changes in this version. (major)
+
+### Removed
+
+- Remove the `Transaction.new` method Transaction ID argument. The Transaction ID will always be automatically generated. (major [bb938a9f](https://github.com/appsignal/appsignal-ruby/commit/bb938a9f79b8b51e4c47d3f268326f89c137df6f))
+
 ## 4.0.0.beta.2
 
 _Published on 2024-08-19._
