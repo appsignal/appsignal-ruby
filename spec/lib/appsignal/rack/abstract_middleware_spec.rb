@@ -1,4 +1,14 @@
 describe Appsignal::Rack::AbstractMiddleware do
+  class HashLike < Hash
+    def initialize(value)
+      @value = value
+    end
+
+    def to_h
+      @value
+    end
+  end
+
   let(:app) { DummyApp.new }
   let(:request_path) { "/some/path" }
   let(:env) do
@@ -260,6 +270,13 @@ describe Appsignal::Rack::AbstractMiddleware do
           make_request
 
           expect(last_transaction).to include_session_data("session" => "data", "user_id" => 123)
+        end
+
+        it "sets session data if the session is a Hash-like type" do
+          env["rack.session"] = HashLike.new("hash-like" => "value", "user_id" => 123)
+          make_request
+
+          expect(last_transaction).to include_session_data("hash-like" => "value", "user_id" => 123)
         end
       end
 

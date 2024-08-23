@@ -142,9 +142,7 @@ module Appsignal
         transaction.set_metadata("method", request_method) if request_method
 
         transaction.add_params { params_for(request) }
-        transaction.add_session_data do
-          request.session if request.respond_to?(:session)
-        end
+        transaction.add_session_data { session_data_for(request) }
         transaction.add_headers do
           request.env if request.respond_to?(:env)
         end
@@ -170,6 +168,18 @@ module Appsignal
       rescue => error
         Appsignal.internal_logger.error(
           "Exception while fetching the HTTP request method: #{error.class}: #{error}"
+        )
+        nil
+      end
+
+      def session_data_for(request)
+        return unless request.respond_to?(:session)
+
+        request.session.to_h
+      rescue => error
+        Appsignal.internal_logger.error(
+          "Exception while fetching session data from '#{@request_class}': " \
+            "#{error.class} #{error}"
         )
         nil
       end
