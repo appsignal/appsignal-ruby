@@ -121,6 +121,22 @@ _Published on 2024-08-19._
 
 - Fix an issue where, when setting several errors for the same transaction, error causes from a different error would be shown for an error that has no causes. (patch [d54ce8b9](https://github.com/appsignal/appsignal-ruby/commit/d54ce8b947c9316756c4191155e8d255a8e25a8c))
 
+## 3.13.1
+
+_Published on 2024-08-23._
+
+### Changed
+
+- Release the final package version. See the pre-release changelog entries for the changes in this version. (patch)
+
+## 3.13.1.alpha.1
+
+_Published on 2024-08-22._
+
+### Changed
+
+- Ignore `Errno::EPIPE` errors when instrumenting response bodies. We've noticed this error gets reported when the connection is broken between server and client. This happens in normal scenarios so we'll ignore this error in this scenario to avoid error reports from errors that cannot be resolved. (patch [8ad8a057](https://github.com/appsignal/appsignal-ruby/commit/8ad8a05787dcb12a5c7febc64559e7f145a59096))
+
 ## 3.13.0
 
 _Published on 2024-08-14._
