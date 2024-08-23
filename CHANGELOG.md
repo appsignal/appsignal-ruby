@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.1
+
+_Published on 2024-08-23._
+
+### Fixed
+
+- Do not report `Sidekiq::JobRetry::Skip` errors. These errors would be reported by our Rails error subscriber. This is an internal Sidekiq error we do not need to report. (patch [9ea2d3e8](https://github.com/appsignal/appsignal-ruby/commit/9ea2d3e83657d115baf166257a50c7e3394318aa))
+- Do not report `SystemExit` errors from our `at_exit` error reporter. (patch [e9c0cad3](https://github.com/appsignal/appsignal-ruby/commit/e9c0cad3d672e68a63ca9c33cfa30a3434c77d04))
+
 ## 4.0.0
 
 _Published on 2024-08-23._
