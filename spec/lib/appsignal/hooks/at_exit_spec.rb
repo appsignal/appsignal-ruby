@@ -59,8 +59,19 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
   end
 
-  it "doesn't report the error if is also the last error reported" do
+  it "doesn't report the error if it is also the last error reported" do
     with_error(ExampleException, "error message") do |error|
+      Appsignal.report_error(error)
+      expect(created_transactions.count).to eq(1)
+
+      expect do
+        call_callback
+      end.to_not change { created_transactions.count }.from(1)
+    end
+  end
+
+  it "doesn't report the error if it is a SystemExit exception" do
+    with_error(SystemExit, "error message") do |error|
       Appsignal.report_error(error)
       expect(created_transactions.count).to eq(1)
 

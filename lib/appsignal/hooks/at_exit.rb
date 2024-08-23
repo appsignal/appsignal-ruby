@@ -24,12 +24,22 @@ module Appsignal
       class AtExitCallback
         def self.call
           error = $! # rubocop:disable Style/SpecialGlobalVars
+          return if ignored_error?(error)
           return if Appsignal::Transaction.last_errors.include?(error)
 
           Appsignal.report_error(error) do |transaction|
             transaction.set_namespace("unhandled")
           end
           Appsignal.stop("at_exit")
+        end
+
+        IGNORED_ERRORS = [
+          # Normal exits from the application we do not need to report
+          SystemExit
+        ].freeze
+
+        def self.ignored_error?(error)
+          IGNORED_ERRORS.include?(error.class)
         end
       end
     end
