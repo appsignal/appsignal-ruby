@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.2
+
+_Published on 2024-08-23._
+
+### Fixed
+
+- Do not log a warning for `nil` data being added as sample data, but silently ignore it because we don't support it. (patch [0a658e5e](https://github.com/appsignal/appsignal-ruby/commit/0a658e5e523f23f87b7d6e0b88bf6d6bea529f06))
+- Fix Rails session data not being reported. (patch [1565c7f0](https://github.com/appsignal/appsignal-ruby/commit/1565c7f0a55e8c2e51b615863b12d13a2b246949))
+
 ## 4.0.1
 
 _Published on 2024-08-23._
