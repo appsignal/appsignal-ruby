@@ -28,7 +28,7 @@ module Appsignal
     end
 
     def value
-      value = nil
+      value = UNSET_VALUE
       @blocks.map! do |block_or_value|
         new_value =
           if block_or_value.respond_to?(:call)
@@ -63,6 +63,8 @@ module Appsignal
 
     private
 
+    UNSET_VALUE = nil
+
     # Method called by `dup` and `clone` to create a duplicate instance.
     # Make sure the `@blocks` variable is also properly duplicated.
     def initialize_copy(original)
@@ -81,11 +83,13 @@ module Appsignal
 
     def merge_values(value_original, value_new)
       unless value_new.instance_of?(value_original.class)
-        Appsignal.internal_logger.warn(
-          "The sample data '#{@key}' changed type from " \
-            "'#{value_original.class}' to '#{value_new.class}'. " \
-            "These types can not be merged. Using new '#{value_new.class}' type."
-        )
+        unless value_original == UNSET_VALUE
+          Appsignal.internal_logger.warn(
+            "The sample data '#{@key}' changed type from " \
+              "'#{value_original.class}' to '#{value_new.class}'. " \
+              "These types can not be merged. Using new '#{value_new.class}' type."
+          )
+        end
         return value_new
       end
 

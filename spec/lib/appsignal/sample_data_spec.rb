@@ -3,15 +3,40 @@ describe Appsignal::SampleData do
 
   describe "#add" do
     it "sets the given value" do
-      data.add(:key1 => "value 1")
+      logs =
+        capture_logs do
+          data.add(:key1 => "value 1")
+        end
 
       expect(data.value).to eq(:key1 => "value 1")
+
+      expect(logs).to_not contains_log(
+        :error,
+        "Sample data 'data_key': Unsupported data type 'NilClass' received: nil"
+      )
     end
 
     it "adds the given value with the block being leading" do
       data.add(:key1 => "value 1") { { :key2 => "value 2" } }
 
       expect(data.value).to eq(:key2 => "value 2")
+    end
+
+    it "doesn't add nil to the data" do
+      logs =
+        capture_logs do
+          data.add([1])
+          data.add(nil)
+          data.add { nil }
+          data.add([2, 3])
+        end
+
+      expect(data.value).to eq([1, 2, 3])
+      expect(logs).to contains_log(
+        :error,
+        "Sample data 'data_key': Unsupported data type 'NilClass' received: nil"
+      )
+      expect(logs).to_not contains_log(:warn, "The sample data 'data_key' changed type")
     end
 
     it "merges multiple values" do
