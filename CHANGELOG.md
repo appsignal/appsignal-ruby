@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.13.1
+
+_Published on 2024-08-23._
+
+### Changed
+
+- Release the final package version. See the pre-release changelog entries for the changes in this version. (patch)
+
 ## 3.13.1.alpha.1
 
 _Published on 2024-08-22._
