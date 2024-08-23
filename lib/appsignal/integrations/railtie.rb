@@ -80,6 +80,8 @@ module Appsignal
     class RailsErrorReporterSubscriber
       class << self
         def report(error, handled:, severity:, context: {}, source: nil) # rubocop:disable Lint/UnusedMethodArgument
+          return if ignored_error?(error)
+
           is_rails_runner = source == "application.runner.railties"
           namespace, action_name, tags, custom_data = context_for(context.dup)
 
@@ -99,6 +101,16 @@ module Appsignal
         end
 
         private
+
+        IGNORED_ERRORS = [
+          # We don't need to alert Sidekiq job skip errors.
+          # This is an internal Sidekiq error.
+          "Sidekiq::JobRetry::Skip"
+        ].freeze
+
+        def ignored_error?(error)
+          IGNORED_ERRORS.include?(error.class.name)
+        end
 
         def context_for(context)
           tags = {}
