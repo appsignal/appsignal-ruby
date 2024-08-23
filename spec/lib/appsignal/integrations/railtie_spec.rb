@@ -229,6 +229,17 @@ if DependencyHelper.rails_present?
           expect(last_transaction).to have_error("ExampleStandardError", "error message")
         end
 
+        it "ignores Sidekiq::JobRetry::Skip errors" do
+          require "sidekiq"
+          require "sidekiq/job_retry"
+
+          with_rails_error_reporter do
+            Rails.error.handle { raise Sidekiq::JobRetry::Skip, "error message" }
+          end
+
+          expect(last_transaction).to_not have_error
+        end
+
         context "when no transaction is active" do
           it "reports the error on a new transaction" do
             with_rails_error_reporter do
