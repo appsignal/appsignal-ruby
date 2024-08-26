@@ -225,7 +225,7 @@ module Appsignal
     #   How to integrate AppSignal manually
     def initialize(
       root_path,
-      initial_env,
+      env,
       logger = Appsignal.internal_logger
     )
       @root_path = root_path
@@ -234,8 +234,7 @@ module Appsignal
       @logger = logger
       @valid = false
 
-      @initial_env = initial_env
-      @env = initial_env.to_s
+      @env = env.to_s
       @config_hash = {}
       @system_config = {}
       @loaders_config = {}
@@ -270,7 +269,7 @@ module Appsignal
       end
 
       # Track origin of env
-      @initial_config[:env] = @initial_env.to_s
+      @initial_config[:env] = @env
 
       # Load the config file if it exists
       @file_config = load_from_disk || {}
