@@ -102,14 +102,9 @@ module Appsignal
 
         private
 
-        IGNORED_ERRORS = [
-          # We don't need to alert Sidekiq job skip errors.
-          # This is an internal Sidekiq error.
-          "Sidekiq::JobRetry::Skip"
-        ].freeze
-
         def ignored_error?(error)
-          IGNORED_ERRORS.include?(error.class.name)
+          # We don't need to alert about Sidekiq job internal errors.
+          defined?(Sidekiq::JobRetry::Handled) && error.is_a?(Sidekiq::JobRetry::Handled)
         end
 
         def context_for(context)
