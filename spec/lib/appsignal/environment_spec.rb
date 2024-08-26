@@ -115,12 +115,33 @@ describe Appsignal::Environment do
   end
 
   describe ".report_supported_gems" do
-    it "reports about all AppSignal supported gems in the bundle" do
+    it "reports about all AppSignal supported gems in the bundle using Bundler all_specs" do
       logs = capture_logs { described_class.report_supported_gems }
 
       expect(logs).to be_empty
 
-      bundle_gem_specs = ::Bundler.rubygems.all_specs
+      if Bundler.rubygems.respond_to?(:all_specs)
+        skip "Using new Bundler version without `all_specs` method"
+      end
+      bundle_gem_specs = silence { ::Bundler.rubygems.all_specs }
+      rack_spec = bundle_gem_specs.find { |s| s.name == "rack" }
+      rake_spec = bundle_gem_specs.find { |s| s.name == "rake" }
+      expect_environment_metadata("ruby_rack_version", rack_spec.version.to_s)
+      expect_environment_metadata("ruby_rake_version", rake_spec.version.to_s)
+      expect(rack_spec.version.to_s).to_not be_empty
+      expect(rake_spec.version.to_s).to_not be_empty
+    end
+
+    it "reports about all AppSignal supported gems in the bundle using bundler installed_specs" do
+      unless Bundler.rubygems.respond_to?(:installed_specs)
+        skip "Using old Bundler version without `installed_specs` method"
+      end
+
+      logs = capture_logs { described_class.report_supported_gems }
+
+      expect(logs).to be_empty
+
+      bundle_gem_specs = ::Bundler.rubygems.installed_specs
       rack_spec = bundle_gem_specs.find { |s| s.name == "rack" }
       rake_spec = bundle_gem_specs.find { |s| s.name == "rake" }
       expect_environment_metadata("ruby_rack_version", rack_spec.version.to_s)
