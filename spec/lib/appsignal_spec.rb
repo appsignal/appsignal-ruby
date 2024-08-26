@@ -581,6 +581,11 @@ describe Appsignal do
         expect(Appsignal.active?).to be_falsy
       end
     end
+
+    it "calls stop on the check-in scheduler" do
+      expect(Appsignal::CheckIn.scheduler).to receive(:stop)
+      Appsignal.stop
+    end
   end
 
   describe ".started?" do
