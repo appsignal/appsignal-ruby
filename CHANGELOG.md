@@ -1,5 +1,21 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.3
+
+_Published on 2024-08-26._
+
+### Changed
+
+- Do not report Sidekiq `Sidekiq::JobRetry::Handled` and `Sidekiq::JobRetry::Skip` errors. These errors would be reported by our Rails error subscriber. These are an internal Sidekiq errors we do not need to report. (patch [e385ee2c](https://github.com/appsignal/appsignal-ruby/commit/e385ee2c4da13063e6f1a7a207286dda74113fc4))
+
+### Removed
+
+- Remove the `app_path` writer in the `Appsignal.configure` helper. This was deprecated in version 3.x. It is removed now in the next major version.
+
+  Use the `root_path` keyword argument in the `Appsignal.configure` helper (`Appsignal.configure(:root_path => "...")`) to change the AppSignal root path if necessary.
+
+  (patch [6335da6d](https://github.com/appsignal/appsignal-ruby/commit/6335da6d99a5ba7687fb5885eee27b9633d80474))
+
 ## 4.0.2
 
 _Published on 2024-08-23._
