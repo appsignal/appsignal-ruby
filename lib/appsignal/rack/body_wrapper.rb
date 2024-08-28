@@ -57,6 +57,21 @@ module Appsignal
         @transaction.set_error(error)
         raise error
       end
+
+      # Return whether the wrapped body responds to the method if this class does not.
+      # Based on:
+      # https://github.com/rack/rack/blob/0ed580bbe3858ffe5d530adf1bdad9ef9c03407c/lib/rack/body_proxy.rb#L16-L24
+      def respond_to_missing?(method_name, include_all = false)
+        super || @body.respond_to?(method_name, include_all)
+      end
+
+      # Delegate missing methods to the wrapped body.
+      # Based on:
+      # https://github.com/rack/rack/blob/0ed580bbe3858ffe5d530adf1bdad9ef9c03407c/lib/rack/body_proxy.rb#L44-L61
+      def method_missing(method_name, *args, &block)
+        @body.__send__(method_name, *args, &block)
+      end
+      ruby2_keywords(:method_missing) if respond_to?(:ruby2_keywords, true)
     end
 
     # The standard Rack body wrapper which exposes "each" for iterating
