@@ -1,5 +1,22 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.4
+
+_Published on 2024-08-29._
+
+### Changed
+
+- Send check-ins concurrently. When calling `Appsignal::CheckIn.cron`, instead of blocking the current thread while the check-in events are sent, schedule them to be sent in a separate thread.
+
+  When shutting down your application manually, call `Appsignal.stop` to block until all scheduled check-ins have been sent.
+
+  (patch [46d4ca74](https://github.com/appsignal/appsignal-ruby/commit/46d4ca74f4c188cc011653ed23969ad7ec770812))
+
+### Fixed
+
+- Make our Rack BodyWrapper behave like a Rack BodyProxy. If a method doesn't exist on our BodyWrapper class, but it does exist on the body, behave like the Rack BodyProxy and call the method on the wrapped body. (patch [e2376305](https://github.com/appsignal/appsignal-ruby/commit/e23763058a3fb980f1054e9c1eaf7e0f25f75666))
+- Do not report `SignalException` errors from our `at_exit` error reporter. (patch [3ba3ce31](https://github.com/appsignal/appsignal-ruby/commit/3ba3ce31ee3f3e84665c9f2f18d488c689cff6c2))
+
 ## 4.0.3
 
 _Published on 2024-08-26._
