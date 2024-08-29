@@ -120,7 +120,7 @@ describe Appsignal::Environment do
 
       expect(logs).to be_empty
 
-      if Bundler.rubygems.respond_to?(:all_specs)
+      unless Bundler.rubygems.respond_to?(:all_specs)
         skip "Using new Bundler version without `all_specs` method"
       end
       bundle_gem_specs = silence { ::Bundler.rubygems.all_specs }
