@@ -80,4 +80,15 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       end.to_not change { created_transactions.count }.from(1)
     end
   end
+
+  it "doesn't report the error if it is a SignalException exception" do
+    with_error(SignalException, "TERM") do |error|
+      Appsignal.report_error(error)
+      expect(created_transactions.count).to eq(1)
+
+      expect do
+        call_callback
+      end.to_not change { created_transactions.count }.from(1)
+    end
+  end
 end
