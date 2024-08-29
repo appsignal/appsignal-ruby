@@ -5,23 +5,29 @@ describe Appsignal::Rack::BodyWrapper do
     set_current_transaction(transaction)
   end
 
-  describe "with a body that supports all possible features" do
-    it "reduces the supported methods to just each()" do
-      # which is the safest thing to do, since the body is likely broken
-      fake_body = double(
-        :each => nil,
-        :call => nil,
-        :to_ary => [],
-        :to_path => "/tmp/foo.bin",
-        :close => nil
-      )
+  it "forwards method calls to the body if the method doesn't exist" do
+    fake_body = double(
+      :body => ["some body"],
+      :some_method => :some_value
+    )
 
-      wrapped = described_class.wrap(fake_body, transaction)
-      expect(wrapped).to respond_to(:each)
-      expect(wrapped).to_not respond_to(:to_ary)
-      expect(wrapped).to_not respond_to(:call)
-      expect(wrapped).to respond_to(:close)
-    end
+    wrapped = described_class.wrap(fake_body, transaction)
+    expect(wrapped).to respond_to(:body)
+    expect(wrapped.body).to eq(["some body"])
+
+    expect(wrapped).to respond_to(:some_method)
+    expect(wrapped.some_method).to eq(:some_value)
+  end
+
+  it "doesn't respond to methods the Rack::BodyProxy doesn't respond to" do
+    body = Rack::BodyProxy.new(["body"])
+    wrapped = described_class.wrap(body, transaction)
+
+    expect(wrapped).to_not respond_to(:to_str)
+    expect { wrapped.to_str }.to raise_error(NoMethodError)
+
+    expect(wrapped).to_not respond_to(:body)
+    expect { wrapped.body }.to raise_error(NoMethodError)
   end
 
   describe "with a body only supporting each()" do
@@ -97,15 +103,17 @@ describe Appsignal::Rack::BodyWrapper do
   end
 
   describe "with a body supporting both each() and call" do
-    it "wraps with the wrapper that conceals call() and exposes each" do
-      fake_body = double
-      allow(fake_body).to receive(:each)
-      allow(fake_body).to receive(:call)
+    it "wraps with the wrapper that exposes each" do
+      fake_body = double(
+        :each => true,
+        :call => "original call"
+      )
 
       wrapped = described_class.wrap(fake_body, transaction)
       expect(wrapped).to respond_to(:each)
       expect(wrapped).to_not respond_to(:to_ary)
-      expect(wrapped).to_not respond_to(:call)
+      expect(wrapped).to respond_to(:call)
+      expect(wrapped.call).to eq("original call")
       expect(wrapped).to_not respond_to(:to_path)
       expect(wrapped).to respond_to(:close)
     end
