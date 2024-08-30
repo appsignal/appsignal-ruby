@@ -40,6 +40,17 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     Appsignal::Hooks::AtExit::AtExitCallback.call
   end
 
+  it "reports no transaction if the process didn't exit with an error" do
+    logs =
+      capture_logs do
+        expect do
+          call_callback
+        end.to_not(change { created_transactions.count })
+      end
+
+    expect(logs).to_not contains_log(:error, "Appsignal.report_error: Cannot add error.")
+  end
+
   it "reports an error if there's an unhandled error" do
     expect do
       with_error(ExampleException, "error message") do
