@@ -12,6 +12,9 @@ module Appsignal
       end
 
       def install
+        require "appsignal/integrations/puma"
+        ::Puma::Server.prepend(Appsignal::Integrations::PumaServer)
+
         return unless defined?(::Puma::Cluster)
 
         # For clustered mode with multiple workers

@@ -2,31 +2,8 @@ describe Appsignal::Hooks::PumaHook do
   context "with puma" do
     let(:puma_version) { "6.0.0" }
     before do
-      class TestPuma
-        def self.stats
-        end
-
-        def self.cli_config
-          @cli_config ||= CliConfig.new
-        end
-
-        class Server
-        end
-
-        module Const
-        end
-      end
-      TestPuma::Const::VERSION = puma_version
-
-      class CliConfig
-        attr_accessor :options
-
-        def initialize
-          @options = {}
-        end
-      end
-
-      stub_const("Puma", TestPuma)
+      stub_const("Puma", PumaMock)
+      stub_const("Puma::Const::VERSION", puma_version)
     end
 
     describe "#dependencies_present?" do
@@ -58,6 +35,11 @@ describe Appsignal::Hooks::PumaHook do
     describe "installation" do
       before { Appsignal::Probes.probes.clear }
 
+      it "adds the Puma::Server patch" do
+        Appsignal::Hooks::PumaHook.new.install
+        expect(::Puma::Server.included_modules).to include(Appsignal::Integrations::PumaServer)
+      end
+
       context "when not clustered mode" do
         it "does not add AppSignal stop behavior Puma::Cluster" do
           expect(defined?(::Puma::Cluster)).to be_falsy
@@ -68,15 +50,12 @@ describe Appsignal::Hooks::PumaHook do
 
       context "when in clustered mode" do
         before do
-          class Puma
-            class Cluster
-              def stop_workers
-                @called = true
-              end
+          stub_const("Puma::Cluster", Class.new do
+            def stop_workers
+              @called = true
             end
-          end
+          end)
         end
-        after { Puma.send(:remove_const, :Cluster) }
 
         it "adds behavior to Puma::Cluster.stop_workers" do
           Appsignal::Hooks::PumaHook.new.install
