@@ -66,7 +66,7 @@ module Appsignal
       private
 
       def params_for(request)
-        return unless request.respond_to?(@params_method)
+        return if !@params_method || !request.respond_to?(@params_method)
 
         request.send(@params_method)
       rescue => error

@@ -140,6 +140,16 @@ describe Appsignal::Rack::ApplyRackRequest do
       )
     end
 
+    context "when params_method isn't set" do
+      let(:options) { { :params_method => nil } }
+
+      it "reports no params" do
+        apply_to(transaction)
+
+        expect(transaction).to_not include_params
+      end
+    end
+
     context "when fetching the request method raises an error" do
       class BrokenRequestParamsRequest < Rack::Request
         def params
