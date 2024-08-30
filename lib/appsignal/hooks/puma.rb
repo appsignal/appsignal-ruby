@@ -7,7 +7,8 @@ module Appsignal
       register :puma
 
       def dependencies_present?
-        defined?(::Puma)
+        defined?(::Puma) &&
+          Gem::Version.new(Puma::Const::VERSION) >= Gem::Version.new("3.0.0")
       end
 
       def install

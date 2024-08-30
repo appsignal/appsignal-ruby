@@ -1,14 +1,22 @@
 describe Appsignal::Hooks::PumaHook do
   context "with puma" do
-    before(:context) do
-      class Puma
+    let(:puma_version) { "6.0.0" }
+    before do
+      class TestPuma
         def self.stats
         end
 
         def self.cli_config
           @cli_config ||= CliConfig.new
         end
+
+        class Server
+        end
+
+        module Const
+        end
       end
+      TestPuma::Const::VERSION = puma_version
 
       class CliConfig
         attr_accessor :options
@@ -17,13 +25,34 @@ describe Appsignal::Hooks::PumaHook do
           @options = {}
         end
       end
+
+      stub_const("Puma", TestPuma)
     end
-    after(:context) { Object.send(:remove_const, :Puma) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
-      it { is_expected.to be_truthy }
+      context "when Puma present" do
+        context "when Puma is newer than version 3.0.0" do
+          let(:puma_version) { "3.0.0" }
+
+          it { is_expected.to be_truthy }
+        end
+
+        context "when Puma is older than version 3.0.0" do
+          let(:puma_version) { "2.9.9" }
+
+          it { is_expected.to be_falsey }
+        end
+      end
+
+      context "when Puma is not present" do
+        before do
+          hide_const("Puma")
+        end
+
+        it { is_expected.to be_falsey }
+      end
     end
 
     describe "installation" do
