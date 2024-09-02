@@ -79,6 +79,8 @@ module Appsignal
             #
             # The EventHandler.on_finish callback should be called first, this is
             # just a fallback if that doesn't get called.
+            #
+            # One such scenario is when a Puma "lowlevel_error" occurs.
             Appsignal::Transaction.complete_current!
           end
           transaction.start_event

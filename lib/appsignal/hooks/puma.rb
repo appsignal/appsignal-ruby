@@ -7,10 +7,14 @@ module Appsignal
       register :puma
 
       def dependencies_present?
-        defined?(::Puma)
+        defined?(::Puma) &&
+          Gem::Version.new(Puma::Const::VERSION) >= Gem::Version.new("3.0.0")
       end
 
       def install
+        require "appsignal/integrations/puma"
+        ::Puma::Server.prepend(Appsignal::Integrations::PumaServer)
+
         return unless defined?(::Puma::Cluster)
 
         # For clustered mode with multiple workers
