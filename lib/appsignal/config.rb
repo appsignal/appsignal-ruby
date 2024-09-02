@@ -15,6 +15,13 @@ module Appsignal
 
     # @api private
     def self.add_loader_defaults(name, env: nil, root_path: nil, **options)
+      if Appsignal.config
+        Appsignal.internal_logger.warn(
+          "The config defaults from the '#{name}' loader are ignored since " \
+            "the AppSignal config has already been initialized."
+        )
+      end
+
       loader_defaults << {
         :name => name,
         :env => env,
