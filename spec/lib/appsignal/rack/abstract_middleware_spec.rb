@@ -171,7 +171,9 @@ describe Appsignal::Rack::AbstractMiddleware do
           make_request
 
           expect(last_transaction).to include_metadata(
+            "request_method" => "GET",
             "method" => "GET",
+            "request_path" => "/some/path",
             "path" => "/some/path"
           )
           expect(last_transaction).to include_environment(

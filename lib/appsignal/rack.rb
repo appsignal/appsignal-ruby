@@ -48,10 +48,17 @@ module Appsignal
       end
 
       def apply_to(transaction)
-        transaction.set_metadata("path", request.path)
+        request_path = request.path
+        transaction.set_metadata("request_path", request_path)
+        # TODO: Remove in next major/minor version
+        transaction.set_metadata("path", request_path)
 
         request_method = request_method_for(request)
-        transaction.set_metadata("method", request_method) if request_method
+        if request_method
+          transaction.set_metadata("request_method", request_method)
+          # TODO: Remove in next major/minor version
+          transaction.set_metadata("method", request_method)
+        end
 
         transaction.add_params { params_for(request) }
         transaction.add_session_data { session_data_for(request) }
