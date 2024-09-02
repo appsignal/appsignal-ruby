@@ -24,6 +24,7 @@ module Appsignal
       class AtExitCallback
         def self.call
           error = $! # rubocop:disable Style/SpecialGlobalVars
+          return unless error
           return if ignored_error?(error)
           return if Appsignal::Transaction.last_errors.include?(error)
 
