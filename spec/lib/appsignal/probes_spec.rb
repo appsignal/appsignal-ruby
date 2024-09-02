@@ -244,12 +244,7 @@ describe Appsignal::Probes do
   end
 
   describe ".unregister" do
-    let(:log_stream) { StringIO.new }
-    let(:log) { log_contents(log_stream) }
-    before do
-      Appsignal.internal_logger = test_logger(log_stream)
-      speed_up_tests!
-    end
+    before { speed_up_tests! }
 
     it "does not call the initialized probe after unregistering" do
       probe1_calls = 0
