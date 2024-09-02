@@ -43,6 +43,9 @@ describe Appsignal::Probes do
     let(:log) { log_contents(log_stream) }
     before do
       Appsignal.internal_logger = test_logger(log_stream)
+      # TODO: These logs are here to debug an issue on CI
+      Appsignal.internal_logger.info("a" * 100)
+      Appsignal.internal_logger.info("b" * 100)
       speed_up_tests!
     end
 
