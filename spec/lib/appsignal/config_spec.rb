@@ -1,5 +1,18 @@
 describe Appsignal::Config do
   describe ".add_loader_defaults" do
+    context "when the config is initialized" do
+      before { Appsignal.configure(:test) }
+
+      it "logs a warning" do
+        logs = capture_logs { described_class.add_loader_defaults(:loader1) }
+
+        expect(logs).to contains_log(
+          :warn,
+          "The config defaults from the 'loader1' loader are ignored"
+        )
+      end
+    end
+
     it "adds loader defaults to the list" do
       described_class.add_loader_defaults(:loader1)
 
