@@ -46,7 +46,7 @@ describe Appsignal::Integrations::PumaServer do
           end.to_not(change { created_transactions.count })
 
           expect(last_transaction).to have_error("ExampleException", "error message")
-          expect(last_transaction).to include_tags("reported_by_puma_lowlevel_error" => true)
+          expect(last_transaction).to include_tags("reported_by" => "puma_lowlevel_error")
         end
       end
 
@@ -59,7 +59,7 @@ describe Appsignal::Integrations::PumaServer do
           end.to change { created_transactions.count }.by(1)
 
           expect(last_transaction).to have_error("ExampleException", "error message")
-          expect(last_transaction).to include_tags("reported_by_puma_lowlevel_error" => true)
+          expect(last_transaction).to include_tags("reported_by" => "puma_lowlevel_error")
         end
       end
 

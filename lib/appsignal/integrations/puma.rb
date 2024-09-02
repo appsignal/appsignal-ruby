@@ -18,7 +18,7 @@ module Appsignal
               .new(::Rack::Request.new(env))
               .apply_to(transaction)
             transaction.add_tags(
-              :reported_by_puma_lowlevel_error => true,
+              :reported_by => :puma_lowlevel_error,
               :response_status => response_status
             )
           end
