@@ -1,5 +1,39 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.5
+
+_Published on 2024-09-02._
+
+### Added
+
+- Report Puma low-level errors using the `lowlevel_error` reporter. This will report errors previously not caught by our instrumentation middleware. (patch [70cc21f4](https://github.com/appsignal/appsignal-ruby/commit/70cc21f49e19faa9fd2d12a051620cd48e036dcb))
+
+### Changed
+
+- Log a warning when loader defaults are added after AppSignal has already been configured.
+
+  ```ruby
+  # Bad
+  Appsignal.configure # or Appsignal.start
+  Appsignal.load(:sinatra)
+
+  # Good
+  Appsignal.load(:sinatra)
+  Appsignal.configure # or Appsignal.start
+  ```
+
+  (patch [0997dd9c](https://github.com/appsignal/appsignal-ruby/commit/0997dd9c0430123a697b8100785f5676163e20ef))
+- Rename the `path` and `method` transaction metadata to `request_path` and `request_method` to make it more clear what context this metadata is from. The `path` and `method` metadata will continue to be reported until the next major/minor version. (patch [fa314b5f](https://github.com/appsignal/appsignal-ruby/commit/fa314b5fb6fdfbf3e9746df377b0145cde0cfa36))
+- Internal change to how OpenTelemetry metrics are sent. (patch [e66d1d70](https://github.com/appsignal/appsignal-ruby/commit/e66d1d702d5010cb5b8084ba790b24d9e70a9e08))
+
+### Removed
+
+- Drop support for Puma version 2 and lower. (patch [4fab861c](https://github.com/appsignal/appsignal-ruby/commit/4fab861cae74b08aa71bf64e1b134ae4b1df1dff))
+
+### Fixed
+
+- Fix the error log message about our `at_exit` hook reporting no error on process exit when the process exits without an error. (patch [b71f3966](https://github.com/appsignal/appsignal-ruby/commit/b71f39661e9b05c10fa78b821ba0e45bde0c941b))
+
 ## 4.0.4
 
 _Published on 2024-08-29._
