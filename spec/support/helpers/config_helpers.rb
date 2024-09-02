@@ -46,7 +46,7 @@ module ConfigHelpers
   end
   module_function :build_config
 
-  def start_agent(env: "production", options: {})
+  def start_agent(env: "production", options: {}, internal_logger: nil)
     env = "production" if env == :default
     env ||= "production"
     Appsignal.configure(env, :root_path => project_fixture_path) do |config|
@@ -55,6 +55,7 @@ module ConfigHelpers
       end
     end
     Appsignal.start
+    Appsignal.internal_logger = internal_logger if internal_logger
   end
 
   def clear_integration_env_vars!

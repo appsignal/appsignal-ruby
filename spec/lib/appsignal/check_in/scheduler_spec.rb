@@ -2,10 +2,13 @@ describe Appsignal::CheckIn::Scheduler do
   include WaitForHelper
   include TakeAtMostHelper
 
+  let(:log_stream) { std_stream }
+  let(:logs) { log_contents(log_stream) }
+  let(:appsignal_options) { {} }
   let(:transmitter) { Appsignal::Transmitter.new("http://checkin-endpoint.invalid") }
 
   before do
-    allow(Appsignal).to receive(:active?).and_return(true)
+    start_agent(:options => appsignal_options, :internal_logger => test_logger(log_stream))
     allow(transmitter).to receive(:transmit).and_return(Net::HTTPSuccess.new("1.1", 200, "OK"))
     allow(Appsignal::CheckIn).to receive(:transmitter).and_return(transmitter)
     allow(Appsignal::CheckIn).to receive(:scheduler).and_return(subject)
@@ -76,23 +79,18 @@ describe Appsignal::CheckIn::Scheduler do
         :kind => "finish"
       )], :format => :ndjson)
 
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Scheduling cron check-in `test` finish event")
-      end)
-
       expect(subject.events).to be_empty
 
       Appsignal::CheckIn.cron("test")
 
       expect(subject.events).not_to be_empty
 
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Transmitted cron check-in `test` finish event")
-      end)
-
       wait_for("the event to be transmitted") { subject.transmitted == 1 }
 
       expect(subject.events).to be_empty
+
+      expect(logs).to contains_log(:debug, "Scheduling cron check-in `test` finish event")
+      expect(logs).to contains_log(:debug, "Transmitted cron check-in `test` finish event")
     end
 
     it "waits for the event to be transmitted when stopped" do
@@ -109,15 +107,7 @@ describe Appsignal::CheckIn::Scheduler do
         :kind => "finish"
       )], :format => :ndjson)
 
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Scheduling cron check-in `test` finish event")
-      end)
-
       Appsignal::CheckIn.cron("test")
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Transmitted cron check-in `test` finish event")
-      end)
 
       expect(subject.events).not_to be_empty
 
@@ -130,6 +120,9 @@ describe Appsignal::CheckIn::Scheduler do
       expect(subject.transmitted).to eq(1)
 
       expect(subject.events).to be_empty
+
+      expect(logs).to contains_log(:debug, "Scheduling cron check-in `test` finish event")
+      expect(logs).to contains_log(:debug, "Transmitted cron check-in `test` finish event")
     end
 
     it "can be stopped more than once" do
@@ -249,15 +242,7 @@ describe Appsignal::CheckIn::Scheduler do
       it "transmits the other events after the debounce interval" do
         expect(transmitter).to receive(:transmit)
 
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `first` finish event")
-        end)
-
         Appsignal::CheckIn.cron("first")
-
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Transmitted cron check-in `first` finish event")
-        end)
 
         wait_for("the first event to be transmitted") { subject.transmitted == 1 }
 
@@ -271,27 +256,20 @@ describe Appsignal::CheckIn::Scheduler do
           end, :format => :ndjson
         )
 
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `second` finish event")
-        end)
-
         Appsignal::CheckIn.cron("second")
-
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `third` finish event")
-        end)
-
         Appsignal::CheckIn.cron("third")
 
         expect(subject.events).to_not be_empty
 
-        expect(Appsignal.internal_logger).to receive(:debug).with(
-          "Transmitted 2 check-in events"
-        )
-
         wait_for("the other events to be transmitted") { subject.transmitted == 2 }
 
         expect(subject.events).to be_empty
+
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `first` finish event")
+        expect(logs).to contains_log(:debug, "Transmitted cron check-in `first` finish event")
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `second` finish event")
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `third` finish event")
+        expect(logs).to contains_log(:debug, "Transmitted 2 check-in events")
       end
 
       it "transmits the other events when stopped" do
@@ -303,15 +281,7 @@ describe Appsignal::CheckIn::Scheduler do
 
         expect(transmitter).to receive(:transmit)
 
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `first` finish event")
-        end)
-
         Appsignal::CheckIn.cron("first")
-
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Transmitted cron check-in `first` finish event")
-        end)
 
         wait_for("the event to be transmitted") { subject.transmitted == 1 }
 
@@ -325,29 +295,22 @@ describe Appsignal::CheckIn::Scheduler do
           end, :format => :ndjson
         )
 
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `second` finish event")
-        end)
-
         Appsignal::CheckIn.cron("second")
-
-        expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-          message.include?("Scheduling cron check-in `third` finish event")
-        end)
-
         Appsignal::CheckIn.cron("third")
 
         expect(subject.events).to_not be_empty
-
-        expect(Appsignal.internal_logger).to receive(:debug).with(
-          "Transmitted 2 check-in events"
-        )
 
         subject.stop
 
         wait_for("the other events to be transmitted") { subject.transmitted == 2 }
 
         expect(subject.events).to be_empty
+
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `first` finish event")
+        expect(logs).to contains_log(:debug, "Transmitted cron check-in `first` finish event")
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `second` finish event")
+        expect(logs).to contains_log(:debug, "Scheduling cron check-in `third` finish event")
+        expect(logs).to contains_log(:debug, "Transmitted 2 check-in events")
       end
     end
   end
@@ -364,27 +327,27 @@ describe Appsignal::CheckIn::Scheduler do
         :kind => "start"
       )], :format => :ndjson)
 
-      expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Scheduling cron check-in `test` start event (digest #{cron.digest}) to be transmitted"
-      )
-
       cron.start
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Scheduling cron check-in `test` start event (digest #{cron.digest}) to be transmitted"
-      )
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Replacing previously scheduled cron check-in `test` start event (digest #{cron.digest})"
-      )
-
       cron.start
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(
-        "Transmitted cron check-in `test` start event (digest #{cron.digest})"
-      )
 
       wait_for("the event to be transmitted") { subject.transmitted == 1 }
+
+      expect(logs).to contains_log(
+        :debug,
+        "Scheduling cron check-in `test` start event (digest #{cron.digest}) to be transmitted"
+      )
+      expect(logs).to contains_log(
+        :debug,
+        "Scheduling cron check-in `test` start event (digest #{cron.digest}) to be transmitted"
+      )
+      expect(logs).to contains_log(
+        :debug,
+        "Replacing previously scheduled cron check-in `test` start event (digest #{cron.digest})"
+      )
+      expect(logs).to contains_log(
+        :debug,
+        "Transmitted cron check-in `test` start event (digest #{cron.digest})"
+      )
     end
   end
 
@@ -394,31 +357,31 @@ describe Appsignal::CheckIn::Scheduler do
 
       subject.stop
 
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Cannot transmit cron check-in `test` finish event") &&
-          message.include?("AppSignal is stopped")
-      end)
-
       Appsignal::CheckIn.cron("test")
 
       expect(subject.events).to be_empty
+
+      expect(logs).to contains_log(
+        :debug,
+        /Cannot transmit cron check-in `test` finish event .+: AppSignal is stopped/
+      )
     end
   end
 
   describe "when AppSignal is not active" do
+    let(:appsignal_options) { { :active => false } }
+
     it "does not schedule any events to be transmitted" do
-      allow(Appsignal).to receive(:active?).and_return(false)
-
       subject.stop
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Cannot transmit cron check-in `test` finish event") &&
-          message.include?("AppSignal is not active")
-      end)
 
       Appsignal::CheckIn.cron("test")
 
       expect(subject.events).to be_empty
+
+      expect(logs).to contains_log(
+        :debug,
+        /Cannot transmit cron check-in `test` finish event .+: AppSignal is not active/
+      )
     end
   end
 
@@ -430,11 +393,6 @@ describe Appsignal::CheckIn::Scheduler do
 
       Appsignal::CheckIn.cron("first")
 
-      expect(Appsignal.internal_logger).to receive(:error).with(satisfy do |message|
-        message.include?("Failed to transmit cron check-in `first` finish event") &&
-          message.include?("404 status code")
-      end)
-
       wait_for("the first event to be transmitted") { subject.transmitted == 1 }
 
       expect(transmitter).to receive(:transmit).and_return(
@@ -443,13 +401,16 @@ describe Appsignal::CheckIn::Scheduler do
 
       Appsignal::CheckIn.cron("second")
 
-      expect(Appsignal.internal_logger).not_to receive(:error)
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Transmitted cron check-in `second` finish event")
-      end)
-
       wait_for("the second event to be transmitted") { subject.transmitted == 2 }
+
+      expect(logs).to contains_log(
+        :error,
+        /Failed to transmit cron check-in `first` finish event .+: 404 status code/
+      )
+      expect(logs).to contains_log(
+        :debug,
+        "Transmitted cron check-in `second` finish event"
+      )
     end
   end
 
@@ -459,11 +420,6 @@ describe Appsignal::CheckIn::Scheduler do
 
       Appsignal::CheckIn.cron("first")
 
-      expect(Appsignal.internal_logger).to receive(:error).with(satisfy do |message|
-        message.include?("Failed to transmit cron check-in `first` finish event") &&
-          message.include?("Something went wrong")
-      end)
-
       wait_for("the first event to be transmitted") { subject.transmitted == 1 }
 
       expect(transmitter).to receive(:transmit).and_return(
@@ -472,13 +428,16 @@ describe Appsignal::CheckIn::Scheduler do
 
       Appsignal::CheckIn.cron("second")
 
-      expect(Appsignal.internal_logger).not_to receive(:error)
-
-      expect(Appsignal.internal_logger).to receive(:debug).with(satisfy do |message|
-        message.include?("Transmitted cron check-in `second` finish event")
-      end)
-
       wait_for("the second event to be transmitted") { subject.transmitted == 2 }
+
+      expect(logs).to contains_log(
+        :error,
+        /Failed to transmit cron check-in `first` finish event .+: Something went wrong/
+      )
+      expect(logs).to contains_log(
+        :debug,
+        "Transmitted cron check-in `second` finish event"
+      )
     end
   end
 end
