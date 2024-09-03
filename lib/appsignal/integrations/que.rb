@@ -4,7 +4,7 @@ module Appsignal
   module Integrations
     # @api private
     module QuePlugin
-      def _run(*)
+      def _run(*args)
         transaction =
           Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
@@ -16,7 +16,13 @@ module Appsignal
         ensure
           local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
           transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
-          transaction.add_params_if_nil(local_attrs[:args])
+          transaction.add_params_if_nil do
+            {
+              :arguments => local_attrs[:args]
+            }.tap do |hash|
+              hash[:keyword_arguments] = local_attrs[:kwargs] if local_attrs.key?(:kwargs)
+            end
+          end
           transaction.add_tags(
             "id" => local_attrs[:job_id] || local_attrs[:id],
             "queue" => local_attrs[:queue],
