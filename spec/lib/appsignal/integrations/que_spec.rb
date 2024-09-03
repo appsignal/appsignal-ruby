@@ -9,28 +9,16 @@ if DependencyHelper.que_present?
           :queue => "dfl",
           :job_class => "MyQueJob",
           :priority => 100,
-          :args => %w[1 birds],
+          :args => %w[post_id_123 user_id_123],
           :run_at => fixed_time,
           :error_count => 0
-        }
-      end
-      let(:env) do
-        {
-          :class => "MyQueJob",
-          :method => "run",
-          :metadata => {
-            :id => 123,
-            :queue => "dfl",
-            :priority => 100,
-            :run_at => fixed_time.to_s,
-            :attempts => 0
-          },
-          :params => %w[1 birds]
-        }
+        }.tap do |hash|
+          hash[:kwargs] = {} if DependencyHelper.que2_present?
+        end
       end
       let(:job) do
         Class.new(::Que::Job) do
-          def run(*args)
+          def run(post_id, user_id)
           end
         end
       end
@@ -46,7 +34,7 @@ if DependencyHelper.que_present?
         job._run
       end
 
-      context "success" do
+      context "without exception" do
         it "creates a transaction for a job" do
           expect do
             perform_que_job(instance)
@@ -64,7 +52,18 @@ if DependencyHelper.que_present?
             "name" => "perform_job.que",
             "title" => ""
           )
-          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_params(
+            "arguments" => %w[post_id_123 user_id_123]
+          )
+          if DependencyHelper.que2_present?
+            expect(transaction).to include_params(
+              "keyword_arguments" => {}
+            )
+          else
+            expect(transaction).to_not include_params(
+              "keyword_arguments" => anything
+            )
+          end
           expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
@@ -93,7 +92,9 @@ if DependencyHelper.que_present?
           expect(transaction).to have_action("MyQueJob#run")
           expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
           expect(transaction).to have_error(error.class.name, error.message)
-          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_params(
+            "arguments" => %w[post_id_123 user_id_123]
+          )
           expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
@@ -118,7 +119,9 @@ if DependencyHelper.que_present?
           expect(transaction).to have_action("MyQueJob#run")
           expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
           expect(transaction).to have_error(error.class.name, error.message)
-          expect(transaction).to include_params(%w[1 birds])
+          expect(transaction).to include_params(
+            "arguments" => %w[post_id_123 user_id_123]
+          )
           expect(transaction).to include_tags(
             "attempts" => 0,
             "id" => 123,
@@ -127,6 +130,38 @@ if DependencyHelper.que_present?
             "run_at" => fixed_time.to_s
           )
           expect(transaction).to be_completed
+        end
+      end
+
+      if DependencyHelper.que2_present?
+        context "with keyword argument" do
+          let(:job_attrs) do
+            {
+              :job_id => 123,
+              :queue => "dfl",
+              :job_class => "MyQueJob",
+              :priority => 100,
+              :args => %w[post_id_123],
+              :kwargs => { :user_id => "user_id_123" },
+              :run_at => fixed_time,
+              :error_count => 0
+            }
+          end
+          let(:job) do
+            Class.new(::Que::Job) do
+              def run(post_id, user_id: nil)
+              end
+            end
+          end
+
+          it "reports keyword arguments as parameters" do
+            perform_que_job(instance)
+
+            expect(last_transaction).to include_params(
+              "arguments" => %w[post_id_123],
+              "keyword_arguments" => { "user_id" => "user_id_123" }
+            )
+          end
         end
       end
 

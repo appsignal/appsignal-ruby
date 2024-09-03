@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 117
+# Generated job count: 122
 ---
 name: Ruby gem CI
 'on':
@@ -372,8 +372,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-3-4__que_ubuntu-latest:
-    name: Ruby 3.3.4 - que
+  ruby_3-3-4__que-1_ubuntu-latest:
+    name: Ruby 3.3.4 - que-1
     needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -398,7 +398,34 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/que.gemfile
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_3-3-4__que-2_ubuntu-latest:
+    name: Ruby 3.3.4 - que-2
+    needs: ruby_3-3-4_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.4
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./support/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./support/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
   ruby_3-3-4__rails-6-1_ubuntu-latest:
     name: Ruby 3.3.4 - rails-6.1
     needs: ruby_3-3-4_ubuntu-latest
@@ -970,8 +997,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-2-5__que_ubuntu-latest:
-    name: Ruby 3.2.5 - que
+  ruby_3-2-5__que-1_ubuntu-latest:
+    name: Ruby 3.2.5 - que-1
     needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -996,7 +1023,34 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/que.gemfile
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_3-2-5__que-2_ubuntu-latest:
+    name: Ruby 3.2.5 - que-2
+    needs: ruby_3-2-5_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2.5
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./support/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./support/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
   ruby_3-2-5__rails-6-1_ubuntu-latest:
     name: Ruby 3.2.5 - rails-6.1
     needs: ruby_3-2-5_ubuntu-latest
@@ -1568,8 +1622,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-1-6__que_ubuntu-latest:
-    name: Ruby 3.1.6 - que
+  ruby_3-1-6__que-1_ubuntu-latest:
+    name: Ruby 3.1.6 - que-1
     needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -1594,7 +1648,34 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/que.gemfile
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_3-1-6__que-2_ubuntu-latest:
+    name: Ruby 3.1.6 - que-2
+    needs: ruby_3-1-6_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1.6
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./support/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./support/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
   ruby_3-1-6__rails-6-1_ubuntu-latest:
     name: Ruby 3.1.6 - rails-6.1
     needs: ruby_3-1-6_ubuntu-latest
@@ -2166,8 +2247,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_3-0-7__que_ubuntu-latest:
-    name: Ruby 3.0.7 - que
+  ruby_3-0-7__que-1_ubuntu-latest:
+    name: Ruby 3.0.7 - que-1
     needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -2192,7 +2273,34 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/que.gemfile
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_3-0-7__que-2_ubuntu-latest:
+    name: Ruby 3.0.7 - que-2
+    needs: ruby_3-0-7_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0.7
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./support/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./support/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
   ruby_3-0-7__rails-6-0_ubuntu-latest:
     name: Ruby 3.0.7 - rails-6.0
     needs: ruby_3-0-7_ubuntu-latest
@@ -2683,8 +2791,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
-  ruby_2-7-8__que_ubuntu-latest:
-    name: Ruby 2.7.8 - que
+  ruby_2-7-8__que-1_ubuntu-latest:
+    name: Ruby 2.7.8 - que-1
     needs: ruby_2-7-8_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -2709,7 +2817,34 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/que.gemfile
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_2-7-8__que-2_ubuntu-latest:
+    name: Ruby 2.7.8 - que-2
+    needs: ruby_2-7-8_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7.8
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./support/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./support/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
   ruby_2-7-8__rails-6-0_ubuntu-latest:
     name: Ruby 2.7.8 - rails-6.0
     needs: ruby_2-7-8_ubuntu-latest

@@ -127,6 +127,11 @@ module DependencyHelper
     dependency_present? "que"
   end
 
+  def que2_present?
+    que_present? &&
+      Gem.loaded_specs["que"].version >= Gem::Version.new("2.0.0")
+  end
+
   def hanami_present?
     dependency_present? "hanami"
   end
