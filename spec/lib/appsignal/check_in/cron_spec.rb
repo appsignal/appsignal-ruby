@@ -4,16 +4,13 @@ describe Appsignal::CheckIn::Cron do
   let(:appsignal_options) { {} }
   let(:config) { project_fixture_config }
   let(:cron_checkin) { described_class.new(:identifier => "cron-checkin-name") }
-  let(:transmitter) { Appsignal::Transmitter.new("https://checkin-endpoint.invalid") }
-  let(:scheduler) { Appsignal::CheckIn::Scheduler.new }
+  let(:scheduler) { Appsignal::CheckIn.scheduler }
 
   before do
     start_agent(
       :options => appsignal_options,
       :internal_logger => test_logger(log_stream)
     )
-    allow(Appsignal::CheckIn).to receive(:scheduler).and_return(scheduler)
-    allow(Appsignal::CheckIn).to receive(:transmitter).and_return(transmitter)
   end
   after { stop_scheduler }
 
@@ -64,11 +61,13 @@ describe Appsignal::CheckIn::Cron do
     it "sends a cron check-in start" do
       cron_checkin.start
 
-      expect(transmitter).to receive(:transmit).with([hash_including(
-        :identifier => "cron-checkin-name",
-        :kind => "start",
-        :check_in_type => "cron"
-      )], :format => :ndjson).and_return(Net::HTTPResponse.new(nil, "200", nil))
+      stub_check_in_request(
+        :events => [
+          "identifier" => "cron-checkin-name",
+          "kind" => "start",
+          "check_in_type" => "cron"
+        ]
+      )
 
       scheduler.stop
 
@@ -86,11 +85,14 @@ describe Appsignal::CheckIn::Cron do
     it "logs an error if it fails" do
       cron_checkin.start
 
-      expect(transmitter).to receive(:transmit).with([hash_including(
-        :identifier => "cron-checkin-name",
-        :kind => "start",
-        :check_in_type => "cron"
-      )], :format => :ndjson).and_return(Net::HTTPResponse.new(nil, "499", nil))
+      stub_check_in_request(
+        :events => [
+          "identifier" => "cron-checkin-name",
+          "kind" => "start",
+          "check_in_type" => "cron"
+        ],
+        :response => { :status => 499 }
+      )
 
       scheduler.stop
 
@@ -109,11 +111,13 @@ describe Appsignal::CheckIn::Cron do
     it "sends a cron check-in finish" do
       cron_checkin.finish
 
-      expect(transmitter).to receive(:transmit).with([hash_including(
-        :identifier => "cron-checkin-name",
-        :kind => "finish",
-        :check_in_type => "cron"
-      )], :format => :ndjson).and_return(Net::HTTPResponse.new(nil, "200", nil))
+      stub_check_in_request(
+        :events => [
+          "identifier" => "cron-checkin-name",
+          "kind" => "finish",
+          "check_in_type" => "cron"
+        ]
+      )
 
       scheduler.stop
       expect(logs).to_not contains_log(:error)
@@ -130,11 +134,14 @@ describe Appsignal::CheckIn::Cron do
     it "logs an error if it fails" do
       cron_checkin.finish
 
-      expect(transmitter).to receive(:transmit).with([hash_including(
-        :identifier => "cron-checkin-name",
-        :kind => "finish",
-        :check_in_type => "cron"
-      )], :format => :ndjson).and_return(Net::HTTPResponse.new(nil, "499", nil))
+      stub_check_in_request(
+        :events => [
+          "identifier" => "cron-checkin-name",
+          "kind" => "finish",
+          "check_in_type" => "cron"
+        ],
+        :response => { :status => 499 }
+      )
 
       scheduler.stop
 
@@ -152,34 +159,33 @@ describe Appsignal::CheckIn::Cron do
   describe ".cron" do
     describe "when a block is given" do
       it "sends a cron check-in start and finish and return the block output" do
-        expect(scheduler).to receive(:schedule).with(hash_including(
-          :kind => "start",
-          :identifier => "cron-checkin-with-block",
-          :check_in_type => "cron"
-        ))
-
-        expect(scheduler).to receive(:schedule).with(hash_including(
-          :kind => "finish",
-          :identifier => "cron-checkin-with-block",
-          :check_in_type => "cron"
-        ))
+        stub_check_in_request(
+          :events => [
+            "identifier" => "cron-checkin-with-block",
+            "kind" => "start",
+            "check_in_type" => "cron"
+          ]
+        )
+        stub_check_in_request(
+          :events => [
+            "identifier" => "cron-checkin-with-block",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          ]
+        )
 
         output = Appsignal::CheckIn.cron("cron-checkin-with-block") { "output" }
         expect(output).to eq("output")
       end
 
       it "does not send a cron check-in finish event when an error is raised" do
-        expect(scheduler).to receive(:schedule).with(hash_including(
-          :kind => "start",
-          :identifier => "cron-checkin-with-block",
-          :check_in_type => "cron"
-        ))
-
-        expect(scheduler).not_to receive(:schedule).with(hash_including(
-          :kind => "finish",
-          :identifier => "cron-checkin-with-block",
-          :check_in_type => "cron"
-        ))
+        stub_check_in_request(
+          :events => [
+            "identifier" => "cron-checkin-with-block",
+            "kind" => "start",
+            "check_in_type" => "cron"
+          ]
+        )
 
         expect do
           Appsignal::CheckIn.cron("cron-checkin-with-block") { raise "error" }
@@ -189,11 +195,13 @@ describe Appsignal::CheckIn::Cron do
 
     describe "when no block is given" do
       it "only sends a cron check-in finish event" do
-        expect(scheduler).to receive(:schedule).with(hash_including(
-          :kind => "finish",
-          :identifier => "cron-checkin-without-block",
-          :check_in_type => "cron"
-        ))
+        stub_check_in_request(
+          :events => [
+            "identifier" => "cron-checkin-without-block",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          ]
+        )
 
         Appsignal::CheckIn.cron("cron-checkin-without-block")
       end

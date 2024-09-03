@@ -98,16 +98,15 @@ module Appsignal
           response = CheckIn.transmitter.transmit(events, :format => :ndjson)
 
           if (200...300).include?(response.code.to_i)
-            Appsignal.internal_logger.debug(
-              "Transmitted #{description}"
-            )
+            Appsignal.internal_logger.debug("Transmitted #{description}")
           else
             Appsignal.internal_logger.error(
               "Failed to transmit #{description}: #{response.code} status code"
             )
           end
         rescue => e
-          Appsignal.internal_logger.error("Failed to transmit #{description}: #{e.message}")
+          Appsignal.internal_logger
+            .error("Failed to transmit #{description}: #{e.class}: #{e.message}")
         end
       end
 

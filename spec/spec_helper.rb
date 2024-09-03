@@ -85,6 +85,10 @@ RSpec.configure do |config|
     File.join(tmp_dir, "system-tmp")
   end
 
+  config.before :suite do
+    WebMock.disable_net_connect!
+  end
+
   config.before :context do
     FileUtils.rm_rf(tmp_dir)
     FileUtils.mkdir_p(spec_system_tmp_dir)
@@ -94,6 +98,8 @@ RSpec.configure do |config|
     Appsignal.clear!
     Appsignal::Testing.clear!
     Appsignal::Loaders.clear!
+    Appsignal::CheckIn.clear!
+
     clear_current_transaction!
     stop_minutely_probes
     ENV["RAILS_ENV"] ||= "test"
