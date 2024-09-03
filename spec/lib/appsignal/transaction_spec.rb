@@ -211,15 +211,15 @@ describe Appsignal::Transaction do
 
     context "when a transaction has errors" do
       let(:error) do
-        e = ExampleStandardError.new("test message")
-        allow(e).to receive(:backtrace).and_return(["line 1"])
-        e
+        ExampleStandardError.new("test message").tap do |e|
+          e.set_backtrace(["line 1"])
+        end
       end
 
       let(:other_error) do
-        e = ExampleStandardError.new("other test message")
-        allow(e).to receive(:backtrace).and_return(["line 2"])
-        e
+        ExampleStandardError.new("other test message").tap do |e|
+          e.set_backtrace(["line 2"])
+        end
       end
 
       context "when an error is already set on the transaction" do
@@ -1526,9 +1526,9 @@ describe Appsignal::Transaction do
     let(:transaction) { create_transaction }
 
     let(:error) do
-      e = ExampleStandardError.new("test message")
-      allow(e).to receive(:backtrace).and_return(["line 1"])
-      e
+      ExampleStandardError.new("test message").tap do |e|
+        e.set_backtrace(["line 1"])
+      end
     end
 
     context "when error argument is not an error" do
@@ -1588,9 +1588,9 @@ describe Appsignal::Transaction do
 
     context "when an error is already set in the transaction" do
       let(:other_error) do
-        e = ExampleStandardError.new("other test message")
-        allow(e).to receive(:backtrace).and_return(["line 2"])
-        e
+        ExampleStandardError.new("other test message").tap do |e|
+          e.set_backtrace(["line 2"])
+        end
       end
 
       before { transaction.set_error(other_error) }
@@ -1697,12 +1697,92 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    context "with a PG::UniqueViolation" do
+      let(:error) do
+        PG::UniqueViolation.new(
+          "ERROR: duplicate key value violates unique constraint " \
+            "\"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
+        )
+      end
+      before do
+        stub_const("PG::UniqueViolation", Class.new(StandardError))
+        transaction.add_error(error)
+      end
+
+      it "returns a sanizited error message" do
+        expect(transaction).to have_error(
+          "PG::UniqueViolation",
+          "ERROR: duplicate key value violates unique constraint " \
+            "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+        )
+      end
+    end
+
+    context "with a ActiveRecord::RecordNotUnique" do
+      let(:error) do
+        ActiveRecord::RecordNotUnique.new(
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
+            "\"example_constraint\"\nDETAIL: Key (email)=(foo@example.com) already exists."
+        )
+      end
+      before do
+        stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError))
+        transaction.add_error(error)
+      end
+
+      it "returns a sanizited error message" do
+        expect(transaction).to have_error(
+          "ActiveRecord::RecordNotUnique",
+          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
+            "\"example_constraint\"\nDETAIL: Key (email)=(?) already exists."
+        )
+      end
+    end
+
+    context "with Rails module but without backtrace_cleaner method" do
+      it "returns the backtrace uncleaned" do
+        stub_const("Rails", Module.new)
+        error = ExampleStandardError.new("error message")
+        error.set_backtrace(["line 1", "line 2"])
+        transaction.add_error(error)
+
+        expect(last_transaction).to have_error(
+          "ExampleStandardError",
+          "error message",
+          ["line 1", "line 2"]
+        )
+      end
+    end
+
+    if rails_present?
+      context "with Rails" do
+        it "cleans the backtrace with the Rails backtrace cleaner" do
+          ::Rails.backtrace_cleaner.add_filter do |line|
+            line.tr("2", "?")
+          end
+
+          error = ExampleStandardError.new("error message")
+          error.set_backtrace(["line 1", "line 2"])
+          transaction.add_error(error)
+          expect(last_transaction).to have_error(
+            "ExampleStandardError",
+            "error message",
+            ["line 1", "line ?"]
+          )
+        end
+      end
+    end
   end
 
   describe "#_set_error" do
     let(:transaction) { new_transaction }
     let(:env) { http_request_env_with_data }
-    let(:error) { ExampleStandardError.new("test message") }
+    let(:error) do
+      ExampleStandardError.new("test message").tap do |e|
+        e.set_backtrace(["line 1"])
+      end
+    end
 
     it "responds to add_exception for backwards compatibility" do
       expect(transaction).to respond_to(:add_exception)
@@ -1716,7 +1796,6 @@ describe Appsignal::Transaction do
 
     context "for a http request" do
       it "sets an error on the transaction" do
-        allow(error).to receive(:backtrace).and_return(["line 1"])
         transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
@@ -1738,9 +1817,9 @@ describe Appsignal::Transaction do
     context "when the error has multiple causes" do
       let(:error) do
         e = ExampleStandardError.new("test message")
+        e.set_backtrace(["line 1"])
         e2 = RuntimeError.new("cause message")
         e3 = StandardError.new("cause message 2")
-        allow(e).to receive(:backtrace).and_return(["line 1"])
         allow(e).to receive(:cause).and_return(e2)
         allow(e2).to receive(:cause).and_return(e3)
         e
@@ -1795,8 +1874,7 @@ describe Appsignal::Transaction do
           allow(next_e).to receive(:cause).and_return(e)
           e = next_e
         end
-
-        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e.set_backtrace(["line 1"])
         e
       end
 
@@ -1831,7 +1909,7 @@ describe Appsignal::Transaction do
       let(:error) do
         e = ExampleStandardError.new
         allow(e).to receive(:message).and_return(nil)
-        allow(e).to receive(:backtrace).and_return(["line 1"])
+        e.set_backtrace(["line 1"])
         e
       end
 
@@ -1984,80 +2062,6 @@ describe Appsignal::Transaction do
   end
 
   # private
-
-  describe "#cleaned_backtrace" do
-    let(:transaction) { new_transaction }
-    subject { transaction.send(:cleaned_backtrace, ["line 1", "line 2"]) }
-
-    it "returns the backtrace" do
-      expect(subject).to eq ["line 1", "line 2"]
-    end
-
-    context "with Rails module but without backtrace_cleaner method" do
-      it "returns the backtrace uncleaned" do
-        stub_const("Rails", Module.new)
-        expect(subject).to eq ["line 1", "line 2"]
-      end
-    end
-
-    if rails_present?
-      context "with rails" do
-        it "cleans the backtrace with the Rails backtrace cleaner" do
-          ::Rails.backtrace_cleaner.add_filter do |line|
-            line.tr("2", "?")
-          end
-          expect(subject).to eq ["line 1", "line ?"]
-        end
-      end
-    end
-  end
-
-  describe "#cleaned_error_message" do
-    let(:transaction) { new_transaction }
-    let(:error) { StandardError.new("Error message") }
-    subject { transaction.send(:cleaned_error_message, error) }
-
-    it "returns the error message" do
-      expect(subject).to eq "Error message"
-    end
-
-    context "with a PG::UniqueViolation" do
-      before do
-        stub_const("PG::UniqueViolation", Class.new(StandardError))
-      end
-
-      let(:error) do
-        PG::UniqueViolation.new(
-          "ERROR: duplicate key value violates unique constraint " \
-            "\"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
-        )
-      end
-
-      it "returns a sanizited error message" do
-        expect(subject).to eq "ERROR: duplicate key value violates unique constraint " \
-          "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
-      end
-    end
-
-    context "with a ActiveRecord::RecordNotUnique" do
-      before do
-        stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError))
-      end
-
-      let(:error) do
-        ActiveRecord::RecordNotUnique.new(
-          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
-            "\"example_constraint\"\nDETAIL: Key (email)=(foo@example.com) already exists."
-        )
-      end
-
-      it "returns a sanizited error message" do
-        expect(subject).to eq \
-          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
-            "\"example_constraint\"\nDETAIL: Key (email)=(?) already exists."
-      end
-    end
-  end
 
   describe ".to_hash / .to_h" do
     let(:transaction) { new_transaction }
