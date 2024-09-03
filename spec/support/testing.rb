@@ -47,6 +47,15 @@ module Appsignal
     end
   end
 
+  module CheckIn
+    class << self
+      def clear!
+        @transmitter = nil
+        @scheduler = nil
+      end
+    end
+  end
+
   # @api private
   module Testing
     class << self
