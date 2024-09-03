@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.6
+
+_Published on 2024-09-03._
+
+### Added
+
+- Add support for Que 2 keyword arguments. Que job arguments will now be reported as the `arguments` key for positional arguments and `keyword_arguments` for Ruby keyword arguments. (patch [770bdc06](https://github.com/appsignal/appsignal-ruby/commit/770bdc06c352de09757edc92ee06b7c999befaee))
+
 ## 4.0.5
 
 _Published on 2024-09-02._
