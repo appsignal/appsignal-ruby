@@ -32,14 +32,37 @@ RSpec.describe "Puma plugin" do
   # StatsD server used for these tests.
   # Open a UDPSocket and listen for messages sent by the AppSignal Puma plugin.
   class StatsdServer
-    def initialize(statsd_port)
-      @statsd_port = statsd_port
+    attr_reader :port
+
+    def initialize
+      @port = nil
+      @port_range = 8126..8160
+      @socket = nil
+    end
+
+    def connect
+      stop if connected?
+
+      @port_range.each do |port|
+        @socket = UDPSocket.new
+        @port = port
+        @socket.bind("127.0.0.1", port)
+        break
+      rescue Errno::EADDRINUSE
+        puts "INFO: StatsD port '#{port}' already in use"
+        next
+      end
+    end
+
+    def connected?
+      @socket
     end
 
     def start
-      stop
-      @socket = UDPSocket.new
-      @socket.bind("127.0.0.1", @statsd_port)
+      if connected?
+        stop
+        connect
+      end
 
       loop do
         # Listen for messages and track them on the messages Array.
@@ -116,8 +139,9 @@ RSpec.describe "Puma plugin" do
 
   def run_plugin(stats_data, plugin, &block)
     Puma._set_stats = stats_data
-    ENV["APPSIGNAL_STATSD_PORT"] = "8126"
-    @statsd = StatsdServer.new(ENV.fetch("APPSIGNAL_STATSD_PORT"))
+    @statsd = StatsdServer.new
+    @statsd.connect
+    ENV["APPSIGNAL_STATSD_PORT"] = @statsd.port.to_s
     @server_thread = Thread.new { @statsd.start }
     @server_thread.abort_on_exception = true
     @client_thread = Thread.new { start_plugin(plugin) }
