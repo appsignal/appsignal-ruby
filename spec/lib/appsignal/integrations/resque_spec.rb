@@ -103,25 +103,16 @@ if DependencyHelper.resque_present?
 
     context "with active job" do
       before do
-        module ActiveJobMock
-          module QueueAdapters
-            module ResqueAdapter
-              module JobWrapper
-                class << self
-                  def perform(job_data)
-                    # Basic ActiveJob stub for this test.
-                    # I haven't found a way to run Resque in a testing mode.
-                    Appsignal.set_action(job_data["job_class"])
-                  end
-                end
-              end
+        stub_const("ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper", Class.new do
+          class << self
+            def perform(job_data)
+              # Basic ActiveJob stub for this test.
+              # I haven't found a way to run Resque in a testing mode.
+              Appsignal.set_action(job_data["job_class"])
             end
           end
-        end
-
-        stub_const "ActiveJob", ActiveJobMock
+        end)
       end
-      after { Object.send(:remove_const, :ActiveJobMock) }
 
       it "does not set arguments but lets the ActiveJob integration handle it" do
         perform_rescue_job(
