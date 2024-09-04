@@ -344,10 +344,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
     end
 
     context "for a struct" do
-      before :context do
-        TestStruct = Struct.new(:key)
-      end
-      let(:struct) { TestStruct.new("value") }
+      let(:struct_class) { Struct.new(:key) }
+      let(:struct) { struct_class.new("value") }
 
       context "when the key exists" do
         subject { plugin.extract_value(struct, :key) }
@@ -369,8 +367,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
     end
 
     context "for a struct with a method" do
-      before :context do
-        class TestStructClass < Struct.new(:id) # rubocop:disable Style/StructInheritance
+      before do
+        stub_const("TestStructClass", Class.new(Struct.new(:id)) do
           def appsignal_name
             "TestStruct#perform"
           end
@@ -378,7 +376,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           def bool_false
             false
           end
-        end
+        end)
       end
       let(:struct) { TestStructClass.new("id") }
 
