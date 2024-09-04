@@ -100,7 +100,7 @@ RSpec.describe "Puma plugin" do
   let(:expected_default_tags) { { "hostname" => hostname } }
   let(:stats_data) { { :backlog => 1 } }
   before do
-    module Puma
+    stub_const("Puma", Module.new do
       def self.stats
         JSON.dump(@_stats_data)
       end
@@ -112,30 +112,26 @@ RSpec.describe "Puma plugin" do
       def self._set_stats=(data)
         @_stats_data = data
       end
+    end)
+    stub_const("Puma::Plugin", Class.new do
+      class << self
+        attr_reader :appsignal_plugin
 
-      class Plugin
-        class << self
-          attr_reader :appsignal_plugin
-
-          def create(&block)
-            @appsignal_plugin = Class.new(::Puma::Plugin)
-            @appsignal_plugin.class_eval(&block)
-          end
-        end
-
-        attr_reader :in_background_block
-
-        def in_background(&block)
-          @in_background_block = block
+        def create(&block)
+          @appsignal_plugin = Class.new(::Puma::Plugin)
+          @appsignal_plugin.class_eval(&block)
         end
       end
-    end
+
+      attr_reader :in_background_block
+
+      def in_background(&block)
+        @in_background_block = block
+      end
+    end)
     load File.expand_path("../lib/puma/plugin/appsignal.rb", APPSIGNAL_SPEC_DIR)
   end
-  after do
-    Object.send(:remove_const, :Puma)
-    Object.send(:remove_const, :AppsignalPumaPlugin)
-  end
+  after { Object.send(:remove_const, :AppsignalPumaPlugin) }
 
   def run_plugin(stats_data, plugin, &block)
     Puma._set_stats = stats_data

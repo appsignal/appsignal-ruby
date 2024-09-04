@@ -526,30 +526,26 @@ if DependencyHelper.active_job_present?
       Appsignal.internal_logger = test_logger(log)
       ActiveJob::Base.queue_adapter = :sidekiq
 
-      class ActiveJobSidekiqTestJob < ActiveJob::Base
+      stub_const("ActiveJobSidekiqTestJob", Class.new(ActiveJob::Base) do
         self.queue_adapter = :sidekiq
 
         def perform(*_args)
         end
-      end
+      end)
 
-      class ActiveJobSidekiqErrorTestJob < ActiveJob::Base
+      stub_const("ActiveJobSidekiqErrorTestJob", Class.new(ActiveJob::Base) do
         self.queue_adapter = :sidekiq
 
         def perform(*_args)
           raise "uh oh"
         end
-      end
+      end)
       # Manually add the AppSignal middleware for the Testing environment.
       # It doesn't use configured middlewares by default looks like.
       # We test somewhere else if the middleware is installed properly.
       Sidekiq::Testing.server_middleware do |chain|
         chain.add Appsignal::Integrations::SidekiqMiddleware
       end
-    end
-    after do
-      Object.send(:remove_const, :ActiveJobSidekiqTestJob)
-      Object.send(:remove_const, :ActiveJobSidekiqErrorTestJob)
     end
 
     it "reports the transaction from the ActiveJob integration" do

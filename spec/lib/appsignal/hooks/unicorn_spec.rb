@@ -1,30 +1,27 @@
 describe Appsignal::Hooks::UnicornHook do
   context "with unicorn" do
-    before :context do
-      module Unicorn
-        class HttpServer
-          def worker_loop(_worker)
-            @worker_loop = true
-          end
-
-          def worker_loop?
-            @worker_loop == true
-          end
+    before do
+      stub_const("Unicorn", Module.new)
+      stub_const("Unicorn::HttpServer", Class.new do
+        def worker_loop(_worker)
+          @worker_loop = true
         end
 
-        class Worker
-          def close
-            @close = true
-          end
-
-          def close?
-            @close == true
-          end
+        def worker_loop?
+          @worker_loop == true
         end
-      end
+      end)
+      stub_const("Unicorn::Worker", Class.new do
+        def close
+          @close = true
+        end
+
+        def close?
+          @close == true
+        end
+      end)
       Appsignal::Hooks::UnicornHook.new.install
     end
-    after(:context) { Object.send(:remove_const, :Unicorn) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

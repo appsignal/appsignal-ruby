@@ -14,25 +14,21 @@ if DependencyHelper.resque_present?
     before do
       start_agent(:options => options)
 
-      class ResqueTestJob
+      stub_const("ResqueTestJob", Class.new do
         def self.perform(*_args)
         end
-      end
+      end)
 
-      class ResqueErrorTestJob
+      stub_const("ResqueErrorTestJob", Class.new do
         def self.perform
           raise "resque job error"
         end
-      end
+      end)
 
       expect(Appsignal).to receive(:stop) # Resque calls stop after every job
     end
     around do |example|
       keep_transactions { example.run }
-    end
-    after do
-      Object.send(:remove_const, :ResqueTestJob)
-      Object.send(:remove_const, :ResqueErrorTestJob)
     end
 
     it "tracks a transaction on perform" do

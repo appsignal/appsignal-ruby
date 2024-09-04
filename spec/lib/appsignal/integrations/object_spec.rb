@@ -87,14 +87,13 @@ describe Object do
 
         context "with named class" do
           before do
-            class NamedClass
+            stub_const("NamedClass", Class.new do
               def foo
                 1
               end
               appsignal_instrument_method :foo
-            end
+            end)
           end
-          after { Object.send(:remove_const, :NamedClass) }
           let(:klass) { NamedClass }
 
           it "instruments the method and calls it" do
@@ -106,18 +105,13 @@ describe Object do
 
         context "with nested named class" do
           before do
-            module MyModule
-              module NestedModule
-                class NamedClass
-                  def bar
-                    2
-                  end
-                  appsignal_instrument_method :bar
-                end
+            stub_const("MyModule::NestedModule::NamedClass", Class.new do
+              def bar
+                2
               end
-            end
+              appsignal_instrument_method :bar
+            end)
           end
-          after { Object.send(:remove_const, :MyModule) }
           let(:klass) { MyModule::NestedModule::NamedClass }
 
           it "instruments the method and calls it" do
@@ -257,14 +251,13 @@ describe Object do
 
         context "with named class" do
           before do
-            class NamedClass
+            stub_const("NamedClass", Class.new do
               def self.bar
                 2
               end
               appsignal_instrument_class_method :bar
-            end
+            end)
           end
-          after { Object.send(:remove_const, :NamedClass) }
           let(:klass) { NamedClass }
 
           it "instruments the method and calls it" do
@@ -276,18 +269,13 @@ describe Object do
 
           context "with nested named class" do
             before do
-              module MyModule
-                module NestedModule
-                  class NamedClass
-                    def self.bar
-                      2
-                    end
-                    appsignal_instrument_class_method :bar
-                  end
+              stub_const("MyModule::NestedModule::NamedClass", Class.new do
+                def self.bar
+                  2
                 end
-              end
+                appsignal_instrument_class_method :bar
+              end)
             end
-            after { Object.send(:remove_const, :MyModule) }
             let(:klass) { MyModule::NestedModule::NamedClass }
 
             it "instruments the method and calls it" do

@@ -2,15 +2,14 @@ describe Appsignal::Hooks::ExconHook do
   before { start_agent }
 
   context "with Excon" do
-    before(:context) do
-      class Excon
+    before do
+      stub_const("Excon", Class.new do
         def self.defaults
           @defaults ||= {}
         end
-      end
+      end)
       Appsignal::Hooks::ExconHook.new.install
     end
-    after(:context) { Object.send(:remove_const, :Excon) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

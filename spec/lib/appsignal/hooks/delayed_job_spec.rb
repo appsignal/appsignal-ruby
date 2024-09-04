@@ -1,21 +1,17 @@
 describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
-    before(:context) do
-      module Delayed
-        class Plugin
-          def self.callbacks
-          end
+    before do
+      stub_const("Delayed::Plugin", Class.new do
+        def self.callbacks
         end
-
-        class Worker
-          def self.plugins
-            @plugins ||= []
-          end
+      end)
+      stub_const("Delayed::Worker", Class.new do
+        def self.plugins
+          @plugins ||= []
         end
-      end
+      end)
+      start_agent
     end
-    after(:context) { Object.send(:remove_const, :Delayed) }
-    before { start_agent }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }

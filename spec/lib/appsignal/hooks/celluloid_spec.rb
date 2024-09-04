@@ -1,7 +1,7 @@
 describe Appsignal::Hooks::CelluloidHook do
   context "with celluloid" do
-    before :context do
-      module Celluloid
+    before do
+      stub_const("Celluloid", Module.new do
         def self.shutdown
           @shut_down = true
         end
@@ -9,11 +9,8 @@ describe Appsignal::Hooks::CelluloidHook do
         def self.shut_down?
           @shut_down == true
         end
-      end
+      end)
       Appsignal::Hooks::CelluloidHook.new.install
-    end
-    after :context do
-      Object.send(:remove_const, :Celluloid)
     end
 
     describe "#dependencies_present?" do
@@ -22,11 +19,12 @@ describe Appsignal::Hooks::CelluloidHook do
       it { is_expected.to be_truthy }
     end
 
-    specify { expect(Appsignal).to receive(:stop) }
-    specify { expect(Celluloid.shut_down?).to be true }
-
-    after do
-      Celluloid.shutdown
+    describe "#install" do
+      it "calls Appsignal.stop on shutdown" do
+        expect(Appsignal).to receive(:stop)
+        Celluloid.shutdown
+        expect(Celluloid.shut_down?).to be true
+      end
     end
   end
 

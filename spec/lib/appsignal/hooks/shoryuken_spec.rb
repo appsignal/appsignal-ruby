@@ -1,15 +1,11 @@
 describe Appsignal::Hooks::ShoryukenHook do
   context "with shoryuken" do
-    before(:context) do
-      module Shoryuken
+    before do
+      stub_const("Shoryuken", Module.new do
         def self.configure_server
         end
-      end
+      end)
       Appsignal::Hooks::ShoryukenHook.new.install
-    end
-
-    after(:context) do
-      Object.send(:remove_const, :Shoryuken)
     end
 
     describe "#dependencies_present?" do
