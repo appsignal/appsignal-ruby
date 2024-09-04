@@ -631,7 +631,6 @@ describe Appsignal::CLI::Install do
           it "completes the installation" do
             run
 
-            puts output
             expect(output).to include(*installation_instructions)
             expect(output).to include_complete_install
           end

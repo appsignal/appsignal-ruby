@@ -32,13 +32,9 @@ describe Appsignal::Hooks::GvlHook do
     end
 
     context "with old versions of GVLTools" do
-      before(:context) do
-        module GVLTools
-          VERSION = "0.1.0".freeze
-        end
+      before do
+        stub_const("GVLTools::VERSION", "0.1.0")
       end
-
-      after(:context) { Object.send(:remove_const, :GVLTools) }
 
       before(:each) { expect_gvltools_require }
 
@@ -50,23 +46,18 @@ describe Appsignal::Hooks::GvlHook do
     end
 
     context "with new versions of GVLTools" do
-      before(:context) do
-        module GVLTools
-          VERSION = "0.2.0".freeze
-
-          module GlobalTimer
-            def self.enable
-            end
+      before do
+        stub_const("GVLTools", Module.new)
+        stub_const("GVLTools::VERSION", "0.2.0")
+        stub_const("GVLTools::GlobalTimer", Module.new do
+          def self.enable
           end
-
-          module WaitingThreads
-            def self.enable
-            end
+        end)
+        stub_const("GVLTools::WaitingThreads", Module.new do
+          def self.enable
           end
-        end
+        end)
       end
-
-      after(:context) { Object.send(:remove_const, :GVLTools) }
 
       describe "#dependencies_present?" do
         before(:each) { expect_gvltools_require }

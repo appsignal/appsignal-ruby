@@ -520,10 +520,7 @@ describe Appsignal do
 
   describe ".load" do
     before do
-      TestLoader = define_loader(:appsignal_loader)
-    end
-    after do
-      Object.send(:remove_const, :TestLoader)
+      stub_const("TestLoader", define_loader(:appsignal_loader))
     end
 
     it "loads a loader" do

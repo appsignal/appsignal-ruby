@@ -1,22 +1,19 @@
 describe "Appsignal::Integrations::DelayedJobHook" do
-  before(:context) do
-    module Delayed
-      class Plugin
-        def self.callbacks
-        end
-      end
-
-      class Worker
-        def self.plugins
-          @plugins ||= []
-        end
-      end
-    end
-    require "appsignal/integrations/delayed_job_plugin"
-  end
-  after(:context) { Object.send(:remove_const, :Delayed) }
   let(:options) { {} }
-  before { start_agent(:options => options) }
+  before do
+    stub_const("Delayed", Module.new)
+    stub_const("Delayed::Plugin", Class.new do
+      def self.callbacks
+      end
+    end)
+    stub_const("Delayed::Worker", Class.new do
+      def self.plugins
+        @plugins ||= []
+      end
+    end)
+    require "appsignal/integrations/delayed_job_plugin"
+    start_agent(:options => options)
+  end
 
   # We haven't found a way to test the hooks, we'll have to do that manually
 

@@ -1,19 +1,10 @@
 describe Appsignal::Hooks::DataMapperHook do
   context "with datamapper" do
-    before :context do
-      module DataMapper
-      end
-
-      module DataObjects
-        class Connection
-        end
-      end
+    before do
+      stub_const("DataMapper", Module.new)
+      stub_const("DataObjects", Module.new)
+      stub_const("DataObjects::Connection", Class.new)
       Appsignal::Hooks::DataMapperHook.new.install
-    end
-
-    after :context do
-      Object.send(:remove_const, :DataMapper)
-      Object.send(:remove_const, :DataObjects)
     end
 
     describe "#dependencies_present?" do

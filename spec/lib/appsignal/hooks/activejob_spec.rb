@@ -76,39 +76,33 @@ if DependencyHelper.active_job_present?
       ActiveJob::Base.queue_adapter = :inline
 
       start_agent(:options => options)
-      class ActiveJobTestJob < ActiveJob::Base
+      stub_const("ActiveJobTestJob", Class.new(ActiveJob::Base) do
         def perform(*_args)
         end
-      end
+      end)
 
-      class ActiveJobErrorTestJob < ActiveJob::Base
+      stub_const("ActiveJobErrorTestJob", Class.new(ActiveJob::Base) do
         def perform
           raise "uh oh"
         end
-      end
+      end)
 
-      class ActiveJobErrorWithRetryTestJob < ActiveJob::Base
+      stub_const("ActiveJobErrorWithRetryTestJob", Class.new(ActiveJob::Base) do
         retry_on StandardError, :wait => 0.seconds, :attempts => 2
 
         def perform
           raise "uh oh"
         end
-      end
+      end)
 
-      class ActiveJobCustomQueueTestJob < ActiveJob::Base
+      stub_const("ActiveJobCustomQueueTestJob", Class.new(ActiveJob::Base) do
         queue_as :custom_queue
 
         def perform(*_args)
         end
-      end
+      end)
     end
     around { |example| keep_transactions { example.run } }
-    after do
-      Object.send(:remove_const, :ActiveJobTestJob)
-      Object.send(:remove_const, :ActiveJobErrorTestJob)
-      Object.send(:remove_const, :ActiveJobErrorWithRetryTestJob)
-      Object.send(:remove_const, :ActiveJobCustomQueueTestJob)
-    end
 
     it "reports the name from the ActiveJob integration" do
       tags = { :queue => queue }
@@ -149,15 +143,12 @@ if DependencyHelper.active_job_present?
     if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
       context "with priority" do
         before do
-          class ActiveJobPriorityTestJob < ActiveJob::Base
+          stub_const("ActiveJobPriorityTestJob", Class.new(ActiveJob::Base) do
             queue_with_priority 10
 
             def perform(*_args)
             end
-          end
-        end
-        after do
-          Object.send(:remove_const, :ActiveJobPriorityTestJob)
+          end)
         end
 
         it "reports the priority as tag on the transaction" do
@@ -264,16 +255,13 @@ if DependencyHelper.active_job_present?
       if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
         context "with priority" do
           before do
-            class ActiveJobErrorPriorityTestJob < ActiveJob::Base
+            stub_const("ActiveJobErrorPriorityTestJob", Class.new(ActiveJob::Base) do
               queue_with_priority 10
 
               def perform(*_args)
                 raise "uh oh"
               end
-            end
-          end
-          after do
-            Object.send(:remove_const, :ActiveJobErrorPriorityTestJob)
+            end)
           end
 
           it "reports the priority as tag on the transaction" do
@@ -370,31 +358,28 @@ if DependencyHelper.active_job_present?
     context "with provider_job_id",
       :skip => DependencyHelper.rails_version < Gem::Version.new("5.0.0") do
       before do
-        module ActiveJob
-          module QueueAdapters
+        stub_const(
+          "ActiveJob::QueueAdapters::AppsignalTestAdapter",
+          Class.new(ActiveJob::QueueAdapters::InlineAdapter) do
             # Adapter used in our test suite to add provider data to the job
             # data, as is done by Rails provided ActiveJob adapters.
             #
             # This implementation is based on the
             # `ActiveJob::QueueAdapters::InlineAdapter`.
-            class AppsignalTestAdapter < InlineAdapter
-              def enqueue(job)
-                Base.execute(job.serialize.merge("provider_job_id" => "my_provider_job_id"))
-              end
+            def enqueue(job)
+              ActiveJob::Base.execute(
+                job.serialize.merge("provider_job_id" => "my_provider_job_id")
+              )
             end
           end
-        end
+        )
 
-        class ProviderWrappedActiveJobTestJob < ActiveJob::Base
+        stub_const("ProviderWrappedActiveJobTestJob", Class.new(ActiveJob::Base) do
           self.queue_adapter = :appsignal_test
 
           def perform(*_args)
           end
-        end
-      end
-      after do
-        ActiveJob::QueueAdapters.send(:remove_const, :AppsignalTestAdapter)
-        Object.send(:remove_const, :ProviderWrappedActiveJobTestJob)
+        end)
       end
 
       it "sets provider_job_id as tag" do
@@ -409,31 +394,26 @@ if DependencyHelper.active_job_present?
     context "with enqueued_at",
       :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
       before do
-        module ActiveJob
-          module QueueAdapters
+        stub_const(
+          "ActiveJob::QueueAdapters::AppsignalTestAdapter",
+          Class.new(ActiveJob::QueueAdapters::InlineAdapter) do
             # Adapter used in our test suite to add provider data to the job
             # data, as is done by Rails provided ActiveJob adapters.
             #
             # This implementation is based on the
             # `ActiveJob::QueueAdapters::InlineAdapter`.
-            class AppsignalTestAdapter < InlineAdapter
-              def enqueue(job)
-                Base.execute(job.serialize.merge("enqueued_at" => "2020-10-10T10:10:10Z"))
-              end
+            def enqueue(job)
+              ActiveJob::Base.execute(job.serialize.merge("enqueued_at" => "2020-10-10T10:10:10Z"))
             end
           end
-        end
+        )
 
-        class ProviderWrappedActiveJobTestJob < ActiveJob::Base
+        stub_const("ProviderWrappedActiveJobTestJob", Class.new(ActiveJob::Base) do
           self.queue_adapter = :appsignal_test
 
           def perform(*_args)
           end
-        end
-      end
-      after do
-        ActiveJob::QueueAdapters.send(:remove_const, :AppsignalTestAdapter)
-        Object.send(:remove_const, :ProviderWrappedActiveJobTestJob)
+        end)
       end
 
       it "sets queue time on transaction" do
@@ -448,13 +428,10 @@ if DependencyHelper.active_job_present?
       include ActionMailerHelpers
 
       before do
-        class ActionMailerTestJob < ActionMailer::Base
+        stub_const("ActionMailerTestJob", Class.new(ActionMailer::Base) do
           def welcome(_first_arg = nil, _second_arg = nil)
           end
-        end
-      end
-      after do
-        Object.send(:remove_const, :ActionMailerTestJob)
+        end)
       end
 
       context "without params" do
@@ -524,15 +501,12 @@ if DependencyHelper.active_job_present?
         include ActionMailerHelpers
 
         before do
-          class ActionMailerTestMailDeliveryJob < ActionMailer::Base
+          stub_const("ActionMailerTestMailDeliveryJob", Class.new(ActionMailer::Base) do
             self.delivery_job = ActionMailer::MailDeliveryJob
 
             def welcome(*_args)
             end
-          end
-        end
-        after do
-          Object.send(:remove_const, :ActionMailerTestMailDeliveryJob)
+          end)
         end
 
         it "sets the Action mailer data on the transaction" do

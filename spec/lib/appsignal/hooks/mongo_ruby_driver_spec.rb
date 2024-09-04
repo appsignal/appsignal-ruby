@@ -7,19 +7,14 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
       allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber)
     end
 
-    before(:context) do
-      module Mongo
-        module Monitoring
-          COMMAND = "command".freeze
-
-          class Global
-            def subscribe
-            end
-          end
+    before do
+      stub_const("Mongo::Monitoring", Module.new)
+      stub_const("Mongo::Monitoring::COMMAND", "command")
+      stub_const("Mongo::Monitoring::Global", Class.new do
+        def subscribe
         end
-      end
+      end)
     end
-    after(:context) { Object.send(:remove_const, :Mongo) }
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
