@@ -6,7 +6,7 @@
 # Modifications to this file will be overwritten with the next agent release.
 
 APPSIGNAL_AGENT_CONFIG = {
-  "version" => "0.35.23",
+  "version" => "0.35.24",
   "mirrors" => [
     "https://appsignal-agent-releases.global.ssl.fastly.net",
     "https://d135dj0rjqvssy.cloudfront.net"
@@ -14,131 +14,131 @@ APPSIGNAL_AGENT_CONFIG = {
   "triples" => {
     "x86_64-darwin" => {
       "static" => {
-        "checksum" => "efb58de4d4095dc9d810db5daf09eff87dc66b3c8566dffe949302841155a836",
+        "checksum" => "5e84f2239cc9d7019a08d9076e1f021e282698c4e9dbd4cc748c1fb63a1bdabe",
         "filename" => "appsignal-x86_64-darwin-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "f8aab2ad0ae30afb0a501a8787c8a729d5dd77434823e9e9fd8fd9b2d392efcd",
+        "checksum" => "b1f5861c46ca61681039b12d5fbd454ca0d953862fccc6e94890a0283c89eafd",
         "filename" => "appsignal-x86_64-darwin-all-dynamic.tar.gz"
       }
     },
     "universal-darwin" => {
       "static" => {
-        "checksum" => "efb58de4d4095dc9d810db5daf09eff87dc66b3c8566dffe949302841155a836",
+        "checksum" => "5e84f2239cc9d7019a08d9076e1f021e282698c4e9dbd4cc748c1fb63a1bdabe",
         "filename" => "appsignal-x86_64-darwin-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "f8aab2ad0ae30afb0a501a8787c8a729d5dd77434823e9e9fd8fd9b2d392efcd",
+        "checksum" => "b1f5861c46ca61681039b12d5fbd454ca0d953862fccc6e94890a0283c89eafd",
         "filename" => "appsignal-x86_64-darwin-all-dynamic.tar.gz"
       }
     },
     "aarch64-darwin" => {
       "static" => {
-        "checksum" => "dde837d344805abcd6f55f2931f2398ab11e35f99333e2347deb2a1aa1ea20e8",
+        "checksum" => "b3d64e6f73c81a66e9a19647d02792140f129209563dc4e95baf9148bb7ea159",
         "filename" => "appsignal-aarch64-darwin-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "6a2f421a5354b51d0b7eb5fb6e44633f2f89427c964d3d274bd08eed76dd9135",
+        "checksum" => "67b996373e29e848762930940b1c9c790378125002d01fe0ece599100e5fccda",
         "filename" => "appsignal-aarch64-darwin-all-dynamic.tar.gz"
       }
     },
     "arm64-darwin" => {
       "static" => {
-        "checksum" => "dde837d344805abcd6f55f2931f2398ab11e35f99333e2347deb2a1aa1ea20e8",
+        "checksum" => "b3d64e6f73c81a66e9a19647d02792140f129209563dc4e95baf9148bb7ea159",
         "filename" => "appsignal-aarch64-darwin-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "6a2f421a5354b51d0b7eb5fb6e44633f2f89427c964d3d274bd08eed76dd9135",
+        "checksum" => "67b996373e29e848762930940b1c9c790378125002d01fe0ece599100e5fccda",
         "filename" => "appsignal-aarch64-darwin-all-dynamic.tar.gz"
       }
     },
     "arm-darwin" => {
       "static" => {
-        "checksum" => "dde837d344805abcd6f55f2931f2398ab11e35f99333e2347deb2a1aa1ea20e8",
+        "checksum" => "b3d64e6f73c81a66e9a19647d02792140f129209563dc4e95baf9148bb7ea159",
         "filename" => "appsignal-aarch64-darwin-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "6a2f421a5354b51d0b7eb5fb6e44633f2f89427c964d3d274bd08eed76dd9135",
+        "checksum" => "67b996373e29e848762930940b1c9c790378125002d01fe0ece599100e5fccda",
         "filename" => "appsignal-aarch64-darwin-all-dynamic.tar.gz"
       }
     },
     "aarch64-linux" => {
       "static" => {
-        "checksum" => "ba5d59ac45992df8f677cee5a23ba9120f0553f331195872187dfcb2133136e6",
+        "checksum" => "df88da006c7de613f9461be51a232bcfebbe58a6a8a4a406ef52c436526be10d",
         "filename" => "appsignal-aarch64-linux-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "4b25da519413dc268bada4e5c0d7c94e13cc8e687a1ca6a7cf8810fd847bfc37",
+        "checksum" => "3001d13ea6f03472323345be21e9cb9c6db895405de47273968946746bbce593",
         "filename" => "appsignal-aarch64-linux-all-dynamic.tar.gz"
       }
     },
     "i686-linux" => {
       "static" => {
-        "checksum" => "c23213ffb9cc8a045d5da6d7acb499055bc40f93c9ef147827f8d78c75cc7ddd",
+        "checksum" => "2a2c005e26196e3008f52e909b192e61ccc39c2a942980bb6177222cdfcb801b",
         "filename" => "appsignal-i686-linux-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "5c673340597d87aeba0d27f6517f357020b4c0ee28791aaebf297e56e8ed28a1",
+        "checksum" => "18e74b0ae51208d439b252b55f340df563bbf1f945f31a70139f2a973530962f",
         "filename" => "appsignal-i686-linux-all-dynamic.tar.gz"
       }
     },
     "x86-linux" => {
       "static" => {
-        "checksum" => "c23213ffb9cc8a045d5da6d7acb499055bc40f93c9ef147827f8d78c75cc7ddd",
+        "checksum" => "2a2c005e26196e3008f52e909b192e61ccc39c2a942980bb6177222cdfcb801b",
         "filename" => "appsignal-i686-linux-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "5c673340597d87aeba0d27f6517f357020b4c0ee28791aaebf297e56e8ed28a1",
+        "checksum" => "18e74b0ae51208d439b252b55f340df563bbf1f945f31a70139f2a973530962f",
         "filename" => "appsignal-i686-linux-all-dynamic.tar.gz"
       }
     },
     "x86_64-linux" => {
       "static" => {
-        "checksum" => "7b7eb13b5913a17cd0abadf646b2fc5485a74721712cad1c8db222c510fc2cae",
+        "checksum" => "2e2545f7ef725c644fa597c7e9b46d9725f3584e2e57a84fd4c00c3eabdf61ae",
         "filename" => "appsignal-x86_64-linux-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "fb27e4dfd6ecce87ad44fa249c809c58b082f3a0c544965f25f6f3af3bb2c634",
+        "checksum" => "29ee43e441c3d43615e6bd10f234939f289ebad5d88b91ab78ee881ac954261c",
         "filename" => "appsignal-x86_64-linux-all-dynamic.tar.gz"
       }
     },
     "x86_64-linux-musl" => {
       "static" => {
-        "checksum" => "ae6bcf709d5263fe0267b8025c7264eb997dd913c7c24a12cbdaee1635df66de",
+        "checksum" => "eb60a12950fe1eaa13225aefa6da2295384380f3a31e3377f4a107edd2b360ae",
         "filename" => "appsignal-x86_64-linux-musl-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "929b7436354040d73666b7edbff5e3623cd10f99467c133def4a50bde9a81de4",
+        "checksum" => "66f332e66c17d0e4234c923e266b8191596e2288afdeb9330b967bd75b1925e4",
         "filename" => "appsignal-x86_64-linux-musl-all-dynamic.tar.gz"
       }
     },
     "aarch64-linux-musl" => {
       "static" => {
-        "checksum" => "32ce5593cda7238819140d9fbc601519f5c16da075f2c0f7b639fe5f947ab98f",
+        "checksum" => "3f4e0be8e197dae26a6e75f41ac8def681b6611fe0089b9236aa2837fb36d0de",
         "filename" => "appsignal-aarch64-linux-musl-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "dacd3037777ef00d838fe8d8f31247a96d6abe4bd5a0fb2c7b2e9e7b58864345",
+        "checksum" => "fcde2bbb659c8797c493adbb09b8558e528b5cac5e5dca6ad594d16ec464d798",
         "filename" => "appsignal-aarch64-linux-musl-all-dynamic.tar.gz"
       }
     },
     "x86_64-freebsd" => {
       "static" => {
-        "checksum" => "558a6803b4bb2ceba261a0b6c0a2beb67493a41b9539fb9219b7e6fb8f0ffe36",
+        "checksum" => "e45ab5335f68658c13cd79dc751400544a2e17c7ad4fe025dd0c53c3d19138ec",
         "filename" => "appsignal-x86_64-freebsd-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "42e76a7b3ebb9e4a8c1e14c1435358ef09f02d59313148eaf9ebd33c10bdde33",
+        "checksum" => "107a24d1f1023b72ff483b21f773a70788b3bfa9decbcb045861211d0a3f6e7b",
         "filename" => "appsignal-x86_64-freebsd-all-dynamic.tar.gz"
       }
     },
     "amd64-freebsd" => {
       "static" => {
-        "checksum" => "558a6803b4bb2ceba261a0b6c0a2beb67493a41b9539fb9219b7e6fb8f0ffe36",
+        "checksum" => "e45ab5335f68658c13cd79dc751400544a2e17c7ad4fe025dd0c53c3d19138ec",
         "filename" => "appsignal-x86_64-freebsd-all-static.tar.gz"
       },
       "dynamic" => {
-        "checksum" => "42e76a7b3ebb9e4a8c1e14c1435358ef09f02d59313148eaf9ebd33c10bdde33",
+        "checksum" => "107a24d1f1023b72ff483b21f773a70788b3bfa9decbcb045861211d0a3f6e7b",
         "filename" => "appsignal-x86_64-freebsd-all-dynamic.tar.gz"
       }
     }
