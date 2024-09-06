@@ -214,14 +214,12 @@ module Appsignal
     # Initialize a new configuration object for AppSignal.
     #
     # @param root_path [String] Root path of the app.
-    # @param initial_env [String] The environment to load when AppSignal is started. It
+    # @param env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
     # @param logger [Logger] The logger to use for the AppSignal gem. This is
     #   used by the configuration class only. Default:
     #   {Appsignal.internal_logger}. See also {Appsignal.start}.
-    # @param config_file [String] Custom config file location. Default
-    #   `config/appsignal.yml`.
     #
     # @api private
     # @see https://docs.appsignal.com/ruby/configuration/
