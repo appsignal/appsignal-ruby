@@ -22,7 +22,7 @@ module Appsignal
       #     # your code
       #   end
       #
-      # @param name [String] name of the cron check-in to report.
+      # @param identifier [String] identifier of the cron check-in to report.
       # @yield the block to monitor.
       # @return [void]
       # @since 3.13.0
