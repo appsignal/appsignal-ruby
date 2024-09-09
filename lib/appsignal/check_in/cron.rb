@@ -22,13 +22,11 @@ module Appsignal
       private
 
       def event(kind)
-        {
+        Event.cron(
           :identifier => @identifier,
           :digest => @digest,
-          :kind => kind,
-          :timestamp => Time.now.utc.to_i,
-          :check_in_type => "cron"
-        }
+          :kind => kind
+        )
       end
     end
   end

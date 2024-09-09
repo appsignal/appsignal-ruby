@@ -44,6 +44,18 @@ module ApiRequestHelper
     )
   end
 
+  def stub_heartbeat_check_in_request(events:, response: { :status => 200 })
+    stub_check_in_requests(
+      :requests => [events],
+      :event_shape => {
+        "identifier" => nil,
+        "timestamp" => kind_of(Integer),
+        "check_in_type" => "heartbeat"
+      },
+      :response => response
+    )
+  end
+
   def stub_check_in_requests(requests:, event_shape: {}, response: { :status => 200 })
     config = Appsignal.config
     options = {

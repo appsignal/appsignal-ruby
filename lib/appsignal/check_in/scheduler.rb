@@ -29,7 +29,7 @@ module Appsignal
       def schedule(event)
         unless Appsignal.active?
           Appsignal.internal_logger.debug(
-            "Cannot transmit #{describe([event])}: AppSignal is not active"
+            "Cannot transmit #{Event.describe([event])}: AppSignal is not active"
           )
           return
         end
@@ -37,7 +37,7 @@ module Appsignal
         @mutex.synchronize do
           if @queue.closed?
             Appsignal.internal_logger.debug(
-              "Cannot transmit #{describe([event])}: AppSignal is stopped"
+              "Cannot transmit #{Event.describe([event])}: AppSignal is stopped"
             )
             return
           end
@@ -48,7 +48,7 @@ module Appsignal
           start_waker(INITIAL_DEBOUNCE_SECONDS) if @waker.nil?
 
           Appsignal.internal_logger.debug(
-            "Scheduling #{describe([event])} to be transmitted"
+            "Scheduling #{Event.describe([event])} to be transmitted"
           )
 
           # Make sure to start the thread after an event has been added.
@@ -92,7 +92,7 @@ module Appsignal
       end
 
       def transmit(events)
-        description = describe(events)
+        description = Event.describe(events)
 
         begin
           response = CheckIn.transmitter.transmit(events, :format => :ndjson)
@@ -110,42 +110,18 @@ module Appsignal
         end
       end
 
-      def describe(events)
-        if events.empty?
-          # This shouldn't happen.
-          "no check-in events"
-        elsif events.length > 1
-          "#{events.length} check-in events"
-        else
-          event = events.first
-          if event[:check_in_type] == "cron"
-            "cron check-in `#{event[:identifier] || "unknown"}` " \
-              "#{event[:kind] || "unknown"} event (digest #{event[:digest] || "unknown"})" \
-          else
-            "unknown check-in event"
-          end
-        end
-      end
-
       # Must be called from within a `@mutex.synchronize` block.
       def add_event(event)
         # Remove redundant events, keeping the newly added one, which
         # should be the one with the most recent timestamp.
-        if event[:check_in_type] == "cron"
-          # Remove any existing cron check-in event with the same identifier,
-          # digest and kind as the one we're adding.
-          @events.reject! do |existing_event|
-            next unless existing_event[:identifier] == event[:identifier] &&
-              existing_event[:digest] == event[:digest] &&
-              existing_event[:kind] == event[:kind] &&
-              existing_event[:check_in_type] == "cron"
+        @events.reject! do |existing_event|
+          next unless Event.redundant?(event, existing_event)
 
-            Appsignal.internal_logger.debug(
-              "Replacing previously scheduled #{describe([existing_event])}"
-            )
+          Appsignal.internal_logger.debug(
+            "Replacing previously scheduled #{Event.describe([existing_event])}"
+          )
 
-            true
-          end
+          true
         end
 
         @events << event
