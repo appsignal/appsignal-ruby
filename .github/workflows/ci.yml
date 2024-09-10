@@ -86,7 +86,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -94,9 +94,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -115,7 +115,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -123,7 +123,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -142,7 +142,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -150,7 +150,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -169,7 +169,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -177,7 +177,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -196,7 +196,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -204,7 +204,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -223,7 +223,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -231,7 +231,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -250,7 +250,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -258,7 +258,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -277,7 +277,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -285,7 +285,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -304,7 +304,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -312,7 +312,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -331,7 +331,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -339,7 +339,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -358,7 +358,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -366,7 +366,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -385,7 +385,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -393,7 +393,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -412,7 +412,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -420,7 +420,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -439,7 +439,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -447,7 +447,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -466,7 +466,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -474,7 +474,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -493,7 +493,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -501,7 +501,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -520,7 +520,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -528,7 +528,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -547,7 +547,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -555,7 +555,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -574,7 +574,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -582,7 +582,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -601,7 +601,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -609,7 +609,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -628,7 +628,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -636,7 +636,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -655,7 +655,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -663,7 +663,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -682,7 +682,7 @@ jobs:
         ruby-version: 3.3.4
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -690,9 +690,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -711,7 +711,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -719,9 +719,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -740,7 +740,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -748,7 +748,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -767,7 +767,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -775,7 +775,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -794,7 +794,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -802,7 +802,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -821,7 +821,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -829,7 +829,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -848,7 +848,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -856,7 +856,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -875,7 +875,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -883,7 +883,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -902,7 +902,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -910,7 +910,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -929,7 +929,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -937,7 +937,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -956,7 +956,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -964,7 +964,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -983,7 +983,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -991,7 +991,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1010,7 +1010,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1018,7 +1018,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1037,7 +1037,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1045,7 +1045,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1064,7 +1064,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1072,7 +1072,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1091,7 +1091,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1099,7 +1099,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1118,7 +1118,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1126,7 +1126,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1145,7 +1145,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1153,7 +1153,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1172,7 +1172,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1180,7 +1180,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1199,7 +1199,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1207,7 +1207,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1226,7 +1226,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1234,7 +1234,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1253,7 +1253,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1261,7 +1261,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1280,7 +1280,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1288,7 +1288,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1307,7 +1307,7 @@ jobs:
         ruby-version: 3.2.5
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1315,9 +1315,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1336,7 +1336,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1344,9 +1344,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1365,7 +1365,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1373,7 +1373,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1392,7 +1392,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1400,7 +1400,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1419,7 +1419,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1427,7 +1427,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1446,7 +1446,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1454,7 +1454,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1473,7 +1473,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1481,7 +1481,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1500,7 +1500,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1508,7 +1508,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1527,7 +1527,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1535,7 +1535,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1554,7 +1554,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1562,7 +1562,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1581,7 +1581,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1589,7 +1589,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1608,7 +1608,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1616,7 +1616,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1635,7 +1635,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1643,7 +1643,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1662,7 +1662,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1670,7 +1670,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1689,7 +1689,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1697,7 +1697,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1716,7 +1716,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1724,7 +1724,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1743,7 +1743,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1751,7 +1751,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1770,7 +1770,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1778,7 +1778,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1797,7 +1797,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1805,7 +1805,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1824,7 +1824,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1832,7 +1832,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1851,7 +1851,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1859,7 +1859,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1878,7 +1878,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1886,7 +1886,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1905,7 +1905,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1913,7 +1913,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1932,7 +1932,7 @@ jobs:
         ruby-version: 3.1.6
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1940,9 +1940,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1961,7 +1961,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1969,9 +1969,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1990,7 +1990,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -1998,7 +1998,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2017,7 +2017,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2025,7 +2025,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2044,7 +2044,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2052,7 +2052,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2071,7 +2071,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2079,7 +2079,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2098,7 +2098,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2106,7 +2106,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2125,7 +2125,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2133,7 +2133,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2152,7 +2152,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2160,7 +2160,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2179,7 +2179,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2187,7 +2187,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2206,7 +2206,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2214,7 +2214,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2233,7 +2233,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2241,7 +2241,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2260,7 +2260,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2268,7 +2268,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2287,7 +2287,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2295,7 +2295,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2314,7 +2314,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2322,7 +2322,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2341,7 +2341,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2349,7 +2349,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2368,7 +2368,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2376,7 +2376,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2395,7 +2395,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2403,7 +2403,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2422,7 +2422,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2430,7 +2430,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2449,7 +2449,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2457,7 +2457,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2476,7 +2476,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2484,7 +2484,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2503,7 +2503,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2511,7 +2511,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2530,7 +2530,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2538,7 +2538,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2557,7 +2557,7 @@ jobs:
         ruby-version: 3.0.7
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2565,9 +2565,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2586,7 +2586,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2594,9 +2594,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2615,7 +2615,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2623,7 +2623,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2642,7 +2642,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2650,7 +2650,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2669,7 +2669,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2677,7 +2677,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2696,7 +2696,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2704,7 +2704,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2723,7 +2723,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2731,7 +2731,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2750,7 +2750,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2758,7 +2758,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2777,7 +2777,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2785,7 +2785,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2804,7 +2804,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2812,7 +2812,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2831,7 +2831,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2839,7 +2839,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2858,7 +2858,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2866,7 +2866,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2885,7 +2885,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2893,7 +2893,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2912,7 +2912,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2920,7 +2920,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2939,7 +2939,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2947,7 +2947,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2966,7 +2966,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -2974,7 +2974,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2993,7 +2993,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3001,7 +3001,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3020,7 +3020,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3028,7 +3028,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3047,7 +3047,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3055,7 +3055,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3074,7 +3074,7 @@ jobs:
         ruby-version: 2.7.8
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3082,9 +3082,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3103,7 +3103,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3111,9 +3111,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3132,7 +3132,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3140,7 +3140,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3159,7 +3159,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3167,7 +3167,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3186,7 +3186,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3194,7 +3194,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3213,7 +3213,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3221,7 +3221,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3240,7 +3240,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3248,7 +3248,7 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3267,7 +3267,7 @@ jobs:
         ruby-version: jruby-9.4.7.0
         bundler-cache: true
     - name: Install gem extension
-      run: "./support/bundler_wrapper exec rake extension:install"
+      run: "./script/bundler_wrapper exec rake extension:install"
     - name: Print extension install report
       run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
         file found'"
@@ -3275,9 +3275,9 @@ jobs:
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
     - name: Run tests
-      run: "./support/bundler_wrapper exec rake test"
+      run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
-      run: "./support/bundler_wrapper exec rake test:failure"
+      run: "./script/bundler_wrapper exec rake test:failure"
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
