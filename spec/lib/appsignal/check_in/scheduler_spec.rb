@@ -6,6 +6,7 @@ describe Appsignal::CheckIn::Scheduler do
   let(:logs) { log_contents(log_stream) }
   let(:appsignal_options) { {} }
   let(:scheduler) { Appsignal::CheckIn.scheduler }
+  let(:stubs) { [] }
 
   before do
     start_agent(:options => appsignal_options, :internal_logger => test_logger(log_stream))
@@ -16,6 +17,10 @@ describe Appsignal::CheckIn::Scheduler do
 
   after do
     scheduler.stop
+
+    stubs.each do |stub|
+      expect(stub.count).to eq(1)
+    end
   end
 
   describe "when no event is sent" do
@@ -60,11 +65,10 @@ describe Appsignal::CheckIn::Scheduler do
 
   describe "when an event is sent" do
     it "starts a thread" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
       Appsignal::CheckIn.cron("test")
@@ -72,11 +76,10 @@ describe Appsignal::CheckIn::Scheduler do
     end
 
     it "schedules a debounce" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
       Appsignal::CheckIn.cron("test")
@@ -84,11 +87,10 @@ describe Appsignal::CheckIn::Scheduler do
     end
 
     it "schedules the event to be transmitted" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
 
@@ -114,11 +116,10 @@ describe Appsignal::CheckIn::Scheduler do
       stub_const("Appsignal::CheckIn::Scheduler::INITIAL_DEBOUNCE_SECONDS", 10)
       stub_const("Appsignal::CheckIn::Scheduler::BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS", 10)
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
 
@@ -148,14 +149,16 @@ describe Appsignal::CheckIn::Scheduler do
       stub_const("Appsignal::CheckIn::Scheduler::INITIAL_DEBOUNCE_SECONDS", 10)
       stub_const("Appsignal::CheckIn::Scheduler::BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS", 10)
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
           "kind" => "finish",
           "check_in_type" => "cron"
         ]
       )
+
       Appsignal::CheckIn.cron("test")
+
       take_at_most(0.1) do
         expect { scheduler.stop }.not_to raise_error
       end
@@ -170,33 +173,35 @@ describe Appsignal::CheckIn::Scheduler do
     end
 
     it "closes the queue when stopped" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
           "kind" => "finish",
           "check_in_type" => "cron"
         ]
       )
+
       Appsignal::CheckIn.cron("test")
       scheduler.stop
       expect(scheduler.queue.closed?).to be(true)
     end
 
     it "kills the thread when stopped" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
           "kind" => "finish",
           "check_in_type" => "cron"
         ]
       )
+
       Appsignal::CheckIn.cron("test")
       scheduler.stop
       expect(scheduler.thread.alive?).to be(false)
     end
 
     it "unschedules the debounce when stopped" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
           "kind" => "finish",
@@ -214,15 +219,15 @@ describe Appsignal::CheckIn::Scheduler do
   describe "when many events are sent" do
     describe "within the short debounce interval" do
       it "transmits all events at once" do
-        ["first", "second", "third"].map do |identifier|
-          stub_check_in_request(
-            :events => [
+        stubs << stub_cron_check_in_request(
+          :events => ["first", "second", "third"].map do |identifier|
+            {
               "identifier" => identifier,
               "kind" => "finish",
               "check_in_type" => "cron"
-            ]
-          )
-        end
+            }
+          end
+        )
 
         Appsignal::CheckIn.cron("first")
         Appsignal::CheckIn.cron("second")
@@ -238,15 +243,15 @@ describe Appsignal::CheckIn::Scheduler do
         # stopped.
         stub_const("Appsignal::CheckIn::Scheduler::INITIAL_DEBOUNCE_SECONDS", 10)
 
-        ["first", "second", "third"].map do |identifier|
-          stub_check_in_request(
-            :events => [
+        stubs << stub_cron_check_in_request(
+          :events => ["first", "second", "third"].map do |identifier|
+            {
               "identifier" => identifier,
               "kind" => "finish",
               "check_in_type" => "cron"
-            ]
-          )
-        end
+            }
+          end
+        )
 
         Appsignal::CheckIn.cron("first")
         Appsignal::CheckIn.cron("second")
@@ -260,7 +265,7 @@ describe Appsignal::CheckIn::Scheduler do
 
     describe "further apart than the short debounce interval" do
       it "transmits the first event and enqueues future events" do
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             "identifier" => "first",
             "kind" => "finish",
@@ -272,7 +277,7 @@ describe Appsignal::CheckIn::Scheduler do
 
         wait_for("the first event to be transmitted") { scheduler.transmitted == 1 }
 
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             {
               "identifier" => "second",
@@ -286,6 +291,7 @@ describe Appsignal::CheckIn::Scheduler do
             }
           ]
         )
+
         Appsignal::CheckIn.cron("second")
         Appsignal::CheckIn.cron("third")
 
@@ -299,28 +305,26 @@ describe Appsignal::CheckIn::Scheduler do
       end
 
       it "transmits the other events after the debounce interval" do
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             "identifier" => "first",
-            "kind" => "finish",
-            "check_in_type" => "cron"
+            "kind" => "finish"
           ]
         )
+
         Appsignal::CheckIn.cron("first")
 
         wait_for("the first event to be transmitted") { scheduler.transmitted == 1 }
 
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             {
               "identifier" => "second",
-              "kind" => "finish",
-              "check_in_type" => "cron"
+              "kind" => "finish"
             },
             {
               "identifier" => "third",
-              "kind" => "finish",
-              "check_in_type" => "cron"
+              "kind" => "finish"
             }
           ]
         )
@@ -348,28 +352,25 @@ describe Appsignal::CheckIn::Scheduler do
         # immediately when the scheduler is stopped.
         stub_const("Appsignal::CheckIn::Scheduler::BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS", 10)
 
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             "identifier" => "first",
-            "kind" => "finish",
-            "check_in_type" => "cron"
+            "kind" => "finish"
           ]
         )
         Appsignal::CheckIn.cron("first")
 
         wait_for("the event to be transmitted") { scheduler.transmitted == 1 }
 
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             {
               "identifier" => "second",
-              "kind" => "finish",
-              "check_in_type" => "cron"
+              "kind" => "finish"
             },
             {
               "identifier" => "third",
-              "kind" => "finish",
-              "check_in_type" => "cron"
+              "kind" => "finish"
             }
           ]
         )
@@ -400,11 +401,10 @@ describe Appsignal::CheckIn::Scheduler do
       # `.cron` helper would use a different digest for each invocation.
       cron = Appsignal::CheckIn::Cron.new(:identifier => "test")
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "test",
-          "kind" => "start",
-          "check_in_type" => "cron"
+          "kind" => "start"
         ]
       )
 
@@ -466,19 +466,10 @@ describe Appsignal::CheckIn::Scheduler do
 
   describe "when transmitting returns a non-success response code" do
     it "logs the error and continues" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "first",
-          "kind" => "start",
-          "check_in_type" => "cron"
-        ],
-        :response => { :status => 404 }
-      )
-      stub_check_in_request(
-        :events => [
-          "identifier" => "first",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ],
         :response => { :status => 404 }
       )
@@ -487,18 +478,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       wait_for("the first event to be transmitted") { scheduler.transmitted == 1 }
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "second",
-          "kind" => "start",
-          "check_in_type" => "cron"
-        ]
-      )
-      stub_check_in_request(
-        :events => [
-          "identifier" => "second",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
 
@@ -519,11 +502,10 @@ describe Appsignal::CheckIn::Scheduler do
 
   describe "when transmitting throws an error" do
     it "logs the error and continues" do
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "first",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ],
         :response => ExampleStandardError.new("Something went wrong")
       )
@@ -532,11 +514,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       wait_for("the first event to be transmitted") { scheduler.transmitted == 1 }
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "second",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
 
