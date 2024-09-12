@@ -16,12 +16,7 @@ module Appsignal
       ensure
         if transaction
           transaction.set_action_if_nil("#{payload["class"]}#perform")
-          args =
-            Appsignal::Utils::HashSanitizer.sanitize(
-              ResqueHelpers.arguments(payload),
-              Appsignal.config[:filter_parameters]
-            )
-          transaction.add_params_if_nil(args)
+          transaction.add_params_if_nil { ResqueHelpers.arguments(payload) }
           transaction.add_tags("queue" => queue)
 
           Appsignal::Transaction.complete_current!
