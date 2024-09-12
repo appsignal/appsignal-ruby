@@ -6,7 +6,7 @@ _Published on 2024-09-12._
 
 ### Changed
 
-- Format the Date and Time objects in a human-friendly way. Previously, dates and times stored in sample data, like session data, would be shown as `#<Date>` and `#<Time>`. Now they will show as `#<Date: 2024-09-11>` and `#<Time: Time: 2024-09-12T13:14:15+02:00>` (UTC offset may be different for your time objects depending on the server setting). (patch [8f516484](https://github.com/appsignal/appsignal-ruby/commit/8f516484d249f43ffadcf15a67bbab48f827eff6))
+- Format the Date and Time objects in a human-friendly way. Previously, dates and times stored in sample data, like session data, would be shown as `#<Date>` and `#<Time>`. Now they will show as `#<Date: 2024-09-11>` and `#<Time: 2024-09-12T13:14:15+02:00>` (UTC offset may be different for your time objects depending on the server setting). (patch [8f516484](https://github.com/appsignal/appsignal-ruby/commit/8f516484d249f43ffadcf15a67bbab48f827eff6))
 
 ### Removed
 
