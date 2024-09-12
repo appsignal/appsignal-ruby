@@ -797,6 +797,17 @@ describe Appsignal::Transaction do
       expect(transaction).to include_session_data(block_data)
     end
 
+    it "adds certain Ruby objects as Strings" do
+      transaction.add_session_data("time" => Time.utc(2024, 9, 12, 13, 14, 15))
+      transaction.add_session_data("date" => Date.new(2024, 9, 11))
+
+      transaction._sample
+      expect(transaction).to include_session_data(
+        "time" => "#<Time: 2024-09-12T13:14:15Z>",
+        "date" => "#<Date: 2024-09-11>"
+      )
+    end
+
     it "logs an error if an error occurred storing the session data" do
       transaction.add_session_data { raise "uh oh" }
 

@@ -21,6 +21,10 @@ module Appsignal
             sanitize_array(value, filter_keys, seen)
           when TrueClass, FalseClass, NilClass, Integer, String, Symbol, Float
             unmodified(value)
+          when Time
+            "#<Time: #{value.iso8601}>"
+          when Date
+            "#<Date: #{value.iso8601}>"
           else
             inspected(value)
           end
