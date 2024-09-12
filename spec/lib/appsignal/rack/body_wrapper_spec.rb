@@ -113,6 +113,43 @@ describe Appsignal::Rack::BodyWrapper do
 
       expect(transaction).to include_event("name" => "close_response_body.rack")
     end
+
+    it "reports an error if an error occurs on close" do
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(ExampleException, "error message")
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(ExampleException, "error message")
+
+      expect(transaction).to have_error("ExampleException", "error message")
+    end
+
+    it "doesn't report EPIPE error on close" do
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report EPIPE error when it's the error cause on close" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
   end
 
   describe "with a body supporting both each() and call" do
