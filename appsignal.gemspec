@@ -2,6 +2,25 @@
 
 require File.expand_path("lib/appsignal/version", __dir__)
 
+IGNORED_PATHS = [
+  # Directories
+  ".changesets/",
+  ".github/",
+  "gemfiles/",
+  "script/",
+  "spec/",
+
+  # Files
+  ".gitignore",
+  ".gitmodules",
+  ".rspec",
+  ".yardopts",
+  "benchmark.rake",
+  "mono.yml",
+  "rubocop.yml",
+  "rubocop_todo.yml"
+].freeze
+
 Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.authors = [
     "Robert Beekman",
@@ -15,7 +34,9 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.homepage              = "https://github.com/appsignal/appsignal-ruby"
   gem.license               = "MIT"
 
-  gem.files                 = `git ls-files`.split($\).reject { |f| f.start_with?(".changesets/") } # rubocop:disable Style/SpecialGlobalVars
+  gem.files                 = `git ls-files`
+    .split($\) # rubocop:disable Style/SpecialGlobalVars
+    .reject { |f| IGNORED_PATHS.any? { |ignored_path| f.start_with?(ignored_path) } }
   gem.executables           = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.name                  = "appsignal"
   gem.require_paths         = %w[lib ext]

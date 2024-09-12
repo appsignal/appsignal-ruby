@@ -43,7 +43,7 @@ def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
       },
       {
         "name" => "Install gem extension",
-        "run" => "./support/bundler_wrapper exec rake extension:install"
+        "run" => "./script/bundler_wrapper exec rake extension:install"
       },
       {
         "name" => "Print extension install report",
@@ -97,7 +97,7 @@ namespace :build_matrix do
 
           test_step = {
             "name" => "Run tests",
-            "run" => "./support/bundler_wrapper exec rake test"
+            "run" => "./script/bundler_wrapper exec rake test"
           }
 
           if is_primary_job
@@ -105,7 +105,7 @@ namespace :build_matrix do
             # Only test the failure scenarios once per Ruby version
             job["steps"] << {
               "name" => "Run tests without extension",
-              "run" => "./support/bundler_wrapper exec rake test:failure"
+              "run" => "./script/bundler_wrapper exec rake test:failure"
             }
             builds[build_matrix_key(ruby["ruby"])] = job
           else
@@ -124,11 +124,11 @@ namespace :build_matrix do
 
         job["steps"] << {
           "name" => "Run tests",
-          "run" => "./support/bundler_wrapper exec rake test"
+          "run" => "./script/bundler_wrapper exec rake test"
         }
         job["steps"] << {
           "name" => "Run tests without extension",
-          "run" => "./support/bundler_wrapper exec rake test:failure"
+          "run" => "./script/bundler_wrapper exec rake test:failure"
         }
         builds[build_matrix_key(ruby["ruby"], :runs_on => runs_on)] = job
       end
@@ -175,7 +175,7 @@ namespace :build_matrix do
           out << "#{config[:switch_command].call(ruby_version)} || { echo 'Switching Ruby failed'; exit 1; }"
           out << "ruby -v"
           out << "echo 'Compiling extension'"
-          out << "./support/bundler_wrapper exec rake extension:install"
+          out << "./script/bundler_wrapper exec rake extension:install"
           out << "rm -f gemfiles/*.gemfile.lock"
           gemset_for_ruby(ruby, matrix).each do |gem|
             next unless included_for_ruby?(matrix, gem, ruby)
@@ -187,10 +187,10 @@ namespace :build_matrix do
             bundler = gem["bundler"] || ruby["bundler"] || defaults["bundler"]
             bundler_version = "env _BUNDLER_VERSION=#{bundler}" if bundler
             gemfile_env = "env BUNDLE_GEMFILE=gemfiles/#{gemfile}.gemfile"
-            out << "#{bundler_version} #{rubygems_version} ./support/install_deps"
-            out << "#{bundler_version} #{gemfile_env} ./support/bundler_wrapper install --quiet || { echo 'Bundling failed'; exit 1; }"
+            out << "#{bundler_version} #{rubygems_version} ./script/install_deps"
+            out << "#{bundler_version} #{gemfile_env} ./script/bundler_wrapper install --quiet || { echo 'Bundling failed'; exit 1; }"
             out << "echo 'Running #{gemfile} in #{ruby_version}'"
-            out << "#{bundler_version} #{gemfile_env} ./support/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
+            out << "#{bundler_version} #{gemfile_env} ./script/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
           end
           # rubocop:enable Layout/LineLength
           out << ""
