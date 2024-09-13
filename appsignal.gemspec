@@ -17,8 +17,8 @@ IGNORED_PATHS = [
   ".yardopts",
   "benchmark.rake",
   "mono.yml",
-  "rubocop.yml",
-  "rubocop_todo.yml"
+  ".rubocop.yml",
+  ".rubocop_todo.yml"
 ].freeze
 
 Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
