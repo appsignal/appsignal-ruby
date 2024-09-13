@@ -7,7 +7,7 @@ class Runner
     @pid = nil
     @output = nil
     @status = nil
-    @post_spawn_wait = jruby? ? 10 : 0.5 # seconds
+    @post_spawn_wait = jruby? ? 10 : 1 # seconds
     @finish_timeout = jruby? ? 10 : 5 # seconds
     @read_timeout = 1 # seconds
     @read, @write = IO.pipe

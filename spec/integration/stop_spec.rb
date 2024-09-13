@@ -6,7 +6,7 @@ describe "AppSignal stop" do
       # "USR1" has no special meaning for this test, it's just a signal
       Process.kill("USR1", runner.pid)
       # Give it some time to receive the signal and shut down AppSignal
-      sleep(DependencyHelper.running_jruby? ? 5 : 0.5) # seconds
+      sleep(DependencyHelper.running_jruby? ? 5 : 1) # seconds
     end
 
     output = runner.output
