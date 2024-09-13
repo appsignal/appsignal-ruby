@@ -56,6 +56,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
     "source_code_uri" => "https://github.com/appsignal/appsignal-ruby"
   }
 
+  gem.add_dependency "logger"
   gem.add_dependency "rack"
 
   gem.add_development_dependency "pry"
