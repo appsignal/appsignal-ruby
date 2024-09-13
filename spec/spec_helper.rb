@@ -32,6 +32,7 @@ if DependencyHelper.hanami2_present?
     require f
   end
 end
+require File.join(APPSIGNAL_SPEC_DIR, "integration/runner")
 require "pry" if DependencyHelper.dependency_present?("pry")
 require "appsignal"
 # Include patches of AppSignal modules and classes to make test helpers

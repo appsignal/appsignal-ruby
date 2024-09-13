@@ -157,14 +157,16 @@ module Appsignal
     # @return [void]
     # @since 1.0.0
     def stop(called_by = nil)
-      if called_by
-        internal_logger.debug("Stopping AppSignal (#{called_by})")
-      else
-        internal_logger.debug("Stopping AppSignal")
-      end
-      Appsignal::Extension.stop
-      Appsignal::Probes.stop
-      Appsignal::CheckIn.stop
+      Thread.new do
+        if called_by
+          internal_logger.debug("Stopping AppSignal (#{called_by})")
+        else
+          internal_logger.debug("Stopping AppSignal")
+        end
+        Appsignal::Extension.stop
+        Appsignal::Probes.stop
+        Appsignal::CheckIn.stop
+      end.join
     end
 
     # Configure the AppSignal Ruby gem using a DSL.

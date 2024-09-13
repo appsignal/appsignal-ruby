@@ -13,6 +13,7 @@ capybara-*.html
 /spec/examples.txt
 /spec/tmp
 /spec/support/project_fixture/log/*.log
+/spec/integration/runners/tmp
 **.orig
 rerun.txt
 pickle-email-*.html
