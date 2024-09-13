@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.8
+
+_Published on 2024-09-13._
+
+### Fixed
+
+- Fix a `ThreadError` from being raised on process exit when `Appsignal.stop` is called from a `Signal.trap` block, like when Puma shuts down in clustered mode. (patch [32323ded](https://github.com/appsignal/appsignal-ruby/commit/32323ded277d4764ea1bd0d0dab02bef3de40ccb))
+
 ## 4.0.7
 
 _Published on 2024-09-12._
