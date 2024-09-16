@@ -25,7 +25,7 @@ module Appsignal
               # An Integer too big for C-lang longs to fit
               bigint = 1 << 63
               if value >= bigint
-                map.set_string(key, "bigint:#{value}")
+                map.set_string(key, map_bigint(value))
               else
                 map.set_integer(key, value)
               end
@@ -56,7 +56,7 @@ module Appsignal
               # An Integer too big for C-lang longs to fit
               bigint = 1 << 63
               if value >= bigint
-                array.append_string("bigint:#{value}")
+                array.append_string(map_bigint(value))
               else
                 array.append_integer(value)
               end
@@ -75,6 +75,10 @@ module Appsignal
             end
           end
           array
+        end
+
+        def map_bigint(value)
+          "bigint:#{value}"
         end
       end
     end
