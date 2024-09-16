@@ -1,11 +1,10 @@
-describe Appsignal::Utils::HashSanitizer do
+describe Appsignal::Utils::SampleDataSanitizer do
   describe ".sanitize" do
     def sanitize(value, filter_keys = [])
       described_class.sanitize(value, filter_keys)
     end
 
     it "accepts String values" do
-      # Hashes
       expect(sanitize(:a => "abc")).to eq(:a => "abc")
       expect(sanitize("a" => "abc")).to eq("a" => "abc")
       expect(sanitize("a" => { "b" => "abc" })).to eq("a" => { "b" => "abc" })
@@ -126,6 +125,12 @@ describe Appsignal::Utils::HashSanitizer do
         object = { :user => { :password => "secret", :id => 123 } }
         expect(sanitize(object, ["password"]))
           .to eq(:user => { :password => "[FILTERED]", :id => 123 })
+      end
+
+      it "sanitizes multiple values" do
+        object = { :password => "secret", :email => "my email", :user_id => 123 }
+        expect(sanitize(object, ["password", "email"]))
+          .to eq(:password => "[FILTERED]", :email => "[FILTERED]", :user_id => 123)
       end
 
       it "sanitizes values in a nested objects" do
