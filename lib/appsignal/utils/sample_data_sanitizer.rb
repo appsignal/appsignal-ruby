@@ -2,7 +2,7 @@
 
 module Appsignal
   module Utils
-    class HashSanitizer
+    class SampleDataSanitizer
       FILTERED = "[FILTERED]"
       RECURSIVE = "[RECURSIVE VALUE]"
 

@@ -707,7 +707,7 @@ module Appsignal
       return unless Appsignal.config[:send_params]
 
       filter_keys = Appsignal.config[:filter_parameters] || []
-      Appsignal::Utils::HashSanitizer.sanitize params, filter_keys
+      Appsignal::Utils::SampleDataSanitizer.sanitize(params, filter_keys)
     end
 
     def session_data
@@ -720,7 +720,8 @@ module Appsignal
 
     # Returns sanitized session data.
     #
-    # The session data is sanitized by the {Appsignal::Utils::HashSanitizer}.
+    # The session data is sanitized by the
+    # {Appsignal::Utils::SampleDataSanitizer}.
     #
     # @return [nil] if `:send_session_data` config is set to `false`.
     # @return [nil] if the {#request} object doesn't respond to `#session`.
@@ -729,8 +730,9 @@ module Appsignal
     def sanitized_session_data
       return unless Appsignal.config[:send_session_data]
 
-      Appsignal::Utils::HashSanitizer.sanitize(
-        session_data, Appsignal.config[:filter_session_data]
+      Appsignal::Utils::SampleDataSanitizer.sanitize(
+        session_data,
+        Appsignal.config[:filter_session_data]
       )
     end
 
