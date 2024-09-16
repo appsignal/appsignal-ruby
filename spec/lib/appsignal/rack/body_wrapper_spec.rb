@@ -103,6 +103,19 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "does not report EPIPE error when it's the nested error cause" do
+      error = error_with_nested_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
     it "closes the body and tracks an instrumentation event when it gets closed" do
       fake_body = double(:close => nil)
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -438,6 +451,20 @@ describe Appsignal::Rack::BodyWrapper do
   def error_with_cause(klass, message, cause)
     begin
       raise cause
+    rescue
+      raise klass, message
+    end
+  rescue => error
+    error
+  end
+
+  def error_with_nested_cause(klass, message, cause)
+    begin
+      begin
+        raise cause
+      rescue
+        raise klass, message
+      end
     rescue
       raise klass, message
     end

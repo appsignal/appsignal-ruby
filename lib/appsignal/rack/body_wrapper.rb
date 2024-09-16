@@ -81,8 +81,9 @@ module Appsignal
 
       def appsignal_accepted_error?(error)
         return true unless error.cause
+        return false if IGNORED_ERRORS.include?(error.cause.class)
 
-        !IGNORED_ERRORS.include?(error.cause.class)
+        appsignal_accepted_error?(error.cause)
       end
     end
 
