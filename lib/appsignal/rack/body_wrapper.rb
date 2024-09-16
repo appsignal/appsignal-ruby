@@ -54,7 +54,7 @@ module Appsignal
       rescue *IGNORED_ERRORS # Do not report
         raise
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        appsignal_report_error(error)
         raise error
       end
 
@@ -72,6 +72,19 @@ module Appsignal
         @body.__send__(method_name, *args, &block)
       end
       ruby2_keywords(:method_missing) if respond_to?(:ruby2_keywords, true)
+
+      private
+
+      def appsignal_report_error(error)
+        @transaction.set_error(error) if appsignal_accepted_error?(error)
+      end
+
+      def appsignal_accepted_error?(error)
+        return true unless error.cause
+        return false if IGNORED_ERRORS.include?(error.cause.class)
+
+        appsignal_accepted_error?(error.cause)
+      end
     end
 
     # The standard Rack body wrapper which exposes "each" for iterating
@@ -97,7 +110,7 @@ module Appsignal
       rescue *IGNORED_ERRORS # Do not report
         raise
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        appsignal_report_error(error)
         raise error
       end
     end
@@ -118,7 +131,7 @@ module Appsignal
       rescue *IGNORED_ERRORS # Do not report
         raise
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        appsignal_report_error(error)
         raise error
       end
     end
@@ -144,7 +157,7 @@ module Appsignal
       rescue *IGNORED_ERRORS # Do not report
         raise
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        appsignal_report_error(error)
         raise error
       end
     end
@@ -162,7 +175,7 @@ module Appsignal
       rescue *IGNORED_ERRORS # Do not report
         raise
       rescue Exception => error # rubocop:disable Lint/RescueException
-        @transaction.set_error(error)
+        appsignal_report_error(error)
         raise error
       end
     end

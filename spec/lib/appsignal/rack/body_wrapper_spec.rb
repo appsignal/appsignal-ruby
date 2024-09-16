@@ -90,6 +90,32 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "does not report EPIPE error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report EPIPE error when it's the nested error cause" do
+      error = error_with_nested_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
     it "closes the body and tracks an instrumentation event when it gets closed" do
       fake_body = double(:close => nil)
       expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -99,6 +125,43 @@ describe Appsignal::Rack::BodyWrapper do
       wrapped.close
 
       expect(transaction).to include_event("name" => "close_response_body.rack")
+    end
+
+    it "reports an error if an error occurs on close" do
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(ExampleException, "error message")
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(ExampleException, "error message")
+
+      expect(transaction).to have_error("ExampleException", "error message")
+    end
+
+    it "doesn't report EPIPE error on close" do
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(Errno::EPIPE)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report EPIPE error when it's the error cause on close" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.close
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
     end
   end
 
@@ -165,6 +228,19 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "does not report EPIPE error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
     it "reads out the body in full using to_ary" do
       expect(fake_body).to receive(:to_ary).and_return(["one", "two", "three"])
 
@@ -189,6 +265,21 @@ describe Appsignal::Rack::BodyWrapper do
       end.to raise_error(ExampleException, "error message")
 
       expect(transaction).to have_error("ExampleException", "error message")
+    end
+
+    it "does not report EPIPE error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      allow(fake_body).to receive(:each)
+      expect(fake_body).to receive(:to_ary).once.and_raise(error)
+      expect(fake_body).to_not receive(:close) # Per spec we expect the body has closed itself
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_ary
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
     end
   end
 
@@ -245,6 +336,30 @@ describe Appsignal::Rack::BodyWrapper do
       expect do
         wrapped.to_path
       end.to raise_error(Errno::EPIPE)
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report EPIPE error from #each when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report EPIPE error from #to_path when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      allow(fake_body).to receive(:to_path).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_path
+      end.to raise_error(StandardError, "error message")
 
       expect(transaction).to_not have_error
     end
@@ -315,5 +430,45 @@ describe Appsignal::Rack::BodyWrapper do
 
       expect(transaction).to_not have_error
     end
+
+    it "does not report EPIPE error from #call when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_rack_stream = double
+      allow(fake_body).to receive(:call)
+        .with(fake_rack_stream)
+        .and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+
+      expect do
+        wrapped.call(fake_rack_stream)
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+  end
+
+  def error_with_cause(klass, message, cause)
+    begin
+      raise cause
+    rescue
+      raise klass, message
+    end
+  rescue => error
+    error
+  end
+
+  def error_with_nested_cause(klass, message, cause)
+    begin
+      begin
+        raise cause
+      rescue
+        raise klass, message
+      end
+    rescue
+      raise klass, message
+    end
+  rescue => error
+    error
   end
 end
