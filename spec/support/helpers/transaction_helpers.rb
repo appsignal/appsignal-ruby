@@ -1,10 +1,28 @@
 module TransactionHelpers
   def uploaded_file
     if DependencyHelper.rails_present?
-      ActionDispatch::Http::UploadedFile.new(:tempfile => "/tmp")
+      rails_uploaded_file
     else
-      ::Rack::Multipart::UploadedFile.new(File.join(fixtures_dir, "/uploaded_file.txt"))
+      rack_uploaded_file
     end
+  end
+
+  def rails_uploaded_file
+    tempfile = Tempfile.new(uploaded_file_path)
+    tempfile.write(File.read(uploaded_file_path))
+    ActionDispatch::Http::UploadedFile.new(
+      :tempfile => tempfile,
+      :type => "text/plain",
+      :filename => File.basename(uploaded_file_path)
+    )
+  end
+
+  def rack_uploaded_file
+    ::Rack::Multipart::UploadedFile.new(uploaded_file_path)
+  end
+
+  def uploaded_file_path
+    File.join(fixtures_dir, "uploaded_file.txt")
   end
 
   def default_namespace
