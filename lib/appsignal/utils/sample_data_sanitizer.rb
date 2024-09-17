@@ -26,7 +26,21 @@ module Appsignal
           when Date
             "#<Date: #{value.iso8601}>"
           else
-            inspected(value)
+            if defined?(::Rack::Multipart::UploadedFile) &&
+                value.is_a?(::Rack::Multipart::UploadedFile)
+              "#<Rack::Multipart::UploadedFile " \
+                "original_filename: #{value.original_filename.inspect}, " \
+                "content_type: #{value.content_type.inspect}" \
+                ">"
+            elsif defined?(::ActionDispatch::Http::UploadedFile) &&
+                value.is_a?(::ActionDispatch::Http::UploadedFile)
+              "#<ActionDispatch::Http::UploadedFile " \
+                "original_filename: #{value.original_filename.inspect}, " \
+                "content_type: #{value.content_type.inspect}" \
+                ">"
+            else
+              inspected(value)
+            end
           end
         end
 

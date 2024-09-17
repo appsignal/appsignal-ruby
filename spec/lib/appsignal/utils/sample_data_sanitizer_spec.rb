@@ -32,23 +32,45 @@ describe Appsignal::Utils::SampleDataSanitizer do
         .to eq(:date => "#<Date: 2024-09-11>")
     end
 
-    it "normalizes unsupported objects" do
-      expect(sanitize(:file => uploaded_file)[:file])
-        .to include("::UploadedFile")
-
-      expect(sanitize(:file => [:file => uploaded_file])[:file].first[:file])
-        .to include("::UploadedFile")
-
-      expect(sanitize(:object => Object.new))
-        .to eq(:object => "#<Object>")
-    end
-
     it "normalizes Time objects" do
       expect(sanitize(:time_in_utc => Time.utc(2024, 9, 12, 13, 14, 15)))
         .to eq(:time_in_utc => "#<Time: 2024-09-12T13:14:15Z>")
 
       expect(sanitize(:time_with_timezone => Time.new(2024, 9, 12, 13, 14, 15, "+09:00")))
         .to eq(:time_with_timezone => "#<Time: 2024-09-12T13:14:15+09:00>")
+    end
+
+    it "normalizes Rack UploadedFile objects" do
+      normalized_file =
+        "#<Rack::Multipart::UploadedFile " \
+          "original_filename: \"uploaded_file.txt\", " \
+          "content_type: \"text/plain\"" \
+          ">"
+      expect(sanitize(:file => rack_uploaded_file))
+        .to eq(:file => normalized_file)
+
+      expect(sanitize(:file => [:file => rack_uploaded_file])[:file].first[:file])
+        .to eq(normalized_file)
+    end
+
+    if DependencyHelper.rails_present?
+      it "normalizes Rails ActionDispatch::Http::UploadedFile objects" do
+        normalized_file =
+          "#<ActionDispatch::Http::UploadedFile " \
+            "original_filename: \"uploaded_file.txt\", " \
+            "content_type: \"text/plain\"" \
+            ">"
+        expect(sanitize(:file => rails_uploaded_file))
+          .to eq(:file => normalized_file)
+
+        expect(sanitize(:file => [:file => rails_uploaded_file])[:file].first[:file])
+          .to eq(normalized_file)
+      end
+    end
+
+    it "normalizes unsupported objects" do
+      expect(sanitize(:object => Object.new))
+        .to eq(:object => "#<Object>")
     end
 
     it "accepts nested Hash values" do
