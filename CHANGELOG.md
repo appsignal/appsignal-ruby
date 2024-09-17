@@ -1,5 +1,27 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.0.9
+
+_Published on 2024-09-17._
+
+### Changed
+
+- Add the logger gem as a dependency. This fixes the deprecation warning on Ruby 3.3. (patch [8c1d577e](https://github.com/appsignal/appsignal-ruby/commit/8c1d577e4790185db887d49577cedc7d614d8d98))
+- Do not report errors caused by `Errno::EPIPE` (broken pipe errors) when instrumenting response bodies, to avoid reporting errors that cannot be fixed by the application. (patch [1fdccba4](https://github.com/appsignal/appsignal-ruby/commit/1fdccba4ceeb8f9bb13ae077019b2c1f7d9d4fe4))
+- Normalize Rack and Rails `UploadedFile` objects. Instead of displaying the Ruby class name, it will now show object details like the filename and content type.
+
+  ```
+  # Before
+  #<Rack::Multipart::UploadedFile>
+  #<ActionDispatch::Http::UploadedFile>
+
+  # After
+  #<Rack::Multipart::UploadedFile original_filename: "uploaded_file.txt", content_type: "text/plain">
+  #<ActionDispatch::Http::UploadedFile original_filename: "uploaded_file.txt", content_type: "text/plain">
+  ```
+
+  (patch [bb50c933](https://github.com/appsignal/appsignal-ruby/commit/bb50c93387eafebe043b0e7f4083c95556b93136))
+
 ## 4.0.8
 
 _Published on 2024-09-13._
