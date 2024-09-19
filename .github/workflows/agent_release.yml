@@ -18,7 +18,7 @@ on:
 
 jobs:
   update:
-    name: "Update agent"
+    name: "Update"
     uses: "appsignal/integrations-shared/.github/workflows/agent_release.yml@main"
     with:
       version: "${{inputs.version}}"
