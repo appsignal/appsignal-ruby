@@ -1838,17 +1838,38 @@ describe Appsignal::Transaction do
     context "when the error has multiple causes" do
       let(:error) do
         e = ExampleStandardError.new("test message")
-        e.set_backtrace(["line 1"])
+        e.set_backtrace([
+          "/absolute/path/example.rb:9123:in `my_method'",
+          "/absolute/path/context.rb:9456:in `context_method'",
+          "/absolute/path/suite.rb:9789:in `suite_method'"
+        ])
         e2 = RuntimeError.new("cause message")
+        e2.set_backtrace([
+          # Absolute path with gem name
+          "my_gem (1.2.3) /absolute/path/example.rb:123:in `my_method'",
+          "other_gem (4.5.6) /absolute/path/context.rb:456:in `context_method'",
+          "other_gem (4.5.6) /absolute/path/suite.rb:789:in `suite_method'"
+        ])
         e3 = StandardError.new("cause message 2")
+        e3.set_backtrace([
+          # Relative paths
+          "src/example.rb:123:in `my_method'",
+          "context.rb:456:in `context_method'",
+          "suite.rb:789:in `suite_method'"
+        ])
+        e4 = StandardError.new("cause message 3")
+        e4.set_backtrace([]) # No backtrace
+
         allow(e).to receive(:cause).and_return(e2)
         allow(e2).to receive(:cause).and_return(e3)
+        allow(e3).to receive(:cause).and_return(e4)
         e
       end
 
       let(:error_without_cause) do
         ExampleStandardError.new("error without cause")
       end
+      let(:options) { { :revision => "my_revision" } }
 
       it "sends the causes information as sample data" do
         transaction.send(:_set_error, error)
@@ -1856,17 +1877,42 @@ describe Appsignal::Transaction do
         expect(transaction).to have_error(
           "ExampleStandardError",
           "test message",
-          ["line 1"]
+          [
+            "/absolute/path/example.rb:9123:in `my_method'",
+            "/absolute/path/context.rb:9456:in `context_method'",
+            "/absolute/path/suite.rb:9789:in `suite_method'"
+          ]
         )
         expect(transaction).to include_error_causes(
           [
             {
               "name" => "RuntimeError",
-              "message" => "cause message"
+              "message" => "cause message",
+              "first_line" => {
+                "original" => "my_gem (1.2.3) /absolute/path/example.rb:123:in `my_method'",
+                "gem" => "my_gem (1.2.3)",
+                "path" => "/absolute/path/example.rb",
+                "line" => "123",
+                "method" => "my_method",
+                "revision" => "my_revision"
+              }
             },
             {
               "name" => "StandardError",
-              "message" => "cause message 2"
+              "message" => "cause message 2",
+              "first_line" => {
+                "original" => "src/example.rb:123:in `my_method'",
+                "gem" => nil,
+                "path" => "src/example.rb",
+                "line" => "123",
+                "method" => "my_method",
+                "revision" => "my_revision"
+              }
+            },
+            {
+              "name" => "StandardError",
+              "message" => "cause message 3",
+              "first_line" => nil
             }
           ]
         )
@@ -1883,6 +1929,70 @@ describe Appsignal::Transaction do
         )
 
         expect(transaction).to include_error_causes([])
+      end
+
+      describe "HAML backtrace lines" do
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e2 = RuntimeError.new("cause message")
+          e2.set_backtrace([
+            "app/views/search/_navigation_tabs.html.haml:17"
+          ])
+          allow(e).to receive(:cause).and_return(e2)
+          e
+        end
+
+        it "sends the causes information as sample data" do
+          transaction.send(:_set_error, error)
+
+          expect(transaction).to include_error_causes(
+            [
+              {
+                "name" => "RuntimeError",
+                "message" => "cause message",
+                "first_line" => {
+                  "original" => "app/views/search/_navigation_tabs.html.haml:17",
+                  "gem" => nil,
+                  "path" => "app/views/search/_navigation_tabs.html.haml",
+                  "line" => "17",
+                  "method" => nil,
+                  "revision" => "my_revision"
+                }
+              }
+            ]
+          )
+        end
+      end
+
+      describe "invalid backtrace lines" do
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e.set_backtrace([
+            "/absolute/path/example.rb:9123:in `my_method'",
+            "/absolute/path/context.rb:9456:in `context_method'",
+            "/absolute/path/suite.rb:9789:in `suite_method'"
+          ])
+          e2 = RuntimeError.new("cause message")
+          e2.set_backtrace([
+            "(lorem) abc def xyz.123 `function yes '"
+          ])
+          allow(e).to receive(:cause).and_return(e2)
+          e
+        end
+
+        it "doesn't send the cause line information as sample data" do
+          transaction.send(:_set_error, error)
+
+          expect(transaction).to include_error_causes(
+            [
+              {
+                "name" => "RuntimeError",
+                "message" => "cause message",
+                "first_line" => nil
+              }
+            ]
+          )
+        end
       end
     end
 
@@ -1904,7 +2014,8 @@ describe Appsignal::Transaction do
           Array.new(10) do |i|
             {
               "name" => "ExampleStandardError",
-              "message" => "wrapper error #{9 - i}"
+              "message" => "wrapper error #{9 - i}",
+              "first_line" => nil
             }
           end
         expected_error_causes.last["is_root_cause"] = false

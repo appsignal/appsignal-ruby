@@ -627,7 +627,8 @@ module Appsignal
       causes_sample_data = causes.map do |e|
         {
           :name => e.class.name,
-          :message => cleaned_error_message(e)
+          :message => cleaned_error_message(e),
+          :first_line => first_formatted_backtrace_line(e)
         }
       end
 
@@ -637,6 +638,27 @@ module Appsignal
         "error_causes",
         causes_sample_data
       )
+    end
+
+    BACKTRACE_REGEX =
+      %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?<group>:in `(?<method>.+)')?$}.freeze # rubocop:disable Layout/LineLength
+
+    def first_formatted_backtrace_line(error)
+      first_line = error.backtrace&.first
+      return unless first_line
+
+      captures = BACKTRACE_REGEX.match(first_line)
+      return unless captures
+
+      captures.named_captures
+        .merge("original" => first_line)
+        .tap do |c|
+          c.delete("group") # Unused key, only for easier matching
+          # Strip of whitespace at the end of the gem name
+          c["gem"] = c["gem"]&.strip
+          # Add revision for linking to the repository from the UI
+          c["revision"] = Appsignal.config[:revision]
+        end
     end
 
     def set_sample_data(key, data)
