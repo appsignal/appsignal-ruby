@@ -644,7 +644,8 @@ module Appsignal
       %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?<group>:in `(?<method>.+)')?$}.freeze # rubocop:disable Layout/LineLength
 
     def first_formatted_backtrace_line(error)
-      first_line = error.backtrace&.first
+      backtrace = cleaned_backtrace(error.backtrace)
+      first_line = backtrace&.first
       return unless first_line
 
       captures = BACKTRACE_REGEX.match(first_line)
@@ -653,11 +654,19 @@ module Appsignal
       captures.named_captures
         .merge("original" => first_line)
         .tap do |c|
+          config = Appsignal.config
           c.delete("group") # Unused key, only for easier matching
           # Strip of whitespace at the end of the gem name
           c["gem"] = c["gem"]&.strip
+          # Strip the app path from the path if present
+          root_path = config.root_path
+          if c["path"].start_with?(root_path)
+            c["path"].delete_prefix!(root_path)
+            # Relative paths shouldn't start with a slash
+            c["path"].delete_prefix!("/")
+          end
           # Add revision for linking to the repository from the UI
-          c["revision"] = Appsignal.config[:revision]
+          c["revision"] = config[:revision]
         end
     end
 

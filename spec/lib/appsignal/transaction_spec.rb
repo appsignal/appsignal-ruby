@@ -1,9 +1,10 @@
 describe Appsignal::Transaction do
   let(:options) { {} }
   let(:time) { Time.at(fixed_time) }
+  let(:root_path) { nil }
 
   before do
-    start_agent(:options => options)
+    start_agent(:options => options, :root_path => root_path)
     Timecop.freeze(time)
   end
   after { Timecop.return }
@@ -1865,13 +1866,16 @@ describe Appsignal::Transaction do
         allow(e3).to receive(:cause).and_return(e4)
         e
       end
-
       let(:error_without_cause) do
         ExampleStandardError.new("error without cause")
       end
       let(:options) { { :revision => "my_revision" } }
 
       it "sends the causes information as sample data" do
+        # Hide Rails so we can test the normal Ruby behavior. The Rails
+        # behavior is tested in another spec.
+        hide_const("Rails")
+
         transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
@@ -1929,6 +1933,86 @@ describe Appsignal::Transaction do
         )
 
         expect(transaction).to include_error_causes([])
+      end
+
+      describe "with app paths" do
+        let(:root_path) { project_fixture_path }
+        let(:error) do
+          e = ExampleStandardError.new("test message")
+          e2 = RuntimeError.new("cause message")
+          e2.set_backtrace(["#{root_path}/src/example.rb:123:in `my_method'"])
+          allow(e).to receive(:cause).and_return(e2)
+          e
+        end
+
+        it "sends the causes information as sample data" do
+          # Hide Rails so we can test the normal Ruby behavior. The Rails
+          # behavior is tested in another spec.
+          hide_const("Rails")
+
+          transaction.send(:_set_error, error)
+
+          path = "src/example.rb"
+          original_path = "#{root_path}/#{path}"
+
+          expect(transaction).to include_error_causes([
+            {
+              "name" => "RuntimeError",
+              "message" => "cause message",
+              "first_line" => {
+                "original" => "#{original_path}:123:in `my_method'",
+                "gem" => nil,
+                "path" => path,
+                "line" => "123",
+                "method" => "my_method",
+                "revision" => "my_revision"
+              }
+            }
+          ])
+        end
+      end
+
+      if rails_present?
+        describe "with Rails" do
+          let(:root_path) { project_fixture_path }
+          let(:error) do
+            e = ExampleStandardError.new("test message")
+            e2 = RuntimeError.new("cause message")
+            e2.set_backtrace([
+              "#{root_path}/src/example.rb:123:in `my_method'"
+            ])
+            allow(e).to receive(:cause).and_return(e2)
+            e
+          end
+
+          it "sends the causes information as sample data" do
+            transaction.send(:_set_error, error)
+
+            path = "src/example.rb"
+            original_path = "#{root_path}/#{path}"
+            # When Rails is present we run it through the Rails backtrace cleaner
+            # that removes the app path from the backtrace lines, so update our
+            # assertion to match.
+            original_path.delete_prefix!(DirectoryHelper.project_dir)
+            original_path.delete_prefix!("/")
+            path = original_path
+
+            expect(transaction).to include_error_causes([
+              {
+                "name" => "RuntimeError",
+                "message" => "cause message",
+                "first_line" => {
+                  "original" => "#{original_path}:123:in `my_method'",
+                  "gem" => nil,
+                  "path" => path,
+                  "line" => "123",
+                  "method" => "my_method",
+                  "revision" => "my_revision"
+                }
+              }
+            ])
+          end
+        end
       end
 
       describe "HAML backtrace lines" do
