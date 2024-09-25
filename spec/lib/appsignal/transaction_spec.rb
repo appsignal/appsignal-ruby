@@ -1768,11 +1768,21 @@ describe Appsignal::Transaction do
 
     if rails_present?
       context "with Rails" do
-        it "cleans the backtrace with the Rails backtrace cleaner" do
-          ::Rails.backtrace_cleaner.add_filter do |line|
-            line.tr("2", "?")
+        let(:test_filter) do
+          lambda do |line|
+            if Appsignal::Testing.store[:enable_rails_backtrace_line_filter]
+              line.tr("2", "?")
+            else
+              line
+            end
           end
+        end
+        before do
+          Appsignal::Testing.store[:enable_rails_backtrace_line_filter] = true
+          ::Rails.backtrace_cleaner.add_filter(&test_filter)
+        end
 
+        it "cleans the backtrace with the Rails backtrace cleaner" do
           error = ExampleStandardError.new("error message")
           error.set_backtrace(["line 1", "line 2"])
           transaction.add_error(error)
