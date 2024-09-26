@@ -1,14 +1,15 @@
 describe Appsignal::Transmitter do
   let(:options) { {} }
   let(:config) do
-    build_config(
-      :options => { :hostname => "app1.local" }.merge(options),
-      :logger => Logger.new(log)
-    )
+    build_config(:options => { :hostname => "app1.local" }.merge(options))
   end
   let(:base_uri) { "action" }
-  let(:log) { StringIO.new }
   let(:instance) { Appsignal::Transmitter.new(base_uri, config) }
+  let(:log_stream) { StringIO.new }
+  let(:logs) { log_contents(log_stream) }
+  before do
+    Appsignal.internal_logger = test_logger(log_stream)
+  end
 
   describe "#uri" do
     let(:uri) { instance.uri }
@@ -98,7 +99,7 @@ describe Appsignal::Transmitter do
         it "ignores the config and logs a warning" do
           expect(response).to be_kind_of(Net::HTTPResponse)
           expect(response.code).to eq "200"
-          expect(log.string).to_not include "Ignoring non-existing or unreadable " \
+          expect(logs).to_not include "Ignoring non-existing or unreadable " \
             "`ca_file_path`: #{config[:ca_file_path]}"
         end
       end
@@ -109,8 +110,11 @@ describe Appsignal::Transmitter do
         it "ignores the config and logs a warning" do
           expect(response).to be_kind_of(Net::HTTPResponse)
           expect(response.code).to eq "200"
-          expect(log.string).to include "Ignoring non-existing or unreadable " \
-            "`ca_file_path`: #{config[:ca_file_path]}"
+          expect(logs).to contains_log(
+            :warn,
+            "Ignoring non-existing or unreadable " \
+              "`ca_file_path`: #{config[:ca_file_path]}"
+          )
         end
       end
 
@@ -124,8 +128,11 @@ describe Appsignal::Transmitter do
         it "ignores the config and logs a warning" do
           expect(response).to be_kind_of(Net::HTTPResponse)
           expect(response.code).to eq "200"
-          expect(log.string).to include "Ignoring non-existing or unreadable " \
-            "`ca_file_path`: #{config[:ca_file_path]}"
+          expect(logs).to contains_log(
+            :warn,
+            "Ignoring non-existing or unreadable " \
+              "`ca_file_path`: #{config[:ca_file_path]}"
+          )
         end
 
         after { File.delete file }
