@@ -19,11 +19,12 @@ module Appsignal
               appsignal_config = Appsignal::Config.new(
                 ENV.fetch("PWD", nil),
                 env,
-                Appsignal::Utils::IntegrationLogger.new(StringIO.new)
+                Appsignal.internal_logger
               ).tap do |c|
                 c.merge_dsl_options(fetch(:appsignal_config, {}))
                 c.validate
               end
+              Appsignal._start_logger
 
               if appsignal_config&.active?
                 marker_data = {
