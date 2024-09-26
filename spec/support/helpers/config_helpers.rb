@@ -46,10 +46,15 @@ module ConfigHelpers
   end
   module_function :build_config
 
-  def start_agent(env: "production", options: {}, internal_logger: nil)
+  def start_agent(
+    env: "production",
+    root_path: nil,
+    options: {},
+    internal_logger: nil
+  )
     env = "production" if env == :default
     env ||= "production"
-    Appsignal.configure(env, :root_path => project_fixture_path) do |config|
+    Appsignal.configure(env, :root_path => root_path || project_fixture_path) do |config|
       options.each do |option, value|
         config.send("#{option}=", value)
       end
