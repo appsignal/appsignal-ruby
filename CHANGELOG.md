@@ -1,5 +1,36 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.1.0
+
+_Published on 2024-09-26._
+
+### Added
+
+- Add support for heartbeat check-ins.
+
+  Use the `Appsignal::CheckIn.heartbeat` method to send a single heartbeat check-in event from your application. This can be used, for example, in your application's main loop:
+
+  ```ruby
+  loop do
+    Appsignal::CheckIn.heartbeat("job_processor")
+    process_job
+  end
+  ```
+
+  Heartbeats are deduplicated and sent asynchronously, without blocking the current thread. Regardless of how often the `.heartbeat` method is called, at most one heartbeat with the same identifier will be sent every ten seconds.
+
+  Pass `continuous: true` as the second argument to send heartbeats continuously during the entire lifetime of the current process. This can be used, for example, after your application has finished its boot process:
+
+  ```ruby
+  def main
+    start_app
+    Appsignal::CheckIn.heartbeat("my_app", continuous: true)
+  end
+  ```
+
+  (minor [7ae7152c](https://github.com/appsignal/appsignal-ruby/commit/7ae7152cddae7c257e9d62d3bf2433cce1f4287d))
+- Include the first backtrace line from error causes to show where each cause originated in the interface. (patch [496b035a](https://github.com/appsignal/appsignal-ruby/commit/496b035a3510dbb6dc47c7c59172f488ec55c986))
+
 ## 4.0.9
 
 _Published on 2024-09-17._
