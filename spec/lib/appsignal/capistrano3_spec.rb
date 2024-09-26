@@ -10,12 +10,12 @@ if DependencyHelper.capistrano3_present?
     let(:config) { build_config(:env => env, :options => options) }
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:logger) { Logger.new(out_stream) }
+    let(:log_stream) { StringIO.new }
+    let(:logs) { log_contents(log_stream) }
     let!(:capistrano_config) do
       Capistrano::Configuration.reset!
       Capistrano::Configuration.env.tap do |c|
         c.set(:log_level, :error)
-        c.set(:logger, logger)
         c.set(:rails_env, "production")
         c.set(:repository, "main")
         c.set(:deploy_to, "/home/username/app")
@@ -29,7 +29,10 @@ if DependencyHelper.capistrano3_present?
         :user => "batman"
       }
     end
-    before { Rake::Task["appsignal:deploy"].reenable }
+    before do
+      Appsignal.internal_logger = test_logger(log_stream)
+      Rake::Task["appsignal:deploy"].reenable
+    end
 
     def run
       capture_std_streams(out_stream, out_stream) do
@@ -141,6 +144,7 @@ if DependencyHelper.capistrano3_present?
               run
               expect(output).to include \
                 "Not notifying of deploy, config is not active for environment: production"
+              expect(logs).to contains_log(:error, "Push API key not set after loading config")
             end
           end
         end
