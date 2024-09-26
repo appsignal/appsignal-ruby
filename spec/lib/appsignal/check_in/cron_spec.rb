@@ -2,7 +2,7 @@ describe Appsignal::CheckIn::Cron do
   let(:log_stream) { std_stream }
   let(:logs) { log_contents(log_stream) }
   let(:appsignal_options) { {} }
-  let(:config) { project_fixture_config }
+  let(:config) { build_config }
   let(:cron_checkin) { described_class.new(:identifier => "cron-checkin-name") }
   let(:scheduler) { Appsignal::CheckIn.scheduler }
   let(:stubs) { [] }
