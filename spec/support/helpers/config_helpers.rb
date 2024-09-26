@@ -13,22 +13,6 @@ module ConfigHelpers
   end
   module_function :rails_project_fixture_path
 
-  def project_fixture_config(
-    env = "production",
-    options = {},
-    logger = Appsignal.internal_logger
-  )
-    Appsignal::Config.new(
-      project_fixture_path,
-      env,
-      logger
-    ).tap do |c|
-      c.merge_dsl_options(options)
-      c.validate
-    end
-  end
-  module_function :project_fixture_config
-
   def build_config(
     root_path: project_fixture_path,
     env: "production",
