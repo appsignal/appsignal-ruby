@@ -5,6 +5,7 @@ describe Appsignal::CheckIn::Cron do
   let(:config) { project_fixture_config }
   let(:cron_checkin) { described_class.new(:identifier => "cron-checkin-name") }
   let(:scheduler) { Appsignal::CheckIn.scheduler }
+  let(:stubs) { [] }
 
   before do
     start_agent(
@@ -12,10 +13,13 @@ describe Appsignal::CheckIn::Cron do
       :internal_logger => test_logger(log_stream)
     )
   end
-  after { stop_scheduler }
 
-  def stop_scheduler
+  after do
     scheduler.stop
+
+    stubs.each do |stub|
+      expect(stub.count).to eq(1)
+    end
   end
 
   describe "when Appsignal is not active" do
@@ -26,7 +30,7 @@ describe Appsignal::CheckIn::Cron do
 
       cron_checkin.start
       cron_checkin.finish
-      stop_scheduler
+      scheduler.stop
 
       expect(logs).to contains_log(
         :debug,
@@ -48,12 +52,14 @@ describe Appsignal::CheckIn::Cron do
 
       expect(logs).to contains_log(
         :debug,
-        "Cannot transmit cron check-in `cron-checkin-name` start event"
+        /Cannot transmit cron check-in `cron-checkin-name` start event .+: AppSignal is stopped/
       )
       expect(logs).to contains_log(
         :debug,
-        "Cannot transmit cron check-in `cron-checkin-name` finish event"
+        /Cannot transmit cron check-in `cron-checkin-name` finish event .+: AppSignal is stopped/
       )
+
+      scheduler.stop
     end
   end
 
@@ -61,11 +67,10 @@ describe Appsignal::CheckIn::Cron do
     it "sends a cron check-in start" do
       cron_checkin.start
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "cron-checkin-name",
-          "kind" => "start",
-          "check_in_type" => "cron"
+          "kind" => "start"
         ]
       )
 
@@ -85,11 +90,10 @@ describe Appsignal::CheckIn::Cron do
     it "logs an error if it fails" do
       cron_checkin.start
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "cron-checkin-name",
-          "kind" => "start",
-          "check_in_type" => "cron"
+          "kind" => "start"
         ],
         :response => { :status => 499 }
       )
@@ -111,11 +115,10 @@ describe Appsignal::CheckIn::Cron do
     it "sends a cron check-in finish" do
       cron_checkin.finish
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "cron-checkin-name",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ]
       )
 
@@ -134,11 +137,10 @@ describe Appsignal::CheckIn::Cron do
     it "logs an error if it fails" do
       cron_checkin.finish
 
-      stub_check_in_request(
+      stubs << stub_cron_check_in_request(
         :events => [
           "identifier" => "cron-checkin-name",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          "kind" => "finish"
         ],
         :response => { :status => 499 }
       )
@@ -159,19 +161,14 @@ describe Appsignal::CheckIn::Cron do
   describe ".cron" do
     describe "when a block is given" do
       it "sends a cron check-in start and finish and return the block output" do
-        stub_check_in_request(
-          :events => [
+        stubs << stub_cron_check_in_request(
+          :events => [{
             "identifier" => "cron-checkin-with-block",
-            "kind" => "start",
-            "check_in_type" => "cron"
-          ]
-        )
-        stub_check_in_request(
-          :events => [
+            "kind" => "start"
+          }, {
             "identifier" => "cron-checkin-with-block",
-            "kind" => "finish",
-            "check_in_type" => "cron"
-          ]
+            "kind" => "finish"
+          }]
         )
 
         output = Appsignal::CheckIn.cron("cron-checkin-with-block") { "output" }
@@ -179,11 +176,10 @@ describe Appsignal::CheckIn::Cron do
       end
 
       it "does not send a cron check-in finish event when an error is raised" do
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             "identifier" => "cron-checkin-with-block",
-            "kind" => "start",
-            "check_in_type" => "cron"
+            "kind" => "start"
           ]
         )
 
@@ -195,11 +191,10 @@ describe Appsignal::CheckIn::Cron do
 
     describe "when no block is given" do
       it "only sends a cron check-in finish event" do
-        stub_check_in_request(
+        stubs << stub_cron_check_in_request(
           :events => [
             "identifier" => "cron-checkin-without-block",
-            "kind" => "finish",
-            "check_in_type" => "cron"
+            "kind" => "finish"
           ]
         )
 
