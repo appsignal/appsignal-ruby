@@ -18,8 +18,7 @@ module Appsignal
 
               appsignal_config = Appsignal::Config.new(
                 ENV.fetch("PWD", nil),
-                env,
-                Appsignal.internal_logger
+                env
               ).tap do |c|
                 c.merge_dsl_options(fetch(:appsignal_config, {}))
                 c.validate

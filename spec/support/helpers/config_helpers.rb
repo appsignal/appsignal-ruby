@@ -16,13 +16,11 @@ module ConfigHelpers
   def build_config(
     root_path: project_fixture_path,
     env: "production",
-    options: {},
-    logger: Appsignal.internal_logger
+    options: {}
   )
     Appsignal::Config.new(
       root_path,
-      env,
-      logger
+      env
     ).tap do |c|
       c.merge_dsl_options(options) if options.any?
       c.validate

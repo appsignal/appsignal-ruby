@@ -208,8 +208,6 @@ module Appsignal
     attr_accessor :root_path, :env, :config_hash
     attr_reader :system_config, :loaders_config, :initial_config, :file_config,
       :env_config, :override_config, :dsl_config
-    # @api private
-    attr_accessor :logger
 
     # Initialize a new configuration object for AppSignal.
     #
@@ -217,9 +215,6 @@ module Appsignal
     # @param env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
-    # @param logger [Logger] The logger to use for the AppSignal gem. This is
-    #   used by the configuration class only. Default:
-    #   {Appsignal.internal_logger}. See also {Appsignal.start}.
     #
     # @api private
     # @see https://docs.appsignal.com/ruby/configuration/
@@ -230,13 +225,11 @@ module Appsignal
     #   How to integrate AppSignal manually
     def initialize(
       root_path,
-      env,
-      logger = Appsignal.internal_logger
+      env
     )
       @root_path = root_path
       @config_file_error = false
       @config_file = config_file
-      @logger = logger
       @valid = false
 
       @env = env.to_s
@@ -426,7 +419,7 @@ module Appsignal
       push_api_key = config_hash[:push_api_key] || ""
       if push_api_key.strip.empty?
         @valid = false
-        @logger.error "Push API key not set after loading config"
+        logger.error "Push API key not set after loading config"
       else
         @valid = true
       end
@@ -444,6 +437,10 @@ module Appsignal
     end
 
     private
+
+    def logger
+      Appsignal.internal_logger
+    end
 
     def config_file
       @config_file ||=
@@ -546,7 +543,7 @@ module Appsignal
 
     def merge(new_config)
       new_config.each do |key, value|
-        @logger.debug("Config key '#{key}' is being overwritten") unless config_hash[key].nil?
+        logger.debug("Config key '#{key}' is being overwritten") unless config_hash[key].nil?
         config_hash[key] = value
       end
     end
