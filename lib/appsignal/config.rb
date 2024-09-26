@@ -181,7 +181,7 @@ module Appsignal
     }.freeze
 
     # @api private
-    attr_accessor :root_path, :env, :config_hash
+    attr_reader :root_path, :env, :config_hash
 
     # List of config option sources. If a config option was set by a source,
     # it's listed in that source's config options hash.
