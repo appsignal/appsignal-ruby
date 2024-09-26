@@ -376,7 +376,14 @@ describe Appsignal do
     end
 
     context "when config is loaded" do
-      before { Appsignal.configure(:production, :root_path => project_fixture_path) }
+      let(:options) { {} }
+      before do
+        configure(
+          :env => :production,
+          :root_path => project_fixture_path,
+          :options => options
+        )
+      end
 
       it "should initialize logging" do
         Appsignal.start
@@ -395,7 +402,7 @@ describe Appsignal do
           Appsignal.config[:ignore_actions] << "my action"
         end
         expect_frozen_error do
-          Appsignal.config.config_hash[:ignore_actions] << "my action"
+          Appsignal.config[:ignore_actions] << "my action"
         end
         expect_frozen_error do
           Appsignal.config.config_hash.merge!(:option => :value)
@@ -410,8 +417,8 @@ describe Appsignal do
       end
 
       context "when allocation tracking has been enabled" do
+        let(:options) { { :enable_allocation_tracking => true } }
         before do
-          Appsignal.config.config_hash[:enable_allocation_tracking] = true
           capture_environment_metadata_report_calls
         end
 
@@ -426,12 +433,12 @@ describe Appsignal do
       end
 
       context "when allocation tracking has been disabled" do
+        let(:options) { { :enable_allocation_tracking => false } }
         before do
-          Appsignal.config.config_hash[:enable_allocation_tracking] = false
           capture_environment_metadata_report_calls
         end
 
-        it "should not install the allocation event hook" do
+        it "doesn't install the allocation event hook" do
           expect(Appsignal::Extension).not_to receive(:install_allocation_event_hook)
           Appsignal.start
           expect_not_environment_metadata("ruby_allocation_tracking_enabled")
@@ -439,22 +446,18 @@ describe Appsignal do
       end
 
       context "when minutely metrics has been enabled" do
-        before do
-          Appsignal.config.config_hash[:enable_minutely_probes] = true
-        end
+        let(:options) { { :enable_minutely_probes => true } }
 
-        it "should start minutely" do
+        it "starts minutely probes" do
           expect(Appsignal::Probes).to receive(:start)
           Appsignal.start
         end
       end
 
       context "when minutely metrics has been disabled" do
-        before do
-          Appsignal.config.config_hash[:enable_minutely_probes] = false
-        end
+        let(:options) { { :enable_minutely_probes => false } }
 
-        it "should not start minutely" do
+        it "does not start minutely probes" do
           expect(Appsignal::Probes).to_not receive(:start)
           Appsignal.start
         end

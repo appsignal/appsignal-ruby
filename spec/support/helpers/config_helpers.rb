@@ -30,12 +30,7 @@ module ConfigHelpers
   end
   module_function :build_config
 
-  def start_agent(
-    env: "production",
-    root_path: nil,
-    options: {},
-    internal_logger: nil
-  )
+  def configure(env: :default, root_path: nil, options: {})
     env = "production" if env == :default
     env ||= "production"
     Appsignal.configure(env, :root_path => root_path || project_fixture_path) do |config|
@@ -43,6 +38,15 @@ module ConfigHelpers
         config.send("#{option}=", value)
       end
     end
+  end
+
+  def start_agent(
+    env: "production",
+    root_path: nil,
+    options: {},
+    internal_logger: nil
+  )
+    configure(:env => env, :root_path => root_path, :options => options)
     Appsignal.start
     Appsignal.internal_logger = internal_logger if internal_logger
   end

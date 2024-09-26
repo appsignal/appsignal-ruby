@@ -1,6 +1,10 @@
 describe Appsignal::Transmitter do
+  let(:options) { {} }
   let(:config) do
-    build_config(:options => { :hostname => "app1.local" }, :logger => Logger.new(log))
+    build_config(
+      :options => { :hostname => "app1.local" }.merge(options),
+      :logger => Logger.new(log)
+    )
   end
   let(:base_uri) { "action" }
   let(:log) { StringIO.new }
@@ -89,9 +93,7 @@ describe Appsignal::Transmitter do
 
     context "with ca_file_path config option set" do
       context "when file does not exist" do
-        before do
-          config.config_hash[:ca_file_path] = File.join(resources_dir, "cacert.pem")
-        end
+        let(:options) { { :ca_file_path => File.join(resources_dir, "cacert.pem") } }
 
         it "ignores the config and logs a warning" do
           expect(response).to be_kind_of(Net::HTTPResponse)
@@ -102,9 +104,7 @@ describe Appsignal::Transmitter do
       end
 
       context "when not existing file" do
-        before do
-          config.config_hash[:ca_file_path] = File.join(tmp_dir, "ca_file_that_does_not_exist")
-        end
+        let(:options) { { :ca_file_path => File.join(tmp_dir, "ca_file_that_does_not_exist") } }
 
         it "ignores the config and logs a warning" do
           expect(response).to be_kind_of(Net::HTTPResponse)
@@ -116,8 +116,8 @@ describe Appsignal::Transmitter do
 
       context "when not readable file" do
         let(:file) { File.join(tmp_dir, "ca_file") }
+        let(:options) { { :ca_file_path => file } }
         before do
-          config.config_hash[:ca_file_path] = file
           File.open(file, "w") { |f| f.chmod 0o000 }
         end
 
