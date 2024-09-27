@@ -180,32 +180,17 @@ module Appsignal
       "APPSIGNAL_CPU_COUNT" => :cpu_count
     }.freeze
 
-    # @attribute [r] system_config
-    #   Config detected on the system level.
-    #   Used in diagnose report.
-    #   @api private
-    #   @return [Hash]
-    # @!attribute [r] file_config
-    #   Config loaded from `config/appsignal.yml` config file.
-    #   Used in diagnose report.
-    #   @api private
-    #   @return [Hash]
-    # @!attribute [r] env_config
-    #   Config loaded from the system environment.
-    #   Used in diagnose report.
-    #   @api private
-    #   @return [Hash]
-    # @!attribute [r] config_hash
-    #   Config used by the AppSignal gem.
-    #   Combined Hash of the {system_config}, {file_config}, {env_config}
-    #   attributes.
-    #   @see #[]
-    #   @see #[]=
-    #   @api private
-    #   @return [Hash]
-
     # @api private
     attr_accessor :root_path, :env, :config_hash
+
+    # List of config option sources. If a config option was set by a source,
+    # it's listed in that source's config options hash.
+    #
+    # These options are merged as the config is initialized.
+    # Their values cannot be changed after the config is initialized.
+    #
+    # Used by the diagnose report to list which value was read from which source.
+    # @api private
     attr_reader :system_config, :loaders_config, :initial_config, :file_config,
       :env_config, :override_config, :dsl_config
 
