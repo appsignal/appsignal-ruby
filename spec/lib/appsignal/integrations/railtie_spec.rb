@@ -295,6 +295,7 @@ if DependencyHelper.rails_present?
                 expect(transaction).to have_action("CustomAction")
                 expect(transaction).to have_error("ExampleStandardError", "error message")
                 expect(transaction).to include_tags(
+                  "reported_by" => "rails_error_reporter",
                   "duplicated_tag" => "duplicated value",
                   "severity" => "warning"
                 )
@@ -317,11 +318,15 @@ if DependencyHelper.rails_present?
                     current_transaction.complete
                   end.to change { created_transactions.count }.by(1)
 
+                  expect(current_transaction)
+                    .to_not include_tags("reported_by" => "rails_error_reporter")
+
                   transaction = last_transaction
                   expect(transaction).to have_namespace("custom")
                   expect(transaction).to have_action("CustomAction")
                   expect(transaction).to have_error("ExampleStandardError", "other message")
                   expect(transaction).to include_tags(
+                    "reported_by" => "rails_error_reporter",
                     "duplicated_tag" => "duplicated value",
                     "severity" => "warning"
                   )
@@ -359,6 +364,7 @@ if DependencyHelper.rails_present?
                   expect(transaction).to have_action("ContextAction")
                   expect(transaction).to have_error("ExampleStandardError", "other message")
                   expect(transaction).to include_tags(
+                    "reported_by" => "rails_error_reporter",
                     "duplicated_tag" => "duplicated value",
                     "severity" => "warning"
                   )
@@ -382,6 +388,7 @@ if DependencyHelper.rails_present?
                 current_transaction.complete
 
                 expect(current_transaction).to include_tags(
+                  "reported_by" => "rails_error_reporter",
                   "tag1" => "value1",
                   "tag2" => "value2",
                   "severity" => "warning"
@@ -431,7 +438,10 @@ if DependencyHelper.rails_present?
             expect(transaction).to have_namespace("runner")
             expect(transaction).to_not have_action
             expect(transaction).to have_error("ExampleStandardError", "error message")
-            expect(transaction).to include_tags("source" => "application.runner.railties")
+            expect(transaction).to include_tags(
+              "reported_by" => "rails_error_reporter",
+              "source" => "application.runner.railties"
+            )
           end
         end
 
@@ -446,6 +456,7 @@ if DependencyHelper.rails_present?
           end
 
           expect(last_transaction).to include_tags(
+            "reported_by" => "rails_error_reporter",
             "tag1" => "value1",
             "tag2" => "value2",
             "severity" => "warning"
