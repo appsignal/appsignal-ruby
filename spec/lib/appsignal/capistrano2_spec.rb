@@ -7,6 +7,8 @@ if DependencyHelper.capistrano2_present?
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
     let(:config) { build_config }
+    let(:log_stream) { StringIO.new }
+    let(:logs) { log_contents(log_stream) }
     let(:capistrano_config) do
       Capistrano::Configuration.new.tap do |c|
         c.set(:rails_env, "production")
@@ -17,7 +19,10 @@ if DependencyHelper.capistrano2_present?
         c.dry_run = false
       end
     end
-    before { Appsignal::Integrations::Capistrano.tasks(capistrano_config) }
+    before do
+      Appsignal.internal_logger = test_logger(log_stream)
+      Appsignal::Integrations::Capistrano.tasks(capistrano_config)
+    end
 
     def run
       capture_stdout(out_stream) do
@@ -125,6 +130,7 @@ if DependencyHelper.capistrano2_present?
               run
               expect(output).to include \
                 "Not notifying of deploy, config is not active for environment: production"
+              expect(logs).to contains_log(:error, "Push API key not set after loading config")
             end
           end
         end

@@ -107,7 +107,7 @@ module Appsignal
           if ca_file && File.exist?(ca_file) && File.readable?(ca_file)
             http.ca_file = ca_file
           else
-            config.logger.warn "Ignoring non-existing or unreadable " \
+            Appsignal.internal_logger.warn "Ignoring non-existing or unreadable " \
               "`ca_file_path`: #{ca_file}"
           end
         end
