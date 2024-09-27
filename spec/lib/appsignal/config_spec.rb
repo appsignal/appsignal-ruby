@@ -856,29 +856,33 @@ describe Appsignal::Config do
   end
 
   describe "#write_to_environment" do
-    let(:config) { build_config }
-    before do
-      config[:bind_address] = "0.0.0.0"
-      config[:cpu_count] = 1.5
-      config[:logging_endpoint] = "http://localhost:123"
-      config[:http_proxy] = "http://localhost"
-      config[:ignore_actions] = %w[action1 action2]
-      config[:ignore_errors] = %w[ExampleStandardError AnotherError]
-      config[:ignore_logs] = ["^start$", "^Completed 2.* in .*ms (.*)"]
-      config[:ignore_namespaces] = %w[admin private_namespace]
-      config[:log] = "stdout"
-      config[:log_path] = "/tmp"
-      config[:filter_parameters] = %w[password confirm_password]
-      config[:filter_session_data] = %w[key1 key2]
-      config[:running_in_container] = false
-      config[:dns_servers] = ["8.8.8.8", "8.8.4.4"]
-      config[:transaction_debug_mode] = true
-      config[:send_environment_metadata] = false
-      config[:revision] = "v2.5.1"
-      config.write_to_environment
+    let(:base_options) do
+      {
+        :bind_address => "0.0.0.0",
+        :cpu_count => 1.5,
+        :logging_endpoint => "http://localhost:123",
+        :http_proxy => "http://localhost",
+        :ignore_actions => %w[action1 action2],
+        :ignore_errors => %w[ExampleStandardError AnotherError],
+        :ignore_logs => ["^start$", "^Completed 2.* in .*ms (.*)"],
+        :ignore_namespaces => %w[admin private_namespace],
+        :log => "stdout",
+        :log_path => "/tmp",
+        :filter_parameters => %w[password confirm_password],
+        :filter_session_data => %w[key1 key2],
+        :running_in_container => false,
+        :dns_servers => ["8.8.8.8", "8.8.4.4"],
+        :transaction_debug_mode => true,
+        :send_environment_metadata => false,
+        :revision => "v2.5.1"
+      }
     end
+    let(:options) { {} }
+    let(:config) { build_config(:options => base_options.merge(options)) }
 
     it "writes the current config to environment variables" do
+      config.write_to_environment
+
       expect(ENV.fetch("_APPSIGNAL_ACTIVE", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_APP_PATH", nil))
         .to end_with("spec/support/fixtures/projects/valid")
@@ -917,10 +921,8 @@ describe Appsignal::Config do
     end
 
     context "with :hostname" do
-      before do
-        config[:hostname] = "Alices-MBP.example.com"
-        config.write_to_environment
-      end
+      let(:options) { { :hostname => "Alices-MBP.example.com" } }
+      before { config.write_to_environment }
 
       it "sets the modified :hostname" do
         expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq "Alices-MBP.example.com"
@@ -928,10 +930,8 @@ describe Appsignal::Config do
     end
 
     context "with :host_role" do
-      before do
-        config[:host_role] = "host role"
-        config.write_to_environment
-      end
+      let(:options) { { :host_role => "host role" } }
+      before { config.write_to_environment }
 
       it "sets the modified :host_role" do
         expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq "host role"
@@ -939,10 +939,8 @@ describe Appsignal::Config do
     end
 
     context "with :working_directory_path" do
-      before do
-        config[:working_directory_path] = "/tmp/appsignal2"
-        config.write_to_environment
-      end
+      let(:options) { { :working_directory_path => "/tmp/appsignal2" } }
+      before { config.write_to_environment }
 
       it "sets the modified :working_directory_path" do
         expect(ENV.fetch("_APPSIGNAL_WORKING_DIRECTORY_PATH", nil)).to eq "/tmp/appsignal2"
@@ -950,10 +948,8 @@ describe Appsignal::Config do
     end
 
     context "with :statsd_port" do
-      before do
-        config[:statsd_port] = "1000"
-        config.write_to_environment
-      end
+      let(:options) { { :statsd_port => "1000" } }
+      before { config.write_to_environment }
 
       it "sets the statsd_port env var" do
         expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq "1000"
@@ -1305,7 +1301,8 @@ describe Appsignal::Config do
 
   describe Appsignal::Config::ConfigDSL do
     let(:env) { :production }
-    let(:config) { build_config(:env => env) }
+    let(:options) { {} }
+    let(:config) { build_config(:env => env, :options => options) }
     let(:dsl) { described_class.new(config) }
 
     describe "default options" do
@@ -1318,14 +1315,22 @@ describe Appsignal::Config do
       end
     end
 
-    it "returns already set values for config options" do
-      ENV["APPSIGNAL_IGNORE_ERRORS"] = "my_error1,my_error2"
-      config[:push_api_key] = "my push key"
-      config[:ignore_actions] = ["My ignored action"]
+    context "with options set" do
+      let(:options) do
+        {
+          :push_api_key => "my push key",
+          :ignore_actions => ["My ignored action"]
+        }
+      end
+      before do
+        ENV["APPSIGNAL_IGNORE_ERRORS"] = "my_error1,my_error2"
+      end
 
-      expect(dsl.push_api_key).to eq("my push key")
-      expect(dsl.ignore_actions).to eq(["My ignored action"])
-      expect(dsl.ignore_errors).to eq(["my_error1", "my_error2"])
+      it "returns already set values for config options" do
+        expect(dsl.push_api_key).to eq("my push key")
+        expect(dsl.ignore_actions).to eq(["My ignored action"])
+        expect(dsl.ignore_errors).to eq(["my_error1", "my_error2"])
+      end
     end
 
     it "returns the env" do

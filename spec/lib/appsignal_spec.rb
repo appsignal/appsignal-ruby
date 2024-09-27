@@ -1901,10 +1901,10 @@ describe Appsignal do
 
       context "when there is a config" do
         context "when log level is configured to debug" do
+          let(:log_level) { "debug" }
           before do
             capture_stdout(out_stream) do
               initialize_config
-              Appsignal.config[:log_level] = "debug"
               Appsignal._start_logger
             end
           end
