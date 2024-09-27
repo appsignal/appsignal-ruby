@@ -729,6 +729,11 @@ describe Appsignal::Config do
       expect(config.dsl_config).to eq(dsl_config)
     end
 
+    it "merges the options when called multiple times" do
+      config.merge_dsl_options(:extra_option => "yes")
+      expect(config.dsl_config).to eq(dsl_config.merge(:extra_option => "yes"))
+    end
+
     describe "overriding system detected config" do
       describe ":running_in_container" do
         let(:dsl_config) { { :running_in_container => true } }

@@ -395,7 +395,7 @@ module Appsignal
 
     # @api private
     def merge_dsl_options(options)
-      @dsl_config = options
+      @dsl_config.merge!(options)
       merge(options)
     end
 
