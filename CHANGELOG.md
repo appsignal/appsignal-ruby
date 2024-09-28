@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.1.1
+
+_Published on 2024-09-28._
+
+### Changed
+
+- Add the `reported_by` tag to errors reported by the Rails error reporter so the source of the error is easier to identify. (patch [ff98ed67](https://github.com/appsignal/appsignal-ruby/commit/ff98ed677bf30242c51261bf7e44c9b6ba2f33ac))
+
+### Fixed
+
+- Fix no AppSignal internal logs being logged from Capistrano tasks. (patch [089d0325](https://github.com/appsignal/appsignal-ruby/commit/089d03251c3dc8b83658a4ebfade51ab6bed1771))
+- Report all the config options set via `Appsignal.config` in the DSL config source in the diagnose report. Previously, it would only report the options from the last time `Appsignal.configure` was called. (patch [27b9aff7](https://github.com/appsignal/appsignal-ruby/commit/27b9aff7776646dfef6c55fa589024a71052e70b))
+- Fix 'no implicit conversion of Pathname into String' error when parsing backtrace lines of error causes in Rails apps. (patch [b767f269](https://github.com/appsignal/appsignal-ruby/commit/b767f269c41cb7625d6869d8e8acb9b288292d19))
+
 ## 4.1.0
 
 _Published on 2024-09-26._
