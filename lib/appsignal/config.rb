@@ -212,7 +212,7 @@ module Appsignal
       root_path,
       env
     )
-      @root_path = root_path
+      @root_path = root_path.to_s
       @config_file_error = false
       @config_file = config_file
       @valid = false

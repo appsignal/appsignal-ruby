@@ -71,7 +71,7 @@ if DependencyHelper.rails_present?
         it "sets the Rails app path as root_path" do
           initialize_railtie(event)
 
-          expect(Appsignal.config.root_path).to eq(Pathname.new(rails_project_fixture_path))
+          expect(Appsignal.config.root_path).to eq(rails_project_fixture_path)
         end
 
         it "loads the Rails app name in the initial config" do

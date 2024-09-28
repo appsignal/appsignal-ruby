@@ -371,6 +371,15 @@ describe Appsignal::Config do
     end
   end
 
+  context "when root path is Pathname instance" do
+    let(:config) { described_class.new(Pathname.new("/path"), "production") }
+
+    it "converts it to a String" do
+      expect(config.root_path).to eq("/path")
+      expect(config.root_path).to be_instance_of(String)
+    end
+  end
+
   context "without config file" do
     let(:config) { described_class.new(tmp_dir, "production") }
 
