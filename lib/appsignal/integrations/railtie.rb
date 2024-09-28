@@ -94,6 +94,7 @@ module Appsignal
             transaction.set_action(action_name) if action_name
             transaction.add_custom_data(custom_data) if custom_data
 
+            tags[:reported_by] = :rails_error_reporter
             tags[:severity] = severity
             tags[:source] = source.to_s if source
             transaction.add_tags(tags)
