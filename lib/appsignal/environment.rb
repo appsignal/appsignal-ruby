@@ -128,7 +128,7 @@ module Appsignal
           ::Bundler.rubygems.all_specs
         end
       SUPPORTED_GEMS.each do |gem_name|
-        gem_spec = bundle_gem_specs.find { |spec| spec.name == gem_name }
+        gem_spec = bundle_gem_specs.bsearch { |spec| spec.name <=> gem_name }
         next unless gem_spec
 
         report("ruby_#{gem_name}_version") { gem_spec.version.to_s }
