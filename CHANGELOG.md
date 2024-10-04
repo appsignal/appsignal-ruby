@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.1.2
+
+_Published on 2024-10-04._
+
+### Changed
+
+- Change the primary download mirror for integrations. (patch [8fb8b93a](https://github.com/appsignal/appsignal-ruby/commit/8fb8b93af873735a33d9c9440260fd9afe9dd12b))
+- Internal OpenTelemetry change. (patch [8fb8b93a](https://github.com/appsignal/appsignal-ruby/commit/8fb8b93af873735a33d9c9440260fd9afe9dd12b))
+
+### Fixed
+
+- Fix session data reporting for Action Cable actions. (patch [41642bea](https://github.com/appsignal/appsignal-ruby/commit/41642beace7e65f441a93319fbd94192c4d5aedf))
+
 ## 4.1.1
 
 _Published on 2024-09-28._
