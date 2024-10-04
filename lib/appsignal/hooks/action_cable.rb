@@ -52,7 +52,7 @@ module Appsignal
             transaction.set_metadata("method", "websocket")
             transaction.add_params_if_nil { request.params }
             transaction.add_headers_if_nil { request.env }
-            transaction.add_session_data { request.session if request.respond_to? :session }
+            transaction.add_session_data { request.session.to_h if request.respond_to? :session }
             transaction.add_tags(:request_id => request_id) if request_id
             Appsignal::Transaction.complete_current!
           end
@@ -88,7 +88,7 @@ module Appsignal
             transaction.set_metadata("method", "websocket")
             transaction.add_params_if_nil { request.params }
             transaction.add_headers_if_nil { request.env }
-            transaction.add_session_data { request.session if request.respond_to? :session }
+            transaction.add_session_data { request.session.to_h if request.respond_to? :session }
             transaction.add_tags(:request_id => request_id) if request_id
             Appsignal::Transaction.complete_current!
           end

@@ -37,7 +37,16 @@ describe Appsignal::Hooks::ActionCableHook do
             :with_queue_start => true
           )
         end
-        let(:connection) { ActionCable::Connection::Base.new(server, env) }
+        let(:request) do
+          ActionDispatch::Request.new(env).tap do |req|
+            set_rails_session_data(
+              req,
+              "user_id" => "123",
+              "session" => "yes"
+            )
+          end
+        end
+        let(:connection) { ActionCable::Connection::Base.new(server, request.env) }
         let(:identifier) { { :channel => "MyChannel" }.to_json }
         let(:params) { {} }
         let(:request_id) { SecureRandom.uuid }
@@ -74,6 +83,10 @@ describe Appsignal::Hooks::ActionCableHook do
             expect(transaction).to include_params(
               "action" => "speak",
               "message" => "foo"
+            )
+            expect(transaction).to include_session_data(
+              "user_id" => "123",
+              "session" => "yes"
             )
             expect(transaction).to include_tags("request_id" => request_id)
             expect(transaction).to_not have_queue_start
@@ -152,6 +165,10 @@ describe Appsignal::Hooks::ActionCableHook do
               "name" => "subscribed.action_cable",
               "title" => ""
             )
+            expect(transaction).to include_session_data(
+              "user_id" => "123",
+              "session" => "yes"
+            )
             expect(transaction).to include_tags("request_id" => request_id)
             expect(transaction).to_not have_queue_start
             expect(transaction).to be_completed
@@ -194,6 +211,10 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               )
               expect(transaction).to include_params("internal" => "true")
+              expect(transaction).to include_session_data(
+                "user_id" => "123",
+                "session" => "yes"
+              )
               expect(transaction).to_not have_queue_start
               expect(transaction).to be_completed
             end
@@ -246,6 +267,10 @@ describe Appsignal::Hooks::ActionCableHook do
               "path" => "/blog"
             )
             expect(transaction).to include_params("internal" => "true")
+            expect(transaction).to include_session_data(
+              "user_id" => "123",
+              "session" => "yes"
+            )
             expect(transaction).to include_event(
               "body" => "",
               "body_format" => Appsignal::EventFormatter::DEFAULT,
@@ -294,6 +319,10 @@ describe Appsignal::Hooks::ActionCableHook do
                 "path" => "/blog"
               )
               expect(transaction).to include_params("internal" => "true")
+              expect(transaction).to include_session_data(
+                "user_id" => "123",
+                "session" => "yes"
+              )
               expect(transaction).to_not have_queue_start
               expect(transaction).to be_completed
             end

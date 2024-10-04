@@ -21,6 +21,7 @@ module Appsignal
         ensure
           transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
           transaction.add_params_if_nil(args.first)
+          transaction.add_session_data { request.session.to_h if request.respond_to? :session }
           transaction.set_metadata("path", request.path)
           transaction.set_metadata("method", "websocket")
           transaction.add_tags(:request_id => request_id) if request_id
