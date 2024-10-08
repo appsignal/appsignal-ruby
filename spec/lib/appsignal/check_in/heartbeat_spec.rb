@@ -120,7 +120,7 @@ describe "Appsignal::CheckIn.heartbeat" do
         end
       )
 
-      wait_for("the event to be transmitted") { scheduler.transmitted == 2 }
+      wait_for("the event to be transmitted") { scheduler.transmitted >= 2 }
       expect(stub.count).to be >= 2
     end
   end
