@@ -35,12 +35,12 @@ describe Appsignal do
     context "with config but not started" do
       it "reuses the already loaded config if no env arg is given" do
         Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
-          config.ignore_actions = ["My action"]
+          config.ignore_errors = ["My error"]
         end
 
         Appsignal.configure do |config|
           expect(config.env).to eq("my_env")
-          expect(config.ignore_actions).to eq(["My action"])
+          expect(config.ignore_errors).to eq(["My error"])
 
           config.active = true
           config.name = "My app"
@@ -52,16 +52,16 @@ describe Appsignal do
         expect(Appsignal.config.env).to eq("my_env")
         expect(Appsignal.config[:name]).to eq("My app")
         expect(Appsignal.config[:push_api_key]).to eq("key")
-        expect(Appsignal.config[:ignore_actions]).to eq(["My action"])
+        expect(Appsignal.config[:ignore_errors]).to eq(["My error"])
       end
 
       it "reuses the already loaded config if the env is the same" do
         Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
-          config.ignore_actions = ["My action"]
+          config.ignore_errors = ["My error"]
         end
 
         Appsignal.configure(:my_env) do |config|
-          expect(config.ignore_actions).to eq(["My action"])
+          expect(config.ignore_errors).to eq(["My error"])
           config.active = true
           config.name = "My app"
           config.push_api_key = "key"
@@ -79,11 +79,11 @@ describe Appsignal do
         Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
           config.name = "Some name"
           config.push_api_key = "Some key"
-          config.ignore_actions = ["My action"]
+          config.ignore_errors = ["My error"]
         end
 
         Appsignal.configure(:my_env2) do |config|
-          expect(config.ignore_actions).to be_empty
+          expect(config.ignore_errors).to be_empty
           config.active = true
           config.name = "My app"
           config.push_api_key = "key"
@@ -101,11 +101,11 @@ describe Appsignal do
         Appsignal.configure(:my_env, :root_path => "/some/path") do |config|
           config.name = "Some name"
           config.push_api_key = "Some key"
-          config.ignore_actions = ["My action"]
+          config.ignore_errors = ["My error"]
         end
 
         Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
-          expect(config.ignore_actions).to be_empty
+          expect(config.ignore_errors).to be_empty
           config.active = true
           config.name = "My app"
           config.push_api_key = "key"
@@ -128,7 +128,7 @@ describe Appsignal do
         expect(Appsignal.started?).to be_falsy
 
         Appsignal.configure(:my_env) do |config|
-          expect(config.ignore_actions).to be_empty
+          expect(config.ignore_errors).to be_empty
           config.active = true
           config.name = "My app"
           config.push_api_key = "key"
@@ -292,12 +292,12 @@ describe Appsignal do
       it "allows modification of previously unset config options" do
         expect do
           Appsignal.configure do |config|
-            config.ignore_actions << "My action"
+            config.ignore_errors << "My error"
             config.request_headers << "My allowed header"
           end
         end.to_not(change { Appsignal::Config::DEFAULT_CONFIG })
 
-        expect(Appsignal.config[:ignore_actions]).to eq(["My action"])
+        expect(Appsignal.config[:ignore_errors]).to eq(["My error"])
         expect(Appsignal.config[:request_headers])
           .to eq(Appsignal::Config::DEFAULT_CONFIG[:request_headers] + ["My allowed header"])
       end
@@ -399,16 +399,16 @@ describe Appsignal do
         Appsignal.start
 
         expect_frozen_error do
-          Appsignal.config[:ignore_actions] << "my action"
+          Appsignal.config[:ignore_errors] << "my error"
         end
         expect_frozen_error do
-          Appsignal.config[:ignore_actions] << "my action"
+          Appsignal.config[:ignore_errors] << "my error"
         end
         expect_frozen_error do
           Appsignal.config.config_hash.merge!(:option => :value)
         end
         expect_frozen_error do
-          Appsignal.config[:ignore_actions] = "my action"
+          Appsignal.config[:ignore_errors] = "my error"
         end
       end
 
