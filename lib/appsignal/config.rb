@@ -243,15 +243,26 @@ module Appsignal
       @system_config = detect_from_system
       merge(system_config)
 
-      # Set defaults from loaders in reverse order so the first register
+      # Set defaults from loaders in reverse order so the first registered
       # loader's defaults overwrite all others
       self.class.loader_defaults.reverse.each do |loader_defaults|
+        options = config_hash
+        new_loader_defaults = {}
         defaults = loader_defaults[:options]
-        @loaders_config.merge!(defaults.merge(
+        defaults.each do |option, value|
+          new_loader_defaults[option] =
+            if ARRAY_OPTIONS.key?(option)
+              # Merge arrays: new value first
+              value + options[option]
+            else
+              value
+            end
+        end
+        @loaders_config.merge!(new_loader_defaults.merge(
           :root_path => loader_defaults[:root_path],
           :env => loader_defaults[:env]
         ))
-        merge(defaults)
+        merge(new_loader_defaults)
       end
 
       # Track origin of env
