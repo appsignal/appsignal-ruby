@@ -1871,7 +1871,7 @@ describe Appsignal::Transaction do
       end
       let(:options) { { :revision => "my_revision" } }
 
-      it "sends the causes information as sample data" do
+      it "sends the error causes information as sample data" do
         # Hide Rails so we can test the normal Ruby behavior. The Rails
         # behavior is tested in another spec.
         hide_const("Rails")
@@ -1896,7 +1896,7 @@ describe Appsignal::Transaction do
                 "original" => "my_gem (1.2.3) /absolute/path/example.rb:123:in `my_method'",
                 "gem" => "my_gem (1.2.3)",
                 "path" => "/absolute/path/example.rb",
-                "line" => "123",
+                "line" => 123,
                 "method" => "my_method",
                 "revision" => "my_revision"
               }
@@ -1908,7 +1908,7 @@ describe Appsignal::Transaction do
                 "original" => "src/example.rb:123:in `my_method'",
                 "gem" => nil,
                 "path" => "src/example.rb",
-                "line" => "123",
+                "line" => 123,
                 "method" => "my_method",
                 "revision" => "my_revision"
               }
@@ -1945,7 +1945,7 @@ describe Appsignal::Transaction do
           e
         end
 
-        it "sends the causes information as sample data" do
+        it "sends the error causes information as sample data" do
           # Hide Rails so we can test the normal Ruby behavior. The Rails
           # behavior is tested in another spec.
           hide_const("Rails")
@@ -1963,7 +1963,7 @@ describe Appsignal::Transaction do
                 "original" => "#{original_path}:123:in `my_method'",
                 "gem" => nil,
                 "path" => path,
-                "line" => "123",
+                "line" => 123,
                 "method" => "my_method",
                 "revision" => "my_revision"
               }
@@ -2005,7 +2005,7 @@ describe Appsignal::Transaction do
                   "original" => "#{original_path}:123:in `my_method'",
                   "gem" => nil,
                   "path" => path,
-                  "line" => "123",
+                  "line" => 123,
                   "method" => "my_method",
                   "revision" => "my_revision"
                 }
@@ -2038,7 +2038,7 @@ describe Appsignal::Transaction do
                   "original" => "app/views/search/_navigation_tabs.html.haml:17",
                   "gem" => nil,
                   "path" => "app/views/search/_navigation_tabs.html.haml",
-                  "line" => "17",
+                  "line" => 17,
                   "method" => nil,
                   "revision" => "my_revision"
                 }
