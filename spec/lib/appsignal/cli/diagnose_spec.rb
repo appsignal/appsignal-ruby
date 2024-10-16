@@ -941,7 +941,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                 expect(output).to include(
                   "  ignore_actions: [\"Action from DSL\"]\n" \
                     "    Sources:\n" \
-                    "      default: []\n" \
+                    "      default: [\"Rails::HealthController#show\"]\n" \
                     "      dsl:     [\"Action from DSL\"]\n"
                 )
 

@@ -713,7 +713,7 @@ describe Appsignal::Config do
         :filter_metadata                => [],
         :filter_parameters              => [],
         :filter_session_data            => [],
-        :ignore_actions                 => [],
+        :ignore_actions                 => ["Rails::HealthController#show"],
         :ignore_errors                  => [],
         :ignore_logs                    => [],
         :ignore_namespaces              => [],
