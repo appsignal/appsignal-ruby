@@ -926,7 +926,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                 # Workaround to not being able to require the railtie file
                 # multiple times and triggering the Rails initialization process.
                 # This will be used whtn the MyApp app has already been loaded.
-                Appsignal::Integrations::Railtie.load_default_config if defined?(MyApp)
+                if defined?(MyApp) && MyApp::Application.initialized?
+                  Appsignal::Integrations::Railtie.load_default_config
+                end
                 run_within_dir(root_path)
               end
 
