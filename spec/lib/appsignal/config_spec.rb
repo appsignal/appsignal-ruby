@@ -618,7 +618,7 @@ describe Appsignal::Config do
     it "reads all string env keys" do
       config
 
-      Appsignal::Config::ENV_STRING_KEYS.each do |env_key, option|
+      Appsignal::Config::STRING_OPTIONS.each do |option, env_key|
         ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
         expect(config[option]).to eq(ENV.fetch(env_key, nil))
       end
@@ -627,7 +627,7 @@ describe Appsignal::Config do
     it "reads all boolean env keys" do
       config
 
-      Appsignal::Config::ENV_BOOLEAN_KEYS.each do |env_key, option|
+      Appsignal::Config::BOOLEAN_OPTIONS.each do |option, env_key|
         ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
         expect(config[option]).to eq(ENV.fetch(env_key, nil) == "true")
       end
@@ -636,7 +636,7 @@ describe Appsignal::Config do
     it "reads all array env keys" do
       config
 
-      Appsignal::Config::ENV_ARRAY_KEYS.each do |env_key, option|
+      Appsignal::Config::ARRAY_OPTIONS.each do |option, env_key|
         ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
         expect(config[option]).to eq(ENV.fetch(env_key, nil).split(","))
       end
@@ -645,7 +645,7 @@ describe Appsignal::Config do
     it "reads all float env keys" do
       config
 
-      Appsignal::Config::ENV_FLOAT_KEYS.each do |env_key, option|
+      Appsignal::Config::FLOAT_OPTIONS.each do |option, env_key|
         ENV.fetch(env_key) { raise "Config env var '#{env_key}' is not set for this test" }
         expect(config[option]).to eq(ENV.fetch(env_key, nil).to_f)
       end
