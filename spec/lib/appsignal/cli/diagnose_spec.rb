@@ -942,6 +942,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                   "  ignore_actions: [\"Action from DSL\"]\n" \
                     "    Sources:\n" \
                     "      default: []\n" \
+                    "      loaders: [\"Rails::HealthController#show\"]\n" \
                     "      dsl:     [\"Action from DSL\"]\n"
                 )
 
@@ -951,7 +952,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     "root_path" => root_path,
                     "env" => "test",
                     "log_path" => File.join(rails_project_fixture_path, "log"),
-                    "name" => "MyApp"
+                    "name" => "MyApp",
+                    "ignore_actions" => ["Rails::HealthController#show"]
                   }
                 )
                 # Includes values from the DSL
