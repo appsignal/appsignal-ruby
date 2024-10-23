@@ -120,7 +120,7 @@ module Appsignal
     }.freeze
 
     # @api private
-    ENV_STRING_KEYS = {
+    STRING_OPTIONS = {
       "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS" => :activejob_report_errors,
       "APPSIGNAL_APP_NAME" => :name,
       "APPSIGNAL_BIND_ADDRESS" => :bind_address,
@@ -140,7 +140,7 @@ module Appsignal
       "APP_REVISION" => :revision
     }.freeze
     # @api private
-    ENV_BOOLEAN_KEYS = {
+    BOOLEAN_OPTIONS = {
       "APPSIGNAL_ACTIVE" => :active,
       "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
       "APPSIGNAL_ENABLE_AT_EXIT_REPORTER" => :enable_at_exit_reporter,
@@ -164,7 +164,7 @@ module Appsignal
       "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data
     }.freeze
     # @api private
-    ENV_ARRAY_KEYS = {
+    ARRAY_OPTIONS = {
       "APPSIGNAL_DNS_SERVERS" => :dns_servers,
       "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
       "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
@@ -176,7 +176,7 @@ module Appsignal
       "APPSIGNAL_REQUEST_HEADERS" => :request_headers
     }.freeze
     # @api private
-    ENV_FLOAT_KEYS = {
+    FLOAT_OPTIONS = {
       "APPSIGNAL_CPU_COUNT" => :cpu_count
     }.freeze
 
@@ -470,7 +470,7 @@ module Appsignal
       config = {}
 
       # Configuration with string type
-      ENV_STRING_KEYS.each do |env_key, option|
+      STRING_OPTIONS.each do |env_key, option|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -478,7 +478,7 @@ module Appsignal
       end
 
       # Configuration with boolean type
-      ENV_BOOLEAN_KEYS.each do |env_key, option|
+      BOOLEAN_OPTIONS.each do |env_key, option|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -486,7 +486,7 @@ module Appsignal
       end
 
       # Configuration with array of strings type
-      ENV_ARRAY_KEYS.each do |env_key, option|
+      ARRAY_OPTIONS.each do |env_key, option|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -494,7 +494,7 @@ module Appsignal
       end
 
       # Configuration with float type
-      ENV_FLOAT_KEYS.each do |env_key, option|
+      FLOAT_OPTIONS.each do |env_key, option|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -550,7 +550,7 @@ module Appsignal
         @config.env
       end
 
-      Appsignal::Config::ENV_STRING_KEYS.each_value do |option|
+      Appsignal::Config::STRING_OPTIONS.each_value do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -560,7 +560,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::ENV_BOOLEAN_KEYS.each_value do |option|
+      Appsignal::Config::BOOLEAN_OPTIONS.each_value do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -570,7 +570,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::ENV_ARRAY_KEYS.each_value do |option|
+      Appsignal::Config::ARRAY_OPTIONS.each_value do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -580,7 +580,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::ENV_FLOAT_KEYS.each_value do |option|
+      Appsignal::Config::FLOAT_OPTIONS.each_value do |option|
         define_method(option) do
           fetch_option(option)
         end
