@@ -121,63 +121,66 @@ module Appsignal
 
     # @api private
     STRING_OPTIONS = {
-      "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS" => :activejob_report_errors,
-      "APPSIGNAL_APP_NAME" => :name,
-      "APPSIGNAL_BIND_ADDRESS" => :bind_address,
-      "APPSIGNAL_CA_FILE_PATH" => :ca_file_path,
-      "APPSIGNAL_HOSTNAME" => :hostname,
-      "APPSIGNAL_HOST_ROLE" => :host_role,
-      "APPSIGNAL_HTTP_PROXY" => :http_proxy,
-      "APPSIGNAL_LOG" => :log,
-      "APPSIGNAL_LOG_LEVEL" => :log_level,
-      "APPSIGNAL_LOG_PATH" => :log_path,
-      "APPSIGNAL_LOGGING_ENDPOINT" => :logging_endpoint,
-      "APPSIGNAL_PUSH_API_ENDPOINT" => :endpoint,
-      "APPSIGNAL_PUSH_API_KEY" => :push_api_key,
-      "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => :sidekiq_report_errors,
-      "APPSIGNAL_STATSD_PORT" => :statsd_port,
-      "APPSIGNAL_WORKING_DIRECTORY_PATH" => :working_directory_path,
-      "APP_REVISION" => :revision
+      :activejob_report_errors => "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS",
+      :name => "APPSIGNAL_APP_NAME",
+      :bind_address => "APPSIGNAL_BIND_ADDRESS",
+      :ca_file_path => "APPSIGNAL_CA_FILE_PATH",
+      :hostname => "APPSIGNAL_HOSTNAME",
+      :host_role => "APPSIGNAL_HOST_ROLE",
+      :http_proxy => "APPSIGNAL_HTTP_PROXY",
+      :log => "APPSIGNAL_LOG",
+      :log_level => "APPSIGNAL_LOG_LEVEL",
+      :log_path => "APPSIGNAL_LOG_PATH",
+      :logging_endpoint => "APPSIGNAL_LOGGING_ENDPOINT",
+      :endpoint => "APPSIGNAL_PUSH_API_ENDPOINT",
+      :push_api_key => "APPSIGNAL_PUSH_API_KEY",
+      :sidekiq_report_errors => "APPSIGNAL_SIDEKIQ_REPORT_ERRORS",
+      :statsd_port => "APPSIGNAL_STATSD_PORT",
+      :working_directory_path => "APPSIGNAL_WORKING_DIRECTORY_PATH",
+      :revision => "APP_REVISION"
     }.freeze
+
     # @api private
     BOOLEAN_OPTIONS = {
-      "APPSIGNAL_ACTIVE" => :active,
-      "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => :enable_allocation_tracking,
-      "APPSIGNAL_ENABLE_AT_EXIT_REPORTER" => :enable_at_exit_reporter,
-      "APPSIGNAL_ENABLE_HOST_METRICS" => :enable_host_metrics,
-      "APPSIGNAL_ENABLE_MINUTELY_PROBES" => :enable_minutely_probes,
-      "APPSIGNAL_ENABLE_STATSD" => :enable_statsd,
-      "APPSIGNAL_ENABLE_NGINX_METRICS" => :enable_nginx_metrics,
-      "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => :enable_gvl_global_timer,
-      "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => :enable_gvl_waiting_threads,
-      "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER" => :enable_rails_error_reporter,
-      "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION" =>
-        :enable_rake_performance_instrumentation,
-      "APPSIGNAL_FILES_WORLD_ACCESSIBLE" => :files_world_accessible,
-      "APPSIGNAL_INSTRUMENT_HTTP_RB" => :instrument_http_rb,
-      "APPSIGNAL_INSTRUMENT_NET_HTTP" => :instrument_net_http,
-      "APPSIGNAL_INSTRUMENT_REDIS" => :instrument_redis,
-      "APPSIGNAL_INSTRUMENT_SEQUEL" => :instrument_sequel,
-      "APPSIGNAL_RUNNING_IN_CONTAINER" => :running_in_container,
-      "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => :send_environment_metadata,
-      "APPSIGNAL_SEND_PARAMS" => :send_params,
-      "APPSIGNAL_SEND_SESSION_DATA" => :send_session_data
+      :active => "APPSIGNAL_ACTIVE",
+      :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
+      :enable_at_exit_reporter => "APPSIGNAL_ENABLE_AT_EXIT_REPORTER",
+      :enable_host_metrics => "APPSIGNAL_ENABLE_HOST_METRICS",
+      :enable_minutely_probes => "APPSIGNAL_ENABLE_MINUTELY_PROBES",
+      :enable_statsd => "APPSIGNAL_ENABLE_STATSD",
+      :enable_nginx_metrics => "APPSIGNAL_ENABLE_NGINX_METRICS",
+      :enable_gvl_global_timer => "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER",
+      :enable_gvl_waiting_threads => "APPSIGNAL_ENABLE_GVL_WAITING_THREADS",
+      :enable_rails_error_reporter => "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER",
+      :enable_rake_performance_instrumentation =>
+        "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION",
+      :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
+      :instrument_http_rb => "APPSIGNAL_INSTRUMENT_HTTP_RB",
+      :instrument_net_http => "APPSIGNAL_INSTRUMENT_NET_HTTP",
+      :instrument_redis => "APPSIGNAL_INSTRUMENT_REDIS",
+      :instrument_sequel => "APPSIGNAL_INSTRUMENT_SEQUEL",
+      :running_in_container => "APPSIGNAL_RUNNING_IN_CONTAINER",
+      :send_environment_metadata => "APPSIGNAL_SEND_ENVIRONMENT_METADATA",
+      :send_params => "APPSIGNAL_SEND_PARAMS",
+      :send_session_data => "APPSIGNAL_SEND_SESSION_DATA"
     }.freeze
+
     # @api private
     ARRAY_OPTIONS = {
-      "APPSIGNAL_DNS_SERVERS" => :dns_servers,
-      "APPSIGNAL_FILTER_METADATA" => :filter_metadata,
-      "APPSIGNAL_FILTER_PARAMETERS" => :filter_parameters,
-      "APPSIGNAL_FILTER_SESSION_DATA" => :filter_session_data,
-      "APPSIGNAL_IGNORE_ACTIONS" => :ignore_actions,
-      "APPSIGNAL_IGNORE_ERRORS" => :ignore_errors,
-      "APPSIGNAL_IGNORE_LOGS" => :ignore_logs,
-      "APPSIGNAL_IGNORE_NAMESPACES" => :ignore_namespaces,
-      "APPSIGNAL_REQUEST_HEADERS" => :request_headers
+      :dns_servers => "APPSIGNAL_DNS_SERVERS",
+      :filter_metadata => "APPSIGNAL_FILTER_METADATA",
+      :filter_parameters => "APPSIGNAL_FILTER_PARAMETERS",
+      :filter_session_data => "APPSIGNAL_FILTER_SESSION_DATA",
+      :ignore_actions => "APPSIGNAL_IGNORE_ACTIONS",
+      :ignore_errors => "APPSIGNAL_IGNORE_ERRORS",
+      :ignore_logs => "APPSIGNAL_IGNORE_LOGS",
+      :ignore_namespaces => "APPSIGNAL_IGNORE_NAMESPACES",
+      :request_headers => "APPSIGNAL_REQUEST_HEADERS"
     }.freeze
+
     # @api private
     FLOAT_OPTIONS = {
-      "APPSIGNAL_CPU_COUNT" => :cpu_count
+      :cpu_count => "APPSIGNAL_CPU_COUNT"
     }.freeze
 
     # @api private
@@ -470,7 +473,7 @@ module Appsignal
       config = {}
 
       # Configuration with string type
-      STRING_OPTIONS.each do |env_key, option|
+      STRING_OPTIONS.each do |option, env_key|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -478,7 +481,7 @@ module Appsignal
       end
 
       # Configuration with boolean type
-      BOOLEAN_OPTIONS.each do |env_key, option|
+      BOOLEAN_OPTIONS.each do |option, env_key|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -486,7 +489,7 @@ module Appsignal
       end
 
       # Configuration with array of strings type
-      ARRAY_OPTIONS.each do |env_key, option|
+      ARRAY_OPTIONS.each do |option, env_key|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -494,7 +497,7 @@ module Appsignal
       end
 
       # Configuration with float type
-      FLOAT_OPTIONS.each do |env_key, option|
+      FLOAT_OPTIONS.each do |option, env_key|
         env_var = ENV.fetch(env_key, nil)
         next unless env_var
 
@@ -550,7 +553,7 @@ module Appsignal
         @config.env
       end
 
-      Appsignal::Config::STRING_OPTIONS.each_value do |option|
+      Appsignal::Config::STRING_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -560,7 +563,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::BOOLEAN_OPTIONS.each_value do |option|
+      Appsignal::Config::BOOLEAN_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -570,7 +573,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::ARRAY_OPTIONS.each_value do |option|
+      Appsignal::Config::ARRAY_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
         end
@@ -580,7 +583,7 @@ module Appsignal
         end
       end
 
-      Appsignal::Config::FLOAT_OPTIONS.each_value do |option|
+      Appsignal::Config::FLOAT_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
         end
