@@ -82,6 +82,8 @@ if DependencyHelper.rails_present?
           expect(rails_defaults[:options][:name]).to eq("MyApp")
           expect(rails_defaults[:options][:log_path])
             .to eq(Pathname.new(File.join(rails_project_fixture_path, "log")))
+          expect(rails_defaults[:options][:ignore_actions])
+            .to eq(["Rails::HealthController#show"])
         end
 
         it "loads the app name from the project's appsignal.yml file" do

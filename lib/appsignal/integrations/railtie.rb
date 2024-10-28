@@ -45,7 +45,8 @@ module Appsignal
           :root_path => Rails.root,
           :env => Rails.env,
           :name => Appsignal::Utils::RailsHelper.detected_rails_app_name,
-          :log_path => Rails.root.join("log")
+          :log_path => Rails.root.join("log"),
+          :ignore_actions => ["Rails::HealthController#show"]
         )
       end
 

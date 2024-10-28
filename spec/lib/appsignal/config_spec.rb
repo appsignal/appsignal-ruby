@@ -313,7 +313,7 @@ describe Appsignal::Config do
           register_config_defaults(
             :env => "loader_env",
             :root_path => "loader-path",
-            :ignore_actions => ["loader-action"],
+            :ignore_actions => ["loader 1 action"],
             :my_option => "my_value",
             :nil_option => nil
           )
@@ -323,7 +323,7 @@ describe Appsignal::Config do
     end
 
     it "overrides the default config option values" do
-      expect(config[:ignore_actions]).to eq(["loader-action"])
+      expect(config[:ignore_actions]).to eq(["loader 1 action"])
     end
 
     it "does not set any nil values" do
@@ -346,7 +346,8 @@ describe Appsignal::Config do
           def on_load
             register_config_defaults(
               :my_option => "second_value",
-              :second_option => "second_value"
+              :second_option => "second_value",
+              :ignore_actions => ["loader 2 action"]
             )
           end
         end
@@ -358,6 +359,26 @@ describe Appsignal::Config do
           :my_option => "my_value",
           :second_option => "second_value"
         )
+        expect(config.loaders_config).to include(
+          :my_option => "my_value",
+          :second_option => "second_value"
+        )
+      end
+
+      it "merges options with array values" do
+        expect(config.config_hash).to include(
+          :ignore_actions => ["loader 1 action", "loader 2 action"]
+        )
+        expect(config.loaders_config).to include(
+          :ignore_actions => ["loader 1 action", "loader 2 action"]
+        )
+
+        # Doesn't modify defaults
+        defaults = Appsignal::Config.loader_defaults
+        expect(defaults.find { |d| d[:name] == :options_loader }[:options][:ignore_actions])
+          .to eq(["loader 1 action"])
+        expect(defaults.find { |d| d[:name] == :options_loader2 }[:options][:ignore_actions])
+          .to eq(["loader 2 action"])
       end
     end
   end
