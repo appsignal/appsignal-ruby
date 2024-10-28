@@ -231,20 +231,20 @@ module Appsignal
     # @see Config
     # @see https://docs.appsignal.com/ruby/configuration.html Configuration guide
     # @see https://docs.appsignal.com/ruby/configuration/options.html Configuration options
-    def configure(env = nil, root_path: nil)
+    def configure(env_param = nil, root_path: nil)
       if Appsignal.started?
         Appsignal.internal_logger
           .warn("AppSignal is already started. Ignoring `Appsignal.configure` call.")
         return
       end
 
-      if config && ((env.nil? || config.env == env.to_s) &&
-          (root_path.nil? || config.root_path == root_path))
+      root_path_param = root_path
+      if params_match_loaded_config?(env_param, root_path_param)
         config
       else
         @config = Config.new(
-          root_path || Config.determine_root_path,
-          Config.determine_env(env)
+          root_path_param || Config.determine_root_path,
+          Config.determine_env(env_param)
         )
       end
 
@@ -398,6 +398,15 @@ module Appsignal
     end
 
     private
+
+    def params_match_loaded_config?(env_param, root_path_param)
+      # No config present: can't match any config
+      return false unless config
+
+      # Check if the params, if present, match the loaded config
+      (env_param.nil? || config.env == env_param.to_s) &&
+        (root_path_param.nil? || config.root_path == root_path_param)
+    end
 
     def start_internal_stdout_logger
       @internal_logger = Appsignal::Utils::IntegrationLogger.new($stdout)
