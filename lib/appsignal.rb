@@ -103,6 +103,11 @@ module Appsignal
         return
       end
 
+      if ENV["_APPSIGNAL_DSL_CONTEXT"] == "true"
+        internal_logger.warn("Ignoring call to Appsignal.start in `config/appsignal.rb`")
+        return
+      end
+
       unless extension_loaded?
         internal_logger.info("Not starting AppSignal, extension is not loaded")
         return
@@ -110,7 +115,14 @@ module Appsignal
 
       internal_logger.debug("Loading AppSignal gem")
 
-      @config ||= Config.new(Config.determine_root_path, Config.determine_env)
+      unless @config
+        context = Appsignal::Config::Context.new(
+          :env => Config.determine_env,
+          :root_path => Config.determine_root_path
+        )
+        load_dsl_file(context)
+        @config ||= Config.new(context.root_path, context.env)
+      end
       @config.validate
 
       _start_logger
@@ -239,13 +251,16 @@ module Appsignal
       end
 
       root_path_param = root_path
+      context = Appsignal::Config::Context.new(
+        :env => Config.determine_env(env_param),
+        :root_path => root_path_param || Config.determine_root_path
+      )
+      load_dsl_file(context)
+
       if params_match_loaded_config?(env_param, root_path_param)
         config
       else
-        @config = Config.new(
-          root_path_param || Config.determine_root_path,
-          Config.determine_env(env_param)
-        )
+        @config = Config.new(context.root_path, context.env)
       end
 
       config_dsl = Appsignal::Config::ConfigDSL.new(config)
@@ -253,6 +268,22 @@ module Appsignal
 
       yield config_dsl
       config.merge_dsl_options(config_dsl.dsl_options)
+    end
+
+    # @api private
+    def load_dsl_file(context)
+      return if @has_dsl_file_been_required
+      return unless context.dsl_file?
+
+      @has_dsl_file_been_required = true
+      ENV["_APPSIGNAL_DSL_CONTEXT"] = "true"
+      ENV["_APPSIGNAL_DSL_ENV"] = context.env
+      ENV["_APPSIGNAL_DSL_ROOT_PATH"] = context.root_path
+      require context.dsl_file
+    ensure
+      ENV.delete("_APPSIGNAL_DSL_CONTEXT")
+      ENV.delete("_APPSIGNAL_DSL_ENV")
+      ENV.delete("_APPSIGNAL_DSL_ROOT_PATH")
     end
 
     def forked

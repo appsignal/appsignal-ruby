@@ -35,6 +35,7 @@ module Appsignal
     def self.determine_env(initial_env = nil)
       [
         initial_env,
+        ENV.fetch("_APPSIGNAL_DSL_ENV", nil),
         ENV.fetch("APPSIGNAL_APP_ENV", nil),
         ENV.fetch("RAILS_ENV", nil),
         ENV.fetch("RACK_ENV", nil)
@@ -53,12 +54,35 @@ module Appsignal
     # Determine which root path AppSignal should initialize with.
     # @api private
     def self.determine_root_path
+      dsl_env = ENV.fetch("_APPSIGNAL_DSL_ROOT_PATH", nil)
+      return dsl_env if dsl_env
+
       loader_defaults.reverse.each do |loader_defaults|
         root_path = loader_defaults[:root_path]
         return root_path if root_path
       end
 
       Dir.pwd
+    end
+
+    # @api private
+    class Context
+      DSL_FILENAME = "config/appsignal.rb"
+
+      attr_reader :env, :root_path
+
+      def initialize(env: nil, root_path: nil)
+        @env = env
+        @root_path = root_path
+      end
+
+      def dsl_file
+        File.join(root_path, DSL_FILENAME)
+      end
+
+      def dsl_file?
+        File.exist?(dsl_file)
+      end
     end
 
     # @api private
