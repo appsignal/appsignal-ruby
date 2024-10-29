@@ -564,6 +564,10 @@ module Appsignal
         @config.env
       end
 
+      def activate_if_environment(*envs)
+        self.active = envs.map(&:to_s).include?(env)
+      end
+
       Appsignal::Config::STRING_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
