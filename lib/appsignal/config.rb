@@ -53,12 +53,35 @@ module Appsignal
     # Determine which root path AppSignal should initialize with.
     # @api private
     def self.determine_root_path
+      app_path_env_var = ENV.fetch("APPSIGNAL_APP_PATH", nil)
+      return app_path_env_var if app_path_env_var
+
       loader_defaults.reverse.each do |loader_defaults|
         root_path = loader_defaults[:root_path]
         return root_path if root_path
       end
 
       Dir.pwd
+    end
+
+    # @api private
+    class Context
+      DSL_FILENAME = "config/appsignal.rb"
+
+      attr_reader :env, :root_path
+
+      def initialize(env: nil, root_path: nil)
+        @env = env
+        @root_path = root_path
+      end
+
+      def dsl_config_file
+        File.join(root_path, DSL_FILENAME)
+      end
+
+      def dsl_config_file?
+        File.exist?(dsl_config_file)
+      end
     end
 
     # @api private
@@ -213,8 +236,10 @@ module Appsignal
     #   How to integrate AppSignal manually
     def initialize(
       root_path,
-      env
+      env,
+      load_yaml_file: true
     )
+      @load_yaml_file = load_yaml_file
       @root_path = root_path.to_s
       @config_file_error = false
       @config_file = config_file
@@ -269,8 +294,10 @@ module Appsignal
       @initial_config[:env] = @env
 
       # Load the config file if it exists
-      @file_config = load_from_disk || {}
-      merge(file_config)
+      if @load_yaml_file
+        @file_config = load_from_disk || {}
+        merge(file_config)
+      end
 
       # Load config from environment variables
       @env_config = load_from_environment

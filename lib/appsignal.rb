@@ -92,7 +92,7 @@ module Appsignal
     #
     # @return [void]
     # @since 0.7.0
-    def start # rubocop:disable Metrics/AbcSize
+    def start # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/MethodLength, Metrics/CyclomaticComplexity
       if ENV.fetch("_APPSIGNAL_DIAGNOSE", false)
         internal_logger.info("Skipping start in diagnose context")
         return
@@ -103,6 +103,13 @@ module Appsignal
         return
       end
 
+      if config_file_context?
+        internal_logger.warn(
+          "Ignoring call to Appsignal.start in config file context."
+        )
+        return
+      end
+
       unless extension_loaded?
         internal_logger.info("Not starting AppSignal, extension is not loaded")
         return
@@ -110,12 +117,35 @@ module Appsignal
 
       internal_logger.debug("Loading AppSignal gem")
 
-      @config ||= Config.new(Config.determine_root_path, Config.determine_env)
-      @config.validate
+      context = Appsignal::Config::Context.new(
+        :env => Config.determine_env,
+        :root_path => Config.determine_root_path
+      )
+      # If there's a config/appsignal.rb file
+      if context.dsl_config_file?
+        if config
+          # Do not load it if a config is already present
+          internal_logger.warn(
+            "Ignoring `#{context.dsl_config_file}` file because " \
+              "`Appsignal.configure` has already been called."
+          )
+        else
+          # Load it when no config is present
+          load_dsl_config_file(context.dsl_config_file)
+          # Disable AppSignal on config file error
+          config[:active] = false if config && config_file_error?
+        end
+      else
+        # Load config if no config file was found and no config is present yet
+        # This will load the config/appsignal.yml file automatically
+        @config ||= Config.new(context.root_path, context.env)
+      end
+      # Validate the config, if present
+      config&.validate
 
       _start_logger
 
-      if config.valid?
+      if config&.valid?
         if config.active?
           @started = true
           internal_logger.info "Starting AppSignal #{Appsignal::VERSION} " \
@@ -244,7 +274,12 @@ module Appsignal
       else
         @config = Config.new(
           root_path_param || Config.determine_root_path,
-          Config.determine_env(env_param)
+          Config.determine_env(env_param),
+          # If in the context of an `config/appsignal.rb` config file, do not
+          # load the `config/appsignal.yml` file.
+          # The `.rb` file is a replacement for the `.yml` file so it shouldn't
+          # load both.
+          :load_yaml_file => !config_file_context?
         )
       end
 
@@ -397,6 +432,11 @@ module Appsignal
       config&.active? && extension_loaded?
     end
 
+    # @api private
+    def dsl_config_file_loaded?
+      defined?(@dsl_config_file_loaded) ? true : false
+    end
+
     private
 
     def params_match_loaded_config?(env_param, root_path_param)
@@ -406,6 +446,41 @@ module Appsignal
       # Check if the params, if present, match the loaded config
       (env_param.nil? || config.env == env_param.to_s) &&
         (root_path_param.nil? || config.root_path == root_path_param)
+    end
+
+    # Load the `config/appsignal.rb` config file, if present.
+    #
+    # If the config file has already been loaded once and it's trying to be
+    # loaded more than once, which should never happen, it will not do
+    # anything.
+    def load_dsl_config_file(path)
+      return if defined?(@dsl_config_file_loaded)
+
+      ENV["_APPSIGNAL_CONFIG_FILE_CONTEXT"] = "true"
+      @dsl_config_file_loaded = true
+      require path
+    rescue => error
+      @config_file_error = error
+      message = "Not starting AppSignal because an error occurred while " \
+        "loading the AppSignal config file.\n" \
+        "File: #{path.inspect}\n" \
+        "#{error.class.name}: #{error}"
+      Kernel.warn "appsignal ERROR: #{message}"
+      internal_logger.error "#{message}\n#{error.backtrace.join("\n")}"
+    ensure
+      ENV.delete("_APPSIGNAL_CONFIG_FILE_CONTEXT")
+    end
+
+    # Returns true if we're currently in the `config/appsignal.rb` file
+    # context.
+    def config_file_context?
+      ENV.fetch("_APPSIGNAL_CONFIG_FILE_CONTEXT", nil) == "true"
+    end
+
+    # Returns true if loading the `config/appsignal.rb` file resulted in an
+    # error.
+    def config_file_error?
+      defined?(@config_file_error) ? true : false
     end
 
     def start_internal_stdout_logger
