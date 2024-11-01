@@ -916,8 +916,39 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             end
           end
 
+          describe "with config/appsignal.rb" do
+            let(:root_path) { File.join(tmp_dir, "config_file_test_diagnose1") }
+            let(:app_name) { "DiagnoseDSLapp" }
+            let(:push_api_key) { "DiagnosePushAPIKey" }
+            let(:options) { { :environment => "production" } }
+            before do
+              FileUtils.mkdir_p(root_path)
+              config_contents =
+                <<~CONFIG
+                  Appsignal.configure do |config|
+                    config.name = "#{app_name}"
+                    config.push_api_key = "#{push_api_key}"
+                  end
+                CONFIG
+              write_file(File.join(root_path, "config", "appsignal.rb"), config_contents)
+
+              ENV["APPSIGNAL_APP_PATH"] = root_path
+              ENV["APPSIGNAL_APP_NAME"] = "ENV app name"
+              run
+            end
+
+            it "loads config/appsignal.rb" do
+              expect(output).to include(
+                "  name: \"DiagnoseDSLapp\"\n" \
+                  "    Sources:\n" \
+                  "      env: \"ENV app name\"\n" \
+                  "      dsl: \"DiagnoseDSLapp\"\n"
+              )
+            end
+          end
+
           if DependencyHelper.rails_present?
-            context "when is a Rails app" do
+            context "when is a Rails app with config/appsignal.yml config file" do
               let(:root_path) { rails_project_fixture_path }
               let(:app_name) { "TestApp" }
               let(:environment) { "test" }
@@ -929,10 +960,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                 if defined?(MyApp) && MyApp::Application.initialized?
                   Appsignal::Integrations::Railtie.load_default_config
                 end
-                run_within_dir(root_path)
               end
 
               it "includes the Rails default config in the output and transmitted report" do
+                run_within_dir(root_path)
+
                 expect(output).to include(
                   "  name: \"TestApp\"\n" \
                     "    Sources:\n" \
@@ -941,11 +973,10 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                 )
                 # Outputs values from the DSL
                 expect(output).to include(
-                  "  ignore_actions: [\"Action from DSL\"]\n" \
+                  "  ignore_actions: [\"Rails::HealthController#show\"]\n" \
                     "    Sources:\n" \
                     "      default: []\n" \
-                    "      loaders: [\"Rails::HealthController#show\"]\n" \
-                    "      dsl:     [\"Action from DSL\"]\n"
+                    "      loaders: [\"Rails::HealthController#show\"]\n"
                 )
 
                 expect(received_report["app"]["rails"]).to be(true)
@@ -958,10 +989,77 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
                     "ignore_actions" => ["Rails::HealthController#show"]
                   }
                 )
+              end
+
+              context "when there's a problem loading the app" do
+                before do
+                  # A spot where we can mock an error raise
+                  expect(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+                    .and_raise(ExampleStandardError, "error message", ["line 1", "line 2"])
+                  run_within_dir(root_path)
+                end
+
+                it "includes a load error" do
+                  expect(output).to include(
+                    "ERROR: Error encountered while loading the Rails app\n" \
+                      "ExampleStandardError: error message"
+                  )
+
+                  expect(received_report["app"]["load_error"])
+                    .to eq("ExampleStandardError: error message\nline 1\nline 2")
+                end
+              end
+            end
+
+            context "when is a Rails app with config/appsignal.rb config file" do
+              let(:root_path) { File.join(tmp_dir, "diagnose_test_app_#{SecureRandom.uuid}") }
+              let(:app_name) { "TestApp" }
+              let(:environment) { "test" }
+              # Set the environment option so it's more predictable which
+              # environment we should mock API requests for
+              let(:options) { { :environment => environment } }
+              before do
+                # Copy Rails project so we can require the same
+                # `config/appsignal.rb` file multiple times in one test suite
+                # from multiple locations.
+                FileUtils.cp_r(rails_project_with_config_rb_fixture_path, root_path)
+
+                # Workaround to not being able to require the railtie file
+                # multiple times and triggering the Rails initialization process.
+                # This will be used whtn the MyApp app has already been loaded.
+                if defined?(MyApp) && MyApp::Application.initialized?
+                  Appsignal::Integrations::Railtie.load_default_config
+                end
+              end
+              after { FileUtils.rm_rf(root_path) }
+
+              it "includes the Rails default config in the output and transmitted report" do
+                run_within_dir(root_path)
+
+                expect(output).to include(
+                  "  name: \"TestApp\"\n" \
+                    "    Sources:\n" \
+                    "      loaders: \"MyApp\"\n" \
+                    "      dsl:     \"TestApp\"\n"
+                )
+
+                expect(received_report["app"]["rails"]).to be(true)
+                expect(received_report["config"]["sources"]).to include(
+                  "loaders" => {
+                    "root_path" => root_path,
+                    "env" => "test",
+                    "log_path" => File.join(root_path, "log"),
+                    "name" => "MyApp",
+                    "ignore_actions" => ["Rails::HealthController#show"]
+                  }
+                )
                 # Includes values from the DSL
                 expect(received_report["config"]["sources"]).to include(
                   "dsl" => {
-                    "ignore_actions" => ["Action from DSL"]
+                    "active" => true,
+                    "name" => "TestApp",
+                    "push_api_key" => "abc",
+                    "enable_minutely_probes" => false
                   }
                 )
               end

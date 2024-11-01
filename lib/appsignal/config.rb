@@ -35,6 +35,7 @@ module Appsignal
     def self.determine_env(initial_env = nil)
       [
         initial_env,
+        ENV.fetch("_APPSIGNAL_CONFIG_FILE_ENV", nil), # PRIVATE ENV var used by the diagnose CLI
         ENV.fetch("APPSIGNAL_APP_ENV", nil),
         ENV.fetch("RAILS_ENV", nil),
         ENV.fetch("RACK_ENV", nil)

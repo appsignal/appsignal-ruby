@@ -167,7 +167,7 @@ module Appsignal
           )
         else
           # Load it when no config is present
-          load_dsl_config_file(context.dsl_config_file)
+          load_dsl_config_file(context.dsl_config_file, env_param)
         end
       else
         # Load config if no config file was found and no config is present yet
@@ -459,11 +459,12 @@ module Appsignal
     # If the config file has already been loaded once and it's trying to be
     # loaded more than once, which should never happen, it will not do
     # anything.
-    def load_dsl_config_file(path)
+    def load_dsl_config_file(path, env_param = nil)
       return if defined?(@dsl_config_file_loaded)
 
       begin
         ENV["_APPSIGNAL_CONFIG_FILE_CONTEXT"] = "true"
+        ENV["_APPSIGNAL_CONFIG_FILE_ENV"] = env_param if env_param
         @dsl_config_file_loaded = true
         require path
       rescue => error
@@ -489,6 +490,7 @@ module Appsignal
         config[:active] = false if defined?(@config_file_error)
 
         ENV.delete("_APPSIGNAL_CONFIG_FILE_CONTEXT")
+        ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")
       end
     end
 

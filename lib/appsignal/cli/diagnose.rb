@@ -188,15 +188,16 @@ module Appsignal
         end
 
         def configure_appsignal(options)
+          env_option = options.fetch(:environment, nil)
           # Try and load the Rails app, if any.
           # This will configure AppSignal through the config file or an
           # initializer.
-          require_rails_app_if_present
+          require_rails_app_if_present(env_option)
 
-          # If no config was found by loading the app, load with the defaults.
-          Appsignal.configure(options.fetch(:environment, nil))
-          Appsignal.config.write_to_environment
+          # No config loaded yet, try loading as normal
+          Appsignal._load_config!(env_option) unless Appsignal.config
           Appsignal._start_logger
+          Appsignal.config.write_to_environment
           Appsignal.internal_logger.info("Starting AppSignal diagnose")
         end
 
@@ -631,9 +632,12 @@ module Appsignal
           puts "\n"
         end
 
-        def require_rails_app_if_present
+        def require_rails_app_if_present(env_option)
           return unless rails_present?
 
+          # Set the environment given as an option to the diagnose CLI so the
+          # Rails app uses it when loaded.
+          ENV["_APPSIGNAL_CONFIG_FILE_ENV"] = env_option
           # Mark app as Rails app
           data[:app][:rails] = true
           # Manually require the railtie, because it wasn't loaded when the CLI
@@ -649,6 +653,8 @@ module Appsignal
           puts error.backtrace
           data[:app][:load_error] =
             "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+        ensure
+          ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")
         end
 
         def rails_present?

@@ -13,6 +13,13 @@ module ConfigHelpers
   end
   module_function :rails_project_fixture_path
 
+  def rails_project_with_config_rb_fixture_path
+    File.expand_path(
+      File.join(File.dirname(__FILE__), "../fixtures/projects/valid_with_rails_app_with_config_rb")
+    )
+  end
+  module_function :rails_project_fixture_path
+
   def build_config(
     root_path: project_fixture_path,
     env: "production",
