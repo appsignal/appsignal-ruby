@@ -491,7 +491,9 @@ describe Appsignal do
         expect(Appsignal.dsl_config_file_loaded?).to be(true)
         # No Appsignal.configure was called, so it's misconfigured, but it
         # shouldn't fall back on the YAML file.
-        expect(Appsignal.config).to be_nil
+        expect(Appsignal.config[:active]).to be(false)
+        expect(Appsignal.config[:name]).to be_nil
+        expect(Appsignal.config[:ignore_errors]).to be_empty
       ensure
         FileUtils.rm_rf(test_path)
       end
