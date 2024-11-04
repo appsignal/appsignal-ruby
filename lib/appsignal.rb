@@ -94,7 +94,7 @@ module Appsignal
     # @since 0.7.0
     def start # rubocop:disable Metrics/AbcSize
       if ENV.fetch("_APPSIGNAL_DIAGNOSE", false)
-        internal_logger.warn("Skipping start in diagnose context")
+        internal_logger.info("Skipping start in diagnose context")
         return
       end
 
