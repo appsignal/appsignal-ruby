@@ -1416,5 +1416,23 @@ describe Appsignal::Config do
 
       expect(dsl.cpu_count).to eq(1.0)
     end
+
+    describe "#activate_if_environment" do
+      it "sets active to true if loaded env matches argument" do
+        dsl.activate_if_environment(:production)
+        expect(dsl.active).to be(true)
+
+        dsl.activate_if_environment(:staging, :production)
+        expect(dsl.active).to be(true)
+      end
+
+      it "sets active to false if loaded env doesn't match argument" do
+        dsl.activate_if_environment(:qa)
+        expect(dsl.active).to be(false)
+
+        dsl.activate_if_environment(:qa, :beta)
+        expect(dsl.active).to be(false)
+      end
+    end
   end
 end
