@@ -12,12 +12,24 @@ module Appsignal
 
       private
 
+      HANAMI_ACTION_INSTANCE = "hanami.action_instance"
+
       def add_transaction_metadata_after(transaction, request)
+        action_name = fetch_hanami_action(request.env)
+        transaction.set_action_if_nil(action_name) if action_name
         transaction.add_params { params_for(request) }
       end
 
       def params_for(request)
         ::Hanami::Action.params_class.new(request.env).to_h
+      end
+
+      def fetch_hanami_action(env)
+        # This env key is available in Hanami 2.2+
+        action_instance = env.fetch(HANAMI_ACTION_INSTANCE, nil)
+        return unless action_instance
+
+        action_instance.class.name
       end
     end
   end

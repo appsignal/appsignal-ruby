@@ -16,6 +16,15 @@ if DependencyHelper.hanami2_present?
     around { |example| keep_transactions { example.run } }
 
     def make_request(env)
+      if DependencyHelper.hanami2_2_present?
+        instance =
+          Class.new do
+            def self.name
+              "HanamiApp::Actions::Books::Index"
+            end
+          end.new
+        env["hanami.action_instance"] = instance
+      end
       middleware.call(env)
     end
 
@@ -31,6 +40,14 @@ if DependencyHelper.hanami2_present?
       make_request(env)
 
       expect(last_transaction).to include_event("name" => "process_action.hanami")
+    end
+
+    if DependencyHelper.hanami2_2_present?
+      it "sets action name on the transaction" do
+        make_request(env)
+
+        expect(last_transaction).to have_action("HanamiApp::Actions::Books::Index")
+      end
     end
   end
 end
