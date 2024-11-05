@@ -23,9 +23,12 @@ module Appsignal
         )
         hanami_app_config.middleware.use(Appsignal::Rack::HanamiMiddleware)
 
+        return unless Gem::Version.new(Hanami::VERSION) < Gem::Version.new("2.2.0")
+
         ::Hanami::Action.prepend Appsignal::Loaders::HanamiLoader::HanamiIntegration
       end
 
+      # Legacy instrumentation to set the action name in Hanami apps older than Hanami 2.2
       module HanamiIntegration
         def call(env)
           super

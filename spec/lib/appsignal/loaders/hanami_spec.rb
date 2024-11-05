@@ -37,9 +37,16 @@ if DependencyHelper.hanami_present?
           )
       end
 
-      it "prepends the integration to Hanami::Action" do
-        expect(::Hanami::Action)
-          .to have_received(:prepend).with(Appsignal::Loaders::HanamiLoader::HanamiIntegration)
+      if DependencyHelper.hanami2_2_present?
+        it "does not prepend a monkeypatch integration to Hanami::Action" do
+          expect(::Hanami::Action).to_not have_received(:prepend)
+            .with(Appsignal::Loaders::HanamiLoader::HanamiIntegration)
+        end
+      else
+        it "prepends the integration to Hanami::Action" do
+          expect(::Hanami::Action).to have_received(:prepend)
+            .with(Appsignal::Loaders::HanamiLoader::HanamiIntegration)
+        end
       end
 
       def hanami_middleware_options
@@ -80,10 +87,19 @@ if DependencyHelper.hanami_present?
         context "with an active transaction" do
           let(:env) { { Appsignal::Rack::APPSIGNAL_TRANSACTION => transaction } }
 
-          it "sets action name on the transaction" do
-            make_request(env)
+          if DependencyHelper.hanami2_2_present?
+            it "does not set an action name on the transaction" do
+              # This is done by the middleware instead
+              make_request(env)
 
-            expect(transaction).to have_action("HanamiApp::Actions::Books::Index")
+              expect(transaction).to_not have_action
+            end
+          else
+            it "sets action name on the transaction" do
+              make_request(env)
+
+              expect(transaction).to have_action("HanamiApp::Actions::Books::Index")
+            end
           end
         end
       end
