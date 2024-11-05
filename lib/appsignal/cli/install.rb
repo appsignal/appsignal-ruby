@@ -229,35 +229,49 @@ module Appsignal
           done_notice
         end
 
-        def configure(config, environments, name_overwritten)
+        def configure(config, environments, name_overwritten) # rubocop:disable Metrics/AbcSize
           install_for_capistrano
 
           ENV["APPSIGNAL_APP_ENV"] = "development"
 
           puts "How do you want to configure AppSignal?"
-          puts "  (1) a config file"
-          puts "  (2) environment variables"
+          puts "  (1) a Ruby config file"
+          puts "  (2) a YAML config file (legacy)"
+          puts "  (3) environment variables"
           puts
           puts "  See our docs for information on the different configuration methods: "
           puts "  https://docs.appsignal.com/ruby/configuration.html"
           puts
-          loop do
-            print "  Choose (1/2): "
+          loop do # rubocop:disable Metrics/BlockLength
+            print "  Choose (1-3): "
             case ask_for_input
             when "1"
               puts
-              print "Writing config file"
+              print "Writing Ruby config file"
               periods
               puts
-              puts colorize "  Config file written to config/appsignal.yml", :green
-              write_config_file(
+              write_ruby_config_file(
                 :push_api_key => config[:push_api_key],
                 :app_name => config[:name],
                 :environments => environments
               )
+              puts colorize "  Config file written to config/appsignal.rb", :green
               puts
               break
             when "2"
+              puts
+              print "Writing YAML config file"
+              periods
+              puts
+              write_yaml_config_file(
+                :push_api_key => config[:push_api_key],
+                :app_name => config[:name],
+                :environments => environments
+              )
+              puts colorize "  Config file written to config/appsignal.yml", :green
+              puts
+              break
+            when "3"
               ENV["APPSIGNAL_ACTIVE"] = "true"
               ENV["APPSIGNAL_PUSH_API_KEY"] = config[:push_api_key]
               ENV["APPSIGNAL_APP_NAME"] = config[:name]
@@ -325,17 +339,37 @@ module Appsignal
           ).map { |o| File.basename(o, ".rb") }.sort - EXCLUDED_ENVIRONMENTS
         end
 
-        def write_config_file(data)
-          filename = File.join(
+        def write_ruby_config_file(data)
+          template = File.join(
+            File.dirname(__FILE__),
+            "../../../resources/appsignal.rb.erb"
+          )
+          write_config_file(
+            template,
+            File.join(Dir.pwd, "config/appsignal.rb"),
+            data
+          )
+        end
+
+        def write_yaml_config_file(data)
+          template = File.join(
             File.dirname(__FILE__),
             "../../../resources/appsignal.yml.erb"
           )
-          file_contents = File.read(filename)
+          write_config_file(
+            template,
+            File.join(Dir.pwd, "config/appsignal.yml"),
+            data
+          )
+        end
+
+        def write_config_file(template_path, path, data)
+          file_contents = File.read(template_path)
           template = ERB.new(file_contents, :trim_mode => "-")
           config = template.result(OpenStruct.new(data).instance_eval { binding })
 
           FileUtils.mkdir_p(File.join(Dir.pwd, "config"))
-          File.write(File.join(Dir.pwd, "config/appsignal.yml"), config)
+          File.write(path, config)
         end
 
         def new_config

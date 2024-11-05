@@ -9,6 +9,8 @@ describe Appsignal::CLI::Install do
   let(:config) { Appsignal::Config.new(tmp_dir, "") }
   let(:yaml_config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
   let(:yaml_config_file) { File.read(yaml_config_file_path) }
+  let(:ruby_config_file_path) { File.join(tmp_dir, "config", "appsignal.rb") }
+  let(:ruby_config_file) { File.read(ruby_config_file_path) }
   let(:options) { {} }
   before do
     stub_api_validation_request
@@ -42,6 +44,28 @@ describe Appsignal::CLI::Install do
   define :include_env_app_name do |name|
     match do |actual|
       actual.include?("export APPSIGNAL_APP_NAME=#{name}")
+    end
+  end
+
+  define :configure_ruby_app_name do |name|
+    match do |file_contents|
+      file_contents =~ /config\.name = "#{name}"/
+    end
+  end
+  define :configure_ruby_push_api_key do |key|
+    match do |file_contents|
+      file_contents =~ /config\.push_api_key = "#{key}"/
+    end
+  end
+  define :configure_ruby_environment do |env|
+    match do |file_contents|
+      match = /config\.activate_if_environment\((.*)\)$/.match(file_contents)
+      match[1].include?(env)
+    end
+  end
+  define :include_ruby_file_config do
+    match do |log|
+      log.include?("Config file written to config/appsignal.rb")
     end
   end
 
@@ -80,12 +104,16 @@ describe Appsignal::CLI::Install do
 
   alias_method :enter_app_name, :add_cli_input
 
-  def choose_yaml_config_file
+  def choose_ruby_config_file
     add_cli_input "1"
   end
 
-  def choose_environment_config
+  def choose_yaml_config_file
     add_cli_input "2"
+  end
+
+  def choose_environment_config
+    add_cli_input "3"
   end
 
   def run
@@ -266,18 +294,18 @@ describe Appsignal::CLI::Install do
           File.delete(File.join(environments_dir, "development.rb"))
           File.delete(File.join(environments_dir, "staging.rb"))
           add_cli_input "n"
-          choose_yaml_config_file
+          choose_ruby_config_file
         end
 
         it "only configures the available environments" do
           run
 
-          expect(output).to include_yaml_file_config
-          expect(yaml_config_file).to configure_yaml_app_name(app_name)
-          expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
-          expect(yaml_config_file).to_not configure_yaml_environment("development")
-          expect(yaml_config_file).to_not configure_yaml_environment("staging")
-          expect(yaml_config_file).to configure_yaml_environment("production")
+          expect(output).to include_ruby_file_config
+          expect(ruby_config_file).to configure_ruby_app_name(app_name)
+          expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+          expect(ruby_config_file).to_not configure_ruby_environment("development")
+          expect(ruby_config_file).to_not configure_ruby_environment("staging")
+          expect(ruby_config_file).to configure_ruby_environment("production")
 
           expect(output).to include(*installation_instructions)
           expect(output).to include_complete_install
@@ -312,7 +340,33 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        context "with configuration using a configuration file" do
+        context "with configuration using a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        context "with configuration using a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
@@ -379,7 +433,36 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        context "with configuration using a configuration file" do
+        context "with configuration using a Ruby configuration file" do
+          before do
+            enter_app_name app_name
+            choose_ruby_config_file
+          end
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        context "with configuration using a YAML configuration file" do
           before do
             enter_app_name app_name
             choose_yaml_config_file
@@ -439,20 +522,20 @@ describe Appsignal::CLI::Install do
 
         it "prompts the user to fill in an app name" do
           enter_app_name app_name
-          choose_yaml_config_file
+          choose_ruby_config_file
           run
 
           expect(output).to include("Installing for Ruby on Rails")
           expect(output).to include("Unable to automatically detect your Rails app's name.")
           expect(output).to include("Choose your app's display name for AppSignal.com:")
-          expect(output).to include_yaml_file_config
+          expect(output).to include_ruby_file_config
           expect(output).to include_complete_install
 
-          expect(yaml_config_file).to configure_yaml_app_name(app_name)
-          expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
-          expect(yaml_config_file).to configure_yaml_environment("development")
-          expect(yaml_config_file).to configure_yaml_environment("staging")
-          expect(yaml_config_file).to configure_yaml_environment("production")
+          expect(ruby_config_file).to configure_ruby_app_name(app_name)
+          expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+          expect(ruby_config_file).to configure_ruby_environment("development")
+          expect(ruby_config_file).to configure_ruby_environment("staging")
+          expect(ruby_config_file).to configure_ruby_environment("production")
         end
       end
     end
@@ -499,7 +582,33 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        describe "configure with a configuration file" do
+        describe "configure with a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
@@ -569,7 +678,33 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        describe "configure with a configuration file" do
+        describe "configure with a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
@@ -636,7 +771,33 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        describe "configure with a configuration file" do
+        describe "configure with a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
@@ -706,7 +867,32 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        describe "configure with a configuration file" do
+        describe "configure with a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
@@ -776,7 +962,32 @@ describe Appsignal::CLI::Install do
           end
         end
 
-        describe "configure with a configuration file" do
+        describe "configure with a Ruby configuration file" do
+          before { choose_ruby_config_file }
+
+          it_behaves_like "windows installation"
+          it_behaves_like "capistrano install"
+          it_behaves_like "demo data"
+
+          it "writes configuration to file" do
+            run
+            expect(output).to include_ruby_file_config
+            expect(ruby_config_file).to configure_ruby_app_name(app_name)
+            expect(ruby_config_file).to configure_ruby_push_api_key(push_api_key)
+            expect(ruby_config_file).to configure_ruby_environment("development")
+            expect(ruby_config_file).to configure_ruby_environment("staging")
+            expect(ruby_config_file).to configure_ruby_environment("production")
+          end
+
+          it "completes the installation" do
+            run
+
+            expect(output).to include(*installation_instructions)
+            expect(output).to include_complete_install
+          end
+        end
+
+        describe "configure with a YAML configuration file" do
           before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
