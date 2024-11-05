@@ -8,7 +8,12 @@ if DependencyHelper.hanami_present?
           :name => :hanami,
           :root_path => Dir.pwd,
           :env => :test,
-          :options => {}
+          :options => {
+            :ignore_errors => [
+              "Hanami::Router::NotAllowedError",
+              "Hanami::Router::NotFoundError"
+            ]
+          }
         )
       end
     end

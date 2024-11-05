@@ -9,7 +9,11 @@ module Appsignal
         hanami_app_config = ::Hanami.app.config
         register_config_defaults(
           :root_path => hanami_app_config.root.to_s,
-          :env => hanami_app_config.env
+          :env => hanami_app_config.env,
+          :ignore_errors => [
+            "Hanami::Router::NotAllowedError",
+            "Hanami::Router::NotFoundError"
+          ]
         )
       end
 
