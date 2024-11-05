@@ -3,11 +3,13 @@ require "appsignal/rack/hanami_middleware"
 if DependencyHelper.hanami2_present?
   describe Appsignal::Rack::HanamiMiddleware do
     let(:app) { double(:call => true) }
-    let(:router_params) { { "param1" => "value1", "param2" => "value2" } }
+    let(:router_params) { nil }
     let(:env) do
+      options = {}
+      options["router.params"] = router_params if router_params
       Rack::MockRequest.env_for(
         "/some/path",
-        "router.params" => router_params
+        options
       )
     end
     let(:middleware) { Appsignal::Rack::HanamiMiddleware.new(app, {}) }
@@ -28,7 +30,17 @@ if DependencyHelper.hanami2_present?
       middleware.call(env)
     end
 
+    context "without params" do
+      it "sets no request parameters on the transaction" do
+        make_request(env)
+
+        expect(last_transaction).to_not include_params
+      end
+    end
+
     context "with params" do
+      let(:router_params) { { "param1" => "value1", "param2" => "value2" } }
+
       it "sets request parameters on the transaction" do
         make_request(env)
 
