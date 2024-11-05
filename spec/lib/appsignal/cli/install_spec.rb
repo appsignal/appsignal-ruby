@@ -7,8 +7,8 @@ describe Appsignal::CLI::Install do
   let(:output) { out_stream.read }
   let(:push_api_key) { "my_key" }
   let(:config) { Appsignal::Config.new(tmp_dir, "") }
-  let(:config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
-  let(:config_file) { File.read(config_file_path) }
+  let(:yaml_config_file_path) { File.join(tmp_dir, "config", "appsignal.yml") }
+  let(:yaml_config_file) { File.read(yaml_config_file_path) }
   let(:options) { {} }
   before do
     stub_api_validation_request
@@ -45,22 +45,22 @@ describe Appsignal::CLI::Install do
     end
   end
 
-  define :configure_app_name do |name|
+  define :configure_yaml_app_name do |name|
     match do |file_contents|
       file_contents =~ /^  name: "#{name}"/
     end
   end
-  define :configure_push_api_key do |key|
+  define :configure_yaml_push_api_key do |key|
     match do |file_contents|
       file_contents =~ /^  push_api_key: "#{key}"/
     end
   end
-  define :configure_environment do |env|
+  define :configure_yaml_environment do |env|
     match do |file_contents|
       file_contents =~ /^#{env}:$/
     end
   end
-  define :include_file_config do
+  define :include_yaml_file_config do
     match do |log|
       log.include?("Config file written to config/appsignal.yml")
     end
@@ -80,7 +80,7 @@ describe Appsignal::CLI::Install do
 
   alias_method :enter_app_name, :add_cli_input
 
-  def choose_config_file
+  def choose_yaml_config_file
     add_cli_input "1"
   end
 
@@ -266,18 +266,18 @@ describe Appsignal::CLI::Install do
           File.delete(File.join(environments_dir, "development.rb"))
           File.delete(File.join(environments_dir, "staging.rb"))
           add_cli_input "n"
-          choose_config_file
+          choose_yaml_config_file
         end
 
         it "only configures the available environments" do
           run
 
-          expect(output).to include_file_config
-          expect(config_file).to configure_app_name(app_name)
-          expect(config_file).to configure_push_api_key(push_api_key)
-          expect(config_file).to_not configure_environment("development")
-          expect(config_file).to_not configure_environment("staging")
-          expect(config_file).to configure_environment("production")
+          expect(output).to include_yaml_file_config
+          expect(yaml_config_file).to configure_yaml_app_name(app_name)
+          expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+          expect(yaml_config_file).to_not configure_yaml_environment("development")
+          expect(yaml_config_file).to_not configure_yaml_environment("staging")
+          expect(yaml_config_file).to configure_yaml_environment("production")
 
           expect(output).to include(*installation_instructions)
           expect(output).to include_complete_install
@@ -313,7 +313,7 @@ describe Appsignal::CLI::Install do
         end
 
         context "with configuration using a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -322,12 +322,12 @@ describe Appsignal::CLI::Install do
           it "writes configuration to file" do
             run
 
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -382,7 +382,7 @@ describe Appsignal::CLI::Install do
         context "with configuration using a configuration file" do
           before do
             enter_app_name app_name
-            choose_config_file
+            choose_yaml_config_file
           end
 
           it_behaves_like "windows installation"
@@ -392,12 +392,12 @@ describe Appsignal::CLI::Install do
           it "writes configuration to file" do
             run
 
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -439,20 +439,20 @@ describe Appsignal::CLI::Install do
 
         it "prompts the user to fill in an app name" do
           enter_app_name app_name
-          choose_config_file
+          choose_yaml_config_file
           run
 
           expect(output).to include("Installing for Ruby on Rails")
           expect(output).to include("Unable to automatically detect your Rails app's name.")
           expect(output).to include("Choose your app's display name for AppSignal.com:")
-          expect(output).to include_file_config
+          expect(output).to include_yaml_file_config
           expect(output).to include_complete_install
 
-          expect(config_file).to configure_app_name(app_name)
-          expect(config_file).to configure_push_api_key(push_api_key)
-          expect(config_file).to configure_environment("development")
-          expect(config_file).to configure_environment("staging")
-          expect(config_file).to configure_environment("production")
+          expect(yaml_config_file).to configure_yaml_app_name(app_name)
+          expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+          expect(yaml_config_file).to configure_yaml_environment("development")
+          expect(yaml_config_file).to configure_yaml_environment("staging")
+          expect(yaml_config_file).to configure_yaml_environment("production")
         end
       end
     end
@@ -500,7 +500,7 @@ describe Appsignal::CLI::Install do
         end
 
         describe "configure with a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -509,12 +509,12 @@ describe Appsignal::CLI::Install do
           it "writes configuration to file" do
             run
 
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -570,7 +570,7 @@ describe Appsignal::CLI::Install do
         end
 
         describe "configure with a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -579,12 +579,12 @@ describe Appsignal::CLI::Install do
           it "writes configuration to file" do
             run
 
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -637,7 +637,7 @@ describe Appsignal::CLI::Install do
         end
 
         describe "configure with a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -646,12 +646,12 @@ describe Appsignal::CLI::Install do
           it "writes configuration to file" do
             run
 
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -707,7 +707,7 @@ describe Appsignal::CLI::Install do
         end
 
         describe "configure with a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -715,12 +715,12 @@ describe Appsignal::CLI::Install do
 
           it "writes configuration to file" do
             run
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
@@ -777,7 +777,7 @@ describe Appsignal::CLI::Install do
         end
 
         describe "configure with a configuration file" do
-          before { choose_config_file }
+          before { choose_yaml_config_file }
 
           it_behaves_like "windows installation"
           it_behaves_like "capistrano install"
@@ -785,12 +785,12 @@ describe Appsignal::CLI::Install do
 
           it "writes configuration to file" do
             run
-            expect(output).to include_file_config
-            expect(config_file).to configure_app_name(app_name)
-            expect(config_file).to configure_push_api_key(push_api_key)
-            expect(config_file).to configure_environment("development")
-            expect(config_file).to configure_environment("staging")
-            expect(config_file).to configure_environment("production")
+            expect(output).to include_yaml_file_config
+            expect(yaml_config_file).to configure_yaml_app_name(app_name)
+            expect(yaml_config_file).to configure_yaml_push_api_key(push_api_key)
+            expect(yaml_config_file).to configure_yaml_environment("development")
+            expect(yaml_config_file).to configure_yaml_environment("staging")
+            expect(yaml_config_file).to configure_yaml_environment("production")
           end
 
           it "completes the installation" do
