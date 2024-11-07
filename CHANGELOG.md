@@ -1,5 +1,69 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.1.3
+
+_Published on 2024-11-07._
+
+### Added
+
+- Add `activate_if_environment` helper for `Appsignal.configure`. Avoid having to add conditionals to your configuration file and use the `activate_if_environment` helper to specify for which environments AppSignal should become active. AppSignal will automatically detect the environment and activate itself it the environment matches one of the listed environments.
+
+  ```ruby
+  # Before
+  Appsignal.configure do |config|
+    config.active = Rails.env.production? || Rails.env.staging?
+  end
+
+  # After
+  Appsignal.configure do |config|
+    # Activate for one environment
+    config.activate_if_environment(:production)
+
+    # Activate for multiple environments
+    config.activate_if_environment(:production, :staging)
+  end
+  ```
+
+  (patch [ff31be88](https://github.com/appsignal/appsignal-ruby/commit/ff31be88cf49a18951f48663d96af3cde4184e32))
+- Add a hostname AppSignal tag automatically, based on the OpenTelemetry `host.name` resource attribute. (Beta only) (patch [35449268](https://github.com/appsignal/appsignal-ruby/commit/35449268a5f6d7487d17018ddb8f5dd433d676e0))
+- Add incident error count metric for enriched OpenTelemetry traces. (Beta only) (patch [35449268](https://github.com/appsignal/appsignal-ruby/commit/35449268a5f6d7487d17018ddb8f5dd433d676e0))
+- Set the app revision config option for Scalingo deploys automatically. If the `CONTAINER_VERSION` system environment variable is present, it will use used to set the `revision` config option automatically. Overwrite it's value by configuring the `revision` config option for your application. (patch [35449268](https://github.com/appsignal/appsignal-ruby/commit/35449268a5f6d7487d17018ddb8f5dd433d676e0))
+
+### Changed
+
+- Ignore the Rails healthcheck endpoint (Rails::HealthController#show) by default for Rails apps.
+
+  If the `ignore_actions` option is set in the `config/appsignal.yml` file, the default is overwritten.
+  If the `APPSIGNAL_IGNORE_ACTIONS` environment variable is set, the default is overwritten.
+  When using the `Appsignal.configure` helper, add more actions to the default like so:
+
+  ```ruby
+  # config/appsignal.rb
+  Appsignal.configure do |config|
+    # Add more actions to ignore
+    config.ignore_actions << "My action"
+  end
+  ```
+
+  To overwrite the default using the `Appsignal.configure` helper, do either of the following:
+
+  ```ruby
+  # config/appsignal.rb
+  Appsignal.configure do |config|
+    # Overwrite the default value, ignoring all actions ignored by default
+    config.ignore_actions = ["My action"]
+
+    # To only remove the healtcheck endpoint
+    config.ignore_actions.delete("Rails::HealthController#show")
+  end
+  ```
+
+  (patch [af71fb90](https://github.com/appsignal/appsignal-ruby/commit/af71fb904eebc4af05dc2fcf8bd390dd9baffd68))
+
+### Fixed
+
+- Fix an issue where the extension fails to build on ARM64 Linux. (patch [79ac5bbe](https://github.com/appsignal/appsignal-ruby/commit/79ac5bbe7028151ae749cbd7a4e98f706d259ad8))
+
 ## 4.1.2
 
 _Published on 2024-10-04._
