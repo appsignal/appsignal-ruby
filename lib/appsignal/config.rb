@@ -609,6 +609,15 @@ module Appsignal
         @config.env
       end
 
+      # Returns true if the given environment name matches the loaded
+      # environment name.
+      #
+      # @param given_env [String, Symbol]
+      # @return [TrueClass, FalseClass]
+      def env?(given_env)
+        env == given_env.to_s
+      end
+
       def activate_if_environment(*envs)
         self.active = envs.map(&:to_s).include?(env)
       end
