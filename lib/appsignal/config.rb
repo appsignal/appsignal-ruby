@@ -298,6 +298,16 @@ module Appsignal
       if @load_yaml_file
         @file_config = load_from_disk || {}
         merge(file_config)
+      elsif yml_config_file?
+        # When in a `config/appsignal.rb` file and it detects a
+        # `config/appsignal.yml` file.
+        # Only logged and printed on `Appsignal.start`.
+        message = "Both a Ruby and YAML configuration file are found. " \
+          "The `config/appsignal.yml` file is ignored when the " \
+          "config is loaded from `config/appsignal.rb`. Move all config to " \
+          "the `config/appsignal.rb` file and remove the " \
+          "`config/appsignal.yml` file."
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
       end
 
       # Load config from environment variables
@@ -463,6 +473,13 @@ module Appsignal
       config_hash.transform_values(&:freeze)
     end
 
+    # @api private
+    def yml_config_file?
+      return false unless config_file
+
+      File.exist?(config_file)
+    end
+
     private
 
     def logger
@@ -486,7 +503,7 @@ module Appsignal
     end
 
     def load_from_disk
-      return if !config_file || !File.exist?(config_file)
+      return unless yml_config_file?
 
       read_options = YAML::VERSION >= "4.0.0" ? { :aliases => true } : {}
       configurations = YAML.load(ERB.new(File.read(config_file)).result, **read_options)

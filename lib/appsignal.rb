@@ -160,11 +160,15 @@ module Appsignal
       # If there's a config/appsignal.rb file
       if context.dsl_config_file?
         if config
-          # Do not load it if a config is already present
-          internal_logger.warn(
-            "Ignoring `#{context.dsl_config_file}` file because " \
-              "`Appsignal.configure` has already been called."
-          )
+          # When calling `Appsignal.configure` from an app, not the
+          # `config/appsignal.rb` file, with also a Ruby config file present.
+          message = "The `Appsignal.configure` helper is called from within an " \
+            "app while a `#{context.dsl_config_file}` file is present. " \
+            "The `config/appsignal.rb` file is ignored when the " \
+            "config is loaded with `Appsignal.configure` from within an app. " \
+            "We recommend moving all config to the `config/appsignal.rb` file " \
+            "or the `Appsignal.configure` helper in the app."
+          Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
         else
           # Load it when no config is present
           load_dsl_config_file(context.dsl_config_file, env_param)
@@ -287,6 +291,19 @@ module Appsignal
           # load both.
           :load_yaml_file => !config_file_context?
         )
+      end
+
+      # When calling `Appsignal.configure` from a Rails initializer and a YAML
+      # file is present. We will not load the YAML file in the future.
+      if !config_file_context? && config.yml_config_file?
+        message = "The `Appsignal.configure` helper is called while a " \
+          "`config/appsignal.yml` file is present. In future versions the " \
+          "`config/appsignal.yml` file will be ignored when loading the " \
+          "config. We recommend moving all config to the " \
+          "`config/appsignal.rb` file, or the `Appsignal.configure` helper " \
+          "in Rails initializer file, and remove the " \
+          "`config/appsignal.yml` file."
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
       end
 
       config_dsl = Appsignal::Config::ConfigDSL.new(config)

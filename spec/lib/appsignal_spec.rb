@@ -5,9 +5,18 @@ describe Appsignal do
   let(:transaction) { http_request_transaction }
 
   describe ".configure" do
-    context "when active" do
+    let(:root_path) { tmp_dir }
+    before do
+      log_dir = File.join(root_path, "log")
+      FileUtils.mkdir_p(log_dir)
+    end
+
+    context "when started" do
       it "doesn't update the config" do
-        start_agent
+        start_agent(
+          :root_path => root_path,
+          :options => { :active => true, :push_api_key => "dummy" }
+        )
         Appsignal::Testing.store[:config_called] = false
         expect do
           Appsignal.configure do |_config|
@@ -18,7 +27,10 @@ describe Appsignal do
       end
 
       it "logs a warning" do
-        start_agent
+        start_agent(
+          :root_path => tmp_dir,
+          :options => { :active => true, :push_api_key => "dummy" }
+        )
         logs =
           capture_logs do
             Appsignal.configure do |_config|
@@ -34,7 +46,7 @@ describe Appsignal do
 
     context "with config but not started" do
       it "reuses the already loaded config if no env arg is given" do
-        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+        Appsignal.configure(:my_env, :root_path => root_path) do |config|
           config.ignore_actions = ["My action"]
         end
 
@@ -56,7 +68,7 @@ describe Appsignal do
       end
 
       it "reuses the already loaded config if the env is the same" do
-        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+        Appsignal.configure(:my_env, :root_path => root_path) do |config|
           config.ignore_actions = ["My action"]
         end
 
@@ -76,7 +88,7 @@ describe Appsignal do
       end
 
       it "loads a new config if the env is not the same" do
-        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+        Appsignal.configure(:my_env, :root_path => root_path) do |config|
           config.name = "Some name"
           config.push_api_key = "Some key"
           config.ignore_actions = ["My action"]
@@ -104,7 +116,7 @@ describe Appsignal do
           config.ignore_actions = ["My action"]
         end
 
-        Appsignal.configure(:my_env, :root_path => project_fixture_path) do |config|
+        Appsignal.configure(:my_env, :root_path => root_path) do |config|
           expect(config.ignore_actions).to be_empty
           config.active = true
           config.name = "My app"
@@ -162,21 +174,41 @@ describe Appsignal do
       end
 
       it "uses the given root path to read the config file" do
-        Appsignal.configure(:test, :root_path => project_fixture_path)
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Appsignal.configure(:test, :root_path => project_fixture_path)
+            end
+          end
         Appsignal.start
 
+        message = "The `Appsignal.configure` helper is called while a `config/appsignal.yml` " \
+          "file is present."
+        expect(logs).to contains_log(:warn, message)
+        expect(err_stream.read).to include("appsignal WARNING: #{message}")
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the given path
         expect(Appsignal.config.file_config).to_not be_empty
       end
 
-      it "loads the config without a block being given" do
-        Dir.chdir project_fixture_path do
-          Appsignal.configure(:test)
-        end
+      it "loads the config from the YAML file" do
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Dir.chdir project_fixture_path do
+                Appsignal.configure(:test)
+              end
+            end
+          end
         Appsignal.start
 
+        message = "The `Appsignal.configure` helper is called while a `config/appsignal.yml` " \
+          "file is present."
+        expect(logs).to contains_log(:warn, message)
+        expect(err_stream.read).to include("appsignal WARNING: #{message}")
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the current working directory
@@ -198,14 +230,6 @@ describe Appsignal do
         Appsignal.configure do |config|
           Appsignal::Config::DEFAULT_CONFIG.each do |option, value|
             expect(config.send(option)).to eq(value)
-          end
-        end
-      end
-
-      it "loads the config from the YAML file" do
-        Dir.chdir project_fixture_path do
-          Appsignal.configure(:test) do |config|
-            expect(config.name).to eq("TestApp")
           end
         end
       end
@@ -241,6 +265,18 @@ describe Appsignal do
         end
 
         expect(Appsignal.config.env).to eq("env_env")
+      end
+
+      it "reads config options from the environment" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        ENV["APPSIGNAL_APP_NAME"] = "AppNameFromEnv"
+        Appsignal.configure do |config|
+          expect(config.env).to eq("env_env")
+          expect(config.name).to eq("AppNameFromEnv")
+        end
+
+        expect(Appsignal.config.env).to eq("env_env")
+        expect(Appsignal.config[:name]).to eq("AppNameFromEnv")
       end
 
       it "reads the environment from a loader default" do
@@ -456,8 +492,17 @@ describe Appsignal do
         end
 
         ENV["APPSIGNAL_APP_PATH"] = test_path
-        Appsignal.start
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Appsignal.start
+            end
+          end
 
+        warning_message = "Both a Ruby and YAML configuration file are found."
+        expect(logs).to contains_log(:warn, warning_message)
+        expect(err_stream.read).to include("appsignal WARNING: #{warning_message}")
         expect(Appsignal.dsl_config_file_loaded?).to be(true)
         expect(Appsignal.config.root_path).to eq(test_path)
         expect(Appsignal.config[:active]).to be(false)
@@ -717,13 +762,18 @@ describe Appsignal do
         end
 
         ENV["APPSIGNAL_APP_PATH"] = test_path
-        logs = capture_logs { Appsignal.start }
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Appsignal.start
+            end
+          end
 
-        expect(logs).to contains_log(
-          :warn,
-          "Ignoring `#{config_file_path}` file because " \
-            "`Appsignal.configure` has already been called."
-        )
+        message = "The `Appsignal.configure` helper is called from within an " \
+          "app while a `#{config_file_path}` file is present."
+        expect(logs).to contains_log(:warn, message)
+        expect(err_stream.read).to include("appsignal WARNING: #{message}")
         expect(Appsignal.dsl_config_file_loaded?).to be(false)
         expect(Appsignal.config.root_path).to eq(project_fixture_path)
         expect(Appsignal.config[:active]).to be(false)
