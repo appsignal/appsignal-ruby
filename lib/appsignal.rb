@@ -222,7 +222,7 @@ module Appsignal
     #   # Or for the environment given as an argument
     #   Appsignal.configure(:production)
     #
-    # @param env [String, Symbol] The environment to load.
+    # @param env_param [String, Symbol] The environment to load.
     # @param root_path [String] The path to look the `config/appsignal.yml` config file in.
     #   Defaults to the current working directory.
     # @yield [Config] Gives the {Config} instance to the block.
