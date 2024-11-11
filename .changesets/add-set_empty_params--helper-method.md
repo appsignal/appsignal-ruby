@@ -29,8 +29,8 @@ Appsignal.set_empty_params!
 # Example: When AppSignal instrumentation sets parameters:
 Appsignal.set_empty_params!
 # Parameters: {}
-# Example code:
-Appsignal::Instrumtation::SomeLibrary.new.add_params("xyz" => "...")
+# Pseudo example code:
+Appsignal::Instrumentation::SomeLibrary.new.add_params("xyz" => "...")
 # Parameters: {}
 
 # Example: Set parameters after them being unset previously
