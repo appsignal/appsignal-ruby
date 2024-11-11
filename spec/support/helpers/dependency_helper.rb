@@ -136,17 +136,22 @@ module DependencyHelper
     dependency_present? "hanami"
   end
 
+  def hanami2_present?
+    hanami_present? && Gem.loaded_specs["hanami"].version >= Gem::Version.new("2.0")
+  end
+
   def hanami2_1_present?
     hanami_present? &&
       Gem::Version.new(::Hanami::VERSION) >= Gem::Version.new("2.1.0")
   end
 
-  def dry_monitor_present?
-    dependency_present? "dry-monitor"
+  def hanami2_2_present?
+    hanami_present? &&
+      Gem::Version.new(::Hanami::VERSION) >= Gem::Version.new("2.2.0")
   end
 
-  def hanami2_present?
-    hanami_present? && Gem.loaded_specs["hanami"].version >= Gem::Version.new("2.0")
+  def dry_monitor_present?
+    dependency_present? "dry-monitor"
   end
 
   def dependency_present?(dependency_file)
