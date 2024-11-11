@@ -556,11 +556,20 @@ module Appsignal
 
       # Mark the parameters sample data to be set as an empty value.
       #
-      # @api private
-      # @since 4.0.0
+      # Use this helper to unset request parameters / background job arguments
+      # and not report any for this transaction.
+      #
+      # If parameters would normally be added by AppSignal instrumentations of
+      # libraries, these parameters will not be added to the Transaction.
+      #
+      # Calling {#add_params} after this helper will add new parameters to the
+      # transaction.
+      #
+      # @since 4.2.0
       # @return [void]
       #
-      # @see Helpers::Instrumentation#set_empty_params!
+      # @see Transaction#set_empty_params!
+      # @see Transaction#set_params_if_nil
       def set_empty_params!
         return unless active?
         return unless Appsignal::Transaction.current?
