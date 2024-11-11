@@ -10,23 +10,13 @@ Appsignal.configure do |config|
   # https://docs.appsignal.com/ruby/configuration/options.html#option-push_api_key
   config.push_api_key = "<%= push_api_key %>"
 
-  # Actions that should not be monitored by AppSignal
+  # Configure actions that should not be monitored by AppSignal.
+  # For more information see our docs:
+  # https://docs.appsignal.com/ruby/configuration/ignore-actions.html
   # config.ignore_actions << "ApplicationController#isup"
 
-  # Errors that should not be recorded by AppSignal
+  # Configure errors that should not be recorded by AppSignal.
   # For more information see our docs:
   # https://docs.appsignal.com/ruby/configuration/ignore-errors.html
-  # config.ignore_errors += [
-  #   "Exception",
-  #   "NoMemoryError",
-  #   "ScriptError",
-  #   "LoadError",
-  #   "NotImplementedError",
-  #   "SyntaxError",
-  #   "SecurityError",
-  #   "SignalException",
-  #   "Interrupt",
-  #   "SystemExit",
-  #   "SystemStackError"
-  # ]
+  # config.ignore_errors << "MyCustomError"
 end
