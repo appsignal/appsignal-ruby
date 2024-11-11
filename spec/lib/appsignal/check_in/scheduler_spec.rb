@@ -23,6 +23,12 @@ describe Appsignal::CheckIn::Scheduler do
     end
   end
 
+  around do |example|
+    Timeout.timeout(5 * 60) do # in seconds
+      example.run
+    end
+  end
+
   describe "when no event is sent" do
     it "does not start a thread" do
       expect(scheduler.thread).to be_nil
