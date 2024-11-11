@@ -35,6 +35,7 @@ module Appsignal
     def self.determine_env(initial_env = nil)
       [
         initial_env,
+        ENV.fetch("_APPSIGNAL_CONFIG_FILE_ENV", nil), # PRIVATE ENV var used by the diagnose CLI
         ENV.fetch("APPSIGNAL_APP_ENV", nil),
         ENV.fetch("RAILS_ENV", nil),
         ENV.fetch("RACK_ENV", nil)
@@ -53,12 +54,35 @@ module Appsignal
     # Determine which root path AppSignal should initialize with.
     # @api private
     def self.determine_root_path
+      app_path_env_var = ENV.fetch("APPSIGNAL_APP_PATH", nil)
+      return app_path_env_var if app_path_env_var
+
       loader_defaults.reverse.each do |loader_defaults|
         root_path = loader_defaults[:root_path]
         return root_path if root_path
       end
 
       Dir.pwd
+    end
+
+    # @api private
+    class Context
+      DSL_FILENAME = "config/appsignal.rb"
+
+      attr_reader :env, :root_path
+
+      def initialize(env: nil, root_path: nil)
+        @env = env
+        @root_path = root_path
+      end
+
+      def dsl_config_file
+        File.join(root_path, DSL_FILENAME)
+      end
+
+      def dsl_config_file?
+        File.exist?(dsl_config_file)
+      end
     end
 
     # @api private
@@ -213,8 +237,10 @@ module Appsignal
     #   How to integrate AppSignal manually
     def initialize(
       root_path,
-      env
+      env,
+      load_yaml_file: true
     )
+      @load_yaml_file = load_yaml_file
       @root_path = root_path.to_s
       @config_file_error = false
       @config_file = config_file
@@ -269,8 +295,20 @@ module Appsignal
       @initial_config[:env] = @env
 
       # Load the config file if it exists
-      @file_config = load_from_disk || {}
-      merge(file_config)
+      if @load_yaml_file
+        @file_config = load_from_disk || {}
+        merge(file_config)
+      elsif yml_config_file?
+        # When in a `config/appsignal.rb` file and it detects a
+        # `config/appsignal.yml` file.
+        # Only logged and printed on `Appsignal.start`.
+        message = "Both a Ruby and YAML configuration file are found. " \
+          "The `config/appsignal.yml` file is ignored when the " \
+          "config is loaded from `config/appsignal.rb`. Move all config to " \
+          "the `config/appsignal.rb` file and remove the " \
+          "`config/appsignal.yml` file."
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
+      end
 
       # Load config from environment variables
       @env_config = load_from_environment
@@ -435,6 +473,13 @@ module Appsignal
       config_hash.transform_values(&:freeze)
     end
 
+    # @api private
+    def yml_config_file?
+      return false unless config_file
+
+      File.exist?(config_file)
+    end
+
     private
 
     def logger
@@ -458,7 +503,7 @@ module Appsignal
     end
 
     def load_from_disk
-      return if !config_file || !File.exist?(config_file)
+      return unless yml_config_file?
 
       read_options = YAML::VERSION >= "4.0.0" ? { :aliases => true } : {}
       configurations = YAML.load(ERB.new(File.read(config_file)).result, **read_options)

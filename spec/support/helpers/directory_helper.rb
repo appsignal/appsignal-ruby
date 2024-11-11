@@ -17,6 +17,12 @@ module DirectoryHelper
     @tmp_dir ||= File.join(spec_dir, "tmp")
   end
 
+  def write_file(path, contents)
+    parent_dir = File.dirname(path)
+    FileUtils.mkdir_p(parent_dir)
+    File.write(path, contents)
+  end
+
   def fixtures_dir
     @fixtures_dir ||= File.join(support_dir, "fixtures")
   end
