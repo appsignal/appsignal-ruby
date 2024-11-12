@@ -1367,6 +1367,18 @@ describe Appsignal::Config do
       expect(dsl.env).to eq("production")
     end
 
+    describe "#env?" do
+      it "returns true if the env matches" do
+        expect(dsl.env?("production")).to be(true)
+        expect(dsl.env?(:production)).to be(true)
+      end
+
+      it "returns false if the env doesn't match" do
+        expect(dsl.env?("staging")).to be(false)
+        expect(dsl.env?(:staging)).to be(false)
+      end
+    end
+
     it "sets config options" do
       dsl.push_api_key = "my push key"
       dsl.ignore_actions = ["My ignored action"]
