@@ -184,7 +184,7 @@ describe Appsignal::Logger do
 
   describe "a logger with default attributes" do
     it "adds the attributes when a message is logged" do
-      logger = Appsignal::Logger.new("group", :default_attributes => { :some_key => "some_value" })
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
 
       expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
         Appsignal::Utils::Data.generate({ :other_key => "other_value", :some_key => "some_value" }))
