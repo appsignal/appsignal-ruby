@@ -201,6 +201,15 @@ describe Appsignal::Logger do
       expect(default_attributes).to eq({ :some_key => "some_value" })
       expect(line_attributes).to eq({ :other_key => "other_value" })
     end
+
+    it "prioritises line attributes over default attributes" do
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+
+      expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
+        Appsignal::Utils::Data.generate({ :some_key => "other_value" }))
+
+      logger.error("Some message", { :some_key => "other_value" })
+    end
   end
 
   describe "#error with exception object" do
