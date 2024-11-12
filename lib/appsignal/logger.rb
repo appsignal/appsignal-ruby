@@ -162,7 +162,7 @@ module Appsignal
     attr_reader :default_attributes
 
     def add_with_attributes(severity, message, group, attributes)
-      Thread.current[:appsignal_logger_attributes] = default_attributes.merge!(attributes)
+      Thread.current[:appsignal_logger_attributes] = default_attributes.merge(attributes)
       add(severity, message, group)
     ensure
       Thread.current[:appsignal_logger_attributes] = nil
