@@ -25,15 +25,18 @@ module Appsignal
     # Create a new logger instance
     #
     # @param group Name of the group for this logger.
-    # @param level Log level to filter with
+    # @param level Minimum log level to report. Log lines below this level will be ignored.
+    # @param format Format to use to parse log line attributes.
+    # @param attributes Default attributes for all log lines.
     # @return [void]
-    def initialize(group, level: INFO, format: PLAINTEXT)
+    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {})
       raise TypeError, "group must be a string" unless group.is_a? String
 
       @group = group
       @level = level
       @format = format
       @mutex = Mutex.new
+      @default_attributes = attributes
     end
 
     # We support the various methods in the Ruby
@@ -156,8 +159,10 @@ module Appsignal
 
     private
 
+    attr_reader :default_attributes
+
     def add_with_attributes(severity, message, group, attributes)
-      Thread.current[:appsignal_logger_attributes] = attributes
+      Thread.current[:appsignal_logger_attributes] = default_attributes.merge(attributes)
       add(severity, message, group)
     ensure
       Thread.current[:appsignal_logger_attributes] = nil

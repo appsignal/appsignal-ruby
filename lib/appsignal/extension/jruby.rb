@@ -80,7 +80,7 @@ module Appsignal
 
         # Logging methods
         attach_function :appsignal_log,
-          [:appsignal_string, :int32, :appsignal_string, :pointer],
+          [:appsignal_string, :int32, :int32, :appsignal_string, :pointer],
           :void
 
         # Transaction methods
@@ -273,10 +273,11 @@ module Appsignal
         make_ruby_string state if state[:len] > 0
       end
 
-      def log(group, level, message, attributes)
+      def log(group, level, format, message, attributes)
         appsignal_log(
           make_appsignal_string(group),
           level,
+          format,
           make_appsignal_string(message),
           attributes.pointer
         )

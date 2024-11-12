@@ -182,6 +182,36 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "a logger with default attributes" do
+    it "adds the attributes when a message is logged" do
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+
+      expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
+        Appsignal::Utils::Data.generate({ :other_key => "other_value", :some_key => "some_value" }))
+      logger.error("Some message", { :other_key => "other_value" })
+    end
+
+    it "does not modify the original attribute hashes passed" do
+      default_attributes = { :some_key => "some_value" }
+      logger = Appsignal::Logger.new("group", :attributes => default_attributes)
+
+      line_attributes = { :other_key => "other_value" }
+      logger.error("Some message", line_attributes)
+
+      expect(default_attributes).to eq({ :some_key => "some_value" })
+      expect(line_attributes).to eq({ :other_key => "other_value" })
+    end
+
+    it "prioritises line attributes over default attributes" do
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+
+      expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
+        Appsignal::Utils::Data.generate({ :some_key => "other_value" }))
+
+      logger.error("Some message", { :some_key => "other_value" })
+    end
+  end
+
   describe "#error with exception object" do
     it "logs the exception class and its message" do
       error =
