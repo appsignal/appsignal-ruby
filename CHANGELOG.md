@@ -1,5 +1,126 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.2.0
+
+_Published on 2024-11-13._
+
+### Added
+
+- Add `config/appsignal.rb` config file support. When a `config/appsignal.rb` file is present in the app, the Ruby gem will automatically load it when `Appsignal.start` is called.
+
+  The `config/appsignal.rb` config file is a replacement for the `config/appsignal.yml` config file. When both files are present, only the `config/appsignal.rb` config file is loaded when the configuration file is automatically loaded by AppSignal  when the configuration file is automatically loaded by AppSignal.
+
+  Example `config/appsignal.rb` config file:
+
+  ```ruby
+  # config/appsignal.rb
+  Appsignal.configure do |config|
+    config.name = "My app name"
+  end
+  ```
+
+  To configure different option values for environments in the `config/appsignal.rb` config file, use if-statements:
+
+  ```ruby
+  # config/appsignal.rb
+  Appsignal.configure do |config|
+    config.name = "My app name"
+    if config.env == "production"
+      config.ignore_actions << "My production action"
+    end
+    if config.env == "staging"
+      config.ignore_actions << "My staging action"
+    end
+  end
+  ```
+
+  (minor [f81248bc](https://github.com/appsignal/appsignal-ruby/commit/f81248bc9c557197a0dd123c6d5958f21c11af9d), [48d16c7a](https://github.com/appsignal/appsignal-ruby/commit/48d16c7ab4dbc35ac3d56ecf042ca165d609bb64))
+- Add the `config/appsignal.rb` Ruby config file method to installer, `appsignal install`. (patch [0d2e2bde](https://github.com/appsignal/appsignal-ruby/commit/0d2e2bde5da510f0d339673cdcdb9f79030acf59))
+- Add `Appsignal.set_empty_params!` helper method. This helper method can be used to unset parameters on a transaction and to prevent the Appsignal instrumentation from adding parameters to a transaction.
+
+  Example usage:
+
+  ```ruby
+  class PaymentsController < ApplicationController
+    def create
+      Appsignal.set_empty_params!
+
+      # Do things with sensitive parameters
+    end
+  end
+  ```
+
+  When `Appsignal.add_params` is called afterward, the "empty parameters" state is cleared and any AppSignal instrumentation (if called afterward) will also add parameters again.
+
+  ```ruby
+  # Example: Unset parameters when set
+  Appsignal.add_params("abc" => "def")
+  # Parameters: { "abc" => "def" }
+  Appsignal.set_empty_params!
+  # Parameters: {}
+
+  # Example: When AppSignal instrumentation sets parameters:
+  Appsignal.set_empty_params!
+  # Parameters: {}
+  # Pseudo example code:
+  Appsignal::Instrumentation::SomeLibrary.new.add_params("xyz" => "...")
+  # Parameters: {}
+
+  # Example: Set parameters after them being unset previously
+  Appsignal.set_empty_params!
+  # Parameters: {}
+  Appsignal.add_params("abc" => "def")
+  # Parameters: { "abc" => "def" }
+  ```
+
+  (patch [20a8050e](https://github.com/appsignal/appsignal-ruby/commit/20a8050e63605f08e9377dda84b3a422810dd49a), [23627cd7](https://github.com/appsignal/appsignal-ruby/commit/23627cd7e7c2b2939c43701228e77aa14eae5c68))
+- Add `Appsignal.configure` context `env?` helper method. Check if the loaded environment matches the given environment using the `.env?(:env_name)` helper.
+
+  Example:
+
+  ```ruby
+  Appsignal.configure do |config|
+    # Symbols work as the argument
+    if config.env?(:production)
+      config.ignore_actions << "My production action"
+    end
+
+    # Strings also work as the argument
+    if config.env?("staging")
+      config.ignore_actions << "My staging action"
+    end
+  end
+  ```
+
+  (patch [8b234cae](https://github.com/appsignal/appsignal-ruby/commit/8b234caee4c29f9550c4dc77d02ebd21f8dbfa30))
+- Allow for default attributes to be given when initialising a `Logger` instance:
+
+  ```ruby
+  order_logger = Appsignal::Logger.new("app", attributes: { order_id: 123 })
+  ```
+
+  All log lines reported by this logger will contain the given attribute. Attributes given when reporting the log line will be merged with the default attributes for the logger, with those in the log line taking priority.
+
+  (patch [27e05af6](https://github.com/appsignal/appsignal-ruby/commit/27e05af6cb1e1ebca1fd6e8038da290f42db2bdb), [8be7c791](https://github.com/appsignal/appsignal-ruby/commit/8be7c7912eea4d3df74f1ca8808b7d6e8802f550))
+
+### Changed
+
+- Read the Hanami Action name without metaprogramming in Hanami 2.2 and newer. This makes our instrumentation more stable whenever something changes in future Hanami releases. (patch [c6848504](https://github.com/appsignal/appsignal-ruby/commit/c68485043feee13a49400f57c9a77d48f670f0f2))
+- Ignore these Hanami errors by default:
+
+  - Hanami::Router::NotAllowedError (for example: sending a GET request to POST endpoint)
+  - Hanami::Router::NotFoundError
+
+  They are usually errors you don't want to be notified about, so we ignore them by default now.
+
+  Customize the `ignore_errors` config option to continue receiving these errors.
+
+  (patch [f1500987](https://github.com/appsignal/appsignal-ruby/commit/f1500987b7b73ab2873202ea7301f2cfb19acdc7))
+
+### Fixed
+
+- Fix request parameter reporting for Hanami 2.2. (patch [ca22ed54](https://github.com/appsignal/appsignal-ruby/commit/ca22ed54de513773c5ee387f28ad98ee8f301627))
+
 ## 4.1.3
 
 _Published on 2024-11-07._
