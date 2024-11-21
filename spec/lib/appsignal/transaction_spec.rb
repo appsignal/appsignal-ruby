@@ -166,6 +166,38 @@ describe Appsignal::Transaction do
         keep_transactions { transaction.complete }
         expect(transaction).to include_tags("foo" => "bar")
       end
+
+      context "when the APPSIGNAL_SAMPLING_RATE is set to 0.5" do
+        before do
+          stub_const("Appsignal::Transaction::SAMPLING_RATE", 0.2)
+        end
+
+        context "and we are lucky" do
+          before do
+            allow(transaction).to receive(:rand).and_return(0.1)
+          end
+
+          it 'samples the transaction' do
+            transaction.add_tags(:foo => "bar")
+            transaction.complete
+            expect(transaction).to be_completed
+            expect(transaction).not_to be_discarded
+          end
+        end
+
+        context "and we are unlucky" do
+          before do
+            allow(transaction).to receive(:rand).and_return(0.3)
+          end
+
+          it 'does not sample the transaction' do
+            transaction.add_tags(:foo => "bar")
+            transaction.complete
+            expect(transaction).not_to be_completed
+            expect(transaction).to be_discarded
+          end
+        end
+      end
     end
 
     context "when transaction is not being sampled" do
