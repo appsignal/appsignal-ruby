@@ -1,5 +1,6 @@
 source "https://rubygems.org"
 
+gem "mutex_m" # Ruby 3.4 requirement
 gem "webmachine", "~> 2.0"
 gem "webrick"
 
