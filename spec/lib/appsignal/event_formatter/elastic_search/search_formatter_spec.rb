@@ -18,9 +18,15 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     end
 
     it "should return a payload with name and sanitized body" do
+      query =
+        if DependencyHelper.ruby_3_4_or_newer?
+          "{index: \"users\", type: \"user\", q: \"?\"}"
+        else
+          "{:index=>\"users\", :type=>\"user\", :q=>\"?\"}"
+        end
       expect(formatter.format(payload)).to eql([
         "Search: User",
-        "{:index=>\"users\", :type=>\"user\", :q=>\"?\"}"
+        query
       ])
     end
   end
