@@ -4,8 +4,12 @@ gem "rails", "~> 7.2.0"
 gem "rake", "> 12.2"
 gem "sidekiq"
 
-# Fix install issue for jruby on gem 3.1.8.
-# No java stub is published.
-gem "bigdecimal", "3.1.7" if RUBY_PLATFORM == "java"
+if RUBY_PLATFORM == "java"
+  # Fix install issue for jruby on gem 3.1.8.
+  # No java stub is published.
+  gem "bigdecimal", "3.1.7"
+  # Fix default gem install issue
+  gem "jar-dependencies", "0.4.1"
+end
 
 gemspec :path => "../"
