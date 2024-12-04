@@ -37,6 +37,7 @@ module Appsignal
       @format = format
       @mutex = Mutex.new
       @default_attributes = attributes
+      @appsignal_attributes = {}
     end
 
     # We support the various methods in the Ruby
@@ -159,17 +160,13 @@ module Appsignal
 
     private
 
-    attr_reader :default_attributes
+    attr_reader :default_attributes, :appsignal_attributes
 
     def add_with_attributes(severity, message, group, attributes)
-      Thread.current[:appsignal_logger_attributes] = default_attributes.merge(attributes)
+      @appsignal_attributes = default_attributes.merge(attributes)
       add(severity, message, group)
     ensure
-      Thread.current[:appsignal_logger_attributes] = nil
-    end
-
-    def appsignal_attributes
-      Thread.current.fetch(:appsignal_logger_attributes, {})
+      @appsignal_attributes = {}
     end
   end
 end
