@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.2.1
+
+_Published on 2024-12-04._
+
+### Changed
+
+- Minimize difference between Rack transaction duration and total child event durations. (patch [95c37802](https://github.com/appsignal/appsignal-ruby/commit/95c3780291241fa6de8d2c0ae9bb09d3ce42d18d))
+
 ## 4.2.0
 
 _Published on 2024-11-13._
