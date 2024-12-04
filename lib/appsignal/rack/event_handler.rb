@@ -59,6 +59,7 @@ module Appsignal
           return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 
           transaction = Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
+          transaction.start_event
           request.env[APPSIGNAL_TRANSACTION] = transaction
 
           request.env[RACK_AFTER_REPLY] ||= []
@@ -83,7 +84,6 @@ module Appsignal
             # One such scenario is when a Puma "lowlevel_error" occurs.
             Appsignal::Transaction.complete_current!
           end
-          transaction.start_event
         end
       end
 
