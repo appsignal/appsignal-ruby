@@ -232,4 +232,118 @@ describe Appsignal::Logger do
       logger.error(error)
     end
   end
+
+  if DependencyHelper.rails_present?
+    describe "tagged logging" do
+      it "logs messages with tags from logger.tagged" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[My tag] [My other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+
+        appsignal_logger = Appsignal::Logger.new("group")
+        logger = ActiveSupport::TaggedLogging.new(appsignal_logger)
+        logger.tagged("My tag", "My other tag") do
+          logger.info("Some message")
+        end
+      end
+
+      it "logs messages with nested tags from logger.tagged" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+
+        appsignal_logger = Appsignal::Logger.new("group")
+        logger = ActiveSupport::TaggedLogging.new(appsignal_logger)
+        logger.tagged("My tag", "My other tag") do
+          logger.tagged("Nested tag", "Nested other tag") do
+            logger.info("Some message")
+          end
+        end
+      end
+
+      it "logs messages with tags from Rails.application.config.log_tags" do
+        allow(Appsignal::Extension).to receive(:log)
+
+        appsignal_logger = Appsignal::Logger.new("group")
+        logger = ActiveSupport::TaggedLogging.new(appsignal_logger)
+
+        # This is how Rails sets the `log_tags` values
+        logger.push_tags(["Request tag", "Second tag"])
+        logger.tagged("First message", "My other tag") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+
+        # Logs all messsages within the time between `push_tags` and `pop_tags`
+        # with the same set tags
+        logger.tagged("Second message") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[Request tag] [Second tag] [Second message] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+
+        # This is how Rails clears the `log_tags` values
+        # It will no longer includes those tags in new log messages
+        logger.pop_tags(2)
+        logger.tagged("Third message") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[Third message] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+      end
+
+      it "clears all tags with clear_tags!" do
+        allow(Appsignal::Extension).to receive(:log)
+
+        appsignal_logger = Appsignal::Logger.new("group")
+        logger = ActiveSupport::TaggedLogging.new(appsignal_logger)
+
+        # This is how Rails sets the `log_tags` values
+        logger.push_tags(["Request tag", "Second tag"])
+        logger.tagged("First message", "My other tag") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+
+        logger.clear_tags!
+        logger.tagged("First message", "My other tag") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[First message] [My other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+      end
+    end
+  end
 end

@@ -37,6 +37,8 @@ module Appsignal
       @format = format
       @mutex = Mutex.new
       @default_attributes = attributes
+      @appsignal_attributes = {}
+      @tags = []
     end
 
     # We support the various methods in the Ruby
@@ -56,6 +58,11 @@ module Appsignal
         end
       end
       return if message.nil?
+
+      if @tags.any?
+        formatted_tags = @tags.map { |tag| "[#{tag}]" }
+        message = "#{formatted_tags.join(" ")} #{message}"
+      end
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 
@@ -143,6 +150,29 @@ module Appsignal
       add_with_attributes(FATAL, message, @group, attributes)
     end
 
+    # Listen to ActiveSupport tagged logging tags set with `Rails.logger.tagged`.
+    def tagged(tags)
+      @tags.append(*tags)
+      yield self
+    ensure
+      @tags.pop(tags.length)
+    end
+
+    # Listen to ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
+    def push_tags(tags)
+      @tags.append(*tags)
+    end
+
+    # Remove a set of ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
+    def pop_tags(count = 1)
+      @tags.pop(count)
+    end
+
+    # Remove all ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
+    def clear_tags!
+      @tags.clear
+    end
+
     # When using ActiveSupport::TaggedLogging without the broadcast feature,
     # the passed logger is required to respond to the `silence` method.
     # In our case it behaves as the broadcast feature of the Rails logger, but
@@ -159,17 +189,13 @@ module Appsignal
 
     private
 
-    attr_reader :default_attributes
+    attr_reader :default_attributes, :appsignal_attributes
 
     def add_with_attributes(severity, message, group, attributes)
-      Thread.current[:appsignal_logger_attributes] = default_attributes.merge(attributes)
+      @appsignal_attributes = default_attributes.merge(attributes)
       add(severity, message, group)
     ensure
-      Thread.current[:appsignal_logger_attributes] = nil
-    end
-
-    def appsignal_attributes
-      Thread.current.fetch(:appsignal_logger_attributes, {})
+      @appsignal_attributes = {}
     end
   end
 end
