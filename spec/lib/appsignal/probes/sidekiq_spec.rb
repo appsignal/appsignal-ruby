@@ -312,7 +312,7 @@ describe Appsignal::Probes::SidekiqProbe do
         log = capture_logs { probe }
         expect(log).to contains_log(
           :debug,
-          %(Initializing Sidekiq probe with config: {:hostname=>"#{redis_hostname}"})
+          %(Initializing Sidekiq probe with config: hostname: "#{redis_hostname}")
         )
         log = capture_logs { probe.call }
         expect(log).to contains_log(

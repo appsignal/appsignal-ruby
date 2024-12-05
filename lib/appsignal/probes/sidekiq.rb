@@ -59,7 +59,11 @@ module Appsignal
         is_sidekiq7 = self.class.sidekiq7_and_greater?
         @adapter = is_sidekiq7 ? Sidekiq7Adapter : Sidekiq6Adapter
 
-        config_string = " with config: #{config}" unless config.empty?
+        unless config.empty?
+          formatted_config =
+            config.map { |key, value| "#{key}: #{value.inspect}" }.join(", ")
+          config_string = " with config: #{formatted_config}"
+        end
         Appsignal.internal_logger.debug("Initializing Sidekiq probe#{config_string}")
         require "sidekiq/api"
       end

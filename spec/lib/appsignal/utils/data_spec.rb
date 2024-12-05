@@ -108,7 +108,11 @@ describe Appsignal::Utils::Data do
 
           it "casts unsupported key types to string" do
             expect(generate([1, 2] => "abc").to_s).to eq(%({"[1, 2]":"abc"}))
-            expect(generate({ :a => "b" } => "abc").to_s).to eq(%({"{:a=>\\"b\\"}":"abc"}))
+            if DependencyHelper.ruby_3_4_or_newer?
+              expect(generate({ :a => "b" } => "abc").to_s).to eq(%({"{a: \\"b\\"}":"abc"}))
+            else
+              expect(generate({ :a => "b" } => "abc").to_s).to eq(%({"{:a=>\\"b\\"}":"abc"}))
+            end
           end
         end
       end

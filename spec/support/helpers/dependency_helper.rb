@@ -17,6 +17,10 @@ module DependencyHelper
     ruby_version >= Gem::Version.new("3.2.0")
   end
 
+  def ruby_3_4_or_newer?
+    ruby_version >= Gem::Version.new("3.4.0")
+  end
+
   def running_jruby?
     Appsignal::System.jruby?
   end

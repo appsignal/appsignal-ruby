@@ -33,4 +33,5 @@ ext/*.bundle
 ext/*.o
 ext/*.so
 ext/*.report
+ext/*.bundle.dSYM
 pkg/

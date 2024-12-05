@@ -1,5 +1,8 @@
 source "https://rubygems.org"
 
+gem "base64" # Ruby 3.4 requirement
+gem "drb" # Ruby 3.4 requirement
+gem "mutex_m" # Ruby 3.4 requirement
 gem "rails", "~> 7.0.1"
 gem "rake", "> 12.2"
 gem "sidekiq"
