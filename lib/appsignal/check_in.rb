@@ -4,7 +4,6 @@ module Appsignal
   module CheckIn
     HEARTBEAT_CONTINUOUS_INTERVAL_SECONDS = 30
     NEW_SCHEDULER_MUTEX = Mutex.new
-    NEW_TRANSMITTER_MUTEX = Mutex.new
 
     class << self
       # @api private
@@ -83,19 +82,6 @@ module Appsignal
 
         event = Event.heartbeat(:identifier => identifier)
         scheduler.schedule(event)
-      end
-
-      # @api private
-      def transmitter
-        return @transmitter if @transmitter
-
-        NEW_TRANSMITTER_MUTEX.synchronize do
-          @transmitter ||= Transmitter.new(
-            "#{Appsignal.config[:logging_endpoint]}/check_ins/json"
-          )
-        end
-
-        @transmitter
       end
 
       # @api private

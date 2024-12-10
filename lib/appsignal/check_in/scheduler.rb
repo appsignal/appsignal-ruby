@@ -95,7 +95,11 @@ module Appsignal
         description = Event.describe(events)
 
         begin
-          response = CheckIn.transmitter.transmit(events, :format => :ndjson)
+          @transmitter ||= Transmitter.new(
+            "#{Appsignal.config[:logging_endpoint]}/check_ins/json"
+          )
+
+          response = @transmitter.transmit(events, :format => :ndjson)
 
           if (200...300).include?(response.code.to_i)
             Appsignal.internal_logger.debug("Transmitted #{description}")
