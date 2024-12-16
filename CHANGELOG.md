@@ -1,5 +1,27 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.2.2
+
+_Published on 2024-12-16._
+
+### Added
+
+- Support Rails/ActiveSupport tagged logging. When tags are set in apps using `Rails.logger.tagged { ... }` or with the `Rails.application.config.log_tags = [...]` config option, these tags are now included in the collected log messages.
+
+  ```ruby
+  Rails.logger.tagged(["Tag 1", "Tag 2"]) { Rails.logger.info("My message") }
+  ```
+
+  Reports this log message:
+
+  > [Tag 1] [Tag 2] My message
+
+  (patch [41e1e8f0](https://github.com/appsignal/appsignal-ruby/commit/41e1e8f076025da2420cb43c53b5f7211ae45de8))
+
+### Fixed
+
+- Fix a thread safety issue where sending check-in events simultaneously from different threads would cause several check-in schedulers to be initialised internally. This could cause some of the scheduled check-in events to never be sent to AppSignal when `Appsignal.stop` is called. (patch [c372a3f9](https://github.com/appsignal/appsignal-ruby/commit/c372a3f998b78ef5ef259be39fe198433d6ca95e))
+
 ## 4.2.1
 
 _Published on 2024-12-04._
