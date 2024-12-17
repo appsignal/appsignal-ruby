@@ -159,7 +159,7 @@ module Appsignal
     end
 
     # Listen to ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
-    def push_tags(tags)
+    def push_tags(*tags)
       @tags.append(*tags)
     end
 
