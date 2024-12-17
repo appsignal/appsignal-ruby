@@ -315,6 +315,25 @@ describe Appsignal::Logger do
           )
       end
 
+      it "logs messages with tags from Rails 8 application.config.log_tags" do
+        allow(Appsignal::Extension).to receive(:log)
+
+        appsignal_logger = Appsignal::Logger.new("group")
+        logger = ActiveSupport::TaggedLogging.new(appsignal_logger)
+
+        # This is how Rails sets the `log_tags` values
+        logger.push_tags("Request tag", "Second tag")
+        logger.tagged("First message", "My other tag") { logger.info("Some message") }
+        expect(Appsignal::Extension).to have_received(:log)
+          .with(
+            "group",
+            3,
+            0,
+            "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
+            Appsignal::Utils::Data.generate({})
+          )
+      end
+
       it "clears all tags with clear_tags!" do
         allow(Appsignal::Extension).to receive(:log)
 
