@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.2.3
+
+_Published on 2024-12-17._
+
+### Fixed
+
+- Fix tagged logging ArgumentError error for Rails 8. (patch [8f373074](https://github.com/appsignal/appsignal-ruby/commit/8f373074531d8285b4718c16e125a62f42774d90))
+
 ## 4.2.2
 
 _Published on 2024-12-16._
