@@ -29,7 +29,7 @@ module Appsignal
     # @param format Format to use to parse log line attributes.
     # @param attributes Default attributes for all log lines.
     # @return [void]
-    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {})
+    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {}, tags: [])
       raise TypeError, "group must be a string" unless group.is_a? String
 
       @group = group
@@ -38,7 +38,7 @@ module Appsignal
       @mutex = Mutex.new
       @default_attributes = attributes
       @appsignal_attributes = {}
-      @tags = []
+      @tags = tags
     end
 
     # We support the various methods in the Ruby
@@ -156,10 +156,19 @@ module Appsignal
       # as separate arguments. Flatten the tags argument array to deal with them
       # indistinctly.
       tags = tags.flatten
+
+      # If called without a block, return a new logger that always logs with the
+      # given set of tags.
+      return with_tags(tags) unless block_given?
+
+      # If called with a block, modify the current logger to log with the given
+      # set of tags for the duration of the block.
       @tags.append(*tags)
-      yield self
-    ensure
-      @tags.pop(tags.length)
+      begin
+        yield self
+      ensure
+        @tags.pop(tags.length)
+      end
     end
 
     # Listen to ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
@@ -196,6 +205,16 @@ module Appsignal
     end
 
     private
+
+    def with_tags(tags)
+      Logger.new(
+        @group,
+        :level => @level,
+        :format => @format,
+        :attributes => @default_attributes,
+        :tags => @tags + tags
+      )
+    end
 
     attr_reader :default_attributes, :appsignal_attributes
 
