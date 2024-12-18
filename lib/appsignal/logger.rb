@@ -151,7 +151,11 @@ module Appsignal
     end
 
     # Listen to ActiveSupport tagged logging tags set with `Rails.logger.tagged`.
-    def tagged(tags)
+    def tagged(*tags)
+      # Depending on the Rails version, the tags can be passed as an array or
+      # as separate arguments. Flatten the tags argument array to deal with them
+      # indistinctly.
+      tags = tags.flatten
       @tags.append(*tags)
       yield self
     ensure
@@ -160,6 +164,10 @@ module Appsignal
 
     # Listen to ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
     def push_tags(*tags)
+      # Depending on the Rails version, the tags can be passed as an array or
+      # as separate arguments. Flatten the tags argument array to deal with them
+      # indistinctly.
+      tags = tags.flatten
       @tags.append(*tags)
     end
 
