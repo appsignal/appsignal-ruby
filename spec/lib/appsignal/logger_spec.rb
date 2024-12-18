@@ -122,6 +122,113 @@ shared_examples "tagged logging" do
         Appsignal::Utils::Data.generate({})
       )
   end
+
+  it "accepts tags in #tagged as an array" do
+    expect(Appsignal::Extension).to receive(:log)
+      .with(
+        "group",
+        3,
+        0,
+        a_string_starting_with("[My tag] [My other tag] Some message"),
+        Appsignal::Utils::Data.generate({})
+      )
+
+    logger.tagged(["My tag", "My other tag"]) do
+      logger.info("Some message")
+    end
+  end
+
+  # Calling `#tagged` without a block is not supported by
+  # `ActiveSupport::TaggedLogging` in Rails 6 and earlier. Only run this
+  # in builds where Rails is not present, or builds where Rails 7 or later
+  # is present.
+  if !DependencyHelper.rails_present? || DependencyHelper.rails7_present?
+    describe "when calling #tagged without a block" do
+      it "returns a new logger with the tags added" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("[My tag] [My other tag] Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        logger.tagged("My tag", "My other tag").info("Some message")
+      end
+
+      it "does not modify the original logger" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("[My tag] [My other tag] Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        new_logger = logger.tagged("My tag", "My other tag")
+        new_logger.info("Some message")
+
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        logger.info("Some message")
+      end
+
+      it "can be chained" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        logger.tagged("My tag", "My other tag").tagged("My third tag").info("Some message")
+      end
+
+      it "can be chained before a block invocation" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        # We must explicitly use the logger passed to the block,
+        # as the logger returned from the first #tagged invocation
+        # is a new instance of the logger.
+        logger.tagged("My tag", "My other tag").tagged("My third tag") do |logger|
+          logger.info("Some message")
+        end
+      end
+
+      it "can be chained after a block invocation" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            Appsignal::Utils::Data.generate({})
+          )
+
+        logger.tagged("My tag", "My other tag") do
+          logger.tagged("My third tag").info("Some message")
+        end
+      end
+    end
+  end
 end
 
 describe Appsignal::Logger do
