@@ -29,7 +29,7 @@ module Appsignal
     # @param format Format to use to parse log line attributes.
     # @param attributes Default attributes for all log lines.
     # @return [void]
-    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {}, tags: [])
+    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {})
       raise TypeError, "group must be a string" unless group.is_a? String
 
       @group = group
@@ -38,7 +38,7 @@ module Appsignal
       @mutex = Mutex.new
       @default_attributes = attributes
       @appsignal_attributes = {}
-      @tags = tags
+      @loggers = []
     end
 
     # We support the various methods in the Ruby
@@ -59,12 +59,13 @@ module Appsignal
       end
       return if message.nil?
 
-      if @tags.any?
-        formatted_tags = @tags.map { |tag| "[#{tag}]" }
-        message = "#{formatted_tags.join(" ")} #{message}"
-      end
-
       message = formatter.call(severity, Time.now, group, message) if formatter
+
+      @loggers.each do |logger|
+        logger.add(severity, message, group)
+      rescue
+        nil
+      end
 
       unless message.is_a?(String)
         Appsignal.internal_logger.warn(
@@ -150,46 +151,6 @@ module Appsignal
       add_with_attributes(FATAL, message, @group, attributes)
     end
 
-    # Listen to ActiveSupport tagged logging tags set with `Rails.logger.tagged`.
-    def tagged(*tags)
-      # Depending on the Rails version, the tags can be passed as an array or
-      # as separate arguments. Flatten the tags argument array to deal with them
-      # indistinctly.
-      tags = tags.flatten
-
-      # If called without a block, return a new logger that always logs with the
-      # given set of tags.
-      return with_tags(tags) unless block_given?
-
-      # If called with a block, modify the current logger to log with the given
-      # set of tags for the duration of the block.
-      @tags.append(*tags)
-      begin
-        yield self
-      ensure
-        @tags.pop(tags.length)
-      end
-    end
-
-    # Listen to ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
-    def push_tags(*tags)
-      # Depending on the Rails version, the tags can be passed as an array or
-      # as separate arguments. Flatten the tags argument array to deal with them
-      # indistinctly.
-      tags = tags.flatten
-      @tags.append(*tags)
-    end
-
-    # Remove a set of ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
-    def pop_tags(count = 1)
-      @tags.pop(count)
-    end
-
-    # Remove all ActiveSupport tagged logging tags set with `Rails.config.log_tags`.
-    def clear_tags!
-      @tags.clear
-    end
-
     # When using ActiveSupport::TaggedLogging without the broadcast feature,
     # the passed logger is required to respond to the `silence` method.
     # In our case it behaves as the broadcast feature of the Rails logger, but
@@ -204,17 +165,11 @@ module Appsignal
       block.call
     end
 
-    private
-
-    def with_tags(tags)
-      Logger.new(
-        @group,
-        :level => @level,
-        :format => @format,
-        :attributes => @default_attributes,
-        :tags => @tags + tags
-      )
+    def broadcast_to(logger)
+      @loggers << logger
     end
+
+    private
 
     attr_reader :default_attributes, :appsignal_attributes
 
