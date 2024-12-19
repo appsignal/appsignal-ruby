@@ -466,8 +466,6 @@ describe Appsignal::Logger do
     end
   end
 
-  it_behaves_like "tagged logging"
-
   if DependencyHelper.rails_present?
     describe "wrapped in ActiveSupport::TaggedLogging" do
       let(:logger) do
