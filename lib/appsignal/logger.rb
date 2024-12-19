@@ -38,6 +38,7 @@ module Appsignal
       @mutex = Mutex.new
       @default_attributes = attributes
       @appsignal_attributes = {}
+      @loggers = []
     end
 
     # We support the various methods in the Ruby
@@ -59,6 +60,12 @@ module Appsignal
       return if message.nil?
 
       message = formatter.call(severity, Time.now, group, message) if formatter
+
+      @loggers.each do |logger|
+        logger.add(severity, message, group)
+      rescue
+        nil
+      end
 
       unless message.is_a?(String)
         Appsignal.internal_logger.warn(
@@ -157,6 +164,10 @@ module Appsignal
       block.call(self)
     ensure
       @level = previous_level
+    end
+
+    def broadcast_to(logger)
+      @loggers << logger
     end
 
     private

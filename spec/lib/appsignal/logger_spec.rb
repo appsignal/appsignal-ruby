@@ -375,6 +375,53 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#broadcast_to" do
+    it "broadcasts the message to the given logger" do
+      other_device = StringIO.new
+      other_logger = ::Logger.new(other_device)
+
+      logger.broadcast_to(other_logger)
+
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+
+      logger.info("Log message")
+
+      expect(other_device.string).to include("INFO -- group: Log message")
+    end
+
+    if DependencyHelper.rails_present?
+      describe "wrapped in ActiveSupport::TaggedLogging" do
+        let(:other_stream) { StringIO.new }
+        let(:other_logger) { ::Logger.new(other_stream) }
+
+        let(:logger) do
+          appsignal_logger = Appsignal::Logger.new("group")
+          appsignal_logger.broadcast_to(other_logger)
+          ActiveSupport::TaggedLogging.new(appsignal_logger)
+        end
+
+        it "broadcasts a tagged message to the given logger" do
+          expect(Appsignal::Extension).to receive(:log)
+            .with(
+              "group",
+              3,
+              0,
+              a_string_starting_with("[My tag] [My other tag] Some message"),
+              Appsignal::Utils::Data.generate({})
+            )
+
+          logger.tagged("My tag", "My other tag") do
+            logger.info("Some message")
+          end
+
+          expect(other_stream.string)
+            .to include("INFO -- group: [My tag] [My other tag] Some message")
+        end
+      end
+    end
+  end
+
   [
     ["debug", 2, ::Logger::INFO],
     ["info", 3, ::Logger::WARN],
