@@ -336,6 +336,43 @@ describe Appsignal::Logger do
       expect(num).to eq(2)
       expect(Appsignal::Extension).not_to receive(:log)
     end
+
+    it "silences the logger up to, but not including, the given level" do
+      # Expect not to receive info
+      expect(Appsignal::Extension).not_to receive(:log)
+        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+
+      # Expect to receive warn
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 5, 0, "Log message", instance_of(Appsignal::Extension::Data))
+
+      logger.silence(::Logger::WARN) do
+        logger.info("Log message")
+        logger.warn("Log message")
+      end
+    end
+
+    it "silences the logger to error level by default" do
+      # Expect not to receive debug, info or warn
+      [2, 3, 5].each do |severity|
+        expect(Appsignal::Extension).not_to receive(:log)
+          .with("group", severity, 0, "Log message", instance_of(Appsignal::Extension::Data))
+      end
+
+      # Expect to receive error and fatal
+      [6, 7].each do |severity|
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", severity, 0, "Log message", instance_of(Appsignal::Extension::Data))
+      end
+
+      logger.silence do
+        logger.debug("Log message")
+        logger.info("Log message")
+        logger.warn("Log message")
+        logger.error("Log message")
+        logger.fatal("Log message")
+      end
+    end
   end
 
   [
