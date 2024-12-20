@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.3.1
+
+_Published on 2024-12-20._
+
+### Fixed
+
+- Fix a performance issue when sanitising `INSERT INTO ... VALUES` queries. (patch [9791d9a1](https://github.com/appsignal/appsignal-ruby/commit/9791d9a1ef18bd18b96ad449cae90425a621bfb3))
+
 ## 4.3.0
 
 _Published on 2024-12-20._
