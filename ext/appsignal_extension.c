@@ -15,6 +15,30 @@ static inline VALUE make_ruby_string(appsignal_string_t string) {
   return str;
 }
 
+const rb_data_type_t transaction_data_type = {
+  .wrap_struct_name = "Appsignal::Extension::Transaction",
+  .function = {
+    .dfree = appsignal_free_transaction,
+  },
+  .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+};
+
+const rb_data_type_t data_data_type = {
+  .wrap_struct_name = "Appsignal::Extension::Data",
+  .function = {
+    .dfree = appsignal_free_data,
+  },
+  .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+};
+
+const rb_data_type_t span_data_type = {
+  .wrap_struct_name = "Appsignal::Extension::Span",
+  .function = {
+    .dfree = appsignal_free_span,
+  },
+  .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+};
+
 VALUE Appsignal;
 VALUE Extension;
 VALUE Transaction;
@@ -64,7 +88,7 @@ static VALUE start_transaction(VALUE self, VALUE transaction_id, VALUE namespace
   );
 
   if (transaction) {
-    return Data_Wrap_Struct(Transaction, NULL, appsignal_free_transaction, transaction);
+    return TypedData_Wrap_Struct(Transaction, &transaction_data_type, transaction);
   } else {
     return Qnil;
   }
@@ -75,7 +99,7 @@ static VALUE start_event(VALUE self, VALUE gc_duration_ms) {
 
   Check_Type(gc_duration_ms, T_FIXNUM);
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_start_event(transaction, NUM2LONG(gc_duration_ms));
 
@@ -91,7 +115,7 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   Check_Type(title, T_STRING);
   Check_Type(body_format, T_FIXNUM);
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   body_type = TYPE(body);
   if (body_type == T_STRING) {
@@ -103,8 +127,8 @@ static VALUE finish_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
         FIX2INT(body_format),
         FIX2LONG(gc_duration_ms)
     );
-  } else if (body_type == RUBY_T_DATA) {
-    Data_Get_Struct(body, appsignal_data_t, body_data);
+  } else if (body_type == T_DATA) {
+    TypedData_Get_Struct(body, appsignal_data_t, &data_data_type, body_data);
     appsignal_finish_event_data(
         transaction,
         make_appsignal_string(name),
@@ -134,7 +158,7 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
   }
   Check_Type(body_format, T_FIXNUM);
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   body_type = TYPE(body);
   if (body_type == T_STRING) {
@@ -147,8 +171,8 @@ static VALUE record_event(VALUE self, VALUE name, VALUE title, VALUE body, VALUE
         NUM2LONG(duration),
         NUM2LONG(gc_duration_ms)
     );
-  } else if (body_type == RUBY_T_DATA) {
-    Data_Get_Struct(body, appsignal_data_t, body_data);
+  } else if (body_type == T_DATA) {
+    TypedData_Get_Struct(body, appsignal_data_t, &data_data_type, body_data);
     appsignal_record_event_data(
         transaction,
         make_appsignal_string(name),
@@ -171,10 +195,10 @@ static VALUE set_transaction_error(VALUE self, VALUE name, VALUE message, VALUE 
 
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
-  Check_Type(backtrace, RUBY_T_DATA);
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
-  Data_Get_Struct(backtrace, appsignal_data_t, backtrace_data);
+  backtrace_data = rb_check_typeddata(backtrace, &data_data_type);
+
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_error(
       transaction,
@@ -190,10 +214,10 @@ static VALUE set_transaction_sample_data(VALUE self, VALUE key, VALUE payload) {
   appsignal_data_t* payload_data;
 
   Check_Type(key, T_STRING);
-  Check_Type(payload, RUBY_T_DATA);
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
-  Data_Get_Struct(payload, appsignal_data_t, payload_data);
+  payload_data = rb_check_typeddata(payload, &data_data_type);
+
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_sample_data(
       transaction,
@@ -207,7 +231,7 @@ static VALUE set_transaction_action(VALUE self, VALUE action) {
   appsignal_transaction_t* transaction;
 
   Check_Type(action, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_action(
       transaction,
@@ -220,7 +244,7 @@ static VALUE set_transaction_namespace(VALUE self, VALUE namespace) {
   appsignal_transaction_t* transaction;
 
   Check_Type(namespace, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_namespace(
       transaction,
@@ -238,7 +262,7 @@ static VALUE set_transaction_queue_start(VALUE self, VALUE queue_start) {
       rb_raise(rb_eTypeError, "queue_start should be an Integer");
   }
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_queue_start(
       transaction,
@@ -252,7 +276,7 @@ static VALUE set_transaction_metadata(VALUE self, VALUE key, VALUE value) {
 
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_set_transaction_metadata(
       transaction,
@@ -267,7 +291,7 @@ static VALUE finish_transaction(VALUE self, VALUE gc_duration_ms) {
   int sample;
 
   Check_Type(gc_duration_ms, T_FIXNUM);
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   sample = appsignal_finish_transaction(transaction, NUM2LONG(gc_duration_ms));
   return sample == 1 ? Qtrue : Qfalse;
@@ -278,7 +302,7 @@ static VALUE duplicate_transaction(VALUE self, VALUE new_transaction_id) {
   appsignal_transaction_t* duplicate_transaction;
 
   Check_Type(new_transaction_id, T_STRING);
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   duplicate_transaction = appsignal_duplicate_transaction(
       transaction,
@@ -286,10 +310,9 @@ static VALUE duplicate_transaction(VALUE self, VALUE new_transaction_id) {
   );
 
   if (duplicate_transaction) {
-      return Data_Wrap_Struct(
+      return TypedData_Wrap_Struct(
           Transaction,
-          NULL,
-          appsignal_free_transaction,
+          &transaction_data_type,
           duplicate_transaction
       );
   } else {
@@ -300,7 +323,7 @@ static VALUE duplicate_transaction(VALUE self, VALUE new_transaction_id) {
 static VALUE complete_transaction(VALUE self) {
   appsignal_transaction_t* transaction;
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   appsignal_complete_transaction(transaction);
   return Qnil;
@@ -310,7 +333,7 @@ static VALUE transaction_to_json(VALUE self) {
   appsignal_transaction_t* transaction;
   appsignal_string_t json;
 
-  Data_Get_Struct(self, appsignal_transaction_t, transaction);
+  TypedData_Get_Struct(self, appsignal_transaction_t, &transaction_data_type, transaction);
 
   json = appsignal_transaction_to_json(transaction);
 
@@ -327,7 +350,7 @@ static VALUE data_map_new(VALUE self) {
   data = appsignal_data_map_new();
 
   if (data) {
-    return Data_Wrap_Struct(Data, NULL, appsignal_free_data, data);
+    return TypedData_Wrap_Struct(Data, &data_data_type, data);
   } else {
     return Qnil;
   }
@@ -339,7 +362,7 @@ static VALUE data_array_new(VALUE self) {
   data = appsignal_data_array_new();
 
   if (data) {
-    return Data_Wrap_Struct(Data, NULL, appsignal_free_data, data);
+    return TypedData_Wrap_Struct(Data, &data_data_type, data);
   } else {
     return Qnil;
   }
@@ -351,7 +374,7 @@ static VALUE data_set_string(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_string(
     data,
@@ -371,7 +394,7 @@ static VALUE data_set_integer(VALUE self, VALUE key, VALUE value) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
   }
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_integer(
     data,
@@ -388,7 +411,7 @@ static VALUE data_set_float(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_float(
     data,
@@ -404,7 +427,7 @@ static VALUE data_set_boolean(VALUE self, VALUE key, VALUE value) {
 
   Check_Type(key, T_STRING);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_boolean(
     data,
@@ -420,7 +443,7 @@ static VALUE data_set_nil(VALUE self, VALUE key) {
 
   Check_Type(key, T_STRING);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_null(
     data,
@@ -435,10 +458,9 @@ static VALUE data_set_data(VALUE self, VALUE key, VALUE value) {
   appsignal_data_t* value_data;
 
   Check_Type(key, T_STRING);
-  Check_Type(value, RUBY_T_DATA);
+  value_data = rb_check_typeddata(value, &data_data_type);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
-  Data_Get_Struct(value, appsignal_data_t, value_data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_map_set_data(
     data,
@@ -454,7 +476,7 @@ static VALUE data_append_string(VALUE self, VALUE value) {
 
   Check_Type(value, T_STRING);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_string(
     data,
@@ -472,7 +494,7 @@ static VALUE data_append_integer(VALUE self, VALUE value) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
   }
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_integer(
     data,
@@ -487,7 +509,7 @@ static VALUE data_append_float(VALUE self, VALUE value) {
 
   Check_Type(value, T_FLOAT);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_float(
     data,
@@ -500,7 +522,7 @@ static VALUE data_append_float(VALUE self, VALUE value) {
 static VALUE data_append_boolean(VALUE self, VALUE value) {
   appsignal_data_t* data;
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_boolean(
     data,
@@ -513,7 +535,7 @@ static VALUE data_append_boolean(VALUE self, VALUE value) {
 static VALUE data_append_nil(VALUE self) {
   appsignal_data_t* data;
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_null(data);
 
@@ -524,10 +546,9 @@ static VALUE data_append_data(VALUE self, VALUE value) {
   appsignal_data_t* data;
   appsignal_data_t* value_data;
 
-  Check_Type(value, RUBY_T_DATA);
+  value_data = rb_check_typeddata(value, &data_data_type);
 
-  Data_Get_Struct(self, appsignal_data_t, data);
-  Data_Get_Struct(value, appsignal_data_t, value_data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   appsignal_data_array_append_data(
     data,
@@ -541,12 +562,12 @@ static VALUE data_equal(VALUE self, VALUE other) {
   appsignal_data_t* data;
   appsignal_data_t* other_data;
 
-  if (TYPE(other) != RUBY_T_DATA) {
+  if (TYPE(other) != T_DATA) {
     return Qfalse;
   }
 
-  Data_Get_Struct(self, appsignal_data_t, data);
-  Data_Get_Struct(other, appsignal_data_t, other_data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
+  TypedData_Get_Struct(other, appsignal_data_t, &data_data_type, other_data);
 
   if (appsignal_data_equal(data, other_data) == 1) {
     return Qtrue;
@@ -559,7 +580,7 @@ static VALUE data_to_s(VALUE self) {
   appsignal_data_t* data;
   appsignal_string_t json;
 
-  Data_Get_Struct(self, appsignal_data_t, data);
+  TypedData_Get_Struct(self, appsignal_data_t, &data_data_type, data);
 
   json = appsignal_data_to_json(data);
 
@@ -578,7 +599,7 @@ static VALUE root_span_new(VALUE self, VALUE namespace) {
   span = appsignal_create_root_span(make_appsignal_string(namespace));
 
   if (span) {
-    return Data_Wrap_Struct(Span, NULL, appsignal_free_span, span);
+    return TypedData_Wrap_Struct(Span, &span_data_type, span);
   } else {
     return Qnil;
   }
@@ -588,12 +609,12 @@ static VALUE child_span_new(VALUE self) {
   appsignal_span_t* parent;
   appsignal_span_t* span;
 
-  Data_Get_Struct(self, appsignal_span_t, parent);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, parent);
 
   span = appsignal_create_child_span(parent);
 
   if (span) {
-    return Data_Wrap_Struct(Span, NULL, appsignal_free_span, span);
+    return TypedData_Wrap_Struct(Span, &span_data_type, span);
   } else {
     return Qnil;
   }
@@ -604,7 +625,7 @@ static VALUE set_span_name(VALUE self, VALUE name) {
 
   Check_Type(name, T_STRING);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_name(span, make_appsignal_string(name));
   return Qnil;
@@ -616,10 +637,10 @@ static VALUE add_span_error(VALUE self, VALUE name, VALUE message, VALUE backtra
 
   Check_Type(name, T_STRING);
   Check_Type(message, T_STRING);
-  Check_Type(backtrace, RUBY_T_DATA);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
-  Data_Get_Struct(backtrace, appsignal_data_t, backtrace_data);
+  backtrace_data = rb_check_typeddata(backtrace, &data_data_type);
+
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_add_span_error(
       span,
@@ -635,10 +656,10 @@ static VALUE set_span_sample_data(VALUE self, VALUE key, VALUE payload) {
   appsignal_data_t* payload_data;
 
   Check_Type(key, T_STRING);
-  Check_Type(payload, RUBY_T_DATA);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
-  Data_Get_Struct(payload, appsignal_data_t, payload_data);
+  payload_data = rb_check_typeddata(payload, &data_data_type);
+
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_sample_data(
       span,
@@ -654,7 +675,7 @@ static VALUE set_span_attribute_string(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_STRING);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_attribute_string(
     span,
@@ -675,7 +696,7 @@ static VALUE set_span_attribute_int(VALUE self, VALUE key, VALUE value) {
     rb_raise(rb_eTypeError, "wrong argument type %s (expected Integer)", rb_obj_classname(value));
   }
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_attribute_int(
     span,
@@ -691,7 +712,7 @@ static VALUE set_span_attribute_bool(VALUE self, VALUE key, VALUE value) {
 
   Check_Type(key, T_STRING);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_attribute_bool(
     span,
@@ -708,7 +729,7 @@ static VALUE set_span_attribute_double(VALUE self, VALUE key, VALUE value) {
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_set_span_attribute_double(
     span,
@@ -723,7 +744,7 @@ static VALUE span_to_json(VALUE self) {
   appsignal_span_t* span;
   appsignal_string_t json;
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   json = appsignal_span_to_json(span);
 
@@ -737,7 +758,7 @@ static VALUE span_to_json(VALUE self) {
 static VALUE close_span(VALUE self) {
   appsignal_span_t* span;
 
-  Data_Get_Struct(self, appsignal_span_t, span);
+  TypedData_Get_Struct(self, appsignal_span_t, &span_data_type, span);
 
   appsignal_close_span(span);
 
@@ -751,9 +772,8 @@ static VALUE a_log(VALUE self, VALUE group, VALUE severity, VALUE format, VALUE 
   Check_Type(severity, T_FIXNUM);
   Check_Type(format, T_FIXNUM);
   Check_Type(message, T_STRING);
-  Check_Type(attributes, RUBY_T_DATA);
 
-  Data_Get_Struct(attributes, appsignal_data_t, attributes_data);
+  attributes_data = rb_check_typeddata(attributes, &data_data_type);
 
   appsignal_log(
       make_appsignal_string(group),
@@ -771,9 +791,8 @@ static VALUE set_gauge(VALUE self, VALUE key, VALUE value, VALUE tags) {
 
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
-  Check_Type(tags, RUBY_T_DATA);
 
-  Data_Get_Struct(tags, appsignal_data_t, tags_data);
+  tags_data = rb_check_typeddata(tags, &data_data_type);
 
   appsignal_set_gauge(
       make_appsignal_string(key),
@@ -788,9 +807,8 @@ static VALUE increment_counter(VALUE self, VALUE key, VALUE count, VALUE tags) {
 
   Check_Type(key, T_STRING);
   Check_Type(count, T_FLOAT);
-  Check_Type(tags, RUBY_T_DATA);
 
-  Data_Get_Struct(tags, appsignal_data_t, tags_data);
+  tags_data = rb_check_typeddata(tags, &data_data_type);
 
   appsignal_increment_counter(
       make_appsignal_string(key),
@@ -805,9 +823,8 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value, VALUE ta
 
   Check_Type(key, T_STRING);
   Check_Type(value, T_FLOAT);
-  Check_Type(tags, RUBY_T_DATA);
 
-  Data_Get_Struct(tags, appsignal_data_t, tags_data);
+  tags_data = rb_check_typeddata(tags, &data_data_type);
 
   appsignal_add_distribution_value(
       make_appsignal_string(key),
