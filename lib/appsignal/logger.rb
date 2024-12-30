@@ -41,6 +41,14 @@ module Appsignal
       @loggers = []
     end
 
+    # When a formatter is set on the logger (e.g. when wrapping the logger in
+    # `ActiveSupport::TaggedLogging`) we want to set that formatter on all the
+    # loggers that are being broadcasted to.
+    def formatter=(formatter)
+      super
+      @loggers.each { |logger| logger.formatter = formatter }
+    end
+
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @api private
@@ -59,8 +67,6 @@ module Appsignal
       end
       return if message.nil?
 
-      message = formatter.call(severity, Time.now, group, message) if formatter
-
       @loggers.each do |logger|
         logger.add(severity, message, group)
       rescue
@@ -73,6 +79,8 @@ module Appsignal
         )
         return
       end
+
+      message = formatter.call(severity, Time.now, group, message) if formatter
 
       Appsignal::Extension.log(
         group,

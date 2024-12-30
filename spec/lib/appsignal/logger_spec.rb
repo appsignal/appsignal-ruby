@@ -5,7 +5,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with("[My tag] [My other tag] Some message"),
+        "[My tag] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -20,9 +20,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with(
-          "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message"
-        ),
+        "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -44,9 +42,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with(
-          "[Request tag] [Second tag] [First message] [My other tag] Some message"
-        ),
+        "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -58,7 +54,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with("[Request tag] [Second tag] [Second message] Some message"),
+        "[Request tag] [Second tag] [Second message] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -71,7 +67,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with("[Third message] Some message"),
+        "[Third message] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
   end
@@ -87,9 +83,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with(
-          "[Request tag] [Second tag] [First message] [My other tag] Some message"
-        ),
+        "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
   end
@@ -105,9 +99,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with(
-          "[Request tag] [Second tag] [First message] [My other tag] Some message"
-        ),
+        "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -118,7 +110,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with("[First message] [My other tag] Some message"),
+        "[First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
   end
@@ -129,7 +121,7 @@ shared_examples "tagged logging" do
         "group",
         3,
         0,
-        a_string_starting_with("[My tag] [My other tag] Some message"),
+        "[My tag] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
 
@@ -150,7 +142,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("[My tag] [My other tag] Some message"),
+            "[My tag] [My other tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -163,7 +155,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("[My tag] [My other tag] Some message"),
+            "[My tag] [My other tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -175,7 +167,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("Some message"),
+            "Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -188,7 +180,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -201,7 +193,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -219,7 +211,7 @@ shared_examples "tagged logging" do
             "group",
             3,
             0,
-            a_string_starting_with("[My tag] [My other tag] [My third tag] Some message"),
+            "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
 
@@ -407,7 +399,7 @@ describe Appsignal::Logger do
               "group",
               3,
               0,
-              a_string_starting_with("[My tag] [My other tag] Some message"),
+              "[My tag] [My other tag] Some message\n",
               Appsignal::Utils::Data.generate({})
             )
 
@@ -416,7 +408,7 @@ describe Appsignal::Logger do
           end
 
           expect(other_stream.string)
-            .to include("INFO -- group: [My tag] [My other tag] Some message")
+            .to eq("[My tag] [My other tag] Some message\n")
         end
       end
     end
