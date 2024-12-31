@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.3.2
+
+_Published on 2024-12-31._
+
+### Fixed
+
+- Fix an issue where loggers, when broadcasted to by `Appsignal::Logger#broadcast_to`, would format again messages that have already been formatted by the broadcaster, causing the resulting message emitted by the logger to contain double newlines. (patch [cd2f9fbf](https://github.com/appsignal/appsignal-ruby/commit/cd2f9fbfe31b39de90bc012ddacaaf9b28fef913))
+
 ## 4.3.1
 
 _Published on 2024-12-20._
