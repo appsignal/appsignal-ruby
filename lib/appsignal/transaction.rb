@@ -48,13 +48,34 @@ module Appsignal
       # @return [Array<Proc>]
       # Add a block, if given, to be executed after a transaction is created.
       # The block will be called with the transaction as an argument.
-      # Returns the array of blocks that will be executed.
+      # Returns the array of blocks that will be executed after a transaction
+      # is created.
       def after_create(&block)
         @after_create ||= Set.new
 
         return @after_create if block.nil?
 
         @after_create << block
+      end
+
+      # @api private
+      # @return [Array<Proc>]
+      # Add a block, if given, to be executed before a transaction is completed.
+      # This happens after duplicating the transaction for each error that was
+      # reported in the transaction -- that is, when a transaction with
+      # several errors is completed, the block will be called once for each
+      # error, with the transaction (either the original one or a duplicate of it)
+      # that has each of the errors set.
+      # The block will be called with the transaction as the first argument,
+      # and the error reported by the transaction, if any, as the second argument.
+      # Returns the array of blocks that will be executed before a transaction is
+      # completed.
+      def before_complete(&block)
+        @before_complete ||= Set.new
+
+        return @before_complete if block.nil?
+
+        @before_complete << block
       end
 
       # @api private
@@ -207,7 +228,11 @@ module Appsignal
           end
         end
       end
+
+      run_before_complete_hooks
+
       sample_data if should_sample
+
       @ext.complete
     end
 
@@ -614,6 +639,12 @@ module Appsignal
     def run_after_create_hooks
       self.class.after_create.each do |block|
         block.call(self)
+      end
+    end
+
+    def run_before_complete_hooks
+      self.class.before_complete.each do |block|
+        block.call(self, @error_set)
       end
     end
 
