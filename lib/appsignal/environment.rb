@@ -90,6 +90,7 @@ module Appsignal
       hanami
       hiredis
       mongo_ruby_driver
+      ownership
       padrino
       passenger
       puma
