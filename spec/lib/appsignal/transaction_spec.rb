@@ -2145,6 +2145,78 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#after_create" do
+    it "stores the given hook when passed as a block" do
+      transaction = new_transaction
+
+      expect(Appsignal::Transaction.after_create).to be_empty
+      Appsignal::Transaction.after_create do |t|
+        t.set_action("hook_action")
+      end
+
+      expect(Appsignal::Transaction.after_create).to_not be_empty
+
+      expect(transaction).to_not have_action("hook_action")
+      Appsignal::Transaction.after_create.first.call(transaction)
+      expect(transaction).to have_action("hook_action")
+    end
+
+    it "stores the given hook when using <<" do
+      expect(Appsignal::Transaction.after_create).to be_empty
+      proc = proc do |transaction|
+        transaction.set_action("hook_action")
+      end
+
+      Appsignal::Transaction.after_create << proc
+
+      expect(Appsignal::Transaction.after_create).to eq(Set.new([proc]))
+    end
+
+    it "only stores a hook once when added several times" do
+      expect(Appsignal::Transaction.after_create).to be_empty
+      proc = proc do |transaction|
+        transaction.set_action("hook_action")
+      end
+
+      Appsignal::Transaction.after_create(&proc)
+      Appsignal::Transaction.after_create << proc
+
+      expect(Appsignal::Transaction.after_create).to eq(Set.new([proc]))
+    end
+
+    it "calls the given hook when a transaction is created" do
+      block = proc do |transaction|
+        transaction.set_action("hook_action")
+      end
+
+      Appsignal::Transaction.after_create(&block)
+
+      expect(block).to(
+        receive(:call)
+          .with(kind_of(Appsignal::Transaction))
+          .and_call_original
+      )
+
+      expect(new_transaction).to have_action("hook_action")
+    end
+
+    it "calls all the hooks in order" do
+      Appsignal::Transaction.after_create do |transaction|
+        transaction.set_namespace("hook_namespace_1")
+        transaction.set_action("hook_action_1")
+      end
+
+      Appsignal::Transaction.after_create do |transaction|
+        transaction.set_action("hook_action_2")
+      end
+
+      transaction = new_transaction
+
+      expect(transaction).to have_namespace("hook_namespace_1")
+      expect(transaction).to have_action("hook_action_2")
+    end
+  end
+
   describe "#start_event" do
     let(:transaction) { new_transaction }
 

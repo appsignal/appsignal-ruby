@@ -45,6 +45,19 @@ module Appsignal
       end
 
       # @api private
+      # @return [Array<Proc>]
+      # Add a block, if given, to be executed after a transaction is created.
+      # The block will be called with the transaction as an argument.
+      # Returns the array of blocks that will be executed.
+      def after_create(&block)
+        @after_create ||= Set.new
+
+        return @after_create if block.nil?
+
+        @after_create << block
+      end
+
+      # @api private
       def set_current_transaction(transaction)
         Thread.current[:appsignal_transaction] = transaction
       end
@@ -137,6 +150,8 @@ module Appsignal
         @namespace,
         0
       ) || Appsignal::Extension::MockTransaction.new
+
+      run_after_create_hooks
     end
 
     # @api private
@@ -595,6 +610,12 @@ module Appsignal
     private
 
     attr_reader :breadcrumbs
+
+    def run_after_create_hooks
+      self.class.after_create.each do |block|
+        block.call(self)
+      end
+    end
 
     def _set_error(error)
       backtrace = cleaned_backtrace(error.backtrace)
