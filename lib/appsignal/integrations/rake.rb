@@ -4,6 +4,15 @@ module Appsignal
   module Integrations
     # @api private
     module RakeIntegration
+      IGNORED_ERRORS = [
+        # Normal exits from the application we do not need to report
+        SystemExit
+      ].freeze
+
+      def self.ignored_error?(error)
+        IGNORED_ERRORS.include?(error.class)
+      end
+
       def execute(*args)
         transaction =
           if Appsignal.config[:enable_rake_performance_instrumentation]
@@ -16,8 +25,10 @@ module Appsignal
         end
       rescue Exception => error # rubocop:disable Lint/RescueException
         Appsignal::Integrations::RakeIntegrationHelper.register_at_exit_hook
-        transaction ||= _appsignal_create_transaction
-        transaction.set_error(error)
+        unless RakeIntegration.ignored_error?(error)
+          transaction ||= _appsignal_create_transaction
+          transaction.set_error(error)
+        end
         raise error
       ensure
         if transaction
