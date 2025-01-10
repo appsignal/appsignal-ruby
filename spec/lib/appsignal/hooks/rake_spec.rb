@@ -124,6 +124,17 @@ describe Appsignal::Hooks::RakeHook do
           expect(transaction).to_not have_error
         end
       end
+
+      context "when error is a SignalException" do
+        let(:error) { SignalException.new(1) }
+
+        it "does not report the error" do
+          perform
+
+          transaction = last_transaction
+          expect(transaction).to_not have_error
+        end
+      end
     end
   end
 end

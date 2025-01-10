@@ -6,7 +6,8 @@ module Appsignal
     module RakeIntegration
       IGNORED_ERRORS = [
         # Normal exits from the application we do not need to report
-        SystemExit
+        SystemExit,
+        SignalException
       ].freeze
 
       def self.ignored_error?(error)
