@@ -76,37 +76,63 @@ describe Appsignal::Hooks::RakeHook do
 
     context "with error" do
       before do
-        task.enhance { raise ExampleException, "error message" }
+        task.enhance { raise error }
       end
 
       def perform
-        expect { task.execute(arguments) }.to raise_error(ExampleException, "error message")
+        expect { task.execute(arguments) }.to raise_error(error)
       end
 
-      it "creates a background job transaction" do
-        perform
+      context "with normal error" do
+        let(:error) { ExampleException.new("error message") }
 
-        transaction = last_transaction
-        expect(transaction).to have_id
-        expect(transaction).to have_namespace("rake")
-        expect(transaction).to have_action("task:name")
-        expect(transaction).to have_error("ExampleException", "error message")
-        expect(transaction).to include_params("foo" => "bar")
-        expect(transaction).to be_completed
-      end
-
-      it "registers an at_exit hook" do
-        perform
-        expect_to_have_registered_at_exit_hook
-      end
-
-      context "when first argument is not a `Rake::TaskArguments`" do
-        let(:arguments) { nil }
-
-        it "does not add the params to the transaction" do
+        it "creates a background job transaction" do
           perform
 
-          expect(last_transaction).to_not include_params
+          transaction = last_transaction
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace("rake")
+          expect(transaction).to have_action("task:name")
+          expect(transaction).to have_error("ExampleException", "error message")
+          expect(transaction).to include_params("foo" => "bar")
+          expect(transaction).to be_completed
+        end
+
+        it "registers an at_exit hook" do
+          perform
+          expect_to_have_registered_at_exit_hook
+        end
+
+        context "when first argument is not a `Rake::TaskArguments`" do
+          let(:arguments) { nil }
+
+          it "does not add the params to the transaction" do
+            perform
+
+            expect(last_transaction).to_not include_params
+          end
+        end
+      end
+
+      context "when error is a SystemExit" do
+        let(:error) { SystemExit.new(1) }
+
+        it "does not report the error" do
+          perform
+
+          transaction = last_transaction
+          expect(transaction).to_not have_error
+        end
+      end
+
+      context "when error is a SignalException" do
+        let(:error) { SignalException.new(1) }
+
+        it "does not report the error" do
+          perform
+
+          transaction = last_transaction
+          expect(transaction).to_not have_error
         end
       end
     end
