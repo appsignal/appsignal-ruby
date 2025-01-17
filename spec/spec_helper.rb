@@ -101,6 +101,8 @@ RSpec.configure do |config|
     Appsignal::Testing.clear!
     Appsignal::Loaders.clear!
     Appsignal::CheckIn.clear!
+    Appsignal::Transaction.after_create.clear
+    Appsignal::Transaction.before_complete.clear
 
     clear_current_transaction!
     stop_minutely_probes

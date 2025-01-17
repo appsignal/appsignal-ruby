@@ -111,10 +111,12 @@ module Appsignal
       :ignore_namespaces => [],
       :instrument_http_rb => true,
       :instrument_net_http => true,
+      :instrument_ownership => true,
       :instrument_redis => true,
       :instrument_sequel => true,
       :log => "file",
       :logging_endpoint => "https://appsignal-endpoint.net",
+      :ownership_set_namespace => false,
       :request_headers => %w[
         HTTP_ACCEPT HTTP_ACCEPT_CHARSET HTTP_ACCEPT_ENCODING
         HTTP_ACCEPT_LANGUAGE HTTP_CACHE_CONTROL HTTP_CONNECTION
@@ -181,8 +183,10 @@ module Appsignal
       :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
       :instrument_http_rb => "APPSIGNAL_INSTRUMENT_HTTP_RB",
       :instrument_net_http => "APPSIGNAL_INSTRUMENT_NET_HTTP",
+      :instrument_ownership => "APPSIGNAL_INSTRUMENT_OWNERSHIP",
       :instrument_redis => "APPSIGNAL_INSTRUMENT_REDIS",
       :instrument_sequel => "APPSIGNAL_INSTRUMENT_SEQUEL",
+      :ownership_set_namespace => "APPSIGNAL_OWNERSHIP_SET_NAMESPACE",
       :running_in_container => "APPSIGNAL_RUNNING_IN_CONTAINER",
       :send_environment_metadata => "APPSIGNAL_SEND_ENVIRONMENT_METADATA",
       :send_params => "APPSIGNAL_SEND_PARAMS",
