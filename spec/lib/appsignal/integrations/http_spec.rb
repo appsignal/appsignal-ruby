@@ -106,6 +106,17 @@ if DependencyHelper.http_present?
           "title" => "GET http://www.google.com"
         )
       end
+
+      it "parses a URI object with non ascii characters" do
+        stub_request(:get, "http://www.example.com/áéíóúãÔù")
+
+        HTTP.get("http://www.example.com/áéíóúãÔù")
+
+        expect(transaction).to include_event(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.example.com"
+        )
+      end
     end
   end
 end
