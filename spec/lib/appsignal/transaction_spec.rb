@@ -1568,6 +1568,43 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when the error is already reported" do
+      it "does not add the error" do
+        # Report it on another transaction first
+        transaction1 = new_transaction
+        transaction1.add_error(error)
+        expect(transaction1).to have_error
+
+        transaction2 = new_transaction
+        transaction2.add_error(error)
+        expect(transaction2).to_not have_error
+      end
+    end
+
+    context "when the error cause is already reported" do
+      it "does not add the error" do
+        error =
+          begin
+            begin
+              raise ExampleStandardError, "error cause"
+            rescue
+              raise ExampleException, "error wrapper"
+            end
+          rescue ExampleException => e
+            e
+          end
+
+        # Report the wrapper on another transaction first
+        transaction1 = new_transaction
+        transaction1.add_error(error)
+        expect(transaction1).to have_error
+
+        transaction2 = new_transaction
+        transaction2.add_error(error.cause)
+        expect(transaction).to_not have_error
+      end
+    end
+
     context "when a block is given" do
       it "stores the block in the error blocks" do
         block = proc { "block" }
