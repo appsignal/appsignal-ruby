@@ -96,7 +96,18 @@ if DependencyHelper.http_present?
         )
       end
 
-      it "parses a String object" do
+      it "parses an HTTP::URI object" do
+        stub_request(:get, "http://www.google.com")
+
+        HTTP.get(HTTP::URI.parse("http://www.google.com"))
+
+        expect(transaction).to include_event(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.google.com"
+        )
+      end
+
+      it "parses a string" do
         stub_request(:get, "http://www.google.com")
 
         HTTP.get("http://www.google.com")
@@ -104,6 +115,17 @@ if DependencyHelper.http_present?
         expect(transaction).to include_event(
           "name" => "request.http_rb",
           "title" => "GET http://www.google.com"
+        )
+      end
+
+      it "parses a string with non-ascii characters" do
+        stub_request(:get, "http://www.example.com/áéíóúãÔù")
+
+        HTTP.get("http://www.example.com/áéíóúãÔù")
+
+        expect(transaction).to include_event(
+          "name" => "request.http_rb",
+          "title" => "GET http://www.example.com"
         )
       end
     end
