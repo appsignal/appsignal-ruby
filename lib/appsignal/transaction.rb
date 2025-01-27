@@ -213,7 +213,7 @@ module Appsignal
           # In the duplicate transaction for each error, set an error
           # with a block that calls all the blocks set for that error
           # in the original transaction.
-          transaction.set_error(error) do
+          transaction.internal_set_error(error) do
             blocks.each { |block| block.call(transaction) }
           end
 
@@ -560,17 +560,18 @@ module Appsignal
       return unless error
       return unless Appsignal.active?
 
-      _set_error(error) if @error_blocks.empty?
-
-      if !@error_blocks.include?(error) && @error_blocks.length >= ERRORS_LIMIT
-        Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
-          "than #{ERRORS_LIMIT} distinct errors. Only the first " \
-          "#{ERRORS_LIMIT} distinct errors will be reported."
+      if error.instance_variable_get(:@__appsignal_error_reported) && !@error_blocks.include?(error)
         return
       end
 
-      @error_blocks[error] << block
-      @error_blocks[error].compact!
+      internal_set_error(error, &block)
+
+      # Mark errors and their causes as tracked so we don't report duplicates,
+      # but also not error causes if the wrapper error is already reported.
+      while error
+        error.instance_variable_set(:@__appsignal_error_reported, true) unless error.frozen?
+        error = error.cause
+      end
     end
     alias :set_error :add_error
     alias_method :add_exception, :add_error
@@ -631,6 +632,19 @@ module Appsignal
 
     attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params,
       :session_data, :headers
+
+    def internal_set_error(error, &block)
+      _set_error(error) if @error_blocks.empty?
+
+      if !@error_blocks.include?(error) && @error_blocks.length >= ERRORS_LIMIT
+        Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
+          "than #{ERRORS_LIMIT} distinct errors. Only the first " \
+          "#{ERRORS_LIMIT} distinct errors will be reported."
+        return
+      end
+      @error_blocks[error] << block
+      @error_blocks[error].compact!
+    end
 
     private
 
