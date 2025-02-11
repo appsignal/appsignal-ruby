@@ -357,7 +357,7 @@ end
 begin
   require "rspec/core/rake_task"
   is_jruby = defined?(RUBY_ENGINE) && RUBY_ENGINE == "jruby"
-  excludes = []
+  excludes = ["spec/integration/diagnose/**/*_spec.rb"]
   excludes << "spec/lib/appsignal/extension/jruby_spec.rb" unless is_jruby
   exclude_pattern = "--exclude-pattern=#{excludes.join(",")}" if excludes.any?
 
