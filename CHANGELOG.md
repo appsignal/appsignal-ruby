@@ -1,5 +1,44 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.0
+
+_Published on 2025-02-21._
+
+### Added
+
+- Add a helper to create custom markers from the Ruby gem.
+
+  Create a custom marker (a little icon shown in the graph timeline on AppSignal.com) to mark events on the timeline.
+
+  Create a marker with all the available options:
+
+  ```ruby
+  Appsignal::CustomMarker.report(
+    # The icon shown on the timeline
+    :icon => "🎉",
+    # The message shown on hover
+    :message => "Migration completed",
+    # Any time object or a string with a ISO8601 valid time is accepted
+    :created_at => Time.now
+  )
+  ```
+
+  Create a marker with just a message:
+
+  ```ruby
+  Appsignal::CustomMarker.report(
+    :message => "Migration completed",
+  )
+  ```
+
+  _The default icon is the 🚀 icon. The default time is the time the request is received by our servers._
+
+  (minor [e92c8c9d](https://github.com/appsignal/appsignal-ruby/commit/e92c8c9da6e0a159a4405ff178b346040db53fa4))
+
+### Removed
+
+- Remove the OpenTelemetry beta feature in favor of the new [AppSignal collector](https://docs.appsignal.com/collector). If you are using the AppSignal agent to send OpenTelemetry data in our public beta through the `/enriched` endpoint on the agent's HTTP server, please migrate to the collector to continue using the beta. The collector has a much better implementation of this feature for the beta. (minor [f934d0d4](https://github.com/appsignal/appsignal-ruby/commit/f934d0d496a61779d17caf01b4dff1e2c9f5b92e))
+
 ## 4.4.0
 
 _Published on 2025-02-06._
