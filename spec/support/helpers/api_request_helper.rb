@@ -30,6 +30,27 @@ module ApiRequestHelper
     stub_request(:post, "#{endpoint}/1/#{path}").with(options)
   end
 
+  def stub_public_endpoint_markers_request(marker_data:)
+    config = Appsignal.config
+    options = {
+      :query => {
+        :api_key => config[:push_api_key],
+        :name => config[:name],
+        :environment => config.respond_to?(:env) ? config.env : config[:environment],
+        :hostname => config[:hostname],
+        :gem_version => Appsignal::VERSION
+      },
+      :headers => { "Content-Type" => "application/json; charset=UTF-8" }
+    }
+    stub_request(
+      :post,
+      "#{config[:logging_endpoint]}/markers"
+    ).with(options) do |request|
+      payload = JSON.parse(request.body)
+      expect(payload).to match(marker_data)
+    end
+  end
+
   def stub_cron_check_in_request(events:, response: { :status => 200 })
     stub_check_in_requests(
       :requests => [events],
