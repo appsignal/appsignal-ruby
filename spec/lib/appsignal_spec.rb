@@ -340,6 +340,39 @@ describe Appsignal do
     end
   end
 
+  describe "._load_config!" do
+    it "works with envs as symbols" do
+      ENV["APPSIGNAL_APP_ENV"] = "_load_config_env"
+      Appsignal._load_config!(:production)
+      expect(Appsignal.config.env).to eq("production")
+    end
+
+    it "ignores zero length string values" do
+      ENV["APPSIGNAL_APP_ENV"] = "_load_config_env"
+      Appsignal._load_config!("")
+      expect(Appsignal.config.env).to eq("_load_config_env")
+    end
+
+    it "ignores empty string values" do
+      ENV["APPSIGNAL_APP_ENV"] = "_load_config_env"
+      Appsignal._load_config!("  ")
+      expect(Appsignal.config.env).to eq("_load_config_env")
+    end
+
+    it "calls the blocks before validation" do
+      called = false
+      Appsignal._load_config! do |config|
+        # Not yet validated here
+        expect(Appsignal.config.valid?).to be(false)
+
+        config.merge_dsl_options(:push_api_key => "abc")
+        called = true
+      end
+      expect(called).to be(true)
+      expect(Appsignal.config.valid?).to be(true)
+    end
+  end
+
   describe ".start" do
     context "with no config set beforehand" do
       let(:stdout_stream) { std_stream }
