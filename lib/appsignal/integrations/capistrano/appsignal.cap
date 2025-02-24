@@ -8,22 +8,18 @@ namespace :appsignal do
     user = fetch(:appsignal_user, ENV["USER"] || ENV.fetch("USERNAME", nil))
     revision = fetch(:appsignal_revision, fetch(:current_revision))
 
-    appsignal_config = Appsignal::Config.new(
-      Dir.pwd,
-      appsignal_env
-    ).tap do |c|
-      c.merge_dsl_options(fetch(:appsignal_config, {}))
-      c.validate
+    Appsignal._load_config!(appsignal_env) do |config|
+      config&.merge_dsl_options(fetch(:appsignal_config, {}))
     end
     Appsignal._start_logger
 
-    if appsignal_config&.active?
+    if Appsignal.config&.active?
       marker_data = {
         :revision => revision,
         :user => user
       }
 
-      marker = Appsignal::Marker.new(marker_data, appsignal_config)
+      marker = Appsignal::Marker.new(marker_data, Appsignal.config)
       # {#dry_run?} helper was added in Capistrano 3.5.0
       # https://github.com/capistrano/capistrano/commit/38d8d6d2c8485f1b5643857465b16ff01da57aff
       if respond_to?(:dry_run?) && dry_run?
