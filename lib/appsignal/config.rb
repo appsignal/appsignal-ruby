@@ -39,8 +39,10 @@ module Appsignal
         ENV.fetch("APPSIGNAL_APP_ENV", nil),
         ENV.fetch("RAILS_ENV", nil),
         ENV.fetch("RACK_ENV", nil)
-      ].compact.each do |env|
-        return env if env
+      ].compact.each do |env_value|
+        value = env_value.to_s.strip
+        next if value.empty?
+        return value if value
       end
 
       loader_defaults.reverse.each do |loader_defaults|
