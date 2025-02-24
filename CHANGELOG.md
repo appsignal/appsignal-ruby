@@ -1,5 +1,23 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.2
+
+_Published on 2025-02-24._
+
+### Fixed
+
+- Validate application environment sources so nil values and empty strings are not valid app environments.
+  Symbols are now always cast to a String before set as the application environment.
+
+  ```ruby
+  # These will no longer be accepted as valid app environments
+  Appsignal.configure("")
+  Appsignal.configure(" ")
+  ```
+
+  (patch [bfe37be9](https://github.com/appsignal/appsignal-ruby/commit/bfe37be9ca14248f5e5a030d0cab42998d371d36))
+- Fix Capistrano version 2 and 3 support when using an `appsignal.rb` config file. It will now pick up the config from `appsignal.rb` file. (patch [2a694196](https://github.com/appsignal/appsignal-ruby/commit/2a6941967435d6672c122e0aa07ec9c2de3e30bc))
+
 ## 4.5.1
 
 _Published on 2025-02-24._
