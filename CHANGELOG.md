@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.1
+
+_Published on 2025-02-24._
+
+### Changed
+
+- [b3748870](https://github.com/appsignal/appsignal-ruby/commit/b3748870b0de1973566761308c365ce5c5de7d00) patch - Update bundled trusted root certificates
+
 ## 4.5.0
 
 _Published on 2025-02-21._
