@@ -39,8 +39,10 @@ module Appsignal
         ENV.fetch("APPSIGNAL_APP_ENV", nil),
         ENV.fetch("RAILS_ENV", nil),
         ENV.fetch("RACK_ENV", nil)
-      ].compact.each do |env|
-        return env if env
+      ].compact.each do |env_value|
+        value = env_value.to_s.strip
+        next if value.empty?
+        return value if value
       end
 
       loader_defaults.reverse.each do |loader_defaults|
@@ -246,8 +248,8 @@ module Appsignal
     )
       @load_yaml_file = load_yaml_file
       @root_path = root_path.to_s
-      @config_file_error = false
-      @config_file = config_file
+      @yml_config_file_error = false
+      @yml_config_file = yml_config_file
       @valid = false
 
       @env = env.to_s
@@ -479,9 +481,9 @@ module Appsignal
 
     # @api private
     def yml_config_file?
-      return false unless config_file
+      return false unless yml_config_file
 
-      File.exist?(config_file)
+      File.exist?(yml_config_file)
     end
 
     private
@@ -490,8 +492,8 @@ module Appsignal
       Appsignal.internal_logger
     end
 
-    def config_file
-      @config_file ||=
+    def yml_config_file
+      @yml_config_file ||=
         root_path.nil? ? nil : File.join(root_path, "config", "appsignal.yml")
     end
 
@@ -510,7 +512,7 @@ module Appsignal
       return unless yml_config_file?
 
       read_options = YAML::VERSION >= "4.0.0" ? { :aliases => true } : {}
-      configurations = YAML.load(ERB.new(File.read(config_file)).result, **read_options)
+      configurations = YAML.load(ERB.new(File.read(yml_config_file)).result, **read_options)
       config_for_this_env = configurations[env]
       if config_for_this_env
         config_for_this_env.transform_keys(&:to_sym)
@@ -519,10 +521,10 @@ module Appsignal
         nil
       end
     rescue => e
-      @config_file_error = true
+      @yml_config_file_error = true
       message = "An error occurred while loading the AppSignal config file. " \
         "Not starting AppSignal.\n" \
-        "File: #{config_file.inspect}\n" \
+        "File: #{yml_config_file.inspect}\n" \
         "#{e.class.name}: #{e}"
       Kernel.warn "appsignal: #{message}"
       logger.error "#{message}\n#{e.backtrace.join("\n")}"
@@ -574,7 +576,7 @@ module Appsignal
       # If an error was detected during config file reading/parsing and the new
       # behavior is enabled to not start AppSignal on incomplete config, do not
       # start AppSignal.
-      config[:active] = false if @config_file_error
+      config[:active] = false if @yml_config_file_error
 
       if config_hash[:activejob_report_errors] == "discard" &&
           !Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?

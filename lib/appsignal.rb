@@ -152,7 +152,12 @@ module Appsignal
     # @param env_var [String, NilClass] Used by diagnose CLI to pass through
     #   the environment CLI option value.
     # @api private
-    def _load_config!(env_param = nil)
+    def _load_config!(env_param = nil, &block)
+      # Ensure it's not an empty string if it's a value
+      proper_env_param = env_param&.to_s&.strip
+      # Unset it if it's an empty string
+      proper_env_param = nil if proper_env_param&.empty?
+
       context = Appsignal::Config::Context.new(
         :env => Config.determine_env(env_param),
         :root_path => Config.determine_root_path
@@ -171,13 +176,25 @@ module Appsignal
           Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
         else
           # Load it when no config is present
-          load_dsl_config_file(context.dsl_config_file, env_param)
+          #
+          # We don't pass the `env_var` or `context.env` here so that the
+          # `Appsignal.configure` or `Appsignal.start` can figure out the
+          # environment themselves if it was not explicitly set.
+          # This way we prevent forcing an environment that's auto loaded on
+          # the to-be-loaded config file.
+          #
+          # The `(proper)_env_param` is only set when it's explicitly set,
+          # which means it needs to override any auto detected environment.
+          load_dsl_config_file(context.dsl_config_file, proper_env_param)
         end
       else
         # Load config if no config file was found and no config is present yet
         # This will load the config/appsignal.yml file automatically
         @config ||= Config.new(context.root_path, context.env)
       end
+      # Allow a block to be given to customize the config and override any
+      # loaded config before it's validated.
+      block.call(config) if block_given?
       # Validate the config, if present
       config&.validate
     end

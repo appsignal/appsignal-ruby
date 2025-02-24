@@ -97,9 +97,23 @@ describe Appsignal::Config do
         expect(described_class.determine_env("given_env")).to eq("given_env")
       end
 
+      it "works with a symbol" do
+        expect(described_class.determine_env(:given_env)).to eq("given_env")
+      end
+
       it "considers the given env leading over APPSIGNAL_APP_ENV" do
         ENV["APPSIGNAL_APP_ENV"] = "env_env"
         expect(described_class.determine_env("given_env")).to eq("given_env")
+      end
+
+      it "ignores empty strings" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        expect(described_class.determine_env("")).to eq("env_env")
+      end
+
+      it "ignores nil values" do
+        ENV["APPSIGNAL_APP_ENV"] = "env_env"
+        expect(described_class.determine_env(nil)).to eq("env_env")
       end
 
       it "considers the given env leading over other env vars" do

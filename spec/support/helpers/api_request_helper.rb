@@ -30,6 +30,10 @@ module ApiRequestHelper
     stub_request(:post, "#{endpoint}/1/#{path}").with(options)
   end
 
+  def stub_marker_request(config = {}, data = {})
+    stub_api_request(config, "markers", data)
+  end
+
   def stub_public_endpoint_markers_request(marker_data:)
     config = Appsignal.config
     options = {
