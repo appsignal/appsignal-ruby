@@ -154,8 +154,9 @@ if DependencyHelper.capistrano2_present?
             run
 
             expect(output).to include \
-              "Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005," \
-                " user: batman",
+              "Notifying AppSignal of 'production' deploy with " \
+                "revision: 503ce0923ed177a3ce000005, " \
+                "user: batman",
               "AppSignal has been notified of this deploy!"
           end
 
@@ -168,7 +169,7 @@ if DependencyHelper.capistrano2_present?
 
             it "transmits the overridden revision" do
               expect(output).to include \
-                "Notifying AppSignal of deploy with: revision: abc123, user: batman",
+                "Notifying AppSignal of 'production' deploy with revision: abc123, user: batman",
                 "AppSignal has been notified of this deploy!"
             end
           end
@@ -182,8 +183,9 @@ if DependencyHelper.capistrano2_present?
 
             it "transmits the overridden deploy user" do
               expect(output).to include \
-                "Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005," \
-                  " user: robin",
+                "Notifying AppSignal of 'production' deploy with " \
+                  "revision: 503ce0923ed177a3ce000005, " \
+                  "user: robin",
                 "AppSignal has been notified of this deploy!"
             end
           end
@@ -196,8 +198,9 @@ if DependencyHelper.capistrano2_present?
 
             it "does not transmit marker" do
               expect(output).to include \
-                "Notifying AppSignal of deploy with: revision: 503ce0923ed177a3ce000005," \
-                  " user: batman",
+                "Notifying AppSignal of 'production' deploy with " \
+                  "revision: 503ce0923ed177a3ce000005, " \
+                  "user: batman",
                 "Something went wrong while trying to notify AppSignal:"
               expect(output).to_not include "AppSignal has been notified of this deploy!"
             end

@@ -49,7 +49,7 @@ module Appsignal
     # @return [void]
     def transmit
       transmitter = Transmitter.new(ACTION, config)
-      puts "Notifying AppSignal of deploy with: " \
+      puts "Notifying AppSignal of '#{config.env}' deploy with " \
         "revision: #{marker_data[:revision]}, user: #{marker_data[:user]}"
 
       response = transmitter.transmit(marker_data)
