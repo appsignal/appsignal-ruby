@@ -6,7 +6,9 @@ if DependencyHelper.capistrano2_present?
   describe "Capistrano 2 integration" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
-    let(:config) { build_config }
+    let(:env) { :production }
+    let(:options) { {} }
+    let(:config) { build_config(:env => env, :options => options) }
     let(:log_stream) { StringIO.new }
     let(:logs) { log_contents(log_stream) }
     let(:capistrano_config) do
@@ -18,6 +20,12 @@ if DependencyHelper.capistrano2_present?
         c.set(:current_revision, "503ce0923ed177a3ce000005")
         c.dry_run = false
       end
+    end
+    let(:marker_data) do
+      {
+        :revision => "503ce0923ed177a3ce000005",
+        :user => "batman"
+      }
     end
     before do
       Appsignal.internal_logger = test_logger(log_stream)
@@ -37,12 +45,13 @@ if DependencyHelper.capistrano2_present?
     describe "appsignal:deploy task" do
       before do
         ENV["USER"] = "batman"
-        ENV["PWD"] = project_fixture_path
       end
 
-      context "config" do
-        before do
-          capistrano_config.dry_run = true
+      context "with appsignal.yml config file" do
+        around do |example|
+          Dir.chdir project_fixture_path do
+            example.run
+          end
         end
 
         context "when appsignal_config is available" do
@@ -56,14 +65,18 @@ if DependencyHelper.capistrano2_present?
           end
 
           it "overrides the default config with the custom appsignal_config" do
-            original_new = Appsignal::Marker.method(:new)
-
-            expect(Appsignal::Marker).to receive(:new) do |data, given_config|
-              expect(given_config[:name]).to eq("AppName")
-              original_new.call(data, given_config)
-            end
+            marker_request = stub_marker_request(
+              {
+                :environment => env.to_s,
+                :name => "AppName",
+                :push_api_key => "abc"
+              },
+              marker_data
+            )
 
             run
+
+            expect(marker_request).to have_been_made
           end
 
           context "when rack_env is used instead of rails_env" do
@@ -73,14 +86,18 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "uses the rack_env as the env" do
-              original_new = Appsignal::Marker.method(:new)
-
-              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
-                expect(given_config.env).to eq("rack_production")
-                original_new.call(data, given_config)
-              end
+              marker_request = stub_marker_request(
+                {
+                  :environment => "rack_production",
+                  :name => "AppName",
+                  :push_api_key => "abc"
+                },
+                marker_data
+              )
 
               run
+
+              expect(marker_request).to have_been_made
             end
           end
 
@@ -91,14 +108,18 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "uses the stage as the env" do
-              original_new = Appsignal::Marker.method(:new)
-
-              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
-                expect(given_config.env).to eq("stage_production")
-                original_new.call(data, given_config)
-              end
+              marker_request = stub_marker_request(
+                {
+                  :environment => "stage_production",
+                  :name => "AppName",
+                  :push_api_key => "abc"
+                },
+                marker_data
+              )
 
               run
+
+              expect(marker_request).to have_been_made
             end
           end
 
@@ -110,14 +131,18 @@ if DependencyHelper.capistrano2_present?
             end
 
             it "uses the appsignal_env as the env" do
-              original_new = Appsignal::Marker.method(:new)
-
-              expect(Appsignal::Marker).to receive(:new) do |data, given_config|
-                expect(given_config.env).to eq("appsignal_production")
-                original_new.call(data, given_config)
-              end
+              marker_request = stub_marker_request(
+                {
+                  :environment => "appsignal_production",
+                  :name => "AppName",
+                  :push_api_key => "abc"
+                },
+                marker_data
+              )
 
               run
+
+              expect(marker_request).to have_been_made
             end
           end
 
@@ -137,20 +162,15 @@ if DependencyHelper.capistrano2_present?
       end
 
       describe "markers" do
-        def stub_marker_request(data = {})
-          stub_api_request config, "markers", marker_data.merge(data)
-        end
-
-        let(:marker_data) do
-          {
-            :revision => "503ce0923ed177a3ce000005",
-            :user => "batman"
-          }
+        around do |example|
+          Dir.chdir project_fixture_path do
+            example.run
+          end
         end
 
         context "when active for this environment" do
           it "transmits marker" do
-            stub_marker_request.to_return(:status => 200)
+            marker_request = stub_marker_request(config, marker_data).to_return(:status => 200)
             run
 
             expect(output).to include \
@@ -158,51 +178,69 @@ if DependencyHelper.capistrano2_present?
                 "revision: 503ce0923ed177a3ce000005, " \
                 "user: batman",
               "AppSignal has been notified of this deploy!"
+
+            expect(marker_request).to have_been_made
           end
 
           context "with overridden revision" do
             before do
               capistrano_config.set(:appsignal_revision, "abc123")
-              stub_marker_request(:revision => "abc123").to_return(:status => 200)
-              run
             end
 
             it "transmits the overridden revision" do
+              marker_request = stub_marker_request(config, marker_data.merge(:revision => "abc123"))
+                .to_return(:status => 200)
+              run
+
               expect(output).to include \
                 "Notifying AppSignal of 'production' deploy with revision: abc123, user: batman",
                 "AppSignal has been notified of this deploy!"
+
+              expect(marker_request).to have_been_made
             end
           end
 
           context "with overridden deploy user" do
             before do
               capistrano_config.set(:appsignal_user, "robin")
-              stub_marker_request(:user => "robin").to_return(:status => 200)
-              run
             end
 
             it "transmits the overridden deploy user" do
+              marker_request = stub_marker_request(
+                config,
+                :revision => "503ce0923ed177a3ce000005",
+                :user => "robin"
+              ).to_return(:status => 200)
+
+              run
+
               expect(output).to include \
                 "Notifying AppSignal of 'production' deploy with " \
                   "revision: 503ce0923ed177a3ce000005, " \
                   "user: robin",
                 "AppSignal has been notified of this deploy!"
+
+              expect(marker_request).to have_been_made
             end
           end
 
           context "with failed request" do
-            before do
-              stub_marker_request.to_return(:status => 500)
-              run
-            end
-
             it "does not transmit marker" do
+              marker_request = stub_marker_request(
+                config,
+                marker_data
+              ).to_return(:status => 500)
+
+              run
+
               expect(output).to include \
                 "Notifying AppSignal of 'production' deploy with " \
                   "revision: 503ce0923ed177a3ce000005, " \
                   "user: batman",
                 "Something went wrong while trying to notify AppSignal:"
               expect(output).to_not include "AppSignal has been notified of this deploy!"
+
+              expect(marker_request).to have_been_made
             end
           end
 
