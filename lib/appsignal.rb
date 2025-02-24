@@ -192,6 +192,8 @@ module Appsignal
         # This will load the config/appsignal.yml file automatically
         @config ||= Config.new(context.root_path, context.env)
       end
+      # Allow a block to be given to customize the config and override any
+      # loaded config before it's validated.
       block.call(config) if block_given?
       # Validate the config, if present
       config&.validate
