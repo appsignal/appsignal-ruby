@@ -370,6 +370,7 @@ describe Appsignal do
       end
       expect(called).to be(true)
       expect(Appsignal.config.valid?).to be(true)
+      expect(Appsignal.config.config_hash).to include(:push_api_key => "abc")
     end
   end
 
