@@ -57,7 +57,8 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   }
 
   gem.add_dependency "logger"
-  gem.add_dependency "rack"
+  # Needs 2.0+ because we rely on Rack::Events
+  gem.add_dependency "rack", ">= 2.0.0"
 
   gem.add_development_dependency "pry"
   gem.add_development_dependency "rake", ">= 12"
