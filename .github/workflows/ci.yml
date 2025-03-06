@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 157
+# Generated job count: 159
 ---
 name: Ruby gem CI
 'on':
@@ -723,6 +723,60 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
+  ruby_3-4-1__sidekiq-7_ubuntu-latest:
+    name: Ruby 3.4.1 - sidekiq-7
+    needs: ruby_3-4-1_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.1
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sidekiq-7.gemfile
+  ruby_3-4-1__sidekiq-8_ubuntu-latest:
+    name: Ruby 3.4.1 - sidekiq-8
+    needs: ruby_3-4-1_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.1
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sidekiq-8.gemfile
   ruby_3-4-1_macos-14:
     name: Ruby 3.4.1 (macos-14)
     needs: validation
