@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.3
+
+_Published on 2025-03-06._
+
+### Changed
+
+- Specify stricter Rack version requirement. The Ruby gem relies on the `Rack::Events` constant which was introduced in Rack 2. Update our version requirement to require Rack 2 or newer. (patch [19bdb0b3](https://github.com/appsignal/appsignal-ruby/commit/19bdb0b3914e93e9f7c7ffa3a1bad80d9f3d1520))
+
+### Fixed
+
+- Fix the queue time reporting for Sidekiq 8 jobs. It would report high negative values for the queue time with Sidekiq 8. (patch [6fcc40e3](https://github.com/appsignal/appsignal-ruby/commit/6fcc40e31e8656cb84daa8bb5a0bea7a137ab089))
+
 ## 4.5.2
 
 _Published on 2025-02-24._
