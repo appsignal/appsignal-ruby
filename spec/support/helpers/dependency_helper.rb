@@ -163,8 +163,12 @@ module DependencyHelper
     dependency_present? "dry-monitor"
   end
 
+  def sidekiq_present?
+    dependency_present?("sidekiq")
+  end
+
   def sidekiq8_present?
-    dependency_present?("sidekiq") &&
+    sidekiq_present? &&
       Gem::Version.new(::Sidekiq::VERSION) >= Gem::Version.new("8.0.0")
   end
 
