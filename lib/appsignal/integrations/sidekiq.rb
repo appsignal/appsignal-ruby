@@ -156,8 +156,6 @@ module Appsignal
           safe_load(args[0], args) do |_, _, arg|
             arg
           end
-        when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-          nil # Set in the ActiveJob integration
         else
           # Sidekiq Enterprise argument encryption.
           # More information: https://github.com/mperham/sidekiq/wiki/Ent-Encryption
