@@ -208,3 +208,11 @@ matrix:
     - gem: "webmachine2"
     - gem: "redis-4"
     - gem: "redis-5"
+    - gem: "sidekiq-7"
+      only:
+        ruby:
+          - "3.4.1"
+    - gem: "sidekiq-8"
+      only:
+        ruby:
+          - "3.4.1"

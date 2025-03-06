@@ -58,6 +58,12 @@ module Appsignal
         error_message failed_at jid retried_at retry wrapped
       ].freeze
 
+      def self.sidekiq8?
+        return false unless ::Sidekiq.respond_to?(:gem_version)
+
+        @sidekiq8 ||= ::Sidekiq.gem_version >= Gem::Version.new("8.0.0")
+      end
+
       def call(_worker, item, _queue, &block)
         job_status = nil
         transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
@@ -74,7 +80,14 @@ module Appsignal
       ensure
         if transaction
           transaction.add_params_if_nil { parse_arguments(item) }
-          queue_start = (item["enqueued_at"].to_f * 1000.0).to_i # Convert seconds to milliseconds
+          enqueued_at = item["enqueued_at"]
+          queue_start =
+            if self.class.sidekiq8?
+              enqueued_at.to_i # Sidekiq 8 stores it as epoc milliseconds
+            else
+              # Convert seconds to milliseconds for Sidekiq 7 and older
+              (enqueued_at.to_f * 1000.0).to_i
+            end
           transaction.set_queue_start(queue_start)
           transaction.add_tags(:request_id => item["jid"])
           Appsignal::Transaction.complete_current! unless exception
@@ -143,8 +156,6 @@ module Appsignal
           safe_load(args[0], args) do |_, _, arg|
             arg
           end
-        when "ActiveJob::QueueAdapters::SidekiqAdapter::JobWrapper"
-          nil # Set in the ActiveJob integration
         else
           # Sidekiq Enterprise argument encryption.
           # More information: https://github.com/mperham/sidekiq/wiki/Ent-Encryption

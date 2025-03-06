@@ -13,6 +13,10 @@ require "rspec"
 require "timecop"
 require "webmock/rspec"
 
+# Also mock the `Process.clock_gettime` method, which is not mocked by default by Timecop.
+# This is needed for Sidekiq 8 because it uses it for its time values.
+Timecop.mock_process_clock = true
+
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support", "helpers", "*.rb")].sort.each do |f|
   require f
 end
