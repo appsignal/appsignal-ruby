@@ -202,13 +202,19 @@ describe Appsignal::Integrations::SidekiqMiddleware do
   let(:job_class) { "TestClass" }
   let(:jid) { "b4a577edbccf1d805744efa9" }
   let(:item) do
+    time =
+      if DependencyHelper.sidekiq8_present?
+        Time.parse("2001-01-01 10:00:00UTC").to_f * 1000
+      else
+        Time.parse("2001-01-01 10:00:00UTC").to_f
+      end
     {
       "jid" => jid,
       "class" => job_class,
       "retry_count" => 0,
       "queue" => "default",
-      "created_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
-      "enqueued_at" => Time.parse("2001-01-01 10:00:00UTC").to_f,
+      "created_at" => time,
+      "enqueued_at" => time,
       "args" => given_args,
       "extra" => "data"
     }
