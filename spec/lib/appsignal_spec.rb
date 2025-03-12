@@ -880,7 +880,7 @@ describe Appsignal do
 
   describe ".stop" do
     it "calls stop on the extension" do
-      expect(Appsignal.internal_logger).to receive(:debug).with("Stopping AppSignal")
+      expect(Appsignal.internal_logger).to receive(:info).with("Stopping AppSignal")
       expect(Appsignal::Extension).to receive(:stop)
       Appsignal.stop
       expect(Appsignal.active?).to be_falsy
@@ -895,7 +895,7 @@ describe Appsignal do
 
     context "with context specified" do
       it "should log the context" do
-        expect(Appsignal.internal_logger).to receive(:debug).with("Stopping AppSignal (something)")
+        expect(Appsignal.internal_logger).to receive(:info).with("Stopping AppSignal (something)")
         expect(Appsignal::Extension).to receive(:stop)
         Appsignal.stop("something")
         expect(Appsignal.active?).to be_falsy
