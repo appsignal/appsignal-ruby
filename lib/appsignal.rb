@@ -216,9 +216,9 @@ module Appsignal
     def stop(called_by = nil)
       Thread.new do
         if called_by
-          internal_logger.debug("Stopping AppSignal (#{called_by})")
+          internal_logger.info("Stopping AppSignal (#{called_by})")
         else
-          internal_logger.debug("Stopping AppSignal")
+          internal_logger.info("Stopping AppSignal")
         end
         Appsignal::Extension.stop
         Appsignal::Probes.stop
