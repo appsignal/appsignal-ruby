@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.5
+
+_Published on 2025-03-14._
+
+### Changed
+
+- Improve SQL sanitisation for functions and numbered placeholders. (patch [316f1205](https://github.com/appsignal/appsignal-ruby/commit/316f12050bd4e1391a50ff72989aabbdb7a09760))
+
 ## 4.5.4
 
 _Published on 2025-03-11._
