@@ -149,7 +149,7 @@ module Appsignal
 
     # PRIVATE METHOD. DO NOT USE.
     #
-    # @param env_var [String, NilClass] Used by diagnose CLI to pass through
+    # @param env_param [String, NilClass] Used by diagnose CLI to pass through
     #   the environment CLI option value.
     # @api private
     def _load_config!(env_param = nil, &block)
@@ -330,6 +330,7 @@ module Appsignal
       config.merge_dsl_options(config_dsl.dsl_options)
     end
 
+    # @return [void]
     def forked
       return unless active?
 
