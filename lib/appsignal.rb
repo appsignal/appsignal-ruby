@@ -62,6 +62,19 @@ module Appsignal
     #   @see start
     attr_writer :internal_logger
 
+    # Returns the error that was encountered while loading the `appsignal.rb`
+    # config file.
+    #
+    # It does not include any error that occurred while loading the
+    # `appsignal.yml` file.
+    #
+    # If the value is `nil`, no error was encountered or AppSignal wasn't
+    # started yet.
+    #
+    # @return [NilClass/Exception]
+    attr_reader :config_error
+    alias config_error? config_error
+
     # @api private
     def testing?
       false
@@ -508,7 +521,7 @@ module Appsignal
         @dsl_config_file_loaded = true
         require path
       rescue => error
-        @config_file_error = error
+        @config_error = error
         message = "Not starting AppSignal because an error occurred while " \
           "loading the AppSignal config file.\n" \
           "File: #{path.inspect}\n" \
@@ -527,7 +540,7 @@ module Appsignal
         end
 
         # Disable on config file error
-        config[:active] = false if defined?(@config_file_error)
+        config[:active] = false if defined?(@config_error)
 
         ENV.delete("_APPSIGNAL_CONFIG_FILE_CONTEXT")
         ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")

@@ -25,7 +25,7 @@ module Appsignal
     # @api private
     def clear!
       remove_instance_variable(:@dsl_config_file_loaded) if defined?(@dsl_config_file_loaded)
-      remove_instance_variable(:@config_file_error) if defined?(@config_file_error)
+      remove_instance_variable(:@config_error) if defined?(@config_error)
       Appsignal.internal_logger = nil
 
       clear_started!
