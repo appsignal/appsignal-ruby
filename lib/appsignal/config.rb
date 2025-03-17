@@ -442,6 +442,7 @@ module Appsignal
       merge(options)
     end
 
+    # @return [void]
     # @api private
     def validate
       # Apply any overrides for invalid settings.
@@ -472,6 +473,7 @@ module Appsignal
     # of the Ruby app.
     #
     # @api private
+    # @return [void]
     # @since 4.0.0
     def freeze
       super
