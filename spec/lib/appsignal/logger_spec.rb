@@ -542,6 +542,45 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#<<" do
+    it "writes an info message and returns the number of characters written" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with(
+          "group",
+          3,
+          0,
+          "hello there",
+          instance_of(Appsignal::Extension::Data)
+        )
+
+      message = "hello there"
+      result = logger << message
+      expect(result).to eq(message.length)
+    end
+
+    context "with a formatter set" do
+      before do
+        logger.formatter = proc do |_level, _timestamp, _appname, message|
+          "formatted: '#{message}'"
+        end
+      end
+
+      # This documents how the logger currently behaves in this scenario.
+      # Normally a Ruby logger would ignore the logger.
+      # We would recommend not setting a logger on the AppSignal logger.
+      it "logs a formatted message" do
+        expect(Appsignal::Extension).to receive(:log).with(
+          "group",
+          3,
+          0,
+          "formatted: 'Log message'",
+          instance_of(Appsignal::Extension::Data)
+        )
+        logger << "Log message"
+      end
+    end
+  end
+
   if DependencyHelper.rails_present?
     describe "wrapped in ActiveSupport::TaggedLogging" do
       let(:logger) do
