@@ -542,6 +542,23 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#<<" do
+    it "writes an info message and returns the number of characters written" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with(
+          "group",
+          3,
+          0,
+          "hello there",
+          instance_of(Appsignal::Extension::Data)
+        )
+
+      message = "hello there"
+      result = logger << message
+      expect(result).to eq(message.length)
+    end
+  end
+
   if DependencyHelper.rails_present?
     describe "wrapped in ActiveSupport::TaggedLogging" do
       let(:logger) do

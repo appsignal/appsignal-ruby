@@ -159,6 +159,17 @@ module Appsignal
       add_with_attributes(FATAL, message, @group, attributes)
     end
 
+    # Log an info level message
+    #
+    # Returns the number of characters written.
+    #
+    # @param message Message to log
+    # @return [Integer]
+    def <<(message)
+      add(Logger::INFO, message)
+      message.length
+    end
+
     # When using ActiveSupport::TaggedLogging without the broadcast feature,
     # the passed logger is required to respond to the `silence` method.
     #
