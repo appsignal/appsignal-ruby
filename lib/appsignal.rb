@@ -145,6 +145,7 @@ module Appsignal
       else
         internal_logger.error("Not starting, no valid config for this environment")
       end
+      nil
     end
 
     # PRIVATE METHOD. DO NOT USE.
@@ -224,6 +225,7 @@ module Appsignal
         Appsignal::Probes.stop
         Appsignal::CheckIn.stop
       end.join
+      nil
     end
 
     # Configure the AppSignal Ruby gem using a DSL.
@@ -328,6 +330,7 @@ module Appsignal
 
       yield config_dsl
       config.merge_dsl_options(config_dsl.dsl_options)
+      nil
     end
 
     # @return [void]
@@ -337,6 +340,7 @@ module Appsignal
       Appsignal._start_logger
       internal_logger.debug("Forked process, resubscribing and restarting extension")
       Appsignal::Extension.start
+      nil
     end
 
     # Load an AppSignal integration.
@@ -369,6 +373,7 @@ module Appsignal
     # @since 3.12.0
     def load(integration_name)
       Loaders.load(integration_name)
+      nil
     end
 
     # @api private
