@@ -496,6 +496,31 @@ module Appsignal
       defined?(@dsl_config_file_loaded) ? true : false
     end
 
+    # Check if the AppSignal Ruby gem has started successfully.
+    #
+    # If it has not (yet) started or encountered an error in the
+    # `config/appsignal.rb` config file during start up that prevented it from
+    # starting, it will raise a {Appsignal::NotStartedError}.
+    #
+    # If there an error raised from the config file, it will include it as the
+    # error cause of the raised error.
+    #
+    # @raise [Appsignal::NotStartedError]
+    # @return [void]
+    def check_if_started!
+      return if started?
+
+      begin
+        raise config_error if config_error?
+      rescue
+        # Raise the NotStartedError and make the config error the error cause
+        raise NotStartedError, config_error
+      end
+
+      # Raise the NotStartedError as normal
+      raise NotStartedError
+    end
+
     private
 
     def params_match_loaded_config?(env_param, root_path_param)
@@ -582,6 +607,7 @@ module Appsignal
   end
 end
 
+require "appsignal/internal_errors"
 require "appsignal/loaders"
 require "appsignal/sample_data"
 require "appsignal/environment"
