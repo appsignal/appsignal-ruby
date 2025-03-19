@@ -78,6 +78,10 @@ describe Appsignal::Rack::EventHandler do
       expect(Appsignal::Transaction.current).to be_kind_of(Appsignal::Transaction::NilTransaction)
 
       expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+      expect(last_transaction).to include_event(
+        "name" => "process_request.rack",
+        "title" => "callback: after_reply"
+      )
     end
 
     context "with error inside rack.after_reply handler" do
@@ -386,7 +390,10 @@ describe Appsignal::Rack::EventHandler do
       on_start
       on_finish
 
-      expect(last_transaction).to include_event("name" => "process_request.rack")
+      expect(last_transaction).to include_event(
+        "name" => "process_request.rack",
+        "title" => "callback: on_finish"
+      )
     end
 
     context "with response" do

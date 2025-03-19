@@ -68,7 +68,7 @@ module Appsignal
 
             Appsignal::Rack::EventHandler
               .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
-              transaction.finish_event("process_request.rack", "", "")
+              transaction.finish_event("process_request.rack", "callback: after_reply", "")
               queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
               transaction.set_queue_start(queue_start) if queue_start
             end
@@ -111,7 +111,7 @@ module Appsignal
         return unless transaction
 
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
-          transaction.finish_event("process_request.rack", "", "")
+          transaction.finish_event("process_request.rack", "callback: on_finish", "")
           transaction.add_params_if_nil { request.params }
           transaction.add_headers_if_nil { request.env }
           transaction.add_session_data_if_nil do
