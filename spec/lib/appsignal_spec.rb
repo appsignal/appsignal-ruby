@@ -469,6 +469,8 @@ describe Appsignal do
         expect(Appsignal.config[:name]).to eq("DSL app")
         expect(Appsignal.config[:push_api_key]).to eq("config_file_push_api_key")
         expect(Appsignal.config[:ignore_actions]).to include("Test")
+        expect(Appsignal.config_error?).to be_falsey
+        expect(Appsignal.config_error).to be_nil
       ensure
         FileUtils.rm_rf(test_path)
       end
@@ -646,6 +648,8 @@ describe Appsignal do
         expect(Appsignal.config[:active]).to be(false) # Disables the config on error
         expect(Appsignal.config[:name]).to eq("DSL app")
         expect(Appsignal.config[:push_api_key]).to eq("config_file_push_api_key")
+        expect(Appsignal.config_error?).to be_truthy
+        expect(Appsignal.config_error).to be_kind_of(RuntimeError)
       ensure
         FileUtils.rm_rf(test_path)
       end
