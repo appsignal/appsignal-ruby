@@ -1,5 +1,29 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.6
+
+_Published on 2025-03-20._
+
+### Added
+
+- Add the Logger `<<` method. This improves our compatibility with Ruby's Logger class implementation, making it usable in more scenarios. (patch [e09a78a4](https://github.com/appsignal/appsignal-ruby/commit/e09a78a425607852b5e12adf5c9ddb718811b09f))
+
+### Changed
+
+- Explicitly return `nil` from public methods with no usable return value. We want to avoid the situation where `Appsignal.start` happens to return `true` and it is thought to mean that the gem started successfully.
+
+  Methods updated:
+
+  - `Appsignal.start`
+  - `Appsignal.stop`
+  - `Appsignal.configure`
+  - `Appsignal.forked`
+  - `Appsignal.load`
+
+  (patch [93c304ee](https://github.com/appsignal/appsignal-ruby/commit/93c304eecd80992648d9e836a52e28c4e78958ee))
+- Differentiate between `process_request.rack` events. Add the callback that triggered the event in the event title for debugging purposes. (patch [4393b2fa](https://github.com/appsignal/appsignal-ruby/commit/4393b2faeac6d8be6390eef158b3cda133b99915))
+- Improve the log message for the uneven timestack error. This will help the AppSignal team debug issues where events get closed when all events are already closed. (patch [d2d4863f](https://github.com/appsignal/appsignal-ruby/commit/d2d4863fc8421eabb4c88e945bb24243a56535d3))
+
 ## 4.5.5
 
 _Published on 2025-03-14._
