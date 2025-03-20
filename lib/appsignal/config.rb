@@ -93,6 +93,7 @@ module Appsignal
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers => [],
       :enable_allocation_tracking => true,
+      :enable_at_exit_hook => true,
       :enable_at_exit_reporter => true,
       :enable_host_metrics => true,
       :enable_minutely_probes => true,
@@ -172,6 +173,7 @@ module Appsignal
     BOOLEAN_OPTIONS = {
       :active => "APPSIGNAL_ACTIVE",
       :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
+      :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :enable_at_exit_reporter => "APPSIGNAL_ENABLE_AT_EXIT_REPORTER",
       :enable_host_metrics => "APPSIGNAL_ENABLE_HOST_METRICS",
       :enable_minutely_probes => "APPSIGNAL_ENABLE_MINUTELY_PROBES",
