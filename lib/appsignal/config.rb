@@ -93,7 +93,6 @@ module Appsignal
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers => [],
       :enable_allocation_tracking => true,
-      :enable_at_exit_hook => true,
       :enable_at_exit_reporter => true,
       :enable_host_metrics => true,
       :enable_minutely_probes => true,
@@ -509,6 +508,8 @@ module Appsignal
         # environment variable is present and not empty.
         env_push_api_key = ENV["APPSIGNAL_PUSH_API_KEY"] || ""
         hash[:active] = true unless env_push_api_key.strip.empty?
+
+        hash[:enable_at_exit_hook] = true if Appsignal::Extension.running_in_container?
       end
     end
 
