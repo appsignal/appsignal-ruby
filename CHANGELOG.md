@@ -1,5 +1,26 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.7
+
+_Published on 2025-03-20._
+
+### Added
+
+- Add the `Appsignal.config_error` and `Appsignal.config_error?` methods. This method contains any error that may have occurred while loading the `config/appsignal.rb` file. If it is `nil` no error occurred or `Appsignal.start` hasn't been called yet. The `Appsignal.config_error?` method is an alias for syntax sugar. (patch [0f3a7372](https://github.com/appsignal/appsignal-ruby/commit/0f3a73729306d96b630339ccf6e218318d1e2870))
+- Add the `check_if_started!` method. This method will raise an error if the AppSignal Ruby gem failed to start.
+
+  Call this method in your CI or on app boot if you wish to verify that AppSignal has started when your application does, and want the application to fail to start if AppSignal hasn't started.
+
+  For example, in this Rails initializer:
+
+  ```
+  # config/initializers/appsignal.rb
+
+  Appsignal.check_if_started!
+  ```
+
+  (patch [b41c9c99](https://github.com/appsignal/appsignal-ruby/commit/b41c9c991bdbcd64b7a04e9832b15ddacda7ae20))
+
 ## 4.5.6
 
 _Published on 2025-03-20._
