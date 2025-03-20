@@ -172,6 +172,7 @@ module Appsignal
     BOOLEAN_OPTIONS = {
       :active => "APPSIGNAL_ACTIVE",
       :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
+      :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :enable_at_exit_reporter => "APPSIGNAL_ENABLE_AT_EXIT_REPORTER",
       :enable_host_metrics => "APPSIGNAL_ENABLE_HOST_METRICS",
       :enable_minutely_probes => "APPSIGNAL_ENABLE_MINUTELY_PROBES",
@@ -507,6 +508,8 @@ module Appsignal
         # environment variable is present and not empty.
         env_push_api_key = ENV["APPSIGNAL_PUSH_API_KEY"] || ""
         hash[:active] = true unless env_push_api_key.strip.empty?
+
+        hash[:enable_at_exit_hook] = true if Appsignal::Extension.running_in_container?
       end
     end
 

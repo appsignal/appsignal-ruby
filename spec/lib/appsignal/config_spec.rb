@@ -317,6 +317,36 @@ describe Appsignal::Config do
         end
       end
     end
+
+    describe ":enable_at_exit_hook" do
+      context "when running on a container" do
+        before do
+          allow(Appsignal::Extension).to receive(:running_in_container?).and_return(true)
+        end
+
+        it "is enabled" do
+          expect(config[:enable_at_exit_hook]).to be(true)
+        end
+
+        it "sets the option as loaded through the system" do
+          expect(config.system_config).to include(:enable_at_exit_hook => true)
+        end
+      end
+
+      context "when not running on Heroku" do
+        before do
+          allow(Appsignal::Extension).to receive(:running_in_container?).and_return(false)
+        end
+
+        it "is not enabled" do
+          expect(config[:enable_at_exit_hook]).to be_nil
+        end
+
+        it "does not set option as loaded through the system" do
+          expect(config.system_config).to_not have_key(:enable_at_exit_hook)
+        end
+      end
+    end
   end
 
   describe "loader default config" do
@@ -544,6 +574,7 @@ describe Appsignal::Config do
         :cpu_count => 1.5,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :enable_allocation_tracking => false,
+        :enable_at_exit_hook => false,
         :enable_at_exit_reporter => false,
         :enable_gvl_global_timer => false,
         :enable_gvl_waiting_threads => false,
@@ -612,6 +643,7 @@ describe Appsignal::Config do
         # Booleans
         "APPSIGNAL_ACTIVE" => "true",
         "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => "false",
+        "APPSIGNAL_ENABLE_AT_EXIT_HOOK" => "false",
         "APPSIGNAL_ENABLE_AT_EXIT_REPORTER" => "false",
         "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => "false",
         "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => "false",
