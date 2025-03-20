@@ -2240,4 +2240,47 @@ describe Appsignal do
       end
     end
   end
+
+  describe ".raise_if_not_started" do
+    it "doesn't raise an error if AppSignal was started" do
+      start_agent
+      Appsignal.check_if_started!
+    end
+
+    it "raises an error if AppSignal was not started" do
+      expect { Appsignal.check_if_started! }.to raise_error(Appsignal::NotStartedError) do |error|
+        expect(error.cause).to be_nil
+      end
+    end
+
+    it "raises the config error if the DSL file had an error" do
+      test_path = File.join(tmp_dir, "config_file_test_6")
+      FileUtils.mkdir_p(test_path)
+      Dir.chdir test_path do
+        config_contents =
+          <<~CONFIG
+            Appsignal.configure do |config|
+              config.active = true
+              config.name = "DSL app"
+              config.push_api_key = "config_file_push_api_key"
+            end
+            raise "uh oh" # Deliberatly crash
+          CONFIG
+        write_file(File.join(test_path, "config", "appsignal.rb"), config_contents)
+      end
+
+      ENV["APPSIGNAL_APP_PATH"] = test_path
+      silence(:allowed => ["Not starting AppSignal because an error occurred", "uh oh"]) do
+        Appsignal.start
+      end
+      expect(Appsignal.config_error?).to be_truthy
+      expect(Appsignal.config_error).to be_kind_of(RuntimeError)
+
+      expect { Appsignal.check_if_started! }.to raise_error(Appsignal::NotStartedError) do |error|
+        expect(error.cause).to be_kind_of(RuntimeError)
+      end
+    ensure
+      FileUtils.rm_rf(test_path)
+    end
+  end
 end
