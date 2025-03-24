@@ -791,6 +791,10 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits validation in report" do
           default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
+          # Tested elsewhere so remove it here
+          received_report["config"]["options"].delete("enable_at_exit_hook")
+          received_report["config"]["sources"]["system"].delete("enable_at_exit_hook")
+
           expect(received_report["config"]).to eq(
             "options" => default_config.merge("env" => "", "send_session_data" => true),
             "sources" => {
@@ -1091,6 +1095,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           run
           final_config = Appsignal.config.config_hash
             .merge(:env => "production")
+
+          # Tested elsewhere so remove it here
+          received_report["config"]["sources"]["system"].delete("enable_at_exit_hook")
           expect(received_report["config"]).to match(
             "options" => hash_with_string_keys(final_config),
             "sources" => {
@@ -1123,6 +1130,8 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         it "transmits config in report" do
+          # Tested elsewhere so remove it here
+          received_report["config"]["sources"]["system"].delete("enable_at_exit_hook")
           expect(received_report["config"]).to match(
             "options" => hash_with_string_keys(
               Appsignal.config.config_hash.merge("env" => "foobar")

@@ -762,6 +762,11 @@ describe Appsignal::Config do
         :options => dsl_config
       )
     end
+    before do
+      # Mock this to false in case it is tested in a container.
+      # We're asserting like it's not.
+      allow(Appsignal::Extension).to receive(:running_in_container?).and_return(false)
+    end
 
     it "merges with the default config" do
       expect(config.config_hash).to eq(
