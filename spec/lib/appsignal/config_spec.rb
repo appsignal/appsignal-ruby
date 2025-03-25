@@ -325,11 +325,11 @@ describe Appsignal::Config do
         end
 
         it "is enabled" do
-          expect(config[:enable_at_exit_hook]).to be(true)
+          expect(config[:enable_at_exit_hook]).to eq("always")
         end
 
         it "sets the option as loaded through the system" do
-          expect(config.system_config).to include(:enable_at_exit_hook => true)
+          expect(config.system_config).to include(:enable_at_exit_hook => "always")
         end
       end
 
@@ -339,7 +339,7 @@ describe Appsignal::Config do
         end
 
         it "is not enabled" do
-          expect(config[:enable_at_exit_hook]).to be_nil
+          expect(config[:enable_at_exit_hook]).to eq("on_error")
         end
 
         it "does not set option as loaded through the system" do
@@ -574,7 +574,7 @@ describe Appsignal::Config do
         :cpu_count => 1.5,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :enable_allocation_tracking => false,
-        :enable_at_exit_hook => false,
+        :enable_at_exit_hook => "never",
         :enable_at_exit_reporter => false,
         :enable_gvl_global_timer => false,
         :enable_gvl_waiting_threads => false,
@@ -626,6 +626,7 @@ describe Appsignal::Config do
         "APPSIGNAL_APP_NAME" => "App name",
         "APPSIGNAL_BIND_ADDRESS" => "0.0.0.0",
         "APPSIGNAL_CA_FILE_PATH" => "/some/path",
+        "APPSIGNAL_ENABLE_AT_EXIT_HOOK" => "never",
         "APPSIGNAL_HOSTNAME" => "my hostname",
         "APPSIGNAL_HOST_ROLE" => "my host role",
         "APPSIGNAL_HTTP_PROXY" => "some proxy",
@@ -643,7 +644,6 @@ describe Appsignal::Config do
         # Booleans
         "APPSIGNAL_ACTIVE" => "true",
         "APPSIGNAL_ENABLE_ALLOCATION_TRACKING" => "false",
-        "APPSIGNAL_ENABLE_AT_EXIT_HOOK" => "false",
         "APPSIGNAL_ENABLE_AT_EXIT_REPORTER" => "false",
         "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER" => "false",
         "APPSIGNAL_ENABLE_GVL_WAITING_THREADS" => "false",
@@ -775,6 +775,7 @@ describe Appsignal::Config do
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
         :dns_servers                    => [],
         :enable_allocation_tracking     => true,
+        :enable_at_exit_hook            => "on_error",
         :enable_at_exit_reporter        => true,
         :enable_gvl_global_timer        => true,
         :enable_gvl_waiting_threads     => true,
@@ -1396,7 +1397,12 @@ describe Appsignal::Config do
       let(:env) { :unknown_env }
 
       it "returns default values for config options" do
-        Appsignal::Config::DEFAULT_CONFIG.each do |option, value|
+        options = Appsignal::Config::DEFAULT_CONFIG
+        if Appsignal::Extension.running_in_container?
+          options = options.merge(:enable_at_exit_hook => "always")
+        end
+
+        options.each do |option, value|
           expect(dsl.send(option)).to eq(value)
         end
       end

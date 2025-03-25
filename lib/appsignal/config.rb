@@ -93,6 +93,7 @@ module Appsignal
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
       :dns_servers => [],
       :enable_allocation_tracking => true,
+      :enable_at_exit_hook => "on_error",
       :enable_at_exit_reporter => true,
       :enable_host_metrics => true,
       :enable_minutely_probes => true,
@@ -153,6 +154,7 @@ module Appsignal
       :name => "APPSIGNAL_APP_NAME",
       :bind_address => "APPSIGNAL_BIND_ADDRESS",
       :ca_file_path => "APPSIGNAL_CA_FILE_PATH",
+      :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :hostname => "APPSIGNAL_HOSTNAME",
       :host_role => "APPSIGNAL_HOST_ROLE",
       :http_proxy => "APPSIGNAL_HTTP_PROXY",
@@ -172,7 +174,6 @@ module Appsignal
     BOOLEAN_OPTIONS = {
       :active => "APPSIGNAL_ACTIVE",
       :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
-      :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :enable_at_exit_reporter => "APPSIGNAL_ENABLE_AT_EXIT_REPORTER",
       :enable_host_metrics => "APPSIGNAL_ENABLE_HOST_METRICS",
       :enable_minutely_probes => "APPSIGNAL_ENABLE_MINUTELY_PROBES",
@@ -509,7 +510,7 @@ module Appsignal
         env_push_api_key = ENV["APPSIGNAL_PUSH_API_KEY"] || ""
         hash[:active] = true unless env_push_api_key.strip.empty?
 
-        hash[:enable_at_exit_hook] = true if Appsignal::Extension.running_in_container?
+        hash[:enable_at_exit_hook] = "always" if Appsignal::Extension.running_in_container?
       end
     end
 

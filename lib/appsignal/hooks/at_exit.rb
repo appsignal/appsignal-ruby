@@ -28,6 +28,7 @@ module Appsignal
       # error from a Rake task or instrumented script twice.
       class AtExitCallback
         def self.call
+          report_error = false
           return unless Appsignal.config&.[](:enable_at_exit_reporter)
 
           error = $! # rubocop:disable Style/SpecialGlobalVars
@@ -35,11 +36,16 @@ module Appsignal
           return if ignored_error?(error)
           return if Appsignal::Transaction.last_errors.include?(error)
 
+          report_error = true
+
           Appsignal.report_error(error) do |transaction|
             transaction.set_namespace("unhandled")
           end
         ensure
-          Appsignal.stop("at_exit") if Appsignal.config&.[](:enable_at_exit_hook)
+          at_exit_hook = Appsignal.config&.[](:enable_at_exit_hook)
+          if at_exit_hook == "always" || (at_exit_hook == "on_error" && report_error)
+            Appsignal.stop("at_exit")
+          end
         end
 
         IGNORED_ERRORS = [

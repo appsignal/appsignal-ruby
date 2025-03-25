@@ -227,8 +227,12 @@ describe Appsignal do
       end
 
       it "loads the default config" do
+        options = Appsignal::Config::DEFAULT_CONFIG
+        if Appsignal::Extension.running_in_container?
+          options = options.merge(:enable_at_exit_hook => "always")
+        end
         Appsignal.configure do |config|
-          Appsignal::Config::DEFAULT_CONFIG.each do |option, value|
+          options.each do |option, value|
             expect(config.send(option)).to eq(value)
           end
         end

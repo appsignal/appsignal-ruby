@@ -44,11 +44,12 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     let(:options) do
       {
         :enable_at_exit_reporter => true,
-        :enable_at_exit_hook => false # Turned off to speed up the tests
+        :enable_at_exit_hook => "on_error"
       }
     end
 
     it "reports no transaction if the process didn't exit with an error" do
+      expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
           expect do
@@ -60,6 +61,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
 
     it "reports an error if there's an unhandled error" do
+      expect(Appsignal).to receive(:stop).with("at_exit")
       expect do
         with_error(ExampleException, "error message") do
           call_callback
@@ -72,6 +74,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
 
     it "doesn't report the error if it is also the last error reported" do
+      expect(Appsignal).to_not receive(:stop)
       with_error(ExampleException, "error message") do |error|
         Appsignal.report_error(error)
         expect(created_transactions.count).to eq(1)
@@ -83,6 +86,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
 
     it "doesn't report the error if it is a SystemExit exception" do
+      expect(Appsignal).to_not receive(:stop)
       with_error(SystemExit, "error message") do |error|
         Appsignal.report_error(error)
         expect(created_transactions.count).to eq(1)
@@ -94,6 +98,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
 
     it "doesn't report the error if it is a SignalException exception" do
+      expect(Appsignal).to_not receive(:stop)
       with_error(SignalException, "TERM") do |error|
         Appsignal.report_error(error)
         expect(created_transactions.count).to eq(1)
@@ -106,9 +111,15 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
   end
 
   context "when enable_at_exit_reporter is false" do
-    let(:options) { { :enable_at_exit_reporter => false } }
+    let(:options) do
+      {
+        :enable_at_exit_reporter => false,
+        :enable_at_exit_hook => "never" # Turned off to speed up the tests
+      }
+    end
 
     it "reports no error if the process didn't exit with an error" do
+      expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
           expect do
@@ -120,6 +131,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
     end
 
     it "reports no error if there's an unhandled error" do
+      expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
           expect do
@@ -134,7 +146,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
   end
 
   context "when enable_at_exit_hook is true" do
-    let(:options) { { :enable_at_exit_hook => true } }
+    let(:options) { { :enable_at_exit_hook => "always" } }
 
     it "calls Appsignal.stop" do
       expect(Appsignal).to receive(:stop).with("at_exit")
