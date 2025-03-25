@@ -154,6 +154,11 @@ module Appsignal
       #
       # @see monitor
       def monitor_and_stop(action:, namespace: nil, &block)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning \
+          "The `Appsignal.monitor_and_stop` helper is deprecated. " \
+            "Use the `Appsignal.monitor` along with our `enable_at_exit_hook` " \
+            "option instead."
+
         monitor(:namespace => namespace, :action => action, &block)
       ensure
         Appsignal.stop("monitor_and_stop")
