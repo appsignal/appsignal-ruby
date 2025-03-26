@@ -1170,7 +1170,13 @@ describe Appsignal do
     describe ".monitor_and_stop" do
       it "calls Appsignal.stop after the block" do
         allow(Appsignal).to receive(:stop)
-        Appsignal.monitor_and_stop(:namespace => "custom", :action => "My Action")
+        err_stream = std_stream
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              Appsignal.monitor_and_stop(:namespace => "custom", :action => "My Action")
+            end
+          end
 
         transaction = last_transaction
         expect(transaction).to have_namespace("custom")
@@ -1178,11 +1184,16 @@ describe Appsignal do
         expect(transaction).to be_completed
 
         expect(Appsignal).to have_received(:stop).with("monitor_and_stop")
+        message = "The `Appsignal.monitor_and_stop` helper is deprecated."
+        expect(logs).to contains_log(:warn, message)
+        expect(err_stream.read).to include("appsignal WARNING: #{message}")
       end
 
       it "passes the block to Appsignal.monitor" do
         expect do |blk|
-          Appsignal.monitor_and_stop(:action => "My action", &blk)
+          silence do
+            Appsignal.monitor_and_stop(:action => "My action", &blk)
+          end
         end.to yield_control
       end
     end
