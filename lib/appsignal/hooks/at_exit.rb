@@ -11,27 +11,41 @@ module Appsignal
       end
 
       def install
-        return unless Appsignal.config[:enable_at_exit_reporter]
-
         Kernel.at_exit(&AtExitCallback.method(:call))
       end
 
-      # Report any unhandled errors and will crash the Ruby process.
+      # Stop AppSignal before the app exists.
+      #
+      # This is the default behavior and can be customized with the
+      # `enable_at_exit_hook` option.
+      #
+      # When the `enable_at_exit_reporter` option is set to `true` (the
+      # default), it will report any unhandled errors that will crash the Ruby
+      # process.
       #
       # If this error was previously reported by any of our instrumentation,
       # the error will not also be reported here. This way we don't report an
       # error from a Rake task or instrumented script twice.
       class AtExitCallback
         def self.call
+          report_error = false
+          return unless Appsignal.config&.[](:enable_at_exit_reporter)
+
           error = $! # rubocop:disable Style/SpecialGlobalVars
           return unless error
           return if ignored_error?(error)
           return if Appsignal::Transaction.last_errors.include?(error)
 
+          report_error = true
+
           Appsignal.report_error(error) do |transaction|
             transaction.set_namespace("unhandled")
           end
-          Appsignal.stop("at_exit")
+        ensure
+          at_exit_hook = Appsignal.config&.[](:enable_at_exit_hook)
+          if at_exit_hook == "always" || (at_exit_hook == "on_error" && report_error)
+            Appsignal.stop("at_exit")
+          end
         end
 
         IGNORED_ERRORS = [

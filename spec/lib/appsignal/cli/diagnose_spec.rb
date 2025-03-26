@@ -786,16 +786,27 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
+          options = Appsignal::Config::DEFAULT_CONFIG
+          if Appsignal::Extension.running_in_container?
+            options = options.merge(:enable_at_exit_hook => "always")
+          end
+          expect_config_to_be_printed(options)
         end
 
         it "transmits validation in report" do
           default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
+          options = default_config.merge("env" => "", "send_session_data" => true)
+
+          system_options = {}
+          if Appsignal::Extension.running_in_container?
+            options["enable_at_exit_hook"] = "always"
+            system_options["enable_at_exit_hook"] = "always"
+          end
           expect(received_report["config"]).to eq(
-            "options" => default_config.merge("env" => "", "send_session_data" => true),
+            "options" => options,
             "sources" => {
               "default" => default_config,
-              "system" => {},
+              "system" => system_options,
               "loaders" => {},
               "initial" => { "env" => "" },
               "file" => {},
@@ -1091,11 +1102,17 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           run
           final_config = Appsignal.config.config_hash
             .merge(:env => "production")
+
+          system_options = {}
+          if Appsignal::Extension.running_in_container?
+            final_config["enable_at_exit_hook"] = "always"
+            system_options["enable_at_exit_hook"] = "always"
+          end
           expect(received_report["config"]).to match(
             "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
-              "system" => {},
+              "system" => system_options,
               "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
               "file" => hash_with_string_keys(Appsignal.config.file_config),
@@ -1119,17 +1136,27 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "outputs config defaults" do
           expect(output).to include("Configuration")
-          expect_config_to_be_printed(Appsignal::Config::DEFAULT_CONFIG)
+          options = Appsignal::Config::DEFAULT_CONFIG
+          if Appsignal::Extension.running_in_container?
+            options = options.merge(:enable_at_exit_hook => "always")
+          end
+          expect_config_to_be_printed(options)
         end
 
         it "transmits config in report" do
+          options = Appsignal.config.config_hash.merge("env" => "foobar")
+          if Appsignal::Extension.running_in_container?
+            options = options.merge("enable_at_exit_hook" => "always")
+          end
+          system_options = {}
+          if Appsignal::Extension.running_in_container?
+            system_options["enable_at_exit_hook"] = "always"
+          end
           expect(received_report["config"]).to match(
-            "options" => hash_with_string_keys(
-              Appsignal.config.config_hash.merge("env" => "foobar")
-            ),
+            "options" => hash_with_string_keys(options),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
-              "system" => {},
+              "system" => system_options,
               "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
               "file" => hash_with_string_keys(Appsignal.config.file_config),
