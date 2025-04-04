@@ -1,5 +1,29 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.8
+
+_Published on 2025-04-04._
+
+### Added
+
+- Add the `enable_at_exit_hook` option to configure if `Appsignal.stop` is called when the Ruby application exits. Calling `Appsignal.stop` will stop the application for a moment to flush all the data to our agent before shutting down.
+
+  This option has three possible values:
+
+  - `always`: Always call `Appsignal.stop` when the program exits. On (Docker) containers it's automatically set to this value.
+  - `never`: Never call `Appsignal.stop` when the program exits. The default value when the program doesn't run on a (Docker) container.
+  - `on_error`: Call `Appsignal.stop` when the program exits with an error.
+
+  (patch [d0a5875c](https://github.com/appsignal/appsignal-ruby/commit/d0a5875cef5101680f1cab4649d71440212f9ea8), [043a6c74](https://github.com/appsignal/appsignal-ruby/commit/043a6c740b708e1182ed7161e3c9ad38bd3314de), [b680fe6f](https://github.com/appsignal/appsignal-ruby/commit/b680fe6f6b283205a13ca61bd4a26167f541dbca))
+
+### Deprecated
+
+- Deprecate the `Appsignal.monitor_and_stop` helper.
+
+  We instead recommend using the `Appsignal.monitor` helper and configuring the `enable_at_exit_hook` config option to `always`.
+
+  (patch [84969aea](https://github.com/appsignal/appsignal-ruby/commit/84969aeaca8f3737921e9adf1efdad55b52e1206))
+
 ## 4.5.7
 
 _Published on 2025-03-20._
