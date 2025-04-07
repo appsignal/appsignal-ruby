@@ -78,7 +78,8 @@ describe Appsignal::Transaction do
       let!(:transaction) { create_transaction }
 
       it "reads :appsignal_transaction from the current Thread" do
-        expect(current_transaction).to eq(Thread.current[:appsignal_transaction])
+        expect(current_transaction)
+          .to eq(Thread.current.thread_variable_get(:appsignal_transaction))
         expect(current_transaction).to eq(transaction)
       end
 
@@ -94,7 +95,7 @@ describe Appsignal::Transaction do
 
     context "when there is no current transaction" do
       it "has no :appsignal_transaction registered on the current Thread" do
-        expect(Thread.current[:appsignal_transaction]).to be_nil
+        expect(Thread.current.thread_variable_get(:appsignal_transaction)).to be_nil
       end
 
       it "returns a NilTransaction stub" do
@@ -123,7 +124,9 @@ describe Appsignal::Transaction do
       it "unsets the current transaction on the current Thread" do
         expect do
           Appsignal::Transaction.complete_current!
-        end.to change { Thread.current[:appsignal_transaction] }.from(transaction).to(nil)
+        end.to change {
+                 Thread.current.thread_variable_get(:appsignal_transaction)
+               }.from(transaction).to(nil)
       end
 
       context "when encountering an error while completing" do
@@ -143,7 +146,9 @@ describe Appsignal::Transaction do
         it "clears the current transaction" do
           expect do
             Appsignal::Transaction.complete_current!
-          end.to change { Thread.current[:appsignal_transaction] }.from(transaction).to(nil)
+          end.to change {
+                   Thread.current.thread_variable_get(:appsignal_transaction)
+                 }.from(transaction).to(nil)
         end
       end
     end
@@ -152,7 +157,7 @@ describe Appsignal::Transaction do
       it "does nothing" do
         expect do
           Appsignal::Transaction.complete_current!
-        end.to_not(change { Thread.current[:appsignal_transaction] })
+        end.to_not(change { Thread.current.thread_variable_get(:appsignal_transaction) })
       end
     end
   end

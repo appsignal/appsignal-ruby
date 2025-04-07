@@ -28,7 +28,7 @@ module Appsignal
       # @return [Transaction]
       def create(namespace)
         # Check if we already have a running transaction
-        if Thread.current[:appsignal_transaction].nil?
+        if Thread.current.thread_variable_get(:appsignal_transaction).nil?
           # If not, start a new transaction
           set_current_transaction(Appsignal::Transaction.new(namespace))
         else
@@ -80,7 +80,7 @@ module Appsignal
 
       # @api private
       def set_current_transaction(transaction)
-        Thread.current[:appsignal_transaction] = transaction
+        Thread.current.thread_variable_set(:appsignal_transaction, transaction)
       end
 
       # Set the current for the duration of the given block.
@@ -101,7 +101,7 @@ module Appsignal
       # @see .current?
       # @return [Boolean]
       def current
-        Thread.current[:appsignal_transaction] || NilTransaction.new
+        Thread.current.thread_variable_get(:appsignal_transaction) || NilTransaction.new
       end
 
       # Returns if any transaction is currently active or not. A
@@ -128,7 +128,7 @@ module Appsignal
       # Remove current transaction from current Thread.
       # @api private
       def clear_current_transaction!
-        Thread.current[:appsignal_transaction] = nil
+        Thread.current.thread_variable_set(:appsignal_transaction, nil)
       end
 
       # @api private

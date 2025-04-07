@@ -78,7 +78,7 @@ module TransactionHelpers
   # When a block is given, the current transaction is automatically unset after
   # the block.
   def set_current_transaction(transaction) # rubocop:disable Naming/AccessorMethodName
-    Thread.current[:appsignal_transaction] = transaction
+    Thread.current.thread_variable_set(:appsignal_transaction, transaction)
     yield if block_given?
   ensure
     clear_current_transaction! if block_given?
@@ -87,7 +87,7 @@ module TransactionHelpers
   # Use when {Appsignal::Transaction.clear_current_transaction!} is stubbed to
   # clear the current transaction on the current thread.
   def clear_current_transaction!
-    Thread.current[:appsignal_transaction] = nil
+    Thread.current.thread_variable_set(:appsignal_transaction, nil)
   end
 
   # Set the current for the duration of the given block.
