@@ -9,9 +9,6 @@ issues.
 - [Ruby code documentation][ruby-doc]
 - [Support][contact]
 
-[![Gem Version](https://badge.fury.io/rb/appsignal.svg)](http://badge.fury.io/rb/appsignal)
-[![Code Climate](https://codeclimate.com/github/appsignal/appsignal.png)](https://codeclimate.com/github/appsignal/appsignal)
-
 ## Description
 
 The AppSignal gem collects exceptions and performance data from your Ruby
