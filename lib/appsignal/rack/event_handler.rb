@@ -82,7 +82,8 @@ module Appsignal
             # just a fallback if that doesn't get called.
             #
             # One such scenario is when a Puma "lowlevel_error" occurs.
-            Appsignal::Transaction.complete_current!
+            transaction.complete
+            Appsignal::Transaction.clear_current_transaction!
           end
         end
       end
@@ -138,7 +139,8 @@ module Appsignal
 
         # Make sure the current transaction is always closed when the request
         # is finished
-        Appsignal::Transaction.complete_current!
+        transaction.complete
+        Appsignal::Transaction.clear_current_transaction!
       end
 
       private
