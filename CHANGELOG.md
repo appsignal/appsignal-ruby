@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.9
+
+_Published on 2025-04-09._
+
+### Fixed
+
+- Ensure request transactions are always closed in the `Rack::EventHandler`. A problem with Fibers changing during a request would cause transactions transactions to be left open and the data from requests to not be sent to our servers. (patch [52a72395](https://github.com/appsignal/appsignal-ruby/commit/52a72395b99a44d451fdc4026acfeb0cc2a5c23b))
+
 ## 4.5.8
 
 _Published on 2025-04-04._
