@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 186
+# Generated job count: 192
 ---
 name: Ruby gem CI
 'on':
@@ -80,6 +80,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -109,6 +112,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -136,6 +142,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -163,6 +172,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -190,6 +202,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -217,6 +232,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -244,6 +262,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -271,6 +292,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -298,6 +322,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -325,6 +352,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -352,6 +382,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -379,6 +412,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -406,6 +442,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -433,6 +472,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -460,6 +502,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -487,6 +532,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -514,6 +562,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -541,6 +592,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -568,6 +622,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -595,6 +652,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -622,6 +682,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -649,6 +712,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -676,6 +742,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -703,6 +772,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -730,6 +802,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -757,6 +832,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -784,6 +862,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -813,6 +894,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -842,6 +926,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -869,6 +956,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -896,6 +986,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -923,6 +1016,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -950,6 +1046,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -977,6 +1076,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1004,6 +1106,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1031,6 +1136,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1058,6 +1166,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1085,6 +1196,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1112,6 +1226,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1139,6 +1256,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1166,6 +1286,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1193,6 +1316,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1220,6 +1346,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1247,6 +1376,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1274,6 +1406,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1301,6 +1436,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1328,6 +1466,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1355,6 +1496,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1382,6 +1526,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1409,6 +1556,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1436,6 +1586,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1463,6 +1616,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1490,6 +1646,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1517,6 +1676,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1546,6 +1708,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1575,6 +1740,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1602,6 +1770,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1629,6 +1800,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1656,6 +1830,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1683,6 +1860,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1710,6 +1890,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1737,6 +1920,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1764,6 +1950,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1791,6 +1980,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1818,6 +2010,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1845,6 +2040,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1872,6 +2070,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1899,6 +2100,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1926,6 +2130,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1953,6 +2160,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -1980,6 +2190,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2007,6 +2220,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2034,6 +2250,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2061,6 +2280,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2088,6 +2310,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2115,6 +2340,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2142,6 +2370,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2169,6 +2400,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2196,6 +2430,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2223,6 +2460,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2252,6 +2492,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2281,6 +2524,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2308,6 +2554,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2335,6 +2584,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2362,6 +2614,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2389,6 +2644,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2416,6 +2674,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2443,6 +2704,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2470,6 +2734,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2497,6 +2764,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2524,6 +2794,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2551,6 +2824,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2578,6 +2854,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2605,6 +2884,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2632,6 +2914,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2659,6 +2944,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2686,6 +2974,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2713,6 +3004,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2740,6 +3034,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2767,6 +3064,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2794,6 +3094,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2821,6 +3124,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2848,6 +3154,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2875,6 +3184,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2902,6 +3214,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2929,6 +3244,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2958,6 +3276,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -2987,6 +3308,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3014,6 +3338,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3041,6 +3368,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3068,6 +3398,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3095,6 +3428,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3122,6 +3458,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3149,6 +3488,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3176,6 +3518,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3203,6 +3548,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3230,6 +3578,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3257,6 +3608,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3284,6 +3638,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3311,6 +3668,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3338,6 +3698,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3365,6 +3728,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3392,6 +3758,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3419,6 +3788,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3446,6 +3818,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3473,6 +3848,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3500,6 +3878,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3527,6 +3908,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3554,6 +3938,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3581,6 +3968,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3608,6 +3998,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3637,6 +4030,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3666,6 +4062,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3693,6 +4092,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3720,6 +4122,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3747,6 +4152,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3774,6 +4182,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3801,6 +4212,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3828,6 +4242,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3855,6 +4272,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3882,6 +4302,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3909,6 +4332,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3936,6 +4362,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3963,6 +4392,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -3990,6 +4422,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4017,6 +4452,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4044,6 +4482,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4071,6 +4512,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4098,6 +4542,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4125,6 +4572,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4152,6 +4602,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4179,6 +4632,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4206,6 +4662,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4233,6 +4692,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4260,6 +4722,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4289,6 +4754,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4318,6 +4786,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4345,6 +4816,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4372,6 +4846,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4399,6 +4876,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4426,6 +4906,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4453,6 +4936,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4480,6 +4966,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4507,6 +4996,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4534,6 +5026,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4561,6 +5056,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4588,6 +5086,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4615,6 +5116,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4642,6 +5146,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4669,6 +5176,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4696,6 +5206,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4723,6 +5236,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4750,6 +5266,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4777,6 +5296,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4804,6 +5326,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4833,6 +5358,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4862,6 +5390,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4889,6 +5420,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4916,6 +5450,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4943,6 +5480,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4970,6 +5510,9 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -4997,10 +5540,197 @@ jobs:
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: jruby-9.4.7.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    - name: Run tests without extension
+      run: "./script/bundler_wrapper exec rake test:failure"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
+  ruby_jruby-10-0-0-0_ubuntu-latest:
+    name: Ruby jruby-10.0.0.0
+    needs: validation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    - name: Run tests without extension
+      run: "./script/bundler_wrapper exec rake test:failure"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
+  ruby_jruby-10-0-0-0__rails-7-0_ubuntu-latest:
+    name: Ruby jruby-10.0.0.0 - rails-7.0
+    needs: ruby_jruby-10-0-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
+  ruby_jruby-10-0-0-0__rails-7-1_ubuntu-latest:
+    name: Ruby jruby-10.0.0.0 - rails-7.1
+    needs: ruby_jruby-10-0-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
+  ruby_jruby-10-0-0-0__rails-7-2_ubuntu-latest:
+    name: Ruby jruby-10.0.0.0 - rails-7.2
+    needs: ruby_jruby-10-0-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.2.gemfile
+  ruby_jruby-10-0-0-0__rails-8-0_ubuntu-latest:
+    name: Ruby jruby-10.0.0.0 - rails-8.0
+    needs: ruby_jruby-10-0-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-8.0.gemfile
+  ruby_jruby-10-0-0-0_macos-14:
+    name: Ruby jruby-10.0.0.0 (macos-14)
+    needs: validation
+    runs-on: macos-14
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Set JAVA_HOME
+      run: echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"
+      if: startsWith(github.job, 'ruby_jruby')
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: jruby-10.0.0.0
         bundler-cache: true
     - name: Install gem extension
       run: "./script/bundler_wrapper exec rake extension:install"
