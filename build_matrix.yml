@@ -96,6 +96,8 @@ matrix:
     - ruby: "2.7.8"
     - ruby: "jruby-9.4.7.0"
       gems: "minimal"
+    - ruby: "jruby-10.0.0.0"
+      gems: "minimal"
   gems:
     - gem: "no_dependencies"
     - gem: "capistrano2"
@@ -161,6 +163,7 @@ matrix:
           - "3.0.7"
           - "2.7.8"
           - "jruby-9.4.7.0"
+          - "jruby-10.0.0.0"
     - gem: "rails-6.1"
       only:
         ruby:
@@ -170,6 +173,7 @@ matrix:
           - "3.0.7"
           - "2.7.8"
           - "jruby-9.4.7.0"
+          - "jruby-10.0.0.0"
     - gem: "rails-7.0"
       only:
         ruby:
@@ -180,6 +184,7 @@ matrix:
           - "3.0.7"
           - "2.7.8"
           - "jruby-9.4.7.0"
+          - "jruby-10.0.0.0"
     - gem: "rails-7.1"
       only:
         ruby:
@@ -189,6 +194,7 @@ matrix:
           - "3.1.6"
           - "3.0.7"
           - "jruby-9.4.7.0"
+          - "jruby-10.0.0.0"
     - gem: "rails-7.2"
       only:
         ruby:
@@ -197,6 +203,7 @@ matrix:
           - "3.2.5"
           - "3.1.6"
           - "jruby-9.4.7.0"
+          - "jruby-10.0.0.0"
     - gem: "rails-8.0"
       only:
         ruby:

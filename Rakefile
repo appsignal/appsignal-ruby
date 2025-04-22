@@ -34,6 +34,11 @@ def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
         "uses" => "actions/checkout@v4"
       },
       {
+        "name" => "Set JAVA_HOME",
+        "run" => 'echo "JAVA_HOME=${JAVA_HOME_21_X64:-${JAVA_HOME_21_arm64:-}}" >> "$GITHUB_ENV"',
+        "if" => "startsWith(github.job, 'ruby_jruby')"
+      },
+      {
         "name" => "Install Ruby",
         "uses" => "ruby/setup-ruby@v1",
         "with" => {
