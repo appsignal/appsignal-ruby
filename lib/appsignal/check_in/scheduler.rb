@@ -161,7 +161,9 @@ module Appsignal
         # Push a copy of the events to the queue, and clear the events array.
         # This ensures that `@events` always contains events that have not
         # yet been pushed to the queue.
-        @queue.push(@events.dup)
+        events = @events.dup
+        Event.deduplicate_cron!(events)
+        @queue.push(events)
         @events.clear
 
         start_waker(BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS)
