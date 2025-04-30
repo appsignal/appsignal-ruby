@@ -6,5 +6,6 @@ gem "rack", "~> 1.6" if ruby_version < Gem::Version.new("2.3.0")
 # Fix install issue for jruby on gem 3.1.8.
 # No java stub is published.
 gem "bigdecimal", "3.1.7" if RUBY_PLATFORM == "java"
+gem "ostruct"
 
 gemspec :path => "../"

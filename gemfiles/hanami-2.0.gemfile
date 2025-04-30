@@ -1,7 +1,8 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
 gem "hanami", "~> 2.0.0"
-gem "hanami-router", "~> 2.0.0"
 gem "hanami-controller", "~> 2.0.0"
+gem "hanami-router", "~> 2.0.0"
+gem "ostruct"
 
-gemspec :path => '../'
+gemspec :path => "../"

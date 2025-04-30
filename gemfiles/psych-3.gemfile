@@ -1,5 +1,6 @@
 source "https://rubygems.org"
 
+gem "ostruct"
 gem "psych", "~> 3.3"
 
 gemspec :path => "../"

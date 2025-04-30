@@ -12,4 +12,6 @@ if RUBY_PLATFORM == "java"
   gem "jar-dependencies", "0.4.1"
 end
 
+gem "ostruct"
+
 gemspec :path => "../"
