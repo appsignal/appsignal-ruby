@@ -1,10 +1,11 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'sequel'
+gem "sequel"
 if RUBY_PLATFORM == "java"
-  gem 'jdbc-sqlite3'
+  gem "jdbc-sqlite3"
 else
-  gem 'sqlite3'
+  gem "sqlite3"
 end
+gem "ostruct"
 
-gemspec :path => '../'
+gemspec :path => "../"

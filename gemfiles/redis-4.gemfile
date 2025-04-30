@@ -1,5 +1,6 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-gem 'redis', "~> 4.0"
+gem "ostruct"
+gem "redis", "~> 4.0"
 
-gemspec :path => '../'
+gemspec :path => "../"

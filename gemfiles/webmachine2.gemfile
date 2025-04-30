@@ -1,6 +1,8 @@
 source "https://rubygems.org"
 
 gem "mutex_m" # Ruby 3.4 requirement
+gem "ostruct"
+gem "pstore"
 gem "webmachine", "~> 2.0"
 gem "webrick"
 

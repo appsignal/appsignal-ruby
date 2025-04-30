@@ -9,6 +9,8 @@ gem "sidekiq"
 
 # Fix install issue for jruby on gem 3.1.8.
 # No java stub is published.
+gem "benchmark"
 gem "bigdecimal", "3.1.7" if RUBY_PLATFORM == "java"
+gem "ostruct"
 
 gemspec :path => "../"
