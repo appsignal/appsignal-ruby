@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.10
+
+_Published on 2025-05-05._
+
+### Changed
+
+- Remove redundant cron check-in pairs. When more than one pair of start and finish cron check-in events is reported for the same identifier in the same period, only one of them will be reported to AppSignal. (patch [803a0389](https://github.com/appsignal/appsignal-ruby/commit/803a03893aaf83391129b0b30cda169c8922a870))
+
 ## 4.5.9
 
 _Published on 2025-04-09._
