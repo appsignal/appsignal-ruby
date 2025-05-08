@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.11
+
+_Published on 2025-05-08._
+
+### Changed
+
+- Log a debug message when the reported error is ignored by the `ignore_errors` config option. (patch [0cda9da0](https://github.com/appsignal/appsignal-ruby/commit/0cda9da0c47c56bee39b6e045be36655dd13ee54))
+
 ## 4.5.10
 
 _Published on 2025-05-05._
