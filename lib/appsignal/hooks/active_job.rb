@@ -42,7 +42,16 @@ module Appsignal
       end
 
       module ActiveJobClassInstrumentation
-        def execute(job)
+        def execute(job) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+          enqueued_at = job["enqueued_at"]
+          queue_start = Time.parse(enqueued_at) if enqueued_at
+          queue_time =
+            if queue_start
+              time_now = Time.now.utc
+              # Calculate queue time and store it as milliseconds
+              (time_now - queue_start) * 1_000
+            end
+
           job_status = nil
           has_wrapper_transaction = Appsignal::Transaction.current?
           transaction =
@@ -73,10 +82,8 @@ module Appsignal
           raise exception
         ensure
           if transaction
-            enqueued_at = job["enqueued_at"]
-            if enqueued_at # Present in Rails 6 and up
-              transaction.set_queue_start((Time.parse(enqueued_at).to_f * 1_000).to_i)
-            end
+            # Present in Rails 6 and up
+            transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
 
             unless has_wrapper_transaction
               # Only complete transaction if ActiveJob is not wrapped in
@@ -93,6 +100,15 @@ module Appsignal
             end
             ActiveJobHelpers.increment_counter metric_name, 1,
               tags.merge(:status => :processed)
+          end
+
+          queue_name = job["queue_name"]
+          if queue_time && queue_name
+            ActiveJobHelpers.add_distribution_value(
+              "queue_time",
+              queue_time,
+              :queue => queue_name
+            )
           end
         end
 
@@ -171,6 +187,10 @@ module Appsignal
 
         def self.increment_counter(key, value, tags = {})
           Appsignal.increment_counter "active_job_#{key}", value, tags
+        end
+
+        def self.add_distribution_value(key, value, tags = {})
+          Appsignal.add_distribution_value("active_job_#{key}", value, tags)
         end
       end
     end
