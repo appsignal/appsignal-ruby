@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.13
+
+_Published on 2025-05-12._
+
+### Fixed
+
+- Fix the C extension function definitions. On install, the Ruby gem extension would print warnings or fail to compile. (patch [c93f8e20](https://github.com/appsignal/appsignal-ruby/commit/c93f8e20860168929721f0c2b3e642a02dbde936))
+
 ## 4.5.12
 
 _Published on 2025-05-12._
