@@ -838,7 +838,7 @@ static void track_allocation(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID ar
   appsignal_track_allocation();
 }
 
-static VALUE install_allocation_event_hook() {
+static VALUE install_allocation_event_hook(VALUE self) {
   // This event hook is only available on Ruby 2.1 and 2.2
   #if defined(RUBY_INTERNAL_EVENT_NEWOBJ)
   rb_add_event_hook(
@@ -851,7 +851,7 @@ static VALUE install_allocation_event_hook() {
   return Qnil;
 }
 
-static VALUE running_in_container() {
+static VALUE running_in_container(VALUE self) {
   return appsignal_running_in_container() == 1 ? Qtrue : Qfalse;
 }
 
