@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.12
+
+_Published on 2025-05-12._
+
+### Added
+
+- Report the Active Job queue time as the `active_job_queue_time` metric. This metric can be used to track the queue time per Active Job queue. (patch [906f4458](https://github.com/appsignal/appsignal-ruby/commit/906f4458ceab3a922ffb1437e5bc85416589b809))
+
 ## 4.5.11
 
 _Published on 2025-05-08._
