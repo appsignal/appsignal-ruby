@@ -403,7 +403,10 @@ if DependencyHelper.active_job_present?
             # This implementation is based on the
             # `ActiveJob::QueueAdapters::InlineAdapter`.
             def enqueue(job)
-              ActiveJob::Base.execute(job.serialize.merge("enqueued_at" => "2020-10-10T10:10:10Z"))
+              ActiveJob::Base.execute(job.serialize.merge(
+                # Is 1 hour before the `let(:time)` definition
+                "enqueued_at" => "2001-01-01T09:00:00.000000000Z"
+              ))
             end
           end
         )
@@ -419,8 +422,18 @@ if DependencyHelper.active_job_present?
       it "sets queue time on transaction" do
         queue_job(ProviderWrappedActiveJobTestJob)
 
-        queue_time = Time.parse("2020-10-10T10:10:10Z")
+        queue_time = Time.parse("2001-01-01T09:00:00.000000000Z")
         expect(last_transaction).to have_queue_start((queue_time.to_f * 1_000).to_i)
+      end
+
+      it "reports the queue time" do
+        allow(Appsignal).to receive(:add_distribution_value)
+
+        queue_job(ProviderWrappedActiveJobTestJob)
+
+        # Asserts 1 hour queue time
+        expect(Appsignal).to have_received(:add_distribution_value)
+          .with("active_job_queue_time", 3_600_000.0, :queue => queue)
       end
     end
 
