@@ -71,6 +71,34 @@ describe Appsignal::Transaction do
             "Using transaction 'transaction_id_1'."
       end
     end
+
+    context "when a completed transaction is still in Thread.current" do
+      before do
+        allow(SecureRandom).to receive(:uuid)
+          .and_return(
+            "transaction_id_1",
+            "transaction_id_2"
+          )
+        transaction = create_transaction
+        transaction.complete
+      end
+
+      it "creates a new transaction instead of reusing the completed one" do
+        new_transaction = create_transaction
+
+        expect(new_transaction.transaction_id).to eq("transaction_id_2")
+        expect(new_transaction).to eq(current_transaction)
+        expect(new_transaction).to_not be_completed
+      end
+
+      it "clears the completed transaction from Thread.current" do
+        expect(Thread.current[:appsignal_transaction]).to be_completed
+
+        create_transaction
+
+        expect(current_transaction.transaction_id).to eq("transaction_id_2")
+      end
+    end
   end
 
   describe ".current" do
@@ -545,6 +573,24 @@ describe Appsignal::Transaction do
         it "returns true" do
           expect(transaction.paused?).to be_truthy
         end
+      end
+    end
+  end
+
+  describe "#completed?" do
+    let(:transaction) { new_transaction }
+
+    context "when not completed" do
+      it "returns false" do
+        expect(transaction.completed?).to be_falsy
+      end
+    end
+
+    context "when completed" do
+      before { transaction.complete }
+
+      it "returns true" do
+        expect(transaction.completed?).to be_truthy
       end
     end
   end
