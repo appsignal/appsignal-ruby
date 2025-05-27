@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.14
+
+_Published on 2025-05-27._
+
+### Fixed
+
+- Resolve problems with transactions not being properly closed when using libraries that change Fibers during the transactions. Previously, completed transactions would be attempted to be reused when creating a transaction, when the Fiber would be switched during a transaction. (patch [32733b25](https://github.com/appsignal/appsignal-ruby/commit/32733b25ced393cc7ed4bd6f15f3b6b293b133c5))
+- Fix a config error log message when the config is not active and should not validate the config. (patch [0d114b43](https://github.com/appsignal/appsignal-ruby/commit/0d114b435f63fe11bebce26efe282f90e2eb57aa))
+
 ## 4.5.13
 
 _Published on 2025-05-12._
