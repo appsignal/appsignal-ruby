@@ -27,20 +27,25 @@ module Appsignal
       # @param namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
       def create(namespace)
-        # Check if we already have a running transaction
+        # Reset the transaction if it was already completed but not cleared
+        if Thread.current[:appsignal_transaction]&.completed?
+          Thread.current[:appsignal_transaction] = nil
+        end
+
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
           set_current_transaction(Appsignal::Transaction.new(namespace))
         else
+          transaction = current
           # Otherwise, log the issue about trying to start another transaction
           Appsignal.internal_logger.warn(
             "Trying to start new transaction, but a transaction " \
-              "with id '#{current.transaction_id}' is already running. " \
-              "Using transaction '#{current.transaction_id}'."
+              "with id '#{transaction.transaction_id}' is already running. " \
+              "Using transaction '#{transaction.transaction_id}'."
           )
 
           # And return the current transaction instead
-          current
+          transaction
         end
       end
 
@@ -154,6 +159,7 @@ module Appsignal
       @namespace = namespace
       @paused = false
       @discarded = false
+      @completed = false
       @tags = {}
       @breadcrumbs = []
       @store = Hash.new { |hash, key| hash[key] = {} }
@@ -183,6 +189,11 @@ module Appsignal
     # @api private
     def nil_transaction?
       false
+    end
+
+    # @api private
+    def completed?
+      @completed
     end
 
     # @api private
@@ -233,6 +244,7 @@ module Appsignal
 
       sample_data if should_sample
 
+      @completed = true
       @ext.complete
     end
 
