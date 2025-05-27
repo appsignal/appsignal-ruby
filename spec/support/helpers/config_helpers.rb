@@ -29,7 +29,9 @@ module ConfigHelpers
       root_path,
       env
     ).tap do |c|
+      # Mimics {Appsignal._load_config!} order
       c.merge_dsl_options(options) if options.any?
+      c.apply_overrides
       c.validate
     end
   end

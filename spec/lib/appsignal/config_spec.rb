@@ -1387,6 +1387,57 @@ describe Appsignal::Config do
     end
   end
 
+  describe "#active_for_env?" do
+    let(:options) { {} }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
+    subject { config.active_for_env? }
+
+    context "when :active config option is true" do
+      let(:options) { { :active => true } }
+      it { is_expected.to be(true) }
+    end
+
+    context "when :active config option is false" do
+      let(:options) { { :active => false } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when :active config option is nil" do
+      let(:options) { { :active => nil } }
+      it { is_expected.to be(nil) }
+    end
+
+    context "when :active config option is not set" do
+      it { is_expected.to be_falsy }
+    end
+  end
+
+  describe "#active?" do
+    let(:options) { {} }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
+    subject { config.active? }
+
+    context "when config is valid and active is true" do
+      let(:options) { { :push_api_key => "abc", :active => true } }
+      it { is_expected.to be(true) }
+    end
+
+    context "when config is valid but active is false" do
+      let(:options) { { :push_api_key => "abc", :active => false } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when config is invalid but active is true" do
+      let(:options) { { :active => true } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when config is invalid and active is false" do
+      let(:options) { { :active => false } }
+      it { is_expected.to be(false) }
+    end
+  end
+
   describe Appsignal::Config::ConfigDSL do
     let(:env) { :production }
     let(:options) { {} }
