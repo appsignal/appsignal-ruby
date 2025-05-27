@@ -393,8 +393,12 @@ module Appsignal
       @valid
     end
 
+    def active_for_env?
+      config_hash[:active]
+    end
+
     def active?
-      @valid && config_hash[:active]
+      valid? && active_for_env?
     end
 
     # @api private
@@ -444,13 +448,16 @@ module Appsignal
       merge(options)
     end
 
+    # Apply any overrides for invalid settings.
+    # @api private
+    def apply_overrides
+      @override_config = determine_overrides
+      merge(override_config)
+    end
+
     # @return [void]
     # @api private
     def validate
-      # Apply any overrides for invalid settings.
-      @override_config = determine_overrides
-      merge(override_config)
-
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.
       # TODO: Move to its own method, maybe in `#[]=`?

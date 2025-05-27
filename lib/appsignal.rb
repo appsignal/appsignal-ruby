@@ -133,8 +133,8 @@ module Appsignal
       _load_config!
       _start_logger
 
-      if config.valid?
-        if config.active?
+      if config.active_for_env?
+        if config.valid?
           @started = true
           internal_logger.info "Starting AppSignal #{Appsignal::VERSION} " \
             "(#{$PROGRAM_NAME}, Ruby #{RUBY_VERSION}, #{RUBY_PLATFORM})"
@@ -153,10 +153,10 @@ module Appsignal
           collect_environment_metadata
           @config.freeze
         else
-          internal_logger.info("Not starting, not active for #{config.env}")
+          internal_logger.info("Not starting, no valid config for this environment")
         end
       else
-        internal_logger.error("Not starting, no valid config for this environment")
+        internal_logger.info("Not starting, not active for #{config.env}")
       end
       nil
     end
@@ -166,7 +166,7 @@ module Appsignal
     # @param env_param [String, NilClass] Used by diagnose CLI to pass through
     #   the environment CLI option value.
     # @api private
-    def _load_config!(env_param = nil, &block)
+    def _load_config!(env_param = nil, &block) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
       # Ensure it's not an empty string if it's a value
       proper_env_param = env_param&.to_s&.strip
       # Unset it if it's an empty string
@@ -206,9 +206,17 @@ module Appsignal
         # This will load the config/appsignal.yml file automatically
         @config ||= Config.new(context.root_path, context.env)
       end
+
       # Allow a block to be given to customize the config and override any
       # loaded config before it's validated.
       block.call(config) if block_given?
+
+      # Apply any config overrides after the user config has been merged
+      config&.apply_overrides
+
+      # Skip validation if not configured as active for this environment
+      return unless config.active_for_env?
+
       # Validate the config, if present
       config&.validate
     end

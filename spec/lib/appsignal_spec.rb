@@ -217,6 +217,7 @@ describe Appsignal do
 
       it "allows customization of config in the block" do
         Appsignal.configure(:test) do |config|
+          config.activate_if_environment(:test)
           config.push_api_key = "key"
         end
         Appsignal.start
@@ -240,6 +241,7 @@ describe Appsignal do
 
       it "recognizes valid config" do
         Appsignal.configure(:my_env) do |config|
+          config.activate_if_environment(:my_env)
           config.push_api_key = "key"
         end
         Appsignal.start
@@ -249,6 +251,7 @@ describe Appsignal do
 
       it "recognizes invalid config" do
         Appsignal.configure(:my_env) do |config|
+          config.activate_if_environment(:my_env)
           config.push_api_key = ""
         end
         Appsignal.start
@@ -363,9 +366,19 @@ describe Appsignal do
       expect(Appsignal.config.env).to eq("_load_config_env")
     end
 
+    it "does not validate if not active for env" do
+      ENV["APPSIGNAL_APP_ENV"] = "_custom_env"
+      logs = capture_logs { Appsignal._load_config! }
+      expect(Appsignal.config.valid?).to be(false)
+
+      expect(logs)
+        .to_not contains_log(:error, "Not starting, not active for '_custom_env'")
+    end
+
     it "calls the blocks before validation" do
       called = false
       Appsignal._load_config! do |config|
+        config.merge_dsl_options(:active => true)
         # Not yet validated here
         expect(Appsignal.config.valid?).to be(false)
 
@@ -390,10 +403,7 @@ describe Appsignal do
         expect(Appsignal::Extension).to_not receive(:start)
         capture_std_streams(stdout_stream, stderr_stream) { Appsignal.start }
 
-        expect(stdout).to contains_log(
-          :error,
-          "appsignal: Not starting, no valid config for this environment"
-        )
+        expect(stdout).to contains_log(:info, "appsignal: Not starting, not active for test")
       end
 
       it "should create a config from the env" do
