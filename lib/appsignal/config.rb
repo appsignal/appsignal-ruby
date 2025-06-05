@@ -166,6 +166,7 @@ module Appsignal
       :push_api_key => "APPSIGNAL_PUSH_API_KEY",
       :sidekiq_report_errors => "APPSIGNAL_SIDEKIQ_REPORT_ERRORS",
       :statsd_port => "APPSIGNAL_STATSD_PORT",
+      :nginx_port => "APPSIGNAL_NGINX_PORT",
       :working_directory_path => "APPSIGNAL_WORKING_DIRECTORY_PATH",
       :revision => "APP_REVISION"
     }.freeze
@@ -436,6 +437,7 @@ module Appsignal
       ENV["_APPSIGNAL_RUNNING_IN_CONTAINER"]         = config_hash[:running_in_container].to_s
       ENV["_APPSIGNAL_SEND_ENVIRONMENT_METADATA"]    = config_hash[:send_environment_metadata].to_s
       ENV["_APPSIGNAL_STATSD_PORT"]                  = config_hash[:statsd_port].to_s
+      ENV["_APPSIGNAL_NGINX_PORT"]                   = config_hash[:nginx_port].to_s
       if config_hash[:working_directory_path]
         ENV["_APPSIGNAL_WORKING_DIRECTORY_PATH"] = config_hash[:working_directory_path]
       end
