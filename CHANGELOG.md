@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.15
+
+_Published on 2025-06-06._
+
+### Added
+
+- Add `nginx_port` configuration option. This configuration option can be used to customize the port on which the AppSignal integration exposes [the NGINX metrics server](https://docs.appsignal.com/metrics/nginx.html). (patch [16976de8](https://github.com/appsignal/appsignal-ruby/commit/16976de8ad3cedda2b6ba3986c325728f5629f50))
+
 ## 4.5.14
 
 _Published on 2025-05-27._
