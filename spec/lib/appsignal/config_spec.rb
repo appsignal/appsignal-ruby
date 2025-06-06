@@ -616,7 +616,8 @@ describe Appsignal::Config do
         :send_session_data => false,
         :sidekiq_report_errors => "all",
         :statsd_port => "7890",
-        :working_directory_path => working_directory_path
+        :working_directory_path => working_directory_path,
+        :nginx_port => "4321"
       }
     end
     let(:env_vars) do
@@ -638,6 +639,7 @@ describe Appsignal::Config do
         "APPSIGNAL_PUSH_API_KEY" => "aaa-bbb-ccc",
         "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => "all",
         "APPSIGNAL_STATSD_PORT" => "7890",
+        "APPSIGNAL_NGINX_PORT" => "4321",
         "APPSIGNAL_WORKING_DIRECTORY_PATH" => working_directory_path,
         "APP_REVISION" => "v2.5.1",
 
@@ -1002,6 +1004,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_FILES_WORLD_ACCESSIBLE", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_SEND_ENVIRONMENT_METADATA", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_NGINX_PORT", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_FILTER_PARAMETERS", nil)).to eq "password,confirm_password"
       expect(ENV.fetch("_APPSIGNAL_FILTER_SESSION_DATA", nil)).to eq "key1,key2"
       expect(ENV.fetch("_APP_REVISION", nil)).to eq "v2.5.1"
@@ -1041,6 +1044,15 @@ describe Appsignal::Config do
 
       it "sets the statsd_port env var" do
         expect(ENV.fetch("_APPSIGNAL_STATSD_PORT", nil)).to eq "1000"
+      end
+    end
+
+    context "with :nginx_port" do
+      let(:options) { { :nginx_port => "4321" } }
+      before { config.write_to_environment }
+
+      it "sets the nginx_port env var" do
+        expect(ENV.fetch("_APPSIGNAL_NGINX_PORT", nil)).to eq "4321"
       end
     end
   end
