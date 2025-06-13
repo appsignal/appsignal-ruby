@@ -4,7 +4,7 @@ module Appsignal
   module Rack
     # @api private
     class BodyWrapper
-      IGNORED_ERRORS = [Errno::EPIPE].freeze
+      IGNORED_ERRORS = [Errno::EPIPE, Errno::ECONNRESET].freeze
 
       def self.wrap(original_body, appsignal_transaction)
         # The logic of how Rack treats a response body differs based on which methods
