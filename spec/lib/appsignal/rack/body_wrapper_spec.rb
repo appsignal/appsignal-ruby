@@ -90,6 +90,18 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "doesn't report ECONNRESET error" do
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(Errno::ECONNRESET)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(Errno::ECONNRESET)
+
+      expect(transaction).to_not have_error
+    end
+
     it "does not report EPIPE error when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
       fake_body = double
@@ -105,6 +117,32 @@ describe Appsignal::Rack::BodyWrapper do
 
     it "does not report EPIPE error when it's the nested error cause" do
       error = error_with_nested_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error when it's the nested error cause" do
+      error = error_with_nested_cause(StandardError, "error message", Errno::ECONNRESET)
       fake_body = double
       expect(fake_body).to receive(:each).once.and_raise(error)
 
@@ -144,10 +182,16 @@ describe Appsignal::Rack::BodyWrapper do
       expect(fake_body).to receive(:close).and_raise(Errno::EPIPE)
 
       wrapped = described_class.wrap(fake_body, transaction)
-      expect do
-        wrapped.close
-      end.to raise_error(Errno::EPIPE)
+      expect { wrapped.close }.to raise_error(Errno::EPIPE)
+      expect(transaction).to_not have_error
+    end
 
+    it "doesn't report ECONNRESET error on close" do
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(Errno::ECONNRESET)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect { wrapped.close }.to raise_error(Errno::ECONNRESET)
       expect(transaction).to_not have_error
     end
 
@@ -157,10 +201,17 @@ describe Appsignal::Rack::BodyWrapper do
       expect(fake_body).to receive(:close).and_raise(error)
 
       wrapped = described_class.wrap(fake_body, transaction)
-      expect do
-        wrapped.close
-      end.to raise_error(StandardError, "error message")
+      expect { wrapped.close }.to raise_error(StandardError, "error message")
+      expect(transaction).to_not have_error
+    end
 
+    it "does not report ECONNRESET error when it's the error cause on close" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
+      fake_body = double
+      expect(fake_body).to receive(:close).and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect { wrapped.close }.to raise_error(StandardError, "error message")
       expect(transaction).to_not have_error
     end
   end
@@ -228,8 +279,32 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "doesn't report ECONNRESET error" do
+      expect(fake_body).to receive(:each).once.and_raise(Errno::ECONNRESET)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(Errno::ECONNRESET)
+
+      expect(transaction).to_not have_error
+    end
+
     it "does not report EPIPE error when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
       fake_body = double
       expect(fake_body).to receive(:each).once.and_raise(error)
 
@@ -269,6 +344,21 @@ describe Appsignal::Rack::BodyWrapper do
 
     it "does not report EPIPE error when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_body = double
+      allow(fake_body).to receive(:each)
+      expect(fake_body).to receive(:to_ary).once.and_raise(error)
+      expect(fake_body).to_not receive(:close) # Per spec we expect the body has closed itself
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_ary
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
       fake_body = double
       allow(fake_body).to receive(:each)
       expect(fake_body).to receive(:to_ary).once.and_raise(error)
@@ -340,6 +430,17 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "doesn't report ECONNRESET error" do
+      expect(fake_body).to receive(:to_path).once.and_raise(Errno::ECONNRESET)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_path
+      end.to raise_error(Errno::ECONNRESET)
+
+      expect(transaction).to_not have_error
+    end
+
     it "does not report EPIPE error from #each when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
       expect(fake_body).to receive(:each).once.and_raise(error)
@@ -352,8 +453,32 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "does not report ECONNRESET error from #each when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
+      expect(fake_body).to receive(:each).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        expect { |b| wrapped.each(&b) }.to yield_control
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
     it "does not report EPIPE error from #to_path when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      allow(fake_body).to receive(:to_path).once.and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.to_path
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error from #to_path when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
       allow(fake_body).to receive(:to_path).once.and_raise(error)
 
       wrapped = described_class.wrap(fake_body, transaction)
@@ -431,8 +556,38 @@ describe Appsignal::Rack::BodyWrapper do
       expect(transaction).to_not have_error
     end
 
+    it "doesn't report ECONNRESET error" do
+      fake_rack_stream = double
+      expect(fake_body).to receive(:call)
+        .with(fake_rack_stream)
+        .and_raise(Errno::ECONNRESET)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+      expect do
+        wrapped.call(fake_rack_stream)
+      end.to raise_error(Errno::ECONNRESET)
+
+      expect(transaction).to_not have_error
+    end
+
     it "does not report EPIPE error from #call when it's the error cause" do
       error = error_with_cause(StandardError, "error message", Errno::EPIPE)
+      fake_rack_stream = double
+      allow(fake_body).to receive(:call)
+        .with(fake_rack_stream)
+        .and_raise(error)
+
+      wrapped = described_class.wrap(fake_body, transaction)
+
+      expect do
+        wrapped.call(fake_rack_stream)
+      end.to raise_error(StandardError, "error message")
+
+      expect(transaction).to_not have_error
+    end
+
+    it "does not report ECONNRESET error from #call when it's the error cause" do
+      error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
       fake_rack_stream = double
       allow(fake_body).to receive(:call)
         .with(fake_rack_stream)
