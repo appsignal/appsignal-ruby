@@ -519,6 +519,14 @@ describe Appsignal::Logger do
 
       logger.error("Some message", { :some_key => "other_value" })
     end
+
+    it "adds the default attributes when #add is called" do
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+
+      expect(Appsignal::Extension).to receive(:log).with("group", 3, 0, "Log message",
+        Appsignal::Utils::Data.generate({ :some_key => "some_value" }))
+      logger.add(::Logger::INFO, "Log message")
+    end
   end
 
   describe "#error with exception object" do
