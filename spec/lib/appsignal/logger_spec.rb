@@ -284,12 +284,6 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message", "other_group")
     end
 
-    it "should log when using `group` for the log message" do
-      expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
-      logger.add(::Logger::INFO, nil, "Log message")
-    end
-
     context "with info log level" do
       let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
 
@@ -392,6 +386,36 @@ describe Appsignal::Logger do
       logger.info("Log message")
 
       expect(other_device.string).to include("INFO -- group: Log message")
+    end
+
+    it "broadcasts the message to the given logger when it's below the log level" do
+      logger = Appsignal::Logger.new("group", :level => ::Logger::INFO)
+
+      other_device = StringIO.new
+      other_logger = ::Logger.new(other_device)
+
+      logger.broadcast_to(other_logger)
+
+      expect(Appsignal::Extension).not_to receive(:log)
+
+      logger.debug("Log message")
+
+      expect(other_device.string).to include("DEBUG -- group: Log message")
+    end
+
+    it "does not broadcast the message to the given logger when silenced" do
+      other_device = StringIO.new
+      other_logger = ::Logger.new(other_device)
+
+      logger.broadcast_to(other_logger)
+
+      expect(Appsignal::Extension).not_to receive(:log)
+
+      logger.silence do
+        logger.info("Log message")
+      end
+
+      expect(other_device.string).to eq("")
     end
 
     if DependencyHelper.rails_present?

@@ -9,6 +9,41 @@ module Appsignal
   # @see https://docs.appsignal.com/logging/platforms/integrations/ruby.html
   #   AppSignal Ruby logging documentation.
   class Logger < ::Logger
+    # A wrapper for a block that ensures it is only called once.
+    # If called again, it will return the result of the first call.
+    # This is useful for ensuring that a block is not executed multiple
+    # times when it is broadcasted to multiple loggers.
+    class BlockOnce
+      def initialize(&block)
+        @block = block
+        @called = false
+        @success = nil
+        @result = nil
+        @error = nil
+      end
+
+      def call(*args, **kwargs)
+        if @called
+          return @result if @success
+
+          raise @error
+        end
+
+        @called = true
+        @result = @block.call(*args, **kwargs)
+        @success = true
+        @result
+      rescue StandardError => e
+        @success = false
+        @error = e
+        raise @error
+      end
+
+      def to_proc
+        method(:call).to_proc
+      end
+    end
+
     PLAINTEXT = 0
     LOGFMT = 1
     JSON = 2
@@ -34,6 +69,7 @@ module Appsignal
 
       @group = group
       @level = level
+      @silenced = false
       @format = format
       @mutex = Mutex.new
       @default_attributes = attributes
@@ -52,27 +88,42 @@ module Appsignal
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @api private
-    def add(severity, message = nil, group = nil)
+    def add(severity, message = nil, group = nil, &block) # rubocop:disable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+      # If we do not need to broadcast to any loggers and the severity is
+      # below the log level, we can return early.
       severity ||= UNKNOWN
-      return true if severity < level
+      return true if severity < level && @loggers.empty?
 
+      # If the logger is silenced, we do not log *or broadcast* messages
+      # below the log level.
+      return true if @silenced && severity < @level
+
+      # Ensure that the block is only run once, even if several loggers
+      # are being broadcasted to.
+      block = BlockOnce.new(&block) unless block.nil?
+
+      # If the group is not set, we use the default group.
       group = @group if group.nil?
-      if message.nil?
-        if block_given?
-          message = yield
-        else
-          message = group
-          group = @group
-        end
-      end
-      return if message.nil?
+
+      did_not_log = true
 
       @loggers.each do |logger|
-        logger.add(severity, message, group)
+        # Loggers should return true if they did *not* log the message.
+        # If any of the broadcasted loggers logs the message, that counts
+        # as having logged the message.
+        did_not_log &&= logger.add(severity, message, group, &block)
       rescue
         nil
       end
 
+      # If the severity is below the log level, we do not log the message.
+      return did_not_log if severity < level
+
+      message = block.call if block && message.nil?
+
+      return if message.nil?
+
+      message = "#{message.class}: #{message.message}" if message.is_a?(Exception)
       message = message.to_s if message.respond_to?(:to_s)
 
       unless message.is_a?(String)
@@ -91,6 +142,8 @@ module Appsignal
         message,
         Appsignal::Utils::Data.generate(appsignal_attributes)
       )
+
+      false
     end
     alias log add
 
@@ -98,67 +151,40 @@ module Appsignal
     # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
-    def debug(message = nil, attributes = {})
-      return if level > DEBUG
-
-      message = yield if message.nil? && block_given?
-      return if message.nil?
-
-      add_with_attributes(DEBUG, message, @group, attributes)
+    def debug(message = nil, attributes = {}, &block)
+      add_with_attributes(DEBUG, message, @group, attributes, &block)
     end
 
     # Log an info level message
     # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
-    def info(message = nil, attributes = {})
-      return if level > INFO
-
-      message = yield if message.nil? && block_given?
-      return if message.nil?
-
-      add_with_attributes(INFO, message, @group, attributes)
+    def info(message = nil, attributes = {}, &block)
+      add_with_attributes(INFO, message, @group, attributes, &block)
     end
 
     # Log a warn level message
     # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
-    def warn(message = nil, attributes = {})
-      return if level > WARN
-
-      message = yield if message.nil? && block_given?
-      return if message.nil?
-
-      add_with_attributes(WARN, message, @group, attributes)
+    def warn(message = nil, attributes = {}, &block)
+      add_with_attributes(WARN, message, @group, attributes, &block)
     end
 
     # Log an error level message
     # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
-    def error(message = nil, attributes = {})
-      return if level > ERROR
-
-      message = yield if message.nil? && block_given?
-      return if message.nil?
-
-      message = "#{message.class}: #{message.message}" if message.is_a?(Exception)
-
-      add_with_attributes(ERROR, message, @group, attributes)
+    def error(message = nil, attributes = {}, &block)
+      add_with_attributes(ERROR, message, @group, attributes, &block)
     end
 
     # Log a fatal level message
     # @param message Message to log
     # @param attributes Attributes to tag the log with
     # @return [void]
-    def fatal(message = nil, attributes = {})
-      return if level > FATAL
-
-      message = yield if message.nil? && block_given?
-      return if message.nil?
-
-      add_with_attributes(FATAL, message, @group, attributes)
+    def fatal(message = nil, attributes = {}, &block)
+      add_with_attributes(FATAL, message, @group, attributes, &block)
     end
 
     # Log an info level message
@@ -182,9 +208,11 @@ module Appsignal
     def silence(severity = ERROR, &block)
       previous_level = @level
       @level = severity
+      @silenced = true
       block.call(self)
     ensure
       @level = previous_level
+      @silenced = false
     end
 
     def broadcast_to(logger)
@@ -195,9 +223,9 @@ module Appsignal
 
     attr_reader :default_attributes, :appsignal_attributes
 
-    def add_with_attributes(severity, message, group, attributes)
+    def add_with_attributes(severity, message, group, attributes, &block)
       @appsignal_attributes = default_attributes.merge(attributes)
-      add(severity, message, group)
+      add(severity, message, group, &block)
     ensure
       @appsignal_attributes = default_attributes
     end
