@@ -37,7 +37,7 @@ module Appsignal
       @format = format
       @mutex = Mutex.new
       @default_attributes = attributes
-      @appsignal_attributes = {}
+      @appsignal_attributes = attributes
       @loggers = []
     end
 
@@ -197,7 +197,7 @@ module Appsignal
       @appsignal_attributes = default_attributes.merge(attributes)
       add(severity, message, group)
     ensure
-      @appsignal_attributes = {}
+      @appsignal_attributes = default_attributes
     end
   end
 end
