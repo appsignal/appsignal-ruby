@@ -166,7 +166,7 @@ module Appsignal
     # @param message Message to log
     # @return [Integer]
     def <<(message)
-      add(Logger::INFO, message)
+      info(message)
       message.length
     end
 
