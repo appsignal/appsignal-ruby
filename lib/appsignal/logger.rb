@@ -73,6 +73,8 @@ module Appsignal
         nil
       end
 
+      message = message.to_s if message.respond_to?(:to_s)
+
       unless message.is_a?(String)
         Appsignal.internal_logger.warn(
           "Logger message was ignored, because it was not a String: #{message.inspect}"
