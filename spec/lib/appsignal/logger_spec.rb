@@ -245,17 +245,29 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message")
     end
 
-    it "does not log a message that's not a String" do
-      expect(Appsignal::Extension).to_not receive(:log)
+    it "calls #to_s on the message" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "{}", instance_of(Appsignal::Extension::Data))
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "[]", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, 123)
       logger.add(::Logger::INFO, {})
       logger.add(::Logger::INFO, [])
+    end
+
+    it "does not log a message that cannot be converted to a String" do
+      expect(Appsignal::Extension).to_not receive(:log)
+
+      object = Object.new
+      class << object
+        undef_method :to_s
+      end
+
+      logger.add(::Logger::INFO, object)
       expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: 123")
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: []")
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: {}")
+        .to contains_log(:warn, "Logger message was ignored, because it was not a String: #<Object")
     end
 
     it "should log with a block" do
