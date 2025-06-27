@@ -145,7 +145,9 @@ def download_archive(type)
         return open(*args)
       end
     rescue => error
-      download_errors << "- URL: #{download_url}\n  Error: #{error.class}: #{error.message}"
+      backtrace = error.backtrace.join("\n")
+      download_errors <<
+        "- URL: #{download_url}\n  Error: #{error.class}: #{error.message}\n#{backtrace}"
       next
     end
   end
