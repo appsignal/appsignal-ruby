@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.16
+
+_Published on 2025-06-27._
+
+### Changed
+
+- Log the error's backtrace on extension download failure. This will help us debug issues related to downloading the extension. (patch [71b7b9fe](https://github.com/appsignal/appsignal-ruby/commit/71b7b9fe7e929857968b69afcaa957be2ac2150a))
+
+### Fixed
+
+- Fix non-canonical rendering event paths for Capistrano deployments (patch [84e3c5c5](https://github.com/appsignal/appsignal-ruby/commit/84e3c5c597589e9e4cd34f9dbf1062c337570275))
+
 ## 4.5.15
 
 _Published on 2025-06-06._
