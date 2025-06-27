@@ -7,14 +7,12 @@ module Appsignal
       class RenderFormatter
         BLANK = ""
 
-        attr_reader :root_path
-
-        def initialize
-          @root_path = "#{Rails.root}/"
+        def format(payload)
+          [payload[:name], payload[:identifier].sub(root_path, BLANK)]
         end
 
-        def format(payload)
-          [payload[:name], payload[:identifier].sub(@root_path, BLANK)]
+        def root_path
+          @root_path ||= "#{Rails.root}/"
         end
       end
     end
