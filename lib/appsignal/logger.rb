@@ -123,7 +123,9 @@ module Appsignal
 
       return if message.nil?
 
-      message = "#{message.class}: #{message.message}" if message.is_a?(Exception)
+      if message.is_a?(Exception)
+        message = "#{message.class}: #{message.message} (#{message.backtrace[0]})"
+      end
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 

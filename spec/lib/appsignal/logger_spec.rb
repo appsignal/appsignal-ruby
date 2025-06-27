@@ -584,7 +584,8 @@ describe Appsignal::Logger do
         begin
           raise ExampleStandardError, "oh no!"
         rescue => e
-          # This makes the exception include a backtrace, so we can assert it's NOT included
+          # This makes the exception include a backtrace, so we can assert its
+          # first line is included
           e
         end
       expect(Appsignal::Extension).to receive(:log)
@@ -592,7 +593,7 @@ describe Appsignal::Logger do
           "group",
           6,
           0,
-          "ExampleStandardError: oh no!",
+          a_string_matching(/ExampleStandardError: oh no! \(.*logger_spec.rb.*\)/),
           instance_of(Appsignal::Extension::Data)
         )
       logger.error(error)
