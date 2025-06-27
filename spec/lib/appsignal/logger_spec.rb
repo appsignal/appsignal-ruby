@@ -245,7 +245,7 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message")
     end
 
-    it "calls #to_s on the message" do
+    it "calls #to_s on the message if it is not a string" do
       expect(Appsignal::Extension).to receive(:log)
         .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
       expect(Appsignal::Extension).to receive(:log)
@@ -255,19 +255,6 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, 123)
       logger.add(::Logger::INFO, {})
       logger.add(::Logger::INFO, [])
-    end
-
-    it "does not log a message that cannot be converted to a String" do
-      expect(Appsignal::Extension).to_not receive(:log)
-
-      object = Object.new
-      class << object
-        undef_method :to_s
-      end
-
-      logger.add(::Logger::INFO, object)
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: #<Object")
     end
 
     it "should log with a block" do
@@ -319,6 +306,30 @@ describe Appsignal::Logger do
           instance_of(Appsignal::Extension::Data)
         )
         logger.add(::Logger::INFO, "Log message", "other_group")
+      end
+
+      it "calls the formatter with the original message" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("formatted:"),
+            instance_of(Appsignal::Extension::Data)
+          )
+        expect(logger.formatter).to receive(:call)
+          .with(::Logger::INFO, instance_of(Time), "group", { :a => "b" })
+          .and_call_original
+        logger.add(::Logger::INFO, { :a => "b" })
+      end
+
+      it "calls #to_s on the formatter output if it is not a string" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+        expect(logger.formatter).to receive(:call)
+          .with(::Logger::INFO, instance_of(Time), "group", 123)
+          .and_return(123)
+        logger.add(::Logger::INFO, 123)
       end
     end
   end
