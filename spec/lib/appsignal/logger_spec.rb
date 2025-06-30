@@ -245,17 +245,16 @@ describe Appsignal::Logger do
       logger.add(::Logger::INFO, "Log message")
     end
 
-    it "does not log a message that's not a String" do
-      expect(Appsignal::Extension).to_not receive(:log)
+    it "calls #to_s on the message if it is not a string" do
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "{}", instance_of(Appsignal::Extension::Data))
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 3, 0, "[]", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, 123)
       logger.add(::Logger::INFO, {})
       logger.add(::Logger::INFO, [])
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: 123")
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: []")
-      expect(logs)
-        .to contains_log(:warn, "Logger message was ignored, because it was not a String: {}")
     end
 
     it "should log with a block" do
@@ -270,12 +269,6 @@ describe Appsignal::Logger do
       expect(Appsignal::Extension).to receive(:log)
         .with("other_group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message", "other_group")
-    end
-
-    it "should log when using `group` for the log message" do
-      expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
-      logger.add(::Logger::INFO, nil, "Log message")
     end
 
     context "with info log level" do
@@ -313,6 +306,30 @@ describe Appsignal::Logger do
           instance_of(Appsignal::Extension::Data)
         )
         logger.add(::Logger::INFO, "Log message", "other_group")
+      end
+
+      it "calls the formatter with the original message" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with(
+            "group",
+            3,
+            0,
+            a_string_starting_with("formatted:"),
+            instance_of(Appsignal::Extension::Data)
+          )
+        expect(logger.formatter).to receive(:call)
+          .with(::Logger::INFO, instance_of(Time), "group", { :a => "b" })
+          .and_call_original
+        logger.add(::Logger::INFO, { :a => "b" })
+      end
+
+      it "calls #to_s on the formatter output if it is not a string" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+        expect(logger.formatter).to receive(:call)
+          .with(::Logger::INFO, instance_of(Time), "group", 123)
+          .and_return(123)
+        logger.add(::Logger::INFO, 123)
       end
     end
   end
@@ -382,6 +399,36 @@ describe Appsignal::Logger do
       expect(other_device.string).to include("INFO -- group: Log message")
     end
 
+    it "broadcasts the message to the given logger when it's below the log level" do
+      logger = Appsignal::Logger.new("group", :level => ::Logger::INFO)
+
+      other_device = StringIO.new
+      other_logger = ::Logger.new(other_device)
+
+      logger.broadcast_to(other_logger)
+
+      expect(Appsignal::Extension).not_to receive(:log)
+
+      logger.debug("Log message")
+
+      expect(other_device.string).to include("DEBUG -- group: Log message")
+    end
+
+    it "does not broadcast the message to the given logger when silenced" do
+      other_device = StringIO.new
+      other_logger = ::Logger.new(other_device)
+
+      logger.broadcast_to(other_logger)
+
+      expect(Appsignal::Extension).not_to receive(:log)
+
+      logger.silence do
+        logger.info("Log message")
+      end
+
+      expect(other_device.string).to eq("")
+    end
+
     if DependencyHelper.rails_present?
       describe "wrapped in ActiveSupport::TaggedLogging" do
         let(:other_stream) { StringIO.new }
@@ -420,16 +467,18 @@ describe Appsignal::Logger do
     ["warn", 5, ::Logger::ERROR],
     ["error", 6, ::Logger::FATAL],
     ["fatal", 7, nil]
-  ].each do |method|
-    describe "##{method[0]}" do
+  ].each do |permutation|
+    method, extension_level, higher_level = permutation
+
+    describe "##{method}" do
       it "should log with a message" do
         expect(Appsignal::Utils::Data).to receive(:generate)
           .with({ :attribute => "value" })
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", extension_level, 0, "Log message", instance_of(Appsignal::Extension::Data))
 
-        logger.send(method[0], "Log message", :attribute => "value")
+        logger.send(method, "Log message", :attribute => "value")
       end
 
       it "should log with a block" do
@@ -437,25 +486,25 @@ describe Appsignal::Logger do
           .with({})
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", method[1], 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", extension_level, 0, "Log message", instance_of(Appsignal::Extension::Data))
 
-        logger.send(method[0]) do
+        logger.send(method) do
           "Log message"
         end
       end
 
       it "should return with a nil message" do
         expect(Appsignal::Extension).not_to receive(:log)
-        logger.send(method[0])
+        logger.send(method)
       end
 
-      if method[2]
+      if higher_level
         context "with a lower log level" do
-          let(:logger) { Appsignal::Logger.new("group", :level => method[2]) }
+          let(:logger) { Appsignal::Logger.new("group", :level => higher_level) }
 
           it "should skip logging if the level is too low" do
             expect(Appsignal::Extension).not_to receive(:log)
-            logger.send(method[0], "Log message")
+            logger.send(method, "Log message")
           end
         end
       end
@@ -480,12 +529,12 @@ describe Appsignal::Logger do
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
-              method[1],
+              extension_level,
               0,
               "formatted: 2023-01-01T00:00:00.000000 'Log message'",
               instance_of(Appsignal::Extension::Data)
             )
-          logger.send(method[0], "Log message")
+          logger.send(method, "Log message")
         end
       end
     end
@@ -519,6 +568,14 @@ describe Appsignal::Logger do
 
       logger.error("Some message", { :some_key => "other_value" })
     end
+
+    it "adds the default attributes when #add is called" do
+      logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+
+      expect(Appsignal::Extension).to receive(:log).with("group", 3, 0, "Log message",
+        Appsignal::Utils::Data.generate({ :some_key => "some_value" }))
+      logger.add(::Logger::INFO, "Log message")
+    end
   end
 
   describe "#error with exception object" do
@@ -527,7 +584,8 @@ describe Appsignal::Logger do
         begin
           raise ExampleStandardError, "oh no!"
         rescue => e
-          # This makes the exception include a backtrace, so we can assert it's NOT included
+          # This makes the exception include a backtrace, so we can assert its
+          # first line is included
           e
         end
       expect(Appsignal::Extension).to receive(:log)
@@ -535,7 +593,7 @@ describe Appsignal::Logger do
           "group",
           6,
           0,
-          "ExampleStandardError: oh no!",
+          a_string_matching(/ExampleStandardError: oh no! \(.*logger_spec.rb.*\)/),
           instance_of(Appsignal::Extension::Data)
         )
       logger.error(error)
