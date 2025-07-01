@@ -1,5 +1,21 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.5.17
+
+_Published on 2025-07-01._
+
+### Fixed
+
+- When an `Appsignal::Logger` uses `.broadcast_to` to broadcast messages to other loggers, broadcast those messages even if the log level of those messages is lower than the logger's threshold. This allows other loggers to set their own logging thresholds.
+
+  When the logger is silenced, messages below the silencing threshold are *not* broadcasted to other loggers.
+
+  (patch [bd3f2147](https://github.com/appsignal/appsignal-ruby/commit/bd3f2147ec58f5ed8c6db49328429e30e1826800))
+- When an `Appsignal::Logger` uses `.broadcast_to` to broadcast messages to other loggers, broadcast the original message received by the logger, without formatting it or converting it to a string. (patch [bd3f2147](https://github.com/appsignal/appsignal-ruby/commit/bd3f2147ec58f5ed8c6db49328429e30e1826800))
+- Call the `Appsignal::Logger` formatter with the original message object given, rather than converting it to a string before calling the formatter. (patch [bd3f2147](https://github.com/appsignal/appsignal-ruby/commit/bd3f2147ec58f5ed8c6db49328429e30e1826800))
+- When an error is passed to an `Appsignal::Logger` as the message, format it regardless of the logging level. Previously it would only be formatted when passed to `#error`. (patch [bd3f2147](https://github.com/appsignal/appsignal-ruby/commit/bd3f2147ec58f5ed8c6db49328429e30e1826800))
+- Ignore `Errno::ECONNRESET` errors in the Rack wrapper. (patch [90b0b7a3](https://github.com/appsignal/appsignal-ruby/commit/90b0b7a3e14832cb3626adf4b339bee56ba9745e))
+
 ## 4.5.16
 
 _Published on 2025-06-27._
