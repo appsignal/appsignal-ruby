@@ -2,7 +2,7 @@
 
 module Appsignal
   module CheckIn
-    # @api private
+    # @!visibility private
     class Event
       class << self
         def new(check_in_type:, identifier:, digest: nil, kind: nil)

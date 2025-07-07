@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class RakeHook < Appsignal::Hooks::Hook
       register :rake
 

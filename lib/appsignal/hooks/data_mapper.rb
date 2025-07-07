@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class DataMapperHook < Appsignal::Hooks::Hook
       register :data_mapper
 

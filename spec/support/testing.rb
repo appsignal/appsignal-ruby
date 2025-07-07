@@ -4,25 +4,21 @@ module Appsignal
 
     remove_method :testing?
 
-    # @api private
     def testing?
       @testing = true unless defined?(@testing)
       @testing
     end
 
-    # @api private
     def clear_started!
       return unless instance_variable_defined?(:@started)
 
       remove_instance_variable(:@started)
     end
 
-    # @api private
     def clear_config!
       @config = nil
     end
 
-    # @api private
     def clear!
       remove_instance_variable(:@dsl_config_file_loaded) if defined?(@dsl_config_file_loaded)
       remove_instance_variable(:@config_error) if defined?(@config_error)
@@ -58,7 +54,6 @@ module Appsignal
     end
   end
 
-  # @api private
   module Testing
     class << self
       def store

@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     module SequelLogExtension
       # Add query instrumentation
       def log_yield(sql, args = nil)
@@ -19,6 +19,7 @@ module Appsignal
 
     module SequelLogConnectionExtension
       # Add query instrumentation
+      # @!visibility private
       def log_connection_yield(sql, conn, args = nil)
         Appsignal.instrument(
           "sql.sequel",

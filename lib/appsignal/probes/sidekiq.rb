@@ -2,7 +2,7 @@
 
 module Appsignal
   module Probes
-    # @api private
+    # @!visibility private
     class SidekiqProbe
       include Helpers
 
@@ -38,14 +38,15 @@ module Appsignal
         end
       end
 
-      # @api private
+      # @!visibility private
       attr_reader :config
 
+      # @!visibility private
       def self.sidekiq7_and_greater?
         Gem::Version.new(::Sidekiq::VERSION) >= Gem::Version.new("7.0.0")
       end
 
-      # @api private
+      # @!visibility private
       def self.dependencies_present?
         return true if sidekiq7_and_greater?
         return false unless defined?(::Redis::VERSION) # Sidekiq <= 6

@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module HttpIntegration
       def request(verb, uri, opts = {})
         uri_module = defined?(HTTP::URI) ? HTTP::URI : URI

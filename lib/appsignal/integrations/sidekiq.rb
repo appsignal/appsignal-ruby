@@ -11,7 +11,7 @@ module Appsignal
     # about completing the transaction.
     #
     # Introduced in Sidekiq 5.1.
-    # @api private
+    # @!visibility private
     class SidekiqDeathHandler
       def call(_job_context, exception)
         return unless Appsignal.config[:sidekiq_report_errors] == "discard"
@@ -24,7 +24,7 @@ module Appsignal
     # Error handler for Sidekiq to report errors from jobs and internal Sidekiq
     # errors.
     #
-    # @api private
+    # @!visibility private
     class SidekiqErrorHandler
       # Sidekiq 7.1.5 introduced the third sidekiq_config argument. It is not
       # given on older Sidekiq versions.
@@ -49,7 +49,7 @@ module Appsignal
       end
     end
 
-    # @api private
+    # @!visibility private
     class SidekiqMiddleware
       include Appsignal::Hooks::Helpers
 

@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class RedisClientHook < Appsignal::Hooks::Hook
       register :redis_client
 

@@ -152,6 +152,24 @@ module Appsignal
       # Acts the same way as {.monitor}. See that method for more
       # documentation.
       #
+      # @param namespace [String, Symbol] The namespace to set on the new
+      #   transaction.
+      #   Defaults to the 'web' namespace.
+      #   This will not update the active transaction's namespace if
+      #   {.monitor} is called when another transaction is already active.
+      # @param action [String, Symbol, NilClass]
+      #   The action name for the transaction.
+      #   The action name is required to be set for the transaction to be
+      #   reported.
+      #   The argument can be set to `nil` or `:set_later` if the action is set
+      #   within the block with {#set_action}.
+      #   This will not update the active transaction's action if
+      #   {.monitor} is called when another transaction is already active.
+      # @yield The block to monitor.
+      # @raise [Exception] Any exception that occurs within the given block is
+      #   re-raised by this method.
+      # @return [Object] The value of the given block is returned.
+      #
       # @see monitor
       def monitor_and_stop(action:, namespace: nil, &block)
         Appsignal::Utils::StdoutAndLoggerMessage.warning \
@@ -459,7 +477,8 @@ module Appsignal
       #   # The custom data is: [1, 2, 3]
       #
       # @since 4.0.0
-      # @param data [Hash, Array] Custom data to add to the transaction.
+      # @param data [Hash<Object, Object>, Array<Object>] Custom data to add to
+      #   the transaction.
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -499,7 +518,8 @@ module Appsignal
       #   end
       #
       # @since 4.0.0
-      # @param tags [Hash] Collection of tags to add to the transaction.
+      # @param tags [Hash<Object, Object>] Collection of tags to add to the
+      #   transaction.
       # @option tags [String, Symbol, Integer] :any
       #   The name of the tag as a Symbol.
       # @option tags [String, Symbol, Integer] "any"
@@ -741,7 +761,7 @@ module Appsignal
       #   instrumented. Accepted values are {EventFormatter::DEFAULT} and
       #   {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
       #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
-      # @yield yields the given block of code instrumented in an AppSignal
+      # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
       #
@@ -782,7 +802,7 @@ module Appsignal
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
       # @param body [String, nil] SQL query that's being executed.
-      # @yield yields the given block of code instrumented in an AppSignal
+      # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
       #

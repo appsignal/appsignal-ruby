@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module RedisClientIntegration
       def write(command)
         sanitized_command =

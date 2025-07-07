@@ -2,11 +2,11 @@
 
 module Appsignal
   module Probes
-    # @api private
+    # @!visibility private
     class MriProbe
       include Helpers
 
-      # @api private
+      # @!visibility private
       def self.dependencies_present?
         defined?(::RubyVM) && ::RubyVM.respond_to?(:stat)
       end
@@ -17,7 +17,7 @@ module Appsignal
         @gc_profiler = gc_profiler
       end
 
-      # @api private
+      # @!visibility private
       def call
         stat = RubyVM.stat
 

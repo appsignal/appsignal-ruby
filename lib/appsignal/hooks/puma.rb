@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class PumaHook < Appsignal::Hooks::Hook
       register :puma
 

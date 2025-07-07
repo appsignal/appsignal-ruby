@@ -2,8 +2,8 @@
 
 module Appsignal
   module CheckIn
+    # @!visibility private
     class Cron
-      # @api private
       attr_reader :identifier, :digest
 
       def initialize(identifier:)

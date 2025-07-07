@@ -214,6 +214,23 @@ Note that some specs depend on certain other gems to run and if they are not
 loaded RSpec will not run them. See also [Testing with other
 gems](#testing-with-other-gems).
 
+#### Type Signature Validation
+
+The gem includes type signatures for both Sorbet and RBS, automatically generated from YARD documentation using the [sord gem](https://github.com/AaronC81/sord). To generate and validate these signatures:
+
+```bash
+# Generate Sorbet .rbi and RBS .rbs signatures
+script/generate_signatures
+
+# Validate Sorbet .rbi files syntax (this is done on the CI)
+find sig -name "*.rbi" -exec ruby -c {} \;
+
+# Validate RBS .rbs files syntax (this is done on the CI)
+bundle exec rbs parse sig/appsignal.rbs
+```
+
+These type signatures provide enhanced IDE support and static type checking for users of the AppSignal gem. The signatures cover all public APIs and are automatically generated and validated in CI.
+
 #### Testing with other gems
 
 AppSignal runs in many different configurations. To replicate these

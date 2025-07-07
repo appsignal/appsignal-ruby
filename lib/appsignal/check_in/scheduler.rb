@@ -2,8 +2,11 @@
 
 module Appsignal
   module CheckIn
+    # @!visibility private
     class Scheduler
+      # @!visibility private
       INITIAL_DEBOUNCE_SECONDS = 0.1
+      # @!visibility private
       BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS = 10
 
       def initialize
@@ -75,7 +78,6 @@ module Appsignal
         end
       end
 
-      # @api private
       # For internal testing purposes.
       attr_reader :thread, :waker, :queue, :events, :transmitted
 

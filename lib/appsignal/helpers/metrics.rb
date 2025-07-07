@@ -8,9 +8,9 @@ module Appsignal
       # @since 2.6.0
       # @param name [String, Symbol] The name of the metric.
       # @param value [Integer, Float] The value of the metric.
-      # @param tags [Hash] The tags for the metric. The Hash keys can be either
-      #   a String or a Symbol. The tag values can be a String, Symbol,
-      #   Integer, Float, TrueClass or FalseClass.
+      # @param tags [Hash<String, Object>] The tags for the metric. The Hash
+      #   keys can be either a String or a Symbol. The tag values can be a
+      #   String, Symbol, Integer, Float, TrueClass or FalseClass.
       # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html
@@ -31,9 +31,9 @@ module Appsignal
       # @since 2.6.0
       # @param name [String, Symbol] The name of the metric.
       # @param value [Integer, Float] The value of the metric.
-      # @param tags [Hash] The tags for the metric. The Hash keys can be either
-      #   a String or a Symbol. The tag values can be a String, Symbol,
-      #   Integer, Float, TrueClass or FalseClass.
+      # @param tags [Hash<String, Object>] The tags for the metric. The Hash
+      #   keys can be either a String or a Symbol. The tag values can be a
+      #   String, Symbol, Integer, Float, TrueClass or FalseClass.
       # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html
@@ -54,9 +54,9 @@ module Appsignal
       # @since 2.6.0
       # @param name [String, Symbol] The name of the metric.
       # @param value [Integer, Float] The value of the metric.
-      # @param tags [Hash] The tags for the metric. The Hash keys can be either
-      #   a String or a Symbol. The tag values can be a String, Symbol,
-      #   Integer, Float, TrueClass or FalseClass.
+      # @param tags [Hash<String, Object>] The tags for the metric. The Hash
+      #   keys can be either a String or a Symbol. The tag values can be a
+      #   String, Symbol, Integer, Float, TrueClass or FalseClass.
       # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html

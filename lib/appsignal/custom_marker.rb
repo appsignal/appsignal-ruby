@@ -32,12 +32,12 @@ module Appsignal
       ).transmit
     end
 
-    # @api private
+    # @!visibility private
     def initialize(marker_data)
       @marker_data = marker_data
     end
 
-    # @api private
+    # @!visibility private
     def transmit
       unless Appsignal.config
         Appsignal.internal_logger.warn(

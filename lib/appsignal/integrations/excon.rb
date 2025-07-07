@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module ExconIntegration
       def self.instrument(name, data, &block)
         namespace, *event = name.split(".")

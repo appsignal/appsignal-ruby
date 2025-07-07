@@ -20,7 +20,7 @@ module Appsignal
   # @see Appsignal::CLI::NotifyOfDeploy
   # @see https://docs.appsignal.com/appsignal/terminology.html#markers
   #   Terminology: Deploy marker
-  # @api private
+  # @!visibility private
   class Marker
     # Path used on the AppSignal Push API
     # https://push.appsignal.com/1/markers

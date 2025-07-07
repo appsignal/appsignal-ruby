@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class Environment
     ERROR_ON_YIELD = :APPSIGNAL_ERROR_ON_YIELD
 
@@ -119,6 +119,8 @@ module Appsignal
     #
     # It will ask Bundler to report name and version information from the gems
     # that are present in the app bundle.
+    #
+    # @return [void]
     def self.report_supported_gems
       return unless defined?(Bundler) # Do nothing if Bundler is not present
 
@@ -139,6 +141,10 @@ module Appsignal
         "#{e.class}: #{e}"
     end
 
+    # Report a Ruby feature is enabled
+    #
+    # @param feature [String] Name of the feature to report as enabled.
+    # @return [void]
     def self.report_enabled(feature)
       Appsignal::Environment.report("ruby_#{feature}_enabled") { true }
     rescue => e

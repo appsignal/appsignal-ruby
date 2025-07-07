@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -eu
+
+rm -rf .yardoc
+bundle exec sord gen sig/appsignal.rbi --rbi --hide-private --exclude-untyped --regenerate --no-sord-comments
+# Don't regenerate YARD docs in the following command because the command just above this generates it already
+bundle exec sord gen sig/appsignal.rbs --rbs --hide-private --exclude-untyped --no-regenerate --no-sord-comments

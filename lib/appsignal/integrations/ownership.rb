@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module OwnershipIntegration
       # Implement the `around_change` logic by monkey-patching the reader,
       # instead of by using the `around_change=` writer. This allows customers

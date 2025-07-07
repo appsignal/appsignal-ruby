@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class OwnershipHook < Appsignal::Hooks::Hook
       register :ownership
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  # @api private
+  # @!visibility private
   module Rack
     APPSIGNAL_TRANSACTION = "appsignal.transaction"
     APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"

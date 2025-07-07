@@ -2,7 +2,17 @@
 
 Appsignal::Environment.report_enabled("object_instrumentation") if defined?(Appsignal)
 
+# Extensions to Object for AppSignal method instrumentation.
+#
+# @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
+#   Method instrumentation documentation.
 class Object
+  # Instruments a class method with AppSignal monitoring.
+  #
+  # @param method_name [Symbol] The name of the class method to instrument.
+  # @param options [Hash] Options for instrumentation.
+  # @option options [String] :name Custom event name for the instrumentation.
+  # @return [Symbol]
   # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
   #   Method instrumentation documentation.
   def self.appsignal_instrument_class_method(method_name, options = {})
@@ -22,6 +32,12 @@ class Object
     end
   end
 
+  # Instruments an instance method with AppSignal monitoring.
+  #
+  # @param method_name [Symbol] The name of the instance method to instrument.
+  # @param options [Hash] Options for instrumentation.
+  # @option options [String] :name Custom event name for the instrumentation.
+  # @return [Symbol]
   # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
   #   Method instrumentation documentation.
   def self.appsignal_instrument_method(method_name, options = {})
@@ -37,14 +53,14 @@ class Object
     ruby2_keywords method_name if respond_to?(:ruby2_keywords, true)
   end
 
-  # @api private
+  # @!visibility private
   def self.appsignal_reverse_class_name
     return "AnonymousClass" unless name
 
     name.split("::").reverse.join(".")
   end
 
-  # @api private
+  # @!visibility private
   def appsignal_reverse_class_name
     self.class.appsignal_reverse_class_name
   end

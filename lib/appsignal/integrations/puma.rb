@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module PumaServer
       def lowlevel_error(error, env, response_status = 500)
         response =

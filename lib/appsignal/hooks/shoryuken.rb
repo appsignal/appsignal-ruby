@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class ShoryukenHook < Appsignal::Hooks::Hook
       register :shoryuken
 

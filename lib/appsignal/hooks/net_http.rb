@@ -4,7 +4,7 @@ require "net/http"
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class NetHttpHook < Appsignal::Hooks::Hook
       register :net_http
 

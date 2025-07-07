@@ -2,7 +2,7 @@
 
 module Appsignal
   class EventFormatter
-    # @api private
+    # @!visibility private
     module ActionView
       class RenderFormatter
         BLANK = ""

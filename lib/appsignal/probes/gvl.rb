@@ -2,21 +2,22 @@
 
 module Appsignal
   module Probes
+    # @!visibility private
     class GvlProbe
       include Helpers
 
-      # @api private
+      # @!visibility private
       def self.dependencies_present?
         defined?(::GVLTools) && gvltools_0_2_or_newer? && ruby_3_2_or_newer? &&
           !Appsignal::System.jruby?
       end
 
-      # @api private
+      # @!visibility private
       def self.gvltools_0_2_or_newer?
         Gem::Version.new(::GVLTools::VERSION) >= Gem::Version.new("0.2.0")
       end
 
-      # @api private
+      # @!visibility private
       def self.ruby_3_2_or_newer?
         Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2.0")
       end

@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module NetHttpIntegration
       def request(request, body = nil, &block)
         Appsignal.instrument(

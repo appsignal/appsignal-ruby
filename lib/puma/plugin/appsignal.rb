@@ -76,7 +76,7 @@ end
 #
 # Class to handle the logic of translating the Puma stats to AppSignal metrics.
 #
-# @api private
+# @!visibility private
 class AppsignalPumaPlugin
   def initialize
     @hostname = fetch_hostname

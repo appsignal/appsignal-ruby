@@ -4,20 +4,23 @@ require "json"
 
 module Appsignal
   class Transaction
+    # @return [String]
     HTTP_REQUEST   = "http_request"
+    # @return [String]
     BACKGROUND_JOB = "background_job"
-    # @api private
+    # @!visibility private
     ACTION_CABLE   = "action_cable"
-    # @api private
+    # @!visibility private
     BLANK          = ""
-    # @api private
+    # @!visibility private
     ALLOWED_TAG_KEY_TYPES = [Symbol, String].freeze
-    # @api private
+    # @!visibility private
     ALLOWED_TAG_VALUE_TYPES = [Symbol, String, Integer, TrueClass, FalseClass].freeze
-    # @api private
+    # @!visibility private
     BREADCRUMB_LIMIT = 20
-    # @api private
+    # @!visibility private
     ERROR_CAUSES_LIMIT = 10
+    # @!visibility private
     ERRORS_LIMIT = 10
 
     class << self
@@ -49,12 +52,13 @@ module Appsignal
         end
       end
 
-      # @api private
-      # @return [Array<Proc>]
       # Add a block, if given, to be executed after a transaction is created.
       # The block will be called with the transaction as an argument.
       # Returns the array of blocks that will be executed after a transaction
       # is created.
+      #
+      # @return [Array<Proc>]
+      # @!visibility private
       def after_create(&block)
         @after_create ||= Set.new
 
@@ -63,8 +67,6 @@ module Appsignal
         @after_create << block
       end
 
-      # @api private
-      # @return [Array<Proc>]
       # Add a block, if given, to be executed before a transaction is completed.
       # This happens after duplicating the transaction for each error that was
       # reported in the transaction -- that is, when a transaction with
@@ -75,6 +77,9 @@ module Appsignal
       # and the error reported by the transaction, if any, as the second argument.
       # Returns the array of blocks that will be executed before a transaction is
       # completed.
+      #
+      # @return [Array<Proc>]
+      # @!visibility private
       def before_complete(&block)
         @before_complete ||= Set.new
 
@@ -83,7 +88,7 @@ module Appsignal
         @before_complete << block
       end
 
-      # @api private
+      # @!visibility private
       def set_current_transaction(transaction)
         Thread.current[:appsignal_transaction] = transaction
       end
@@ -91,7 +96,7 @@ module Appsignal
       # Set the current for the duration of the given block.
       # It restores the original transaction (if any) when the block has executed.
       #
-      # @api private
+      # @!visibility private
       def with_transaction(transaction)
         original_transaction = current if current?
         set_current_transaction(transaction)
@@ -120,6 +125,8 @@ module Appsignal
 
       # Complete the currently active transaction and unset it as the active
       # transaction.
+      #
+      # @return [void]
       def complete_current!
         current.complete
       rescue => e
@@ -131,28 +138,28 @@ module Appsignal
       end
 
       # Remove current transaction from current Thread.
-      # @api private
+      # @!visibility private
       def clear_current_transaction!
         Thread.current[:appsignal_transaction] = nil
       end
 
-      # @api private
+      # @!visibility private
       def last_errors
         @last_errors ||= []
       end
 
-      # @api private
+      # @!visibility private
       attr_writer :last_errors
     end
 
-    # @api private
+    # @!visibility private
     attr_reader :transaction_id, :action, :namespace
 
     # Use {.create} to create new transactions.
     #
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
-    # @api private
+    # @!visibility private
     def initialize(namespace, id: SecureRandom.uuid, ext: nil)
       @transaction_id = id
       @action = nil
@@ -181,22 +188,22 @@ module Appsignal
       run_after_create_hooks
     end
 
-    # @api private
+    # @!visibility private
     def duplicate?
       @is_duplicate
     end
 
-    # @api private
+    # @!visibility private
     def nil_transaction?
       false
     end
 
-    # @api private
+    # @!visibility private
     def completed?
       @completed
     end
 
-    # @api private
+    # @!visibility private
     def complete
       if discarded?
         Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
@@ -248,37 +255,37 @@ module Appsignal
       @ext.complete
     end
 
-    # @api private
+    # @!visibility private
     def pause!
       @paused = true
     end
 
-    # @api private
+    # @!visibility private
     def resume!
       @paused = false
     end
 
-    # @api private
+    # @!visibility private
     def paused?
       @paused == true
     end
 
-    # @api private
+    # @!visibility private
     def discard!
       @discarded = true
     end
 
-    # @api private
+    # @!visibility private
     def restore!
       @discarded = false
     end
 
-    # @api private
+    # @!visibility private
     def discarded?
       @discarded == true
     end
 
-    # @api private
+    # @!visibility private
     def store(key)
       @store[key]
     end
@@ -304,9 +311,9 @@ module Appsignal
     end
     alias :set_params :add_params
 
-    # @api private
     # @since 4.0.0
     # @return [void]
+    # @!visibility private
     #
     # @see Helpers::Instrumentation#set_empty_params!
     def set_empty_params!
@@ -315,12 +322,12 @@ module Appsignal
 
     # Add parameters to the transaction if not already set.
     #
-    # @api private
     # @since 4.0.0
     # @param given_params [Hash] The parameters to set on the transaction if none are already set.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
     # @return [void]
+    # @!visibility private
     #
     # @see #add_params
     def add_params_if_nil(given_params = nil, &block)
@@ -375,12 +382,12 @@ module Appsignal
     # the `given_session_data` argument is leading and the block will _not_ be
     # called.
     #
-    # @api private
     # @since 4.0.0
     # @param given_session_data [Hash] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
     # @return [void]
+    # @!visibility private
     #
     # @see #add_session_data
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -411,12 +418,12 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
-    # @api private
     # @since 4.0.0
     # @param given_headers [Hash] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
     # @return [void]
+    # @!visibility private
     #
     # @see #add_headers
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -498,10 +505,10 @@ module Appsignal
     #   Appsignal.set_action_if_nil("bar")
     #   # Transaction action will be "foo"
     #
-    # @api private
     # @since 2.2.0
     # @param action [String]
     # @return [void]
+    # @!visibility private
     #
     # @see #set_action
     def set_action_if_nil(action)
@@ -552,7 +559,7 @@ module Appsignal
       Appsignal.internal_logger.warn("Queue start value #{start} is too big")
     end
 
-    # @api private
+    # @!visibility private
     def set_metadata(key, value)
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
@@ -560,7 +567,7 @@ module Appsignal
       @ext.set_metadata(key, value)
     end
 
-    # @api private
+    # @!visibility private
     # @see Appsignal::Helpers::Instrumentation#report_error
     def add_error(error, &block)
       unless error.is_a?(Exception)
@@ -588,7 +595,7 @@ module Appsignal
     alias :set_error :add_error
     alias_method :add_exception, :add_error
 
-    # @api private
+    # @!visibility private
     # @see Helpers::Instrumentation#instrument
     def start_event
       return if paused?
@@ -596,7 +603,7 @@ module Appsignal
       @ext.start_event(0)
     end
 
-    # @api private
+    # @!visibility private
     # @see Helpers::Instrumentation#instrument
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
@@ -610,7 +617,7 @@ module Appsignal
       )
     end
 
-    # @api private
+    # @!visibility private
     # @see Helpers::Instrumentation#instrument
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
@@ -625,7 +632,7 @@ module Appsignal
       )
     end
 
-    # @api private
+    # @!visibility private
     # @see Helpers::Instrumentation#instrument
     def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
       start_event
@@ -634,7 +641,7 @@ module Appsignal
       finish_event(name, title, body, body_format)
     end
 
-    # @api private
+    # @!visibility private
     def to_h
       JSON.parse(@ext.to_json)
     end
@@ -642,9 +649,11 @@ module Appsignal
 
     protected
 
+    # @!visibility private
     attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params,
       :session_data, :headers
 
+    # @!visibility private
     def internal_set_error(error, &block)
       _set_error(error) if @error_blocks.empty?
 
@@ -914,6 +923,8 @@ module Appsignal
     # Stub that is returned by {Transaction.current} if there is no current
     # transaction, so that it's still safe to call methods on it if there is no
     # current transaction.
+    #
+    # @!visibility private
     class NilTransaction
       def method_missing(_method, *args, &block)
       end

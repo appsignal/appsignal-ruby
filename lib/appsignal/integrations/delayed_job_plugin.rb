@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     class DelayedJobPlugin < ::Delayed::Plugin
       extend Appsignal::Hooks::Helpers
 

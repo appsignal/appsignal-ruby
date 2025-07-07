@@ -18,7 +18,7 @@ rescue LoadError => error
 end
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class Extension
     class << self
       def agent_config

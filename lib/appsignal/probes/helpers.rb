@@ -2,7 +2,7 @@
 
 module Appsignal
   module Probes
-    # @api private
+    # @!visibility private
     module Helpers
       private
 

@@ -9,7 +9,7 @@ require "appsignal/cli/diagnose"
 require "appsignal/cli/install"
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class CLI
     AVAILABLE_COMMANDS = %w[demo diagnose install].freeze
 

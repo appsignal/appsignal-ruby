@@ -13,6 +13,8 @@ module Appsignal
     # If called again, it will return the result of the first call.
     # This is useful for ensuring that a block is not executed multiple
     # times when it is broadcasted to multiple loggers.
+    #
+    # @!visibility private
     class BlockOnce
       def initialize(&block)
         @block = block
@@ -44,9 +46,13 @@ module Appsignal
       end
     end
 
+    # @!visibility private
     PLAINTEXT = 0
+    # @!visibility private
     LOGFMT = 1
+    # @!visibility private
     JSON = 2
+    # @!visibility private
     SEVERITY_MAP = {
       DEBUG => 2,
       INFO => 3,
@@ -55,6 +61,8 @@ module Appsignal
       FATAL => 7
     }.freeze
 
+    # Logging severity threshold
+    # @return [Integer]
     attr_reader :level
 
     # Create a new logger instance
@@ -77,9 +85,9 @@ module Appsignal
       @loggers = []
     end
 
-    # When a formatter is set on the logger (e.g. when wrapping the logger in
-    # `ActiveSupport::TaggedLogging`) we want to set that formatter on all the
-    # loggers that are being broadcasted to.
+    # Sets the formatter for this logger and all broadcasted loggers.
+    # @param formatter [Proc] The formatter to use for log messages.
+    # @return [Proc]
     def formatter=(formatter)
       super
       @loggers.each { |logger| logger.formatter = formatter }
@@ -87,7 +95,7 @@ module Appsignal
 
     # We support the various methods in the Ruby
     # logger class by supplying this method.
-    # @api private
+    # @!visibility private
     def add(severity, message = nil, group = nil, &block) # rubocop:disable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
       # If we do not need to broadcast to any loggers and the severity is
       # below the log level, we can return early.
@@ -192,6 +200,8 @@ module Appsignal
       message.length
     end
 
+    # Temporarily silences the logger to a specified level while executing a block.
+    #
     # When using ActiveSupport::TaggedLogging without the broadcast feature,
     # the passed logger is required to respond to the `silence` method.
     #
@@ -199,6 +209,9 @@ module Appsignal
     #
     # - https://github.com/rails/rails/blob/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/activesupport/lib/active_support/logger.rb#L60-L76
     # - https://github.com/rails/rails/blob/e11ebc04cfbe41c06cdfb70ee5a9fdbbd98bb263/activesupport/lib/active_support/logger_silence.rb
+    #
+    # @param severity [Integer] The minimum severity level to log during the block.
+    # @return [Object] The return value of the block.
     def silence(severity = ERROR, &block)
       previous_level = @level
       @level = severity
@@ -209,6 +222,9 @@ module Appsignal
       @silenced = false
     end
 
+    # Adds a logger to broadcast log messages to.
+    # @param logger [Logger] The logger to add to the broadcast list.
+    # @return [Array<Logger>]
     def broadcast_to(logger)
       @loggers << logger
     end
