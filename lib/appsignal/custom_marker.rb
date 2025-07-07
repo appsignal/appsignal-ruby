@@ -15,7 +15,7 @@ module Appsignal
     # @param icon [String] icon to use for the marker, like an emoji.
     # @param message [String] name of the user that is creating the
     #   marker.
-    # @param created_at [Time/String] A Ruby time object or a valid ISO8601
+    # @param created_at [Time, String] A Ruby time object or a valid ISO8601
     #   timestamp.
     # @return [Boolean]
     def self.report(

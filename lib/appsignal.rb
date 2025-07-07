@@ -71,7 +71,7 @@ module Appsignal
     # If the value is `nil`, no error was encountered or AppSignal wasn't
     # started yet.
     #
-    # @return [NilClass/Exception]
+    # @return [nil, Exception]
     attr_reader :config_error
     alias config_error? config_error
 
@@ -163,8 +163,10 @@ module Appsignal
 
     # PRIVATE METHOD. DO NOT USE.
     #
-    # @param env_param [String, NilClass] Used by diagnose CLI to pass through
-    #   the environment CLI option value.
+    # @param env_param [String, nil] Used by diagnose CLI to pass through
+    #   the environment CLI option value. If nil, the environment will be
+    #   auto-detected.
+    # @param block [Proc] Optional block to configure the config object.
     # @api private
     def _load_config!(env_param = nil, &block) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
       # Ensure it's not an empty string if it's a value
