@@ -75,7 +75,7 @@ describe Appsignal::AuthCheck do
 
       it "returns an error tuple" do
         is_expected.to eq [
-          nil,
+          "error",
           "Something went wrong while trying to authenticate with AppSignal: execution expired"
         ]
       end

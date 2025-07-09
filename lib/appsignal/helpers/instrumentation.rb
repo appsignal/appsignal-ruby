@@ -89,7 +89,7 @@ module Appsignal
       #   end
       #
       # @since 3.11.0
-      # @param namespace [String/Symbol] The namespace to set on the new
+      # @param namespace [String, Symbol] The namespace to set on the new
       #   transaction.
       #   Defaults to the 'web' namespace.
       #   This will not update the active transaction's namespace if
@@ -459,7 +459,7 @@ module Appsignal
       #   # The custom data is: [1, 2, 3]
       #
       # @since 4.0.0
-      # @param data [Hash/Array] Custom data to add to the transaction.
+      # @param data [Hash, Array] Custom data to add to the transaction.
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -668,7 +668,7 @@ module Appsignal
       # Add breadcrumbs to the transaction.
       #
       # Breadcrumbs can be used to trace what path a user has taken
-      # before encounterin an error.
+      # before encountering an error.
       #
       # Only the last 20 added breadcrumbs will be saved.
       #

@@ -23,7 +23,7 @@ module Appsignal
       end
 
       # Fetch a probe using its name.
-      # @param key [Symbol/String] The name of the probe to fetch.
+      # @param key [Symbol, String] The name of the probe to fetch.
       # @return [Object] Returns the registered probe.
       def [](key)
         probes[key]
@@ -129,7 +129,7 @@ module Appsignal
       #   # "started" # Printed on Appsignal::Probes.start
       #   # "called" # Repeated every minute
       #
-      # @param name [Symbol/String] Name of the probe. Can be used with
+      # @param name [Symbol, String] Name of the probe. Can be used with
       #   {ProbeCollection#[]}. This name will be used in errors in the log and
       #   allows overwriting of probes by registering new ones with the same
       #   name.
@@ -153,7 +153,7 @@ module Appsignal
       #   # Then unregister a probe if needed
       #   Appsignal::Probes.unregister :my_probe
       #
-      # @param name [Symbol/String] Name of the probe used to {register} the
+      # @param name [Symbol, String] Name of the probe used to {register} the
       #   probe.
       # @return [void]
       def unregister(name)

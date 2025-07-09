@@ -429,7 +429,7 @@ module Appsignal
     # Add custom data to the transaction.
     #
     # @since 4.0.0
-    # @param data [Hash/Array]
+    # @param data [Hash, Array]
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_custom_data

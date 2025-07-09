@@ -37,7 +37,7 @@ module Appsignal
     # Perform push api validation request and return a descriptive response
     # tuple.
     #
-    # @return [Array<String/nil, String>] response tuple.
+    # @return [Array<String, String>] response tuple.
     #   - First value is the response status code.
     #   - Second value is a description of the response and the exception error
     #     message if an exception occurred.
@@ -57,7 +57,7 @@ module Appsignal
     rescue => e
       result = "Something went wrong while trying to " \
         "authenticate with AppSignal: #{e}"
-      [nil, result]
+      ["error", result]
     end
   end
 end
