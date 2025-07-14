@@ -230,13 +230,15 @@ module Appsignal
     attr_reader :system_config, :loaders_config, :initial_config, :file_config,
       :env_config, :override_config, :dsl_config
 
-    # Initialize a new configuration object for AppSignal.
+    # Initialize a new AppSignal configuration object.
     #
-    # @param root_path [String] Root path of the app.
+    # @param root_path [String] Path to the root of the application.
     # @param env [String] The environment to load when AppSignal is started. It
     #   will look for an environment with this name in the `config/appsignal.yml`
     #   config file.
-    #
+    # @param load_yaml_file [Boolean] Whether to load configuration from
+    #   the YAML config file. Defaults to true.
+    # @return [Config] The initialized configuration object.
     # @api private
     # @see https://docs.appsignal.com/ruby/configuration/
     #   Configuration documentation
@@ -337,6 +339,10 @@ module Appsignal
       end
     end
 
+    # Fetch a configuration value by key.
+    #
+    # @param key [Symbol, String] The configuration option key to fetch.
+    # @return [Object] The configuration value.
     # @api private
     def [](key)
       config_hash[key]
@@ -347,6 +353,9 @@ module Appsignal
     # This method does not update the config in the extension and agent. It
     # should not be used to update the config after AppSignal has started.
     #
+    # @param key [Symbol, String] The configuration option key to set.
+    # @param value [Object] The configuration value to set.
+    # @return [void]
     # @api private
     def []=(key, value)
       config_hash[key] = value
@@ -390,14 +399,23 @@ module Appsignal
       @log_file_path
     end
 
+    # Check if the configuration is valid.
+    #
+    # @return [Boolean] True if the configuration is valid, false otherwise.
     def valid?
       @valid
     end
 
+    # Check if AppSignal is active for the current environment.
+    #
+    # @return [Boolean] True if active for the current environment.
     def active_for_env?
       config_hash[:active]
     end
 
+    # Check if AppSignal is active.
+    #
+    # @return [Boolean] True if valid and active for the current environment.
     def active?
       valid? && active_for_env?
     end

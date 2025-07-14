@@ -11,6 +11,7 @@ module Appsignal
       # @param tags [Hash] The tags for the metric. The Hash keys can be either
       #   a String or a Symbol. The tag values can be a String, Symbol,
       #   Integer, Float, TrueClass or FalseClass.
+      # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
@@ -33,6 +34,7 @@ module Appsignal
       # @param tags [Hash] The tags for the metric. The Hash keys can be either
       #   a String or a Symbol. The tag values can be a String, Symbol,
       #   Integer, Float, TrueClass or FalseClass.
+      # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
@@ -55,6 +57,7 @@ module Appsignal
       # @param tags [Hash] The tags for the metric. The Hash keys can be either
       #   a String or a Symbol. The tag values can be a String, Symbol,
       #   Integer, Float, TrueClass or FalseClass.
+      # @return [void]
       #
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
