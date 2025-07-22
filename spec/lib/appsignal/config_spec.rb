@@ -347,6 +347,144 @@ describe Appsignal::Config do
         end
       end
     end
+
+    describe ":revision" do
+      let(:revision_file_path) { File.join(tmp_dir, "REVISION") }
+      let(:config) { silence { build_config(:env => :none, :root_path => tmp_dir) } }
+
+      context "when REVISION file exists and is readable" do
+        context "with REVISION file content" do
+          before do
+            File.write(revision_file_path, "abc123\n")
+          end
+
+          it "sets the revision from the file" do
+            expect(config[:revision]).to eq("abc123")
+          end
+
+          it "sets the revision as loaded through the system" do
+            expect(config.system_config).to include(:revision => "abc123")
+          end
+
+          it "logs successful file reading" do
+            logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+            expect(logs).to contains_log(:debug,
+              "REVISION file found and read successfully at: #{revision_file_path}")
+          end
+        end
+
+        context "with whitespace in the file" do
+          before do
+            File.write(revision_file_path, "  def456  \n\n")
+          end
+
+          it "strips whitespace from the revision" do
+            expect(config[:revision]).to eq("def456")
+          end
+
+          it "logs successful file reading" do
+            logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+            expect(logs).to contains_log(:debug,
+              "REVISION file found and read successfully at: #{revision_file_path}")
+          end
+        end
+
+        context "with empty file" do
+          before do
+            File.write(revision_file_path, "")
+          end
+
+          it "does not set the revision" do
+            expect(config.system_config).to_not have_key(:revision)
+          end
+
+          it "logs empty file message" do
+            logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+            expect(logs).to contains_log(:debug,
+              "REVISION file found but is empty at: #{revision_file_path}")
+          end
+        end
+
+        context "with whitespace-only file" do
+          before do
+            File.write(revision_file_path, "  \n\n  ")
+          end
+
+          it "does not set the revision" do
+            expect(config.system_config).to_not have_key(:revision)
+          end
+
+          it "logs empty file message" do
+            logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+            expect(logs).to contains_log(:debug,
+              "REVISION file found but is empty at: #{revision_file_path}")
+          end
+        end
+      end
+
+      context "when REVISION file does not exist" do
+        before do
+          FileUtils.rm_f(revision_file_path)
+        end
+
+        it "does not set the revision" do
+          expect(config.system_config).to_not have_key(:revision)
+        end
+
+        it "logs file not found message" do
+          logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+          expect(logs).to contains_log(:debug, "No REVISION file found at: #{revision_file_path}")
+        end
+      end
+
+      context "when REVISION file is not readable" do
+        before do
+          File.write(revision_file_path, "abc123")
+          File.chmod(0o000, revision_file_path)
+        end
+
+        after do
+          File.chmod(0o644, revision_file_path)
+        end
+
+        it "does not set the revision" do
+          expect(config.system_config).to_not have_key(:revision)
+        end
+
+        it "logs file not readable message" do
+          logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+          expect(logs).to contains_log(:debug,
+            "REVISION file is not readable at: #{revision_file_path}")
+        end
+      end
+
+      context "when root_path is nil" do
+        let(:config) { silence { build_config(:env => :none, :root_path => nil) } }
+
+        it "does not set the revision" do
+          expect(config.system_config).to_not have_key(:revision)
+        end
+      end
+
+      context "when file reading raises an error" do
+        before do
+          File.write(revision_file_path, "abc123")
+          error = SystemCallError.new("Read error")
+          allow(File).to receive(:read).with(revision_file_path).and_raise(error)
+        end
+
+        it "does not set the revision" do
+          expect(config.system_config).to_not have_key(:revision)
+        end
+
+        it "logs error message" do
+          logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+          expect(logs).to contains_log(:debug,
+            "Error occurred while reading REVISION file at #{revision_file_path}: " \
+              "SystemCallError:")
+        end
+      end
+    end
   end
 
   describe "loader default config" do

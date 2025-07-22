@@ -538,6 +538,41 @@ module Appsignal
         hash[:active] = true unless env_push_api_key.strip.empty?
 
         hash[:enable_at_exit_hook] = "always" if Appsignal::Extension.running_in_container?
+
+        # Set revision from REVISION file if present in project root
+        # This helps with Capistrano and Hatchbox.io deployments
+        revision_from_file = detect_revision_from_file
+        hash[:revision] = revision_from_file if revision_from_file
+      end
+    end
+
+    def detect_revision_from_file
+      return unless root_path
+
+      revision_file_path = File.join(root_path, "REVISION")
+      unless File.exist?(revision_file_path)
+        logger.debug "No REVISION file found at: #{revision_file_path}"
+        return
+      end
+
+      unless File.readable?(revision_file_path)
+        logger.debug "REVISION file is not readable at: #{revision_file_path}"
+        return
+      end
+
+      begin
+        revision_content = File.read(revision_file_path).strip
+        if revision_content.empty?
+          logger.debug "REVISION file found but is empty at: #{revision_file_path}"
+          nil
+        else
+          logger.debug "REVISION file found and read successfully at: #{revision_file_path}"
+          revision_content
+        end
+      rescue SystemCallError => e
+        logger.debug "Error occurred while reading REVISION file at " \
+          "#{revision_file_path}: #{e.class}: #{e.message}\n#{e.backtrace}"
+        nil
       end
     end
 
