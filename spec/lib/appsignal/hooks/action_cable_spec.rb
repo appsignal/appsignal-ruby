@@ -3,7 +3,11 @@ describe Appsignal::Hooks::ActionCableHook do
     context "with ActionCable" do
       require "action_cable/engine"
       # Require test helper to test with ConnectionStub
-      require "action_cable/channel/test_case" if DependencyHelper.rails6_present?
+      if DependencyHelper.rails6_present?
+        require "action_cable"
+        require "action_cable/test_helper"
+        require "action_cable/channel/test_case"
+      end
 
       describe ".dependencies_present?" do
         subject { described_class.new.dependencies_present? }
