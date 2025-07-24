@@ -144,8 +144,8 @@ describe Appsignal::Probes do
             "Error while initializing minutely probe 'broken_probe_on_initialize': " \
               "oh no initialize!"
           )
-          # Start of the error backtrace as debug log
-          expect(log).to contains_log :debug, File.expand_path("../../..", __dir__)
+          # Start of the error backtrace as error log
+          expect(log).to contains_log :error, File.expand_path("../../..", __dir__)
         end
       end
     end
@@ -179,7 +179,7 @@ describe Appsignal::Probes do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'broken_probe' probe")
         expect(log).to contains_log(:error, "Error in minutely probe 'broken_probe': oh no!")
         gem_path = File.expand_path("../../..", __dir__) # Start of backtrace
-        expect(log).to contains_log(:debug, gem_path)
+        expect(log).to contains_log(:error, gem_path)
       end
     end
 

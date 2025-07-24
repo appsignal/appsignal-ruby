@@ -72,8 +72,8 @@ describe Appsignal::Hooks do
     expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
       expect(message).to eq("Installing mock_error_hook hook")
     end
-    expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
-      # Start of the error backtrace as debug log
+    expect(Appsignal.internal_logger).to receive(:error).ordered do |message|
+      # Start of the error backtrace as error log
       expect(message).to start_with(File.expand_path("../../..", __dir__))
     end
 

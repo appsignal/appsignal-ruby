@@ -39,7 +39,7 @@ module Appsignal
         rescue => ex
           logger = Appsignal.internal_logger
           logger.error("Error while installing #{name} hook: #{ex}")
-          logger.debug ex.backtrace.join("\n")
+          logger.error ex.backtrace.join("\n")
         end
       end
 
