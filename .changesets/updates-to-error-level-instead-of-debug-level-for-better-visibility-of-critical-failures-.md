@@ -1,6 +1,6 @@
 ---
-bump: minor
+bump: patch
 type: change
 ---
 
-Updates to error level instead of debug level for better visibility of critical failures.
+Use error level for displaying backtraces instead for better visibility of critical failures.

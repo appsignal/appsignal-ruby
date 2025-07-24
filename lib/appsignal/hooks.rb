@@ -38,8 +38,10 @@ module Appsignal
           @installed = true
         rescue => ex
           logger = Appsignal.internal_logger
-          logger.error("Error while installing #{name} hook: #{ex}")
-          logger.error ex.backtrace.join("\n")
+          logger.error(
+            "Error while installing #{name} hook: #{ex.class}: #{ex.message}\n" \
+              "#{ex.backtrace.join("\n")}"
+          )
         end
       end
 

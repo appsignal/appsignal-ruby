@@ -138,14 +138,14 @@ describe Appsignal::Probes do
           wait_for("enough probe calls") { Appsignal::Testing.store[:mock_probe_call] >= 2 }
           # Only counts initialized probes
           expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
-          # Logs error
+          # Logs error with class, message and backtrace in single line
           expect(log).to contains_log(
             :error,
             "Error while initializing minutely probe 'broken_probe_on_initialize': " \
-              "oh no initialize!"
+              "RuntimeError: oh no initialize!\n"
           )
-          # Start of the error backtrace as error log
-          expect(log).to contains_log :error, File.expand_path("../../..", __dir__)
+          # Backtrace is included in the same log entry - just check it contains the file path
+          expect(log).to include(project_dir)
         end
       end
     end
@@ -177,9 +177,10 @@ describe Appsignal::Probes do
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 2 probes")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
         expect(log).to contains_log(:debug, "Gathering minutely metrics with 'broken_probe' probe")
-        expect(log).to contains_log(:error, "Error in minutely probe 'broken_probe': oh no!")
+
         gem_path = File.expand_path("../../..", __dir__) # Start of backtrace
-        expect(log).to contains_log(:error, gem_path)
+        expect(log).to contains_log(:error,
+          "Error in minutely probe 'broken_probe': RuntimeError: oh no!\n#{gem_path}")
       end
     end
 
