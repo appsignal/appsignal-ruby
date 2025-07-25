@@ -79,15 +79,21 @@ module Appsignal
       end
     end
 
+    def mergable?(value_original, value_new)
+      return true if value_new.instance_of?(value_original.class)
+
+      value_original.is_a?(Hash) && value_new.is_a?(Hash)
+    end
+
     def merge_values(value_original, value_new)
-      unless value_new.instance_of?(value_original.class)
-        unless value_original == UNSET_VALUE
-          Appsignal.internal_logger.warn(
-            "The sample data '#{@key}' changed type from " \
-              "'#{value_original.class}' to '#{value_new.class}'. " \
-              "These types can not be merged. Using new '#{value_new.class}' type."
-          )
-        end
+      return value_new if value_original == UNSET_VALUE
+
+      unless mergable?(value_original, value_new)
+        Appsignal.internal_logger.warn(
+          "The sample data '#{@key}' changed type from " \
+            "'#{value_original.class}' to '#{value_new.class}'. " \
+            "These types can not be merged. Using new '#{value_new.class}' type."
+        )
         return value_new
       end
 

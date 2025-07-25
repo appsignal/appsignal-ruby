@@ -6,6 +6,7 @@ describe Appsignal::SampleData do
       logs =
         capture_logs do
           data.add(:key1 => "value 1")
+          data.value # Precalculate values so they show up in the logs
         end
 
       expect(data.value).to eq(:key1 => "value 1")
@@ -29,6 +30,7 @@ describe Appsignal::SampleData do
           data.add(nil)
           data.add { nil }
           data.add([2, 3])
+          data.value # Precalculate values so they show up in the logs
         end
 
       expect(data.value).to eq([1, 2, 3])
@@ -93,7 +95,11 @@ describe Appsignal::SampleData do
 
       set = Set.new
       set.add("abc")
-      logs = capture_logs { data.add(set) }
+      logs =
+        capture_logs do
+          data.add(set)
+          data.value # Precalculate values so they show up in the logs
+        end
       expect(data.value).to be_nil
       expect(logs).to contains_log(
         :error,
@@ -101,7 +107,10 @@ describe Appsignal::SampleData do
       )
 
       instance = Class.new
-      logs = capture_logs { data.add(instance) }
+      logs = capture_logs do
+        data.add(instance)
+        data.value # Precalculate values so they show up in the logs
+      end
       expect(data.value).to be_nil
       expect(logs).to contains_log(
         :error,
@@ -132,6 +141,76 @@ describe Appsignal::SampleData do
         data.add(:key3 => "value 3")
 
         expect(data.value).to eq(["abc", "def"])
+      end
+    end
+
+    if DependencyHelper.rails_present?
+      context "with ActiveSupport::HashWithIndifferentAccess" do
+        it "merges the HashWithIndifferentAccess value into the existing Hash value" do
+          logs = capture_logs do
+            data.add(:key1 => { :abc => "value" })
+            data.add(HashWithIndifferentAccess.new(:key2 => { :def => "value" }))
+            data.value # Precalculate values so they show up in the logs
+          end
+          expect(data.value).to eq(
+            :key1 => { :abc => "value" },
+            # String keys because that's what HashWithIndifferentAccess returns
+            "key2" => { "def" => "value" }
+          )
+          expect(logs).to_not contains_log(:warn, "The sample data")
+        end
+
+        it "works with accepted_type set to Hash" do
+          data = described_class.new(:data_key, Hash)
+          logs = capture_logs do
+            data.add(:key1 => { :abc => "value" })
+            data.add(HashWithIndifferentAccess.new(:key2 => { :def => "value" }))
+            data.value # Precalculate values so they show up in the logs
+          end
+          expect(data.value).to eq(
+            :key1 => { :abc => "value" },
+            # String keys because that's what HashWithIndifferentAccess returns
+            "key2" => { "def" => "value" }
+          )
+          expect(logs).to_not contains_log(:warn, "The sample data")
+        end
+      end
+    end
+
+    if DependencyHelper.sinatra_present?
+      context "with Sinatra::IndifferentHash" do
+        it "merges the Sinatra::IndifferentHash value into the existing Hash value" do
+          logs = capture_logs do
+            data.add(:key1 => { :abc => "value" })
+            indifferent_hash = Sinatra::IndifferentHash.new
+            indifferent_hash[:key2] = { :def => "value" }
+            data.add(indifferent_hash)
+            data.value # Precalculate values so they show up in the logs
+          end
+          expect(data.value).to eq(
+            :key1 => { :abc => "value" },
+            # String keys because that's what Sinatra::IndifferentHash returns
+            "key2" => { "def" => "value" }
+          )
+          expect(logs).to_not contains_log(:warn, "The sample data")
+        end
+
+        it "works with accepted_type set to Hash" do
+          data = described_class.new(:data_key, Hash)
+          logs = capture_logs do
+            data.add(:key1 => { :abc => "value" })
+            indifferent_hash = Sinatra::IndifferentHash.new
+            indifferent_hash[:key2] = { :def => "value" }
+            data.add(indifferent_hash)
+            data.value # Precalculate values so they show up in the logs
+          end
+          expect(data.value).to eq(
+            :key1 => { :abc => "value" },
+            # String keys because that's what Sinatra::IndifferentHash returns
+            "key2" => { "def" => "value" }
+          )
+          expect(logs).to_not contains_log(:warn, "The sample data")
+        end
       end
     end
   end
