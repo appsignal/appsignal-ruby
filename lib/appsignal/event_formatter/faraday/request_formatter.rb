@@ -2,7 +2,7 @@
 
 module Appsignal
   class EventFormatter
-    # @api private
+    # @!visibility private
     module Faraday
       class RequestFormatter
         def format(payload)

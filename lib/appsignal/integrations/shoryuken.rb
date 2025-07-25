@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     class ShoryukenMiddleware
       def call(worker_instance, queue, sqs_msg, body, &block)
         transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)

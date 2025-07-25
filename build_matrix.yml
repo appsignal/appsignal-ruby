@@ -36,6 +36,35 @@ github:
         - name: "Run RuboCop"
           run: bundle exec rubocop
 
+    validate-signatures:
+      name: "Type signature validation"
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: ruby/setup-ruby@v1
+          with:
+            ruby-version: "3.3"
+            bundler-cache: true
+        - name: "Generate fresh signatures and check sync"
+          run: |
+            # Generate fresh signatures
+            script/generate_signatures
+
+            # Check if any signature files changed
+            if [ -n "$(git status --porcelain sig/)" ]; then
+              echo "❌ ERROR: Signatures are out of sync with YARD documentation"
+              echo "The following files have changes:"
+              git status --porcelain sig/
+              echo "Please run 'script/generate_signatures' to update them"
+              exit 1
+            fi
+
+            echo "✅ Signatures are in sync with YARD documentation"
+        - name: "Validate Sorbet .rbi files"
+          run: find sig -name "*.rbi" -exec ruby -c {} \;
+        - name: "Validate RBS .rbs files"
+          run: bundle exec rbs parse sig/appsignal.rbs
+
     validation:
       name: "Validation of CI"
       runs-on: ubuntu-latest

@@ -2,16 +2,18 @@
 
 module Appsignal
   module CheckIn
+    # @!visibility private
     HEARTBEAT_CONTINUOUS_INTERVAL_SECONDS = 30
+    # @!visibility private
     NEW_SCHEDULER_MUTEX = Mutex.new
 
     class << self
-      # @api private
+      # @!visibility private
       def continuous_heartbeats
         @continuous_heartbeats ||= []
       end
 
-      # @api private
+      # @!visibility private
       def kill_continuous_heartbeats
         continuous_heartbeats.each(&:kill)
       end
@@ -84,7 +86,7 @@ module Appsignal
         scheduler.schedule(event)
       end
 
-      # @api private
+      # @!visibility private
       def scheduler
         return @scheduler if @scheduler
 
@@ -95,7 +97,7 @@ module Appsignal
         @scheduler
       end
 
-      # @api private
+      # @!visibility private
       def stop
         scheduler&.stop
       end

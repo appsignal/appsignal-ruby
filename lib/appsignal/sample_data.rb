@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class SampleData
     def initialize(key, accepted_type = nil)
       @key = key
@@ -21,7 +21,6 @@ module Appsignal
       end
     end
 
-    # @api private
     def set_empty_value!
       @empty = true
       @blocks.clear
@@ -52,7 +51,6 @@ module Appsignal
       @blocks.any?
     end
 
-    # @api private
     def empty?
       @empty
     end

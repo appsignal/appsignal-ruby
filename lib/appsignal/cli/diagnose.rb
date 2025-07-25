@@ -75,7 +75,7 @@ module Appsignal
         # @option options :environment [String] environment to load
         #   configuration for.
         # @return [void]
-        # @api private
+        # @!visibility private
         def run(options = {})
           # Do not start AppSignal on `Appsignal.start` and run the extension
           # and agent in diagnose mode.

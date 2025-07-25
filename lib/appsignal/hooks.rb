@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class Hooks
     class << self
       def register(name, hook)

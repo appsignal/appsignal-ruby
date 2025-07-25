@@ -8,12 +8,12 @@ require "tmpdir"
 
 module Appsignal
   class Config
-    # @api private
+    # @!visibility private
     def self.loader_defaults
       @loader_defaults ||= []
     end
 
-    # @api private
+    # @!visibility private
     def self.add_loader_defaults(name, env: nil, root_path: nil, **options)
       if Appsignal.config
         Appsignal.internal_logger.warn(
@@ -31,7 +31,7 @@ module Appsignal
     end
 
     # Determine which env AppSignal should initialize with.
-    # @api private
+    # @!visibility private
     def self.determine_env(initial_env = nil)
       [
         initial_env,
@@ -54,7 +54,7 @@ module Appsignal
     end
 
     # Determine which root path AppSignal should initialize with.
-    # @api private
+    # @!visibility private
     def self.determine_root_path
       app_path_env_var = ENV.fetch("APPSIGNAL_APP_PATH", nil)
       return app_path_env_var if app_path_env_var
@@ -67,7 +67,7 @@ module Appsignal
       Dir.pwd
     end
 
-    # @api private
+    # @!visibility private
     class Context
       DSL_FILENAME = "config/appsignal.rb"
 
@@ -87,7 +87,7 @@ module Appsignal
       end
     end
 
-    # @api private
+    # @!visibility private
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
@@ -133,12 +133,12 @@ module Appsignal
       :sidekiq_report_errors => "all"
     }.freeze
 
-    # @api private
+    # @!visibility private
     DEFAULT_LOG_LEVEL = ::Logger::INFO
     # Map from the `log_level` config option to Ruby's Logger level value.
     #
     # The trace level doesn't exist in the Ruby logger so it's mapped to debug.
-    # @api private
+    # @!visibility private
     LOG_LEVEL_MAP = {
       "error" => ::Logger::ERROR,
       "warn" => ::Logger::WARN,
@@ -148,7 +148,7 @@ module Appsignal
       "trace" => ::Logger::DEBUG
     }.freeze
 
-    # @api private
+    # @!visibility private
     STRING_OPTIONS = {
       :activejob_report_errors => "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS",
       :name => "APPSIGNAL_APP_NAME",
@@ -171,7 +171,7 @@ module Appsignal
       :revision => "APP_REVISION"
     }.freeze
 
-    # @api private
+    # @!visibility private
     BOOLEAN_OPTIONS = {
       :active => "APPSIGNAL_ACTIVE",
       :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
@@ -198,7 +198,7 @@ module Appsignal
       :send_session_data => "APPSIGNAL_SEND_SESSION_DATA"
     }.freeze
 
-    # @api private
+    # @!visibility private
     ARRAY_OPTIONS = {
       :dns_servers => "APPSIGNAL_DNS_SERVERS",
       :filter_metadata => "APPSIGNAL_FILTER_METADATA",
@@ -211,12 +211,12 @@ module Appsignal
       :request_headers => "APPSIGNAL_REQUEST_HEADERS"
     }.freeze
 
-    # @api private
+    # @!visibility private
     FLOAT_OPTIONS = {
       :cpu_count => "APPSIGNAL_CPU_COUNT"
     }.freeze
 
-    # @api private
+    # @!visibility private
     attr_reader :root_path, :env, :config_hash
 
     # List of config option sources. If a config option was set by a source,
@@ -226,7 +226,7 @@ module Appsignal
     # Their values cannot be changed after the config is initialized.
     #
     # Used by the diagnose report to list which value was read from which source.
-    # @api private
+    # @!visibility private
     attr_reader :system_config, :loaders_config, :initial_config, :file_config,
       :env_config, :override_config, :dsl_config
 
@@ -239,7 +239,7 @@ module Appsignal
     # @param load_yaml_file [Boolean] Whether to load configuration from
     #   the YAML config file. Defaults to true.
     # @return [Config] The initialized configuration object.
-    # @api private
+    # @!visibility private
     # @see https://docs.appsignal.com/ruby/configuration/
     #   Configuration documentation
     # @see https://docs.appsignal.com/ruby/configuration/load-order.html
@@ -270,7 +270,7 @@ module Appsignal
       load_config
     end
 
-    # @api private
+    # @!visibility private
     def load_config
       # Set defaults
       # Deep duplicate each frozen default value
@@ -329,8 +329,8 @@ module Appsignal
       @env_config[:env] = env_loaded_from_env if env_loaded_from_env
     end
 
-    # @api private
     # @return [String] System's tmp directory.
+    # @!visibility private
     def self.system_tmp_dir
       if Gem.win_platform?
         Dir.tmpdir
@@ -343,7 +343,7 @@ module Appsignal
     #
     # @param key [Symbol, String] The configuration option key to fetch.
     # @return [Object] The configuration value.
-    # @api private
+    # @!visibility private
     def [](key)
       config_hash[key]
     end
@@ -356,12 +356,12 @@ module Appsignal
     # @param key [Symbol, String] The configuration option key to set.
     # @param value [Object] The configuration value to set.
     # @return [void]
-    # @api private
+    # @!visibility private
     def []=(key, value)
       config_hash[key] = value
     end
 
-    # @api private
+    # @!visibility private
     def log_level
       option = config_hash[:log_level]
       level =
@@ -372,7 +372,7 @@ module Appsignal
       level.nil? ? Appsignal::Config::DEFAULT_LOG_LEVEL : level
     end
 
-    # @api private
+    # @!visibility private
     def log_file_path
       return @log_file_path if defined? @log_file_path
 
@@ -420,7 +420,7 @@ module Appsignal
       valid? && active_for_env?
     end
 
-    # @api private
+    # @!visibility private
     def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
@@ -462,21 +462,21 @@ module Appsignal
       ENV["_APP_REVISION"] = config_hash[:revision].to_s
     end
 
-    # @api private
+    # @!visibility private
     def merge_dsl_options(options)
       @dsl_config.merge!(options)
       merge(options)
     end
 
     # Apply any overrides for invalid settings.
-    # @api private
+    # @!visibility private
     def apply_overrides
       @override_config = determine_overrides
       merge(override_config)
     end
 
     # @return [void]
-    # @api private
+    # @!visibility private
     def validate
       # Strip path from endpoint so we're backwards compatible with
       # earlier versions of the gem.
@@ -501,8 +501,8 @@ module Appsignal
     # Deep freeze the config object so it cannot be modified during the runtime
     # of the Ruby app.
     #
-    # @api private
     # @return [void]
+    # @!visibility private
     # @since 4.0.0
     def freeze
       super
@@ -666,7 +666,7 @@ module Appsignal
       end
     end
 
-    # @api private
+    # @!visibility private
     class ConfigDSL
       attr_reader :dsl_options
 

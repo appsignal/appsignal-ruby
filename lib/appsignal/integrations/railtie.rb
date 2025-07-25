@@ -7,7 +7,7 @@ require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     class Railtie < ::Rails::Railtie
       config.appsignal = ActiveSupport::OrderedOptions.new
       config.appsignal.start_at = :on_load
@@ -77,7 +77,7 @@ module Appsignal
 
     # Report errors reported by the Rails error reporter using {Appsignal.report_error}.
     #
-    # @api private
+    # @!visibility private
     class RailsErrorReporterSubscriber
       class << self
         def report(error, handled:, severity:, context: {}, source: nil) # rubocop:disable Lint/UnusedMethodArgument

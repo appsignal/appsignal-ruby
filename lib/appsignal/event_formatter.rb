@@ -12,16 +12,33 @@ module Appsignal
   # argument if you need to use helper methods.
   class EventFormatter
     class << self
-      # @api private
+      # @!visibility private
       def formatters
         @formatters ||= {}
       end
 
-      # @api private
+      # @!visibility private
       def formatter_classes
         @formatter_classes ||= {}
       end
 
+      # Registers an event formatter for a specific event name.
+      #
+      # @param name [String, Symbol] The name of the event to register the formatter for.
+      # @param formatter [Class] The formatter class that implements the `format(payload)` method.
+      # @return [void]
+      #
+      # @example Register a custom formatter
+      #   class CustomFormatter < Appsignal::EventFormatter
+      #     def format(payload)
+      #       ["Custom event", payload[:body]]
+      #     end
+      #   end
+      #
+      #   Appsignal::EventFormatter.register("my.event", CustomFormatter)
+      #
+      # @see #unregister
+      # @see #registered?
       def register(name, formatter = nil)
         if registered?(name, formatter)
           logger.warn(
@@ -34,6 +51,17 @@ module Appsignal
         initialize_formatter name, formatter
       end
 
+      # Unregisters an event formatter for a specific event name.
+      #
+      # @param name [String, Symbol] The name of the event to unregister the formatter for.
+      # @param formatter [Class] The formatter class to unregister. Defaults to `self`.
+      # @return [void]
+      #
+      # @example Unregister a custom formatter
+      #   Appsignal::EventFormatter.unregister("my.event", CustomFormatter)
+      #
+      # @see #register
+      # @see #registered?
       def unregister(name, formatter = self)
         return unless formatter_classes[name] == formatter
 
@@ -41,6 +69,14 @@ module Appsignal
         formatters.delete(name)
       end
 
+      # Checks if an event formatter is registered for a specific event name.
+      #
+      # @param name [String, Symbol] The name of the event to check.
+      # @param klass [Class, nil] The specific formatter class to check for. Optional.
+      # @return [Boolean] true if a formatter is registered, false otherwise.
+      #
+      # @see #register
+      # @see #unregister
       def registered?(name, klass = nil)
         if klass
           formatter_classes[name] == klass
@@ -49,7 +85,7 @@ module Appsignal
         end
       end
 
-      # @api private
+      # @!visibility private
       def format(name, payload)
         formatter = formatters[name]
         formatter&.format(payload)
@@ -76,8 +112,10 @@ module Appsignal
       end
     end
 
+    # @return [Integer]
     # @api public
     DEFAULT = 0
+    # @return [Integer]
     # @api public
     SQL_BODY_FORMAT = 1
   end

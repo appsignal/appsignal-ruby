@@ -14,7 +14,7 @@ module Appsignal
   #
   # @!attribute [r] config
   #   @return [Appsignal::Config] config to use in the authentication request.
-  # @api private
+  # @!visibility private
   class AuthCheck
     # Path used on the AppSignal Push API
     # https://push.appsignal.com/1/auth

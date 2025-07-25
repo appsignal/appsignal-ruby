@@ -5,7 +5,7 @@ module Appsignal
   #
   # Provides useful methods to find out more about the host system.
   #
-  # @api private
+  # @!visibility private
   module System
     LINUX_TARGET = "linux"
     LINUX_ARM_ARCHITECTURE = "aarch64"
@@ -13,6 +13,9 @@ module Appsignal
     FREEBSD_TARGET = "freebsd"
     GEM_EXT_PATH = File.expand_path("../../ext", __dir__).freeze
 
+    # Returns if system is recognized as a Heroku dyno.
+    #
+    # @return [Boolean]
     def self.heroku?
       ENV.key? "DYNO"
     end
@@ -27,7 +30,6 @@ module Appsignal
     # - Use `export APPSIGNAL_BUILD_FOR_LINUX_ARM=1` to enable the experimental
     #   Linux ARM build.
     #
-    # @api private
     # @return [String]
     def self.agent_platform
       return LINUX_TARGET if force_linux_arm_build?
@@ -63,7 +65,6 @@ module Appsignal
     # - Use `export APPSIGNAL_BUILD_FOR_LINUX_ARM=1` to enable the experimental
     #   Linux ARM build.
     #
-    # @api private
     # @return [String]
     def self.agent_architecture
       return LINUX_ARM_ARCHITECTURE if force_linux_arm_build?
@@ -74,34 +75,34 @@ module Appsignal
 
     # Returns whether or not the musl build was forced by the user.
     #
-    # @api private
+    # @return [Boolean]
     def self.force_musl_build?
       %w[true 1].include?(ENV.fetch("APPSIGNAL_BUILD_FOR_MUSL", nil))
     end
 
     # Returns whether or not the linux ARM build was selected by the user.
     #
-    # @api private
+    # @return [Boolean]
     def self.force_linux_arm_build?
       %w[true 1].include?(ENV.fetch("APPSIGNAL_BUILD_FOR_LINUX_ARM", nil))
     end
 
-    # @api private
     def self.versionify(version)
       Gem::Version.new(version)
     end
 
-    # @api private
     def self.ldd_version_output
       `ldd --version 2>&1`
     end
 
-    # @api private
     def self.extract_ldd_version(string)
       ldd_version = string.match(/\d+\.\d+/)
       ldd_version && ldd_version[0]
     end
 
+    # Returns if the app is recognized as a JRuby app.
+    #
+    # @return [Boolean]
     def self.jruby?
       RUBY_PLATFORM == "java"
     end

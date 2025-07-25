@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class ActiveSupportNotificationsHook < Appsignal::Hooks::Hook
       register :active_support_notifications
 

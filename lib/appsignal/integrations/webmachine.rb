@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module WebmachineIntegration
       def run
         has_parent_transaction = Appsignal::Transaction.current?

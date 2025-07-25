@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class WebmachineHook < Appsignal::Hooks::Hook
       register :webmachine
 

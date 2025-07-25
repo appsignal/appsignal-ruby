@@ -2,6 +2,7 @@
 
 module Appsignal
   class Hooks
+    # @!visibility private
     class SidekiqHook < Appsignal::Hooks::Hook
       register :sidekiq
 

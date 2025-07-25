@@ -152,6 +152,24 @@ module Appsignal
       # Acts the same way as {.monitor}. See that method for more
       # documentation.
       #
+      # @param namespace [String, Symbol] The namespace to set on the new
+      #   transaction.
+      #   Defaults to the 'web' namespace.
+      #   This will not update the active transaction's namespace if
+      #   {.monitor} is called when another transaction is already active.
+      # @param action [String, Symbol, NilClass]
+      #   The action name for the transaction.
+      #   The action name is required to be set for the transaction to be
+      #   reported.
+      #   The argument can be set to `nil` or `:set_later` if the action is set
+      #   within the block with {#set_action}.
+      #   This will not update the active transaction's action if
+      #   {.monitor} is called when another transaction is already active.
+      # @yield The block to monitor.
+      # @raise [Exception] Any exception that occurs within the given block is
+      #   re-raised by this method.
+      # @return [Object] The value of the given block is returned.
+      #
       # @see monitor
       def monitor_and_stop(action:, namespace: nil, &block)
         Appsignal::Utils::StdoutAndLoggerMessage.warning \
@@ -459,7 +477,8 @@ module Appsignal
       #   # The custom data is: [1, 2, 3]
       #
       # @since 4.0.0
-      # @param data [Hash, Array] Custom data to add to the transaction.
+      # @param data [Hash<Object, Object>, Array<Object>] Custom data to add to
+      #   the transaction.
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -499,7 +518,8 @@ module Appsignal
       #   end
       #
       # @since 4.0.0
-      # @param tags [Hash] Collection of tags to add to the transaction.
+      # @param tags [Hash<Object, Object>] Collection of tags to add to the
+      #   transaction.
       # @option tags [String, Symbol, Integer] :any
       #   The name of the tag as a Symbol.
       # @option tags [String, Symbol, Integer] "any"
@@ -525,25 +545,41 @@ module Appsignal
       # should not be necessary to call this method unless you want to report
       # different parameters.
       #
+      # This method accepts both Hash and Array parameter types:
+      # - Hash parameters will be merged when called multiple times
+      # - Array parameters will be concatenated when called multiple times
+      # - Mixing Hash and Array types will use the latest type (and log a warning)
+      #
       # To filter parameters, see our parameter filtering guide.
       #
       # When both the `params` argument and a block is given to this method,
       # the block is leading and the argument will _not_ be used.
       #
-      # @example Add parameters
+      # @example Add Hash parameters
       #   Appsignal.add_params("param1" => "value1")
       #   # The parameters include: { "param1" => "value1" }
       #
-      # @example Calling `add_params` multiple times will merge the values
+      # @example Add Array parameters
+      #   Appsignal.add_params(["item1", "item2"])
+      #   # The parameters include: ["item1", "item2"]
+      #
+      # @example Calling `add_params` multiple times with Hashes merges values
       #   Appsignal.add_params("param1" => "value1")
       #   Appsignal.add_params("param2" => "value2")
       #   # The parameters include:
       #   # { "param1" => "value1", "param2" => "value2" }
       #
+      # @example Calling `add_params` multiple times with Arrays concatenates values
+      #   Appsignal.add_params(["item1"])
+      #   Appsignal.add_params(["item2"])
+      #   # The parameters include: ["item1", "item2"]
+      #
       # @since 4.0.0
-      # @param params [Hash] The parameters to add to the transaction.
+      # @param params [Hash<String, Object>, Array<Object>] The parameters to add to the
+      #   transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new parameters.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -606,9 +642,10 @@ module Appsignal
       #   # { "session" => "data", "other" => "value" }
       #
       # @since 4.0.0
-      # @param session_data [Hash] The session data to add to the transaction.
+      # @param session_data [Hash<String, Object>] The session data to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new session data.
+      # @yieldreturn [Hash<String, Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -647,9 +684,10 @@ module Appsignal
       #   # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
       #
       # @since 4.0.0
-      # @param headers [Hash] The request headers to add to the transaction.
+      # @param headers [Hash<String, Object>] The request headers to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new request headers.
+      # @yieldreturn [Hash<String, Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -697,9 +735,9 @@ module Appsignal
       #   e.g. "UI", "Network", "Navigation", "Console".
       # @param action [String] name of breadcrumb
       #   e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
-      # @option message [String]  optional message in string format
-      # @option metadata [Hash<String,String>]  key/value metadata in <string, string> format
-      # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+      # @param message [String] optional message in string format
+      # @param metadata [Hash<String, String>] key/value metadata in <string, string> format
+      # @param time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
       # @return [void]
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
@@ -741,7 +779,7 @@ module Appsignal
       #   instrumented. Accepted values are {EventFormatter::DEFAULT} and
       #   {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
       #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
-      # @yield yields the given block of code instrumented in an AppSignal
+      # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
       #
@@ -782,7 +820,7 @@ module Appsignal
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
       # @param body [String, nil] SQL query that's being executed.
-      # @yield yields the given block of code instrumented in an AppSignal
+      # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
       #

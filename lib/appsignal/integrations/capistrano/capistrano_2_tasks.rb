@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     class Capistrano
       def self.tasks(config)
         config.load do

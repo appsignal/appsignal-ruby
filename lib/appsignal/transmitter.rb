@@ -7,7 +7,7 @@ require "rack/utils"
 require "json"
 
 module Appsignal
-  # @api private
+  # @!visibility private
   class Transmitter
     JSON_CONTENT_TYPE = "application/json; charset=UTF-8"
     NDJSON_CONTENT_TYPE = "application/x-ndjson; charset=UTF-8"

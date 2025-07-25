@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class DryMonitorHook < Appsignal::Hooks::Hook
       register :dry_monitor
 

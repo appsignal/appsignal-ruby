@@ -2,10 +2,11 @@
 
 module Appsignal
   module Probes
-    # @api private
+    # @return [Integer]
+    # @!visibility private
     ITERATION_IN_SECONDS = 60
 
-    # @api private
+    # @!visibility private
     class ProbeCollection
       def initialize
         @probes = {}
@@ -29,7 +30,6 @@ module Appsignal
         probes[key]
       end
 
-      # @api private
       def internal_register(name, probe)
         if probes.key?(name)
           logger.debug "A probe with the name `#{name}` is already " \
@@ -38,12 +38,10 @@ module Appsignal
         probes[name] = probe
       end
 
-      # @api private
       def unregister(name)
         probes.delete(name)
       end
 
-      # @api private
       def each(&block)
         probes.each(&block)
       end
@@ -58,14 +56,14 @@ module Appsignal
     end
 
     class << self
-      # @api private
+      # @!visibility private
       def mutex
         @mutex ||= Thread::Mutex.new
       end
 
       # @see ProbeCollection
       # @return [ProbeCollection] Returns list of probes.
-      # @api private
+      # @!visibility private
       def probes
         @probes ||= ProbeCollection.new
       end
@@ -162,6 +160,7 @@ module Appsignal
         uninitialize_probe(name)
       end
 
+      # @return [void]
       # @api private
       def start
         stop
@@ -212,13 +211,15 @@ module Appsignal
 
       # Stop the minutely probes mechanism. Stop the thread and clear all probe
       # instances.
+      #
+      # @return [void]
       def stop
         defined?(@thread) && @thread.kill
         @started = false
         probe_instances.clear
       end
 
-      # @api private
+      # @!visibility private
       def wait_time
         ITERATION_IN_SECONDS - Time.now.sec
       end

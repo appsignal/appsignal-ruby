@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class DelayedJobHook < Appsignal::Hooks::Hook
       register :delayed_job
 

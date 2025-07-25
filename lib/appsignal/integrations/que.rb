@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module QuePlugin
       def _run(*args)
         transaction =

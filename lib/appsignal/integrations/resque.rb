@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module ResqueIntegration
       def perform
         transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
@@ -25,7 +25,7 @@ module Appsignal
       end
     end
 
-    # @api private
+    # @!visibility private
     class ResqueHelpers
       def self.arguments(payload)
         case payload["class"]

@@ -2,6 +2,7 @@
 
 module Appsignal
   class Hooks
+    # @!visibility private
     class ActionMailerHook < Appsignal::Hooks::Hook
       register :action_mailer
 

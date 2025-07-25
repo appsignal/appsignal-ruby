@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class AtExit < Appsignal::Hooks::Hook
       register :at_exit
 

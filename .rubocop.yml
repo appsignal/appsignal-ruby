@@ -11,6 +11,8 @@ AllCops:
     - "**/Rakefile"
     - "appsignal.gemspec"
   Exclude:
+    - "*.rbs"
+    - "*.rbi"
     - "pkg/**/*"
     - "tmp/**/*"
     - "vendor/**/*"

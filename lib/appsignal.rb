@@ -39,7 +39,7 @@ module Appsignal
     # Can be `nil` if extension has not been loaded yet. See
     # {.extension_loaded?} for a boolean return value.
     #
-    # @api private
+    # @!visibility private
     # @return [Boolean, nil]
     # @see Extension
     # @see extension_loaded?
@@ -57,7 +57,7 @@ module Appsignal
     #   {.start}) the contents of the "in memory logger" is written to the new
     #   logger.
     #
-    #   @api private
+    #   @!visibility private
     #   @return [Utils::IntegrationLogger or Utils::IntegrationMemoryLogger]
     #   @see start
     attr_writer :internal_logger
@@ -75,7 +75,7 @@ module Appsignal
     attr_reader :config_error
     alias config_error? config_error
 
-    # @api private
+    # @!visibility private
     def testing?
       false
     end
@@ -167,7 +167,8 @@ module Appsignal
     #   the environment CLI option value. If nil, the environment will be
     #   auto-detected.
     # @param block [Proc] Optional block to configure the config object.
-    # @api private
+    # @return [void]
+    # @!visibility private
     def _load_config!(env_param = nil, &block) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
       # Ensure it's not an empty string if it's a value
       proper_env_param = env_param&.to_s&.strip
@@ -399,12 +400,12 @@ module Appsignal
       nil
     end
 
-    # @api private
+    # @!visibility private
     def get_server_state(key)
       Appsignal::Extension.get_server_state(key)
     end
 
-    # @api private
+    # @!visibility private
     def in_memory_logger
       @in_memory_logger ||=
         Appsignal::Utils::IntegrationMemoryLogger.new.tap do |l|
@@ -412,12 +413,12 @@ module Appsignal
         end
     end
 
-    # @api private
+    # @!visibility private
     def internal_logger
       @internal_logger ||= in_memory_logger
     end
 
-    # @api private
+    # @!visibility private
     def log_formatter(prefix = nil)
       pre = "#{prefix}: " if prefix
       proc do |severity, datetime, _progname, msg|
@@ -431,7 +432,7 @@ module Appsignal
     # Sets the log level and sets the logger. Uses a file-based logger or the
     # STDOUT-based logger. See the `:log` configuration option.
     #
-    # @api private
+    # @!visibility private
     # @return [void]
     def _start_logger
       if config && config[:log] == "file" && config.log_file_path
@@ -501,7 +502,7 @@ module Appsignal
       config&.active? && extension_loaded?
     end
 
-    # @api private
+    # @!visibility private
     def dsl_config_file_loaded?
       defined?(@dsl_config_file_loaded) ? true : false
     end
@@ -614,6 +615,10 @@ module Appsignal
       end
       Appsignal::Environment.report_supported_gems
     end
+  end
+
+  # @!visibility private
+  module Integrations
   end
 end
 

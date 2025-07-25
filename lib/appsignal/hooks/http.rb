@@ -2,7 +2,7 @@
 
 module Appsignal
   class Hooks
-    # @api private
+    # @!visibility private
     class HttpHook < Appsignal::Hooks::Hook
       register :http_rb
 

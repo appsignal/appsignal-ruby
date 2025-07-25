@@ -2,7 +2,7 @@
 
 module Appsignal
   module Integrations
-    # @api private
+    # @!visibility private
     module RakeIntegration
       IGNORED_ERRORS = [
         # Normal exits from the application we do not need to report
@@ -49,7 +49,7 @@ module Appsignal
       end
     end
 
-    # @api private
+    # @!visibility private
     module RakeIntegrationHelper
       # Register an `at_exit` hook when a task is executed. This will stop
       # AppSignal when _all_ tasks are executed and Rake exits.

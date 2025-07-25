@@ -2,7 +2,7 @@
 
 module Appsignal
   class EventFormatter
-    # @api private
+    # @!visibility private
     module Sequel
       # Compatibility with the sequel-rails gem.
       # The sequel-rails gem adds its own ActiveSupport::Notifications events
