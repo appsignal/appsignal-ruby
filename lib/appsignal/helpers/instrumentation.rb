@@ -545,25 +545,41 @@ module Appsignal
       # should not be necessary to call this method unless you want to report
       # different parameters.
       #
+      # This method accepts both Hash and Array parameter types:
+      # - Hash parameters will be merged when called multiple times
+      # - Array parameters will be concatenated when called multiple times
+      # - Mixing Hash and Array types will use the latest type (and log a warning)
+      #
       # To filter parameters, see our parameter filtering guide.
       #
       # When both the `params` argument and a block is given to this method,
       # the block is leading and the argument will _not_ be used.
       #
-      # @example Add parameters
+      # @example Add Hash parameters
       #   Appsignal.add_params("param1" => "value1")
       #   # The parameters include: { "param1" => "value1" }
       #
-      # @example Calling `add_params` multiple times will merge the values
+      # @example Add Array parameters
+      #   Appsignal.add_params(["item1", "item2"])
+      #   # The parameters include: ["item1", "item2"]
+      #
+      # @example Calling `add_params` multiple times with Hashes merges values
       #   Appsignal.add_params("param1" => "value1")
       #   Appsignal.add_params("param2" => "value2")
       #   # The parameters include:
       #   # { "param1" => "value1", "param2" => "value2" }
       #
+      # @example Calling `add_params` multiple times with Arrays concatenates values
+      #   Appsignal.add_params(["item1"])
+      #   Appsignal.add_params(["item2"])
+      #   # The parameters include: ["item1", "item2"]
+      #
       # @since 4.0.0
-      # @param params [Hash] The parameters to add to the transaction.
+      # @param params [Hash<String, Object>, Array<Object>] The parameters to add to the
+      #   transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new parameters.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -626,9 +642,10 @@ module Appsignal
       #   # { "session" => "data", "other" => "value" }
       #
       # @since 4.0.0
-      # @param session_data [Hash] The session data to add to the transaction.
+      # @param session_data [Hash<String, Object>] The session data to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new session data.
+      # @yieldreturn [Hash<String, Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -667,9 +684,10 @@ module Appsignal
       #   # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
       #
       # @since 4.0.0
-      # @param headers [Hash] The request headers to add to the transaction.
+      # @param headers [Hash<String, Object>] The request headers to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
       #   return value will become the new request headers.
+      # @yieldreturn [Hash<String, Object>]
       # @return [void]
       #
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
@@ -717,9 +735,9 @@ module Appsignal
       #   e.g. "UI", "Network", "Navigation", "Console".
       # @param action [String] name of breadcrumb
       #   e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
-      # @option message [String]  optional message in string format
-      # @option metadata [Hash<String,String>]  key/value metadata in <string, string> format
-      # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+      # @param message [String] optional message in string format
+      # @param metadata [Hash<String, String>] key/value metadata in <string, string> format
+      # @param time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
       # @return [void]
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html

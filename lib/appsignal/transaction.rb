@@ -298,9 +298,11 @@ module Appsignal
     # block is leading and the argument will _not_ be used.
     #
     # @since 4.0.0
-    # @param given_params [Hash] The parameters to set on the transaction.
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to set on the
+    #   transaction.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_params
@@ -323,9 +325,11 @@ module Appsignal
     # Add parameters to the transaction if not already set.
     #
     # @since 4.0.0
-    # @param given_params [Hash] The parameters to set on the transaction if none are already set.
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to set on the
+    #   transaction if none are already set.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
     # @return [void]
     # @!visibility private
     #
@@ -340,7 +344,7 @@ module Appsignal
     # When this method is called multiple times, it will merge the tags.
     #
     # @since 4.0.0
-    # @param given_tags [Hash] Collection of tags.
+    # @param given_tags [Hash<String, Object>] Collection of tags.
     # @option given_tags [String, Symbol, Integer] :any
     #   The name of the tag as a Symbol.
     # @option given_tags [String, Symbol, Integer] "any"
@@ -363,9 +367,10 @@ module Appsignal
     # the block is leading and the argument will _not_ be used.
     #
     # @since 4.0.0
-    # @param given_session_data [Hash] A hash containing session data.
+    # @param given_session_data [Hash<String, Object>] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
+    # @yieldreturn [Hash<String, Object>]
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_session_data
@@ -383,9 +388,10 @@ module Appsignal
     # called.
     #
     # @since 4.0.0
-    # @param given_session_data [Hash] A hash containing session data.
+    # @param given_session_data [Hash<String, Object>] A hash containing session data.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new session data.
+    # @yieldreturn [Hash<String, Object>]
     # @return [void]
     # @!visibility private
     #
@@ -400,9 +406,10 @@ module Appsignal
     # Add headers to the transaction.
     #
     # @since 4.0.0
-    # @param given_headers [Hash] A hash containing headers.
+    # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
+    # @yieldreturn [Hash<String, Object>]
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_headers
@@ -419,9 +426,10 @@ module Appsignal
     # the block is leading and the argument will _not_ be used.
     #
     # @since 4.0.0
-    # @param given_headers [Hash] A hash containing headers.
+    # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
     #   return value will become the new headers.
+    # @yieldreturn [Hash<String, Object>]
     # @return [void]
     # @!visibility private
     #
@@ -436,7 +444,8 @@ module Appsignal
     # Add custom data to the transaction.
     #
     # @since 4.0.0
-    # @param data [Hash, Array]
+    # @param data [Hash<Object, Object>, Array<Object>] Custom data to add to
+    #   the transaction.
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_custom_data
@@ -453,9 +462,9 @@ module Appsignal
     #   e.g. "UI", "Network", "Navigation", "Console".
     # @param action [String] name of breadcrumb
     #   e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
-    # @option message [String]  optional message in string format
-    # @option metadata [Hash<String,String>]  key/value metadata in <string, string> format
-    # @option time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+    # @param message [String]  optional message in string format
+    # @param metadata [Hash<String,String>]  key/value metadata in <string, string> format
+    # @param time [Time] time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
     # @return [void]
     #
     # @see Appsignal.add_breadcrumb

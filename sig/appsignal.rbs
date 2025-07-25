@@ -645,6 +645,11 @@ module Appsignal
   # should not be necessary to call this method unless you want to report
   # different parameters.
   # 
+  # This method accepts both Hash and Array parameter types:
+  # - Hash parameters will be merged when called multiple times
+  # - Array parameters will be concatenated when called multiple times
+  # - Mixing Hash and Array types will use the latest type (and log a warning)
+  # 
   # To filter parameters, see our parameter filtering guide.
   # 
   # When both the `params` argument and a block is given to this method,
@@ -652,13 +657,19 @@ module Appsignal
   # 
   # _@param_ `params` — The parameters to add to the transaction.
   # 
-  # Add parameters
+  # Add Hash parameters
   # ```ruby
   # Appsignal.add_params("param1" => "value1")
   # # The parameters include: { "param1" => "value1" }
   # ```
   # 
-  # Calling `add_params` multiple times will merge the values
+  # Add Array parameters
+  # ```ruby
+  # Appsignal.add_params(["item1", "item2"])
+  # # The parameters include: ["item1", "item2"]
+  # ```
+  # 
+  # Calling `add_params` multiple times with Hashes merges values
   # ```ruby
   # Appsignal.add_params("param1" => "value1")
   # Appsignal.add_params("param2" => "value2")
@@ -666,10 +677,17 @@ module Appsignal
   # # { "param1" => "value1", "param2" => "value2" }
   # ```
   # 
+  # Calling `add_params` multiple times with Arrays concatenates values
+  # ```ruby
+  # Appsignal.add_params(["item1"])
+  # Appsignal.add_params(["item2"])
+  # # The parameters include: ["item1", "item2"]
+  # ```
+  # 
   # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
   # 
   # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-parameters.html` — Parameter filtering guide
-  def self.add_params: (?::Hash[untyped, untyped]? params) -> void
+  def self.add_params: (?(::Hash[String, Object] | ::Array[Object])? params) ?{ () -> (::Hash[String, Object] | ::Array[Object]) } -> void
 
   # Mark the parameters sample data to be set as an empty value.
   # 
@@ -718,7 +736,7 @@ module Appsignal
   # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
   # 
   # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-session-data.html` — Session data filtering guide
-  def self.add_session_data: (?::Hash[untyped, untyped]? session_data) -> void
+  def self.add_session_data: (?::Hash[String, Object]? session_data) ?{ () -> ::Hash[String, Object] } -> void
 
   # Add request headers to the current transaction.
   # 
@@ -751,7 +769,7 @@ module Appsignal
   # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
   # 
   # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
-  def self.add_headers: (?::Hash[untyped, untyped]? headers) -> void
+  def self.add_headers: (?::Hash[String, Object]? headers) ?{ () -> ::Hash[String, Object] } -> void
 
   # Add breadcrumbs to the transaction.
   # 
@@ -763,6 +781,12 @@ module Appsignal
   # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
   # 
   # _@param_ `action` — name of breadcrumb e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
+  # 
+  # _@param_ `message` — optional message in string format
+  # 
+  # _@param_ `metadata` — key/value metadata in <string, string> format
+  # 
+  # _@param_ `time` — time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
   # 
   # ```ruby
   # Appsignal.add_breadcrumb(
@@ -789,9 +813,9 @@ module Appsignal
   def self.add_breadcrumb: (
                              String category,
                              String action,
-                             ?::Hash[untyped, untyped] message,
-                             ?::Hash[untyped, untyped] metadata,
-                             ?::Hash[untyped, untyped] time
+                             ?String message,
+                             ?::Hash[String, String] metadata,
+                             ?Time time
                            ) -> void
 
   # Instrument helper for AppSignal.
@@ -982,10 +1006,10 @@ module Appsignal
     # 
     # _@param_ `attributes` — Default attributes for all log lines.
     def initialize: (
-                      untyped group,
-                      ?level: untyped,
-                      ?format: untyped,
-                      ?attributes: untyped
+                      String group,
+                      ?level: Integer,
+                      ?format: Integer,
+                      ?attributes: ::Hash[String, String]
                     ) -> void
 
     # Sets the formatter for this logger and all broadcasted loggers.
@@ -998,42 +1022,42 @@ module Appsignal
     # _@param_ `message` — Message to log
     # 
     # _@param_ `attributes` — Attributes to tag the log with
-    def debug: (?untyped message, ?untyped attributes) -> void
+    def debug: (?String? message, ?::Hash[String, Object] attributes) -> void
 
     # Log an info level message
     # 
     # _@param_ `message` — Message to log
     # 
     # _@param_ `attributes` — Attributes to tag the log with
-    def info: (?untyped message, ?untyped attributes) -> void
+    def info: (?String? message, ?::Hash[String, Object] attributes) -> void
 
     # Log a warn level message
     # 
     # _@param_ `message` — Message to log
     # 
     # _@param_ `attributes` — Attributes to tag the log with
-    def warn: (?untyped message, ?untyped attributes) -> void
+    def warn: (?String? message, ?::Hash[String, Object] attributes) -> void
 
     # Log an error level message
     # 
     # _@param_ `message` — Message to log
     # 
     # _@param_ `attributes` — Attributes to tag the log with
-    def error: (?untyped message, ?untyped attributes) -> void
+    def error: (?(String | Exception)? message, ?::Hash[String, Object] attributes) -> void
 
     # Log a fatal level message
     # 
     # _@param_ `message` — Message to log
     # 
     # _@param_ `attributes` — Attributes to tag the log with
-    def fatal: (?untyped message, ?untyped attributes) -> void
+    def fatal: (?(String | Exception)? message, ?::Hash[String, Object] attributes) -> void
 
     # Log an info level message
     # 
     # Returns the number of characters written.
     # 
     # _@param_ `message` — Message to log
-    def <<: (untyped message) -> Integer
+    def <<: (String message) -> Integer
 
     # Temporarily silences the logger to a specified level while executing a block.
     # 
@@ -1246,7 +1270,7 @@ module Appsignal
     # _@see_ `Helpers::Instrumentation#add_params`
     # 
     # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
-    def add_params: (?::Hash[untyped, untyped]? given_params) -> void
+    def add_params: (?(::Hash[String, Object] | ::Array[Object])? given_params) ?{ () -> (::Hash[String, Object] | ::Array[Object]) } -> void
 
     # Add tags to the transaction.
     # 
@@ -1257,7 +1281,7 @@ module Appsignal
     # _@see_ `Helpers::Instrumentation#add_tags`
     # 
     # _@see_ `https://docs.appsignal.com/ruby/instrumentation/tagging.html` — Tagging guide
-    def add_tags: (?::Hash[untyped, untyped] given_tags) -> void
+    def add_tags: (?::Hash[String, Object] given_tags) -> void
 
     # Add session data to the transaction.
     # 
@@ -1271,7 +1295,7 @@ module Appsignal
     # _@see_ `Helpers::Instrumentation#add_session_data`
     # 
     # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
-    def add_session_data: (?::Hash[untyped, untyped]? given_session_data) -> void
+    def add_session_data: (?::Hash[String, Object]? given_session_data) ?{ () -> ::Hash[String, Object] } -> void
 
     # Add headers to the transaction.
     # 
@@ -1280,16 +1304,16 @@ module Appsignal
     # _@see_ `Helpers::Instrumentation#add_headers`
     # 
     # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
-    def add_headers: (?::Hash[untyped, untyped]? given_headers) -> void
+    def add_headers: (?::Hash[String, Object]? given_headers) ?{ () -> ::Hash[String, Object] } -> void
 
     # Add custom data to the transaction.
     # 
-    # _@param_ `data`
+    # _@param_ `data` — Custom data to add to the transaction.
     # 
     # _@see_ `Helpers::Instrumentation#add_custom_data`
     # 
     # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
-    def add_custom_data: ((::Hash[untyped, untyped] | ::Array[untyped]) data) -> void
+    def add_custom_data: ((::Hash[Object, Object] | ::Array[Object]) data) -> void
 
     # Add breadcrumbs to the transaction.
     # 
@@ -1297,15 +1321,21 @@ module Appsignal
     # 
     # _@param_ `action` — name of breadcrumb e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
     # 
+    # _@param_ `message` — optional message in string format
+    # 
+    # _@param_ `metadata` — key/value metadata in <string, string> format
+    # 
+    # _@param_ `time` — time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
+    # 
     # _@see_ `Appsignal.add_breadcrumb`
     # 
     # _@see_ `https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html` — Breadcrumb reference
     def add_breadcrumb: (
                           String category,
                           String action,
-                          ?::Hash[untyped, untyped] message,
-                          ?::Hash[untyped, untyped] metadata,
-                          ?::Hash[untyped, untyped] time
+                          ?String message,
+                          ?::Hash[String, String] metadata,
+                          ?Time time
                         ) -> void
 
     # Set an action name for the transaction.
@@ -1869,6 +1899,11 @@ module Appsignal
       # should not be necessary to call this method unless you want to report
       # different parameters.
       # 
+      # This method accepts both Hash and Array parameter types:
+      # - Hash parameters will be merged when called multiple times
+      # - Array parameters will be concatenated when called multiple times
+      # - Mixing Hash and Array types will use the latest type (and log a warning)
+      # 
       # To filter parameters, see our parameter filtering guide.
       # 
       # When both the `params` argument and a block is given to this method,
@@ -1876,13 +1911,19 @@ module Appsignal
       # 
       # _@param_ `params` — The parameters to add to the transaction.
       # 
-      # Add parameters
+      # Add Hash parameters
       # ```ruby
       # Appsignal.add_params("param1" => "value1")
       # # The parameters include: { "param1" => "value1" }
       # ```
       # 
-      # Calling `add_params` multiple times will merge the values
+      # Add Array parameters
+      # ```ruby
+      # Appsignal.add_params(["item1", "item2"])
+      # # The parameters include: ["item1", "item2"]
+      # ```
+      # 
+      # Calling `add_params` multiple times with Hashes merges values
       # ```ruby
       # Appsignal.add_params("param1" => "value1")
       # Appsignal.add_params("param2" => "value2")
@@ -1890,10 +1931,17 @@ module Appsignal
       # # { "param1" => "value1", "param2" => "value2" }
       # ```
       # 
+      # Calling `add_params` multiple times with Arrays concatenates values
+      # ```ruby
+      # Appsignal.add_params(["item1"])
+      # Appsignal.add_params(["item2"])
+      # # The parameters include: ["item1", "item2"]
+      # ```
+      # 
       # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
       # 
       # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-parameters.html` — Parameter filtering guide
-      def add_params: (?::Hash[untyped, untyped]? params) -> void
+      def add_params: (?(::Hash[String, Object] | ::Array[Object])? params) ?{ () -> (::Hash[String, Object] | ::Array[Object]) } -> void
 
       # Mark the parameters sample data to be set as an empty value.
       # 
@@ -1942,7 +1990,7 @@ module Appsignal
       # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
       # 
       # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-session-data.html` — Session data filtering guide
-      def add_session_data: (?::Hash[untyped, untyped]? session_data) -> void
+      def add_session_data: (?::Hash[String, Object]? session_data) ?{ () -> ::Hash[String, Object] } -> void
 
       # Add request headers to the current transaction.
       # 
@@ -1975,7 +2023,7 @@ module Appsignal
       # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
       # 
       # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
-      def add_headers: (?::Hash[untyped, untyped]? headers) -> void
+      def add_headers: (?::Hash[String, Object]? headers) ?{ () -> ::Hash[String, Object] } -> void
 
       # Add breadcrumbs to the transaction.
       # 
@@ -1987,6 +2035,12 @@ module Appsignal
       # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
       # 
       # _@param_ `action` — name of breadcrumb e.g "The user clicked a button", "HTTP 500 from http://blablabla.com"
+      # 
+      # _@param_ `message` — optional message in string format
+      # 
+      # _@param_ `metadata` — key/value metadata in <string, string> format
+      # 
+      # _@param_ `time` — time of breadcrumb, should respond to `.to_i` defaults to `Time.now.utc`
       # 
       # ```ruby
       # Appsignal.add_breadcrumb(
@@ -2013,9 +2067,9 @@ module Appsignal
       def add_breadcrumb: (
                             String category,
                             String action,
-                            ?::Hash[untyped, untyped] message,
-                            ?::Hash[untyped, untyped] metadata,
-                            ?::Hash[untyped, untyped] time
+                            ?String message,
+                            ?::Hash[String, String] metadata,
+                            ?Time time
                           ) -> void
 
       # Instrument helper for AppSignal.
@@ -2148,7 +2202,7 @@ class Object < BasicObject
   # _@param_ `options` — Options for instrumentation.
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html` — Method instrumentation documentation.
-  def self.appsignal_instrument_class_method: (Symbol method_name, ?::Hash[untyped, untyped] options) -> Symbol
+  def self.appsignal_instrument_class_method: (Symbol method_name, ?::Hash[Symbol, String] options) -> Symbol
 
   # Instruments an instance method with AppSignal monitoring.
   # 
@@ -2157,5 +2211,5 @@ class Object < BasicObject
   # _@param_ `options` — Options for instrumentation.
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html` — Method instrumentation documentation.
-  def self.appsignal_instrument_method: (Symbol method_name, ?::Hash[untyped, untyped] options) -> Symbol
+  def self.appsignal_instrument_method: (Symbol method_name, ?::Hash[Symbol, String] options) -> Symbol
 end

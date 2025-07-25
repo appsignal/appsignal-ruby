@@ -67,10 +67,11 @@ module Appsignal
 
     # Create a new logger instance
     #
-    # @param group Name of the group for this logger.
-    # @param level Minimum log level to report. Log lines below this level will be ignored.
-    # @param format Format to use to parse log line attributes.
-    # @param attributes Default attributes for all log lines.
+    # @param group [String] Name of the group for this logger.
+    # @param level [Integer] Minimum log level to report. Log lines below this
+    #   level will be ignored.
+    # @param format [Integer] Format to use to parse log line attributes.
+    # @param attributes [Hash<String, String>] Default attributes for all log lines.
     # @return [void]
     def initialize(group, level: INFO, format: PLAINTEXT, attributes: {})
       raise TypeError, "group must be a string" unless group.is_a? String
@@ -150,40 +151,40 @@ module Appsignal
     alias log add
 
     # Log a debug level message
-    # @param message Message to log
-    # @param attributes Attributes to tag the log with
+    # @param message [String] Message to log
+    # @param attributes [Hash<String, Object>] Attributes to tag the log with
     # @return [void]
     def debug(message = nil, attributes = {}, &block)
       add_with_attributes(DEBUG, message, @group, attributes, &block)
     end
 
     # Log an info level message
-    # @param message Message to log
-    # @param attributes Attributes to tag the log with
+    # @param message [String] Message to log
+    # @param attributes [Hash<String, Object>] Attributes to tag the log with
     # @return [void]
     def info(message = nil, attributes = {}, &block)
       add_with_attributes(INFO, message, @group, attributes, &block)
     end
 
     # Log a warn level message
-    # @param message Message to log
-    # @param attributes Attributes to tag the log with
+    # @param message [String] Message to log
+    # @param attributes [Hash<String, Object>] Attributes to tag the log with
     # @return [void]
     def warn(message = nil, attributes = {}, &block)
       add_with_attributes(WARN, message, @group, attributes, &block)
     end
 
     # Log an error level message
-    # @param message Message to log
-    # @param attributes Attributes to tag the log with
+    # @param message [String, Exception] Message to log
+    # @param attributes [Hash<String, Object>] Attributes to tag the log with
     # @return [void]
     def error(message = nil, attributes = {}, &block)
       add_with_attributes(ERROR, message, @group, attributes, &block)
     end
 
     # Log a fatal level message
-    # @param message Message to log
-    # @param attributes Attributes to tag the log with
+    # @param message [String, Exception] Message to log
+    # @param attributes [Hash<String, Object>] Attributes to tag the log with
     # @return [void]
     def fatal(message = nil, attributes = {}, &block)
       add_with_attributes(FATAL, message, @group, attributes, &block)
@@ -193,7 +194,7 @@ module Appsignal
     #
     # Returns the number of characters written.
     #
-    # @param message Message to log
+    # @param message [String] Message to log
     # @return [Integer]
     def <<(message)
       info(message)

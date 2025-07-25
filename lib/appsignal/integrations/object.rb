@@ -10,7 +10,7 @@ class Object
   # Instruments a class method with AppSignal monitoring.
   #
   # @param method_name [Symbol] The name of the class method to instrument.
-  # @param options [Hash] Options for instrumentation.
+  # @param options [Hash<Symbol, String>] Options for instrumentation.
   # @option options [String] :name Custom event name for the instrumentation.
   # @return [Symbol]
   # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
@@ -35,7 +35,7 @@ class Object
   # Instruments an instance method with AppSignal monitoring.
   #
   # @param method_name [Symbol] The name of the instance method to instrument.
-  # @param options [Hash] Options for instrumentation.
+  # @param options [Hash<Symbol, String>] Options for instrumentation.
   # @option options [String] :name Custom event name for the instrumentation.
   # @return [Symbol]
   # @see https://docs.appsignal.com/ruby/instrumentation/method-instrumentation.html
