@@ -992,6 +992,203 @@ module Appsignal
     def active?: () -> bool
 
     def yml_config_file?: () -> bool
+
+    # Configuration DSL for use in configuration blocks.
+    # 
+    # This class provides a Domain Specific Language for configuring AppSignal
+    # within the `Appsignal.configure` block. It provides getter and setter
+    # methods for all configuration options.
+    # 
+    # @example Using the configuration DSL
+    #   Appsignal.configure do |config|
+    #     config.name = "My App"
+    #     config.active = true
+    #     config.push_api_key = "your-api-key"
+    #     config.ignore_actions = ["StatusController#health"]
+    #   end
+    # 
+    # @see AppSignal Ruby gem configuration
+    #   https://docs.appsignal.com/ruby/configuration.html
+    class ConfigDSL
+      # Returns the application's root path.
+      # 
+      # _@return_ — The root path of the application
+      def app_path: () -> String
+
+      # Returns the current environment name.
+      # 
+      # _@return_ — The environment name (e.g., "production", "development")
+      def env: () -> String
+
+      # Returns true if the given environment name matches the loaded
+      # environment name.
+      # 
+      # _@param_ `given_env`
+      def env?: ((String | Symbol) given_env) -> (TrueClass | FalseClass)
+
+      # Activates AppSignal if the current environment matches any of the given environments.
+      # 
+      # _@param_ `envs` — List of environment names to activate for
+      # 
+      # _@return_ — true if AppSignal was activated, false otherwise
+      # 
+      # Activate for production and staging
+      # ```ruby
+      # config.activate_if_environment(:production, :staging)
+      # ```
+      def activate_if_environment: (*::Array[(String | Symbol)] envs) -> bool
+
+      # _@return_ — Error reporting mode for ActiveJob ("all", "discard" or "none")
+      attr_accessor activejob_report_errors: String
+
+      # _@return_ — The application name
+      attr_accessor name: String
+
+      # _@return_ — The host to the agent binds to for its HTTP server
+      attr_accessor bind_address: String
+
+      # _@return_ — Path to the CA certificate file
+      attr_accessor ca_file_path: String
+
+      # _@return_ — Override for the detected hostname
+      attr_accessor hostname: String
+
+      # _@return_ — Role of the host for grouping in metrics
+      attr_accessor host_role: String
+
+      # _@return_ — HTTP proxy URL
+      attr_accessor http_proxy: String
+
+      # _@return_ — Log destination ("file" or "stdout")
+      attr_accessor log: String
+
+      # _@return_ — AppSignal internal logger
+      # log level ("error", "warn", "info", "debug", "trace")
+      attr_accessor log_level: String
+
+      # _@return_ — Path to the log directory
+      attr_accessor log_path: String
+
+      # _@return_ — Endpoint for log transmission
+      attr_accessor logging_endpoint: String
+
+      # _@return_ — Push API endpoint URL
+      attr_accessor endpoint: String
+
+      # _@return_ — AppSignal Push API key
+      attr_accessor push_api_key: String
+
+      # _@return_ — Error reporting mode for Sidekiq ("all", "discard" or "none")
+      attr_accessor sidekiq_report_errors: String
+
+      # _@return_ — Port for StatsD metrics
+      attr_accessor statsd_port: String
+
+      # _@return_ — Port for Nginx metrics collection
+      attr_accessor nginx_port: String
+
+      # _@return_ — Override for the agent working directory
+      attr_accessor working_directory_path: String
+
+      # _@return_ — Application revision identifier
+      attr_accessor revision: String
+
+      # _@return_ — Activate AppSignal for the loaded environment
+      attr_accessor active: bool
+
+      # _@return_ — Configure whether allocation tracking is enabled
+      attr_accessor enable_allocation_tracking: bool
+
+      # _@return_ — Configure whether the at_exit reporter is enabled
+      attr_accessor enable_at_exit_reporter: bool
+
+      # _@return_ — Configure whether host metrics collection is enabled
+      attr_accessor enable_host_metrics: bool
+
+      # _@return_ — Configure whether minutely probes are enabled
+      attr_accessor enable_minutely_probes: bool
+
+      # _@return_ — Configure whether the StatsD metrics endpoint on the agent is enabled
+      attr_accessor enable_statsd: bool
+
+      # _@return_ — Configure whether the agent's NGINX metrics endpoint is enabled
+      attr_accessor enable_nginx_metrics: bool
+
+      # _@return_ — Configure whether the GVL global timer instrumentationis enabled
+      attr_accessor enable_gvl_global_timer: bool
+
+      # _@return_ — Configure whether GVL waiting threads instrumentation is enabled
+      attr_accessor enable_gvl_waiting_threads: bool
+
+      # _@return_ — Configure whether Rails error reporter integration is enabled
+      attr_accessor enable_rails_error_reporter: bool
+
+      # _@return_ — Configure whether Rake performance instrumentation is enabled
+      attr_accessor enable_rake_performance_instrumentation: bool
+
+      # _@return_ — Configure whether files created by AppSignal should be world accessible
+      attr_accessor files_world_accessible: bool
+
+      # _@return_ — Configure whether to instrument requests made with the http.rb gem
+      attr_accessor instrument_http_rb: bool
+
+      # _@return_ — Configure whether to instrument requests made with Net::HTTP
+      attr_accessor instrument_net_http: bool
+
+      # _@return_ — Configure whether to instrument the Ownership gem
+      attr_accessor instrument_ownership: bool
+
+      # _@return_ — Configure whether to instrument Redis queries
+      attr_accessor instrument_redis: bool
+
+      # _@return_ — Configure whether to instrument Sequel queries
+      attr_accessor instrument_sequel: bool
+
+      # _@return_ — Configure whether the Ownership gem instrumentation should set namespace
+      attr_accessor ownership_set_namespace: bool
+
+      # _@return_ — Configure whether the application is running in a container
+      attr_accessor running_in_container: bool
+
+      # _@return_ — Configure whether to send environment metadata
+      attr_accessor send_environment_metadata: bool
+
+      # _@return_ — Configure whether to send request parameters
+      attr_accessor send_params: bool
+
+      # _@return_ — Configure whether to send request session data
+      attr_accessor send_session_data: bool
+
+      # _@return_ — Custom DNS servers to use
+      attr_accessor dns_servers: ::Array[String]
+
+      # _@return_ — Metadata keys to filter from trace data
+      attr_accessor filter_metadata: ::Array[String]
+
+      # _@return_ — Keys of parameter to filter
+      attr_accessor filter_parameters: ::Array[String]
+
+      # _@return_ — Request session data keys to filter
+      attr_accessor filter_session_data: ::Array[String]
+
+      # _@return_ — Ignore traces by action names
+      attr_accessor ignore_actions: ::Array[String]
+
+      # _@return_ — List of errors to not report
+      attr_accessor ignore_errors: ::Array[String]
+
+      # _@return_ — Ignore log messages by substrings
+      attr_accessor ignore_logs: ::Array[String]
+
+      # _@return_ — Ignore traces by namespaces
+      attr_accessor ignore_namespaces: ::Array[String]
+
+      # _@return_ — HTTP request headers to include in error reports
+      attr_accessor request_headers: ::Array[String]
+
+      # _@return_ — CPU count override for metrics collection
+      attr_accessor cpu_count: Float
+    end
   end
 
   # Logger that flushes logs to the AppSignal logging service.
