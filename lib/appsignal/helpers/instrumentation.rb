@@ -102,10 +102,13 @@ module Appsignal
       #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
-      # @yield The block to monitor.
+      # @yield [] The block to monitor.
+      # @yieldreturn [Object] The return value of the block
       # @raise [Exception] Any exception that occurs within the given block is
       #   re-raised by this method.
-      # @return [Object] The value of the given block is returned.
+      # @return [Object, nil] The value of the given block is returned.
+      #   Returns `nil` if there already is a transaction active and no block
+      #   was given.
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/background-jobs.html
       #   Monitor guide
@@ -165,10 +168,11 @@ module Appsignal
       #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
-      # @yield The block to monitor.
+      # @yield [] The block to monitor.
+      # @yieldreturn [Object] The return value of the block
       # @raise [Exception] Any exception that occurs within the given block is
       #   re-raised by this method.
-      # @return [Object] The value of the given block is returned.
+      # @return [Object, nil] The value of the given block is returned.
       #
       # @see monitor
       def monitor_and_stop(action:, namespace: nil, &block)
@@ -862,8 +866,10 @@ module Appsignal
       #   # Only the "my_event.my_group" instrumentation event is reported.
       #
       # @since 3.10.0
-      # @yield block of code that shouldn't be instrumented.
-      # @return [Object] Returns the return value of the block.
+      # @yield [] block of code that shouldn't be instrumented.
+      # @yieldreturn [Object] The return value of the block
+      # @return [Object, nil] Returns the return value of the block.
+      #   Return nil if the block returns nil or no block is given.
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html
       #   Ignore instrumentation guide

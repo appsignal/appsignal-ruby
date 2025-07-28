@@ -156,8 +156,8 @@ module Appsignal
   # _@see_ `https://docs.appsignal.com/ruby/configuration.html` — Configuration guide
   # 
   # _@see_ `https://docs.appsignal.com/ruby/configuration/options.html` — Configuration options
-  sig { params(env_param: T.nilable(T.any(String, Symbol)), root_path: T.nilable(String)).void }
-  def self.configure(env_param = nil, root_path: nil); end
+  sig { params(env_param: T.nilable(T.any(String, Symbol)), root_path: T.nilable(String), blk: T.proc.params(config_dsl: Appsignal::Config::ConfigDSL).void).void }
+  def self.configure(env_param = nil, root_path: nil, &blk); end
 
   sig { void }
   def self.forked; end
@@ -302,6 +302,8 @@ module Appsignal
   # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
   # 
   # _@return_ — The value of the given block is returned.
+  # Returns `nil` if there already is a transaction active and no block
+  # was given.
   # 
   # Instrument a block of code
   # ```ruby
@@ -389,8 +391,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol))).returns(Object) }
-  def self.monitor(action:, namespace: nil); end
+  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+  def self.monitor(action:, namespace: nil, &blk); end
 
   # Instrument a block of code and stop AppSignal.
   # 
@@ -407,7 +409,7 @@ module Appsignal
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.untyped).returns(Object) }
+  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
   def self.monitor_and_stop(action:, namespace: nil, &block); end
 
   # Send an error to AppSignal regardless of the context.
@@ -979,6 +981,7 @@ module Appsignal
   # - Errors and metrics are reported from within this block.
   # 
   # _@return_ — Returns the return value of the block.
+  # Return nil if the block returns nil or no block is given.
   # 
   # ```ruby
   # Appsignal.instrument "my_event.my_group" do
@@ -994,8 +997,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html` — Ignore instrumentation guide
-  sig { returns(Object) }
-  def self.ignore_instrumentation_events; end
+  sig { params(blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+  def self.ignore_instrumentation_events(&blk); end
 
   # {Appsignal::Demo} is a way to send demonstration / test samples for a
   # exception and a performance issue.
@@ -1268,6 +1271,8 @@ module Appsignal
     # 
     # _@param_ `identifier` — identifier of the cron check-in to report.
     # 
+    # _@return_ — returns the block value.
+    # 
     # Send a cron check-in
     # ```ruby
     # Appsignal::CheckIn.cron("send_invoices")
@@ -1281,8 +1286,8 @@ module Appsignal
     # ```
     # 
     # _@see_ `https://docs.appsignal.com/check-ins/cron`
-    sig { params(identifier: String).void }
-    def self.cron(identifier); end
+    sig { params(identifier: String, blk: T.proc.returns(Object)).returns(Object) }
+    def self.cron(identifier, &blk); end
 
     # Track heartbeat check-ins.
     # 
@@ -1607,6 +1612,8 @@ module Appsignal
       # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
       # 
       # _@return_ — The value of the given block is returned.
+      # Returns `nil` if there already is a transaction active and no block
+      # was given.
       # 
       # Instrument a block of code
       # ```ruby
@@ -1694,8 +1701,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol))).returns(Object) }
-      def monitor(action:, namespace: nil); end
+      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+      def monitor(action:, namespace: nil, &blk); end
 
       # Instrument a block of code and stop AppSignal.
       # 
@@ -1712,7 +1719,7 @@ module Appsignal
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.untyped).returns(Object) }
+      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
       def monitor_and_stop(action:, namespace: nil, &block); end
 
       # Send an error to AppSignal regardless of the context.
@@ -2284,6 +2291,7 @@ module Appsignal
       # - Errors and metrics are reported from within this block.
       # 
       # _@return_ — Returns the return value of the block.
+      # Return nil if the block returns nil or no block is given.
       # 
       # ```ruby
       # Appsignal.instrument "my_event.my_group" do
@@ -2299,8 +2307,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html` — Ignore instrumentation guide
-      sig { returns(Object) }
-      def ignore_instrumentation_events; end
+      sig { params(blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+      def ignore_instrumentation_events(&blk); end
     end
   end
 
