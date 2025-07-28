@@ -113,7 +113,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/background-jobs.html
       #   Monitor guide
       def monitor(action:, namespace: nil)
-        return yield unless active?
+        return yield unless Appsignal.active?
 
         has_parent_transaction = Appsignal::Transaction.current?
         if has_parent_transaction
@@ -227,10 +227,11 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
       def send_error(error, &block)
-        return unless active?
+        return unless Appsignal.active?
 
         unless error.is_a?(Exception)
-          internal_logger.error "Appsignal.send_error: Cannot send error. " \
+          Appsignal.internal_logger.error "Appsignal.send_error: " \
+            "Cannot send error. " \
             "The given value is not an exception: #{error.inspect}"
           return
         end
@@ -293,11 +294,12 @@ module Appsignal
       #   Exception handling guide
       def set_error(exception)
         unless exception.is_a?(Exception)
-          internal_logger.error "Appsignal.set_error: Cannot set error. " \
+          Appsignal.internal_logger.error "Appsignal.set_error: " \
+            "Cannot set error. " \
             "The given value is not an exception: #{exception.inspect}"
           return
         end
-        return if !active? || !Appsignal::Transaction.current?
+        return if !Appsignal.active? || !Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
         transaction.set_error(exception)
@@ -356,11 +358,12 @@ module Appsignal
       #   Exception handling guide
       def report_error(exception, &block)
         unless exception.is_a?(Exception)
-          internal_logger.error "Appsignal.report_error: Cannot add error. " \
+          Appsignal.internal_logger.error "Appsignal.report_error: " \
+            "Cannot add error. " \
             "The given value is not an exception: #{exception.inspect}"
           return
         end
-        return unless active?
+        return unless Appsignal.active?
 
         has_parent_transaction = Appsignal::Transaction.current?
         transaction =
@@ -398,7 +401,7 @@ module Appsignal
       # @param action [String]
       # @return [void]
       def set_action(action)
-        return if !active? ||
+        return if !Appsignal.active? ||
           !Appsignal::Transaction.current? ||
           action.nil?
 
@@ -440,7 +443,7 @@ module Appsignal
       # @see https://docs.appsignal.com/guides/namespaces.html
       #   Grouping with namespaces guide
       def set_namespace(namespace)
-        return if !active? ||
+        return if !Appsignal.active? ||
           !Appsignal::Transaction.current? ||
           namespace.nil?
 
@@ -488,7 +491,7 @@ module Appsignal
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       def add_custom_data(data)
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -533,7 +536,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/tagging.html
       #   Tagging guide
       def add_tags(tags = {})
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -591,7 +594,7 @@ module Appsignal
       # @see https://docs.appsignal.com/guides/filter-data/filter-parameters.html
       #   Parameter filtering guide
       def add_params(params = nil, &block)
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -616,7 +619,7 @@ module Appsignal
       # @see Transaction#set_empty_params!
       # @see Transaction#set_params_if_nil
       def set_empty_params!
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -657,7 +660,7 @@ module Appsignal
       # @see https://docs.appsignal.com/guides/filter-data/filter-session-data.html
       #   Session data filtering guide
       def add_session_data(session_data = nil, &block)
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -699,7 +702,7 @@ module Appsignal
       # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html
       #   Request headers filtering guide
       def add_headers(headers = nil, &block)
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -747,7 +750,7 @@ module Appsignal
       # @see https://docs.appsignal.com/ruby/instrumentation/breadcrumbs.html
       #   Breadcrumb reference
       def add_breadcrumb(category, action, message = "", metadata = {}, time = Time.now.utc)
-        return unless active?
+        return unless Appsignal.active?
         return unless Appsignal::Transaction.current?
 
         transaction = Appsignal::Transaction.current
@@ -875,7 +878,7 @@ module Appsignal
       #   Ignore instrumentation guide
       def ignore_instrumentation_events
         Appsignal::Transaction.current&.pause!
-        yield
+        yield if block_given?
       ensure
         Appsignal::Transaction.current&.resume!
       end
