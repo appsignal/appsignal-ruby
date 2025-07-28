@@ -183,8 +183,10 @@ module Appsignal
                 logger.debug("Gathering minutely metrics with '#{name}' probe")
                 probe.call
               rescue => ex
-                logger.error "Error in minutely probe '#{name}': #{ex}"
-                logger.debug ex.backtrace.join("\n")
+                logger.error(
+                  "Error in minutely probe '#{name}': #{ex.class}: #{ex.message}\n" \
+                    "#{ex.backtrace.join("\n")}"
+                )
               end
             end
             end_time = Time.now
@@ -257,8 +259,10 @@ module Appsignal
         end
       rescue => error
         logger = Appsignal.internal_logger
-        logger.error "Error while initializing minutely probe '#{name}': #{error}"
-        logger.debug error.backtrace.join("\n")
+        logger.error(
+          "Error while initializing minutely probe '#{name}': #{error.class}: #{error.message}\n" \
+            "#{error.backtrace.join("\n")}"
+        )
       end
 
       def uninitialize_probe(name)

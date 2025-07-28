@@ -67,14 +67,15 @@ describe Appsignal::Hooks do
     expect(Appsignal::Hooks.hooks[:mock_error_hook]).to be_instance_of(MockErrorHook)
     expect(Appsignal::Hooks.hooks[:mock_error_hook].installed?).to be_falsy
 
-    expect(Appsignal.internal_logger).to receive(:error)
-      .with("Error while installing mock_error_hook hook: error").once
     expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
       expect(message).to eq("Installing mock_error_hook hook")
     end
-    expect(Appsignal.internal_logger).to receive(:debug).ordered do |message|
-      # Start of the error backtrace as debug log
-      expect(message).to start_with(File.expand_path("../../..", __dir__))
+    expect(Appsignal.internal_logger).to receive(:error).ordered do |message|
+      # Error message with class, message and backtrace in single line
+      expect(message).to start_with(
+        "Error while installing mock_error_hook hook: RuntimeError: error\n"
+      )
+      expect(message).to include(project_dir)
     end
 
     Appsignal::Hooks.load_hooks
