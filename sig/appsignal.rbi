@@ -156,8 +156,8 @@ module Appsignal
   # _@see_ `https://docs.appsignal.com/ruby/configuration.html` — Configuration guide
   # 
   # _@see_ `https://docs.appsignal.com/ruby/configuration/options.html` — Configuration options
-  sig { params(env_param: T.nilable(T.any(String, Symbol)), root_path: T.nilable(String)).void }
-  def self.configure(env_param = nil, root_path: nil); end
+  sig { params(env_param: T.nilable(T.any(String, Symbol)), root_path: T.nilable(String), blk: T.proc.params(config_dsl: Appsignal::Config::ConfigDSL).void).void }
+  def self.configure(env_param = nil, root_path: nil, &blk); end
 
   sig { void }
   def self.forked; end
@@ -302,6 +302,8 @@ module Appsignal
   # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
   # 
   # _@return_ — The value of the given block is returned.
+  # Returns `nil` if there already is a transaction active and no block
+  # was given.
   # 
   # Instrument a block of code
   # ```ruby
@@ -389,8 +391,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol))).returns(Object) }
-  def self.monitor(action:, namespace: nil); end
+  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+  def self.monitor(action:, namespace: nil, &blk); end
 
   # Instrument a block of code and stop AppSignal.
   # 
@@ -407,7 +409,7 @@ module Appsignal
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.untyped).returns(Object) }
+  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
   def self.monitor_and_stop(action:, namespace: nil, &block); end
 
   # Send an error to AppSignal regardless of the context.
@@ -979,6 +981,7 @@ module Appsignal
   # - Errors and metrics are reported from within this block.
   # 
   # _@return_ — Returns the return value of the block.
+  # Return nil if the block returns nil or no block is given.
   # 
   # ```ruby
   # Appsignal.instrument "my_event.my_group" do
@@ -994,8 +997,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html` — Ignore instrumentation guide
-  sig { returns(Object) }
-  def self.ignore_instrumentation_events; end
+  sig { params(blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+  def self.ignore_instrumentation_events(&blk); end
 
   # {Appsignal::Demo} is a way to send demonstration / test samples for a
   # exception and a performance issue.
@@ -1040,6 +1043,257 @@ module Appsignal
 
     sig { returns(T::Boolean) }
     def yml_config_file?; end
+
+    # Configuration DSL for use in configuration blocks.
+    # 
+    # This class provides a Domain Specific Language for configuring AppSignal
+    # within the `Appsignal.configure` block. It provides getter and setter
+    # methods for all configuration options.
+    # 
+    # @example Using the configuration DSL
+    #   Appsignal.configure do |config|
+    #     config.name = "My App"
+    #     config.active = true
+    #     config.push_api_key = "your-api-key"
+    #     config.ignore_actions = ["StatusController#health"]
+    #   end
+    # 
+    # @see AppSignal Ruby gem configuration
+    #   https://docs.appsignal.com/ruby/configuration.html
+    class ConfigDSL
+      # Returns the application's root path.
+      # 
+      # _@return_ — The root path of the application
+      sig { returns(String) }
+      def app_path; end
+
+      # Returns the current environment name.
+      # 
+      # _@return_ — The environment name (e.g., "production", "development")
+      sig { returns(String) }
+      def env; end
+
+      # Returns true if the given environment name matches the loaded
+      # environment name.
+      # 
+      # _@param_ `given_env`
+      sig { params(given_env: T.any(String, Symbol)).returns(T.any(TrueClass, FalseClass)) }
+      def env?(given_env); end
+
+      # Activates AppSignal if the current environment matches any of the given environments.
+      # 
+      # _@param_ `envs` — List of environment names to activate for
+      # 
+      # _@return_ — true if AppSignal was activated, false otherwise
+      # 
+      # Activate for production and staging
+      # ```ruby
+      # config.activate_if_environment(:production, :staging)
+      # ```
+      sig { params(envs: T::Array[T.any(String, Symbol)]).returns(T::Boolean) }
+      def activate_if_environment(*envs); end
+
+      # _@return_ — Error reporting mode for ActiveJob ("all", "discard" or "none")
+      sig { returns(String) }
+      attr_accessor :activejob_report_errors
+
+      # _@return_ — The application name
+      sig { returns(String) }
+      attr_accessor :name
+
+      # _@return_ — The host to the agent binds to for its HTTP server
+      sig { returns(String) }
+      attr_accessor :bind_address
+
+      # _@return_ — Path to the CA certificate file
+      sig { returns(String) }
+      attr_accessor :ca_file_path
+
+      # _@return_ — Override for the detected hostname
+      sig { returns(String) }
+      attr_accessor :hostname
+
+      # _@return_ — Role of the host for grouping in metrics
+      sig { returns(String) }
+      attr_accessor :host_role
+
+      # _@return_ — HTTP proxy URL
+      sig { returns(String) }
+      attr_accessor :http_proxy
+
+      # _@return_ — Log destination ("file" or "stdout")
+      sig { returns(String) }
+      attr_accessor :log
+
+      # _@return_ — AppSignal internal logger
+      # log level ("error", "warn", "info", "debug", "trace")
+      sig { returns(String) }
+      attr_accessor :log_level
+
+      # _@return_ — Path to the log directory
+      sig { returns(String) }
+      attr_accessor :log_path
+
+      # _@return_ — Endpoint for log transmission
+      sig { returns(String) }
+      attr_accessor :logging_endpoint
+
+      # _@return_ — Push API endpoint URL
+      sig { returns(String) }
+      attr_accessor :endpoint
+
+      # _@return_ — AppSignal Push API key
+      sig { returns(String) }
+      attr_accessor :push_api_key
+
+      # _@return_ — Error reporting mode for Sidekiq ("all", "discard" or "none")
+      sig { returns(String) }
+      attr_accessor :sidekiq_report_errors
+
+      # _@return_ — Port for StatsD metrics
+      sig { returns(String) }
+      attr_accessor :statsd_port
+
+      # _@return_ — Port for Nginx metrics collection
+      sig { returns(String) }
+      attr_accessor :nginx_port
+
+      # _@return_ — Override for the agent working directory
+      sig { returns(String) }
+      attr_accessor :working_directory_path
+
+      # _@return_ — Application revision identifier
+      sig { returns(String) }
+      attr_accessor :revision
+
+      # _@return_ — Activate AppSignal for the loaded environment
+      sig { returns(T::Boolean) }
+      attr_accessor :active
+
+      # _@return_ — Configure whether allocation tracking is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_allocation_tracking
+
+      # _@return_ — Configure whether the at_exit reporter is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_at_exit_reporter
+
+      # _@return_ — Configure whether host metrics collection is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_host_metrics
+
+      # _@return_ — Configure whether minutely probes are enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_minutely_probes
+
+      # _@return_ — Configure whether the StatsD metrics endpoint on the agent is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_statsd
+
+      # _@return_ — Configure whether the agent's NGINX metrics endpoint is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_nginx_metrics
+
+      # _@return_ — Configure whether the GVL global timer instrumentationis enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_gvl_global_timer
+
+      # _@return_ — Configure whether GVL waiting threads instrumentation is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_gvl_waiting_threads
+
+      # _@return_ — Configure whether Rails error reporter integration is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_rails_error_reporter
+
+      # _@return_ — Configure whether Rake performance instrumentation is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_rake_performance_instrumentation
+
+      # _@return_ — Configure whether files created by AppSignal should be world accessible
+      sig { returns(T::Boolean) }
+      attr_accessor :files_world_accessible
+
+      # _@return_ — Configure whether to instrument requests made with the http.rb gem
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_http_rb
+
+      # _@return_ — Configure whether to instrument requests made with Net::HTTP
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_net_http
+
+      # _@return_ — Configure whether to instrument the Ownership gem
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_ownership
+
+      # _@return_ — Configure whether to instrument Redis queries
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_redis
+
+      # _@return_ — Configure whether to instrument Sequel queries
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_sequel
+
+      # _@return_ — Configure whether the Ownership gem instrumentation should set namespace
+      sig { returns(T::Boolean) }
+      attr_accessor :ownership_set_namespace
+
+      # _@return_ — Configure whether the application is running in a container
+      sig { returns(T::Boolean) }
+      attr_accessor :running_in_container
+
+      # _@return_ — Configure whether to send environment metadata
+      sig { returns(T::Boolean) }
+      attr_accessor :send_environment_metadata
+
+      # _@return_ — Configure whether to send request parameters
+      sig { returns(T::Boolean) }
+      attr_accessor :send_params
+
+      # _@return_ — Configure whether to send request session data
+      sig { returns(T::Boolean) }
+      attr_accessor :send_session_data
+
+      # _@return_ — Custom DNS servers to use
+      sig { returns(T::Array[String]) }
+      attr_accessor :dns_servers
+
+      # _@return_ — Metadata keys to filter from trace data
+      sig { returns(T::Array[String]) }
+      attr_accessor :filter_metadata
+
+      # _@return_ — Keys of parameter to filter
+      sig { returns(T::Array[String]) }
+      attr_accessor :filter_parameters
+
+      # _@return_ — Request session data keys to filter
+      sig { returns(T::Array[String]) }
+      attr_accessor :filter_session_data
+
+      # _@return_ — Ignore traces by action names
+      sig { returns(T::Array[String]) }
+      attr_accessor :ignore_actions
+
+      # _@return_ — List of errors to not report
+      sig { returns(T::Array[String]) }
+      attr_accessor :ignore_errors
+
+      # _@return_ — Ignore log messages by substrings
+      sig { returns(T::Array[String]) }
+      attr_accessor :ignore_logs
+
+      # _@return_ — Ignore traces by namespaces
+      sig { returns(T::Array[String]) }
+      attr_accessor :ignore_namespaces
+
+      # _@return_ — HTTP request headers to include in error reports
+      sig { returns(T::Array[String]) }
+      attr_accessor :request_headers
+
+      # _@return_ — CPU count override for metrics collection
+      sig { returns(Float) }
+      attr_accessor :cpu_count
+    end
   end
 
   # Logger that flushes logs to the AppSignal logging service.
@@ -1268,6 +1522,8 @@ module Appsignal
     # 
     # _@param_ `identifier` — identifier of the cron check-in to report.
     # 
+    # _@return_ — returns the block value.
+    # 
     # Send a cron check-in
     # ```ruby
     # Appsignal::CheckIn.cron("send_invoices")
@@ -1281,8 +1537,8 @@ module Appsignal
     # ```
     # 
     # _@see_ `https://docs.appsignal.com/check-ins/cron`
-    sig { params(identifier: String).void }
-    def self.cron(identifier); end
+    sig { params(identifier: String, blk: T.proc.returns(Object)).returns(Object) }
+    def self.cron(identifier, &blk); end
 
     # Track heartbeat check-ins.
     # 
@@ -1318,7 +1574,7 @@ module Appsignal
     # active.
     # 
     # _@see_ `.current?`
-    sig { returns(T::Boolean) }
+    sig { returns(T.any(Appsignal::Transaction, Appsignal::Transaction::NilTransaction)) }
     def self.current; end
 
     # Returns if any transaction is currently active or not. A
@@ -1607,6 +1863,8 @@ module Appsignal
       # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
       # 
       # _@return_ — The value of the given block is returned.
+      # Returns `nil` if there already is a transaction active and no block
+      # was given.
       # 
       # Instrument a block of code
       # ```ruby
@@ -1694,8 +1952,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol))).returns(Object) }
-      def monitor(action:, namespace: nil); end
+      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+      def monitor(action:, namespace: nil, &blk); end
 
       # Instrument a block of code and stop AppSignal.
       # 
@@ -1712,7 +1970,7 @@ module Appsignal
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.untyped).returns(Object) }
+      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
       def monitor_and_stop(action:, namespace: nil, &block); end
 
       # Send an error to AppSignal regardless of the context.
@@ -2284,6 +2542,7 @@ module Appsignal
       # - Errors and metrics are reported from within this block.
       # 
       # _@return_ — Returns the return value of the block.
+      # Return nil if the block returns nil or no block is given.
       # 
       # ```ruby
       # Appsignal.instrument "my_event.my_group" do
@@ -2299,8 +2558,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/ignore-instrumentation.html` — Ignore instrumentation guide
-      sig { returns(Object) }
-      def ignore_instrumentation_events; end
+      sig { params(blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
+      def ignore_instrumentation_events(&blk); end
     end
   end
 

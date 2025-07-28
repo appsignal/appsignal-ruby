@@ -38,8 +38,9 @@ module Appsignal
       #   end
       #
       # @param identifier [String] identifier of the cron check-in to report.
-      # @yield the block to monitor.
-      # @return [void]
+      # @yield [] the block to monitor.
+      # @yieldreturn [Object] The return value of the block
+      # @return [Object] returns the block value.
       # @since 3.13.0
       # @see https://docs.appsignal.com/check-ins/cron
       def cron(identifier)

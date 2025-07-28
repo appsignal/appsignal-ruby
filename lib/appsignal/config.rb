@@ -666,19 +666,43 @@ module Appsignal
       end
     end
 
-    # @!visibility private
+    # Configuration DSL for use in configuration blocks.
+    #
+    # This class provides a Domain Specific Language for configuring AppSignal
+    # within the `Appsignal.configure` block. It provides getter and setter
+    # methods for all configuration options.
+    #
+    # @example Using the configuration DSL
+    #   Appsignal.configure do |config|
+    #     config.name = "My App"
+    #     config.active = true
+    #     config.push_api_key = "your-api-key"
+    #     config.ignore_actions = ["StatusController#health"]
+    #   end
+    #
+    # @see AppSignal Ruby gem configuration
+    #   https://docs.appsignal.com/ruby/configuration.html
     class ConfigDSL
+      # @!visibility private
+      # @return [Hash] Hash containing the DSL option values
       attr_reader :dsl_options
 
+      # @!visibility private
       def initialize(config)
         @config = config
         @dsl_options = {}
       end
 
+      # Returns the application's root path.
+      #
+      # @return [String] The root path of the application
       def app_path
         @config.root_path
       end
 
+      # Returns the current environment name.
+      #
+      # @return [String] The environment name (e.g., "production", "development")
       def env
         @config.env
       end
@@ -692,10 +716,58 @@ module Appsignal
         env == given_env.to_s
       end
 
+      # Activates AppSignal if the current environment matches any of the given environments.
+      #
+      # @param envs [Array<String, Symbol>] List of environment names to activate for
+      # @return [Boolean] true if AppSignal was activated, false otherwise
+      #
+      # @example Activate for production and staging
+      #   config.activate_if_environment(:production, :staging)
       def activate_if_environment(*envs)
         self.active = envs.map(&:to_s).include?(env)
       end
 
+      # @!group String Configuration Options
+
+      # @!attribute [rw] activejob_report_errors
+      #   @return [String] Error reporting mode for ActiveJob ("all", "discard" or "none")
+      # @!attribute [rw] name
+      #   @return [String] The application name
+      # @!attribute [rw] bind_address
+      #   @return [String] The host to the agent binds to for its HTTP server
+      # @!attribute [rw] ca_file_path
+      #   @return [String] Path to the CA certificate file
+      # @!attribute [rw] hostname
+      #   @return [String] Override for the detected hostname
+      # @!attribute [rw] host_role
+      #   @return [String] Role of the host for grouping in metrics
+      # @!attribute [rw] http_proxy
+      #   @return [String] HTTP proxy URL
+      # @!attribute [rw] log
+      #   @return [String] Log destination ("file" or "stdout")
+      # @!attribute [rw] log_level
+      #   @return [String] AppSignal internal logger
+      #     log level ("error", "warn", "info", "debug", "trace")
+      # @!attribute [rw] log_path
+      #   @return [String] Path to the log directory
+      # @!attribute [rw] logging_endpoint
+      #   @return [String] Endpoint for log transmission
+      # @!attribute [rw] endpoint
+      #   @return [String] Push API endpoint URL
+      # @!attribute [rw] push_api_key
+      #   @return [String] AppSignal Push API key
+      # @!attribute [rw] sidekiq_report_errors
+      #   @return [String] Error reporting mode for Sidekiq ("all", "discard" or "none")
+      # @!attribute [rw] statsd_port
+      #   @return [String] Port for StatsD metrics
+      # @!attribute [rw] nginx_port
+      #   @return [String] Port for Nginx metrics collection
+      # @!attribute [rw] working_directory_path
+      #   @return [String] Override for the agent working directory
+      # @!attribute [rw] revision
+      #   @return [String] Application revision identifier
+
+      # @!endgroup
       Appsignal::Config::STRING_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
@@ -706,6 +778,54 @@ module Appsignal
         end
       end
 
+      # @!group Boolean Configuration Options
+
+      # @!attribute [rw] active
+      #   @return [Boolean] Activate AppSignal for the loaded environment
+      # @!attribute [rw] enable_allocation_tracking
+      #   @return [Boolean] Configure whether allocation tracking is enabled
+      # @!attribute [rw] enable_at_exit_reporter
+      #   @return [Boolean] Configure whether the at_exit reporter is enabled
+      # @!attribute [rw] enable_host_metrics
+      #   @return [Boolean] Configure whether host metrics collection is enabled
+      # @!attribute [rw] enable_minutely_probes
+      #   @return [Boolean] Configure whether minutely probes are enabled
+      # @!attribute [rw] enable_statsd
+      #   @return [Boolean] Configure whether the StatsD metrics endpoint on the agent is enabled
+      # @!attribute [rw] enable_nginx_metrics
+      #   @return [Boolean] Configure whether the agent's NGINX metrics endpoint is enabled
+      # @!attribute [rw] enable_gvl_global_timer
+      #   @return [Boolean] Configure whether the GVL global timer instrumentationis enabled
+      # @!attribute [rw] enable_gvl_waiting_threads
+      #   @return [Boolean] Configure whether GVL waiting threads instrumentation is enabled
+      # @!attribute [rw] enable_rails_error_reporter
+      #   @return [Boolean] Configure whether Rails error reporter integration is enabled
+      # @!attribute [rw] enable_rake_performance_instrumentation
+      #   @return [Boolean] Configure whether Rake performance instrumentation is enabled
+      # @!attribute [rw] files_world_accessible
+      #   @return [Boolean] Configure whether files created by AppSignal should be world accessible
+      # @!attribute [rw] instrument_http_rb
+      #   @return [Boolean] Configure whether to instrument requests made with the http.rb gem
+      # @!attribute [rw] instrument_net_http
+      #   @return [Boolean] Configure whether to instrument requests made with Net::HTTP
+      # @!attribute [rw] instrument_ownership
+      #   @return [Boolean] Configure whether to instrument the Ownership gem
+      # @!attribute [rw] instrument_redis
+      #   @return [Boolean] Configure whether to instrument Redis queries
+      # @!attribute [rw] instrument_sequel
+      #   @return [Boolean] Configure whether to instrument Sequel queries
+      # @!attribute [rw] ownership_set_namespace
+      #   @return [Boolean] Configure whether the Ownership gem instrumentation should set namespace
+      # @!attribute [rw] running_in_container
+      #   @return [Boolean] Configure whether the application is running in a container
+      # @!attribute [rw] send_environment_metadata
+      #   @return [Boolean] Configure whether to send environment metadata
+      # @!attribute [rw] send_params
+      #   @return [Boolean] Configure whether to send request parameters
+      # @!attribute [rw] send_session_data
+      #   @return [Boolean] Configure whether to send request session data
+
+      # @!endgroup
       Appsignal::Config::BOOLEAN_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
@@ -716,6 +836,28 @@ module Appsignal
         end
       end
 
+      # @!group Array Configuration Options
+
+      # @!attribute [rw] dns_servers
+      #   @return [Array<String>] Custom DNS servers to use
+      # @!attribute [rw] filter_metadata
+      #   @return [Array<String>] Metadata keys to filter from trace data
+      # @!attribute [rw] filter_parameters
+      #   @return [Array<String>] Keys of parameter to filter
+      # @!attribute [rw] filter_session_data
+      #   @return [Array<String>] Request session data keys to filter
+      # @!attribute [rw] ignore_actions
+      #   @return [Array<String>] Ignore traces by action names
+      # @!attribute [rw] ignore_errors
+      #   @return [Array<String>] List of errors to not report
+      # @!attribute [rw] ignore_logs
+      #   @return [Array<String>] Ignore log messages by substrings
+      # @!attribute [rw] ignore_namespaces
+      #   @return [Array<String>] Ignore traces by namespaces
+      # @!attribute [rw] request_headers
+      #   @return [Array<String>] HTTP request headers to include in error reports
+
+      # @!endgroup
       Appsignal::Config::ARRAY_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)
@@ -726,6 +868,12 @@ module Appsignal
         end
       end
 
+      # @!group Float Configuration Options
+
+      # @!attribute [rw] cpu_count
+      #   @return [Float] CPU count override for metrics collection
+
+      # @!endgroup
       Appsignal::Config::FLOAT_OPTIONS.each_key do |option|
         define_method(option) do
           fetch_option(option)

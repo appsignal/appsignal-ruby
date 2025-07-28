@@ -109,7 +109,7 @@ module Appsignal
       # active.
       #
       # @see .current?
-      # @return [Boolean]
+      # @return [Appsignal::Transaction, Appsignal::Transaction::NilTransaction]
       def current
         Thread.current[:appsignal_transaction] || NilTransaction.new
       end

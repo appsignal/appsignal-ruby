@@ -308,7 +308,8 @@ module Appsignal
     # @param env_param [String, Symbol] The environment to load.
     # @param root_path [String] The path to look the `config/appsignal.yml` config file in.
     #   Defaults to the current working directory.
-    # @yield [Config] Gives the {Config} instance to the block.
+    # @yield [config_dsl] Gives the configuration DSL instance to the block.
+    # @yieldparam config_dsl [Appsignal::Config::ConfigDSL] The configuration DSL object
     # @return [void]
     # @see config
     # @see Config
