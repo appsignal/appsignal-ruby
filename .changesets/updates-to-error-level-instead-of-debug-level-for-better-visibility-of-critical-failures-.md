@@ -3,4 +3,4 @@ bump: patch
 type: change
 ---
 
-Use error level for displaying backtraces instead for better visibility of critical failures.
+When an error occurs while initializing AppSignal or when running a probe, use the error log level to log the error's backtrace.
