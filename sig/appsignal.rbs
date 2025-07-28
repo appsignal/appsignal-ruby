@@ -1251,7 +1251,7 @@ module Appsignal
     # active.
     # 
     # _@see_ `.current?`
-    def self.current: () -> bool
+    def self.current: () -> (Appsignal::Transaction | Appsignal::Transaction::NilTransaction)
 
     # Returns if any transaction is currently active or not. A
     # {NilTransaction} is not considered an active transaction.

@@ -1323,7 +1323,7 @@ module Appsignal
     # active.
     # 
     # _@see_ `.current?`
-    sig { returns(T::Boolean) }
+    sig { returns(T.any(Appsignal::Transaction, Appsignal::Transaction::NilTransaction)) }
     def self.current; end
 
     # Returns if any transaction is currently active or not. A
