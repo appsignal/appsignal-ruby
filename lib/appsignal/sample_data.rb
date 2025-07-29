@@ -35,12 +35,18 @@ module Appsignal
           else
             block_or_value
           end
+
         unless accepted_type?(new_value)
           log_unsupported_data_type(new_value)
           next
         end
 
-        value = merge_values(value, new_value)
+        # Before trying to merge values, convert them to Ruby classes
+        # This way we don't need to check if something is of a type often
+        value_new = convert_to_ruby_class(new_value)
+        value_original = convert_to_ruby_class(value)
+
+        value = merge_values(value_original, value_new)
         new_value
       end
 
@@ -79,15 +85,19 @@ module Appsignal
       end
     end
 
+    def mergable?(value_original, value_new)
+      value_new.instance_of?(value_original.class)
+    end
+
     def merge_values(value_original, value_new)
-      unless value_new.instance_of?(value_original.class)
-        unless value_original == UNSET_VALUE
-          Appsignal.internal_logger.warn(
-            "The sample data '#{@key}' changed type from " \
-              "'#{value_original.class}' to '#{value_new.class}'. " \
-              "These types can not be merged. Using new '#{value_new.class}' type."
-          )
-        end
+      return value_new if value_original == UNSET_VALUE
+
+      unless mergable?(value_original, value_new)
+        Appsignal.internal_logger.warn(
+          "The sample data '#{@key}' changed type from " \
+            "'#{value_original.class}' to '#{value_new.class}'. " \
+            "These types can not be merged. Using new '#{value_new.class}' type."
+        )
         return value_new
       end
 
@@ -98,6 +108,17 @@ module Appsignal
         value_original + value_new
       else
         value_new
+      end
+    end
+
+    # Convert any subclasses of Hash to a Ruby Hash class, so we don't have to
+    # account for the original value being a value that's not a pure Hash or
+    # Array object.
+    def convert_to_ruby_class(value)
+      if value.is_a? Hash
+        value.to_h
+      else
+        value
       end
     end
 
