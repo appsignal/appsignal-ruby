@@ -9,6 +9,9 @@ clean:
     - "bundle exec rake extension:clean"
     - "rm -rf pkg"
 build:
+  pre: |
+    script/generate_signatures
+    git add sig/*
   command: "bundle exec rake build:all"
 publish:
   gem_files_dir: pkg/
