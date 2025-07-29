@@ -142,6 +142,21 @@ rake extension:install
 cd ext && rake
 ```
 
+### Type signatures
+
+The Ruby gem includes type signatures for better IDE support and static analysis:
+
+- `sig/appsignal.rbi` - Sorbet type signatures
+- `sig/appsignal.rbs` - RBS type signatures
+
+To regenerate type signatures from YARD documentation:
+
+```bash
+script/generate_signatures
+```
+
+This script uses [sord](https://github.com/AaronC81/sord) to generate both RBI and RBS files from YARD comments in the source code.
+
 ## File organization
 
 ### Configuration files
