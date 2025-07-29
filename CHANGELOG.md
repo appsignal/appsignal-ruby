@@ -1,5 +1,38 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.6.0
+
+_Published on 2025-07-29._
+
+### Added
+
+- Add Sorbet and RBS type signatures for the gem's public APIs. If your editor supports showing type signatures, they will now show up in for the AppSignal Ruby gem. (minor [9ed372fc](https://github.com/appsignal/appsignal-ruby/commit/9ed372fc7819eff2fd73aa287b4d0018e008d0da), [4c9118f7](https://github.com/appsignal/appsignal-ruby/commit/4c9118f7bf36475146ed9309e0511c176058efb6))
+- When a deployment tool (Capistrano, Hatchbox.io) provides the `REVISION` file in the deployed application, AppSignal will now use that to set the revision config. (minor [34e4aee5](https://github.com/appsignal/appsignal-ruby/commit/34e4aee5f3010f122501470bad06e02e7aef7ef2), [4c9118f7](https://github.com/appsignal/appsignal-ruby/commit/4c9118f7bf36475146ed9309e0511c176058efb6))
+
+### Changed
+
+- Improve the YARD documentation for public APIs. This will make the documentation clearer and more useful for developers using the Ruby gem. Private APIs have been hidden from the generated output. (patch [989dc495](https://github.com/appsignal/appsignal-ruby/commit/989dc495242a656278186e47b68e41fa785dbae2), [4c9118f7](https://github.com/appsignal/appsignal-ruby/commit/4c9118f7bf36475146ed9309e0511c176058efb6))
+- When an error occurs while initializing AppSignal or when running a probe, use the error log level to log the error's backtrace. (patch [390f4489](https://github.com/appsignal/appsignal-ruby/commit/390f448991e52904d993c2139f4b11642003c345), [385b0262](https://github.com/appsignal/appsignal-ruby/commit/385b0262d1001108bdac07a95b85e90bf6ccde5c), [178bafc2](https://github.com/appsignal/appsignal-ruby/commit/178bafc23888e38b42f58fbaa17b1c28af060f5e))
+
+### Fixed
+
+- When a Hash-like value (such as `ActiveSupport::HashWithIndifferentAccess` or `Sinatra::IndifferentHash`) is passed to a transaction helper (such as `add_params`, `add_session_data`, ...) it is now converted to a Ruby `Hash` before setting it as the value or merging it with the existing value. This allows Hash-like objects to be merged, instead of logging a warning and only storing the new value.
+
+  ```ruby
+  # Example scenario
+  Appsignal.add_params(:key1 => { :abc => "value" })
+  Appsignal.add_params(ActiveSupport::HashWithIndifferentAccess.new(:key2 => { :def => "value" }))
+
+  # Params
+  {
+    :key1 => { :abc => "value" },
+    # Keys from HashWithIndifferentAccess are stored as Strings
+    "key2" => { "def" => "value" }
+  }
+  ```
+
+  (patch [3155cd48](https://github.com/appsignal/appsignal-ruby/commit/3155cd482e1c708d276eb6eb9db158e551116511), [b201e359](https://github.com/appsignal/appsignal-ruby/commit/b201e35917d61f916b59f1809d99bb196d5f1a1c))
+
 ## 4.5.17
 
 _Published on 2025-07-01._
