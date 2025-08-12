@@ -644,7 +644,7 @@ require "appsignal/rack/abstract_middleware"
 require "appsignal/rack/instrumentation_middleware"
 require "appsignal/rack/event_handler"
 require "appsignal/rack/event_middleware"
-require "appsignal/integrations/railtie" if defined?(::Rails)
+require "appsignal/integrations/railtie" if defined?(::Rails::Railtie)
 require "appsignal/transaction"
 require "appsignal/version"
 require "appsignal/transmitter"
