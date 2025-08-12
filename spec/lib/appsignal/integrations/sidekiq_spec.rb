@@ -355,6 +355,12 @@ if DependencyHelper.sidekiq_present?
           .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
         expect(Appsignal).to receive(:increment_counter)
           .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+        expect(Appsignal).to receive(:increment_counter)
+          .with("sidekiq_worker_job_count", 1,
+            { :worker => "TestClass#perform", :queue => "default", :status => :failed })
+        expect(Appsignal).to receive(:increment_counter)
+          .with("sidekiq_worker_job_count", 1,
+            { :worker => "TestClass#perform", :queue => "default", :status => :processed })
         expect do
           perform_sidekiq_job { raise error, "uh oh" }
         end.to raise_error(error)
@@ -409,6 +415,9 @@ if DependencyHelper.sidekiq_present?
         # https://github.com/rspec/rspec-mocks/issues/1460
         expect(Appsignal).to receive(:increment_counter)
           .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+        expect(Appsignal).to receive(:increment_counter)
+          .with("sidekiq_worker_job_count", 1,
+            { :worker => "TestClass#perform", :queue => "default", :status => :processed })
         perform_sidekiq_job
 
         expect(transaction).to have_id
