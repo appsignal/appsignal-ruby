@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-Appsignal.internal_logger.debug("Loading Rails (#{Rails.version}) integration")
-
 require "appsignal/utils/rails_helper"
 require "appsignal/rack/rails_instrumentation"
 
 module Appsignal
   module Integrations
+    rails_version = Rails.respond_to?(:version) ? Rails.version : "unknown"
+    Appsignal.internal_logger.debug("Loading Rails (#{rails_version}) integration")
+
     # @!visibility private
     class Railtie < ::Rails::Railtie
       config.appsignal = ActiveSupport::OrderedOptions.new
