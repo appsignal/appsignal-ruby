@@ -3,9 +3,4 @@ bump: minor
 type: add
 ---
 
-Add Sidekiq worker-level success and failure metrics.
-
-### Added
-- New Sidekiq worker metrics to track job success and failure rates per worker class
-    - `worker_job_count` - Counter incremented when a job runs.
-    - The metric is tagged with `:worker`, `queue` and `status`.
+Add Sidekiq worker-level job status metric: `worker_job_count`. This new counter metric's `status` tag will either be `success` or `failure` depending on if it the job encountered an error or not.
