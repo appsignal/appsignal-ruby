@@ -108,7 +108,6 @@ module Appsignal
             :worker => action_name,
             :queue => queue,
             :status => job_status
-
         end
       end
 
