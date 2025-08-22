@@ -66,8 +66,9 @@ module Appsignal
 
       def call(_worker, item, _queue, &block)
         job_status = nil
+        action_name = formatted_action_name(item)
         transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
-        transaction.set_action_if_nil(formatted_action_name(item))
+        transaction.set_action_if_nil(action_name)
 
         formatted_metadata(item).each do |key, value|
           transaction.set_metadata key, value
@@ -93,14 +94,24 @@ module Appsignal
           Appsignal::Transaction.complete_current! unless exception
 
           queue = item["queue"] || "unknown"
+
           if job_status
             increment_counter "queue_job_count", 1,
+              :queue => queue,
+              :status => job_status
+            increment_counter "worker_job_count", 1,
+              :worker => action_name,
               :queue => queue,
               :status => job_status
           end
           increment_counter "queue_job_count", 1,
             :queue => queue,
             :status => :processed
+          increment_counter "worker_job_count", 1,
+            :worker => action_name,
+            :queue => queue,
+            :status => :processed
+
         end
       end
 
