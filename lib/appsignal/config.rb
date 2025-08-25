@@ -112,6 +112,7 @@ module Appsignal
       :ignore_errors => [],
       :ignore_logs => [],
       :ignore_namespaces => [],
+      :instrument_code_ownership => true,
       :instrument_http_rb => true,
       :instrument_net_http => true,
       :instrument_ownership => true,
@@ -186,6 +187,7 @@ module Appsignal
       :enable_rake_performance_instrumentation =>
         "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION",
       :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
+      :instrument_code_ownership => "APPSIGNAL_INSTRUMENT_CODE_OWNERSHIP",
       :instrument_http_rb => "APPSIGNAL_INSTRUMENT_HTTP_RB",
       :instrument_net_http => "APPSIGNAL_INSTRUMENT_NET_HTTP",
       :instrument_ownership => "APPSIGNAL_INSTRUMENT_OWNERSHIP",

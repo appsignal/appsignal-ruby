@@ -1,3 +1,4 @@
 [submodule "spec/integration/diagnose"]
 	path = spec/integration/diagnose
-	url = git@github.com:appsignal/diagnose_tests.git
+	url = git@github.com:lipskis/diagnose_tests.git
+	branch = code-ownership-config

@@ -80,6 +80,7 @@ module Appsignal
       activerecord
       capistrano
       celluloid
+      code_ownership
       data_mapper
       delayed_job
       dry-monitor
