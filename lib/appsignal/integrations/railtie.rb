@@ -28,11 +28,19 @@ module Appsignal
 
       def self.on_load(app)
         load_default_config
-        Appsignal::Integrations::Railtie.add_instrumentation_middleware(app)
 
-        return unless app.config.appsignal.start_at == :on_load
+        Appsignal::Integrations::Railtie.start if app.config.appsignal.start_at == :on_load
 
-        Appsignal::Integrations::Railtie.start
+        # If AppSignal is supposed to start after initialization, we need to add the
+        # instrumentation middleware now, even if AppSignal may not actually start
+        # later, because the middleware stack will be frozen after initialization.
+        #
+        # Otherwise, only add the instrumentation middleware if AppSignal did actually
+        # start before this point, preventing the middleware from being added when
+        # AppSignal is not active.
+        return unless app.config.appsignal.start_at == :after_initialize || Appsignal.started?
+
+        add_instrumentation_middleware(app)
       end
 
       def self.after_initialize(app)
@@ -52,7 +60,9 @@ module Appsignal
 
       def self.start
         Appsignal.start
-        initialize_error_reporter if Appsignal.started?
+        return unless Appsignal.started?
+
+        initialize_error_reporter
       end
 
       def self.add_instrumentation_middleware(app)
