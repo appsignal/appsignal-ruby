@@ -16,7 +16,7 @@ module Appsignal
       def on_start
         require "appsignal/rack/sinatra_instrumentation"
 
-        ::Sinatra::Base.use(::Rack::Events, [Appsignal::Rack::EventHandler.new])
+        ::Sinatra::Base.use(Appsignal::Rack::EventMiddleware)
         ::Sinatra::Base.use(Appsignal::Rack::SinatraBaseInstrumentation)
       end
     end

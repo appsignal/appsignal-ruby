@@ -19,7 +19,7 @@ if DependencyHelper.sinatra_present?
 
       def uninstall_sinatra_integration
         expected_middleware = [
-          Rack::Events,
+          Appsignal::Rack::EventMiddleware,
           Appsignal::Rack::SinatraBaseInstrumentation
         ]
         Sinatra::Base.instance_variable_get(:@middleware).delete_if do |middleware|
@@ -33,7 +33,7 @@ if DependencyHelper.sinatra_present?
 
         middlewares = Sinatra::Base.middleware.to_a
         expect(middlewares).to include(
-          [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+          [Appsignal::Rack::EventMiddleware, [], nil]
         )
         expect(middlewares).to include(
           [Appsignal::Rack::SinatraBaseInstrumentation, [], nil]

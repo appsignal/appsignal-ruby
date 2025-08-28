@@ -119,9 +119,9 @@ if DependencyHelper.rails_present?
 
           middleware_stack = resolve_middleware(app)
           expect_middleware_to_match(
-            middleware_stack.find { |m| m.klass == ::Rack::Events },
-            ::Rack::Events,
-            [[instance_of(Appsignal::Rack::EventHandler)]]
+            middleware_stack.find { |m| m.klass == Appsignal::Rack::EventMiddleware },
+            Appsignal::Rack::EventMiddleware,
+            []
           )
           expect_middleware_to_match(
             middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },
@@ -199,7 +199,9 @@ if DependencyHelper.rails_present?
           initialize_railtie(event)
 
           middleware_stack = resolve_middleware(app)
-          expect(middleware_stack.find { |m| m.klass == ::Rack::Events }).to be_nil
+          expect(middleware_stack.find do |m|
+                   m.klass == Appsignal::Rack::EventMiddleware
+                 end).to be_nil
           expect(middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation })
             .to be_nil
         end
@@ -237,9 +239,9 @@ if DependencyHelper.rails_present?
 
           middleware_stack = resolve_middleware(app)
           expect_middleware_to_match(
-            middleware_stack.find { |m| m.klass == ::Rack::Events },
-            ::Rack::Events,
-            [[instance_of(Appsignal::Rack::EventHandler)]]
+            middleware_stack.find { |m| m.klass == Appsignal::Rack::EventMiddleware },
+            Appsignal::Rack::EventMiddleware,
+            []
           )
           expect_middleware_to_match(
             middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },

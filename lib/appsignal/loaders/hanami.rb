@@ -21,10 +21,7 @@ module Appsignal
         require "appsignal/rack/hanami_middleware"
 
         hanami_app_config = ::Hanami.app.config
-        hanami_app_config.middleware.use(
-          ::Rack::Events,
-          [Appsignal::Rack::EventHandler.new]
-        )
+        hanami_app_config.middleware.use(Appsignal::Rack::EventMiddleware)
         hanami_app_config.middleware.use(Appsignal::Rack::HanamiMiddleware)
 
         return unless Gem::Version.new(Hanami::VERSION) < Gem::Version.new("2.2.0")

@@ -68,8 +68,7 @@ module Appsignal
       def self.add_instrumentation_middleware(app)
         app.middleware.insert(
           0,
-          ::Rack::Events,
-          [Appsignal::Rack::EventHandler.new]
+          ::Appsignal::Rack::EventMiddleware
         )
         app.middleware.insert_after(
           ActionDispatch::DebugExceptions,
