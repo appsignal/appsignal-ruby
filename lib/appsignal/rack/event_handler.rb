@@ -2,10 +2,11 @@
 
 module Appsignal
   module Rack
-    # Instrumentation middleware using Rack's Events module.
+    # Instrumentation event handler for `Rack::Events`.
     #
-    # We recommend using this in combination with the
-    # {InstrumentationMiddleware}.
+    # Using this middleware directly with `Rack::Events` is deprecated.
+    # We recommend using {EventMiddleware} instead, which is compatible with
+    # streaming bodies, in combination with the {InstrumentationMiddleware}.
     #
     # This middleware will report the response status code as the
     # `response_status` tag on the sample. It will also report the response
@@ -38,10 +39,12 @@ module Appsignal
 
       # @api private
       attr_reader :id
+      attr_writer :using_appsignal_rack_events_middleware
 
       # @api private
       def initialize
         @id = SecureRandom.uuid
+        @using_appsignal_rack_events_middleware = false
       end
 
       # @api private
@@ -51,6 +54,8 @@ module Appsignal
 
       # @api private
       def on_start(request, _response)
+        emit_warning_once
+
         return unless Appsignal.active?
 
         event_handler = self
@@ -151,6 +156,19 @@ module Appsignal
         else
           namespace
         end
+      end
+
+      def emit_warning_once
+        return if @using_appsignal_rack_events_middleware
+
+        Appsignal.internal_logger.warn <<~MSG
+          Rack::Events is not compatible with streaming bodies. Using `Appsignal::Rack::EventHandler`#{" "}
+          with `Rack::Events` will break streaming responses in your application and is deprecated.#{" "}
+          To silence this warning, use `Appsignal::Rack::EventMiddleware` instead, which is compatible#{" "}
+          with streaming bodies.#{" "}
+          See https://docs.appsignal.com/ruby/integrations/rack.html for more information.
+        MSG
+        @using_appsignal_rack_events_middleware = true
       end
     end
   end

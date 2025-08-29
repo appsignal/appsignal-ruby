@@ -27,8 +27,8 @@ module Appsignal
     #   require "appsignal"
     #   # Configure and start AppSignal
     #
-    #   # Add the EventHandler first
-    #   use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
+    #   # Add the EventMiddleware first
+    #   use Appsignal::Rack::EventMiddleware
     #   # Add the instrumentation middleware second
     #   use Appsignal::Rack::InstrumentationMiddleware
     #

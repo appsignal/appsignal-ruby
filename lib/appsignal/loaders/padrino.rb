@@ -18,7 +18,7 @@ module Appsignal
         Padrino::Application.prepend(Appsignal::Loaders::PadrinoLoader::PadrinoIntegration)
 
         Padrino.before_load do
-          Padrino.use ::Rack::Events, [Appsignal::Rack::EventHandler.new]
+          Padrino.use Appsignal::Rack::EventMiddleware
           Padrino.use Appsignal::Rack::SinatraBaseInstrumentation,
             :instrument_event_name => "process_action.padrino"
         end

@@ -30,14 +30,15 @@ if DependencyHelper.hanami_present?
         middleware_stack = ::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX]
         middleware_stack.delete_if do |middleware|
           middleware.first == Appsignal::Rack::HanamiMiddleware ||
-            middleware.first == Rack::Events
+            middleware.first == Appsignal::Rack::EventMiddleware
         end
       end
 
       it "adds the instrumentation middleware to Sinatra::Base" do
         expect(::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX])
           .to include(
-            [Rack::Events, [[kind_of(Appsignal::Rack::EventHandler)]], *hanami_middleware_options],
+            [Appsignal::Rack::EventMiddleware, [],
+             *hanami_middleware_options],
             [Appsignal::Rack::HanamiMiddleware, [], *hanami_middleware_options]
           )
       end

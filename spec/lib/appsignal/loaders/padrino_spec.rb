@@ -26,7 +26,7 @@ if DependencyHelper.padrino_present?
 
       def uninstall_padrino_integration
         expected_middleware = [
-          Rack::Events,
+          Appsignal::Rack::EventMiddleware,
           Appsignal::Rack::SinatraBaseInstrumentation
         ]
         Padrino.middleware.delete_if do |middleware|
@@ -42,7 +42,7 @@ if DependencyHelper.padrino_present?
 
         middlewares = Padrino.middleware
         expect(middlewares).to include(
-          [Rack::Events, [[instance_of(Appsignal::Rack::EventHandler)]], nil]
+          [Appsignal::Rack::EventMiddleware, [], nil]
         )
         expect(middlewares).to include(
           [
