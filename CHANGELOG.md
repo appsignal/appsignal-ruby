@@ -1,5 +1,34 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.0
+
+_Published on 2025-08-29._
+
+### Added
+
+- Add Sidekiq worker-level job status metric: `worker_job_count`. This new counter metric's `status` tag will be `processed` for each job that's processed and reports another counter with the `failure` status if the job encountered an error. (minor [fa9859af](https://github.com/appsignal/appsignal-ruby/commit/fa9859af3c82c34201cf68c80858596014fe9c34))
+
+### Fixed
+
+- Support streaming bodies. AppSignal's Rack instrumentation now supports streaming bodies in responses, such as those produced by `Async::Cable`. This fixes an issue where AppSignal's Rack instrumentation would cause requests with streaming bodies to crash.
+
+  If you use our Rack instrumentation through a framework that is automatically instrumented by AppSignal, such as Rails, Hanami, Padrino or Sinatra, this fix is applied automatically.
+
+  If your application instruments Rack manually, you must remove the following line from your application's initial setup:
+
+  ```ruby
+  use Rack::Events, [Appsignal::Rack::EventHandler.new]
+  ```
+
+  And replace it with the following line:
+
+  ```ruby
+  use Appsignal::Rack::EventMiddleware
+  ```
+
+  (minor [c94315e3](https://github.com/appsignal/appsignal-ruby/commit/c94315e337801347620826504a24f44ba3ee2b53))
+- Avoid instrumenting Rails when AppSignal is not active. If AppSignal is configured to start when the Rails application loads, rather than after it has initialised, only add Rails' instrumentation middlewares if AppSignal was actually started. (patch [0239a2c3](https://github.com/appsignal/appsignal-ruby/commit/0239a2c32d0835af00a4659cc7533465ef17f451))
+
 ## 4.6.0
 
 _Published on 2025-07-29._
