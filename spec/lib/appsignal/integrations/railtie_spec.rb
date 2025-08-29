@@ -3,12 +3,27 @@ if DependencyHelper.rails_present?
 
   describe Appsignal::Integrations::Railtie do
     include RailsHelper
+
     before { Appsignal.clear! }
     after { clear_rails_error_reporter! }
 
     def expect_middleware_to_match(middleware, klass, args)
+      raise "expect_middleware_to_match: No middleware found!" unless middleware
+
       expect(middleware.klass).to eq(klass)
       expect(middleware.args).to match(args)
+    end
+
+    # Resolve the middleware proxy stack for the given app
+    # This needs to be done manually as the middleware stack on the
+    # MyApp::Application constant is frozen after the initial initialization. We need
+    # to test if the operations we do in the Railtie are added by resolving it.
+    def resolve_middleware(app)
+      middleware_stack = ActionDispatch::MiddlewareStack.new
+      # Add this middleware, because our Railtie relies on it being present
+      middleware_stack.use ActionDispatch::DebugExceptions
+      app.middleware.merge_into(middleware_stack)
+      middleware_stack
     end
 
     describe "on Rails app initialize!" do
@@ -102,14 +117,14 @@ if DependencyHelper.rails_present?
         it "adds the middleware" do
           initialize_railtie(event)
 
-          middlewares = MyApp::Application.middleware
+          middleware_stack = resolve_middleware(app)
           expect_middleware_to_match(
-            middlewares.find { |m| m.klass == ::Rack::Events },
+            middleware_stack.find { |m| m.klass == ::Rack::Events },
             ::Rack::Events,
             [[instance_of(Appsignal::Rack::EventHandler)]]
           )
           expect_middleware_to_match(
-            middlewares.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },
+            middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },
             Appsignal::Rack::RailsInstrumentation,
             []
           )
@@ -178,6 +193,16 @@ if DependencyHelper.rails_present?
             expect(Appsignal.config).to be_nil
           end
         end
+
+        it "doesn't add the middleware when AppSignal is not started" do
+          allow(Appsignal).to receive(:started?).and_return(false)
+          initialize_railtie(event)
+
+          middleware_stack = resolve_middleware(app)
+          expect(middleware_stack.find { |m| m.klass == ::Rack::Events }).to be_nil
+          expect(middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation })
+            .to be_nil
+        end
       end
 
       describe ".after_initialize" do
@@ -204,6 +229,23 @@ if DependencyHelper.rails_present?
             expect(Appsignal.started?).to be_falsy
             expect(Appsignal.config).to be_nil
           end
+        end
+
+        it "adds the middleware even when AppSignal is not started" do
+          allow(Appsignal).to receive(:started?).and_return(false)
+          initialize_railtie(event)
+
+          middleware_stack = resolve_middleware(app)
+          expect_middleware_to_match(
+            middleware_stack.find { |m| m.klass == ::Rack::Events },
+            ::Rack::Events,
+            [[instance_of(Appsignal::Rack::EventHandler)]]
+          )
+          expect_middleware_to_match(
+            middleware_stack.find { |m| m.klass == Appsignal::Rack::RailsInstrumentation },
+            Appsignal::Rack::RailsInstrumentation,
+            []
+          )
         end
       end
     end
