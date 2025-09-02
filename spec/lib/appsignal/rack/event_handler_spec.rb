@@ -19,9 +19,10 @@ describe Appsignal::Rack::EventHandler do
       # Silence deprecation warning about using it with the `Rack::Events`
       # middleware, instead of through `Appsignal::Rack::EventMiddleware`,
       # which uses `Appsignal::Rack::Events` under the hood.
-      handler.using_appsignal_rack_events_middleware = true
+      handler.using_appsignal_event_middleware = true
     end
   end
+  let(:rack_app) { lambda { |_env| [200, {}, ["Hello world!"]] } }
   let(:appsignal_env) { :default }
   before do
     start_agent(:env => appsignal_env)
@@ -38,12 +39,14 @@ describe Appsignal::Rack::EventHandler do
   end
 
   context "when used with ::Rack::Events" do
+    # Do not silence the deprecation warning about using it with the
+    # `Rack::Events` middleware.
     let(:event_handler_instance) { described_class.new }
 
     it "emits a warning about using it with Rack::Events" do
-      ::Rack::Events.new(nil, [event_handler_instance])
+      events = ::Rack::Events.new(rack_app, [event_handler_instance])
 
-      logs = capture_logs { on_start }
+      logs = capture_logs { events.call({}) }
       expect(logs).to contains_log(
         :warn,
         /Rack::Events is not compatible with streaming bodies./
@@ -51,13 +54,13 @@ describe Appsignal::Rack::EventHandler do
     end
   end
 
-  context "When used with ::Appsignal::Rack::Events" do
-    let(:event_handler_instance) { described_class.new }
-
+  context "When used via ::Appsignal::Rack::EventMiddleware" do
     it "does not emit a warning about using it with Rack::Events" do
-      Appsignal::Rack::Events.new(nil, [event_handler_instance])
+      expect(described_class).to receive(:new).and_call_original
 
-      logs = capture_logs { on_start }
+      event_middleware = Appsignal::Rack::EventMiddleware.new(rack_app)
+
+      logs = capture_logs { event_middleware.call({}) }
       expect(logs).to_not contains_log(
         :warn,
         /Rack::Events is not compatible with streaming bodies./

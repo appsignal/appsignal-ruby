@@ -39,12 +39,12 @@ module Appsignal
 
       # @api private
       attr_reader :id
-      attr_writer :using_appsignal_rack_events_middleware
+      attr_writer :using_appsignal_event_middleware
 
       # @api private
       def initialize
         @id = SecureRandom.uuid
-        @using_appsignal_rack_events_middleware = false
+        @using_appsignal_event_middleware = false
       end
 
       # @api private
@@ -159,7 +159,7 @@ module Appsignal
       end
 
       def emit_warning_once
-        return if @using_appsignal_rack_events_middleware
+        return if @using_appsignal_event_middleware
 
         Appsignal.internal_logger.warn <<~MSG
           Rack::Events is not compatible with streaming bodies. Using `Appsignal::Rack::EventHandler`#{" "}
@@ -168,7 +168,7 @@ module Appsignal
           with streaming bodies.#{" "}
           See https://docs.appsignal.com/ruby/integrations/rack.html for more information.
         MSG
-        @using_appsignal_rack_events_middleware = true
+        @using_appsignal_event_middleware = true
       end
     end
   end
