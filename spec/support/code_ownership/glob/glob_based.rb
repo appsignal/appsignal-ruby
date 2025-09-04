@@ -1,0 +1,1 @@
+raise "glob-based ownership"
