@@ -1,5 +1,35 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.1
+
+_Published on 2025-09-19._
+
+### Added
+
+- Add support for the [CodeOwnership](https://github.com/rubyatscale/code_ownership) gem, which allows engineering teams to declare ownership of specific parts of a codebase.
+
+  When an error is reported, the AppSignal gem will tag the transaction with the owner of the file that caused the error.
+
+  This feature is enabled by default. To disable it, set the [`instrument_code_ownership` configuration option](https://docs.appsignal.com/ruby/configuration/options.html#option-instrument_code_ownership) to `false`.
+
+  (patch [40860cb2](https://github.com/appsignal/appsignal-ruby/commit/40860cb2c64f9f0ff93dbba253514ddb06020a5f))
+
+### Changed
+
+- Do not patch `Rack::Events` when using recent Rack versions. When using versions 3.2.1 and above,
+  which contain a fix for the bug where using `Rack::Events` breaks requests with streaming bodies,
+  use `Rack::Events` directly, instead of our patched subclass.
+
+  (patch [64f5b0ee](https://github.com/appsignal/appsignal-ruby/commit/64f5b0eebe07e6937a6397ab089d2b6bf1bd234d))
+
+### Fixed
+
+- Fix Rails version detection when only one of Rails's gems is present.
+
+  This prevents loading errors when non-Rails code defines a Rails constant without the full Rails framework.
+
+  (patch [f06952d9](https://github.com/appsignal/appsignal-ruby/commit/f06952d9ac095bb9c7455acd8ab563beb84d8433))
+
 ## 4.7.0
 
 _Published on 2025-08-29._
