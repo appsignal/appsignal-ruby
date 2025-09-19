@@ -1,0 +1,3 @@
+owned_globs:
+  - '{app,config}/**/*.{rb,rake,js,jsx,ts,tsx}'
+js_package_paths: []

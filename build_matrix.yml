@@ -131,6 +131,7 @@ matrix:
     - gem: "no_dependencies"
     - gem: "capistrano2"
     - gem: "capistrano3"
+    - gem: "code_ownership"
     - gem: "dry-monitor"
       only:
         ruby:
