@@ -4,7 +4,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[My tag] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -19,7 +19,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -41,7 +41,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -53,7 +53,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[Request tag] [Second tag] [Second message] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -66,7 +66,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[Third message] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -82,7 +82,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -98,7 +98,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[Request tag] [Second tag] [First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -109,7 +109,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[First message] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -120,7 +120,7 @@ shared_examples "tagged logging" do
       .with(
         "group",
         3,
-        0,
+        3,
         "[My tag] [My other tag] Some message\n",
         Appsignal::Utils::Data.generate({})
       )
@@ -141,7 +141,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "[My tag] [My other tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -154,7 +154,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "[My tag] [My other tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -166,7 +166,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -179,7 +179,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -192,7 +192,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -210,7 +210,7 @@ shared_examples "tagged logging" do
           .with(
             "group",
             3,
-            0,
+            3,
             "[My tag] [My other tag] [My third tag] Some message\n",
             Appsignal::Utils::Data.generate({})
           )
@@ -241,17 +241,17 @@ describe Appsignal::Logger do
   describe "#add" do
     it "should log with a level and message" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message")
     end
 
     it "calls #to_s on the message if it is not a string" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "123", instance_of(Appsignal::Extension::Data))
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "{}", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "{}", instance_of(Appsignal::Extension::Data))
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "[]", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "[]", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, 123)
       logger.add(::Logger::INFO, {})
       logger.add(::Logger::INFO, [])
@@ -259,7 +259,7 @@ describe Appsignal::Logger do
 
     it "should log with a block" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO) do
         "Log message"
       end
@@ -267,7 +267,7 @@ describe Appsignal::Logger do
 
     it "should log with a level, message and group" do
       expect(Appsignal::Extension).to receive(:log)
-        .with("other_group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("other_group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
       logger.add(::Logger::INFO, "Log message", "other_group")
     end
 
@@ -280,12 +280,32 @@ describe Appsignal::Logger do
       end
     end
 
-    context "with a format set" do
+    context "with the PLAINTEXT format set" do
+      let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::PLAINTEXT) }
+
+      it "should log and pass the format flag" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        logger.add(::Logger::INFO, "Log message")
+      end
+    end
+
+    context "with the logfmt format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::LOGFMT) }
 
       it "should log and pass the format flag" do
         expect(Appsignal::Extension).to receive(:log)
           .with("group", 3, 1, "Log message", instance_of(Appsignal::Extension::Data))
+        logger.add(::Logger::INFO, "Log message")
+      end
+    end
+
+    context "with the JSON format set" do
+      let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::JSON) }
+
+      it "should log and pass the format flag" do
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 2, "Log message", instance_of(Appsignal::Extension::Data))
         logger.add(::Logger::INFO, "Log message")
       end
     end
@@ -301,7 +321,7 @@ describe Appsignal::Logger do
         expect(Appsignal::Extension).to receive(:log).with(
           "other_group",
           3,
-          0,
+          3,
           "formatted: 'Log message'",
           instance_of(Appsignal::Extension::Data)
         )
@@ -313,7 +333,7 @@ describe Appsignal::Logger do
           .with(
             "group",
             3,
-            0,
+            3,
             a_string_starting_with("formatted:"),
             instance_of(Appsignal::Extension::Data)
           )
@@ -325,7 +345,7 @@ describe Appsignal::Logger do
 
       it "calls #to_s on the formatter output if it is not a string" do
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 0, "123", instance_of(Appsignal::Extension::Data))
+          .with("group", 3, 3, "123", instance_of(Appsignal::Extension::Data))
         expect(logger.formatter).to receive(:call)
           .with(::Logger::INFO, instance_of(Time), "group", 123)
           .and_return(123)
@@ -349,11 +369,11 @@ describe Appsignal::Logger do
     it "silences the logger up to, but not including, the given level" do
       # Expect not to receive info
       expect(Appsignal::Extension).not_to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
 
       # Expect to receive warn
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 5, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 5, 3, "Log message", instance_of(Appsignal::Extension::Data))
 
       logger.silence(::Logger::WARN) do
         logger.info("Log message")
@@ -365,13 +385,13 @@ describe Appsignal::Logger do
       # Expect not to receive debug, info or warn
       [2, 3, 5].each do |severity|
         expect(Appsignal::Extension).not_to receive(:log)
-          .with("group", severity, 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", severity, 3, "Log message", instance_of(Appsignal::Extension::Data))
       end
 
       # Expect to receive error and fatal
       [6, 7].each do |severity|
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", severity, 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", severity, 3, "Log message", instance_of(Appsignal::Extension::Data))
       end
 
       logger.silence do
@@ -392,7 +412,7 @@ describe Appsignal::Logger do
       logger.broadcast_to(other_logger)
 
       expect(Appsignal::Extension).to receive(:log)
-        .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
 
       logger.info("Log message")
 
@@ -445,7 +465,7 @@ describe Appsignal::Logger do
             .with(
               "group",
               3,
-              0,
+              3,
               "[My tag] [My other tag] Some message\n",
               Appsignal::Utils::Data.generate({})
             )
@@ -476,7 +496,7 @@ describe Appsignal::Logger do
           .with({ :attribute => "value" })
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", extension_level, 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", extension_level, 3, "Log message", instance_of(Appsignal::Extension::Data))
 
         logger.send(method, "Log message", :attribute => "value")
       end
@@ -486,7 +506,7 @@ describe Appsignal::Logger do
           .with({})
           .and_call_original
         expect(Appsignal::Extension).to receive(:log)
-          .with("group", extension_level, 0, "Log message", instance_of(Appsignal::Extension::Data))
+          .with("group", extension_level, 3, "Log message", instance_of(Appsignal::Extension::Data))
 
         logger.send(method) do
           "Log message"
@@ -530,7 +550,7 @@ describe Appsignal::Logger do
             .with(
               "group",
               extension_level,
-              0,
+              3,
               "formatted: 2023-01-01T00:00:00.000000 'Log message'",
               instance_of(Appsignal::Extension::Data)
             )
@@ -544,7 +564,7 @@ describe Appsignal::Logger do
     it "adds the attributes when a message is logged" do
       logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
 
-      expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
+      expect(Appsignal::Extension).to receive(:log).with("group", 6, 3, "Some message",
         Appsignal::Utils::Data.generate({ :other_key => "other_value", :some_key => "some_value" }))
       logger.error("Some message", { :other_key => "other_value" })
     end
@@ -563,7 +583,7 @@ describe Appsignal::Logger do
     it "prioritises line attributes over default attributes" do
       logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
 
-      expect(Appsignal::Extension).to receive(:log).with("group", 6, 0, "Some message",
+      expect(Appsignal::Extension).to receive(:log).with("group", 6, 3, "Some message",
         Appsignal::Utils::Data.generate({ :some_key => "other_value" }))
 
       logger.error("Some message", { :some_key => "other_value" })
@@ -572,7 +592,7 @@ describe Appsignal::Logger do
     it "adds the default attributes when #add is called" do
       logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
 
-      expect(Appsignal::Extension).to receive(:log).with("group", 3, 0, "Log message",
+      expect(Appsignal::Extension).to receive(:log).with("group", 3, 3, "Log message",
         Appsignal::Utils::Data.generate({ :some_key => "some_value" }))
       logger.add(::Logger::INFO, "Log message")
     end
@@ -592,7 +612,7 @@ describe Appsignal::Logger do
         .with(
           "group",
           6,
-          0,
+          3,
           a_string_matching(/ExampleStandardError: oh no! \(.*logger_spec.rb.*\)/),
           instance_of(Appsignal::Extension::Data)
         )
@@ -606,7 +626,7 @@ describe Appsignal::Logger do
         .with(
           "group",
           3,
-          0,
+          3,
           "hello there",
           instance_of(Appsignal::Extension::Data)
         )
@@ -630,7 +650,7 @@ describe Appsignal::Logger do
         expect(Appsignal::Extension).to receive(:log).with(
           "group",
           3,
-          0,
+          3,
           "formatted: 'Log message'",
           instance_of(Appsignal::Extension::Data)
         )
