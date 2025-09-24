@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.2
+
+_Published on 2025-09-24._
+
+### Fixed
+
+- Fix sample data not being reported for JRuby applications. Data like tags, parameters, session data, etc. would not be set if a transaction was sampled. (patch [1cd9ea24](https://github.com/appsignal/appsignal-ruby/commit/1cd9ea248943496780a3ca0fdb2fb4482282f9ba))
+
 ## 4.7.1
 
 _Published on 2025-09-19._
