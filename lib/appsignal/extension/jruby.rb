@@ -128,7 +128,7 @@ module Appsignal
           :void
         attach_function :appsignal_finish_transaction,
           [:pointer, :long],
-          :void
+          :bool
         attach_function :appsignal_complete_transaction,
           [:pointer],
           :void
