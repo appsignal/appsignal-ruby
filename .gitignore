@@ -35,3 +35,4 @@ ext/*.so
 ext/*.report
 ext/*.bundle.dSYM
 pkg/
+.yardoc
