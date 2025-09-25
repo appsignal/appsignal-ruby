@@ -53,6 +53,8 @@ module Appsignal
     # @!visibility private
     JSON = 2
     # @!visibility private
+    AUTODETECT = 3
+    # @!visibility private
     SEVERITY_MAP = {
       DEBUG => 2,
       INFO => 3,
@@ -73,7 +75,7 @@ module Appsignal
     # @param format [Integer] Format to use to parse log line attributes.
     # @param attributes [Hash<String, String>] Default attributes for all log lines.
     # @return [void]
-    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {})
+    def initialize(group, level: INFO, format: AUTODETECT, attributes: {})
       raise TypeError, "group must be a string" unless group.is_a? String
 
       @group = group

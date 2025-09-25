@@ -1318,7 +1318,7 @@ module Appsignal
         attributes: T::Hash[String, String]
       ).void
     end
-    def initialize(group, level: INFO, format: PLAINTEXT, attributes: {}); end
+    def initialize(group, level: INFO, format: AUTODETECT, attributes: {}); end
 
     # Sets the formatter for this logger and all broadcasted loggers.
     # 
