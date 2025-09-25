@@ -107,6 +107,13 @@ describe Appsignal::Extension do
         it "should have a complete method" do
           subject.complete
         end
+
+        # This is tested explicitly because most of our tests mock this
+        # function's return value to ensure it's always sampled and we can test
+        # the sampled data
+        it "returns a boolean value from the transaction extension finish function" do
+          expect(subject.finish(0)).to eq(true).or eq(false)
+        end
       end
 
       it "should have a set_gauge method" do
