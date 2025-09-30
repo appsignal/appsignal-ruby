@@ -7,7 +7,7 @@ module Appsignal
       class << self
         def before_complete(transaction, error)
           team = ::CodeOwnership.for_backtrace(error.backtrace)
-          transaction.add_tags(:owner => team.name)
+          transaction.add_tags(:owner => team.name) if team
         rescue => ex
           logger = Appsignal.internal_logger
           logger.error(
