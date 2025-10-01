@@ -109,6 +109,21 @@ if DependencyHelper.code_ownership_present?
 
           expect(transaction).to include_tags("owner" => "GlobTeam")
         end
+
+        it "handles files without owners" do
+          transaction = create_transaction
+
+          logs = capture_logs do
+            load File.join(support_dir, "code_ownership", "no_owner.rb")
+          rescue => error
+            transaction.add_error(error)
+          ensure
+            transaction.complete
+          end
+
+          expect(transaction).to_not include_tags("owner" => anything)
+          expect(logs).to be_empty
+        end
       end
     end
 
