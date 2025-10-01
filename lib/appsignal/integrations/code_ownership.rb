@@ -6,6 +6,8 @@ module Appsignal
     module CodeOwnershipIntegration
       class << self
         def before_complete(transaction, error)
+          return unless error
+
           team = ::CodeOwnership.for_backtrace(error.backtrace)
           transaction.add_tags(:owner => team.name) if team
         rescue => ex
