@@ -1,5 +1,28 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.3
+
+_Published on 2025-10-01._
+
+### Changed
+
+- Detect the log format automatically. We now detect if a log line is in the JSON, Logfmt or plaintext formats. No further config needed when calling our logger, like so:
+
+  ```ruby
+  logger = Appsignal::Logger.new("gruop")
+  logger.info("message")
+  ```
+
+  (patch [999b84b1](https://github.com/appsignal/appsignal-ruby/commit/999b84b149eb0db07e9e225580b550c01a4721e3))
+
+### Fixed
+
+- Handle unowned files in `CodeOwnership` gem integration. AppSignal will not emit an error log line if no Team can be found for a backtrace.
+
+  Thanks @fatkodima for your contribution!
+
+  (patch [78f92ea4](https://github.com/appsignal/appsignal-ruby/commit/78f92ea474a27d9eca62e59db4d35453fc64c3a8))
+
 ## 4.7.2
 
 _Published on 2025-09-24._
