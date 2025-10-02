@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.4
+
+_Published on 2025-10-02._
+
+### Fixed
+
+- Handle transactions without errors in `CodeOwnership` integration. AppSignal will not emit an error log line if a transaction has no error.
+
+  Thanks @fatkodima for your contribution!
+
+  (patch [73472382](https://github.com/appsignal/appsignal-ruby/commit/73472382013c74b182fdb782ac958e27ff724b85))
+
 ## 4.7.3
 
 _Published on 2025-10-01._
