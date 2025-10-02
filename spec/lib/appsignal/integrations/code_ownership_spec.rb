@@ -124,6 +124,17 @@ if DependencyHelper.code_ownership_present?
           expect(transaction).to_not include_tags("owner" => anything)
           expect(logs).to be_empty
         end
+
+        it "handles transactions without errors" do
+          transaction = create_transaction
+
+          logs = capture_logs do
+            transaction.complete
+          end
+
+          expect(transaction).to_not include_tags("owner" => anything)
+          expect(logs).to be_empty
+        end
       end
     end
 
