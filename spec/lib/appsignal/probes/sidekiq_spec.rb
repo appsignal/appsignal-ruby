@@ -8,6 +8,16 @@ describe Appsignal::Probes::SidekiqProbe do
     before do
       start_agent
 
+      # The probe will `require "sidekiq/api"` on initialize, which
+      # as of 8.0.8 expects the `Sidekiq` module to provide a `loader`
+      # method that responds to `run_load_hooks`.
+      class SidekiqLoader
+        class << self
+          def run_load_hooks(name)
+          end
+        end
+      end
+
       class SidekiqStats
         class << self
           attr_reader :calls
@@ -107,6 +117,10 @@ describe Appsignal::Probes::SidekiqProbe do
           end
         end
 
+        def self.loader
+          SidekiqLoader
+        end
+
         Stats = ::SidekiqStats
         Queue = ::SidekiqQueue
       end
@@ -130,6 +144,10 @@ describe Appsignal::Probes::SidekiqProbe do
           def connection
             { :host => "localhost" }
           end
+        end
+
+        def self.loader
+          SidekiqLoader
         end
 
         Stats = ::SidekiqStats
