@@ -93,7 +93,9 @@ module Appsignal
     # @return [Proc]
     def formatter=(formatter)
       super
-      @loggers.each { |logger| logger.formatter = formatter }
+      @loggers.each do |logger|
+        logger.formatter = formatter if logger.respond_to?(:formatter=)
+      end
     end
 
     # We support the various methods in the Ruby

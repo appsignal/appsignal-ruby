@@ -449,6 +449,40 @@ describe Appsignal::Logger do
       expect(other_device.string).to eq("")
     end
 
+    context "with a formatter" do
+      it "sets the formatter on broadcasted loggers that support it" do
+        other_device = StringIO.new
+        other_logger = ::Logger.new(other_device)
+
+        logger.broadcast_to(other_logger)
+
+        formatter = proc do |_level, _timestamp, _appname, message|
+          "custom: #{message}"
+        end
+
+        logger.formatter = formatter
+
+        expect(logger.formatter).to eq(formatter)
+        expect(other_logger.formatter).to eq(formatter)
+      end
+
+      it "does not raise an error when a broadcasted logger does not support formatter=" do
+        logger_without_formatter = double("logger without formatter")
+        allow(logger_without_formatter).to receive(:respond_to?).with(:formatter=).and_return(false)
+        allow(logger_without_formatter).to receive(:add)
+
+        logger.broadcast_to(logger_without_formatter)
+
+        formatter = proc do |_level, _timestamp, _appname, message|
+          "custom: #{message}"
+        end
+
+        # Does not raise an error
+        logger.formatter = formatter
+        expect(logger.formatter).to eq(formatter)
+      end
+    end
+
     if DependencyHelper.rails_present?
       describe "wrapped in ActiveSupport::TaggedLogging" do
         let(:other_stream) { StringIO.new }
