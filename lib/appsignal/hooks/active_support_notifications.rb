@@ -29,6 +29,17 @@ module Appsignal
             parent_integration_module::StartFinishHandlerIntegration,
             ::ActiveSupport::Notifications::Fanout::Handle
           )
+
+          # Rails 8.1+ optimization: when there are no subscribers, build_handle returns
+          # NullHandle instead of Handle. We need to also hook into Instrumenter to
+          # catch these cases.
+          if defined?(::ActiveSupport::Notifications::Fanout::NullHandle)
+            instrumenter = ::ActiveSupport::Notifications::Instrumenter
+            install_module(
+              parent_integration_module::NullHandleAwareInstrumentIntegration,
+              instrumenter
+            )
+          end
         else
           instrumenter = ::ActiveSupport::Notifications::Instrumenter
 
