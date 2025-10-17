@@ -1,5 +1,14 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.7.5
+
+_Published on 2025-10-17._
+
+### Fixed
+
+- Fix an issue with loggers not supporting a formatter on Rails boot. This will prevent the AppSignal logger config from running into an error if the logger configuration is added to `config/application.rb` or one of the environments in `config/environments/`. (patch [45f0ae0e](https://github.com/appsignal/appsignal-ruby/commit/45f0ae0ebee92ea033b32cf0239de18893933362))
+- Do not log long (error) messages to the internal AppSignal log. If an error like `ActionController::BadRequest` occurred and the error message contained the entire file upload, this would grow the `appsignal.log` file quickly if the error happens often. Internal log messages are now truncated by default. (patch [58401e31](https://github.com/appsignal/appsignal-ruby/commit/58401e31fd81dc1fc24c5bafe104a936cf646667))
+
 ## 4.7.4
 
 _Published on 2025-10-02._
