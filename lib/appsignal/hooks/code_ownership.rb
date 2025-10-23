@@ -8,7 +8,6 @@ module Appsignal
 
       def dependencies_present?
         defined?(::CodeOwnership) &&
-          Gem::Specification.find_by_name("code_ownership").version < Gem::Version.new("2.0") &&
           Appsignal.config && Appsignal.config[:instrument_code_ownership]
       end
 
