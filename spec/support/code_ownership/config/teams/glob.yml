@@ -1,0 +1,6 @@
+name: GlobTeam
+github:
+  team: '@AcmeOrg/glob-team'
+owned_globs:
+  - "app/glob/*.rb"
+
