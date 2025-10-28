@@ -16,10 +16,11 @@ if DependencyHelper.code_ownership_present?
       end
 
       it "handles missing config file" do
+        create_app_files
         transaction = create_transaction
 
         logs = capture_logs do
-          load File.join(support_dir, "code_ownership", "file_annotation_based.rb")
+          load File.join(tmp_dir, "app", "file_annotation_based.rb")
         rescue => error
           transaction.add_error(error)
         ensure
@@ -34,11 +35,12 @@ if DependencyHelper.code_ownership_present?
       end
 
       it "handles missing team config files" do
+        create_app_files
         create_config_file
         transaction = create_transaction
 
         logs = capture_logs do
-          load File.join(support_dir, "code_ownership", "file_annotation_based.rb")
+          load File.join(tmp_dir, "app", "file_annotation_based.rb")
         rescue => error
           transaction.add_error(error)
         ensure
@@ -54,6 +56,7 @@ if DependencyHelper.code_ownership_present?
 
       context "and config is set up correctly" do
         before do
+          create_app_files
           create_config_file
           create_team_files
         end
@@ -72,7 +75,7 @@ if DependencyHelper.code_ownership_present?
           transaction = create_transaction
 
           begin
-            load File.join(support_dir, "code_ownership", "file_annotation_based.rb")
+            load File.join(tmp_dir, "app", "file_annotation_based.rb")
           rescue => error
             transaction.add_error(error)
           ensure
@@ -86,7 +89,7 @@ if DependencyHelper.code_ownership_present?
           transaction = create_transaction
 
           begin
-            load File.join(support_dir, "code_ownership", "dir", "directory_based.rb")
+            load File.join(tmp_dir, "app", "dir", "directory_based.rb")
           rescue => error
             transaction.add_error(error)
           ensure
@@ -100,7 +103,7 @@ if DependencyHelper.code_ownership_present?
           transaction = create_transaction
 
           begin
-            load File.join(support_dir, "code_ownership", "glob", "glob_based.rb")
+            load File.join(tmp_dir, "app", "glob", "glob_based.rb")
           rescue => error
             transaction.add_error(error)
           ensure
@@ -114,7 +117,7 @@ if DependencyHelper.code_ownership_present?
           transaction = create_transaction
 
           logs = capture_logs do
-            load File.join(support_dir, "code_ownership", "no_owner.rb")
+            load File.join(tmp_dir, "app", "no_owner.rb")
           rescue => error
             transaction.add_error(error)
           ensure
@@ -140,6 +143,13 @@ if DependencyHelper.code_ownership_present?
 
     private
 
+    def create_app_files
+      FileUtils.cp_r(
+        File.join(support_dir, "code_ownership", "app"),
+        File.join(tmp_dir)
+      )
+    end
+
     def create_config_file
       FileUtils.mkdir(File.join(tmp_dir, "config"))
       FileUtils.copy_file(
@@ -149,23 +159,10 @@ if DependencyHelper.code_ownership_present?
     end
 
     def create_team_files
-      FileUtils.mkdir(File.join(tmp_dir, "config", "teams"))
-
-      %w[file directory].each do |team|
-        FileUtils.copy_file(
-          File.join(support_dir, "code_ownership", "config", "teams", "#{team}.yml"),
-          File.join(tmp_dir, "config", "teams", "#{team}.yml")
-        )
-      end
-
-      glob_team =
-        <<~CONFIG
-          name: GlobTeam
-          owned_globs:
-            - #{File.join(support_dir, "code_ownership", "glob", "*.rb")}
-        CONFIG
-
-      write_file(File.join(tmp_dir, "config", "teams", "glob.yml"), glob_team)
+      FileUtils.cp_r(
+        File.join(support_dir, "code_ownership", "config", "teams"),
+        File.join(tmp_dir, "config")
+      )
     end
   end
 end

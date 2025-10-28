@@ -1,1 +1,3 @@
 name: DirectoryTeam
+github:
+  team: '@AcmeOrg/dir-team'
