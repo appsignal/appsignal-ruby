@@ -228,6 +228,45 @@ module Appsignal
     end
 
     # Adds a logger to broadcast log messages to.
+    #
+    # This implementation of the broadcasting logic exists here in the
+    # AppSignal Ruby gem, because it doesn't work in Rails using tagged logging.
+    # It would log a log line as many times as there are `Rails.logger.tagged`
+    # calls wrapping it.
+    #
+    # For example, this setup with one log line:
+    #
+    # ```ruby
+    # appsignal_logger = Appsignal::Logger.new("rails")
+    # Rails.logger.broadcast_to(appsignal_logger)
+    #
+    # Rails.logger.tagged("my tag") do
+    #   Rails.logger.tagged("my nested tag") do
+    #     Rails.logger.info("Nested log")
+    #   end
+    # end
+    # ```
+    #
+    # Is logged as the following to the AppSignal logger.
+    # Each combination of tags is sent separately.
+    #
+    # ```
+    # Nested log
+    # [my nested tag] Nested log
+    # [my tag] Nested log
+    # [my tag] [my nested tag] Nested log
+    # ```
+    #
+    # Once it's fixed in Rails, it can be removed here.
+    #
+    # Related issues and PRs:
+    #
+    # - https://github.com/rails/rails/issues/46084
+    # - https://github.com/rails/rails/issues/44668
+    # - https://github.com/rails/rails/pull/53105
+    # - https://github.com/rails/rails/pull/49771
+    #
+    #
     # @param logger [Logger] The logger to add to the broadcast list.
     # @return [Array<Logger>]
     def broadcast_to(logger)
