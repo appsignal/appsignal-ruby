@@ -266,6 +266,19 @@ module Appsignal
     # - https://github.com/rails/rails/pull/53105
     # - https://github.com/rails/rails/pull/49771
     #
+    # Another issue was that the Rails `.broadcast_to` implementation in
+    # `ActiveSupport::BroadcastLogger` will run the block passed to `.tagged`
+    # as many times as there are loggers.
+    # Very early in the Rails execution stack, a middleware runs
+    # `logger.tagged(...) { @app.call(env) }`.
+    # This would cause the request handler to run twice, and it also causes
+    # the Rack response to be an array of Rack responses instead,
+    # which breaks the app entirely.
+    #
+    # Related issues:
+    #
+    # - https://github.com/rails/rails/issues/49745
+    # - https://github.com/rails/rails/issues/49745#issuecomment-1775100622
     #
     # @param logger [Logger] The logger to add to the broadcast list.
     # @return [Array<Logger>]
