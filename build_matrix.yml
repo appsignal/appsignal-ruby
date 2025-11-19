@@ -118,6 +118,7 @@ matrix:
       - "rails-8.1"
 
   ruby:
+    - ruby: "4.0.0-preview2"
     - ruby: "3.5.0-preview1"
     - ruby: "3.4.1"
     - ruby: "3.3.4"
@@ -144,6 +145,7 @@ matrix:
     - gem: "dry-monitor"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -154,6 +156,7 @@ matrix:
     - gem: "hanami-2.0"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -163,6 +166,7 @@ matrix:
     - gem: "hanami-2.1"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -172,6 +176,7 @@ matrix:
     - gem: "hanami-2.2"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -183,6 +188,7 @@ matrix:
     - gem: "psych-3"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -193,6 +199,7 @@ matrix:
     - gem: "psych-4"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -220,6 +227,7 @@ matrix:
     - gem: "rails-7.0"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -231,6 +239,7 @@ matrix:
     - gem: "rails-7.1"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -241,6 +250,7 @@ matrix:
     - gem: "rails-7.2"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -250,6 +260,7 @@ matrix:
     - gem: "rails-8.0"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -269,10 +280,12 @@ matrix:
     - gem: "sidekiq-7"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
     - gem: "sidekiq-8"
       only:
         ruby:
+          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
