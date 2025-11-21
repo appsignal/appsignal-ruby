@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 223
+# Generated job count: 219
 ---
 name: Ruby gem CI
 'on':
@@ -238,87 +238,6 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/grape.gemfile
-  ruby_4-0-0-preview2__hanami-2-0_ubuntu-latest:
-    name: Ruby 4.0.0-preview2 - hanami-2.0
-    needs: ruby_4-0-0-preview2_ubuntu-latest
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 4.0.0-preview2
-        bundler-cache: true
-    - name: Install gem extension
-      run: "./script/bundler_wrapper exec rake extension:install"
-    - name: Print extension install report
-      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-        file found'"
-    - name: Print Makefile log file
-      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
-        found'"
-    - name: Run tests
-      run: "./script/bundler_wrapper exec rake test"
-    env:
-      RAILS_ENV: test
-      JRUBY_OPTS: ''
-      COV: '1'
-      BUNDLE_GEMFILE: gemfiles/hanami-2.0.gemfile
-  ruby_4-0-0-preview2__hanami-2-1_ubuntu-latest:
-    name: Ruby 4.0.0-preview2 - hanami-2.1
-    needs: ruby_4-0-0-preview2_ubuntu-latest
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 4.0.0-preview2
-        bundler-cache: true
-    - name: Install gem extension
-      run: "./script/bundler_wrapper exec rake extension:install"
-    - name: Print extension install report
-      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-        file found'"
-    - name: Print Makefile log file
-      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
-        found'"
-    - name: Run tests
-      run: "./script/bundler_wrapper exec rake test"
-    env:
-      RAILS_ENV: test
-      JRUBY_OPTS: ''
-      COV: '1'
-      BUNDLE_GEMFILE: gemfiles/hanami-2.1.gemfile
-  ruby_4-0-0-preview2__hanami-2-2_ubuntu-latest:
-    name: Ruby 4.0.0-preview2 - hanami-2.2
-    needs: ruby_4-0-0-preview2_ubuntu-latest
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 4.0.0-preview2
-        bundler-cache: true
-    - name: Install gem extension
-      run: "./script/bundler_wrapper exec rake extension:install"
-    - name: Print extension install report
-      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-        file found'"
-    - name: Print Makefile log file
-      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
-        found'"
-    - name: Run tests
-      run: "./script/bundler_wrapper exec rake test"
-    env:
-      RAILS_ENV: test
-      JRUBY_OPTS: ''
-      COV: '1'
-      BUNDLE_GEMFILE: gemfiles/hanami-2.2.gemfile
   ruby_4-0-0-preview2__http5_ubuntu-latest:
     name: Ruby 4.0.0-preview2 - http5
     needs: ruby_4-0-0-preview2_ubuntu-latest
@@ -373,33 +292,6 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/ownership.gemfile
-  ruby_4-0-0-preview2__padrino_ubuntu-latest:
-    name: Ruby 4.0.0-preview2 - padrino
-    needs: ruby_4-0-0-preview2_ubuntu-latest
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check out repository
-      uses: actions/checkout@v4
-    - name: Install Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 4.0.0-preview2
-        bundler-cache: true
-    - name: Install gem extension
-      run: "./script/bundler_wrapper exec rake extension:install"
-    - name: Print extension install report
-      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
-        file found'"
-    - name: Print Makefile log file
-      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
-        found'"
-    - name: Run tests
-      run: "./script/bundler_wrapper exec rake test"
-    env:
-      RAILS_ENV: test
-      JRUBY_OPTS: ''
-      COV: '1'
-      BUNDLE_GEMFILE: gemfiles/padrino.gemfile
   ruby_4-0-0-preview2__psych-3_ubuntu-latest:
     name: Ruby 4.0.0-preview2 - psych-3
     needs: ruby_4-0-0-preview2_ubuntu-latest

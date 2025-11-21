@@ -156,7 +156,6 @@ matrix:
     - gem: "hanami-2.0"
       only:
         ruby:
-          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -166,7 +165,6 @@ matrix:
     - gem: "hanami-2.1"
       only:
         ruby:
-          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -176,7 +174,6 @@ matrix:
     - gem: "hanami-2.2"
       only:
         ruby:
-          - "4.0.0-preview2"
           - "3.5.0-preview1"
           - "3.4.1"
           - "3.3.4"
@@ -185,6 +182,9 @@ matrix:
     - gem: "http5"
     - gem: "ownership"
     - gem: "padrino"
+      exclude:
+        ruby:
+          - "4.0.0-preview2"
     - gem: "psych-3"
       only:
         ruby:
