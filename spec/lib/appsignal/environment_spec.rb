@@ -123,7 +123,13 @@ describe Appsignal::Environment do
       unless Bundler.rubygems.respond_to?(:all_specs)
         skip "Using new Bundler version without `all_specs` method"
       end
-      bundle_gem_specs = silence { ::Bundler.rubygems.all_specs }
+
+      begin
+        bundle_gem_specs = silence { ::Bundler.rubygems.all_specs }
+      rescue Bundler::RemovedError
+        skip "Using new Bundler version without `all_specs` method"
+      end
+
       rack_spec = bundle_gem_specs.find { |s| s.name == "rack" }
       rake_spec = bundle_gem_specs.find { |s| s.name == "rake" }
       expect_environment_metadata("ruby_rack_version", rack_spec.version.to_s)

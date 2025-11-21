@@ -103,7 +103,7 @@ describe Appsignal::SampleData do
       expect(data.value).to be_nil
       expect(logs).to contains_log(
         :error,
-        "Sample data 'data_key': Unsupported data type 'Set' received: #<Set: {\"abc\"}>"
+        /Sample data 'data_key': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
       )
 
       instance = Class.new
