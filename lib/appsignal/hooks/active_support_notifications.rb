@@ -29,6 +29,13 @@ module Appsignal
             parent_integration_module::StartFinishHandlerIntegration,
             ::ActiveSupport::Notifications::Fanout::Handle
           )
+
+          if defined?(::ActiveSupport::Notifications::Fanout::NullHandle)
+            install_module(
+              parent_integration_module::BuildHandleFanoutIntegration,
+              ::ActiveSupport::Notifications::Fanout
+            )
+          end
         else
           instrumenter = ::ActiveSupport::Notifications::Instrumenter
 
