@@ -1481,7 +1481,7 @@ describe Appsignal::Transaction do
           expect(transaction).to_not include_params
 
           set = Set.new
-          set.add("some value")
+          set.add("abc")
           transaction.set_params(set)
           transaction._sample
           expect(transaction).to_not include_params
@@ -1501,7 +1501,7 @@ describe Appsignal::Transaction do
       )
       expect(logs).to contains_log(
         :error,
-        %(Sample data 'params': Unsupported data type 'Set' received: #<Set: {"some value"}>)
+        /Sample data 'params': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
       )
     end
 
