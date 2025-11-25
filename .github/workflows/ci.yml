@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 196
+# Generated job count: 219
 ---
 name: Ruby gem CI
 'on':
@@ -101,6 +101,631 @@ jobs:
       working-directory: spec/integration/diagnose
       env:
         LANGUAGE: ruby
+  ruby_4-0-0-preview2_ubuntu-latest:
+    name: Ruby 4.0.0-preview2
+    needs: validation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    - name: Run tests without extension
+      run: "./script/bundler_wrapper exec rake test:failure"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
+  ruby_4-0-0-preview2__capistrano2_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - capistrano2
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/capistrano2.gemfile
+  ruby_4-0-0-preview2__capistrano3_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - capistrano3
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/capistrano3.gemfile
+  ruby_4-0-0-preview2__dry-monitor_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - dry-monitor
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/dry-monitor.gemfile
+  ruby_4-0-0-preview2__grape_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - grape
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+  ruby_4-0-0-preview2__http5_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - http5
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/http5.gemfile
+  ruby_4-0-0-preview2__ownership_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - ownership
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/ownership.gemfile
+  ruby_4-0-0-preview2__psych-3_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - psych-3
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/psych-3.gemfile
+  ruby_4-0-0-preview2__psych-4_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - psych-4
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/psych-4.gemfile
+  ruby_4-0-0-preview2__que-1_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - que-1
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-1.gemfile
+  ruby_4-0-0-preview2__que-2_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - que-2
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/que-2.gemfile
+  ruby_4-0-0-preview2__rails-7-0_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - rails-7.0
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
+  ruby_4-0-0-preview2__rails-7-1_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - rails-7.1
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
+  ruby_4-0-0-preview2__rails-7-2_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - rails-7.2
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-7.2.gemfile
+  ruby_4-0-0-preview2__rails-8-0_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - rails-8.0
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/rails-8.0.gemfile
+  ruby_4-0-0-preview2__sequel_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - sequel
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_4-0-0-preview2__sinatra_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - sinatra
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sinatra.gemfile
+  ruby_4-0-0-preview2__webmachine2_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - webmachine2
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/webmachine2.gemfile
+  ruby_4-0-0-preview2__redis-4_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - redis-4
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/redis-4.gemfile
+  ruby_4-0-0-preview2__redis-5_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - redis-5
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
+  ruby_4-0-0-preview2__sidekiq-7_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - sidekiq-7
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sidekiq-7.gemfile
+  ruby_4-0-0-preview2__sidekiq-8_ubuntu-latest:
+    name: Ruby 4.0.0-preview2 - sidekiq-8
+    needs: ruby_4-0-0-preview2_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/sidekiq-8.gemfile
+  ruby_4-0-0-preview2_macos-14:
+    name: Ruby 4.0.0-preview2 (macos-14)
+    needs: validation
+    runs-on: macos-14
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0-preview2
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    - name: Run tests without extension
+      run: "./script/bundler_wrapper exec rake test:failure"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
   ruby_3-5-0-preview1_ubuntu-latest:
     name: Ruby 3.5.0-preview1
     needs: validation

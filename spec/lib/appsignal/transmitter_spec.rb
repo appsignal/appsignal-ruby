@@ -17,12 +17,12 @@ describe Appsignal::Transmitter do
     it "returns a URI object with configuration data" do
       expect(uri.to_s).to start_with(config[:endpoint])
       expect(uri.path).to eq("/1/action")
-      expect(CGI.parse(uri.query)).to eq(
-        "api_key" => ["abc"],
-        "hostname" => ["app1.local"],
-        "name" => ["TestApp"],
-        "environment" => ["production"],
-        "gem_version" => [Appsignal::VERSION]
+      expect(URI.decode_www_form(uri.query).to_h).to eq(
+        "api_key" => "abc",
+        "hostname" => "app1.local",
+        "name" => "TestApp",
+        "environment" => "production",
+        "gem_version" => Appsignal::VERSION
       )
     end
 
