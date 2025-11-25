@@ -1,7 +1,7 @@
 describe Appsignal::Hooks::ActiveSupportEventReporterHook do
   begin
     require "active_support/event_reporter"
-  rescue LoadError
+  rescue LoadError # rubocop:disable Lint/SuppressedException
   end
 
   describe "#dependencies_present?" do
