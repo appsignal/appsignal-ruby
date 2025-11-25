@@ -102,6 +102,7 @@ module Appsignal
       :enable_gvl_global_timer => true,
       :enable_gvl_waiting_threads => true,
       :enable_rails_error_reporter => true,
+      :enable_active_support_event_reporter => true,
       :enable_rake_performance_instrumentation => false,
       :endpoint => "https://push.appsignal.com",
       :files_world_accessible => true,
@@ -184,6 +185,7 @@ module Appsignal
       :enable_gvl_global_timer => "APPSIGNAL_ENABLE_GVL_GLOBAL_TIMER",
       :enable_gvl_waiting_threads => "APPSIGNAL_ENABLE_GVL_WAITING_THREADS",
       :enable_rails_error_reporter => "APPSIGNAL_ENABLE_RAILS_ERROR_REPORTER",
+      :enable_active_support_event_reporter => "APPSIGNAL_ENABLE_ACTIVE_SUPPORT_EVENT_REPORTER",
       :enable_rake_performance_instrumentation =>
         "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION",
       :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
@@ -802,6 +804,8 @@ module Appsignal
       #   @return [Boolean] Configure whether GVL waiting threads instrumentation is enabled
       # @!attribute [rw] enable_rails_error_reporter
       #   @return [Boolean] Configure whether Rails error reporter integration is enabled
+      # @!attribute [rw] enable_active_support_event_reporter
+      #   @return [Boolean] Configure whether ActiveSupport::EventReporter integration is enabled
       # @!attribute [rw] enable_rake_performance_instrumentation
       #   @return [Boolean] Configure whether Rake performance instrumentation is enabled
       # @!attribute [rw] files_world_accessible
