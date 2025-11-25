@@ -22,19 +22,16 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
     describe "#install" do
       before do
         # Mock Rails.event
-        stub_const("MockEventReporter", Class.new do
-          attr_reader :subscribers
+        subscribers = []
+        mock_event_reporter = instance_double(
+          "ActiveSupport::EventReporter",
+          :subscribe => nil,
+          :subscribers => subscribers
+        )
 
-          def initialize
-            @subscribers = []
-          end
-
-          def subscribe(subscriber)
-            @subscribers << subscriber
-          end
-        end)
-
-        mock_event_reporter = MockEventReporter.new
+        allow(mock_event_reporter).to receive(:subscribe) do |subscriber|
+          subscribers << subscriber
+        end
 
         allow(Rails).to receive(:event).and_return(mock_event_reporter)
       end
