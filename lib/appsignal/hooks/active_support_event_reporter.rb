@@ -9,7 +9,7 @@ module Appsignal
       def dependencies_present?
         defined?(::ActiveSupport::EventReporter) &&
           Appsignal.config &&
-          Appsignal.config[:enable_active_support_event_reporter]
+          Appsignal.config[:enable_active_support_event_log_reporter]
       end
 
       def install
