@@ -14,7 +14,7 @@ module Appsignal
 
       def install
         require "appsignal/integrations/active_support_event_reporter"
-        Rails.event.subscribe(Appsignal::Integrations::ActiveSupportEventReporter::Subscriber.new())
+        Rails.event.subscribe(Appsignal::Integrations::ActiveSupportEventReporter::Subscriber.new)
       end
     end
   end

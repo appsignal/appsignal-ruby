@@ -13,10 +13,11 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
     it "logs the event name and payload" do
       event = {
         :name => "user.created",
-        :payload => { :id => 123, :email => "user@example.com" },
+        :payload => { :id => 123, :email => "user@example.com" }
       }
 
-      expect(logger).to receive(:info).with("user.created", { :id => 123, :email => "user@example.com" })
+      expect(logger).to receive(:info).with("user.created",
+        { :id => 123, :email => "user@example.com" })
 
       subscriber.emit(event)
     end

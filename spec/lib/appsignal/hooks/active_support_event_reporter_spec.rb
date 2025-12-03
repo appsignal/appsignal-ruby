@@ -60,7 +60,8 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
         described_class.new.install
 
         expect(event_reporter.subscribers.length).to eq(1)
-        expect(event_reporter.subscribers.first).to be_a(Appsignal::Integrations::ActiveSupportEventReporter::Subscriber)
+        expect(event_reporter.subscribers.first)
+          .to be_a(Appsignal::Integrations::ActiveSupportEventReporter::Subscriber)
       end
     end
   end
