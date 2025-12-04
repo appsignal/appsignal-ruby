@@ -490,13 +490,19 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "Agent diagnostics",
             "  Error while parsing agent diagnostics report:",
             "    Output: invalid agent\njson"
-          expect(output)
-            .to match(/Error:( \d+:)? unexpected (token at|character:) 'invalid/)
+          # Ruby 3.x / JRuby: "unexpected token at 'invalid...'"
+          # Ruby 4.x: "unexpected character: 'invalid'" or "source is not valid JSON!"
+          error_pattern =
+            /Error:.*(?:unexpected (?:token at|character:) 'invalid|source is not valid JSON!)/
+          expect(output).to match(error_pattern)
         end
 
         it "adds the output to the report" do
-          expect(received_report["agent"]["error"])
-            .to match(/unexpected (token at|character:) 'invalid/)
+          # Ruby 3.x / JRuby: "unexpected token at 'invalid...'"
+          # Ruby 4.x: "unexpected character: 'invalid'" or "source is not valid JSON!"
+          error_pattern =
+            /(?:unexpected (?:token at|character:) 'invalid|source is not valid JSON!)/
+          expect(received_report["agent"]["error"]).to match(error_pattern)
           expect(received_report["agent"]["output"]).to eq(["invalid agent", "json"])
         end
       end

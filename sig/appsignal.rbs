@@ -1123,6 +1123,9 @@ module Appsignal
       # _@return_ — Configure whether Rails error reporter integration is enabled
       attr_accessor enable_rails_error_reporter: bool
 
+      # _@return_ — Configure whether ActiveSupport::EventReporter integration is enabled
+      attr_accessor enable_active_support_event_log_reporter: bool
+
       # _@return_ — Configure whether Rake performance instrumentation is enabled
       attr_accessor enable_rake_performance_instrumentation: bool
 
