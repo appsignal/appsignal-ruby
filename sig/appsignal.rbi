@@ -1206,6 +1206,10 @@ module Appsignal
       sig { returns(T::Boolean) }
       attr_accessor :enable_rails_error_reporter
 
+      # _@return_ — Configure whether ActiveSupport::EventReporter integration is enabled
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_active_support_event_log_reporter
+
       # _@return_ — Configure whether Rake performance instrumentation is enabled
       sig { returns(T::Boolean) }
       attr_accessor :enable_rake_performance_instrumentation
