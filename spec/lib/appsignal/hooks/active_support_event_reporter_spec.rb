@@ -46,7 +46,7 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
     end
   end
 
-  if defined?(::ActiveSupport::EventReporter)
+  if defined?(::Rails) && defined?(::ActiveSupport::EventReporter)
     describe "#install" do
       before do
         # Mock Rails.event
