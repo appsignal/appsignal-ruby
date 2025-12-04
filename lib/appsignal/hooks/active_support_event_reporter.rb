@@ -7,7 +7,8 @@ module Appsignal
       register :active_support_event_reporter
 
       def dependencies_present?
-        defined?(::ActiveSupport::EventReporter) &&
+        defined?(::Rails) &&
+          defined?(::ActiveSupport::EventReporter) &&
           Appsignal.config &&
           Appsignal.config[:enable_active_support_event_log_reporter]
       end

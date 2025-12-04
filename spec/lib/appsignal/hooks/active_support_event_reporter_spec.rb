@@ -25,6 +25,17 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
             expect(described_class.new.dependencies_present?).to be_falsy
           end
         end
+
+        context "when Rails is not defined" do
+          before do
+            start_agent
+            hide_const("Rails")
+          end
+
+          it "returns false" do
+            expect(described_class.new.dependencies_present?).to be_falsy
+          end
+        end
       end
     else
       context "when ActiveSupport::EventReporter is not present" do
