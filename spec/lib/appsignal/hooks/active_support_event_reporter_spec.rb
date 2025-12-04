@@ -46,7 +46,7 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
     end
   end
 
-  if defined?(::Rails) && defined?(::ActiveSupport::EventReporter)
+  if DependencyHelper.rails8_1_present?
     describe "#install" do
       before do
         # Mock Rails.event
