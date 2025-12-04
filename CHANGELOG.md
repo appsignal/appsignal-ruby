@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.0
+
+_Published on 2025-12-04._
+
+### Added
+
+- Report events from Rails 8.1's Structured Event Reporting (`ActiveSupport::EventReporter`) as logs. (minor [8c55fee2](https://github.com/appsignal/appsignal-ruby/commit/8c55fee2364b19515f66084a3553b978ef756d63))
+
+### Fixed
+
+- Fix ActiveSupport::Notifications event instrumentation on Rails 8.1 when no listeners are registered. (patch [71a9caae](https://github.com/appsignal/appsignal-ruby/commit/71a9caaecaee3043b33d49d4a295a1b28d4962e0))
+
 ## 4.7.5
 
 _Published on 2025-10-17._
