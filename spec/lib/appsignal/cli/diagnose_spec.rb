@@ -265,13 +265,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
       it "adds the installation report to the diagnostics report" do
         run
-        jruby = Appsignal::System.jruby?
+        is_jruby = Appsignal::System.jruby?
         language = {
           "name" => "ruby",
-          "version" => "#{RUBY_VERSION}#{"-p#{rbconfig["PATCHLEVEL"]}" unless jruby}",
-          "implementation" => jruby ? "jruby" : "ruby"
+          "version" => "#{RUBY_VERSION}-p#{rbconfig["PATCHLEVEL"]}",
+          "implementation" => is_jruby ? "jruby" : "ruby"
         }
-        language["implementation_version"] = JRUBY_VERSION if jruby
+        language["implementation_version"] = JRUBY_VERSION if is_jruby
         expect(received_report["installation"]).to match(
           "result" => {
             "status" => "success"
@@ -289,7 +289,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "target" => Appsignal::System.agent_platform,
             "musl_override" => false,
             "linux_arm_override" => false,
-            "library_type" => jruby ? "dynamic" : "static",
+            "library_type" => is_jruby ? "dynamic" : "static",
             "source" => "remote",
             "dependencies" => kind_of(Hash),
             "flags" => kind_of(Hash),
