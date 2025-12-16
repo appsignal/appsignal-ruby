@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.1
+
+_Published on 2025-12-16._
+
+### Changed
+
+- Disable the `enable_active_support_event_log_reporter` configuration option by default. (patch [7f22a693](https://github.com/appsignal/appsignal-ruby/commit/7f22a693e19ba7454d9377c121e0e30b4df5b6cf))
+
 ## 4.8.0
 
 _Published on 2025-12-04._
