@@ -928,7 +928,7 @@ describe Appsignal::Config do
         :enable_statsd                  => true,
         :enable_nginx_metrics           => false,
         :enable_rails_error_reporter    => true,
-        :enable_active_support_event_log_reporter => true,
+        :enable_active_support_event_log_reporter => false,
         :enable_rake_performance_instrumentation => false,
         :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,

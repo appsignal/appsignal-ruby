@@ -8,7 +8,10 @@ describe Appsignal::Hooks::ActiveSupportEventReporterHook do
     if DependencyHelper.rails8_1_present?
       context "when ActiveSupport::EventReporter is present" do
         context "with enable_active_support_event_log_reporter enabled" do
-          before { start_agent }
+          before do
+            ENV["APPSIGNAL_ENABLE_ACTIVE_SUPPORT_EVENT_LOG_REPORTER"] = "true"
+            start_agent
+          end
 
           it "returns true" do
             expect(described_class.new.dependencies_present?).to be_truthy
