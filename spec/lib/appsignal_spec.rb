@@ -186,7 +186,10 @@ describe Appsignal do
         message = "The `Appsignal.configure` helper is called while a `config/appsignal.yml` " \
           "file is present."
         expect(logs).to contains_log(:warn, message)
-        expect(err_stream.read).to include("appsignal WARNING: #{message}")
+        err_output = err_stream.read
+        expect(err_output).to include("appsignal WARNING: #{message}")
+        expect(err_output).to include("Called from:")
+        expect(err_output).to match(/Called from:.*appsignal_spec\.rb:\d+/)
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the given path
@@ -208,7 +211,10 @@ describe Appsignal do
         message = "The `Appsignal.configure` helper is called while a `config/appsignal.yml` " \
           "file is present."
         expect(logs).to contains_log(:warn, message)
-        expect(err_stream.read).to include("appsignal WARNING: #{message}")
+        err_output = err_stream.read
+        expect(err_output).to include("appsignal WARNING: #{message}")
+        expect(err_output).to include("Called from:")
+        expect(err_output).to match(/Called from:.*appsignal_spec\.rb:\d+/)
         expect(Appsignal.config.env).to eq("test")
         expect(Appsignal.config[:push_api_key]).to eq("abc")
         # Ensure it loads from the config file in the current working directory
@@ -825,7 +831,10 @@ describe Appsignal do
         message = "The `Appsignal.configure` helper is called from within an " \
           "app while a `#{config_file_path}` file is present."
         expect(logs).to contains_log(:warn, message)
-        expect(err_stream.read).to include("appsignal WARNING: #{message}")
+        err_output = err_stream.read
+        expect(err_output).to include("appsignal WARNING: #{message}")
+        expect(err_output).to include("Called from:")
+        expect(err_output).to match(/Called from:.*appsignal_spec\.rb:\d+/)
         expect(Appsignal.dsl_config_file_loaded?).to be(false)
         expect(Appsignal.config.root_path).to eq(project_fixture_path)
         expect(Appsignal.config[:active]).to be(false)

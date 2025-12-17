@@ -184,12 +184,14 @@ module Appsignal
         if config
           # When calling `Appsignal.configure` from an app, not the
           # `config/appsignal.rb` file, with also a Ruby config file present.
+          caller_location = external_caller_location
           message = "The `Appsignal.configure` helper is called from within an " \
             "app while a `#{context.dsl_config_file}` file is present. " \
             "The `config/appsignal.rb` file is ignored when the " \
             "config is loaded with `Appsignal.configure` from within an app. " \
             "We recommend moving all config to the `config/appsignal.rb` file " \
             "or the `Appsignal.configure` helper in the app."
+          message += "\n  Called from: #{caller_location}" if caller_location
           Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
         else
           # Load it when no config is present
@@ -340,6 +342,7 @@ module Appsignal
       # When calling `Appsignal.configure` from a Rails initializer and a YAML
       # file is present. We will not load the YAML file in the future.
       if !config_file_context? && config.yml_config_file?
+        caller_location = external_caller_location
         message = "The `Appsignal.configure` helper is called while a " \
           "`config/appsignal.yml` file is present. In future versions the " \
           "`config/appsignal.yml` file will be ignored when loading the " \
@@ -347,6 +350,7 @@ module Appsignal
           "`config/appsignal.rb` file, or the `Appsignal.configure` helper " \
           "in Rails initializer file, and remove the " \
           "`config/appsignal.yml` file."
+        message += "\n  Called from: #{caller_location}" if caller_location
         Appsignal::Utils::StdoutAndLoggerMessage.warning(message)
       end
 
@@ -615,6 +619,26 @@ module Appsignal
         end
       end
       Appsignal::Environment.report_supported_gems
+    end
+
+    # Returns a formatted string with the file and line number where
+    # Appsignal.configure was called from, excluding internal AppSignal frames.
+    #
+    # @return [String, nil] Formatted caller location or nil if not found
+    def external_caller_location
+      # Get the call stack, skipping this method itself
+      locations = caller_locations(1)
+      return unless locations
+
+      # Find the first location outside the AppSignal gem's lib directory
+      appsignal_lib_path = File.expand_path(__dir__)
+      external_location = locations.find do |location|
+        !location.path.start_with?(appsignal_lib_path)
+      end
+
+      return unless external_location
+
+      "#{external_location.path}:#{external_location.lineno}"
     end
   end
 
