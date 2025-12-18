@@ -25,6 +25,10 @@ module DependencyHelper
     Appsignal::System.jruby?
   end
 
+  def running_jruby10?
+    Appsignal::System.jruby? && Gem::Version.new(JRUBY_VERSION) >= Gem::Version.new("10.0.0.0")
+  end
+
   def rails_present?
     dependency_present? "rails"
   end

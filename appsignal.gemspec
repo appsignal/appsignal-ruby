@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require File.expand_path("lib/appsignal/version", __dir__)
+gem_version = File.read("lib/appsignal/version.rb").match(/VERSION\s*=\s*["'](.+)["']/)[1]
 
 IGNORED_PATHS = [
   # Directories
@@ -40,7 +40,7 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.executables           = gem.files.grep(%r{^bin/}).map { |f| File.basename(f) }
   gem.name                  = "appsignal"
   gem.require_paths         = %w[lib ext]
-  gem.version               = Appsignal::VERSION
+  gem.version               = gem_version
   gem.required_ruby_version = ">= 2.7"
   # Default extension installer. Overridden by JRuby gemspec as defined in
   # `Rakefile`.
