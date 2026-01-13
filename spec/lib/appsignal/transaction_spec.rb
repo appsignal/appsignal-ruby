@@ -1404,6 +1404,24 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#queue_start?" do
+    let(:transaction) { new_transaction }
+
+    context "when the queue start is not set" do
+      it "returns false" do
+        expect(transaction.queue_start?).to be(false)
+      end
+    end
+
+    context "when the queue start is set" do
+      it "returns true" do
+        transaction.set_queue_start(10)
+
+        expect(transaction.queue_start?).to be(true)
+      end
+    end
+  end
+
   describe "#set_metadata" do
     let(:transaction) { new_transaction }
 

@@ -173,6 +173,7 @@ module Appsignal
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
       @error_set = nil
+      @queue_start = nil
 
       @params = Appsignal::SampleData.new(:params)
       @session_data = Appsignal::SampleData.new(:session_data, Hash)
@@ -564,8 +565,17 @@ module Appsignal
       return unless start
 
       @ext.set_queue_start(start)
+      @queue_start = start
     rescue RangeError
       Appsignal.internal_logger.warn("Queue start value #{start} is too big")
+    end
+
+    # Check if queue start time is set.
+    #
+    # @return [Boolean] true if queue start time is set, false otherwise.
+    # @!visibility private
+    def queue_start?
+      !@queue_start.nil?
     end
 
     # @!visibility private
