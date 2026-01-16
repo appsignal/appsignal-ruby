@@ -31,6 +31,7 @@ if DependencyHelper.active_job_present?
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
     include ActiveJobHelpers
+
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }
@@ -330,6 +331,99 @@ if DependencyHelper.active_job_present?
           .sort_by { |e| e["start"] }
           .map { |event| event["name"] }
         expect(events).to eq(expected_perform_events)
+      end
+
+      if DependencyHelper.rails_version >= Gem::Version.new("6.0.0")
+        context "when queue start is already set on the transaction by the worker library" do
+          before do
+            stub_const(
+              "ActiveJob::QueueAdapters::AppsignalTestAdapter",
+              Class.new(ActiveJob::QueueAdapters::InlineAdapter) do
+                def enqueue(job)
+                  ActiveJob::Base.execute(job.serialize.merge(
+                    "enqueued_at" => "2001-01-01T09:00:00.000000000Z"
+                  ))
+                end
+              end
+            )
+
+            stub_const("ProviderWrappedActiveJobTestJob", Class.new(ActiveJob::Base) do
+              self.queue_adapter = :appsignal_test
+
+              def perform(*_args)
+              end
+            end)
+          end
+
+          it "does not overwrite the queue start on first execution" do
+            current_transaction = background_job_transaction
+            set_current_transaction current_transaction
+
+            wrapper_queue_start = (Time.parse("2001-01-01T08:00:00.000000000Z").to_f * 1_000).to_i
+            current_transaction.set_queue_start(wrapper_queue_start)
+
+            queue_job(ProviderWrappedActiveJobTestJob)
+
+            expect(created_transactions.count).to eql(1)
+
+            transaction = current_transaction
+            expect(transaction).to_not be_completed
+            transaction._sample
+            expect(transaction).to have_queue_start(wrapper_queue_start)
+          end
+
+          it "overwrites the queue start set when using Active Job retry_on" do
+            stub_const(
+              "ActiveJob::QueueAdapters::AppsignalTestRetryAdapter",
+              Class.new(ActiveJob::QueueAdapters::InlineAdapter) do
+                def enqueue(job)
+                  # Simulate a retry with updated enqueued_at timestamp
+                  ActiveJob::Base.execute(job.serialize.merge(
+                    # This is a retried job
+                    "executions" => 1,
+                    "exception_executions" => { "RuntimeError" => 1 },
+                    # We should store this queue time
+                    "enqueued_at" => "2001-01-01T09:30:00.000000000Z"
+                  ))
+                end
+              end
+            )
+
+            stub_const("ProviderWrappedActiveJobWithRetryTestJob", Class.new(ActiveJob::Base) do
+              self.queue_adapter = :appsignal_test_retry
+
+              def perform(*_args)
+                # Do nothing
+              end
+            end)
+
+            current_transaction = background_job_transaction
+            set_current_transaction current_transaction
+
+            # Simulate wrapper setting queue start time from when the worker library (Sidekiq)
+            # picked up the job
+            wrapper_queue_start = (Time.parse("2001-01-01T08:00:00.000000000Z").to_f * 1_000).to_i
+            current_transaction.set_queue_start(wrapper_queue_start)
+
+            queue_job(ProviderWrappedActiveJobWithRetryTestJob)
+
+            expect(created_transactions.count).to eql(1)
+
+            transaction = current_transaction
+            expect(transaction).to_not be_completed
+            transaction._sample
+
+            # On retry (job["executions"] > 0), Active Job's enqueued_at should overwrite
+            # the worker library's queue_start because the Active Job's timestamp is only accurate
+            # for Active Job retries
+            active_job_queue_start =
+              (Time.parse("2001-01-01T09:30:00.000000000Z").to_f * 1_000).to_i
+            expect(transaction).to have_queue_start(active_job_queue_start)
+
+            # +1 because store a human readable execution count, not a 0-index one
+            expect(transaction).to include_tags("executions" => 2)
+          end
+        end
       end
     end
 
