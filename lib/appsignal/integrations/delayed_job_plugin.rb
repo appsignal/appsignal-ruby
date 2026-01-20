@@ -46,7 +46,9 @@ module Appsignal
           :attempts => extract_value(job, :attempts, 0)
         )
 
-        transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+        # Use updated_at, as it's the time the first job iteration was enqueued
+        # or when a failed job was updated and enqueued for a retry
+        transaction.set_queue_start(extract_value(job, :updated_at)&.to_i&.* 1_000)
 
         Appsignal::Transaction.complete_current!
       end

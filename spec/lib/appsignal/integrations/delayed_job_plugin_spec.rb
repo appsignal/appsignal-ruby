@@ -19,9 +19,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
   describe ".invoke_with_instrumentation" do
     let(:plugin) { Appsignal::Integrations::DelayedJobPlugin }
-    let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
-    let(:created_at) { time - 3600 }
-    let(:run_at) { time - 3600 }
+    let(:time) { Time.parse("01-01-2001 10:05:00UTC") }
+    let(:updated_at) { Time.parse("01-01-2001 10:00:00UTC") }
     let(:payload_object) { double(:args => args) }
     let(:job_data) do
       {
@@ -30,8 +29,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
         :priority => 1,
         :attempts => 1,
         :queue => "default",
-        :created_at => created_at,
-        :run_at => run_at,
+        :updated_at => updated_at,
         :payload_object => payload_object
       }
     end
@@ -90,13 +88,11 @@ describe "Appsignal::Integrations::DelayedJobHook" do
         end
       end
 
-      context "with run_at in the future" do
-        let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
-
-        it "reports queue_start with run_at time" do
+      context "with updated_at in the past" do
+        it "reports queue_start" do
           perform
 
-          expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
+          expect(last_transaction).to have_queue_start(updated_at.to_i * 1000)
         end
       end
 
@@ -223,8 +219,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
               :priority       => 1,
               :attempts       => 1,
               :queue          => "default",
-              :created_at     => created_at,
-              :run_at         => run_at,
+              :updated_at     => updated_at,
               :payload_object => payload_object
             )
           end
@@ -280,13 +275,11 @@ describe "Appsignal::Integrations::DelayedJobHook" do
             end
           end
 
-          context "with run_at in the future" do
-            let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
-
-            it "reports queue_start with run_at time" do
+          context "with updated_at in the past" do
+            it "reports queue_start" do
               perform
 
-              expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
+              expect(last_transaction).to have_queue_start(updated_at.to_i * 1000)
             end
           end
         end
