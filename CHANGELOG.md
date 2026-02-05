@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.2
+
+_Published on 2026-02-05._
+
+### Added
+
+- Log where `Appsignal.configure` is called. When a warning is emitted about `Appsignal.configure` being called from an application where `config/appsignal.yml` or `config/appsignal.rb` exist, log the location from which `Appsignal.configure` was called alongside the location of the configuration file. (patch [a9097107](https://github.com/appsignal/appsignal-ruby/commit/a90971075370bcf1d37f568d934dd8aeb71c1223))
+
+### Fixed
+
+- Fix the `bundle exec appsignal install` CLI command on Ruby 4 by removing the dependency on the `ostruct` gem, which is no longer part of the standard library. (patch [d3bd5198](https://github.com/appsignal/appsignal-ruby/commit/d3bd5198486a762353bfbd7807f4d042a85a9d3d))
+
 ## 4.8.1
 
 _Published on 2025-12-16._
