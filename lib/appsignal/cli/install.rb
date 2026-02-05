@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "erb"
-require "ostruct"
 require "io/console"
 require "appsignal/demo"
 
@@ -366,7 +365,7 @@ module Appsignal
         def write_config_file(template_path, path, data)
           file_contents = File.read(template_path)
           template = ERB.new(file_contents, :trim_mode => "-")
-          config = template.result(OpenStruct.new(data).instance_eval { binding })
+          config = template.result_with_hash(data)
 
           FileUtils.mkdir_p(File.join(Dir.pwd, "config"))
           File.write(path, config)
