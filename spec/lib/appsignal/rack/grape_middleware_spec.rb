@@ -4,20 +4,16 @@ if DependencyHelper.grape_present?
   describe Appsignal::Rack::GrapeMiddleware do
     let(:app) do
       Class.new(::Grape::API) do
+        use Appsignal::Rack::GrapeMiddleware
         format :json
         post :ping do
           { :message => "Hello world!" }
         end
       end
     end
-    let(:api_endpoint) { app.endpoints.first }
     let(:env) do
-      http_request_env_with_data \
-        "api.endpoint" => api_endpoint,
-        "REQUEST_METHOD" => "POST",
-        :path => "/ping"
+      Rack::MockRequest.env_for("/ping", :method => "POST")
     end
-    let(:middleware) { Appsignal::Rack::GrapeMiddleware.new(api_endpoint) }
     let(:transaction) { http_request_transaction }
     before do
       stub_const("GrapeExample::Api", app)
@@ -28,18 +24,19 @@ if DependencyHelper.grape_present?
     end
 
     def make_request(env)
-      middleware.call(env)
+      app.call(env)
     end
 
     def make_request_with_exception(env, exception_class, exception_message)
       expect do
-        middleware.call(env)
+        app.call(env)
       end.to raise_error(exception_class, exception_message)
     end
 
     context "with error" do
       let(:app) do
         Class.new(::Grape::API) do
+          use Appsignal::Rack::GrapeMiddleware
           format :json
           post :ping do
             raise ExampleException, "error message"
@@ -56,6 +53,7 @@ if DependencyHelper.grape_present?
       context "with env['grape.skip_appsignal_error'] = true" do
         let(:app) do
           Class.new(::Grape::API) do
+            use Appsignal::Rack::GrapeMiddleware
             format :json
             post :ping do
               env["grape.skip_appsignal_error"] = true
@@ -75,16 +73,14 @@ if DependencyHelper.grape_present?
     context "with route" do
       let(:app) do
         Class.new(::Grape::API) do
+          use Appsignal::Rack::GrapeMiddleware
           route([:get, :post], "hello") do
             "Hello!"
           end
         end
       end
       let(:env) do
-        http_request_env_with_data \
-          "api.endpoint" => api_endpoint,
-          "REQUEST_METHOD" => "GET",
-          :path => ""
+        Rack::MockRequest.env_for("/hello", :method => "GET")
       end
 
       it "sets non-unique route path" do
@@ -98,6 +94,7 @@ if DependencyHelper.grape_present?
     context "with route_param" do
       let(:app) do
         Class.new(::Grape::API) do
+          use Appsignal::Rack::GrapeMiddleware
           format :json
           resource :users do
             route_param :id do
@@ -109,10 +106,7 @@ if DependencyHelper.grape_present?
         end
       end
       let(:env) do
-        http_request_env_with_data \
-          "api.endpoint" => api_endpoint,
-          "REQUEST_METHOD" => "GET",
-          :path => ""
+        Rack::MockRequest.env_for("/users/123", :method => "GET")
       end
 
       it "sets non-unique route_param path" do
@@ -127,6 +121,7 @@ if DependencyHelper.grape_present?
       context "with symbols" do
         let(:app) do
           Class.new(::Grape::API) do
+            use Appsignal::Rack::GrapeMiddleware
             format :json
             namespace :v1 do
               namespace :beta do
@@ -136,6 +131,9 @@ if DependencyHelper.grape_present?
               end
             end
           end
+        end
+        let(:env) do
+          Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
         end
 
         it "sets namespaced path" do
@@ -151,6 +149,7 @@ if DependencyHelper.grape_present?
         context "without / prefix" do
           let(:app) do
             Class.new(::Grape::API) do
+              use Appsignal::Rack::GrapeMiddleware
               format :json
               namespace "v1" do
                 namespace "beta" do
@@ -160,6 +159,9 @@ if DependencyHelper.grape_present?
                 end
               end
             end
+          end
+          let(:env) do
+            Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
           end
 
           it "sets namespaced path" do
@@ -176,6 +178,7 @@ if DependencyHelper.grape_present?
         context "with / prefix" do
           let(:app) do
             Class.new(::Grape::API) do
+              use Appsignal::Rack::GrapeMiddleware
               format :json
               namespace "/v1" do
                 namespace "/beta" do
@@ -185,6 +188,9 @@ if DependencyHelper.grape_present?
                 end
               end
             end
+          end
+          let(:env) do
+            Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
           end
 
           it "sets namespaced path" do
