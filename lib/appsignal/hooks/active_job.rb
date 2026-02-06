@@ -43,15 +43,6 @@ module Appsignal
 
       module ActiveJobClassInstrumentation
         def execute(job) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
-          enqueued_at = job["enqueued_at"]
-          queue_start = Time.parse(enqueued_at) if enqueued_at
-          queue_time =
-            if queue_start
-              time_now = Time.now.utc
-              # Calculate queue time and store it as milliseconds
-              (time_now - queue_start) * 1_000
-            end
-
           job_status = nil
           has_wrapper_transaction = Appsignal::Transaction.current?
           transaction =
@@ -81,6 +72,22 @@ module Appsignal
           transaction_set_error(transaction, exception)
           raise exception
         ensure
+          # Only use the Active Job enqueued_at value if this is an Active Job
+          # powered retry (executations > 0) or when no queue time is set by
+          # the worker library (Delayed Job, Sidekiq, etc)
+          enqueued_at = job["enqueued_at"]
+          using_active_job_retry_mechanism = job["executions"] > 0
+          queue_start =
+            if (using_active_job_retry_mechanism && enqueued_at) || !transaction.queue_start?
+              Time.parse(enqueued_at)
+            end
+          queue_time =
+            if queue_start
+              time_now = Time.now.utc
+              # Calculate queue time and store it as milliseconds
+              (time_now - queue_start) * 1_000
+            end
+
           if transaction
             # Present in Rails 6 and up
             transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
