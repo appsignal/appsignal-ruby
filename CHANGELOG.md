@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.4
+
+_Published on 2026-03-20._
+
+### Changed
+
+- Bundled certificates have been updated. (patch [a52c55d9](https://github.com/appsignal/appsignal-ruby/commit/a52c55d969a1e8f450e5066ced2a61a468567b4d))
+
+### Fixed
+
+- Fix compatibility with `http` (http.rb) gem version 6.0.0 and higher. (patch [37a2ac92](https://github.com/appsignal/appsignal-ruby/commit/37a2ac926a81c53abafaf46cd8dda2376269a8ef))
+
 ## 4.8.3
 
 _Published on 2026-02-17._

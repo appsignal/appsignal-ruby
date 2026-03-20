@@ -8,7 +8,7 @@
 module Appsignal
   extend Appsignal::Helpers::Metrics
   extend Appsignal::Helpers::Instrumentation
-  VERSION = T.let("4.8.3", T.untyped)
+  VERSION = T.let("4.8.4", T.untyped)
 
   class << self
     # The loaded AppSignal configuration.
