@@ -12,9 +12,16 @@ describe Appsignal::Hooks::HttpHook do
         it { is_expected.to be_truthy }
       end
 
-      it "installs the HTTP plugin" do
-        expect(HTTP::Client.included_modules)
-          .to include(Appsignal::Integrations::HttpIntegration)
+      if DependencyHelper.http6_present?
+        it "installs the HTTP plugin with keyword options" do
+          expect(HTTP::Client.included_modules)
+            .to include(Appsignal::Integrations::HttpIntegration::KeywordOptions)
+        end
+      else
+        it "installs the HTTP plugin with hash options" do
+          expect(HTTP::Client.included_modules)
+            .to include(Appsignal::Integrations::HttpIntegration::HashOptions)
+        end
       end
     end
 
