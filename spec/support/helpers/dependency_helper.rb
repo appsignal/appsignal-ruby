@@ -131,6 +131,10 @@ module DependencyHelper
     dependency_present? "http"
   end
 
+  def http6_present?
+    http_present? && Gem.loaded_specs["http"].version >= Gem::Version.new("6.0.0")
+  end
+
   def que_present?
     dependency_present? "que"
   end
