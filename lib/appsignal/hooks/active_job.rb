@@ -68,6 +68,11 @@ module Appsignal
 
           if transaction
             transaction.add_params_if_nil(job["arguments"]) if ActiveJobHelpers.log_arguments?(job)
+            if ActiveJobHelpers.log_arguments?(job)
+              transaction.add_params_if_nil(job["arguments"])
+            else
+              transaction.store("activejob")["log_arguments"] = false
+            end
 
             transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
             transaction.add_tags(transaction_tags)
