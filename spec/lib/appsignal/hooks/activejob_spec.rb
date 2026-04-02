@@ -31,6 +31,7 @@ if DependencyHelper.active_job_present?
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
     include ActiveJobHelpers
+
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }
@@ -352,6 +353,77 @@ if DependencyHelper.active_job_present?
             }
           ]
         )
+      end
+    end
+
+    if DependencyHelper.rails_version >= Gem::Version.new("6.1.0")
+      context "with log_arguments disabled on the job class" do
+        before do
+          stub_const("ActiveJobNoLogArgsTestJob", Class.new(ActiveJob::Base) do
+            self.log_arguments = false
+
+            def perform(*_args)
+            end
+          end)
+        end
+
+        it "does not include arguments in the transaction params" do
+          queue_job(ActiveJobNoLogArgsTestJob, method_given_args)
+
+          transaction = last_transaction
+          expect(transaction).to have_action("ActiveJobNoLogArgsTestJob#perform")
+          expect(transaction).to_not include_params
+        end
+      end
+
+      context "with log_arguments disabled on the parent class" do
+        before do
+          stub_const("ApplicationJobNoLogArgs", Class.new(ActiveJob::Base) do
+            self.log_arguments = false
+          end)
+
+          stub_const("ActiveJobInheritedNoLogArgsTestJob", Class.new(ApplicationJobNoLogArgs) do
+            def perform(*_args)
+            end
+          end)
+        end
+
+        it "does not include arguments in the transaction params" do
+          queue_job(ActiveJobInheritedNoLogArgsTestJob, method_given_args)
+
+          transaction = last_transaction
+          expect(transaction).to have_action("ActiveJobInheritedNoLogArgsTestJob#perform")
+          expect(transaction).to_not include_params
+        end
+      end
+    end
+
+    context "with log_arguments enabled (default)" do
+      it "includes arguments in the transaction params" do
+        queue_job(ActiveJobTestJob, method_given_args)
+
+        transaction = last_transaction
+        expect(transaction).to include_params([method_expected_args])
+      end
+    end
+
+    context "when the job class does not support log_arguments?" do
+      before do
+        stub_const("ActiveJobNoLogArgumentsSupportTestJob", Class.new(ActiveJob::Base) do
+          class << self
+            undef_method :log_arguments? if method_defined?(:log_arguments?)
+          end
+
+          def perform(*_args)
+          end
+        end)
+      end
+
+      it "includes arguments in the transaction params" do
+        queue_job(ActiveJobNoLogArgumentsSupportTestJob, method_given_args)
+
+        transaction = last_transaction
+        expect(transaction).to include_params([method_expected_args])
       end
     end
 
