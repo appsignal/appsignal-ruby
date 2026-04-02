@@ -13,6 +13,9 @@ github:
     cancel-in-progress: ${{ !contains(github.ref, 'main')}}
 
   jobs:
+    validate-changesets:
+      uses: ./.github/workflows/validate_changesets.yml
+
     lint-git:
       name: "Git linter (Lintje)"
       runs-on: ubuntu-latest
