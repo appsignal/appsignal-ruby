@@ -80,7 +80,9 @@ module Appsignal
         raise exception
       ensure
         if transaction
-          transaction.add_params_if_nil { parse_arguments(item) }
+          # If ActiveJob log_arguments is set to false, don't set params
+          store_arguments = transaction.store("activejob").fetch("log_arguments", true)
+          transaction.add_params_if_nil { parse_arguments(item) } if store_arguments
           enqueued_at = item["enqueued_at"]
           queue_start =
             if self.class.sidekiq8?
