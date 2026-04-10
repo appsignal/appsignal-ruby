@@ -67,7 +67,12 @@ module Appsignal
             end
 
           if transaction
-            transaction.add_params_if_nil(job["arguments"])
+            transaction.add_params_if_nil(job["arguments"]) if ActiveJobHelpers.log_arguments?(job)
+            if ActiveJobHelpers.log_arguments?(job)
+              transaction.add_params_if_nil(job["arguments"])
+            else
+              transaction.store("activejob")["log_arguments"] = false
+            end
 
             transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
             transaction.add_tags(transaction_tags)
@@ -129,6 +134,17 @@ module Appsignal
           "ActionMailer::Parameterized::DeliveryJob",
           "ActionMailer::MailDeliveryJob"
         ].freeze
+
+        def self.log_arguments?(job)
+          job_class = job["job_class"]
+          return true if job_class.nil?
+
+          klass = job_class.safe_constantize
+          return true if klass.nil?
+          return true unless klass.respond_to?(:log_arguments?)
+
+          klass.log_arguments?
+        end
 
         def self.action_name(job)
           case job["job_class"]
