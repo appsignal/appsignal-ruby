@@ -39,5 +39,31 @@ describe Appsignal::Hooks::PgbusHook do
         Appsignal::Integrations::PgbusHandlerPlugin
       )
     end
+
+    context "when Pgbus::Streams::Stream is defined" do
+      before do
+        stub_const("Pgbus::Streams::Stream", Class.new)
+      end
+
+      it "prepends PgbusStreamPlugin to Pgbus::Streams::Stream" do
+        described_class.new.install
+
+        expect(Pgbus::Streams::Stream.ancestors).to include(
+          Appsignal::Integrations::PgbusStreamPlugin
+        )
+      end
+    end
+
+    context "when Pgbus::Web::DataSource is defined" do
+      before do
+        stub_const("Pgbus::Web::DataSource", Class.new)
+      end
+
+      it "registers the PgbusProbe" do
+        described_class.new.install
+
+        expect(Appsignal::Probes.probes[:pgbus]).to eq(Appsignal::Probes::PgbusProbe)
+      end
+    end
   end
 end

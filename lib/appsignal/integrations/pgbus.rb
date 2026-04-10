@@ -62,6 +62,23 @@ module Appsignal
       end
     end
 
+    # Wraps Pgbus::Streams::Stream#broadcast to instrument stream broadcasts
+    # with counters and timing distribution values.
+    #
+    # @!visibility private
+    module PgbusStreamPlugin
+      def broadcast(payload, visible_to: nil)
+        Appsignal.instrument("broadcast.pgbus") do
+          super
+        end
+      ensure
+        Appsignal.increment_counter(
+          "pgbus_stream_broadcast_count", 1,
+          :stream => name
+        )
+      end
+    end
+
     # Wraps Pgbus::EventBus::Handler#process to create AppSignal transactions
     # for each event handled by Pgbus consumers.
     #

@@ -18,6 +18,17 @@ module Appsignal
         ::Pgbus::EventBus::Handler.prepend(
           Appsignal::Integrations::PgbusHandlerPlugin
         )
+
+        if defined?(::Pgbus::Streams::Stream)
+          ::Pgbus::Streams::Stream.prepend(
+            Appsignal::Integrations::PgbusStreamPlugin
+          )
+        end
+
+        if defined?(::Pgbus::Web::DataSource)
+          require "appsignal/probes/pgbus"
+          Appsignal::Probes.register :pgbus, Appsignal::Probes::PgbusProbe
+        end
       end
     end
   end

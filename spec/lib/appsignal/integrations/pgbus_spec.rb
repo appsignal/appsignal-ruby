@@ -155,6 +155,50 @@ describe Appsignal::Integrations::PgbusExecutorPlugin do
   end
 end
 
+describe Appsignal::Integrations::PgbusStreamPlugin do
+  let(:stream_class) do
+    Class.new do
+      attr_reader :name
+
+      def initialize(name)
+        @name = name
+      end
+
+      def broadcast(payload, visible_to: nil)
+        :sent
+      end
+    end.tap { |klass| klass.prepend(described_class) }
+  end
+
+  let(:stream) { stream_class.new("chat_room_42") }
+
+  before { start_agent }
+  around { |example| keep_transactions { example.run } }
+
+  describe "#broadcast" do
+    it "increments pgbus_stream_broadcast_count" do
+      expect(Appsignal).to receive(:increment_counter)
+        .with("pgbus_stream_broadcast_count", 1, { :stream => "chat_room_42" })
+
+      stream.broadcast("<div>hello</div>")
+    end
+
+    it "returns the original result" do
+      result = stream.broadcast("<div>hello</div>")
+      expect(result).to eq(:sent)
+    end
+
+    it "passes visible_to through to super" do
+      stream_with_spy = stream_class.new("chat")
+
+      allow(stream_with_spy).to receive(:broadcast).and_call_original
+
+      # The prepended method should forward visible_to
+      stream_with_spy.broadcast("<div>hi</div>", visible_to: :admin_only)
+    end
+  end
+end
+
 describe Appsignal::Integrations::PgbusHandlerPlugin do
   let(:event_payload) do
     {
