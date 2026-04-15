@@ -67,5 +67,5 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   gem.add_development_dependency("sord") unless RUBY_PLATFORM == "java"
   gem.add_development_dependency "timecop"
   gem.add_development_dependency "webmock"
-  gem.add_development_dependency "yard", ">= 0.9.20"
+  gem.add_development_dependency "yard", "0.9.40"
 end
