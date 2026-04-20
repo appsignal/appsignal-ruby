@@ -10,6 +10,10 @@ if DependencyHelper.code_ownership_present?
 
     around { |example| keep_transactions { example.run } }
 
+    after do
+      CodeOwnership.bust_caches!
+    end
+
     context "when an error is reported in a transaction" do
       after do
         FileUtils.rm_rf(File.join(tmp_dir, "config"))
