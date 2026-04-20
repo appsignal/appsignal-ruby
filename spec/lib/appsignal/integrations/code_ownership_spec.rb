@@ -138,6 +138,28 @@ if DependencyHelper.code_ownership_present?
           expect(transaction).to_not include_tags("owner" => anything)
           expect(logs).to be_empty
         end
+
+        it "falls back to backtrace locations if no team is found from backtrace lines" do
+          transaction = create_transaction
+          team = double(:name => "FallbackTeam")
+          location = double(
+            :absolute_path => File.join(tmp_dir, "app", "file_annotation_based.rb"),
+            :path => "app/file_annotation_based.rb"
+          )
+          error = RuntimeError.new("test")
+
+          allow(error).to receive(:backtrace).and_return([])
+          allow(error).to receive(:backtrace_locations).and_return([location])
+          allow(::CodeOwnership).to receive(:for_backtrace).with([]).and_return(nil)
+          allow(::CodeOwnership).to receive(:for_file)
+            .with("app/file_annotation_based.rb")
+            .and_return(team)
+
+          transaction.add_error(error)
+          transaction.complete
+
+          expect(transaction).to include_tags("owner" => "FallbackTeam")
+        end
       end
     end
 
