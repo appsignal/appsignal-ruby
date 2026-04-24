@@ -180,6 +180,27 @@ rake build_matrix:github:generate
 
 The script to generate the `.github/workflows/ci.yml` file is part of the `Rakefile`.
 
+## Commit Message Convention
+
+This project uses [Lintje](https://lintje.dev/) to lint commit messages in CI. All commits must follow these rules:
+
+- **Subject line**: Maximum 50 characters. Use imperative mood (e.g. "Fix bug" not "Fixed bug").
+- **Message body**: Required. Add a blank line after the subject, then describe what changed and why. Wrap lines at 72 characters.
+- **Ticket/issue reference**: Include a reference to a GitHub issue in the message body (e.g. `Fixes #1487` or `Part of #1487`).
+- **Changeset**: Commits that affect users should include a changeset file in `.changesets/`. If not applicable, the commit message body may contain `[skip changeset]`.
+
+Example:
+
+```
+Fix log_arguments tests for older Rails
+
+Guard the log_arguments tests with a Rails 6.1+ version
+check since the log_arguments class attribute was introduced
+in Rails 6.1.
+
+Fixes #1487
+```
+
 ## Important Notes
 
 - The gem includes both Ruby and Java (JRuby) versions.
