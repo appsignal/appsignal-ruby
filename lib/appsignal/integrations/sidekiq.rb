@@ -55,7 +55,8 @@ module Appsignal
 
       EXCLUDED_JOB_KEYS = %w[
         args backtrace class created_at enqueued_at error_backtrace error_class
-        error_message failed_at jid retried_at retry wrapped
+        error_message failed_at jid retried_at retry wrapped cattr tags retry_for
+        unique_for
       ].freeze
 
       def self.sidekiq8?
