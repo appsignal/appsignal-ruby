@@ -10,6 +10,14 @@ Appsignal.configure(:test) do |config|
   config.push_api_key = "abc"
   config.name = "collector-mode-test"
   config.collector_endpoint = "http://127.0.0.1:9090"
+  config.service_name = "collector-mode-test-service"
+  config.hostname = "test-host"
+  config.revision = "abc1234"
+  config.filter_attributes = ["password", "secret"]
+  config.filter_request_payload = ["payload-key"]
+  config.send_request_payload = false
+  config.ignore_actions = ["IgnoredController#action"]
+  config.ignore_namespaces = ["background"]
 
   working_directory = "tmp/appsignal"
   FileUtils.rm_rf(working_directory)
