@@ -91,6 +91,7 @@ module Appsignal
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
+      :collector_endpoint => nil,
       :dns_servers => [],
       :enable_allocation_tracking => true,
       :enable_at_exit_hook => "on_error",
@@ -157,6 +158,7 @@ module Appsignal
       :name => "APPSIGNAL_APP_NAME",
       :bind_address => "APPSIGNAL_BIND_ADDRESS",
       :ca_file_path => "APPSIGNAL_CA_FILE_PATH",
+      :collector_endpoint => "APPSIGNAL_COLLECTOR_ENDPOINT",
       :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :hostname => "APPSIGNAL_HOSTNAME",
       :host_role => "APPSIGNAL_HOST_ROLE",
@@ -429,6 +431,24 @@ module Appsignal
     # @return [Boolean] True if valid and active for the current environment.
     def active?
       valid? && active_for_env?
+    end
+
+    # Check if AppSignal is running in collector mode.
+    #
+    # Collector mode is active when a non-empty `collector_endpoint` is
+    # configured. In this mode, an OpenTelemetry SDK is configured to export
+    # OTLP/HTTP data to that endpoint.
+    #
+    # Memoised: the result is cached on first call so hot paths (metric
+    # and log emits) avoid re-running the string-strip predicate. A fresh
+    # `Config` instance always starts uncached.
+    #
+    # @return [Boolean] True if collector mode is active.
+    def collector_mode?
+      return @collector_mode if defined?(@collector_mode)
+
+      endpoint = config_hash[:collector_endpoint]
+      @collector_mode = !endpoint.nil? && !endpoint.to_s.strip.empty?
     end
 
     # @!visibility private

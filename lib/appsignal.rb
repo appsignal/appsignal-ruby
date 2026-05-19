@@ -143,6 +143,11 @@ module Appsignal
           Appsignal::Hooks.load_hooks
           Appsignal::Loaders.start
 
+          if config.collector_mode?
+            require "appsignal/opentelemetry"
+            Appsignal::OpenTelemetry.configure(config)
+          end
+
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
             Appsignal::Environment.report_enabled("allocation_tracking")

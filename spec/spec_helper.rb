@@ -92,7 +92,13 @@ RSpec.configure do |config|
   end
 
   config.before :suite do
-    WebMock.disable_net_connect!
+    # Allow connections to the OTLP mock server bound by `OTLPCollectorServer`.
+    WebMock.disable_net_connect!(:allow => "127.0.0.1:#{OTLPCollectorServer::PORT}")
+    OTLPCollectorServer.boot!
+  end
+
+  config.after do
+    OTLPCollectorServer.clear if defined?(OTLPCollectorServer)
   end
 
   config.before :context do
