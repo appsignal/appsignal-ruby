@@ -726,8 +726,12 @@ describe Appsignal::Config do
         :enable_statsd => false,
         :endpoint => "https://test.appsignal.com",
         :files_world_accessible => false,
+        :filter_attributes => ["attr1", "attr2"],
+        :filter_function_parameters => ["fn1", "fn2"],
         :filter_metadata => ["key1", "key2"],
         :filter_parameters => ["param1", "param2"],
+        :filter_request_payload => ["payload1", "payload2"],
+        :filter_request_query_parameters => ["query1", "query2"],
         :filter_session_data => ["session1", "session2"],
         :host_role => "my host role",
         :hostname => "my hostname",
@@ -751,11 +755,16 @@ describe Appsignal::Config do
         :ownership_set_namespace => true,
         :push_api_key => "aaa-bbb-ccc",
         :request_headers => ["accept", "accept-charset"],
+        :response_headers => ["x-response-1", "x-response-2"],
         :revision => "v2.5.1",
         :running_in_container => true,
         :send_environment_metadata => false,
+        :send_function_parameters => true,
         :send_params => false,
+        :send_request_payload => true,
+        :send_request_query_parameters => true,
         :send_session_data => false,
+        :service_name => "my-service",
         :sidekiq_report_errors => "all",
         :statsd_port => "7890",
         :working_directory_path => working_directory_path,
@@ -780,6 +789,7 @@ describe Appsignal::Config do
         "APPSIGNAL_LOG_PATH" => "/tmp/something",
         "APPSIGNAL_PUSH_API_ENDPOINT" => "https://test.appsignal.com",
         "APPSIGNAL_PUSH_API_KEY" => "aaa-bbb-ccc",
+        "APPSIGNAL_SERVICE_NAME" => "my-service",
         "APPSIGNAL_SIDEKIQ_REPORT_ERRORS" => "all",
         "APPSIGNAL_STATSD_PORT" => "7890",
         "APPSIGNAL_NGINX_PORT" => "4321",
@@ -810,19 +820,27 @@ describe Appsignal::Config do
         "APPSIGNAL_OWNERSHIP_SET_NAMESPACE" => "true",
         "APPSIGNAL_RUNNING_IN_CONTAINER" => "true",
         "APPSIGNAL_SEND_ENVIRONMENT_METADATA" => "false",
+        "APPSIGNAL_SEND_FUNCTION_PARAMETERS" => "true",
         "APPSIGNAL_SEND_PARAMS" => "false",
+        "APPSIGNAL_SEND_REQUEST_PAYLOAD" => "true",
+        "APPSIGNAL_SEND_REQUEST_QUERY_PARAMETERS" => "true",
         "APPSIGNAL_SEND_SESSION_DATA" => "false",
 
         # Arrays
         "APPSIGNAL_DNS_SERVERS" => "8.8.8.8,8.8.4.4",
+        "APPSIGNAL_FILTER_ATTRIBUTES" => "attr1,attr2",
+        "APPSIGNAL_FILTER_FUNCTION_PARAMETERS" => "fn1,fn2",
         "APPSIGNAL_FILTER_METADATA" => "key1,key2",
         "APPSIGNAL_FILTER_PARAMETERS" => "param1,param2",
+        "APPSIGNAL_FILTER_REQUEST_PAYLOAD" => "payload1,payload2",
+        "APPSIGNAL_FILTER_REQUEST_QUERY_PARAMETERS" => "query1,query2",
         "APPSIGNAL_FILTER_SESSION_DATA" => "session1,session2",
         "APPSIGNAL_IGNORE_ACTIONS" => "action1,action2",
         "APPSIGNAL_IGNORE_ERRORS" => "ExampleStandardError,AnotherError",
         "APPSIGNAL_IGNORE_LOGS" => "^start$,^Completed 2.* in .*ms (.*)",
         "APPSIGNAL_IGNORE_NAMESPACES" => "admin,private_namespace",
         "APPSIGNAL_REQUEST_HEADERS" => "accept,accept-charset",
+        "APPSIGNAL_RESPONSE_HEADERS" => "x-response-1,x-response-2",
 
         # Floats
         "APPSIGNAL_CPU_COUNT" => "1.5"
@@ -937,8 +955,12 @@ describe Appsignal::Config do
         :enable_rake_performance_instrumentation => false,
         :endpoint                       => "https://push.appsignal.com",
         :files_world_accessible         => true,
+        :filter_attributes              => [],
+        :filter_function_parameters     => [],
         :filter_metadata                => [],
         :filter_parameters              => [],
+        :filter_request_payload         => [],
+        :filter_request_query_parameters => [],
         :filter_session_data            => [],
         :ignore_actions                 => [],
         :ignore_errors                  => [],
@@ -957,10 +979,15 @@ describe Appsignal::Config do
         :ownership_set_namespace        => false,
         :push_api_key                   => "abc",
         :request_headers                => [],
+        :response_headers               => [],
         :revision                       => "v2.5.1",
         :send_environment_metadata      => true,
+        :send_function_parameters       => nil,
         :send_params                    => true,
+        :send_request_payload           => nil,
+        :send_request_query_parameters  => nil,
         :send_session_data              => true,
+        :service_name                   => nil,
         :sidekiq_report_errors          => "all",
         :default_tags                   => {}
       )
@@ -1648,6 +1675,96 @@ describe Appsignal::Config do
       end
 
       it { is_expected.to be(true) }
+    end
+  end
+
+  describe "#warn_for_mode_mismatch" do
+    let(:options) { {} }
+    let(:config) { build_config(:options => options) }
+
+    context "when in collector mode" do
+      let(:collector_options) do
+        { :collector_endpoint => "http://127.0.0.1:9090" }
+      end
+
+      it "warns when filter_parameters is set" do
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:filter_parameters => ["password"]))
+          end
+        expect(logs).to include("filter_parameters")
+        expect(logs).to include("only used by the agent")
+      end
+
+      it "warns when send_params is set" do
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:send_params => false))
+          end
+        expect(logs).to include("send_params")
+        expect(logs).to include("only used by the agent")
+      end
+
+      it "does not warn when only filter_attributes is set" do
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:filter_attributes => ["password"]))
+          end
+        expect(logs).to_not include("only used by the agent")
+        expect(logs).to_not include("only used by the collector")
+      end
+
+      it "does not warn when an agent-only option is explicitly set to its default" do
+        # send_params defaults to true; setting it to true is a no-op and
+        # shouldn't trigger a mode-mismatch warning.
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:send_params => true))
+          end
+        expect(logs).to_not include("only used by the agent")
+        expect(logs).to_not include("only used by the collector")
+      end
+    end
+
+    context "when not in collector mode" do
+      it "warns when a collector-only option is set" do
+        logs =
+          capture_logs do
+            build_config(:options => { :filter_attributes => ["password"] })
+          end
+        expect(logs).to include("filter_attributes")
+        expect(logs).to include("only used by the collector")
+      end
+
+      it "warns when service_name is set" do
+        logs =
+          capture_logs do
+            build_config(:options => { :service_name => "my-service" })
+          end
+        expect(logs).to include("service_name")
+        expect(logs).to include("only used by the collector")
+      end
+
+      it "does not warn when only filter_parameters is set" do
+        logs =
+          capture_logs do
+            build_config(:options => { :filter_parameters => ["password"] })
+          end
+        expect(logs).to_not include("only used by the agent")
+        expect(logs).to_not include("only used by the collector")
+      end
+
+      it "does not warn when a collector-only option is explicitly set to its default" do
+        # filter_attributes defaults to []; setting it to [] is a no-op and
+        # shouldn't trigger a mode-mismatch warning even though the source
+        # dictionary recorded the assignment.
+        logs =
+          capture_logs do
+            build_config(:options => { :filter_attributes => [] })
+          end
+        expect(logs).to_not include("only used by the agent")
+        expect(logs).to_not include("only used by the collector")
+      end
     end
   end
 

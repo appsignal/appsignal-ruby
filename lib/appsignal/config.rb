@@ -107,8 +107,12 @@ module Appsignal
       :enable_rake_performance_instrumentation => false,
       :endpoint => "https://push.appsignal.com",
       :files_world_accessible => true,
+      :filter_attributes => [],
+      :filter_function_parameters => [],
       :filter_metadata => [],
       :filter_parameters => [],
+      :filter_request_payload => [],
+      :filter_request_query_parameters => [],
       :filter_session_data => [],
       :ignore_actions => [],
       :ignore_errors => [],
@@ -131,9 +135,14 @@ module Appsignal
         REQUEST_METHOD REQUEST_PATH SERVER_NAME SERVER_PORT
         SERVER_PROTOCOL
       ],
+      :response_headers => [],
       :send_environment_metadata => true,
+      :send_function_parameters => nil,
       :send_params => true,
+      :send_request_payload => nil,
+      :send_request_query_parameters => nil,
       :send_session_data => true,
+      :service_name => nil,
       :sidekiq_report_errors => "all",
       :default_tags => {}
     }.freeze
@@ -170,6 +179,7 @@ module Appsignal
       :logging_endpoint => "APPSIGNAL_LOGGING_ENDPOINT",
       :endpoint => "APPSIGNAL_PUSH_API_ENDPOINT",
       :push_api_key => "APPSIGNAL_PUSH_API_KEY",
+      :service_name => "APPSIGNAL_SERVICE_NAME",
       :sidekiq_report_errors => "APPSIGNAL_SIDEKIQ_REPORT_ERRORS",
       :statsd_port => "APPSIGNAL_STATSD_PORT",
       :nginx_port => "APPSIGNAL_NGINX_PORT",
@@ -204,21 +214,29 @@ module Appsignal
       :ownership_set_namespace => "APPSIGNAL_OWNERSHIP_SET_NAMESPACE",
       :running_in_container => "APPSIGNAL_RUNNING_IN_CONTAINER",
       :send_environment_metadata => "APPSIGNAL_SEND_ENVIRONMENT_METADATA",
+      :send_function_parameters => "APPSIGNAL_SEND_FUNCTION_PARAMETERS",
       :send_params => "APPSIGNAL_SEND_PARAMS",
+      :send_request_payload => "APPSIGNAL_SEND_REQUEST_PAYLOAD",
+      :send_request_query_parameters => "APPSIGNAL_SEND_REQUEST_QUERY_PARAMETERS",
       :send_session_data => "APPSIGNAL_SEND_SESSION_DATA"
     }.freeze
 
     # @!visibility private
     ARRAY_OPTIONS = {
       :dns_servers => "APPSIGNAL_DNS_SERVERS",
+      :filter_attributes => "APPSIGNAL_FILTER_ATTRIBUTES",
+      :filter_function_parameters => "APPSIGNAL_FILTER_FUNCTION_PARAMETERS",
       :filter_metadata => "APPSIGNAL_FILTER_METADATA",
       :filter_parameters => "APPSIGNAL_FILTER_PARAMETERS",
+      :filter_request_payload => "APPSIGNAL_FILTER_REQUEST_PAYLOAD",
+      :filter_request_query_parameters => "APPSIGNAL_FILTER_REQUEST_QUERY_PARAMETERS",
       :filter_session_data => "APPSIGNAL_FILTER_SESSION_DATA",
       :ignore_actions => "APPSIGNAL_IGNORE_ACTIONS",
       :ignore_errors => "APPSIGNAL_IGNORE_ERRORS",
       :ignore_logs => "APPSIGNAL_IGNORE_LOGS",
       :ignore_namespaces => "APPSIGNAL_IGNORE_NAMESPACES",
-      :request_headers => "APPSIGNAL_REQUEST_HEADERS"
+      :request_headers => "APPSIGNAL_REQUEST_HEADERS",
+      :response_headers => "APPSIGNAL_RESPONSE_HEADERS"
     }.freeze
 
     # @!visibility private
@@ -230,6 +248,32 @@ module Appsignal
     HASH_OPTIONS = {
       :default_tags => "APPSIGNAL_DEFAULT_TAGS"
     }.freeze
+
+    # Configuration options that only have an effect when the integration is
+    # in collector mode. When the agent is in use, setting any of these emits
+    # a warning at startup.
+    # @!visibility private
+    COLLECTOR_ONLY_OPTIONS = [
+      :filter_attributes,
+      :filter_function_parameters,
+      :filter_request_payload,
+      :filter_request_query_parameters,
+      :response_headers,
+      :send_function_parameters,
+      :send_request_payload,
+      :send_request_query_parameters,
+      :service_name
+    ].freeze
+
+    # Existing AppSignal options that only affect the agent's handling of
+    # trace data. In collector mode these don't filter anything; users need
+    # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
+    # @!visibility private
+    AGENT_ONLY_TRACE_OPTIONS = [
+      :filter_metadata,
+      :filter_parameters,
+      :send_params
+    ].freeze
 
     # @!visibility private
     attr_reader :root_path, :env, :config_hash
@@ -529,6 +573,26 @@ module Appsignal
       else
         @valid = true
       end
+
+      warn_for_mode_mismatch
+    end
+
+    # Emit warnings when a configuration option is set that has no effect in
+    # the current mode (collector vs. agent).
+    # @!visibility private
+    def warn_for_mode_mismatch
+      if collector_mode?
+        warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
+          "The collector is in use. The '#{option}' configuration option is " \
+            "only used by the agent for trace data and will be ignored."
+        end
+      else
+        warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
+          "The agent is in use. The '#{option}' configuration option is " \
+            "only used by the collector and will be ignored. Set " \
+            "'collector_endpoint' to use the collector."
+        end
+      end
     end
 
     # Deep freeze the config object so it cannot be modified during the runtime
@@ -551,6 +615,17 @@ module Appsignal
     end
 
     private
+
+    # Yield a warning for each option in `options` whose effective value
+    # differs from the default. Setting an option to its default value is
+    # a no-op, so we don't warn about it.
+    def warn_user_modified(options)
+      options.each do |option|
+        next if config_hash[option] == DEFAULT_CONFIG[option]
+
+        logger.warn(yield(option))
+      end
+    end
 
     def logger
       Appsignal.internal_logger
