@@ -1041,6 +1041,20 @@ module Appsignal
     sig { returns(T::Boolean) }
     def active?; end
 
+    # Check if AppSignal is running in collector mode.
+    # 
+    # Collector mode is active when a non-empty `collector_endpoint` is
+    # configured. In this mode, an OpenTelemetry SDK is configured to export
+    # OTLP/HTTP data to that endpoint.
+    # 
+    # Memoised: the result is cached on first call so hot paths (metric
+    # and log emits) avoid re-running the string-strip predicate. A fresh
+    # `Config` instance always starts uncached.
+    # 
+    # _@return_ — True if collector mode is active.
+    sig { returns(T::Boolean) }
+    def collector_mode?; end
+
     sig { returns(T::Boolean) }
     def yml_config_file?; end
 

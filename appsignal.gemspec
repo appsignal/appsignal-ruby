@@ -60,6 +60,15 @@ Gem::Specification.new do |gem|
   # Needs 2.0+ because we rely on Rack::Events
   gem.add_dependency "rack", ">= 2.0.0"
 
+  # OpenTelemetry SDK and OTLP exporters. Only loaded when collector mode is
+  # active (`Appsignal.config.collector_mode?`); see `lib/appsignal/opentelemetry.rb`.
+  gem.add_dependency "opentelemetry-exporter-otlp"
+  gem.add_dependency "opentelemetry-exporter-otlp-logs"
+  gem.add_dependency "opentelemetry-exporter-otlp-metrics"
+  gem.add_dependency "opentelemetry-logs-sdk"
+  gem.add_dependency "opentelemetry-metrics-sdk"
+  gem.add_dependency "opentelemetry-sdk"
+
   gem.add_development_dependency "pry"
   gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"

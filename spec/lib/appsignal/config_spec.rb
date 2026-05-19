@@ -709,6 +709,7 @@ describe Appsignal::Config do
         :activejob_report_errors => "all",
         :bind_address => "0.0.0.0",
         :ca_file_path => "/some/path",
+        :collector_endpoint => "http://collector.example.test:4318",
         :cpu_count => 1.5,
         :dns_servers => ["8.8.8.8", "8.8.4.4"],
         :enable_allocation_tracking => false,
@@ -768,6 +769,7 @@ describe Appsignal::Config do
         "APPSIGNAL_APP_NAME" => "App name",
         "APPSIGNAL_BIND_ADDRESS" => "0.0.0.0",
         "APPSIGNAL_CA_FILE_PATH" => "/some/path",
+        "APPSIGNAL_COLLECTOR_ENDPOINT" => "http://collector.example.test:4318",
         "APPSIGNAL_ENABLE_AT_EXIT_HOOK" => "never",
         "APPSIGNAL_HOSTNAME" => "my hostname",
         "APPSIGNAL_HOST_ROLE" => "my host role",
@@ -919,6 +921,7 @@ describe Appsignal::Config do
         :active                         => true,
         :activejob_report_errors        => "all",
         :ca_file_path                   => File.join(resources_dir, "cacert.pem"),
+        :collector_endpoint             => nil,
         :dns_servers                    => [],
         :enable_allocation_tracking     => true,
         :enable_at_exit_hook            => "on_error",
@@ -1606,6 +1609,45 @@ describe Appsignal::Config do
     context "when config is invalid and active is false" do
       let(:options) { { :active => false } }
       it { is_expected.to be(false) }
+    end
+  end
+
+  describe "#collector_mode?" do
+    let(:options) { {} }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
+    subject { config.collector_mode? }
+
+    context "when :collector_endpoint is not set" do
+      it { is_expected.to be(false) }
+    end
+
+    context "when :collector_endpoint is nil" do
+      let(:options) { { :collector_endpoint => nil } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when :collector_endpoint is an empty string" do
+      let(:options) { { :collector_endpoint => "" } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when :collector_endpoint is whitespace only" do
+      let(:options) { { :collector_endpoint => "   " } }
+      it { is_expected.to be(false) }
+    end
+
+    context "when :collector_endpoint is set" do
+      let(:options) { { :collector_endpoint => "http://127.0.0.1:9090" } }
+      it { is_expected.to be(true) }
+    end
+
+    context "when :collector_endpoint is set via APPSIGNAL_COLLECTOR_ENDPOINT" do
+      let(:config) do
+        ENV["APPSIGNAL_COLLECTOR_ENDPOINT"] = "http://127.0.0.1:9090"
+        build_config(:root_path => "", :env => nil, :options => {})
+      end
+
+      it { is_expected.to be(true) }
     end
   end
 
