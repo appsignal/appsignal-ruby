@@ -1590,6 +1590,49 @@ describe Appsignal do
           Appsignal.add_distribution_value("key", 10)
         end
       end
+
+      context "when collector mode is active" do
+        before do
+          Appsignal.clear!
+          start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+        end
+
+        describe ".set_gauge" do
+          it "routes through the OpenTelemetry backend, not the extension" do
+            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
+            expect(Appsignal::Extension).not_to receive(:set_gauge)
+
+            Appsignal.set_gauge("key", 0.1, tags)
+
+            expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
+              .with("key", 0.1, tags)
+          end
+        end
+
+        describe ".increment_counter" do
+          it "routes through the OpenTelemetry backend, not the extension" do
+            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
+            expect(Appsignal::Extension).not_to receive(:increment_counter)
+
+            Appsignal.increment_counter("key", 5, tags)
+
+            expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
+              .with("key", 5, tags)
+          end
+        end
+
+        describe ".add_distribution_value" do
+          it "routes through the OpenTelemetry backend, not the extension" do
+            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
+            expect(Appsignal::Extension).not_to receive(:add_distribution_value)
+
+            Appsignal.add_distribution_value("key", 0.1, tags)
+
+            expect(Appsignal::Metrics::OpenTelemetryBackend)
+              .to have_received(:add_distribution_value).with("key", 0.1, tags)
+          end
+        end
+      end
     end
 
     describe ".internal_logger" do
