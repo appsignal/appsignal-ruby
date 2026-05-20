@@ -16,14 +16,7 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def set_gauge(name, value, tags = {})
-        Appsignal::Extension.set_gauge(
-          name.to_s,
-          value.to_f,
-          Appsignal::Utils::Data.generate(tags)
-        )
-      rescue RangeError
-        Appsignal.internal_logger
-          .warn("The gauge value '#{value}' for metric '#{name}' is too big")
+        Appsignal::Metrics.backend.set_gauge(name, value, tags)
       end
 
       # Report a counter metric.
@@ -39,14 +32,7 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def increment_counter(name, value = 1.0, tags = {})
-        Appsignal::Extension.increment_counter(
-          name.to_s,
-          value.to_f,
-          Appsignal::Utils::Data.generate(tags)
-        )
-      rescue RangeError
-        Appsignal.internal_logger
-          .warn("The counter value '#{value}' for metric '#{name}' is too big")
+        Appsignal::Metrics.backend.increment_counter(name, value, tags)
       end
 
       # Report a distribution metric.
@@ -62,14 +48,7 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def add_distribution_value(name, value, tags = {})
-        Appsignal::Extension.add_distribution_value(
-          name.to_s,
-          value.to_f,
-          Appsignal::Utils::Data.generate(tags)
-        )
-      rescue RangeError
-        Appsignal.internal_logger
-          .warn("The distribution value '#{value}' for metric '#{name}' is too big")
+        Appsignal::Metrics.backend.add_distribution_value(name, value, tags)
       end
     end
   end

@@ -12,6 +12,13 @@ module Appsignal
       # Lazily requires the OpenTelemetry SDK and OTLP exporter gems so that
       # users not in collector mode do not pay the load cost.
       def configure(config)
+        # The OTel Ruby SDK exposes no programmatic knob for the default
+        # aggregation temporality; this env var is the only way to set
+        # it. We pick `:delta` to match the Python integration. (Note:
+        # the Ruby SDK keeps `UpDownCounter` cumulative regardless of
+        # this preference, per the OTel spec.)
+        ENV["OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"] ||= "delta"
+
         require "opentelemetry/sdk"
         require "opentelemetry/exporter/otlp"
         require "opentelemetry-metrics-sdk"

@@ -8,6 +8,7 @@ require "appsignal/logger"
 require "appsignal/utils/stdout_and_logger_message"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
+require "appsignal/metrics"
 
 # AppSignal for Ruby gem's main module.
 #
