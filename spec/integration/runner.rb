@@ -7,7 +7,6 @@ class Runner
     @pid = nil
     @output = nil
     @status = nil
-    @post_spawn_wait = jruby? ? 10 : 1 # seconds
     @finish_timeout = jruby? ? 10 : 5 # seconds
     @read_timeout = 1 # seconds
     @read, @write = IO.pipe
@@ -36,7 +35,6 @@ class Runner
         :chdir => directory
       }
     )
-    sleep @post_spawn_wait # Let the app boot
 
     yield if block_given?
 

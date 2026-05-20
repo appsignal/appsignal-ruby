@@ -2,6 +2,10 @@ describe "AppSignal stop" do
   it "doesn't exit the process with a ThreadError when receiving a signal trap" do
     runner = Runner.new("stop_with_trap")
     runner.run do
+      # Let the child fully boot and install its USR1 trap before signalling
+      # it. Without this, the signal can arrive before `Signal.trap` and the
+      # default handler terminates the child.
+      sleep(DependencyHelper.running_jruby? ? 10 : 1) # seconds
       # Send a problematic signal
       # "USR1" has no special meaning for this test, it's just a signal
       Process.kill("USR1", runner.pid)
