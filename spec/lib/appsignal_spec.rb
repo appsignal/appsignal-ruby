@@ -934,6 +934,31 @@ describe Appsignal do
       expect(Appsignal::CheckIn.scheduler).to receive(:stop)
       Appsignal.stop
     end
+
+    context "in collector mode" do
+      before do
+        Appsignal.clear!
+        start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+      end
+
+      it "shuts down the OpenTelemetry providers so buffered telemetry flushes" do
+        expect(::OpenTelemetry.tracer_provider).to receive(:shutdown)
+        expect(::OpenTelemetry.meter_provider).to receive(:shutdown)
+        expect(::OpenTelemetry.logger_provider).to receive(:shutdown)
+        Appsignal.stop
+      end
+    end
+
+    context "when not in collector mode" do
+      it "calls Appsignal::OpenTelemetry.shutdown, which short-circuits as a no-op" do
+        # `configure` was not called in this spec, so `started?` is false
+        # and `shutdown` returns immediately without touching the API gem's
+        # proxy providers (whose `shutdown` isn't defined until an SDK is
+        # wired up).
+        expect(Appsignal::OpenTelemetry.started?).to be(false)
+        expect { Appsignal.stop }.not_to raise_error
+      end
+    end
   end
 
   describe ".started?" do

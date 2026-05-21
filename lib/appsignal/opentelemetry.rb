@@ -11,6 +11,10 @@ module Appsignal
       #
       # Lazily requires the OpenTelemetry SDK and OTLP exporter gems so that
       # users not in collector mode do not pay the load cost.
+      #
+      # Sets `@started` to `true` on success, `false` if the SDK gems can't be
+      # loaded or any other error occurs. Callers can read this via
+      # {.started?} to decide whether to route through the OTel backends.
       def configure(config)
         # The OTel Ruby SDK exposes no programmatic knob for the default
         # aggregation temporality; this env var is the only way to set
@@ -79,14 +83,48 @@ module Appsignal
             )
           )
         )
+
+        @started = true
       rescue LoadError => e
+        @started = false
         Appsignal::Utils::StdoutAndLoggerMessage.error(
           "Cannot configure OpenTelemetry SDK for collector mode: #{e.class}: #{e.message}"
         )
       rescue => e
+        @started = false
         Appsignal::Utils::StdoutAndLoggerMessage.error(
           "Error configuring OpenTelemetry SDK for collector mode: " \
             "#{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}"
+        )
+      end
+
+      # Whether {.configure} has successfully booted the OpenTelemetry SDK
+      # for this process. Returns `false` before {.configure} runs and
+      # `false` if it ran but raised.
+      def started?
+        defined?(@started) ? @started : false
+      end
+
+      # @!visibility private
+      #
+      # Test-only. Drops the started flag so subsequent tests start from a
+      # clean slate; does not touch the global `::OpenTelemetry` providers.
+      def reset!
+        @started = false
+      end
+
+      # Flush and shut down the OpenTelemetry SDK providers booted by
+      # {.configure}. Called from `Appsignal.stop` so buffered
+      # metrics/logs/spans don't get dropped on exit.
+      def shutdown
+        return unless started?
+
+        ::OpenTelemetry.tracer_provider&.shutdown
+        ::OpenTelemetry.meter_provider&.shutdown
+        ::OpenTelemetry.logger_provider&.shutdown
+      rescue => e
+        Appsignal.internal_logger.error(
+          "Error shutting down OpenTelemetry SDK: #{e.class}: #{e.message}"
         )
       end
 

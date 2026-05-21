@@ -99,6 +99,7 @@ RSpec.configure do |config|
 
   config.after do
     OTLPCollectorServer.clear if defined?(OTLPCollectorServer)
+    Appsignal::OpenTelemetry.reset!
   end
 
   config.before :context do
