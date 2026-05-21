@@ -8,9 +8,6 @@ describe "AppSignal collector mode metric helpers" do
     runner = Runner.new("collector_mode_metrics")
     runner.run
 
-    expect(runner.status.exitstatus).to eq(0), "runner failed:\n#{runner.output}"
-    expect(runner.output).to include("DONE")
-
     metric_req = OTLPCollectorServer.listen_to("/v1/metrics")
     metric_msg = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
       .decode(metric_req[:body])

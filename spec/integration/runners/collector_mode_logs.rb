@@ -2,7 +2,6 @@ PROJECT_ROOT = "../../../".freeze
 $LOAD_PATH.unshift(File.expand_path("ext", PROJECT_ROOT))
 $LOAD_PATH.unshift(File.expand_path("lib", PROJECT_ROOT))
 
-require "fileutils"
 require "appsignal"
 
 Appsignal.configure(:test) do |config|
@@ -10,11 +9,6 @@ Appsignal.configure(:test) do |config|
   config.push_api_key = "abc"
   config.name = "collector-mode-test"
   config.collector_endpoint = "http://127.0.0.1:9090"
-
-  working_directory = "tmp/appsignal"
-  FileUtils.rm_rf(working_directory)
-  FileUtils.mkdir_p(working_directory)
-  config.working_directory_path = File.join(__dir__, working_directory)
 end
 
 Appsignal.start
