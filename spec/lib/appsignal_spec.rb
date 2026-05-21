@@ -896,9 +896,25 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "starts the logger and extension" do
-        expect(Appsignal).to receive(:_start_logger)
-        expect(Appsignal::Extension).to receive(:start)
+      it "starts the logger before restarting the extension" do
+        expect(Appsignal).to receive(:_start_logger).ordered
+        expect(Appsignal::Extension).to receive(:start).ordered
+
+        expect(Appsignal.forked).to be_nil
+      end
+
+      it "does not stop the extension before restarting it" do
+        allow(Appsignal).to receive(:_start_logger)
+        allow(Appsignal::Extension).to receive(:start)
+        expect(Appsignal::Extension).to_not receive(:stop)
+
+        Appsignal.forked
+      end
+
+      it "does not restart minutely probes (probe thread dies on fork by design)" do
+        allow(Appsignal).to receive(:_start_logger)
+        allow(Appsignal::Extension).to receive(:start)
+        expect(Appsignal::Probes).to_not receive(:start)
 
         Appsignal.forked
       end
