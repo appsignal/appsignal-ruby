@@ -29,6 +29,13 @@ module OTLPCollectorServer
       "http://127.0.0.1:#{PORT}"
     end
 
+    # Env vars that put a spawned runner into collector mode, pointed at this
+    # mock server. Returns a plain Hash so callers can merge in other env
+    # vars, e.g. `OTLPCollectorServer.env.merge("OTEL_..." => "...")`.
+    def env
+      { "APPSIGNAL_COLLECTOR_ENDPOINT" => endpoint }
+    end
+
     def listen_to(path, timeout: 10)
       Timeout.timeout(timeout) { received[path].pop }
     rescue Timeout::Error

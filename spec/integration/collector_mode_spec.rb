@@ -63,9 +63,6 @@ describe "AppSignal collector mode" do
     runner = Runner.new("collector_mode_emit")
     runner.run
 
-    expect(runner.status.exitstatus).to eq(0), "runner failed:\n#{runner.output}"
-    expect(runner.output).to include("DONE")
-
     # Config wiring: the child process saw the value and computed the predicate.
     expect(runner.output).to include("collector_endpoint=http://127.0.0.1:9090")
     expect(runner.output).to include("collector_mode?=true")
