@@ -867,6 +867,39 @@ describe Appsignal do
         expect(Appsignal.internal_logger.level).to eq Logger::DEBUG
       end
     end
+
+    if DependencyHelper.ruby_3_1_or_newer?
+      context "when collector_endpoint is set but the OpenTelemetry SDK fails to boot" do
+        let(:err_stream) { std_stream }
+        let(:stdout_stream) { std_stream }
+
+        before do
+          # Simulate a failure inside `Appsignal::OpenTelemetry.configure` —
+          # e.g. one of the OTel gems can't be loaded. The rescue inside
+          # `configure` should set `started?` to false instead of letting the
+          # error bubble out.
+          allow(Appsignal::OpenTelemetry).to receive(:require)
+            .with("opentelemetry/sdk")
+            .and_raise(LoadError, "fake load failure")
+        end
+
+        it "falls back to the agent backend rather than silently dropping telemetry" do
+          capture_std_streams(stdout_stream, err_stream) do
+            start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+          end
+
+          # Config still records the user's intent.
+          expect(Appsignal.config.collector_mode_configured?).to be(true)
+          # But the active predicate is false because the SDK never booted.
+          expect(Appsignal.config.collector_mode?).to be(false)
+          expect(Appsignal::OpenTelemetry.started?).to be(false)
+
+          # Backends fall through to the extension implementations.
+          expect(Appsignal::Backends.metrics).to eq(Appsignal::Metrics::ExtensionBackend)
+          expect(Appsignal::Backends.logger).to eq(Appsignal::Logger::ExtensionBackend)
+        end
+      end
+    end
   end
 
   describe ".load" do
@@ -951,17 +984,19 @@ describe Appsignal do
       Appsignal.stop
     end
 
-    context "in collector mode" do
-      before do
-        Appsignal.clear!
-        start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-      end
+    if DependencyHelper.ruby_3_1_or_newer?
+      context "in collector mode" do
+        before do
+          Appsignal.clear!
+          start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+        end
 
-      it "shuts down the OpenTelemetry providers so buffered telemetry flushes" do
-        expect(::OpenTelemetry.tracer_provider).to receive(:shutdown)
-        expect(::OpenTelemetry.meter_provider).to receive(:shutdown)
-        expect(::OpenTelemetry.logger_provider).to receive(:shutdown)
-        Appsignal.stop
+        it "shuts down the OpenTelemetry providers so buffered telemetry flushes" do
+          expect(::OpenTelemetry.tracer_provider).to receive(:shutdown)
+          expect(::OpenTelemetry.meter_provider).to receive(:shutdown)
+          expect(::OpenTelemetry.logger_provider).to receive(:shutdown)
+          Appsignal.stop
+        end
       end
     end
 
@@ -1632,45 +1667,47 @@ describe Appsignal do
         end
       end
 
-      context "when collector mode is active" do
-        before do
-          Appsignal.clear!
-          start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-        end
-
-        describe ".set_gauge" do
-          it "routes through the OpenTelemetry backend, not the extension" do
-            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
-            expect(Appsignal::Extension).not_to receive(:set_gauge)
-
-            Appsignal.set_gauge("key", 0.1, tags)
-
-            expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
-              .with("key", 0.1, tags)
+      if DependencyHelper.ruby_3_1_or_newer?
+        context "when collector mode is active" do
+          before do
+            Appsignal.clear!
+            start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
           end
-        end
 
-        describe ".increment_counter" do
-          it "routes through the OpenTelemetry backend, not the extension" do
-            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
-            expect(Appsignal::Extension).not_to receive(:increment_counter)
+          describe ".set_gauge" do
+            it "routes through the OpenTelemetry backend, not the extension" do
+              allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
+              expect(Appsignal::Extension).not_to receive(:set_gauge)
 
-            Appsignal.increment_counter("key", 5, tags)
+              Appsignal.set_gauge("key", 0.1, tags)
 
-            expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
-              .with("key", 5, tags)
+              expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
+                .with("key", 0.1, tags)
+            end
           end
-        end
 
-        describe ".add_distribution_value" do
-          it "routes through the OpenTelemetry backend, not the extension" do
-            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
-            expect(Appsignal::Extension).not_to receive(:add_distribution_value)
+          describe ".increment_counter" do
+            it "routes through the OpenTelemetry backend, not the extension" do
+              allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
+              expect(Appsignal::Extension).not_to receive(:increment_counter)
 
-            Appsignal.add_distribution_value("key", 0.1, tags)
+              Appsignal.increment_counter("key", 5, tags)
 
-            expect(Appsignal::Metrics::OpenTelemetryBackend)
-              .to have_received(:add_distribution_value).with("key", 0.1, tags)
+              expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
+                .with("key", 5, tags)
+            end
+          end
+
+          describe ".add_distribution_value" do
+            it "routes through the OpenTelemetry backend, not the extension" do
+              allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
+              expect(Appsignal::Extension).not_to receive(:add_distribution_value)
+
+              Appsignal.add_distribution_value("key", 0.1, tags)
+
+              expect(Appsignal::Metrics::OpenTelemetryBackend)
+                .to have_received(:add_distribution_value).with("key", 0.1, tags)
+            end
           end
         end
       end

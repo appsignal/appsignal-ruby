@@ -991,17 +991,34 @@ module Appsignal
     # _@return_ — True if valid and active for the current environment.
     def active?: () -> bool
 
-    # Check if AppSignal is running in collector mode.
+    # Check if collector mode is configured.
     # 
-    # Collector mode is active when a non-empty `collector_endpoint` is
-    # configured. In this mode, an OpenTelemetry SDK is configured to export
-    # OTLP/HTTP data to that endpoint.
+    # Returns true when a non-empty `collector_endpoint` is set and the
+    # running Ruby version is at least {MIN_RUBY_VERSION_FOR_COLLECTOR_MODE}.
+    # On older Rubies, `collector_endpoint` is ignored (with a warning) and
+    # the AppSignal agent is used instead.
     # 
-    # Memoised: the result is cached on first call so hot paths (metric
-    # and log emits) avoid re-running the string-strip predicate. A fresh
-    # `Config` instance always starts uncached.
+    # This is the *intent* check — it answers "did the user ask for
+    # collector mode, and could we honor it?". It does not say whether the
+    # OpenTelemetry SDK actually booted. See {#collector_mode?} for that.
     # 
-    # _@return_ — True if collector mode is active.
+    # Memoised: the result is cached on first call so hot paths avoid
+    # re-running the string-strip predicate, and so the unsupported-Ruby
+    # warning is emitted at most once per `Config` instance.
+    # 
+    # _@return_ — True if collector mode is configured.
+    def collector_mode_configured?: () -> bool
+
+    # Check if AppSignal is actively running in collector mode.
+    # 
+    # True only if collector mode is {#collector_mode_configured? configured}
+    # *and* `Appsignal::OpenTelemetry.configure` has successfully booted the
+    # SDK in this process. Use this for backend dispatch on hot paths
+    # (metric and log emits): if the OTel boot failed, callers fall back to
+    # the agent backend rather than silently dropping data into no-op
+    # providers.
+    # 
+    # _@return_ — True if collector mode is configured and started.
     def collector_mode?: () -> bool
 
     def yml_config_file?: () -> bool
@@ -2462,6 +2479,9 @@ module Appsignal
 
   class NotStartedError < Appsignal::InternalError
     def message: () -> String
+  end
+
+  module Metrics
   end
 end
 

@@ -727,20 +727,23 @@ describe Appsignal::Logger do
     end
   end
 
-  context "when collector mode is active" do
-    before do
-      Appsignal.clear!
-      start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-    end
+  if DependencyHelper.ruby_3_1_or_newer?
+    context "when collector mode is active" do
+      before do
+        Appsignal.clear!
+        start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+      end
 
-    it "routes through the OpenTelemetry backend, not the extension" do
-      allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
-      expect(Appsignal::Extension).not_to receive(:log)
+      it "routes through the OpenTelemetry backend, not the extension" do
+        allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+        expect(Appsignal::Extension).not_to receive(:log)
 
-      logger.info("Hello", :tag => "value")
+        logger.info("Hello", :tag => "value")
 
-      expect(Appsignal::Logger::OpenTelemetryBackend).to have_received(:emit)
-        .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Hello", { :tag => "value" })
+        expect(Appsignal::Logger::OpenTelemetryBackend).to have_received(:emit)
+          .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Hello",
+            { :tag => "value" })
+      end
     end
   end
 end
