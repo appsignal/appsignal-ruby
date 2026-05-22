@@ -1636,10 +1636,14 @@ describe Appsignal::Config do
     end
   end
 
-  describe "#collector_mode?" do
+  describe "#collector_mode_configured?" do
     let(:options) { {} }
     let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
-    subject { config.collector_mode? }
+    subject { config.collector_mode_configured? }
+    # Stub to the gate's minimum so the "happy path" contexts pass on Ruby < 3.1.
+    # The "when running on Ruby older..." context below stubs to an older version
+    # to exercise the gate path on every CI Ruby.
+    before { stub_const("RUBY_VERSION", Appsignal::Config::MIN_RUBY_VERSION_FOR_COLLECTOR_MODE) }
 
     context "when :collector_endpoint is not set" do
       it { is_expected.to be(false) }
@@ -1673,6 +1677,63 @@ describe Appsignal::Config do
 
       it { is_expected.to be(true) }
     end
+
+    context "when running on Ruby older than the minimum supported version" do
+      let(:options) { { :collector_endpoint => "http://127.0.0.1:9090" } }
+      let(:err_stream) { std_stream }
+      before { stub_const("RUBY_VERSION", "3.0.7") }
+
+      it "forces collector mode off and warns the user" do
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              expect(config.collector_mode_configured?).to be(false)
+            end
+          end
+
+        message =
+          "Collector mode requires Ruby " \
+            "#{Appsignal::Config::MIN_RUBY_VERSION_FOR_COLLECTOR_MODE} or higher " \
+            "(running Ruby 3.0.7)"
+        expect(logs).to include(message)
+        expect(err_stream.read).to include("appsignal WARNING: #{message}")
+      end
+
+      it "memoizes the result so the warning is emitted at most once" do
+        logs =
+          capture_logs do
+            capture_std_streams(std_stream, err_stream) do
+              3.times { config.collector_mode_configured? }
+            end
+          end
+
+        expect(logs.scan("Collector mode requires").length).to eq(1)
+      end
+    end
+  end
+
+  describe "#collector_mode?" do
+    let(:options) { { :collector_endpoint => "http://127.0.0.1:9090" } }
+    let(:config) { build_config(:root_path => "", :env => nil, :options => options) }
+    subject { config.collector_mode? }
+    before { stub_const("RUBY_VERSION", Appsignal::Config::MIN_RUBY_VERSION_FOR_COLLECTOR_MODE) }
+
+    context "when collector mode is configured and OpenTelemetry has started" do
+      before { allow(Appsignal::OpenTelemetry).to receive(:started?).and_return(true) }
+
+      it { is_expected.to be(true) }
+    end
+
+    context "when collector mode is configured but OpenTelemetry hasn't started" do
+      before { allow(Appsignal::OpenTelemetry).to receive(:started?).and_return(false) }
+
+      it { is_expected.to be(false) }
+    end
+
+    context "when collector mode is not configured" do
+      let(:options) { {} }
+      it { is_expected.to be(false) }
+    end
   end
 
   describe "#warn_for_mode_mismatch" do
@@ -1683,6 +1744,7 @@ describe Appsignal::Config do
       let(:collector_options) do
         { :collector_endpoint => "http://127.0.0.1:9090" }
       end
+      before { stub_const("RUBY_VERSION", Appsignal::Config::MIN_RUBY_VERSION_FOR_COLLECTOR_MODE) }
 
       it "warns when filter_parameters is set" do
         logs =

@@ -247,6 +247,13 @@ module Appsignal
       :default_tags => "APPSIGNAL_DEFAULT_TAGS"
     }.freeze
 
+    # Collector mode requires Ruby 3.1+. The OpenTelemetry Ruby SDK relies on
+    # `Process._fork` (introduced in Ruby 3.1) for its fork hooks, without
+    # which background reader threads don't restart in child processes and
+    # buffered telemetry is lost after a fork.
+    # @!visibility private
+    MIN_RUBY_VERSION_FOR_COLLECTOR_MODE = "3.1"
+
     # Configuration options that only have an effect when the integration is
     # in collector mode. When the agent is in use, setting any of these emits
     # a warning at startup.
@@ -477,22 +484,55 @@ module Appsignal
       valid? && active_for_env?
     end
 
-    # Check if AppSignal is running in collector mode.
+    # Check if collector mode is configured.
     #
-    # Collector mode is active when a non-empty `collector_endpoint` is
-    # configured. In this mode, an OpenTelemetry SDK is configured to export
-    # OTLP/HTTP data to that endpoint.
+    # Returns true when a non-empty `collector_endpoint` is set and the
+    # running Ruby version is at least {MIN_RUBY_VERSION_FOR_COLLECTOR_MODE}.
+    # On older Rubies, `collector_endpoint` is ignored (with a warning) and
+    # the AppSignal agent is used instead.
     #
-    # Memoised: the result is cached on first call so hot paths (metric
-    # and log emits) avoid re-running the string-strip predicate. A fresh
-    # `Config` instance always starts uncached.
+    # This is the *intent* check — it answers "did the user ask for
+    # collector mode, and could we honor it?". It does not say whether the
+    # OpenTelemetry SDK actually booted. See {#collector_mode?} for that.
     #
-    # @return [Boolean] True if collector mode is active.
-    def collector_mode?
-      return @collector_mode if defined?(@collector_mode)
+    # Memoised: the result is cached on first call so hot paths avoid
+    # re-running the string-strip predicate, and so the unsupported-Ruby
+    # warning is emitted at most once per `Config` instance.
+    #
+    # @return [Boolean] True if collector mode is configured.
+    def collector_mode_configured?
+      return @collector_mode_configured if defined?(@collector_mode_configured)
 
       endpoint = config_hash[:collector_endpoint]
-      @collector_mode = !endpoint.nil? && !endpoint.to_s.strip.empty?
+      configured = !endpoint.nil? && !endpoint.to_s.strip.empty?
+
+      if configured && Gem::Version.new(RUBY_VERSION) <
+          Gem::Version.new(MIN_RUBY_VERSION_FOR_COLLECTOR_MODE)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(
+          "Collector mode requires Ruby #{MIN_RUBY_VERSION_FOR_COLLECTOR_MODE} or higher " \
+            "(running Ruby #{RUBY_VERSION}). The `collector_endpoint` option will be " \
+            "ignored and the AppSignal agent will be used instead."
+        )
+        @collector_mode_configured = false
+      else
+        @collector_mode_configured = configured
+      end
+    end
+
+    # Check if AppSignal is actively running in collector mode.
+    #
+    # True only if collector mode is {#collector_mode_configured? configured}
+    # *and* `Appsignal::OpenTelemetry.configure` has successfully booted the
+    # SDK in this process. Use this for backend dispatch on hot paths
+    # (metric and log emits): if the OTel boot failed, callers fall back to
+    # the agent backend rather than silently dropping data into no-op
+    # providers.
+    #
+    # @return [Boolean] True if collector mode is configured and started.
+    def collector_mode?
+      collector_mode_configured? &&
+        defined?(Appsignal::OpenTelemetry) &&
+        Appsignal::OpenTelemetry.started?
     end
 
     # @!visibility private
@@ -577,9 +617,13 @@ module Appsignal
 
     # Emit warnings when a configuration option is set that has no effect in
     # the current mode (collector vs. agent).
+    #
+    # Uses {#collector_mode_configured?} (intent) rather than
+    # {#collector_mode?} so the warnings fire based on what the user asked
+    # for, independent of whether the OpenTelemetry SDK successfully booted.
     # @!visibility private
     def warn_for_mode_mismatch
-      if collector_mode?
+      if collector_mode_configured?
         warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
           "The collector is in use. The '#{option}' configuration option is " \
             "only used by the agent for trace data and will be ignored."

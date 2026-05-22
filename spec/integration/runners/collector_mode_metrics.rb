@@ -4,13 +4,8 @@ $LOAD_PATH.unshift(File.expand_path("lib", PROJECT_ROOT))
 
 require "appsignal"
 
-Appsignal.configure(:test) do |config|
-  config.active = true
-  config.push_api_key = "abc"
-  config.name = "collector-mode-test"
-  config.collector_endpoint = "http://127.0.0.1:9090"
-end
-
+# Name, environment and push API key come from the env vars the Runner
+# injects (see `Runner::DEFAULT_ENV`); `Appsignal.start` loads them.
 Appsignal.start
 
 # Exercise the public AppSignal metric helpers; in collector mode these
