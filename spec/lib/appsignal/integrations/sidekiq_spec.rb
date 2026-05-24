@@ -575,6 +575,39 @@ if DependencyHelper.sidekiq_present?
         expect(events).to eq(expected_perform_events)
       end
 
+      if DependencyHelper.rails_version >= Gem::Version.new("6.1.0")
+        context "with log_arguments disabled on the job class" do
+          before do
+            stub_const("ActiveJobSidekiqNoLogArgsTestJob", Class.new(ActiveJob::Base) do
+              self.queue_adapter = :sidekiq
+              self.log_arguments = false
+
+              def perform(*_args)
+              end
+            end)
+          end
+
+          it "does not include arguments in the transaction params" do
+            perform_activejob_sidekiq_job(ActiveJobSidekiqNoLogArgsTestJob, given_args)
+
+            transaction = last_transaction
+            expect(transaction).to have_namespace(namespace)
+            expect(transaction).to have_action("ActiveJobSidekiqNoLogArgsTestJob#perform")
+            expect(transaction).to_not have_error
+            expect(transaction).to include_metadata("queue" => "default")
+            expect(transaction).to_not include_environment
+            expect(transaction).to_not include_params
+            expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
+            expect(transaction).to have_queue_start(time.to_i * 1000)
+
+            events = transaction.to_h["events"]
+              .sort_by { |e| e["start"] }
+              .map { |event| event["name"] }
+            expect(events).to eq(expected_perform_events)
+          end
+        end
+      end
+
       context "with error" do
         it "reports the error on the transaction from the ActiveRecord integration" do
           expect do
