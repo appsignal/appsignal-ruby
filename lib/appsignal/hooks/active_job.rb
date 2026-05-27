@@ -119,7 +119,7 @@ module Appsignal
           # To report errors on discard, see the `after_discard` callback.
           return unless Appsignal.config[:activejob_report_errors] == "all"
 
-          transaction.set_error(exception)
+          transaction&.set_error(exception)
         end
       end
 

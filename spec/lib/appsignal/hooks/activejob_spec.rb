@@ -285,6 +285,19 @@ if DependencyHelper.active_job_present?
           end
         end
       end
+
+      context "when the local transaction was never assigned" do
+        # Reproduce a nil `transaction` local in the rescue, as can happen
+        # when an async signal raises before the assignment completes.
+        it "does not raise NoMethodError and re-raises the original error" do
+          allow(Appsignal).to receive(:increment_counter)
+          allow(Appsignal::Transaction).to receive(:create).and_return(nil)
+
+          expect do
+            queue_job(ActiveJobErrorTestJob)
+          end.to raise_error(RuntimeError, "uh oh")
+        end
+      end
     end
 
     context "with retries" do
