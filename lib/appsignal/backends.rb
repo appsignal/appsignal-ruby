@@ -4,6 +4,8 @@ require "appsignal/metrics/extension_backend"
 require "appsignal/metrics/opentelemetry_backend"
 require "appsignal/logger/extension_backend"
 require "appsignal/logger/opentelemetry_backend"
+require "appsignal/transaction/extension_backend"
+require "appsignal/transaction/opentelemetry_backend"
 
 module Appsignal
   # @!visibility private
@@ -31,6 +33,14 @@ module Appsignal
           Appsignal::Logger::OpenTelemetryBackend
         else
           Appsignal::Logger::ExtensionBackend
+        end
+      end
+
+      def transaction
+        if collector?
+          Appsignal::Transaction::OpenTelemetryBackend
+        else
+          Appsignal::Transaction::ExtensionBackend
         end
       end
 

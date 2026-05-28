@@ -115,7 +115,7 @@ describe Appsignal::Rack::EventHandler do
 
       expect(Appsignal::Transaction.current).to be_kind_of(Appsignal::Transaction::NilTransaction)
 
-      expect(last_transaction.ext.queue_start).to eq(queue_start_time)
+      expect(last_transaction.backend.queue_start).to eq(queue_start_time)
       expect(last_transaction).to include_event(
         "name" => "process_request.rack",
         "title" => "callback: after_reply"

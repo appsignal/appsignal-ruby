@@ -160,7 +160,7 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @!visibility private
-    def initialize(namespace, id: SecureRandom.uuid, ext: nil)
+    def initialize(namespace, id: SecureRandom.uuid, backend: nil)
       @transaction_id = id
       @action = nil
       @namespace = namespace
@@ -179,11 +179,11 @@ module Appsignal
       @headers = Appsignal::SampleData.new(:headers, Hash)
       @custom_data = Appsignal::SampleData.new(:custom_data)
 
-      @ext = ext || Appsignal::Extension.start_transaction(
+      @backend = backend || Appsignal::Backends.transaction.new(
         @transaction_id,
         @namespace,
         0
-      ) || Appsignal::Extension::MockTransaction.new
+      )
 
       run_after_create_hooks
     end
@@ -220,7 +220,7 @@ module Appsignal
 
       unless duplicate?
         self.class.last_errors = @error_blocks.keys
-        should_sample = @ext.finish(0)
+        should_sample = @backend.finish(0)
       end
 
       @error_blocks.each do |error, blocks|
@@ -252,7 +252,7 @@ module Appsignal
       sample_data if should_sample
 
       @completed = true
-      @ext.complete
+      @backend.complete
     end
 
     # @!visibility private
@@ -501,7 +501,7 @@ module Appsignal
       return unless action
 
       @action = action
-      @ext.set_action(action)
+      @backend.set_action(action)
     end
 
     # Set an action name only if there is no current action set.
@@ -549,7 +549,7 @@ module Appsignal
       return unless namespace
 
       @namespace = namespace
-      @ext.set_namespace(namespace)
+      @backend.set_namespace(namespace)
     end
 
     # Set queue start time for transaction.
@@ -563,7 +563,7 @@ module Appsignal
     def set_queue_start(start)
       return unless start
 
-      @ext.set_queue_start(start)
+      @backend.set_queue_start(start)
     rescue RangeError
       Appsignal.internal_logger.warn("Queue start value #{start} is too big")
     end
@@ -573,7 +573,7 @@ module Appsignal
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
-      @ext.set_metadata(key, value)
+      @backend.set_metadata(key, value)
     end
 
     # @!visibility private
@@ -609,7 +609,7 @@ module Appsignal
     def start_event
       return if paused?
 
-      @ext.start_event(0)
+      @backend.start_event(0)
     end
 
     # @!visibility private
@@ -617,7 +617,7 @@ module Appsignal
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
-      @ext.finish_event(
+      @backend.finish_event(
         name,
         title || BLANK,
         body || BLANK,
@@ -631,7 +631,7 @@ module Appsignal
     def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
-      @ext.record_event(
+      @backend.record_event(
         name,
         title || BLANK,
         body || BLANK,
@@ -652,7 +652,7 @@ module Appsignal
 
     # @!visibility private
     def to_h
-      JSON.parse(@ext.to_json)
+      JSON.parse(@backend.to_json)
     end
     alias_method :to_hash, :to_h
 
@@ -694,7 +694,7 @@ module Appsignal
 
     def _set_error(error)
       backtrace = cleaned_backtrace(error.backtrace)
-      @ext.set_error(
+      @backend.set_error(
         error.class.name,
         cleaned_error_message(error),
         backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
@@ -777,7 +777,7 @@ module Appsignal
         return
       end
 
-      @ext.set_sample_data(
+      @backend.set_sample_data(
         key.to_s,
         Appsignal::Utils::Data.generate(data)
       )
@@ -812,7 +812,7 @@ module Appsignal
       self.class.new(
         namespace,
         :id => new_transaction_id,
-        :ext => @ext.duplicate(new_transaction_id)
+        :backend => @backend.duplicate(new_transaction_id)
       ).tap do |transaction|
         transaction.is_duplicate = true
         transaction.tags = @tags.dup
