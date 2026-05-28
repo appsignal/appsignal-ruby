@@ -36,11 +36,11 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when an explicit extension transaction is passed in the initialiser" do
-      let(:ext) { "some_ext" }
+    context "when an explicit backend is passed in the initialiser" do
+      let(:backend) { "some_backend" }
 
-      it "assigns the extension transaction to the transaction" do
-        expect(described_class.new("web", :ext => ext).ext).to be(ext)
+      it "assigns the backend to the transaction" do
+        expect(described_class.new("web", :backend => backend).backend).to be(backend)
       end
     end
 
@@ -364,7 +364,7 @@ describe Appsignal::Transaction do
         it "the duplicate transaction has a different extension transaction than the original" do
           original_transaction, duplicate_transaction = created_transactions
 
-          expect(original_transaction.ext).to_not eq(duplicate_transaction.ext)
+          expect(original_transaction.backend).to_not eq(duplicate_transaction.backend)
         end
 
         it "marks transaction as duplicate on the duplicate transaction" do
@@ -599,7 +599,7 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     it "loads the AppSignal extension" do
-      expect(transaction.ext).to_not be_nil
+      expect(transaction.backend).to_not be_nil
     end
 
     context "when extension is not loaded", :extension_installation_failure do
@@ -608,7 +608,7 @@ describe Appsignal::Transaction do
       end
 
       it "does not error on missing extension method calls" do
-        expect(transaction.ext).to be_kind_of(Appsignal::Extension::MockTransaction)
+        expect(transaction.backend).to be_kind_of(Appsignal::Transaction::ExtensionBackend)
         transaction.start_event
         transaction.finish_event(
           "name",
@@ -1502,7 +1502,7 @@ describe Appsignal::Transaction do
     end
 
     it "does not raise an error when the queue start is too big" do
-      expect(transaction.ext).to receive(:set_queue_start).and_raise(RangeError)
+      expect(transaction.backend).to receive(:set_queue_start).and_raise(RangeError)
 
       expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
 
@@ -2545,7 +2545,7 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     it "starts the event in the extension" do
-      expect(transaction.ext).to receive(:start_event).with(0).and_call_original
+      expect(transaction.backend).to receive(:start_event).with(0).and_call_original
 
       transaction.start_event
     end
@@ -2553,7 +2553,7 @@ describe Appsignal::Transaction do
     context "when transaction is paused" do
       it "does not start the event" do
         transaction.pause!
-        expect(transaction.ext).to_not receive(:start_event)
+        expect(transaction.backend).to_not receive(:start_event)
 
         transaction.start_event
       end
@@ -2565,7 +2565,7 @@ describe Appsignal::Transaction do
     let(:fake_gc_time) { 0 }
 
     it "should finish the event in the extension" do
-      expect(transaction.ext).to receive(:finish_event).with(
+      expect(transaction.backend).to receive(:finish_event).with(
         "name",
         "title",
         "body",
@@ -2582,7 +2582,7 @@ describe Appsignal::Transaction do
     end
 
     it "should finish the event in the extension with nil arguments" do
-      expect(transaction.ext).to receive(:finish_event).with(
+      expect(transaction.backend).to receive(:finish_event).with(
         "name",
         "",
         "",
@@ -2601,7 +2601,7 @@ describe Appsignal::Transaction do
     context "when transaction is paused" do
       it "does not finish the event" do
         transaction.pause!
-        expect(transaction.ext).to_not receive(:finish_event)
+        expect(transaction.backend).to_not receive(:finish_event)
 
         transaction.start_event
       end
@@ -2613,7 +2613,7 @@ describe Appsignal::Transaction do
     let(:fake_gc_time) { 0 }
 
     it "should record the event in the extension" do
-      expect(transaction.ext).to receive(:record_event).with(
+      expect(transaction.backend).to receive(:record_event).with(
         "name",
         "title",
         "body",
@@ -2632,7 +2632,7 @@ describe Appsignal::Transaction do
     end
 
     it "should finish the event in the extension with nil arguments" do
-      expect(transaction.ext).to receive(:record_event).with(
+      expect(transaction.backend).to receive(:record_event).with(
         "name",
         "",
         "",
@@ -2653,7 +2653,7 @@ describe Appsignal::Transaction do
     context "when transaction is paused" do
       it "does not record the event" do
         transaction.pause!
-        expect(transaction.ext).to_not receive(:record_event)
+        expect(transaction.backend).to_not receive(:record_event)
 
         transaction.record_event(
           "name",
@@ -2695,7 +2695,7 @@ describe Appsignal::Transaction do
 
     context "when the extension returns invalid serialized JSON" do
       before do
-        expect(transaction.ext).to receive(:to_json).and_return("foo")
+        expect(transaction.backend).to receive(:to_json).and_return("foo")
       end
 
       it "raises a JSON parse error" do
