@@ -2204,6 +2204,146 @@ describe Appsignal do
     end
   end
 
+  context "in collector mode" do
+    require "opentelemetry/sdk"
+
+    let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
+    let(:tracer_provider) do
+      provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new
+      provider.add_span_processor(
+        ::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(span_exporter)
+      )
+      provider
+    end
+
+    before do
+      start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+      ::OpenTelemetry.tracer_provider = tracer_provider
+    end
+
+    # complete_current! clears both the Transaction thread-local AND the
+    # OTel context (the default clear_current_transaction! only clears
+    # the thread-local, which would leave the OTel context attached and
+    # leak into the next test).
+    after { Appsignal::Transaction.complete_current! }
+
+    def root_span
+      span_exporter.finished_spans.find { |s| [:server, :consumer].include?(s.kind) }
+    end
+
+    def event_spans
+      span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
+    end
+
+    describe ".instrument" do
+      before { set_current_transaction(transaction) }
+
+      it "records an OTel child span around the given block" do
+        return_value = Appsignal.instrument "name", "title", "body" do
+          :block_result
+        end
+        expect(return_value).to eq :block_result
+
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq 1
+        span = event_spans.first
+        expect(span.name).to eq "name"
+        expect(span.parent_span_id).to eq root_span.span_id
+        expect(span.attributes["appsignal.title"]).to eq "title"
+        expect(span.attributes["appsignal.body"]).to eq "body"
+        expect(span.attributes).not_to have_key("db.query.text")
+        expect(span.attributes).not_to have_key("db.system.name")
+      end
+
+      context "with an error raised in the passed block" do
+        it "still records the event span" do
+          expect do
+            Appsignal.instrument "name", "title", "body" do
+              raise ExampleException, "foo"
+            end
+          end.to raise_error(ExampleException, "foo")
+
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq 1
+          span = event_spans.first
+          expect(span.name).to eq "name"
+          expect(span.attributes["appsignal.title"]).to eq "title"
+          expect(span.attributes["appsignal.body"]).to eq "body"
+        end
+      end
+
+      context "with a symbol thrown in the passed block" do
+        it "still records the event span" do
+          expect do
+            Appsignal.instrument "name", "title", "body" do
+              throw :foo
+            end
+          end.to throw_symbol(:foo)
+
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq 1
+          span = event_spans.first
+          expect(span.name).to eq "name"
+          expect(span.attributes["appsignal.title"]).to eq "title"
+          expect(span.attributes["appsignal.body"]).to eq "body"
+        end
+      end
+    end
+
+    describe ".instrument_sql" do
+      before { set_current_transaction(transaction) }
+
+      it "creates an SQL OTel child span on the transaction" do
+        result =
+          Appsignal.instrument_sql "name", "title", "body" do
+            "return value"
+          end
+        expect(result).to eq "return value"
+
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq 1
+        span = event_spans.first
+        expect(span.name).to eq "name"
+        expect(span.parent_span_id).to eq root_span.span_id
+        expect(span.attributes["appsignal.title"]).to eq "title"
+        expect(span.attributes["db.query.text"]).to eq "body"
+        expect(span.attributes["db.system.name"]).to eq "other_sql"
+        expect(span.attributes).not_to have_key("appsignal.body")
+      end
+    end
+
+    describe ".ignore_instrumentation_events" do
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
+
+        it "does not emit OTel spans for ignored events but emits them for recorded events" do
+          Appsignal.instrument("register.this.event") { :do_nothing }
+          Appsignal.ignore_instrumentation_events do
+            Appsignal.instrument("dont.register.this.event") { :do_nothing }
+          end
+
+          Appsignal::Transaction.complete_current!
+
+          names = event_spans.map(&:name)
+          expect(names).to include("register.this.event")
+          expect(names).not_to include("dont.register.this.event")
+        end
+      end
+
+      context "without current transaction" do
+        it "does not crash" do
+          expect do
+            Appsignal.ignore_instrumentation_events { :do_nothing }
+          end.not_to raise_error
+        end
+      end
+    end
+  end
+
   describe "._start_logger" do
     let(:out_stream) { std_stream }
     let(:output) { out_stream.read }
