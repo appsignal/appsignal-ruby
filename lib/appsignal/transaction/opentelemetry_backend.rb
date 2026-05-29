@@ -5,15 +5,19 @@ module Appsignal
     # @!visibility private
     #
     # The transaction backend used in collector mode. Emits an OpenTelemetry
-    # root span for the transaction lifecycle. Child spans for events and
-    # exception events for errors land in subsequent steps.
+    # root span for the transaction lifecycle plus child spans for each
+    # instrumented event. Error events land in a subsequent step.
     #
     # On construction the backend starts an OTel root span and attaches it
     # to the current OpenTelemetry context, so any third-party OTel
     # instrumentation that runs while the transaction is active nests
-    # naturally under the transaction's span. On `complete` the backend
-    # detaches the context and finishes the span. All other write methods
-    # are still no-ops for now.
+    # naturally under the transaction's span. `start_event` opens a child
+    # span and pushes it onto a per-transaction LIFO; `finish_event` pops
+    # it, renames it from a placeholder to the event name, writes the
+    # body/title attributes, and closes the span. `record_event` is the
+    # post-facto variant that creates a span with a backdated start
+    # timestamp. On `complete` the backend drains any leftover event
+    # spans, detaches the root context, and finishes the root span.
     class OpenTelemetryBackend
       TRACER_NAME = "appsignal-ruby"
 
@@ -33,11 +37,23 @@ module Appsignal
       # external-triggered units of work).
       DEFAULT_SPAN_KIND = :server
 
+      # Placeholder name an event span carries between `start_event` and
+      # `finish_event`. `finish_event` overwrites it with the AS::N event
+      # name; only surfaces if `complete` has to drain a span that was
+      # started but never finished.
+      EVENT_SPAN_PLACEHOLDER_NAME = "appsignal.event"
+
+      # Sentinel value the AppSignal collector recognizes as "a SQL system
+      # we don't know the specific dialect of" — sufficient to trigger SQL
+      # sanitization on `db.query.text`.
+      SQL_DB_SYSTEM = "other_sql"
+
       def initialize(transaction_id, namespace, gc_duration, **)
         @transaction_id = transaction_id
         @namespace = namespace
         @gc_duration = gc_duration
         @completed = false
+        @event_stack = []
 
         @span = tracer.start_span(
           placeholder_span_name(namespace),
@@ -49,12 +65,30 @@ module Appsignal
       end
 
       def start_event(_gc_duration)
+        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME)
+        token = ::OpenTelemetry::Context.attach(
+          ::OpenTelemetry::Trace.context_with_span(span)
+        )
+        @event_stack.push([span, token])
       end
 
-      def finish_event(_name, _title, _body, _body_format, _gc_duration)
+      def finish_event(name, title, body, body_format, _gc_duration)
+        return if @event_stack.empty?
+
+        span, token = @event_stack.pop
+        span.name = name
+        write_event_body_attributes(span, body, body_format)
+        span.set_attribute("appsignal.title", title) if title && !title.empty?
+        ::OpenTelemetry::Context.detach(token)
+        span.finish
       end
 
-      def record_event(_name, _title, _body, _body_format, _duration, _gc_duration)
+      def record_event(name, title, body, body_format, duration, _gc_duration)
+        start_time = Time.now - (duration / 1_000_000_000.0)
+        span = tracer.start_span(name, :start_timestamp => start_time)
+        write_event_body_attributes(span, body, body_format)
+        span.set_attribute("appsignal.title", title) if title && !title.empty?
+        span.finish
       end
 
       def set_action(_action) # rubocop:disable Naming/AccessorMethodName
@@ -84,6 +118,15 @@ module Appsignal
 
       def complete
         @completed = true
+        # Drain unfinished event spans defensively: if `start_event` was
+        # called without a matching `finish_event` (caller bug or aborted
+        # flow), the root context can't detach in LIFO order until the
+        # event tokens are released first.
+        until @event_stack.empty?
+          span, token = @event_stack.pop
+          ::OpenTelemetry::Context.detach(token)
+          span.finish
+        end
         ::OpenTelemetry::Context.detach(@context_token) if @context_token
         @span&.finish
       end
@@ -119,6 +162,17 @@ module Appsignal
 
       def placeholder_span_name(namespace)
         "appsignal.transaction #{namespace}"
+      end
+
+      def write_event_body_attributes(span, body, body_format)
+        return if body.nil? || body.empty?
+
+        if body_format == Appsignal::EventFormatter::SQL_BODY_FORMAT
+          span.set_attribute("db.query.text", body)
+          span.set_attribute("db.system.name", SQL_DB_SYSTEM)
+        else
+          span.set_attribute("appsignal.body", body)
+        end
       end
     end
   end
