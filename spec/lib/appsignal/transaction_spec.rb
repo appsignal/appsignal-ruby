@@ -3,8 +3,12 @@ describe Appsignal::Transaction do
   let(:time) { Time.at(fixed_time) }
   let(:root_path) { nil }
 
-  before do
-    start_agent(:options => options, :root_path => root_path)
+  before do |example|
+    # Skip start_agent for :collector_mode examples -- the shared context boots
+    # Appsignal with the collector endpoint instead, and `Appsignal.start` is a
+    # no-op once started so the order would otherwise leave the test in agent
+    # mode.
+    start_agent(:options => options, :root_path => root_path) unless example.metadata[:collector_mode]
     Timecop.freeze(time)
   end
   after { Timecop.return }
@@ -99,6 +103,64 @@ describe Appsignal::Transaction do
         expect(current_transaction.transaction_id).to eq("transaction_id_2")
       end
     end
+
+    describe "transaction state after create" do
+      it_in_both_modes do
+        transaction = create_transaction
+        expect(transaction.namespace).to eq(Appsignal::Transaction::HTTP_REQUEST)
+        expect(transaction.transaction_id).to be_a(String)
+        expect(transaction.transaction_id).not_to be_empty
+      end
+    end
+
+    describe "OpenTelemetry root span" do
+      it "starts a root span with SpanKind::SERVER for HTTP_REQUEST", :collector_mode do
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        Appsignal::Transaction.complete_current!
+
+        expect(span_exporter.finished_spans.size).to eq(1)
+        span = span_exporter.finished_spans.first
+        expect(span.kind).to eq(:server)
+        expect(span.name).to eq("appsignal.transaction http_request")
+      end
+
+      it "uses SpanKind::CONSUMER for BACKGROUND_JOB", :collector_mode do
+        create_transaction(Appsignal::Transaction::BACKGROUND_JOB)
+        Appsignal::Transaction.complete_current!
+
+        expect(span_exporter.finished_spans.first.kind).to eq(:consumer)
+      end
+
+      it "uses SpanKind::SERVER for ACTION_CABLE", :collector_mode do
+        create_transaction(Appsignal::Transaction::ACTION_CABLE)
+        Appsignal::Transaction.complete_current!
+
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+      end
+
+      it "uses SpanKind::SERVER for an unknown custom namespace", :collector_mode do
+        create_transaction("my_custom_namespace")
+        Appsignal::Transaction.complete_current!
+
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+        expect(span_exporter.finished_spans.first.name).to eq("appsignal.transaction my_custom_namespace")
+      end
+    end
+
+    describe "OpenTelemetry current context" do
+      it "in collector mode", :collector_mode do
+        expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
+
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        expect(::OpenTelemetry::Trace.current_span).not_to eq(::OpenTelemetry::Trace::Span::INVALID)
+        expect(::OpenTelemetry::Trace.current_span.context.trace_id).not_to be_nil
+
+        Appsignal::Transaction.complete_current!
+
+        expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+    end
   end
 
   describe ".current" do
@@ -181,6 +243,16 @@ describe Appsignal::Transaction do
         expect do
           Appsignal::Transaction.complete_current!
         end.to_not(change { Thread.current[:appsignal_transaction] })
+      end
+    end
+
+    describe "current transaction after complete_current!" do
+      it_in_both_modes do
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        Appsignal::Transaction.complete_current!
+
+        expect(Appsignal::Transaction.current).to be_a(Appsignal::Transaction::NilTransaction)
+        expect(Appsignal::Transaction.current?).to be(false)
       end
     end
   end
@@ -535,6 +607,25 @@ describe Appsignal::Transaction do
         expect(duplicate_transaction).to include_custom_data(
           "changeme" => "duplicate_custom"
         )
+      end
+    end
+
+    describe "completed? after #complete" do
+      it_in_both_modes do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.complete
+
+        expect(transaction.completed?).to be(true)
+      end
+    end
+
+    describe "OpenTelemetry span emission" do
+      it "emits no span until complete is called", :collector_mode do
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        expect(span_exporter.finished_spans).to be_empty
+
+        Appsignal::Transaction.complete_current!
+        expect(span_exporter.finished_spans.size).to eq(1)
       end
     end
   end
@@ -2594,12 +2685,207 @@ describe Appsignal::Transaction do
         )
       end
     end
+
+    describe "recording an event with the given duration" do
+      it "in agent mode", :agent_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        keep_transactions do
+          transaction.record_event("custom.event", "T", "B", 1_000_000_000,
+            Appsignal::EventFormatter::DEFAULT)
+          Appsignal::Transaction.complete_current!
+        end
+
+        expect(transaction).to include_event(
+          "name" => "custom.event",
+          "title" => "T",
+          "body" => "B"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        duration_ns = 1_000_000_000
+        transaction.record_event("custom.event", "T", "B", duration_ns,
+          Appsignal::EventFormatter::DEFAULT)
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("custom.event")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        observed = span.end_timestamp - span.start_timestamp
+        expect(observed).to be_within(50_000_000).of(duration_ns)
+      end
+    end
   end
 
   describe "#instrument" do
     it_behaves_like "instrument helper" do
       let(:transaction) { new_transaction }
       let(:instrumenter) { transaction }
+    end
+
+    describe "block return value" do
+      it_in_both_modes do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        result = transaction.instrument("sql.active_record", "Query", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT) { 42 }
+
+        expect(result).to eq(42)
+      end
+    end
+
+    describe "block raising an exception" do
+      it_in_both_modes do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        expect do
+          transaction.instrument("x.y", nil, nil, Appsignal::EventFormatter::DEFAULT) { raise "boom" }
+        end.to raise_error("boom")
+      end
+    end
+
+    describe "instrumenting a SQL event" do
+      it "in agent mode", :agent_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        keep_transactions do
+          transaction.instrument("sql.active_record", "Query", "SELECT 1",
+            Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+          Appsignal::Transaction.complete_current!
+        end
+
+        expect(transaction).to include_event(
+          "name" => "sql.active_record",
+          "title" => "Query",
+          "body" => "SELECT 1",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.instrument("sql.active_record", "Query", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("sql.active_record")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes).to include(
+          "db.query.text" => "SELECT 1",
+          "db.system.name" => "other_sql",
+          "appsignal.title" => "Query"
+        )
+        expect(span.attributes).not_to have_key("appsignal.body")
+      end
+    end
+
+    describe "instrumenting a default-format event" do
+      it "in agent mode", :agent_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        keep_transactions do
+          transaction.instrument("custom.event", "Title", "Body",
+            Appsignal::EventFormatter::DEFAULT) { nil }
+          Appsignal::Transaction.complete_current!
+        end
+
+        expect(transaction).to include_event(
+          "name" => "custom.event",
+          "title" => "Title",
+          "body" => "Body",
+          "body_format" => Appsignal::EventFormatter::DEFAULT
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.instrument("custom.event", "Title", "Body",
+          Appsignal::EventFormatter::DEFAULT) { nil }
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.attributes).to include(
+          "appsignal.body" => "Body",
+          "appsignal.title" => "Title"
+        )
+        expect(span.attributes).not_to have_key("db.query.text")
+        expect(span.attributes).not_to have_key("db.system.name")
+      end
+    end
+
+    describe "nesting instrumented events" do
+      it "in agent mode", :agent_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        keep_transactions do
+          transaction.instrument("outer.event", "Outer", "outer body",
+            Appsignal::EventFormatter::DEFAULT) do
+            transaction.instrument("inner.event", "Inner", "inner body",
+              Appsignal::EventFormatter::DEFAULT) { nil }
+          end
+          Appsignal::Transaction.complete_current!
+        end
+
+        expect(transaction).to include_event(
+          "name" => "outer.event", "title" => "Outer", "body" => "outer body"
+        )
+        expect(transaction).to include_event(
+          "name" => "inner.event", "title" => "Inner", "body" => "inner body"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.instrument("outer.event", "Outer", "outer body",
+          Appsignal::EventFormatter::DEFAULT) do
+          transaction.instrument("inner.event", "Inner", "inner body",
+            Appsignal::EventFormatter::DEFAULT) { nil }
+        end
+        Appsignal::Transaction.complete_current!
+
+        outer = event_spans.find { |s| s.name == "outer.event" }
+        inner = event_spans.find { |s| s.name == "inner.event" }
+
+        expect(inner.parent_span_id).to eq(outer.span_id)
+        expect(outer.parent_span_id).to eq(root_span.span_id)
+      end
+    end
+
+    describe "with an empty title" do
+      it "omits the appsignal.title attribute on the span", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.instrument("custom.event", nil, "Body",
+          Appsignal::EventFormatter::DEFAULT) { nil }
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.first.attributes).not_to have_key("appsignal.title")
+      end
+    end
+
+    describe "with an empty body" do
+      it "omits the body attribute on the span", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        transaction.instrument("custom.event", "Title", nil,
+          Appsignal::EventFormatter::DEFAULT) { nil }
+        Appsignal::Transaction.complete_current!
+
+        attrs = event_spans.first.attributes
+        expect(attrs).not_to have_key("appsignal.body")
+        expect(attrs).not_to have_key("db.query.text")
+      end
+    end
+
+    describe "OpenTelemetry current context during the block" do
+      it "in collector mode", :collector_mode do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        root_span_id = ::OpenTelemetry::Trace.current_span.context.span_id
+
+        event_span_id_during_block = nil
+        transaction.instrument("custom.event", "T", "B", Appsignal::EventFormatter::DEFAULT) do
+          event_span_id_during_block = ::OpenTelemetry::Trace.current_span.context.span_id
+        end
+
+        expect(event_span_id_during_block).not_to eq(root_span_id)
+        expect(::OpenTelemetry::Trace.current_span.context.span_id).to eq(root_span_id)
+      end
     end
   end
 
