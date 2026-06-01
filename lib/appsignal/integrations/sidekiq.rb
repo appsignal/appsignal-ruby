@@ -75,44 +75,45 @@ module Appsignal
           transaction.set_metadata key, value
         end
 
-        Appsignal.instrument "perform_job.sidekiq", &block
-      rescue Exception => exception # rubocop:disable Lint/RescueException
-        job_status = :failed
-        raise exception
-      ensure
-        if transaction
-          transaction.add_params_if_nil { parse_arguments(item) }
-          enqueued_at = item["enqueued_at"]
-          queue_start =
-            if self.class.sidekiq8?
-              enqueued_at.to_i # Sidekiq 8 stores it as epoc milliseconds
-            else
-              # Convert seconds to milliseconds for Sidekiq 7 and older
-              (enqueued_at.to_f * 1000.0).to_i
+        begin
+          Appsignal.instrument "perform_job.sidekiq", &block
+        rescue Exception => exception # rubocop:disable Lint/RescueException
+          job_status = :failed
+          raise exception
+        ensure
+          if transaction
+            transaction.add_params_if_nil { parse_arguments(item) }
+            enqueued_at = item["enqueued_at"]
+            queue_start =
+              if self.class.sidekiq8?
+                enqueued_at.to_i # Sidekiq 8 stores it as epoc milliseconds
+              else
+                # Convert seconds to milliseconds for Sidekiq 7 and older
+                (enqueued_at.to_f * 1000.0).to_i
+              end
+            transaction.set_queue_start(queue_start)
+            transaction.add_tags(:request_id => item["jid"])
+            Appsignal::Transaction.complete_current! unless exception
+
+            queue = item["queue"] || "unknown"
+
+            if job_status
+              increment_counter "queue_job_count", 1,
+                :queue => queue,
+                :status => job_status
+              increment_counter "worker_job_count", 1,
+                :worker => action_name,
+                :queue => queue,
+                :status => job_status
             end
-          transaction.set_queue_start(queue_start)
-          transaction.add_tags(:request_id => item["jid"])
-          Appsignal::Transaction.complete_current! unless exception
-
-          queue = item["queue"] || "unknown"
-
-          if job_status
             increment_counter "queue_job_count", 1,
               :queue => queue,
-              :status => job_status
+              :status => :processed
             increment_counter "worker_job_count", 1,
               :worker => action_name,
               :queue => queue,
-              :status => job_status
+              :status => :processed
           end
-          increment_counter "queue_job_count", 1,
-            :queue => queue,
-            :status => :processed
-          increment_counter "worker_job_count", 1,
-            :worker => action_name,
-            :queue => queue,
-            :status => :processed
-
         end
       end
 

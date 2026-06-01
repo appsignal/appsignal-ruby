@@ -66,49 +66,51 @@ module Appsignal
               Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
             end
 
-          if transaction
-            transaction.add_params_if_nil(job["arguments"])
+          begin
+            if transaction
+              transaction.add_params_if_nil(job["arguments"])
 
-            transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
-            transaction.add_tags(transaction_tags)
+              transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
+              transaction.add_tags(transaction_tags)
 
-            transaction.set_action(ActiveJobHelpers.action_name(job))
-          end
-
-          super
-        rescue Exception => exception # rubocop:disable Lint/RescueException
-          job_status = :failed
-          transaction_set_error(transaction, exception)
-          raise exception
-        ensure
-          if transaction
-            # Present in Rails 6 and up
-            transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
-
-            unless has_wrapper_transaction
-              # Only complete transaction if ActiveJob is not wrapped in
-              # another supported integration, such as Sidekiq.
-              Appsignal::Transaction.complete_current!
+              transaction.set_action(ActiveJobHelpers.action_name(job))
             end
-          end
 
-          metrics = ActiveJobHelpers.metrics_for(job)
-          metrics.each do |(metric_name, tags)|
-            if job_status
+            super
+          rescue Exception => exception # rubocop:disable Lint/RescueException
+            job_status = :failed
+            transaction_set_error(transaction, exception)
+            raise exception
+          ensure
+            if transaction
+              # Present in Rails 6 and up
+              transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
+
+              unless has_wrapper_transaction
+                # Only complete transaction if ActiveJob is not wrapped in
+                # another supported integration, such as Sidekiq.
+                Appsignal::Transaction.complete_current!
+              end
+            end
+
+            metrics = ActiveJobHelpers.metrics_for(job)
+            metrics.each do |(metric_name, tags)|
+              if job_status
+                ActiveJobHelpers.increment_counter metric_name, 1,
+                  tags.merge(:status => job_status)
+              end
               ActiveJobHelpers.increment_counter metric_name, 1,
-                tags.merge(:status => job_status)
+                tags.merge(:status => :processed)
             end
-            ActiveJobHelpers.increment_counter metric_name, 1,
-              tags.merge(:status => :processed)
-          end
 
-          queue_name = job["queue_name"]
-          if queue_time && queue_name
-            ActiveJobHelpers.add_distribution_value(
-              "queue_time",
-              queue_time,
-              :queue => queue_name
-            )
+            queue_name = job["queue_name"]
+            if queue_time && queue_name
+              ActiveJobHelpers.add_distribution_value(
+                "queue_time",
+                queue_time,
+                :queue => queue_name
+              )
+            end
           end
         end
 

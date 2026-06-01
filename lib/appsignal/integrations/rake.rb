@@ -21,24 +21,26 @@ module Appsignal
             _appsignal_create_transaction
           end
 
-        Appsignal.instrument "task.rake" do
-          super
-        end
-      rescue Exception => error # rubocop:disable Lint/RescueException
-        Appsignal::Integrations::RakeIntegrationHelper.register_at_exit_hook
-        unless RakeIntegration.ignored_error?(error)
-          transaction ||= _appsignal_create_transaction
-          transaction.set_error(error)
-        end
-        raise error
-      ensure
-        if transaction
-          # Format given arguments and cast to hash if possible
-          params, _ = args
-          params = params.to_hash if params.respond_to?(:to_hash)
-          transaction.set_action(name)
-          transaction.add_params_if_nil(params)
-          transaction.complete
+        begin
+          Appsignal.instrument "task.rake" do
+            super
+          end
+        rescue Exception => error # rubocop:disable Lint/RescueException
+          Appsignal::Integrations::RakeIntegrationHelper.register_at_exit_hook
+          unless RakeIntegration.ignored_error?(error)
+            transaction ||= _appsignal_create_transaction
+            transaction.set_error(error)
+          end
+          raise error
+        ensure
+          if transaction
+            # Format given arguments and cast to hash if possible
+            params, _ = args
+            params = params.to_hash if params.respond_to?(:to_hash)
+            transaction.set_action(name)
+            transaction.add_params_if_nil(params)
+            transaction.complete
+          end
         end
       end
 

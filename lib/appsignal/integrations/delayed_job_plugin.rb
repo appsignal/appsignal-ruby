@@ -20,35 +20,37 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
-        Appsignal.instrument("perform_job.delayed_job") do
-          block.call(job)
+        begin
+          Appsignal.instrument("perform_job.delayed_job") do
+            block.call(job)
+          end
+        rescue Exception => error # rubocop:disable Lint/RescueException
+          transaction.set_error(error)
+          raise
+        ensure
+          payload = job.payload_object
+          if payload.respond_to? :job_data
+            # ActiveJob
+            job_data = payload.job_data
+            transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
+            transaction.add_params_if_nil(job_data.fetch("arguments", {}))
+          else
+            # Delayed Job
+            transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
+            transaction.add_params_if_nil(extract_value(payload, :args, {}))
+          end
+
+          transaction.add_tags(
+            :id => extract_value(job, :id, nil, true),
+            :queue => extract_value(job, :queue),
+            :priority => extract_value(job, :priority, 0),
+            :attempts => extract_value(job, :attempts, 0)
+          )
+
+          transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+
+          Appsignal::Transaction.complete_current!
         end
-      rescue Exception => error # rubocop:disable Lint/RescueException
-        transaction.set_error(error)
-        raise
-      ensure
-        payload = job.payload_object
-        if payload.respond_to? :job_data
-          # ActiveJob
-          job_data = payload.job_data
-          transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
-          transaction.add_params_if_nil(job_data.fetch("arguments", {}))
-        else
-          # Delayed Job
-          transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
-          transaction.add_params_if_nil(extract_value(payload, :args, {}))
-        end
-
-        transaction.add_tags(
-          :id => extract_value(job, :id, nil, true),
-          :queue => extract_value(job, :queue),
-          :priority => extract_value(job, :priority, 0),
-          :attempts => extract_value(job, :attempts, 0)
-        )
-
-        transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
-
-        Appsignal::Transaction.complete_current!
       end
 
       def self.action_name_from_payload(payload, default_name)
