@@ -29,6 +29,9 @@ end
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].sort.each do |f|
   require f
 end
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_contexts", "*.rb")].each do |f|
+  require f
+end
 if DependencyHelper.rails_present?
   require File.join(ConfigHelpers.rails_project_fixture_path, "config/application.rb")
 end
