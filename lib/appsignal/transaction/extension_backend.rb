@@ -26,7 +26,7 @@ module Appsignal
         @handle.finish_event(name, title, body, body_format, gc_duration)
       end
 
-      def record_event(name, title, body, body_format, duration, gc_duration)
+      def record_event(name, title, body, body_format, duration, gc_duration) # rubocop:disable Metrics/ParameterLists
         @handle.record_event(name, title, body, body_format, duration, gc_duration)
       end
 

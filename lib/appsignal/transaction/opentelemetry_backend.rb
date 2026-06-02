@@ -27,8 +27,8 @@ module Appsignal
       # `lib/appsignal/transaction.rb`, so the constants are not yet defined
       # at class-body evaluation time.
       SPAN_KIND_BY_NAMESPACE = {
-        "http_request"   => :server,
-        "action_cable"   => :server,
+        "http_request" => :server,
+        "action_cable" => :server,
         "background_job" => :consumer
       }.freeze
 
@@ -66,6 +66,12 @@ module Appsignal
         @context_token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(@span)
         )
+
+        # `Appsignal::Transaction#initialize` sets `@namespace` directly and
+        # never calls `set_namespace`, so emit the attribute here from the
+        # constructor namespace -- otherwise a transaction that never calls
+        # `set_namespace` would carry no namespace for the collector.
+        @span.set_attribute("appsignal.namespace", namespace) if namespace
       end
 
       def start_event(_gc_duration)
@@ -87,7 +93,7 @@ module Appsignal
         span.finish
       end
 
-      def record_event(name, title, body, body_format, duration, _gc_duration)
+      def record_event(name, title, body, body_format, duration, _gc_duration) # rubocop:disable Metrics/ParameterLists
         start_time = Time.now - (duration / 1_000_000_000.0)
         span = tracer.start_span(name, :start_timestamp => start_time)
         write_event_body_attributes(span, body, body_format)
@@ -95,10 +101,21 @@ module Appsignal
         span.finish
       end
 
-      def set_action(_action) # rubocop:disable Naming/AccessorMethodName
+      def set_action(action) # rubocop:disable Naming/AccessorMethodName
+        # The collector reads the action from `appsignal.action_name`, not the
+        # span name. Set the name too so the OTel-native trace stays readable;
+        # the collector treats the span name as authoritative for display.
+        @span.name = action
+        @span.set_attribute("appsignal.action_name", action)
       end
 
-      def set_namespace(_namespace) # rubocop:disable Naming/AccessorMethodName
+      def set_namespace(namespace) # rubocop:disable Naming/AccessorMethodName
+        # Only the attribute can change here: SpanKind is fixed at span
+        # creation (immutable in OTel) from the initial namespace. A later
+        # namespace override updates `appsignal.namespace` but not the kind --
+        # the collector uses the attribute for the namespace and the kind only
+        # to pick the subtrace root, so this is fine for the rare late change.
+        @span.set_attribute("appsignal.namespace", namespace)
       end
 
       def set_queue_start(_start) # rubocop:disable Naming/AccessorMethodName
@@ -121,6 +138,12 @@ module Appsignal
       end
 
       def complete
+        # Idempotent: completing twice would re-detach an already-detached
+        # context (a mismatched-detach error) and re-finish an ended span (a
+        # warning). The Transaction can be completed directly and then again
+        # by a `complete_current!` cleanup path, so guard against it.
+        return if @completed
+
         @completed = true
         # Drain unfinished event spans defensively: if `start_event` was
         # called without a matching `finish_event` (caller bug or aborted

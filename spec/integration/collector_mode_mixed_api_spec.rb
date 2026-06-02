@@ -17,7 +17,11 @@ if DependencyHelper.opentelemetry_present?
       by_name = spans.to_h { |s| [s.name, s] }
 
       outer = by_name.fetch("outer.otel")
-      monitor_root = by_name.fetch("appsignal.transaction http_request")
+      # `Appsignal.monitor` renames its root span to the action, so look it
+      # up by SpanKind (SERVER is the subtrace root the collector keys on)
+      # rather than by name.
+      monitor_root = spans.find { |s| s.kind == :SPAN_KIND_SERVER }
+      expect(monitor_root).not_to be_nil
       event_with_otel_child = by_name.fetch("event.with.otel.child")
       inner_otel = by_name.fetch("inner.otel.inside_instrument")
       manual_otel = by_name.fetch("manual.otel.in_monitor")

@@ -21,9 +21,10 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   # Each `create_backend` call constructs a real backend, which attaches an
   # OTel context on initialize. We track them all here and complete any that
   # the test didn't complete itself, so leftover spans / context attachments
-  # don't pollute the next test.
+  # don't pollute the next test. Complete in reverse (LIFO) order: the contexts
+  # are stacked in creation order, so the last one created must detach first.
   after do
-    @backends_created.each { |backend| backend.complete unless backend._completed? }
+    @backends_created.reverse_each { |backend| backend.complete unless backend._completed? }
   end
 
   def create_backend(namespace = "http_request")
@@ -68,6 +69,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend_span = backend.instance_variable_get(:@span)
         expect(backend_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
         expect(backend_span.context.trace_id).not_to eq(outer.context.trace_id)
+        # Complete (detach the root context) before detaching the outer token,
+        # so the detaches happen in LIFO order.
+        backend.complete
       ensure
         ::OpenTelemetry::Context.detach(outer_token)
         outer.finish
@@ -107,14 +111,6 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect { create_backend.record_event("name", "title", "body", 1, 1000, 0) }.not_to raise_error
     end
 
-    it "accepts #set_action without raising" do
-      expect { create_backend.set_action("MyAction") }.not_to raise_error
-    end
-
-    it "accepts #set_namespace without raising" do
-      expect { create_backend.set_namespace("background_job") }.not_to raise_error
-    end
-
     it "accepts #set_queue_start without raising" do
       expect { create_backend.set_queue_start(123_456) }.not_to raise_error
     end
@@ -129,6 +125,53 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "accepts #set_error without raising" do
       expect { create_backend.set_error("RuntimeError", "boom", "backtrace") }.not_to raise_error
+    end
+  end
+
+  describe "#set_action" do
+    it "renames the root span to the action" do
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      backend.complete
+
+      expect(span_exporter.finished_spans.first.name).to eq("PagesController#show")
+    end
+
+    it "sets the appsignal.action_name attribute on the root span" do
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      backend.complete
+
+      expect(span_exporter.finished_spans.first.attributes["appsignal.action_name"])
+        .to eq("PagesController#show")
+    end
+  end
+
+  describe "appsignal.namespace attribute" do
+    it "is set from the constructor namespace" do
+      create_backend("background_job").complete
+
+      expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
+        .to eq("background_job")
+    end
+
+    describe "#set_namespace" do
+      it "overwrites the appsignal.namespace attribute" do
+        backend = create_backend("http_request")
+        backend.set_namespace("custom")
+        backend.complete
+
+        expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
+          .to eq("custom")
+      end
+
+      it "does not change the span kind (fixed at creation)" do
+        backend = create_backend("http_request")
+        backend.set_namespace("background_job")
+        backend.complete
+
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+      end
     end
   end
 
