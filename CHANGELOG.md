@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.5
+
+_Published on 2026-06-02._
+
+### Changed
+
+- Exclude more Sidekiq internal job attributes (`cattr`, `tags`, `retry_for` and `unique_for`) from the tags reported for Sidekiq jobs. (patch [98c6ff95](https://github.com/appsignal/appsignal-ruby/commit/98c6ff95b82cb252cc4ef266e961acc6d923d4d1))
+
+### Fixed
+
+- Continue reporting non-disk host metrics when a mount is frozen. (patch [9baeaa4b](https://github.com/appsignal/appsignal-ruby/commit/9baeaa4bb7d2224ece5fd64ba52c1ad4783feea0))
+- Prevent a `NoMethodError` in the Active Job, Rake, Sidekiq, Delayed Job, and WebMachine instrumentations when the creation of an AppSignal transaction is interrupted by process shutdown signals. (patch [27eb1dc7](https://github.com/appsignal/appsignal-ruby/commit/27eb1dc71e5535735f5c354b01f123733832afe2))
+
 ## 4.8.4
 
 _Published on 2026-03-20._
