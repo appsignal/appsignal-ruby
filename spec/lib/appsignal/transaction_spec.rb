@@ -8,7 +8,9 @@ describe Appsignal::Transaction do
     # Appsignal with the collector endpoint instead, and `Appsignal.start` is a
     # no-op once started so the order would otherwise leave the test in agent
     # mode.
-    start_agent(:options => options, :root_path => root_path) unless example.metadata[:collector_mode]
+    unless example.metadata[:collector_mode]
+      start_agent(:options => options, :root_path => root_path)
+    end
     Timecop.freeze(time)
   end
   after { Timecop.return }
@@ -142,8 +144,9 @@ describe Appsignal::Transaction do
         create_transaction("my_custom_namespace")
         Appsignal::Transaction.complete_current!
 
-        expect(span_exporter.finished_spans.first.kind).to eq(:server)
-        expect(span_exporter.finished_spans.first.name).to eq("appsignal.transaction my_custom_namespace")
+        span = span_exporter.finished_spans.first
+        expect(span.kind).to eq(:server)
+        expect(span.name).to eq("appsignal.transaction my_custom_namespace")
       end
     end
 
@@ -1420,25 +1423,50 @@ describe Appsignal::Transaction do
 
   describe "#set_action" do
     let(:transaction) { new_transaction }
+    let(:action_name) { "PagesController#show" }
 
     context "when the action is set" do
-      it "updates the action name on the transaction" do
-        action_name = "PagesController#show"
+      def perform
         transaction.set_action(action_name)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
 
         expect(transaction.action).to eq(action_name)
         expect(transaction).to have_action(action_name)
       end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        expect(transaction.action).to eq(action_name)
+        transaction.complete
+        expect(root_span.name).to eq(action_name)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
+      end
     end
 
     context "when the action is nil" do
-      it "does not update the action name on the transaction" do
-        action_name = "PagesController#show"
+      def perform
         transaction.set_action(action_name)
         transaction.set_action(nil)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
 
         expect(transaction.action).to eq(action_name)
         expect(transaction).to have_action(action_name)
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        expect(transaction.action).to eq(action_name)
+        transaction.complete
+        expect(root_span.name).to eq(action_name)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
       end
     end
   end
@@ -1447,62 +1475,138 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     context "when the action is not set" do
-      it "updates the action name on the transaction" do
+      let(:action_name) { "PagesController#show" }
+
+      def perform
+        transaction.set_action_if_nil(action_name)
+      end
+
+      it "in agent mode", :agent_mode do
         expect(transaction.action).to eq(nil)
         expect(transaction).to_not have_action
 
-        action_name = "PagesController#show"
-        transaction.set_action_if_nil(action_name)
+        perform
 
         expect(transaction.action).to eq(action_name)
         expect(transaction).to have_action(action_name)
       end
 
+      it "in collector mode", :collector_mode do
+        expect(transaction.action).to eq(nil)
+
+        perform
+
+        expect(transaction.action).to eq(action_name)
+        transaction.complete
+        expect(root_span.name).to eq(action_name)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
+      end
+
       context "when the given action is nil" do
-        it "does not update the action name on the transaction" do
-          action_name = "something"
-          transaction.set_action("something")
+        let(:action_name) { "something" }
+
+        def perform
+          transaction.set_action(action_name)
           transaction.set_action_if_nil(nil)
+        end
+
+        it "in agent mode", :agent_mode do
+          perform
 
           expect(transaction.action).to eq(action_name)
           expect(transaction).to have_action(action_name)
+        end
+
+        it "in collector mode", :collector_mode do
+          perform
+
+          expect(transaction.action).to eq(action_name)
+          transaction.complete
+          expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
         end
       end
     end
 
     context "when the action is set" do
-      it "does not update the action name on the transaction" do
-        action_name = "something"
-        transaction.set_action("something")
+      let(:action_name) { "something" }
+
+      def perform
+        transaction.set_action(action_name)
         transaction.set_action_if_nil("something else")
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
 
         expect(transaction.action).to eq(action_name)
         expect(transaction).to have_action(action_name)
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        expect(transaction.action).to eq(action_name)
+        transaction.complete
+        expect(root_span.name).to eq(action_name)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
       end
     end
   end
 
   describe "#set_namespace" do
     let(:transaction) { new_transaction }
+    let(:namespace) { "custom" }
 
     context "when the namespace is not nil" do
-      it "updates the namespace on the transaction" do
-        namespace = "custom"
+      def perform
         transaction.set_namespace(namespace)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
 
         expect(transaction.namespace).to eq namespace
         expect(transaction).to have_namespace(namespace)
       end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        expect(transaction.namespace).to eq namespace
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+      end
     end
 
     context "when the namespace is nil" do
-      it "does not update the namespace on the transaction" do
-        namespace = "custom"
+      def perform
         transaction.set_namespace(namespace)
         transaction.set_namespace(nil)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
 
         expect(transaction.namespace).to eq(namespace)
         expect(transaction).to have_namespace(namespace)
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        expect(transaction.namespace).to eq(namespace)
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+      end
+    end
+
+    context "when set_namespace is never called", :collector_mode do
+      it "carries the namespace from creation" do
+        transaction = http_request_transaction
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.namespace"])
+          .to eq(Appsignal::Transaction::HTTP_REQUEST)
       end
     end
   end
@@ -2741,7 +2845,9 @@ describe Appsignal::Transaction do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
 
         expect do
-          transaction.instrument("x.y", nil, nil, Appsignal::EventFormatter::DEFAULT) { raise "boom" }
+          transaction.instrument("x.y", nil, nil, Appsignal::EventFormatter::DEFAULT) do
+            raise "boom"
+          end
         end.to raise_error("boom")
       end
     end
