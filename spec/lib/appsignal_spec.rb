@@ -2048,18 +2048,20 @@ describe Appsignal do
       end
 
       describe "with tags" do
+        def perform
+          Appsignal.set_gauge("key", 0.1, tags)
+        end
+
         it "in agent mode", :agent_mode do
           expect(Appsignal::Extension).to receive(:set_gauge)
             .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.set_gauge("key", 0.1, tags)
+          perform
         end
 
         it "in collector mode", :collector_mode do
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
           expect(Appsignal::Extension).not_to receive(:set_gauge)
-
-          Appsignal.set_gauge("key", 0.1, tags)
-
+          perform
           expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
             .with("key", 0.1, tags)
         end
@@ -2098,18 +2100,20 @@ describe Appsignal do
       end
 
       describe "with tags" do
+        def perform
+          Appsignal.increment_counter("key", 5, tags)
+        end
+
         it "in agent mode", :agent_mode do
           expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.increment_counter("key", 1, tags)
+            .with("key", 5, Appsignal::Utils::Data.generate(tags))
+          perform
         end
 
         it "in collector mode", :collector_mode do
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
           expect(Appsignal::Extension).not_to receive(:increment_counter)
-
-          Appsignal.increment_counter("key", 5, tags)
-
+          perform
           expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
             .with("key", 5, tags)
         end
@@ -2153,18 +2157,20 @@ describe Appsignal do
       end
 
       describe "with tags" do
+        def perform
+          Appsignal.add_distribution_value("key", 0.1, tags)
+        end
+
         it "in agent mode", :agent_mode do
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.add_distribution_value("key", 0.1, tags)
+          perform
         end
 
         it "in collector mode", :collector_mode do
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
           expect(Appsignal::Extension).not_to receive(:add_distribution_value)
-
-          Appsignal.add_distribution_value("key", 0.1, tags)
-
+          perform
           expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:add_distribution_value)
             .with("key", 0.1, tags)
         end
@@ -2203,11 +2209,13 @@ describe Appsignal do
     end
 
     describe "recording an event around the block" do
+      def perform
+        Appsignal.instrument("name", "title", "body") { :do_nothing }
+      end
+
       it "in agent mode", :agent_mode do
         set_current_transaction(transaction)
-
-        Appsignal.instrument("name", "title", "body") { :do_nothing }
-
+        perform
         expect(transaction).to include_event(
           "name" => "name",
           "title" => "title",
@@ -2218,8 +2226,7 @@ describe Appsignal do
 
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
-
-        Appsignal.instrument("name", "title", "body") { :do_nothing }
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -2234,13 +2241,15 @@ describe Appsignal do
     end
 
     describe "when an error is raised in the block" do
-      it "in agent mode", :agent_mode do
-        set_current_transaction(transaction)
-
+      def perform
         expect do
           Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
         end.to raise_error(ExampleException, "foo")
+      end
 
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+        perform
         expect(transaction).to include_event(
           "name" => "name", "title" => "title", "body" => "body"
         )
@@ -2248,10 +2257,7 @@ describe Appsignal do
 
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
-
-        expect do
-          Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
-        end.to raise_error(ExampleException, "foo")
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -2263,13 +2269,15 @@ describe Appsignal do
     end
 
     describe "when a symbol is thrown in the block" do
-      it "in agent mode", :agent_mode do
-        set_current_transaction(transaction)
-
+      def perform
         expect do
           Appsignal.instrument("name", "title", "body") { throw :foo }
         end.to throw_symbol(:foo)
+      end
 
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+        perform
         expect(transaction).to include_event(
           "name" => "name", "title" => "title", "body" => "body"
         )
@@ -2277,10 +2285,7 @@ describe Appsignal do
 
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
-
-        expect do
-          Appsignal.instrument("name", "title", "body") { throw :foo }
-        end.to throw_symbol(:foo)
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -2294,12 +2299,14 @@ describe Appsignal do
 
   describe ".instrument_sql" do
     describe "recording a SQL event around the block" do
+      def perform
+        Appsignal.instrument_sql("name", "title", "body") { "return value" }
+      end
+
       it "in agent mode", :agent_mode do
         set_current_transaction(transaction)
 
-        result = Appsignal.instrument_sql("name", "title", "body") { "return value" }
-
-        expect(result).to eq("return value")
+        expect(perform).to eq("return value")
         expect(transaction).to include_event(
           "name" => "name",
           "title" => "title",
@@ -2311,10 +2318,9 @@ describe Appsignal do
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
 
-        result = Appsignal.instrument_sql("name", "title", "body") { "return value" }
+        expect(perform).to eq("return value")
         Appsignal::Transaction.complete_current!
 
-        expect(result).to eq("return value")
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("name")
