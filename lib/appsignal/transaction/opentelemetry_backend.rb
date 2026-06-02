@@ -55,7 +55,11 @@ module Appsignal
         @completed = false
         @event_stack = []
 
-        @span = tracer.start_span(
+        # `start_root_span` (not `start_span`) so the transaction's root
+        # ignores any ambient OTel context. A transaction is a unit of work
+        # in its own right -- nesting it under whatever span happens to be
+        # current would lose that boundary and mix unrelated traces.
+        @span = tracer.start_root_span(
           placeholder_span_name(namespace),
           :kind => SPAN_KIND_BY_NAMESPACE.fetch(namespace, DEFAULT_SPAN_KIND)
         )
