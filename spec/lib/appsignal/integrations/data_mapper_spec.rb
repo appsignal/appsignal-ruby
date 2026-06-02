@@ -29,12 +29,14 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end)
       end
 
+      def perform
+        log_message
+      end
+
       it "in agent mode", :agent_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        keep_transactions { log_message }
-
+        perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -47,8 +49,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       it "in collector mode", :collector_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        log_message
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -74,12 +75,14 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end)
       end
 
+      def perform
+        log_message
+      end
+
       it "in agent mode", :agent_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        keep_transactions { log_message }
-
+        perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -92,8 +95,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       it "in collector mode", :collector_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        log_message
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)

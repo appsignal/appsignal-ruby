@@ -43,12 +43,14 @@ if DependencyHelper.dry_monitor_present?
         }
       end
 
+      def perform
+        notifications.instrument(event_id, payload)
+      end
+
       it "in agent mode", :agent_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        notifications.instrument(event_id, payload)
-
+        perform
         expect(transaction).to include_event(
           "body" => "SELECT * FROM users",
           "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
@@ -61,8 +63,7 @@ if DependencyHelper.dry_monitor_present?
       it "in collector mode", :collector_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        notifications.instrument(event_id, payload)
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -81,12 +82,14 @@ if DependencyHelper.dry_monitor_present?
       let(:event_id) { :foo }
       let(:payload) { { :name => "foo" } }
 
+      def perform
+        notifications.instrument(event_id, payload)
+      end
+
       it "in agent mode", :agent_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        notifications.instrument(event_id, payload)
-
+        perform
         expect(transaction).to include_event(
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
@@ -99,8 +102,7 @@ if DependencyHelper.dry_monitor_present?
       it "in collector mode", :collector_mode do
         transaction = http_request_transaction
         set_current_transaction(transaction)
-
-        notifications.instrument(event_id, payload)
+        perform
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)

@@ -2757,13 +2757,17 @@ describe Appsignal::Transaction do
     end
 
     describe "recording an event with the given duration" do
+      let(:duration_ns) { 1_000_000_000 }
+
+      def perform(transaction)
+        transaction.record_event("custom.event", "T", "B", duration_ns,
+          Appsignal::EventFormatter::DEFAULT)
+      end
+
       it "in agent mode", :agent_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        keep_transactions do
-          transaction.record_event("custom.event", "T", "B", 1_000_000_000,
-            Appsignal::EventFormatter::DEFAULT)
-          Appsignal::Transaction.complete_current!
-        end
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
 
         expect(transaction).to include_event(
           "name" => "custom.event",
@@ -2774,9 +2778,7 @@ describe Appsignal::Transaction do
 
       it "in collector mode", :collector_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        duration_ns = 1_000_000_000
-        transaction.record_event("custom.event", "T", "B", duration_ns,
-          Appsignal::EventFormatter::DEFAULT)
+        perform(transaction)
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
@@ -2815,13 +2817,15 @@ describe Appsignal::Transaction do
     end
 
     describe "instrumenting a SQL event" do
+      def perform(transaction)
+        transaction.instrument("sql.active_record", "Query", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+      end
+
       it "in agent mode", :agent_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        keep_transactions do
-          transaction.instrument("sql.active_record", "Query", "SELECT 1",
-            Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
-          Appsignal::Transaction.complete_current!
-        end
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
 
         expect(transaction).to include_event(
           "name" => "sql.active_record",
@@ -2833,8 +2837,7 @@ describe Appsignal::Transaction do
 
       it "in collector mode", :collector_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        transaction.instrument("sql.active_record", "Query", "SELECT 1",
-          Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+        perform(transaction)
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
@@ -2850,13 +2853,15 @@ describe Appsignal::Transaction do
     end
 
     describe "instrumenting a default-format event" do
+      def perform(transaction)
+        transaction.instrument("custom.event", "Title", "Body",
+          Appsignal::EventFormatter::DEFAULT) { nil }
+      end
+
       it "in agent mode", :agent_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        keep_transactions do
-          transaction.instrument("custom.event", "Title", "Body",
-            Appsignal::EventFormatter::DEFAULT) { nil }
-          Appsignal::Transaction.complete_current!
-        end
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
 
         expect(transaction).to include_event(
           "name" => "custom.event",
@@ -2868,8 +2873,7 @@ describe Appsignal::Transaction do
 
       it "in collector mode", :collector_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        transaction.instrument("custom.event", "Title", "Body",
-          Appsignal::EventFormatter::DEFAULT) { nil }
+        perform(transaction)
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
@@ -2883,16 +2887,18 @@ describe Appsignal::Transaction do
     end
 
     describe "nesting instrumented events" do
+      def perform(transaction)
+        transaction.instrument("outer.event", "Outer", "outer body",
+          Appsignal::EventFormatter::DEFAULT) do
+          transaction.instrument("inner.event", "Inner", "inner body",
+            Appsignal::EventFormatter::DEFAULT) { nil }
+        end
+      end
+
       it "in agent mode", :agent_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        keep_transactions do
-          transaction.instrument("outer.event", "Outer", "outer body",
-            Appsignal::EventFormatter::DEFAULT) do
-            transaction.instrument("inner.event", "Inner", "inner body",
-              Appsignal::EventFormatter::DEFAULT) { nil }
-          end
-          Appsignal::Transaction.complete_current!
-        end
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
 
         expect(transaction).to include_event(
           "name" => "outer.event", "title" => "Outer", "body" => "outer body"
@@ -2904,11 +2910,7 @@ describe Appsignal::Transaction do
 
       it "in collector mode", :collector_mode do
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
-        transaction.instrument("outer.event", "Outer", "outer body",
-          Appsignal::EventFormatter::DEFAULT) do
-          transaction.instrument("inner.event", "Inner", "inner body",
-            Appsignal::EventFormatter::DEFAULT) { nil }
-        end
+        perform(transaction)
         Appsignal::Transaction.complete_current!
 
         outer = event_spans.find { |s| s.name == "outer.event" }

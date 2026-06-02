@@ -1,13 +1,15 @@
 shared_examples "activesupport instrument override" do
   describe "an event with a registered formatter" do
+    def perform
+      as.instrument("sql.active_record", :sql => "SQL") { "value" }
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("sql.active_record", :sql => "SQL") { "value" }
-
-      expect(return_value).to eq "value"
+      expect(perform).to eq "value"
       expect(transaction).to include_event(
         "body" => "SQL",
         "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
@@ -22,10 +24,9 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("sql.active_record", :sql => "SQL") { "value" }
+      expect(perform).to eq "value"
       Appsignal::Transaction.complete_current!
 
-      expect(return_value).to eq "value"
       span = event_spans.find { |s| s.name == "sql.active_record" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
@@ -37,14 +38,16 @@ shared_examples "activesupport instrument override" do
   end
 
   describe "an event with no registered formatter" do
+    def perform
+      as.instrument("no-registered.formatter", :key => "something") { "value" }
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("no-registered.formatter", :key => "something") { "value" }
-
-      expect(return_value).to eq "value"
+      expect(perform).to eq "value"
       expect(transaction).to include_event(
         "body" => "",
         "body_format" => Appsignal::EventFormatter::DEFAULT,
@@ -59,10 +62,9 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("no-registered.formatter", :key => "something") { "value" }
+      expect(perform).to eq "value"
       Appsignal::Transaction.complete_current!
 
-      expect(return_value).to eq "value"
       span = event_spans.find { |s| s.name == "no-registered.formatter" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
@@ -74,12 +76,16 @@ shared_examples "activesupport instrument override" do
   end
 
   describe "an event with a non-string name" do
+    def perform
+      as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
+      perform
 
       expect(transaction).to include_event(
         "body" => "",
@@ -95,7 +101,7 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
+      perform
       Appsignal::Transaction.complete_current!
 
       expect(event_spans.map(&:name)).to include("not_a_string")
@@ -103,14 +109,16 @@ shared_examples "activesupport instrument override" do
   end
 
   describe "an event whose name starts with a bang" do
+    def perform
+      as.instrument("!sql.active_record", :sql => "SQL") { "value" }
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("!sql.active_record", :sql => "SQL") { "value" }
-
-      expect(return_value).to eq "value"
+      expect(perform).to eq "value"
       expect(transaction).to_not include_events
     end
 
@@ -119,25 +127,28 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      return_value = as.instrument("!sql.active_record", :sql => "SQL") { "value" }
+      expect(perform).to eq "value"
       Appsignal::Transaction.complete_current!
 
-      expect(return_value).to eq "value"
       expect(event_spans).to be_empty
     end
   end
 
   describe "when an error is raised in an instrumented block" do
-    it "in agent mode", :agent_mode do
-      transaction = http_request_transaction
-      set_current_transaction(transaction)
-      as.notifier = notifier
-
+    def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") do
           raise ExampleException, "foo"
         end
       end.to raise_error(ExampleException, "foo")
+    end
+
+    it "in agent mode", :agent_mode do
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
 
       expect(transaction).to include_event(
         "body" => "SQL",
@@ -153,11 +164,7 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      expect do
-        as.instrument("sql.active_record", :sql => "SQL") do
-          raise ExampleException, "foo"
-        end
-      end.to raise_error(ExampleException, "foo")
+      perform
       Appsignal::Transaction.complete_current!
 
       span = event_spans.find { |s| s.name == "sql.active_record" }
@@ -168,14 +175,18 @@ shared_examples "activesupport instrument override" do
   end
 
   describe "when a message is thrown in an instrumented block" do
+    def perform
+      expect do
+        as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
+      end.to throw_symbol(:foo)
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      expect do
-        as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
-      end.to throw_symbol(:foo)
+      perform
 
       expect(transaction).to include_event(
         "body" => "SQL",
@@ -191,9 +202,7 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      expect do
-        as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
-      end.to throw_symbol(:foo)
+      perform
       Appsignal::Transaction.complete_current!
 
       span = event_spans.find { |s| s.name == "sql.active_record" }
@@ -203,14 +212,18 @@ shared_examples "activesupport instrument override" do
   end
 
   describe "when the transaction is completed inside an instrumented block" do
+    def perform
+      as.instrument("sql.active_record", :sql => "SQL") do
+        Appsignal::Transaction.complete_current!
+      end
+    end
+
     it "in agent mode", :agent_mode do
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      as.instrument("sql.active_record", :sql => "SQL") do
-        Appsignal::Transaction.complete_current!
-      end
+      perform
 
       expect(transaction).to_not include_events
       expect(transaction).to be_completed
@@ -221,9 +234,7 @@ shared_examples "activesupport instrument override" do
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      as.instrument("sql.active_record", :sql => "SQL") do
-        Appsignal::Transaction.complete_current!
-      end
+      perform
 
       expect(transaction).to be_completed
       expect(event_spans.map(&:name)).not_to include("sql.active_record")
