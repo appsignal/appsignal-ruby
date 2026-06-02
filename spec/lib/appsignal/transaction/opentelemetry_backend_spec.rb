@@ -57,7 +57,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend do
         .to eq(backend.instance_variable_get(:@span))
     end
 
-    it "nests under the current OpenTelemetry context (free distributed-tracing inheritance)" do
+    it "ignores the ambient OpenTelemetry context and starts a new trace" do
       outer_tracer = ::OpenTelemetry.tracer_provider.tracer("outer")
       outer = outer_tracer.start_span("outer")
       outer_token =
@@ -65,7 +65,27 @@ describe Appsignal::Transaction::OpenTelemetryBackend do
       begin
         backend = create_backend
         backend_span = backend.instance_variable_get(:@span)
-        expect(backend_span.parent_span_id).to eq(outer.context.span_id)
+        expect(backend_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        expect(backend_span.context.trace_id).not_to eq(outer.context.trace_id)
+      ensure
+        ::OpenTelemetry::Context.detach(outer_token)
+        outer.finish
+      end
+    end
+
+    it "restores the previously active OpenTelemetry context on #complete" do
+      outer_tracer = ::OpenTelemetry.tracer_provider.tracer("outer")
+      outer = outer_tracer.start_span("outer")
+      outer_token =
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Trace.context_with_span(outer))
+      begin
+        backend = create_backend
+        expect(::OpenTelemetry::Trace.current_span)
+          .to eq(backend.instance_variable_get(:@span))
+
+        backend.complete
+
+        expect(::OpenTelemetry::Trace.current_span).to eq(outer)
       ensure
         ::OpenTelemetry::Context.detach(outer_token)
         outer.finish
