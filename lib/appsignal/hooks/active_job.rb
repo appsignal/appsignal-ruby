@@ -42,7 +42,7 @@ module Appsignal
       end
 
       module ActiveJobClassInstrumentation
-        def execute(job) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+        def execute(job) # rubocop:disable Metrics/CyclomaticComplexity
           enqueued_at = job["enqueued_at"]
           queue_start = Time.parse(enqueued_at) if enqueued_at
           queue_time =
@@ -67,14 +67,12 @@ module Appsignal
             end
 
           begin
-            if transaction
-              transaction.add_params_if_nil(job["arguments"])
+            transaction.add_params_if_nil(job["arguments"])
 
-              transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
-              transaction.add_tags(transaction_tags)
+            transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
+            transaction.add_tags(transaction_tags)
 
-              transaction.set_action(ActiveJobHelpers.action_name(job))
-            end
+            transaction.set_action(ActiveJobHelpers.action_name(job))
 
             super
           rescue Exception => exception # rubocop:disable Lint/RescueException
