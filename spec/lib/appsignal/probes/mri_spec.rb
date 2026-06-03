@@ -36,9 +36,28 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      it "tracks thread counts" do
-        probe.call
-        expect_gauge_value("thread_count")
+      describe "the thread count gauge" do
+        def perform(probe)
+          probe.call
+        end
+
+        it "in agent mode", :agent_mode do
+          perform(probe)
+          expect_gauge_value("thread_count")
+        end
+
+        it "in collector mode", :collector_mode do
+          # Inject the real Appsignal so `set_gauge` routes through the OTel
+          # metrics backend instead of the in-memory AppsignalMock.
+          perform(described_class.new(:appsignal => Appsignal, :gc_profiler => gc_profiler_mock))
+
+          snapshot = metric_snapshot("thread_count")
+          expect(snapshot).not_to be_nil
+          expect(snapshot.instrument_kind).to eq(:gauge)
+          data_point = snapshot.data_points.first
+          expect(data_point.value).to be_a(Numeric)
+          expect(data_point.attributes).to include("hostname" => kind_of(String))
+        end
       end
 
       it "tracks GC time between measurements" do

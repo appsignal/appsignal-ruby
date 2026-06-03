@@ -8,30 +8,44 @@ describe Appsignal::Hooks::SequelHook do
       end
     end
 
-    before { start_agent }
-
     describe "#dependencies_present?" do
+      before { start_agent }
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_truthy }
     end
 
     context "with a transaction" do
-      let(:transaction) { http_request_transaction }
-      before do
-        set_current_transaction(transaction)
-        db.logger = Logger.new($stdout) # To test #log_duration call
+      def perform
+        db["SELECT 1"].all.to_a
       end
 
-      it "should instrument queries" do
-        expect(transaction).to receive(:start_event).at_least(:once)
-        expect(transaction).to receive(:finish_event)
-          .at_least(:once)
-          .with("sql.sequel", nil, kind_of(String), 1)
+      it "in agent mode", :agent_mode do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
 
-        expect(db).to receive(:log_duration).at_least(:once)
+        expect(transaction).to include_event(
+          "name" => "sql.sequel",
+          "title" => "",
+          "body" => "SELECT 1",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
+        )
+      end
 
-        db["SELECT 1"].all.to_a
+      it "in collector mode", :collector_mode do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.find do |s|
+          s.name == "sql.sequel" && s.attributes["db.query.text"] == "SELECT 1"
+        end
+        expect(span).not_to be_nil
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes["db.system.name"]).to eq("other_sql")
+        expect(span.attributes).not_to have_key("appsignal.body")
       end
     end
   else

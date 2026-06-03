@@ -23,23 +23,39 @@ describe Appsignal::Probes::GvlProbe do
 
   after { FakeGVLTools.reset }
 
-  it "gauges the global timer delta" do
-    FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
-    probe.call
+  describe "the global timer delta gauge" do
+    def perform(probe)
+      FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
+      probe.call
+      FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
+      probe.call
+    end
 
-    expect(gauges_for("gvl_global_timer")).to be_empty
+    it "in agent mode", :agent_mode do
+      # The two-entry match also proves the first call emits nothing: a gauge
+      # on the first call would add a third entry.
+      perform(probe)
 
-    FakeGVLTools::GlobalTimer.monotonic_time = 300_000_000
-    probe.call
+      expect(gauges_for("gvl_global_timer")).to eq [
+        [200, {
+          :hostname => hostname,
+          :process_name => "rspec",
+          :process_id => Process.pid
+        }],
+        [200, { :hostname => hostname }]
+      ]
+    end
 
-    expect(gauges_for("gvl_global_timer")).to eq [
-      [200, {
-        :hostname => hostname,
-        :process_name => "rspec",
-        :process_id => Process.pid
-      }],
-      [200, { :hostname => hostname }]
-    ]
+    it "in collector mode", :collector_mode do
+      # Inject the real Appsignal so `set_gauge` routes through the OTel
+      # metrics backend instead of the in-memory AppsignalMock.
+      perform(described_class.new(:appsignal => Appsignal, :gvl_tools => FakeGVLTools))
+
+      snapshot = metric_snapshot("gvl_global_timer")
+      expect(snapshot).not_to be_nil
+      expect(snapshot.instrument_kind).to eq(:gauge)
+      expect(snapshot.data_points.map(&:value)).to all(eq(200))
+    end
   end
 
   context "when the delta is negative" do
