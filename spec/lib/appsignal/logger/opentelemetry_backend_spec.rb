@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "opentelemetry/sdk"
-require "opentelemetry-logs-sdk"
+require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
+require "opentelemetry-logs-sdk" if DependencyHelper.opentelemetry_present?
 
-describe Appsignal::Logger::OpenTelemetryBackend do
+describe Appsignal::Logger::OpenTelemetryBackend, :if => DependencyHelper.opentelemetry_present? do
   let(:exporter) { ::OpenTelemetry::SDK::Logs::Export::InMemoryLogRecordExporter.new }
   let(:logger_provider) do
     provider = ::OpenTelemetry::SDK::Logs::LoggerProvider.new

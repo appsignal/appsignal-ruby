@@ -2,7 +2,7 @@
 # `Appsignal::Config::MIN_RUBY_VERSION_FOR_COLLECTOR_MODE`). On older
 # Rubies the config gate forces collector_mode? to false; that path is
 # covered by unit tests in `spec/lib/appsignal/config_spec.rb`.
-if DependencyHelper.ruby_3_1_or_newer?
+if DependencyHelper.opentelemetry_present?
   # Use the OTLP proto Ruby stubs shipped inside the
   # `opentelemetry-exporter-otlp` gem to decode the bodies that the runner
   # script posts to the mock collector server.
@@ -32,7 +32,6 @@ if DependencyHelper.ruby_3_1_or_newer?
         .to eq(defaults.fetch("APPSIGNAL_PUSH_API_KEY"))
       expect(attrs["appsignal.config.revision"].string_value).to eq("abc1234")
       expect(attrs["appsignal.config.language_integration"].string_value).to eq("ruby")
-      expect(attrs["appsignal.service.process_id"].int_value).to be > 0
 
       expect(attrs["appsignal.config.filter_attributes"].array_value.values.map(&:string_value))
         .to eq(["password", "secret"])

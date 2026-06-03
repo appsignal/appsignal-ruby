@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "opentelemetry/sdk"
-require "opentelemetry-metrics-sdk"
+require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
+require "opentelemetry-metrics-sdk" if DependencyHelper.opentelemetry_present?
 
-describe Appsignal::Metrics::OpenTelemetryBackend do
+describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opentelemetry_present? do
   let(:exporter) { ::OpenTelemetry::SDK::Metrics::Export::InMemoryMetricPullExporter.new }
   let(:meter_provider) do
     provider = ::OpenTelemetry::SDK::Metrics::MeterProvider.new

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require "opentelemetry/sdk"
+require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
 
-describe Appsignal::Transaction::OpenTelemetryBackend do
+describe Appsignal::Transaction::OpenTelemetryBackend,
+  :if => DependencyHelper.opentelemetry_present? do
   let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
   let(:tracer_provider) do
     provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new
@@ -40,9 +41,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend do
     end
 
     {
-      "http_request"   => :server,
+      "http_request" => :server,
       "background_job" => :consumer,
-      "action_cable"   => :server,
+      "action_cable" => :server,
       "some_custom_ns" => :server
     }.each do |namespace, expected_kind|
       it "maps namespace #{namespace.inspect} to SpanKind #{expected_kind.inspect}" do
@@ -298,7 +299,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend do
     describe "#record_event" do
       it "creates a child span with the event name and a backdated start_timestamp" do
         backend = create_backend
-        duration_ns = 1_000_000_000  # 1 second
+        duration_ns = 1_000_000_000 # 1 second
         backend.record_event("custom.event", "T", "B",
           Appsignal::EventFormatter::DEFAULT, duration_ns, 0)
 

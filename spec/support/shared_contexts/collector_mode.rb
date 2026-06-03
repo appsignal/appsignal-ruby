@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
-require "opentelemetry/sdk"
+# The OpenTelemetry gems are optional (not gemspec dependencies), so only
+# require them when present. This shared context is auto-loaded for every run,
+# but its OTel references live in lazy `let`/`before`/`after` blocks that only
+# run for `:collector_mode`-tagged examples — and those specs are themselves
+# guarded on `opentelemetry_present?`, so they don't load without the gems.
+require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
 
 RSpec.shared_context "collector mode", :collector_mode do
   let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
