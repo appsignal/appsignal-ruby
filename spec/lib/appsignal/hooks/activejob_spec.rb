@@ -104,11 +104,11 @@ if DependencyHelper.active_job_present?
     end
     around { |example| keep_transactions { example.run } }
 
+    # The queue job count counter is covered (in both modes) by the
+    # "emitting the queue job count metric" describe below; this stays
+    # agent-only because the transaction shape it asserts (action, namespace,
+    # tags, events) isn't implemented in collector mode yet.
     it "reports the name from the ActiveJob integration" do
-      tags = { :queue => queue }
-      expect(Appsignal).to receive(:increment_counter)
-        .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-
       queue_job(ActiveJobTestJob)
 
       transaction = last_transaction
@@ -632,6 +632,47 @@ if DependencyHelper.active_job_present?
       else
         "_aj_symbol_keys"
       end
+    end
+  end
+
+  # The agent has no in-memory metric readout, so agent mode keeps the
+  # `increment_counter` mock while collector mode asserts the same metric
+  # reaches the OpenTelemetry backend. Only the metric is asserted here — the
+  # transaction-shape coverage stays agent-only (in the instrumentation describe
+  # above), since action/namespace/tags aren't implemented in collector mode
+  # yet. Self-contained so it doesn't inherit the `ActiveJobClassInstrumentation`
+  # group's parameterized `start_agent`; `start_agent` comes from the mode
+  # contexts.
+  describe "emitting the queue job count metric" do
+    before do
+      ActiveJob::Base.queue_adapter = :inline
+      stub_const("ActiveJobTestJob", Class.new(ActiveJob::Base) do
+        def perform(*_args)
+        end
+      end)
+    end
+
+    def perform
+      ActiveJobTestJob.perform_later
+    end
+
+    it "in agent mode", :agent_mode do
+      expect(Appsignal).to receive(:increment_counter)
+        .with("active_job_queue_job_count", 1, { :queue => "default", :status => :processed })
+
+      perform
+    end
+
+    it "in collector mode", :collector_mode do
+      perform
+
+      snapshot = metric_snapshot("active_job_queue_job_count")
+      expect(snapshot).not_to be_nil
+      expect(snapshot.data_points.first.value).to eq(1.0)
+      expect(snapshot.data_points.first.attributes).to include(
+        "queue" => "default",
+        "status" => "processed"
+      )
     end
   end
 end
