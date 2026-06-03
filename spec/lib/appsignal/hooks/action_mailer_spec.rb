@@ -25,12 +25,8 @@ describe Appsignal::Hooks::ActionMailerHook do
       end
 
       describe ".install" do
-        before do
-          start_agent
+        it "in agent mode", :agent_mode do
           expect(Appsignal.active?).to be_truthy
-        end
-
-        it "is subscribed to 'process.action_mailer' and processes instrumentation" do
           expect(Appsignal).to receive(:increment_counter).with(
             :action_mailer_process,
             1,
@@ -38,6 +34,18 @@ describe Appsignal::Hooks::ActionMailerHook do
           )
 
           UserMailer.welcome.deliver_now
+        end
+
+        it "in collector mode", :collector_mode do
+          expect(Appsignal.active?).to be_truthy
+          UserMailer.welcome.deliver_now
+
+          snapshot = metric_snapshot("action_mailer_process")
+          expect(snapshot).not_to be_nil
+          expect(snapshot.data_points.first.value).to eq(1.0)
+          expect(snapshot.data_points.first.attributes).to eq(
+            "mailer" => "UserMailer", "action" => "welcome"
+          )
         end
       end
     end
