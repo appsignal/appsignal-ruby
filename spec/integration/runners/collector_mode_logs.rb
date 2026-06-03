@@ -27,7 +27,8 @@ logger.info("info line", :tag => "value")
 logger.warn("warn line")
 logger.error("error line")
 
-# Force-flush so the spec can assert on the queued request deterministically.
-OpenTelemetry.logger_provider.force_flush
+# Shut AppSignal down so the OTel providers drain their buffers and the
+# spec sees the queued request deterministically.
+Appsignal.stop("integration test")
 
 puts "DONE"
