@@ -19,6 +19,16 @@ module Appsignal
         # this preference, per the OTel spec.)
         ENV["OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"] ||= "delta"
 
+        # With the metrics and logs SDK gems loaded, `SDK.configure` below
+        # auto-installs a metrics reader and a log processor from these env
+        # vars (both default to "otlp", pointed at the default OTLP
+        # endpoint), each with its own background thread. We replace both
+        # providers with our own right after, which would orphan those
+        # threads -- unreachable by any shutdown. Suppress the auto-setup;
+        # the exporters we build below are the only ones that should run.
+        ENV["OTEL_METRICS_EXPORTER"] ||= "none"
+        ENV["OTEL_LOGS_EXPORTER"] ||= "none"
+
         require "opentelemetry/sdk"
         require "opentelemetry/exporter/otlp"
         require "opentelemetry-metrics-sdk"
