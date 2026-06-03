@@ -20,7 +20,8 @@ Appsignal.increment_counter("test_counter", 1, :tag => "value")
 Appsignal.set_gauge("test_gauge", 42.5, :tag => "value")
 Appsignal.add_distribution_value("test_distribution", 0.123, :tag => "value")
 
-# Force-flush so the spec can assert on the queued request deterministically.
-OpenTelemetry.meter_provider.force_flush
+# Shut AppSignal down so the OTel providers drain their buffers and the
+# spec sees the queued request deterministically.
+Appsignal.stop("integration test")
 
 puts "DONE"

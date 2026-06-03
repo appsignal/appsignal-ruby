@@ -36,9 +36,8 @@ meter.create_counter("test_counter").add(1)
 logger = OpenTelemetry.logger_provider.logger(:name => "collector-mode-runner")
 logger.on_emit(:severity_text => "INFO", :body => "test-log-line")
 
-# Force-flush so the spec can assert on the queued requests deterministically.
-OpenTelemetry.tracer_provider.force_flush
-OpenTelemetry.meter_provider.force_flush
-OpenTelemetry.logger_provider.force_flush
+# Shut AppSignal down so the OTel providers drain their buffers and the
+# spec sees the queued requests deterministically.
+Appsignal.stop("integration test")
 
 puts "DONE"
