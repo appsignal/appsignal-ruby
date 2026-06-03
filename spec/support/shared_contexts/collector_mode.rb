@@ -5,7 +5,11 @@
 # but its OTel references live in lazy `let`/`before`/`after` blocks that only
 # run for `:collector_mode`-tagged examples — and those specs are themselves
 # guarded on `opentelemetry_present?`, so they don't load without the gems.
-require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
+if DependencyHelper.opentelemetry_present?
+  require "opentelemetry/sdk"
+  require "opentelemetry-metrics-sdk"
+  require "opentelemetry-logs-sdk"
+end
 
 RSpec.shared_context "collector mode", :collector_mode do
   let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
@@ -17,26 +21,53 @@ RSpec.shared_context "collector mode", :collector_mode do
     provider
   end
 
+  let(:metric_exporter) { ::OpenTelemetry::SDK::Metrics::Export::InMemoryMetricPullExporter.new }
+  let(:meter_provider) do
+    provider = ::OpenTelemetry::SDK::Metrics::MeterProvider.new
+    provider.add_metric_reader(metric_exporter)
+    provider
+  end
+
+  let(:log_exporter) { ::OpenTelemetry::SDK::Logs::Export::InMemoryLogRecordExporter.new }
+  let(:logger_provider) do
+    provider = ::OpenTelemetry::SDK::Logs::LoggerProvider.new
+    provider.add_log_record_processor(
+      ::OpenTelemetry::SDK::Logs::Export::SimpleLogRecordProcessor.new(log_exporter)
+    )
+    provider
+  end
+
   before do
     start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-    # `Appsignal.start` booted a full SDK tracer provider backed by a
-    # BatchSpanProcessor (a background export thread). Shut it down before
-    # swapping in the threadless in-memory provider: after the swap it is
-    # unreachable and its thread would leak across examples.
-    ::OpenTelemetry.tracer_provider.shutdown
+    # `Appsignal.start` booted a full OTel SDK whose providers each carry a
+    # background export thread (batch span and log processors, periodic
+    # metric reader). Shut it down before the swaps below: after the swap
+    # the booted providers are unreachable and their threads would leak
+    # across examples.
+    Appsignal::OpenTelemetry.shutdown
+    # Swap in the in-memory providers so the test can read spans/metrics/
+    # logs back, and reset the metrics/logger backends so their cached
+    # meter/logger re-resolve against these providers on the next emit.
     ::OpenTelemetry.tracer_provider = tracer_provider
+    ::OpenTelemetry.meter_provider = meter_provider
+    ::OpenTelemetry.logger_provider = logger_provider
+    Appsignal::Metrics::OpenTelemetryBackend.reset!
+    Appsignal::Logger::OpenTelemetryBackend.reset!
   end
 
   after do
     # `clear_current_transaction!` in spec_helper clears the thread-local but
     # not the attached OTel context. `complete_current!` does both.
     Appsignal::Transaction.complete_current!
-    # Shut the OTel SDK down so the meter and logger providers' background
-    # threads don't accumulate across the suite. The targeted shutdown, not
-    # `Appsignal.stop`: stop's `Extension.stop` takes ~2 seconds per call,
-    # which across every collector-mode example adds minutes to the suite.
-    # Runs before the global `Appsignal::OpenTelemetry.reset!` hook, so the
-    # `started?` gate inside the shutdown still passes.
+    # Shut down whatever OTel SDK is current at teardown. Usually that's
+    # the threadless in-memory providers (a near no-op), but examples that
+    # boot AppSignal again themselves leave real providers behind, whose
+    # background threads would otherwise accumulate across the suite. The
+    # targeted shutdown, not `Appsignal.stop`: stop's `Extension.stop`
+    # takes ~2 seconds per call, which across every collector-mode example
+    # adds minutes to the suite. Runs before the global
+    # `Appsignal::OpenTelemetry.reset!` hook, so the `started?` gate inside
+    # the shutdown still passes.
     Appsignal::OpenTelemetry.shutdown
   end
 
@@ -46,6 +77,23 @@ RSpec.shared_context "collector mode", :collector_mode do
 
   def event_spans
     span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
+  end
+
+  # Pull the current metric snapshots from the in-memory reader. The OTLP
+  # exporter is also a reader, so a `pull` collects everything recorded so far.
+  def metric_snapshots
+    metric_exporter.pull
+    snapshots = metric_exporter.metric_snapshots.dup
+    metric_exporter.reset
+    snapshots
+  end
+
+  def metric_snapshot(name)
+    metric_snapshots.find { |snapshot| snapshot.name == name }
+  end
+
+  def log_records
+    log_exporter.emitted_log_records
   end
 end
 
