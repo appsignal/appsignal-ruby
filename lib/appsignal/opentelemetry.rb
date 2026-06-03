@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "appsignal/opentelemetry/attributes"
+require "appsignal/opentelemetry/dependencies"
 
 module Appsignal
   # @!visibility private
@@ -30,8 +31,10 @@ module Appsignal
         # providers with our own right after, which would orphan those
         # threads -- unreachable by any shutdown. Suppress the auto-setup;
         # the exporters we build below are the only ones that should run.
-        ENV["OTEL_METRICS_EXPORTER"] ||= "none"
-        ENV["OTEL_LOGS_EXPORTER"] ||= "none"
+        # Set unconditionally: a user-set "otlp" here would otherwise slip
+        # past and reintroduce the orphaned threads.
+        ENV["OTEL_METRICS_EXPORTER"] = "none"
+        ENV["OTEL_LOGS_EXPORTER"] = "none"
 
         require "opentelemetry/sdk"
         require "opentelemetry/exporter/otlp"
@@ -39,6 +42,12 @@ module Appsignal
         require "opentelemetry-exporter-otlp-metrics"
         require "opentelemetry-logs-sdk"
         require "opentelemetry-exporter-otlp-logs"
+
+        # The OpenTelemetry gems are optional and installed by the user (not
+        # declared in the gemspec). If they're present but older than the
+        # versions we support, fall back to the agent rather than booting an
+        # SDK that may misbehave (e.g. a metrics SDK without fork hooks).
+        return unless required_gem_versions_met?
 
         endpoint = config[:collector_endpoint].to_s.sub(%r{/+\z}, "")
         # Merge with the SDK's default resource so all three signal types
@@ -144,7 +153,6 @@ module Appsignal
           "appsignal.config.language_integration" => "ruby",
           "service.name" => service_name,
           "host.name" => host_name,
-          "appsignal.service.process_id" => Process.pid,
           "appsignal.config.filter_attributes" => config[:filter_attributes],
           "appsignal.config.filter_function_parameters" => config[:filter_function_parameters],
           "appsignal.config.filter_request_query_parameters" =>
@@ -164,6 +172,37 @@ module Appsignal
         }
         attrs.reject! { |_, v| v.nil? || (v.respond_to?(:empty?) && v.empty?) }
         ::OpenTelemetry::SDK::Resources::Resource.create(attrs)
+      end
+
+      private
+
+      # Checks the installed OpenTelemetry gem versions against {REQUIRED_GEMS}.
+      # On a shortfall, warns and flags the SDK as not started so the caller
+      # falls back to the agent; returns whether all requirements are met.
+      def required_gem_versions_met?
+        unmet = unmet_gem_requirements
+        return true if unmet.empty?
+
+        @started = false
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(
+          "Cannot enable collector mode: the installed OpenTelemetry gems are " \
+            "older than the minimum supported versions (#{unmet.join(", ")}). " \
+            "Update them in your Gemfile; the AppSignal agent will be used instead."
+        )
+        false
+      end
+
+      # Descriptions of the OpenTelemetry gems that are missing or older than
+      # the minimum version in {REQUIRED_GEMS}. Empty when all are satisfied.
+      def unmet_gem_requirements
+        REQUIRED_GEMS.filter_map do |name, minimum|
+          spec = Gem.loaded_specs[name]
+          if spec.nil?
+            "#{name} (not installed)"
+          elsif spec.version < Gem::Version.new(minimum)
+            "#{name} #{spec.version} (requires >= #{minimum})"
+          end
+        end
       end
     end
   end

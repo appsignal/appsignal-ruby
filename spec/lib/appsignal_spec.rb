@@ -868,7 +868,7 @@ describe Appsignal do
       end
     end
 
-    if DependencyHelper.ruby_3_1_or_newer?
+    if DependencyHelper.opentelemetry_present?
       context "when collector_endpoint is set but the OpenTelemetry SDK fails to boot" do
         let(:err_stream) { std_stream }
         let(:stdout_stream) { std_stream }
@@ -984,7 +984,7 @@ describe Appsignal do
       Appsignal.stop
     end
 
-    if DependencyHelper.ruby_3_1_or_newer?
+    if DependencyHelper.opentelemetry_present?
       context "in collector mode" do
         before do
           Appsignal.clear!
@@ -2003,8 +2003,8 @@ describe Appsignal do
     end
   end
 
-  context "in collector mode" do
-    require "opentelemetry/sdk"
+  context "in collector mode", :if => DependencyHelper.opentelemetry_present? do
+    require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
 
     let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
     let(:tracer_provider) do
@@ -2033,7 +2033,6 @@ describe Appsignal do
     def event_spans
       span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
     end
-
   end
 
   describe "custom metrics" do

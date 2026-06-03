@@ -1,4 +1,4 @@
-if DependencyHelper.ruby_3_1_or_newer?
+if DependencyHelper.opentelemetry_present?
   require "opentelemetry/exporter/otlp"
   require "opentelemetry/proto/collector/trace/v1/trace_service_pb"
 

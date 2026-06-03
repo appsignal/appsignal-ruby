@@ -1,0 +1,6 @@
+# DO NOT EDIT
+# This is a generated file by the `rake build_matrix:gemfiles:generate` task.
+# It layers the optional OpenTelemetry gems (gemfiles/collector.rb) on top of sidekiq-7.gemfile.
+
+eval_gemfile File.expand_path("sidekiq-7.gemfile", __dir__)
+eval_gemfile File.expand_path("collector.rb", __dir__)

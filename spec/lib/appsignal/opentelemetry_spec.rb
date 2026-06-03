@@ -3,7 +3,7 @@
 # The configure/shutdown/started behavior is gated on Ruby 3.1+ (the OTel
 # SDK ships fork hooks via Process._fork). On older Rubies these unit
 # specs are skipped; the config-level gate is covered in `config_spec`.
-if DependencyHelper.ruby_3_1_or_newer?
+if DependencyHelper.opentelemetry_present?
   require "opentelemetry/sdk"
   require "opentelemetry-metrics-sdk"
   require "opentelemetry-logs-sdk"
@@ -235,7 +235,6 @@ if DependencyHelper.ruby_3_1_or_newer?
         expect(attrs["appsignal.config.language_integration"]).to eq("ruby")
         expect(attrs["service.name"]).to eq("my-service")
         expect(attrs["host.name"]).to eq("host-1")
-        expect(attrs["appsignal.service.process_id"]).to eq(Process.pid)
         expect(attrs["appsignal.config.filter_attributes"]).to eq(["password"])
         expect(attrs["appsignal.config.ignore_actions"])
           .to eq(["IgnoredController#action"])

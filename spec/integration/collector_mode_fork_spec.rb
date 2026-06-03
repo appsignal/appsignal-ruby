@@ -2,7 +2,7 @@
 # so the runner script exits before emitting anything. JRuby's collector
 # mode still works for non-forking workloads (covered by the other
 # collector_mode_*_spec files).
-if DependencyHelper.ruby_3_1_or_newer? && !DependencyHelper.running_jruby?
+if DependencyHelper.opentelemetry_present? && !DependencyHelper.running_jruby?
   require "opentelemetry/exporter/otlp"
   require "opentelemetry/proto/collector/metrics/v1/metrics_service_pb"
 
