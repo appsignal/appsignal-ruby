@@ -5,9 +5,10 @@ describe Appsignal::Probes::SidekiqProbe do
     let(:probe) { described_class.new }
     let(:redis_hostname) { "localhost" }
     let(:expected_default_tags) { { :hostname => "localhost" } }
+    # `start_agent` is supplied by the `:agent_mode`/`:collector_mode` contexts
+    # on each example, not here -- a hardcoded `start_agent` would boot the agent
+    # in agent mode and clobber collector mode's collector-endpoint setup.
     before do
-      start_agent
-
       # The probe will `require "sidekiq/api"` on initialize, which
       # as of 8.0.8 expects the `Sidekiq` module to provide a `loader`
       # method that responds to `run_load_hooks`.
@@ -204,7 +205,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    it "loads Sidekiq::API" do
+    it "loads Sidekiq::API", :agent_mode do
       with_sidekiq!
       # Hide the Sidekiq constant if it was already loaded. It will be
       # redefined by loading "sidekiq/api" in the probe.
@@ -215,7 +216,7 @@ describe Appsignal::Probes::SidekiqProbe do
       expect(defined?(Sidekiq::Stats)).to be_truthy
     end
 
-    it "logs config on initialize" do
+    it "logs config on initialize", :agent_mode do
       with_sidekiq!
       log = capture_logs { probe }
       expect(log).to contains_log(:debug, "Initializing Sidekiq probe\n")
@@ -224,7 +225,7 @@ describe Appsignal::Probes::SidekiqProbe do
     context "with Sidekiq 7" do
       before { with_sidekiq7! }
 
-      it "logs used hostname on call once" do
+      it "logs used hostname on call once", :agent_mode do
         log = capture_logs { probe.call }
         expect(log).to contains_log(
           :debug,
@@ -235,31 +236,67 @@ describe Appsignal::Probes::SidekiqProbe do
         expect(log).to_not contains_log(:debug, %(Sidekiq probe: ))
       end
 
-      it "collects custom metrics" do
-        expect_gauge("worker_count", 24).twice
-        expect_gauge("process_count", 25).twice
-        expect_gauge("connection_count", 2).twice
-        expect_gauge("memory_usage", 1024).twice
-        expect_gauge("memory_usage_rss", 512).twice
-        expect_gauge("job_count", 5, :status => :processed) # Gauge delta
-        expect_gauge("job_count", 3, :status => :failed) # Gauge delta
-        expect_gauge("job_count", 12, :status => :retry_queue).twice
-        expect_gauge("job_count", 2, :status => :died) # Gauge delta
-        expect_gauge("job_count", 14, :status => :scheduled).twice
-        expect_gauge("job_count", 15, :status => :enqueued).twice
-        expect_gauge("queue_length", 10, :queue => "default").twice
-        expect_gauge("queue_latency", 12_000, :queue => "default").twice
-        expect_gauge("queue_length", 1, :queue => "critical").twice
-        expect_gauge("queue_latency", 2_000, :queue => "critical").twice
-        # Call probe twice so we can calculate the delta for some gauge values
-        probe.call
-        probe.call
+      describe "collecting custom metrics" do
+        # Call the probe twice so the delta-based gauges report a value.
+        def perform
+          probe.call
+          probe.call
+        end
+
+        it "in agent mode", :agent_mode do
+          expect_gauge("worker_count", 24).twice
+          expect_gauge("process_count", 25).twice
+          expect_gauge("connection_count", 2).twice
+          expect_gauge("memory_usage", 1024).twice
+          expect_gauge("memory_usage_rss", 512).twice
+          expect_gauge("job_count", 5, :status => :processed) # Gauge delta
+          expect_gauge("job_count", 3, :status => :failed) # Gauge delta
+          expect_gauge("job_count", 12, :status => :retry_queue).twice
+          expect_gauge("job_count", 2, :status => :died) # Gauge delta
+          expect_gauge("job_count", 14, :status => :scheduled).twice
+          expect_gauge("job_count", 15, :status => :enqueued).twice
+          expect_gauge("queue_length", 10, :queue => "default").twice
+          expect_gauge("queue_latency", 12_000, :queue => "default").twice
+          expect_gauge("queue_length", 1, :queue => "critical").twice
+          expect_gauge("queue_latency", 2_000, :queue => "critical").twice
+          perform
+        end
+
+        it "in collector mode", :collector_mode do
+          perform
+
+          # The agent has no in-memory metric readout, so collector mode asserts
+          # that representative gauges reach the OpenTelemetry backend: a plain
+          # gauge, a delta-based gauge carrying a status tag, and a per-queue
+          # gauge. The agent-mode example above covers the full set of values.
+          # Pull the snapshots once: each `metric_snapshots` call resets the
+          # in-memory reader, so a second pull would come back empty.
+          snapshots = metric_snapshots
+
+          worker_count = snapshots.find { |snapshot| snapshot.name == "sidekiq_worker_count" }
+          expect(worker_count).not_to be_nil
+          expect(worker_count.instrument_kind).to eq(:gauge)
+          expect(worker_count.data_points.first.value).to eq(24)
+          expect(worker_count.data_points.first.attributes).to eq("hostname" => "localhost")
+
+          job_count = snapshots.find { |snapshot| snapshot.name == "sidekiq_job_count" }
+          processed = job_count.data_points.find do |point|
+            point.attributes["status"] == "processed"
+          end
+          expect(processed.value).to eq(5)
+
+          queue_length = snapshots.find { |snapshot| snapshot.name == "sidekiq_queue_length" }
+          default_queue = queue_length.data_points.find do |point|
+            point.attributes["queue"] == "default"
+          end
+          expect(default_queue.value).to eq(10)
+        end
       end
 
       context "when redis info doesn't contain requested keys" do
         before { Sidekiq7Mock.redis_info_data = {} }
 
-        it "doesn't create metrics for nil values" do
+        it "doesn't create metrics for nil values", :agent_mode do
           expect_gauge("connection_count").never
           expect_gauge("memory_usage").never
           expect_gauge("memory_usage_rss").never
@@ -270,7 +307,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    context "with Sidekiq 6" do
+    context "with Sidekiq 6", :agent_mode do
       before { with_sidekiq6! }
 
       it "logs used hostname on call once" do
@@ -319,7 +356,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    context "when hostname is configured for probe" do
+    context "when hostname is configured for probe", :agent_mode do
       let(:redis_hostname) { "my_redis_server" }
       let(:probe) { described_class.new(:hostname => redis_hostname) }
 
