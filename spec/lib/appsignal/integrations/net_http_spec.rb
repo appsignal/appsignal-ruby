@@ -15,7 +15,8 @@ describe Appsignal::Integrations::NetHttpIntegration do
 
       expect(transaction).to include_event(
         "name" => "request.net_http",
-        "title" => "GET http://www.google.com"
+        "title" => "GET http://www.google.com",
+        "body" => ""
       )
     end
 
@@ -51,7 +52,8 @@ describe Appsignal::Integrations::NetHttpIntegration do
 
       expect(transaction).to include_event(
         "name" => "request.net_http",
-        "title" => "GET https://www.google.com"
+        "title" => "GET https://www.google.com",
+        "body" => ""
       )
     end
 

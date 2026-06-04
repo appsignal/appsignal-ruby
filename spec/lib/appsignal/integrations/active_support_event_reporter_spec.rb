@@ -25,6 +25,7 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
     it "in collector mode", :collector_mode do
       subscriber.emit(event)
 
+      expect(log_records.size).to eq(1)
       record = log_records.first
       expect(record).not_to be_nil
       expect(record.body).to eq("user.created")

@@ -1,20 +1,15 @@
 require "appsignal/integrations/mongo_ruby_driver"
 
-describe Appsignal::Hooks::MongoMonitorSubscriber do
-  if DependencyHelper.mongo_present?
-    let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
-    let(:address) { Mongo::Address.new("127.0.0.1:27017") }
-
-    # Build real `Mongo::Monitoring::Event` objects so the subscriber is
-    # exercised against the driver's actual event API rather than doubles. The
-    # constructors don't open a connection, so no MongoDB server is needed.
-    def command_started_event(
-      request_id: 1, command_name: "find",
-      command: { "foo" => "bar" }, database_name: "test"
-    )
-      Mongo::Monitoring::Event::CommandStarted.new(
-        command_name, database_name, address, request_id, 1, command
-      )
+  # White-box unit tests of the subscriber's interaction with the Transaction
+  # API and the C-extension. Pinned to :agent_mode: they assert extension
+  # mechanics (`start_event`/`finish_event`) that only apply to the agent
+  # backend; the OTel-backed transaction output is covered by "instrumenting a
+  # finished query" below in both modes. `start_agent` comes from the mode
+  # context, so it is not started here.
+  context "with transaction", :agent_mode do
+    let(:transaction) { http_request_transaction }
+    before do
+      set_current_transaction(transaction)
     end
 
     def command_succeeded_event(
@@ -179,28 +174,10 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       expect(snapshot.data_points.first.attributes).to eq("database" => "test")
     end
 
-    describe "instrumenting a failed query" do
-      let(:started_event) { command_started_event(:request_id => 2) }
-      let(:failed_event) { command_failed_event(started_event, :request_id => 2) }
-
-      def perform
-        subscriber.started(started_event)
-        subscriber.failed(failed_event)
-      end
-
-      it "records the query as an event" do
-        start_agent
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-
-        perform
-
-        expect(transaction).to include_event(
-          "name" => "query.mongodb",
-          "title" => "find | test | FAILED",
-          "body" => "{\"foo\":\"?\"}"
-        )
-      end
+  context "without transaction", :agent_mode do
+    before do
+      allow(Appsignal::Transaction).to receive(:current)
+        .and_return(Appsignal::Transaction::NilTransaction.new)
     end
 
     # The subscriber guards on a current, unpaused transaction before touching
@@ -239,8 +216,30 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         expect(Appsignal::Extension).to_not receive(:finish_event)
         expect(Appsignal).to_not receive(:add_distribution_value)
 
-        perform
-      end
+      subscriber.finish("SUCCEEDED", double)
+    end
+  end
+
+  context "when appsignal is paused", :agent_mode do
+    let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
+    before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
+
+    it "should not attempt to start an event" do
+      expect(Appsignal::Extension).to_not receive(:start_event)
+
+      subscriber.started(double)
+    end
+
+    it "should not attempt to finish an event" do
+      expect(Appsignal::Extension).to_not receive(:finish_event)
+
+      subscriber.finish("SUCCEEDED", double)
+    end
+
+    it "should not attempt to send duration metrics" do
+      expect(Appsignal).to_not receive(:add_distribution_value)
+
+      subscriber.finish("SUCCEEDED", double)
     end
   end
 end

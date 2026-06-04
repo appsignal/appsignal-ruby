@@ -31,6 +31,7 @@ shared_examples "activesupport finish_with_state override" do
       perform
       Appsignal::Transaction.complete_current!
 
+      expect(event_spans.size).to eq(1)
       span = event_spans.find { |s| s.name == "sql.active_record" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
