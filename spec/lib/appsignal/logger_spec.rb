@@ -461,25 +461,31 @@ describe Appsignal::Logger do
   end
 
   describe "format validation" do
-    it "accepts the documented format constants" do
-      [
-        Appsignal::Logger::PLAINTEXT,
-        Appsignal::Logger::LOGFMT,
-        Appsignal::Logger::JSON,
-        Appsignal::Logger::AUTODETECT
-      ].each do |format|
-        expect(Appsignal.internal_logger).not_to receive(:warn)
-        logger = Appsignal::Logger.new("group", :format => format)
-        expect(logger.instance_variable_get(:@format)).to eq(format)
+    # Constructor-only behaviour, independent of the active backend, so it
+    # should hold identically whether agent or collector mode booted.
+    describe "the documented format constants" do
+      it_in_both_modes do
+        [
+          Appsignal::Logger::PLAINTEXT,
+          Appsignal::Logger::LOGFMT,
+          Appsignal::Logger::JSON,
+          Appsignal::Logger::AUTODETECT
+        ].each do |format|
+          expect(Appsignal.internal_logger).not_to receive(:warn)
+          logger = Appsignal::Logger.new("group", :format => format)
+          expect(logger.instance_variable_get(:@format)).to eq(format)
+        end
       end
     end
 
-    it "warns and falls back to AUTODETECT for an unknown format" do
-      expect(Appsignal.internal_logger).to receive(:warn)
-        .with(/Unknown Appsignal::Logger format 99; falling back to AUTODETECT/)
+    describe "an unknown format" do
+      it_in_both_modes do
+        expect(Appsignal.internal_logger).to receive(:warn)
+          .with(/Unknown Appsignal::Logger format 99; falling back to AUTODETECT/)
 
-      logger = Appsignal::Logger.new("group", :format => 99)
-      expect(logger.instance_variable_get(:@format)).to eq(Appsignal::Logger::AUTODETECT)
+        logger = Appsignal::Logger.new("group", :format => 99)
+        expect(logger.instance_variable_get(:@format)).to eq(Appsignal::Logger::AUTODETECT)
+      end
     end
   end
 
