@@ -92,10 +92,18 @@ describe Appsignal::Transaction::ExtensionBackend do
       backend.set_sample_data("params", data)
     end
 
-    it "forwards #set_error to the handle" do
-      data = Appsignal::Extension.data_array_new
+    it "serializes the backtrace Array to Data and forwards #set_error to the handle" do
+      data = Appsignal::Utils::Data.generate(["line 1"])
+      expect(Appsignal::Utils::Data).to receive(:generate).with(["line 1"]).and_return(data)
       expect(handle).to receive(:set_error).with("RuntimeError", "boom", data)
-      backend.set_error("RuntimeError", "boom", data)
+      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+    end
+
+    it "forwards an empty Data array when the backtrace is nil" do
+      data = Appsignal::Extension.data_array_new
+      expect(Appsignal::Extension).to receive(:data_array_new).and_return(data)
+      expect(handle).to receive(:set_error).with("RuntimeError", "boom", data)
+      backend.set_error("RuntimeError", "boom", nil, [])
     end
 
     it "forwards #finish to the handle and returns its value" do
@@ -122,6 +130,12 @@ describe Appsignal::Transaction::ExtensionBackend do
       expect(backend._completed?).to eq(false)
       backend.complete
       expect(backend._completed?).to eq(true)
+    end
+  end
+
+  describe "#supports_multiple_errors?" do
+    it "returns false (extra errors are reported as duplicate transactions)" do
+      expect(backend.supports_multiple_errors?).to eq(false)
     end
   end
 end

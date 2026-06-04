@@ -1982,6 +1982,151 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "recording the error on the span" do
+      def perform
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
+
+        expect(transaction).to have_error(
+          "ExampleStandardError",
+          "test message",
+          ["line 1"]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event).not_to be_nil
+        expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+        expect(event.attributes["exception.message"]).to eq("test message")
+        expect(event.attributes["exception.stacktrace"]).to eq("line 1")
+        expect(event.attributes).not_to have_key("appsignal.error_causes")
+        expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+      end
+    end
+
+    describe "recording an error that has causes" do
+      let(:error) do
+        cause = ExampleStandardError.new("cause message").tap do |e|
+          e.set_backtrace(["/path/cause.rb:1:in `cause_method'"])
+        end
+        ExampleException.new("wrapper message").tap do |e|
+          e.set_backtrace(["/path/wrapper.rb:2:in `wrapper_method'"])
+          allow(e).to receive(:cause).and_return(cause)
+        end
+      end
+
+      def perform
+        # Hide Rails so the backtrace isn't run through its cleaner, keeping the
+        # asserted lines deterministic (mirrors the error-causes sample-data spec).
+        hide_const("Rails")
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
+
+        expect(transaction).to have_error("ExampleException", "wrapper message")
+        expect(transaction).to include_error_causes(
+          [hash_including("name" => "ExampleStandardError", "message" => "cause message")]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event.attributes["exception.type"]).to eq("ExampleException")
+        # `appsignal.error_causes` matches the processor's ErrorSubCause shape:
+        # name / message / lines (full cleaned backtrace per cause).
+        expect(JSON.parse(event.attributes["appsignal.error_causes"])).to eq(
+          [
+            {
+              "name" => "ExampleStandardError",
+              "message" => "cause message",
+              "lines" => ["/path/cause.rb:1:in `cause_method'"]
+            }
+          ]
+        )
+      end
+    end
+
+    describe "recording multiple errors" do
+      let(:other_error) do
+        ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
+      end
+
+      def perform
+        transaction.add_error(error)
+        transaction.add_error(other_error)
+      end
+
+      it "in agent mode", :agent_mode do
+        perform
+        # The extension holds one error per transaction, so the extra error is
+        # reported as a duplicate transaction.
+        expect { transaction.complete }.to change { created_transactions.count }.by(1)
+
+        original_transaction, duplicate_transaction = created_transactions
+        expect(original_transaction).to have_error(
+          "ExampleStandardError", "test message", ["line 1"]
+        )
+        expect(duplicate_transaction).to have_error(
+          "ExampleStandardError", "other message", ["line 2"]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        # One trace: a single root span carrying one exception event per error.
+        root_spans = span_exporter.finished_spans.select do |span|
+          [:server, :consumer].include?(span.kind)
+        end
+        expect(root_spans.size).to eq(1)
+
+        events = root_spans.first.events.select { |e| e.name == "exception" }
+        expect(events.map { |e| e.attributes["exception.type"] })
+          .to contain_exactly("ExampleStandardError", "ExampleStandardError")
+        expect(events.map { |e| e.attributes["exception.message"] })
+          .to contain_exactly("test message", "other message")
+      end
+    end
+
+    # Collector-mode-specific behavior (no agent-mode analog): the error is
+    # recorded on the span that is current when `add_error` is called.
+    it "records the error on the current event span", :collector_mode do
+      transaction.start_event
+      transaction.add_error(error)
+      transaction.finish_event("query", "title", "body", Appsignal::EventFormatter::DEFAULT)
+      transaction.complete
+
+      event_span = event_spans.find { |span| span.name == "query" }
+      expect(event_span.events.map(&:name)).to include("exception")
+      expect(Array(root_span.events).map(&:name)).not_to include("exception")
+    end
+
+    # Collector-mode-specific: errors collapse onto one trace, so error blocks
+    # merge onto the transaction in order -- the last-added error wins on a
+    # shared key.
+    it "applies error blocks in order, last-added error wins", :collector_mode do
+      second_error = ExampleStandardError.new("second message")
+      transaction.add_error(error) { |t| t.set_action("FirstAction") }
+      transaction.add_error(second_error) { |t| t.set_action("SecondAction") }
+      transaction.complete
+
+      expect(root_span.name).to eq("SecondAction")
+      expect(root_span.attributes["appsignal.action_name"]).to eq("SecondAction")
+    end
+
     context "when an error is already set in the transaction" do
       let(:other_error) do
         ExampleStandardError.new("other test message").tap do |e|
@@ -2666,7 +2811,7 @@ describe Appsignal::Transaction do
     end
 
     context "when the transaction has several errors" do
-      it "calls the given hook for each of the duplicate error transactions" do
+      it "calls the given hook for each of the duplicate error transactions", :agent_mode do
         block = proc do |transaction, error|
           transaction.set_action(error.message)
         end
@@ -2690,6 +2835,25 @@ describe Appsignal::Transaction do
         expect(created_transactions.find { |t| t != transaction }).to(
           have_action("hook_error_second")
         )
+      end
+
+      it "calls the hook once with the first error in collector mode", :collector_mode do
+        block = proc do |transaction, error|
+          transaction.set_action(error.message)
+        end
+
+        Appsignal::Transaction.before_complete(&block)
+
+        transaction = new_transaction
+        transaction.set_error(ExampleStandardError.new("hook_error_first"))
+        transaction.set_error(ExampleStandardError.new("hook_error_second"))
+
+        expect(block).to receive(:call).once.and_call_original
+
+        transaction.complete
+
+        # One trace, so the hook runs once with the first error.
+        expect(root_span.name).to eq("hook_error_first")
       end
     end
 

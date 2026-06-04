@@ -205,6 +205,12 @@ module Appsignal
 
     # @!visibility private
     def complete
+      # Completing is idempotent: a transaction can be completed explicitly and
+      # then again by a `complete_current!` cleanup path. Re-running would, for a
+      # multi-error transaction, re-record the extra errors (a second duplicate
+      # in agent mode, or an event on an already-finished span in collector mode).
+      return if completed?
+
       if discarded?
         Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
           "because it was manually discarded."
@@ -223,29 +229,7 @@ module Appsignal
         should_sample = @backend.finish(0)
       end
 
-      @error_blocks.each do |error, blocks|
-        # Ignore the error that is already set in this transaction.
-        next if error == @error_set
-
-        duplicate.tap do |transaction|
-          # In the duplicate transaction for each error, set an error
-          # with a block that calls all the blocks set for that error
-          # in the original transaction.
-          transaction.internal_set_error(error) do
-            blocks.each { |block| block.call(transaction) }
-          end
-
-          transaction.complete
-        end
-      end
-
-      if @error_set && @error_blocks[@error_set].any?
-        self.class.with_transaction(self) do
-          @error_blocks[@error_set].each do |block|
-            block.call(self)
-          end
-        end
-      end
+      report_errors
 
       run_before_complete_hooks
 
@@ -706,14 +690,25 @@ module Appsignal
 
     # @!visibility private
     def internal_set_error(error, &block)
-      _set_error(error) if @error_blocks.empty?
+      is_new_error = !@error_blocks.include?(error)
 
-      if !@error_blocks.include?(error) && @error_blocks.length >= ERRORS_LIMIT
+      if is_new_error && @error_blocks.length >= ERRORS_LIMIT
         Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
           "than #{ERRORS_LIMIT} distinct errors. Only the first " \
           "#{ERRORS_LIMIT} distinct errors will be reported."
         return
       end
+
+      if @error_blocks.empty?
+        _set_error(error)
+      elsif is_new_error && @backend.supports_multiple_errors?
+        # Record additional errors as they are added, so the exception event
+        # lands on the span that is current now rather than the root span at
+        # completion time. The agent backend instead reports extra errors as
+        # duplicate transactions at completion (see `#report_errors`).
+        _send_error_to_backend(error)
+      end
+
       @error_blocks[error] << block
       @error_blocks[error].compact!
     end
@@ -734,34 +729,74 @@ module Appsignal
       end
     end
 
-    def _set_error(error)
-      backtrace = cleaned_backtrace(error.backtrace)
-      @backend.set_error(
-        error.class.name,
-        cleaned_error_message(error),
-        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
-      )
-      @error_set = error
+    # Reports every error stored on the transaction at completion time. How
+    # additional errors (beyond the first, `@error_set`) are reported depends on
+    # the backend.
+    def report_errors
+      if @backend.supports_multiple_errors?
+        report_errors_on_one_trace
+      else
+        report_errors_as_duplicates
+      end
+    end
 
-      root_cause_missing = false
-
-      causes = []
-      while error
-        error = error.cause
-
-        break unless error
-
-        if causes.length >= ERROR_CAUSES_LIMIT
-          Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Error has more " \
-            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
-            "will be reported."
-          root_cause_missing = true
-          break
+    # Collector mode: every error is recorded as its own `exception` event (on
+    # the span current when it was added) at `add_error` time, so a single trace
+    # carries all the errors -- no duplicate transactions. Here we only run the
+    # error blocks.
+    #
+    # Blocks run in the order their errors were added (the first error's blocks
+    # first), so a later error's block overrides an earlier one on a shared key.
+    # Every block runs against this transaction, so block-set metadata merges
+    # onto the root span. This intentionally deviates from the per-error metadata
+    # isolation in `transaction-otel-backend.md` §6.9: isolating further errors'
+    # metadata onto their own exception event is deferred, as the processor/UI
+    # does not read those event attributes yet.
+    def report_errors_on_one_trace
+      @error_blocks.each_value do |blocks|
+        self.class.with_transaction(self) do
+          blocks.each { |block| block.call(self) }
         end
+      end
+    end
 
-        causes << error
+    # Agent mode: the extension transaction holds a single error, so report each
+    # additional error as a duplicate transaction.
+    def report_errors_as_duplicates
+      @error_blocks.each do |error, blocks|
+        # Ignore the error that is already set in this transaction.
+        next if error == @error_set
+
+        duplicate.tap do |transaction|
+          # In the duplicate transaction for each error, set an error
+          # with a block that calls all the blocks set for that error
+          # in the original transaction.
+          transaction.internal_set_error(error) do
+            blocks.each { |block| block.call(transaction) }
+          end
+
+          transaction.complete
+        end
       end
 
+      return unless @error_set && @error_blocks[@error_set].any?
+
+      self.class.with_transaction(self) do
+        @error_blocks[@error_set].each do |block|
+          block.call(self)
+        end
+      end
+    end
+
+    def _set_error(error)
+      @error_set = error
+
+      _send_error_to_backend(error)
+
+      # Agent-mode cause channel: a `first_line`-only projection sent as sample
+      # data. The OpenTelemetry backend stubs `set_sample_data`, so in collector
+      # mode this is a no-op (causes ride on `appsignal.error_causes` instead).
+      causes, root_cause_missing = _error_causes(error)
       causes_sample_data = causes.map do |e|
         {
           :name => e.class.name,
@@ -776,6 +811,54 @@ module Appsignal
         "error_causes",
         causes_sample_data
       )
+    end
+
+    # Records an error on the backend without touching `@error_set` or the
+    # `error_causes` sample data, so it can be called both for the first error
+    # (from `_set_error`) and for additional errors when collapsing multiple
+    # errors onto one trace (see `#complete`).
+    #
+    # The backend receives raw Ruby inputs (a backtrace Array, not a
+    # pre-serialized Data object) and the rich cause list. The agent backend
+    # serializes the backtrace to Data itself; the OpenTelemetry backend uses
+    # the causes to emit the `appsignal.error_causes` attribute. The `:lines`
+    # key matches the processor's `ErrorSubCause { name, message, lines }`.
+    def _send_error_to_backend(error)
+      causes, = _error_causes(error)
+      @backend.set_error(
+        error.class.name,
+        cleaned_error_message(error),
+        cleaned_backtrace(error.backtrace),
+        causes.map do |e|
+          {
+            :name => e.class.name,
+            :message => cleaned_error_message(e),
+            :lines => cleaned_backtrace(e.backtrace)
+          }
+        end
+      )
+    end
+
+    # Walks the `error.cause` chain (without mutating `error`), collecting up to
+    # `ERROR_CAUSES_LIMIT` causes. Returns the causes and whether the chain was
+    # truncated (the root cause is missing).
+    def _error_causes(error)
+      root_cause_missing = false
+      causes = []
+      cause = error
+      while (cause = cause.cause)
+        if causes.length >= ERROR_CAUSES_LIMIT
+          Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Error has more " \
+            "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
+            "will be reported."
+          root_cause_missing = true
+          break
+        end
+
+        causes << cause
+      end
+
+      [causes, root_cause_missing]
     end
 
     BACKTRACE_REGEX =

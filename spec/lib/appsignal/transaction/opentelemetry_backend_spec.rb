@@ -122,10 +122,6 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     it "accepts #set_sample_data without raising" do
       expect { create_backend.set_sample_data("params", "anything") }.not_to raise_error
     end
-
-    it "accepts #set_error without raising" do
-      expect { create_backend.set_error("RuntimeError", "boom", "backtrace") }.not_to raise_error
-    end
   end
 
   describe "#set_action" do
@@ -172,6 +168,124 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
         expect(span_exporter.finished_spans.first.kind).to eq(:server)
       end
+    end
+  end
+
+  describe "#set_error" do
+    def exception_event(backend)
+      backend.complete
+      backend_span_id = backend.instance_variable_get(:@span).context.span_id
+      root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
+      root.events.find { |e| e.name == "exception" }
+    end
+
+    it "records an exception span-event on the root span" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", ["line 1", "line 2"], [])
+
+      event = exception_event(backend)
+      expect(event).not_to be_nil
+      expect(event.attributes["exception.type"]).to eq("RuntimeError")
+      expect(event.attributes["exception.message"]).to eq("boom")
+      expect(event.attributes["exception.stacktrace"]).to eq("line 1\nline 2")
+    end
+
+    it "sets the span status to error" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.complete
+
+      backend_span_id = backend.instance_variable_get(:@span).context.span_id
+      root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
+      expect(root.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+    end
+
+    it "omits exception.stacktrace content when there is no backtrace" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", nil, [])
+
+      expect(exception_event(backend).attributes["exception.stacktrace"]).to eq("")
+    end
+
+    it "emits causes as an appsignal.error_causes JSON attribute matching ErrorSubCause" do
+      backend = create_backend
+      causes = [
+        { :name => "ArgumentError", :message => "bad arg", :lines => ["cause 1", "cause 2"] },
+        { :name => "KeyError", :message => "missing", :lines => ["cause 3"] }
+      ]
+      backend.set_error("RuntimeError", "boom", ["line 1"], causes)
+
+      parsed = JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
+      expect(parsed).to eq(
+        [
+          { "name" => "ArgumentError", "message" => "bad arg", "lines" => ["cause 1", "cause 2"] },
+          { "name" => "KeyError", "message" => "missing", "lines" => ["cause 3"] }
+        ]
+      )
+    end
+
+    it "defaults a cause's lines to an empty Array when it has no backtrace" do
+      backend = create_backend
+      backend.set_error(
+        "RuntimeError", "boom", ["line 1"],
+        [{ :name => "ArgumentError", :message => "bad arg", :lines => nil }]
+      )
+
+      parsed = JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
+      expect(parsed).to eq([{ "name" => "ArgumentError", "message" => "bad arg", "lines" => [] }])
+    end
+
+    it "does not set appsignal.error_causes when there are no causes" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+
+      expect(exception_event(backend).attributes).not_to have_key("appsignal.error_causes")
+    end
+
+    it "flags the error for the collector and lets it compute the digest" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+
+      attributes = exception_event(backend).attributes
+      # The gem flags the exception so the collector reports it even on a
+      # non-root span; the collector computes the digest itself.
+      expect(attributes["appsignal.alert_this_error"]).to eq(true)
+      expect(attributes).not_to have_key("appsignal.error_digest")
+    end
+
+    it "records the exception on the span that is current when called" do
+      backend = create_backend
+      backend.start_event(0)
+      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT, 0)
+      backend.complete
+
+      event_span = span_exporter.finished_spans.find { |s| s.name == "sql.query" }
+      backend_span_id = backend.instance_variable_get(:@span).context.span_id
+      root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
+
+      expect(event_span.events.map(&:name)).to include("exception")
+      expect(Array(root.events).map(&:name)).not_to include("exception")
+    end
+
+    it "records one exception event per call (multiple errors on one span)" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "first", ["line 1"], [])
+      backend.set_error("ArgumentError", "second", ["line 2"], [])
+      backend.complete
+
+      backend_span_id = backend.instance_variable_get(:@span).context.span_id
+      root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
+      events = root.events.select { |e| e.name == "exception" }
+      expect(events.map { |e| e.attributes["exception.type"] })
+        .to eq(["RuntimeError", "ArgumentError"])
+      expect(events.map { |e| e.attributes["exception.message"] }).to eq(["first", "second"])
+    end
+  end
+
+  describe "#supports_multiple_errors?" do
+    it "returns true (multiple exception events on one span)" do
+      expect(create_backend.supports_multiple_errors?).to eq(true)
     end
   end
 
@@ -267,6 +381,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         transaction.start_event
         transaction.finish_event("sql.query", "title", "SELECT 1", 1)
         transaction.add_tags(:tag => "value")
+        transaction.add_error(RuntimeError.new("boom"))
         transaction.complete
         transaction.to_h
       end.not_to raise_error
