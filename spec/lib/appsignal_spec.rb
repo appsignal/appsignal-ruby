@@ -2002,38 +2002,6 @@ describe Appsignal do
     end
   end
 
-  context "in collector mode", :if => DependencyHelper.opentelemetry_present? do
-    require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
-
-    let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
-    let(:tracer_provider) do
-      provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new
-      provider.add_span_processor(
-        ::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(span_exporter)
-      )
-      provider
-    end
-
-    before do
-      start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-      ::OpenTelemetry.tracer_provider = tracer_provider
-    end
-
-    # complete_current! clears both the Transaction thread-local AND the
-    # OTel context (the default clear_current_transaction! only clears
-    # the thread-local, which would leave the OTel context attached and
-    # leak into the next test).
-    after { Appsignal::Transaction.complete_current! }
-
-    def root_span
-      span_exporter.finished_spans.find { |s| [:server, :consumer].include?(s.kind) }
-    end
-
-    def event_spans
-      span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
-    end
-  end
-
   describe "custom metrics" do
     let(:tags) { { :foo => "bar" } }
 
