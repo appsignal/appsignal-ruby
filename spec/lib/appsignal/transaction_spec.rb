@@ -2176,17 +2176,29 @@ describe Appsignal::Transaction do
             "\"index_users_on_email\" DETAIL: Key (email)=(test@test.com) already exists."
         )
       end
-      before do
-        stub_const("PG::UniqueViolation", Class.new(StandardError))
+      let(:sanitized_message) do
+        "ERROR: duplicate key value violates unique constraint " \
+          "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+      before { stub_const("PG::UniqueViolation", Class.new(StandardError)) }
+
+      def perform
         transaction.add_error(error)
       end
 
-      it "returns a sanizited error message" do
-        expect(transaction).to have_error(
-          "PG::UniqueViolation",
-          "ERROR: duplicate key value violates unique constraint " \
-            "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
-        )
+      it "returns a sanizited error message in agent mode", :agent_mode do
+        perform
+
+        expect(transaction).to have_error("PG::UniqueViolation", sanitized_message)
+      end
+
+      it "records a sanitized error message in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        event = exception_event
+        expect(event.attributes["exception.type"]).to eq("PG::UniqueViolation")
+        expect(event.attributes["exception.message"]).to eq(sanitized_message)
       end
     end
 
@@ -2197,32 +2209,56 @@ describe Appsignal::Transaction do
             "\"example_constraint\"\nDETAIL: Key (email)=(foo@example.com) already exists."
         )
       end
-      before do
-        stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError))
+      let(:sanitized_message) do
+        "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
+          "\"example_constraint\"\nDETAIL: Key (email)=(?) already exists."
+      end
+      before { stub_const("ActiveRecord::RecordNotUnique", Class.new(StandardError)) }
+
+      def perform
         transaction.add_error(error)
       end
 
-      it "returns a sanizited error message" do
-        expect(transaction).to have_error(
-          "ActiveRecord::RecordNotUnique",
-          "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
-            "\"example_constraint\"\nDETAIL: Key (email)=(?) already exists."
-        )
+      it "returns a sanizited error message in agent mode", :agent_mode do
+        perform
+
+        expect(transaction).to have_error("ActiveRecord::RecordNotUnique", sanitized_message)
+      end
+
+      it "records a sanitized error message in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        event = exception_event
+        expect(event.attributes["exception.type"]).to eq("ActiveRecord::RecordNotUnique")
+        expect(event.attributes["exception.message"]).to eq(sanitized_message)
       end
     end
 
     context "with Rails module but without backtrace_cleaner method" do
-      it "returns the backtrace uncleaned" do
+      def perform
         stub_const("Rails", Module.new)
         error = ExampleStandardError.new("error message")
         error.set_backtrace(["line 1", "line 2"])
         transaction.add_error(error)
+      end
+
+      it "returns the backtrace uncleaned in agent mode", :agent_mode do
+        perform
 
         expect(last_transaction).to have_error(
           "ExampleStandardError",
           "error message",
           ["line 1", "line 2"]
         )
+      end
+
+      it "records the backtrace uncleaned in collector mode", :collector_mode do
+        perform
+        transaction.complete
+
+        event = exception_event
+        expect(event.attributes["exception.stacktrace"]).to eq("line 1\nline 2")
       end
     end
 
@@ -2242,17 +2278,37 @@ describe Appsignal::Transaction do
           ::Rails.backtrace_cleaner.add_filter(&test_filter)
         end
 
-        it "cleans the backtrace with the Rails backtrace cleaner" do
+        def perform
           error = ExampleStandardError.new("error message")
           error.set_backtrace(["line 1", "line 2"])
           transaction.add_error(error)
+        end
+
+        it "cleans the backtrace with the Rails backtrace cleaner in agent mode", :agent_mode do
+          perform
+
           expect(last_transaction).to have_error(
             "ExampleStandardError",
             "error message",
             ["line 1", "line ?"]
           )
         end
+
+        it "cleans the backtrace with the Rails backtrace cleaner in collector mode",
+          :collector_mode do
+          perform
+          transaction.complete
+
+          event = exception_event
+          expect(event.attributes["exception.stacktrace"]).to eq("line 1\nline ?")
+        end
       end
+    end
+
+    # The completed root span's sole `exception` span-event, for asserting
+    # collector-mode error attributes.
+    def exception_event
+      root_span.events.find { |event| event.name == "exception" }
     end
   end
 
@@ -2263,6 +2319,11 @@ describe Appsignal::Transaction do
       ExampleStandardError.new("test message").tap do |e|
         e.set_backtrace(["line 1"])
       end
+    end
+
+    # The completed root span's sole `exception` span-event.
+    def exception_event
+      root_span.events.find { |event| event.name == "exception" }
     end
 
     it "responds to add_exception for backwards compatibility" do
@@ -2288,10 +2349,17 @@ describe Appsignal::Transaction do
     end
 
     context "when the error has no causes" do
-      it "should set an empty causes array as sample data" do
+      it "should set an empty causes array as sample data", :agent_mode do
         transaction.send(:_set_error, error)
 
         expect(transaction).to include_error_causes([])
+      end
+
+      it "sets no error causes attribute in collector mode", :collector_mode do
+        transaction.send(:_set_error, error)
+        transaction.complete
+
+        expect(exception_event.attributes).not_to have_key("appsignal.error_causes")
       end
     end
 
@@ -2330,7 +2398,7 @@ describe Appsignal::Transaction do
       end
       let(:options) { { :revision => "my_revision" } }
 
-      it "sends the error causes information as sample data" do
+      it "sends the error causes information as sample data", :agent_mode do
         # Hide Rails so we can test the normal Ruby behavior. The Rails
         # behavior is tested in another spec.
         hide_const("Rails")
@@ -2376,6 +2444,44 @@ describe Appsignal::Transaction do
               "name" => "StandardError",
               "message" => "cause message 3",
               "first_line" => nil
+            }
+          ]
+        )
+      end
+
+      # The collector-mode cause channel is `appsignal.error_causes`, which
+      # carries the full cleaned backtrace per cause (`lines`) rather than the
+      # agent's `first_line`-only projection.
+      it "records the error causes on the exception event in collector mode", :collector_mode do
+        hide_const("Rails")
+
+        transaction.send(:_set_error, error)
+        transaction.complete
+
+        expect(JSON.parse(exception_event.attributes["appsignal.error_causes"])).to eq(
+          [
+            {
+              "name" => "RuntimeError",
+              "message" => "cause message",
+              "lines" => [
+                "my_gem (1.2.3) /absolute/path/example.rb:123:in `my_method'",
+                "other_gem (4.5.6) /absolute/path/context.rb:456:in `context_method'",
+                "other_gem (4.5.6) /absolute/path/suite.rb:789:in `suite_method'"
+              ]
+            },
+            {
+              "name" => "StandardError",
+              "message" => "cause message 2",
+              "lines" => [
+                "src/example.rb:123:in `my_method'",
+                "context.rb:456:in `context_method'",
+                "suite.rb:789:in `suite_method'"
+              ]
+            },
+            {
+              "name" => "StandardError",
+              "message" => "cause message 3",
+              "lines" => []
             }
           ]
         )
@@ -2552,7 +2658,7 @@ describe Appsignal::Transaction do
         e
       end
 
-      it "sends only the first causes as sample data" do
+      it "sends only the first causes as sample data", :agent_mode do
         expected_error_causes =
           Array.new(10) do |i|
             {
@@ -2578,6 +2684,32 @@ describe Appsignal::Transaction do
             "will be reported."
         )
       end
+
+      it "records only the first causes on the exception event in collector mode",
+        :collector_mode do
+        expected_error_causes =
+          Array.new(10) do |i|
+            {
+              "name" => "ExampleStandardError",
+              "message" => "wrapper error #{9 - i}",
+              "lines" => []
+            }
+          end
+
+        logs = capture_logs do
+          transaction.send(:_set_error, error)
+          transaction.complete
+        end
+
+        expect(JSON.parse(exception_event.attributes["appsignal.error_causes"]))
+          .to eq(expected_error_causes)
+        expect(logs).to contains_log(
+          :debug,
+          "Appsignal::Transaction#add_error: Error has more " \
+            "than 10 error causes. Only the first 10 " \
+            "will be reported."
+        )
+      end
     end
 
     context "when error message is nil" do
@@ -2592,7 +2724,7 @@ describe Appsignal::Transaction do
         transaction.send(:_set_error, error)
       end
 
-      it "sets an error on the transaction without an error message" do
+      it "sets an error on the transaction without an error message", :agent_mode do
         transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
@@ -2600,6 +2732,15 @@ describe Appsignal::Transaction do
           "",
           ["line 1"]
         )
+      end
+
+      it "records an empty error message on the exception event in collector mode",
+        :collector_mode do
+        transaction.send(:_set_error, error)
+        transaction.complete
+
+        expect(exception_event.attributes["exception.type"]).to eq("ExampleStandardError")
+        expect(exception_event.attributes["exception.message"]).to eq("")
       end
     end
   end
