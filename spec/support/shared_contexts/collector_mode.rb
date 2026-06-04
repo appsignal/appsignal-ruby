@@ -37,8 +37,15 @@ RSpec.shared_context "collector mode", :collector_mode do
     provider
   end
 
+  # Examples can define a `start_agent_args` `let` to pass `:env`/`:options`; the
+  # `collector_endpoint` is always merged into the options so collector mode
+  # stays enabled. Guarded with `defined?` rather than a default `let`, because
+  # an included shared context's `let` would take precedence over the example
+  # group's own `let` override.
   before do
-    start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+    args = (defined?(start_agent_args) ? start_agent_args : {}).dup
+    args[:options] = { :collector_endpoint => "http://127.0.0.1:9090" }.merge(args[:options] || {})
+    start_agent(**args)
     # `Appsignal.start` booted a full OTel SDK whose providers each carry a
     # background export thread (batch span and log processors, periodic
     # metric reader). Shut it down before the swaps below: after the swap
@@ -77,6 +84,15 @@ RSpec.shared_context "collector mode", :collector_mode do
 
   def event_spans
     span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
+  end
+
+  # The OpenTelemetry `exception` events recorded across all finished spans
+  # (errors attach to the span that was current when they were set, which may
+  # be the root span or an event span).
+  def exception_events
+    span_exporter.finished_spans.flat_map { |span| Array(span.events) }.select do |event|
+      event.name == "exception"
+    end
   end
 
   # Pull the current metric snapshots from the in-memory reader. The OTLP
