@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Appsignal
   class Transaction
     # @!visibility private
@@ -127,7 +129,47 @@ module Appsignal
       def set_sample_data(_key, _data)
       end
 
-      def set_error(_class_name, _message, _backtrace_data)
+      # Records the error as an OpenTelemetry `exception` span-event on the
+      # span that is current *now* -- which may be an event span, not the root --
+      # so the error attaches to the operation that raised it. The Transaction
+      # records each error at the moment it is added, so the current span is the
+      # one active at that point.
+      #
+      # `appsignal.alert_this_error` makes the collector report the exception
+      # even when it is on a non-root span: the collector reports every exception
+      # on the root span, but only flagged ones on child spans. The collector
+      # computes `appsignal.error_digest` itself, so we don't set it here.
+      #
+      # Causes are emitted as a single `appsignal.error_causes` JSON attribute on
+      # the exception event (not on the span): separate cause events would each
+      # be stamped with a digest and become their own incident. The processor
+      # reads `appsignal.error_causes` off the event and expands it into cause
+      # subdata. The JSON keys (`name`/`message`/`lines`) match the processor's
+      # `ErrorSubCause` struct.
+      def set_error(class_name, message, backtrace, causes)
+        span = ::OpenTelemetry::Trace.current_span
+
+        attributes = {
+          "exception.type" => class_name,
+          "exception.message" => message.to_s,
+          "exception.stacktrace" => Array(backtrace).join("\n"),
+          "appsignal.alert_this_error" => true
+        }
+
+        unless causes.empty?
+          attributes["appsignal.error_causes"] = JSON.generate(
+            causes.map do |cause|
+              {
+                "name" => cause[:name],
+                "message" => cause[:message],
+                "lines" => cause[:lines] || []
+              }
+            end
+          )
+        end
+
+        span.add_event("exception", :attributes => attributes)
+        span.status = ::OpenTelemetry::Trace::Status.error
       end
 
       # Always returns `false` for now: there is no sample data flush in
@@ -160,6 +202,13 @@ module Appsignal
 
       def duplicate(new_transaction_id)
         self.class.new(new_transaction_id, @namespace, 0)
+      end
+
+      # Multiple errors are recorded as multiple `exception` events on the one
+      # root span (each its own incident), so the Transaction does not need to
+      # duplicate itself per error.
+      def supports_multiple_errors?
+        true
       end
 
       # Returned so `Transaction#to_h` (which does `JSON.parse(@backend.to_json)`)

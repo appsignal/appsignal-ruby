@@ -50,7 +50,16 @@ module Appsignal
         @handle.set_sample_data(key, data)
       end
 
-      def set_error(class_name, message, backtrace_data)
+      # `backtrace` is a raw Array (or nil); the C extension wants a `Data`
+      # object, so serialize it here. `causes` is unused in agent mode -- the
+      # Transaction reports causes separately via the `error_causes` sample data.
+      def set_error(class_name, message, backtrace, _causes)
+        backtrace_data =
+          if backtrace
+            Appsignal::Utils::Data.generate(backtrace)
+          else
+            Appsignal::Extension.data_array_new
+          end
         @handle.set_error(class_name, message, backtrace_data)
       end
 
@@ -60,6 +69,12 @@ module Appsignal
 
       def complete
         @handle.complete
+      end
+
+      # The extension transaction holds a single error, so the Transaction
+      # reports additional errors as duplicate transactions.
+      def supports_multiple_errors?
+        false
       end
 
       def duplicate(new_transaction_id)
