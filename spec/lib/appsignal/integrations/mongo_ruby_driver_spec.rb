@@ -2,10 +2,15 @@ require "appsignal/integrations/mongo_ruby_driver"
 describe Appsignal::Hooks::MongoMonitorSubscriber do
   let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
 
-  context "with transaction" do
+  # White-box unit tests of the subscriber's interaction with the Transaction
+  # API and the C-extension. Pinned to :agent_mode: they assert extension
+  # mechanics (`start_event`/`finish_event`) that only apply to the agent
+  # backend; the OTel-backed transaction output is covered by "instrumenting a
+  # finished query" below in both modes. `start_agent` comes from the mode
+  # context, so it is not started here.
+  context "with transaction", :agent_mode do
     let(:transaction) { http_request_transaction }
     before do
-      start_agent
       set_current_transaction(transaction)
     end
 
@@ -143,7 +148,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
   end
 
-  context "without transaction" do
+  context "without transaction", :agent_mode do
     before do
       allow(Appsignal::Transaction).to receive(:current)
         .and_return(Appsignal::Transaction::NilTransaction.new)
@@ -168,7 +173,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
   end
 
-  context "when appsignal is paused" do
+  context "when appsignal is paused", :agent_mode do
     let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
     before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
