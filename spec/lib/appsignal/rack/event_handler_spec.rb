@@ -498,27 +498,58 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
   end
 
-  def perform
-    event_handler_instance.on_start(request, response)
-    event_handler_instance.on_finish(request, response)
+  describe "for a successful request" do
+    def perform
+      event_handler_instance.on_start(request, response)
+      event_handler_instance.on_finish(request, response)
+    end
+
+    it "in agent mode", :agent_mode do
+      expect(Appsignal).to receive(:increment_counter)
+        .with(:response_status, 1, :status => 200, :namespace => :web)
+
+      perform
+    end
+
+    it "in collector mode", :collector_mode do
+      perform
+
+      snapshot = metric_snapshot("response_status")
+      expect(snapshot).not_to be_nil
+      expect(snapshot.data_points.first.value).to eq(1.0)
+      expect(snapshot.data_points.first.attributes).to eq(
+        "status" => 200,
+        "namespace" => "web"
+      )
+    end
   end
 
-  it "in agent mode", :agent_mode do
-    expect(Appsignal).to receive(:increment_counter)
-      .with(:response_status, 1, :status => 200, :namespace => :web)
+  describe "for a request that errors" do
+    # No response, and an error recorded by `on_error`, so the status comes
+    # from the error (500) rather than the response.
+    def perform
+      event_handler_instance.on_start(request, response)
+      event_handler_instance.on_error(request, response, ExampleStandardError.new("the error"))
+      event_handler_instance.on_finish(request, nil)
+    end
 
-    perform
-  end
+    it "in agent mode", :agent_mode do
+      expect(Appsignal).to receive(:increment_counter)
+        .with(:response_status, 1, :status => 500, :namespace => :web)
 
-  it "in collector mode", :collector_mode do
-    perform
+      perform
+    end
 
-    snapshot = metric_snapshot("response_status")
-    expect(snapshot).not_to be_nil
-    expect(snapshot.data_points.first.value).to eq(1.0)
-    expect(snapshot.data_points.first.attributes).to eq(
-      "status" => 200,
-      "namespace" => "web"
-    )
+    it "in collector mode", :collector_mode do
+      perform
+
+      snapshot = metric_snapshot("response_status")
+      expect(snapshot).not_to be_nil
+      expect(snapshot.data_points.first.value).to eq(1.0)
+      expect(snapshot.data_points.first.attributes).to eq(
+        "status" => 500,
+        "namespace" => "web"
+      )
+    end
   end
 end
