@@ -1139,7 +1139,10 @@ describe Appsignal do
   end
 
   context "with config and started" do
-    before { start_agent }
+    # Opt-out-aware so a `:manual_start` describe can start its own agent in the
+    # example body (the dual-mode start principle) without this hook clobbering
+    # the collector-mode setup.
+    before { |example| start_agent unless example.metadata[:manual_start] }
     around { |example| keep_transactions { example.run } }
 
     describe ".monitor" do
@@ -1609,15 +1612,38 @@ describe Appsignal do
         keep_transactions { example.run }
       end
 
-      it "sends the error to AppSignal" do
-        expect { Appsignal.send_error(error) }.to(change { created_transactions.count }.by(1))
+      describe "sending the error", :manual_start do
+        def perform
+          Appsignal.send_error(error)
+        end
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction).to_not have_action
-        expect(transaction).to have_error("ExampleException", "error message")
-        expect(transaction).to_not include_tags
-        expect(transaction).to be_completed
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect { perform }.to(change { created_transactions.count }.by(1))
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+          expect(transaction).to_not have_action
+          expect(transaction).to have_error("ExampleException", "error message")
+          expect(transaction).to_not include_tags
+          expect(transaction).to be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          # send_error completes its throwaway transaction inline, so the root
+          # span is already finished and exported.
+          perform
+
+          expect(root_span).not_to be_nil
+          # HTTP_REQUEST maps to a SERVER span (a subtrace root).
+          expect(root_span.kind).to eq(:server)
+          expect(root_span.attributes["appsignal.namespace"])
+            .to eq(Appsignal::Transaction::HTTP_REQUEST)
+          expect(root_span.attributes).not_to have_key("appsignal.action_name")
+          expect(exception_events.first.attributes["exception.type"]).to eq("ExampleException")
+          expect(exception_events.first.attributes["exception.message"]).to eq("error message")
+        end
       end
 
       context "when given error is not an Exception" do
@@ -1638,15 +1664,32 @@ describe Appsignal do
       end
 
       context "when given a block" do
-        it "yields the transaction and allows additional metadata to be set" do
-          Appsignal.send_error(StandardError.new("my_error")) do |transaction|
-            transaction.set_action("my_action")
-            transaction.set_namespace("my_namespace")
+        describe "yielding the transaction to set metadata", :manual_start do
+          def perform
+            Appsignal.send_error(StandardError.new("my_error")) do |transaction|
+              transaction.set_action("my_action")
+              transaction.set_namespace("my_namespace")
+            end
           end
 
-          expect(last_transaction).to have_namespace("my_namespace")
-          expect(last_transaction).to have_action("my_action")
-          expect(last_transaction).to have_error("StandardError", "my_error")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to have_namespace("my_namespace")
+            expect(last_transaction).to have_action("my_action")
+            expect(last_transaction).to have_error("StandardError", "my_error")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.name).to eq("my_action")
+            expect(root_span.attributes["appsignal.action_name"]).to eq("my_action")
+            expect(root_span.attributes["appsignal.namespace"]).to eq("my_namespace")
+            expect(exception_events.first.attributes["exception.type"]).to eq("StandardError")
+          end
         end
 
         it "yields and allows additional metadata to be set with global helpers" do
@@ -1694,17 +1737,38 @@ describe Appsignal do
       let(:transaction) { http_request_transaction }
       around { |example| keep_transactions { example.run } }
 
-      context "when there is an active transaction" do
-        before { set_current_transaction(transaction) }
-
-        it "adds the error to the active transaction" do
+      describe "adding the error to the active transaction", :manual_start do
+        # `set_current_transaction` (which builds the transaction's root span)
+        # happens in the body, not a `before`, so in collector mode it uses the
+        # in-memory provider that `start_collector_agent` swaps in.
+        def perform
+          set_current_transaction(transaction)
           Appsignal.set_error(error)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
 
           transaction._sample
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
           expect(transaction).to have_error("ExampleException", "I am an exception")
           expect(transaction).to_not include_tags
         end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(exception_events.first.attributes["exception.type"]).to eq("ExampleException")
+          expect(exception_events.first.attributes["exception.message"])
+            .to eq("I am an exception")
+        end
+      end
+
+      context "when there is an active transaction" do
+        before { set_current_transaction(transaction) }
 
         context "when the error is not an Exception" do
           let(:error) { Object.new }
@@ -1754,7 +1818,6 @@ describe Appsignal do
       let(:err_stream) { std_stream }
       let(:stderr) { err_stream.read }
       let(:error) { ExampleException.new("error message") }
-      before { start_agent }
       around { |example| keep_transactions { example.run } }
 
       context "when the error is not an Exception" do
@@ -1777,16 +1840,30 @@ describe Appsignal do
       end
 
       context "when there is no active transaction" do
-        it "creates a new transaction" do
-          expect do
+        describe "reporting the error", :manual_start do
+          def perform
             Appsignal.report_error(error)
-          end.to(change { created_transactions.count }.by(1))
-        end
+          end
 
-        it "completes the transaction" do
-          Appsignal.report_error(error)
+          it "in agent mode", :agent_mode do
+            start_agent
+            expect { perform }.to(change { created_transactions.count }.by(1))
 
-          expect(last_transaction).to be_completed
+            expect(last_transaction).to have_error("ExampleException", "error message")
+            expect(last_transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            # With no active transaction, report_error creates and completes its
+            # own transaction, so the root span is exported.
+            perform
+
+            expect(root_span).not_to be_nil
+            expect(exception_events.first.attributes["exception.type"]).to eq("ExampleException")
+            expect(exception_events.first.attributes["exception.message"])
+              .to eq("error message")
+          end
         end
 
         context "when given a block" do
@@ -1824,15 +1901,74 @@ describe Appsignal do
 
       context "when there is an active transaction" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction(transaction) }
+        # Opt-out-aware: `:manual_start` examples set the current transaction in
+        # their own body, after swapping in the collector providers.
+        before do |example|
+          set_current_transaction(transaction) unless example.metadata[:manual_start]
+        end
 
-        it "sets the error in the active transaction" do
-          Appsignal.report_error(error)
+        describe "reporting the error onto it", :manual_start do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.report_error(error)
+          end
 
-          expect(last_transaction).to eq(transaction)
-          transaction._sample
-          expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-          expect(transaction).to have_error("ExampleException", "error message")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to eq(transaction)
+            transaction._sample
+            expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+            expect(transaction).to have_error("ExampleException", "error message")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(exception_events.first.attributes["exception.type"]).to eq("ExampleException")
+            expect(exception_events.first.attributes["exception.message"]).to eq("error message")
+          end
+        end
+
+        describe "with multiple reported errors", :manual_start do
+          let(:other_error) do
+            ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
+          end
+
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.report_error(error)
+            Appsignal.report_error(other_error)
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+            # The extension holds one error per transaction, so the extra error
+            # is reported as a duplicate transaction.
+            expect { transaction.complete }.to(change { created_transactions.count }.by(1))
+
+            expect(created_transactions.map { |t| t.to_h["error"]["message"] })
+              .to contain_exactly("error message", "other message")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            # One trace: a single root span carrying one exception event per error.
+            root_spans = span_exporter.finished_spans.select do |span|
+              [:server, :consumer].include?(span.kind)
+            end
+            expect(root_spans.size).to eq(1)
+            events = root_spans.first.events.select { |e| e.name == "exception" }
+            expect(events.map { |e| e.attributes["exception.message"] })
+              .to contain_exactly("error message", "other message")
+          end
         end
 
         context "when the active transaction already has an error" do
@@ -1997,201 +2133,6 @@ describe Appsignal do
           Appsignal.set_namespace("custom")
 
           expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        end
-      end
-    end
-  end
-
-  # Dual-mode coverage of the error-reporting helpers. A separate top-level
-  # describe, like `custom metrics` and `.instrument` below: `start_agent` comes
-  # from the mode contexts, so it avoids the `before { start_agent }` in the
-  # `with config and started` context above (which clobbers collector mode). The
-  # agent-specific details (tag flushing, the duplicate-transaction model,
-  # validation/logging) stay in the agent-mode describes in that context.
-  describe "error reporting" do
-    around { |example| keep_transactions { example.run } }
-
-    # The completed root span's sole `exception` span-event.
-    def exception_event
-      root_span.events.find { |event| event.name == "exception" }
-    end
-
-    describe ".send_error" do
-      let(:error) { ExampleException.new("error message") }
-
-      def perform
-        Appsignal.send_error(error)
-      end
-
-      it "in agent mode", :agent_mode do
-        expect { perform }.to(change { created_transactions.count }.by(1))
-
-        transaction = last_transaction
-        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction).to_not have_action
-        expect(transaction).to have_error("ExampleException", "error message")
-        expect(transaction).to be_completed
-      end
-
-      it "in collector mode", :collector_mode do
-        # send_error completes its throwaway transaction inline, so the root
-        # span is already finished and exported.
-        perform
-
-        expect(root_span).not_to be_nil
-        # HTTP_REQUEST maps to a SERVER span (a subtrace root).
-        expect(root_span.kind).to eq(:server)
-        expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
-        expect(root_span.attributes).not_to have_key("appsignal.action_name")
-        expect(exception_event.attributes["exception.type"]).to eq("ExampleException")
-        expect(exception_event.attributes["exception.message"]).to eq("error message")
-      end
-
-      describe "with a block setting metadata" do
-        def perform
-          Appsignal.send_error(error) do |transaction|
-            transaction.set_action("my_action")
-            transaction.set_namespace("my_namespace")
-          end
-        end
-
-        it "in agent mode", :agent_mode do
-          perform
-
-          expect(last_transaction).to have_namespace("my_namespace")
-          expect(last_transaction).to have_action("my_action")
-          expect(last_transaction).to have_error("ExampleException", "error message")
-        end
-
-        it "in collector mode", :collector_mode do
-          perform
-
-          expect(root_span.name).to eq("my_action")
-          expect(root_span.attributes["appsignal.action_name"]).to eq("my_action")
-          expect(root_span.attributes["appsignal.namespace"]).to eq("my_namespace")
-          expect(exception_event.attributes["exception.type"]).to eq("ExampleException")
-        end
-      end
-    end
-
-    describe ".set_error" do
-      let(:error) { ExampleException.new("I am an exception") }
-      let(:transaction) { http_request_transaction }
-
-      # `transaction` (and so its root span) is built here inside the example
-      # action, not in a `before`, so it uses the in-memory tracer provider the
-      # collector-mode context swaps in.
-      def perform
-        set_current_transaction(transaction)
-        Appsignal.set_error(error)
-      end
-
-      it "in agent mode", :agent_mode do
-        perform
-
-        transaction._sample
-        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-        expect(transaction).to have_error("ExampleException", "I am an exception")
-      end
-
-      it "in collector mode", :collector_mode do
-        perform
-        transaction.complete
-
-        expect(exception_event.attributes["exception.type"]).to eq("ExampleException")
-        expect(exception_event.attributes["exception.message"]).to eq("I am an exception")
-      end
-    end
-
-    describe ".report_error" do
-      let(:error) { ExampleException.new("error message") }
-
-      context "without an active transaction" do
-        def perform
-          Appsignal.report_error(error)
-        end
-
-        it "in agent mode", :agent_mode do
-          expect { perform }.to(change { created_transactions.count }.by(1))
-
-          expect(last_transaction).to have_error("ExampleException", "error message")
-          expect(last_transaction).to be_completed
-        end
-
-        it "in collector mode", :collector_mode do
-          # With no active transaction, report_error creates and completes its
-          # own transaction, so the root span is exported.
-          perform
-
-          expect(root_span).not_to be_nil
-          expect(exception_event.attributes["exception.type"]).to eq("ExampleException")
-          expect(exception_event.attributes["exception.message"]).to eq("error message")
-        end
-      end
-
-      context "with an active transaction" do
-        let(:transaction) { http_request_transaction }
-
-        # Built inside the action, not a `before`, so the root span uses the
-        # in-memory tracer provider the collector-mode context swaps in.
-        def perform
-          set_current_transaction(transaction)
-          Appsignal.report_error(error)
-        end
-
-        it "in agent mode", :agent_mode do
-          perform
-
-          expect(last_transaction).to eq(transaction)
-          transaction._sample
-          expect(transaction).to have_error("ExampleException", "error message")
-        end
-
-        it "in collector mode", :collector_mode do
-          perform
-          transaction.complete
-
-          expect(exception_event.attributes["exception.type"]).to eq("ExampleException")
-          expect(exception_event.attributes["exception.message"]).to eq("error message")
-        end
-
-        context "with multiple reported errors" do
-          let(:other_error) do
-            ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
-          end
-
-          def perform
-            set_current_transaction(transaction)
-            Appsignal.report_error(error)
-            Appsignal.report_error(other_error)
-          end
-
-          it "in agent mode", :agent_mode do
-            perform
-            # The extension holds one error per transaction, so the extra error
-            # is reported as a duplicate transaction.
-            expect { transaction.complete }.to(change { created_transactions.count }.by(1))
-
-            expect(created_transactions.map do |t|
-              t.to_h["error"]["message"]
-            end).to contain_exactly("error message", "other message")
-          end
-
-          it "in collector mode", :collector_mode do
-            perform
-            transaction.complete
-
-            # One trace: a single root span carrying one exception event per error.
-            root_spans = span_exporter.finished_spans.select do |span|
-              [:server, :consumer].include?(span.kind)
-            end
-            expect(root_spans.size).to eq(1)
-
-            events = root_spans.first.events.select { |e| e.name == "exception" }
-            expect(events.map { |e| e.attributes["exception.message"] })
-              .to contain_exactly("error message", "other message")
-          end
         end
       end
     end
