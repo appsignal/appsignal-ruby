@@ -24,8 +24,10 @@ describe Appsignal::Hooks::ActionMailerHook do
         end
       end
 
-      describe ".install" do
+      describe ".install", :manual_start do
         it "in agent mode", :agent_mode do
+          start_agent
+
           expect(Appsignal.active?).to be_truthy
           expect(Appsignal).to receive(:increment_counter).with(
             :action_mailer_process,
@@ -37,6 +39,8 @@ describe Appsignal::Hooks::ActionMailerHook do
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
+
           expect(Appsignal.active?).to be_truthy
           UserMailer.welcome.deliver_now
 

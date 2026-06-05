@@ -104,18 +104,20 @@ if DependencyHelper.sinatra_present?
 
       context "when appsignal is active" do
         context "without an error" do
-          describe "creates a transaction for the request" do
+          describe "creates a transaction for the request", :manual_start do
             def perform
               make_request
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
@@ -124,18 +126,20 @@ if DependencyHelper.sinatra_present?
             end
           end
 
-          describe "reports a process_action.sinatra event" do
+          describe "reports a process_action.sinatra event", :manual_start do
             def perform
               make_request
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               perform
 
               expect(last_transaction).to include_event("name" => "process_action.sinatra")
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               perform
 
               span = event_spans.find { |s| s.name == "process_action.sinatra" }
@@ -149,18 +153,20 @@ if DependencyHelper.sinatra_present?
           let(:error) { ExampleException.new("error message") }
           before { env["sinatra.error"] = error }
 
-          describe "creates a transaction for the request" do
+          describe "creates a transaction for the request", :manual_start do
             def perform
               make_request
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
@@ -171,18 +177,20 @@ if DependencyHelper.sinatra_present?
           context "when raise_errors is off" do
             let(:settings) { double(:raise_errors => false) }
 
-            describe "records the error" do
+            describe "records the error", :manual_start do
               def perform
                 make_request
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to have_error("ExampleException", "error message")
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 event = root_span.events.find { |e| e.name == "exception" }
@@ -199,18 +207,20 @@ if DependencyHelper.sinatra_present?
           context "when raise_errors is on" do
             let(:settings) { double(:raise_errors => true) }
 
-            describe "does not record the error" do
+            describe "does not record the error", :manual_start do
               def perform
                 make_request
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_error
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(exception_events).to be_empty
@@ -226,18 +236,20 @@ if DependencyHelper.sinatra_present?
               )
             end
 
-            describe "does not record the error" do
+            describe "does not record the error", :manual_start do
               def perform
                 make_request
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_error
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(exception_events).to be_empty
@@ -247,18 +259,20 @@ if DependencyHelper.sinatra_present?
         end
 
         describe "action name" do
-          describe "sets the action to the request method and path" do
+          describe "sets the action to the request method and path", :manual_start do
             def perform
               make_request
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               perform
 
               expect(last_transaction).to have_action("GET /path")
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               perform
 
               expect(root_span.name).to eq("GET /path")
@@ -271,18 +285,20 @@ if DependencyHelper.sinatra_present?
               Rack::MockRequest.env_for("/path", "REQUEST_METHOD" => "GET")
             end
 
-            describe "doesn't set an action name" do
+            describe "doesn't set an action name", :manual_start do
               def perform
                 make_request
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_action
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(root_span.attributes).to_not have_key("appsignal.action_name")
@@ -293,18 +309,20 @@ if DependencyHelper.sinatra_present?
           context "with mounted modular application" do
             before { env["SCRIPT_NAME"] = "/api" }
 
-            describe "sets the action name with an application prefix path" do
+            describe "sets the action name with an application prefix path", :manual_start do
               def perform
                 make_request
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to have_action("GET /api/path")
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(root_span.name).to eq("GET /api/path")
@@ -317,18 +335,20 @@ if DependencyHelper.sinatra_present?
                 Rack::MockRequest.env_for("/path", "REQUEST_METHOD" => "GET")
               end
 
-              describe "doesn't set an action name" do
+              describe "doesn't set an action name", :manual_start do
                 def perform
                   make_request
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
                   perform
 
                   expect(last_transaction).to_not have_action
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   perform
 
                   expect(root_span.attributes).to_not have_key("appsignal.action_name")

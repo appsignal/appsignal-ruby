@@ -79,12 +79,13 @@ describe Appsignal::Hooks::RedisClientHook do
                 Appsignal::Hooks::RedisClientHook.new.install
               end
 
-              describe "a redis call" do
+              describe "a redis call", :manual_start do
                 def perform
                   RedisClient::RubyConnection.new(client_config).write([:get, "key"])
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -97,6 +98,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -112,7 +114,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 end
               end
 
-              describe "a redis script call" do
+              describe "a redis script call", :manual_start do
                 let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                 def perform
@@ -123,6 +125,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -135,6 +138,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -206,12 +210,13 @@ describe Appsignal::Hooks::RedisClientHook do
                   Appsignal::Hooks::RedisClientHook.new.install
                 end
 
-                describe "a redis call" do
+                describe "a redis call", :manual_start do
                   def perform
                     RedisClient::HiredisConnection.new(client_config).write([:get, "key"])
                   end
 
                   it "in agent mode", :agent_mode do
+                    start_agent
                     transaction = http_request_transaction
                     set_current_transaction(transaction)
                     expect(perform).to eql("stub_write")
@@ -224,6 +229,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   end
 
                   it "in collector mode", :collector_mode do
+                    start_collector_agent
                     transaction = http_request_transaction
                     set_current_transaction(transaction)
                     expect(perform).to eql("stub_write")
@@ -239,7 +245,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   end
                 end
 
-                describe "a redis script call" do
+                describe "a redis script call", :manual_start do
                   let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                   def perform
@@ -250,6 +256,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   end
 
                   it "in agent mode", :agent_mode do
+                    start_agent
                     transaction = http_request_transaction
                     set_current_transaction(transaction)
                     expect(perform).to eql("stub_write")
@@ -262,6 +269,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   end
 
                   it "in collector mode", :collector_mode do
+                    start_collector_agent
                     transaction = http_request_transaction
                     set_current_transaction(transaction)
                     expect(perform).to eql("stub_write")

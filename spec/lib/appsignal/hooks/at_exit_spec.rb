@@ -60,7 +60,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       expect(logs).to_not contains_log(:error, "Appsignal.report_error: Cannot add error.")
     end
 
-    describe "reports an error if there's an unhandled error" do
+    describe "reports an error if there's an unhandled error", :manual_start do
       def perform
         with_error(ExampleException, "error message") do
           call_callback
@@ -68,6 +68,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         expect(Appsignal).to receive(:stop).with("at_exit")
         expect { perform }.to change { created_transactions.count }.by(1)
 
@@ -77,6 +78,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal).to receive(:stop).with("at_exit")
         expect { perform }.to change { created_transactions.count }.by(1)
 

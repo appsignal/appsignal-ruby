@@ -73,12 +73,13 @@ describe Appsignal::Hooks::RedisHook do
                 Appsignal::Hooks::RedisHook.new.install
               end
 
-              describe "a redis call" do
+              describe "a redis call", :manual_start do
                 def perform
                   Redis::Client.new.write([:get, "key"])
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -91,6 +92,7 @@ describe Appsignal::Hooks::RedisHook do
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -106,7 +108,7 @@ describe Appsignal::Hooks::RedisHook do
                 end
               end
 
-              describe "a redis script call" do
+              describe "a redis script call", :manual_start do
                 let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                 def perform
@@ -116,6 +118,7 @@ describe Appsignal::Hooks::RedisHook do
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")
@@ -128,6 +131,7 @@ describe Appsignal::Hooks::RedisHook do
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   transaction = http_request_transaction
                   set_current_transaction(transaction)
                   expect(perform).to eql("stub_write")

@@ -9,8 +9,10 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
     }
   end
 
-  describe "#emit" do
+  describe "#emit", :manual_start do
     it "in agent mode", :agent_mode do
+      start_agent
+
       logger = instance_double(Appsignal::Logger)
       allow(Appsignal::Logger).to receive(:new).with("rails_events").and_return(logger)
 
@@ -23,6 +25,8 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       subscriber.emit(event)
 
       expect(log_records.size).to eq(1)

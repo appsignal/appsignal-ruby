@@ -1,7 +1,7 @@
 require "appsignal/integrations/net_http"
 
 describe Appsignal::Integrations::NetHttpIntegration do
-  describe "a http request" do
+  describe "a http request", :manual_start do
     def perform
       stub_request(:any, "http://www.google.com/")
 
@@ -9,6 +9,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
@@ -21,6 +22,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
@@ -35,7 +37,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
   end
 
-  describe "a https request" do
+  describe "a https request", :manual_start do
     def perform
       stub_request(:any, "https://www.google.com/")
 
@@ -46,6 +48,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
@@ -58,6 +61,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform

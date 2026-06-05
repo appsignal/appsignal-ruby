@@ -1,13 +1,14 @@
 shared_examples "activesupport finish_with_state override" do
   let(:instrumenter) { as.instrumenter }
 
-  describe "a finish_with_state event" do
+  describe "a finish_with_state event", :manual_start do
     def perform
       listeners_state = instrumenter.start("sql.active_record", {})
       instrumenter.finish_with_state(listeners_state, "sql.active_record", :sql => "SQL")
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -24,6 +25,7 @@ shared_examples "activesupport finish_with_state override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -40,13 +42,14 @@ shared_examples "activesupport finish_with_state override" do
     end
   end
 
-  describe "an event whose name starts with a bang" do
+  describe "an event whose name starts with a bang", :manual_start do
     def perform
       listeners_state = instrumenter.start("!sql.active_record", {})
       instrumenter.finish_with_state(listeners_state, "!sql.active_record", :sql => "SQL")
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -57,6 +60,7 @@ shared_examples "activesupport finish_with_state override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier

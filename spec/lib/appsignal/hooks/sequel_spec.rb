@@ -15,12 +15,13 @@ describe Appsignal::Hooks::SequelHook do
       it { is_expected.to be_truthy }
     end
 
-    context "with a transaction" do
+    context "with a transaction", :manual_start do
       def perform
         db["SELECT 1"].all.to_a
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
@@ -34,6 +35,7 @@ describe Appsignal::Hooks::SequelHook do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
