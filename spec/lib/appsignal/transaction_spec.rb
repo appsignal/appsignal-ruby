@@ -7,12 +7,19 @@ describe Appsignal::Transaction do
     # Skip start_agent for :collector_mode examples -- the shared context boots
     # Appsignal with the collector endpoint instead, and `Appsignal.start` is a
     # no-op once started so the order would otherwise leave the test in agent
-    # mode.
-    unless example.metadata[:collector_mode]
+    # mode. Also skip for `:manual_start` examples, which start the agent in
+    # their own body (agent mode via `start_agent(**start_agent_args)`,
+    # collector mode via `start_collector_agent`).
+    unless example.metadata[:collector_mode] || example.metadata[:manual_start]
       start_agent(:options => options, :root_path => root_path)
     end
     Timecop.freeze(time)
   end
+
+  # Per the dual-mode start principle, `:manual_start` agent-mode examples call
+  # `start_agent(**start_agent_args)` in their body; expose the same
+  # `:options`/`:root_path` the automatic start above would have used.
+  let(:start_agent_args) { { :options => options, :root_path => root_path } }
   after { Timecop.return }
   around do |example|
     keep_transactions do
@@ -115,8 +122,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "OpenTelemetry root span" do
+    describe "OpenTelemetry root span", :manual_start do
       it "starts a root span with SpanKind::SERVER for HTTP_REQUEST", :collector_mode do
+        start_collector_agent
         create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         Appsignal::Transaction.complete_current!
 
@@ -127,6 +135,7 @@ describe Appsignal::Transaction do
       end
 
       it "uses SpanKind::CONSUMER for BACKGROUND_JOB", :collector_mode do
+        start_collector_agent
         create_transaction(Appsignal::Transaction::BACKGROUND_JOB)
         Appsignal::Transaction.complete_current!
 
@@ -134,6 +143,7 @@ describe Appsignal::Transaction do
       end
 
       it "uses SpanKind::SERVER for ACTION_CABLE", :collector_mode do
+        start_collector_agent
         create_transaction(Appsignal::Transaction::ACTION_CABLE)
         Appsignal::Transaction.complete_current!
 
@@ -141,6 +151,7 @@ describe Appsignal::Transaction do
       end
 
       it "uses SpanKind::SERVER for an unknown custom namespace", :collector_mode do
+        start_collector_agent
         create_transaction("my_custom_namespace")
         Appsignal::Transaction.complete_current!
 
@@ -150,8 +161,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "OpenTelemetry current context" do
+    describe "OpenTelemetry current context", :manual_start do
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
 
         create_transaction(Appsignal::Transaction::HTTP_REQUEST)
@@ -622,8 +634,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "OpenTelemetry span emission" do
+    describe "OpenTelemetry span emission", :manual_start do
       it "emits no span until complete is called", :collector_mode do
+        start_collector_agent
         create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         expect(span_exporter.finished_spans).to be_empty
 
@@ -1495,12 +1508,13 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
     let(:action_name) { "PagesController#show" }
 
-    context "when the action is set" do
+    context "when the action is set", :manual_start do
       def perform
         transaction.set_action(action_name)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1508,6 +1522,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1517,13 +1532,14 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the action is nil" do
+    context "when the action is nil", :manual_start do
       def perform
         transaction.set_action(action_name)
         transaction.set_action(nil)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1531,6 +1547,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1544,7 +1561,7 @@ describe Appsignal::Transaction do
   describe "#set_action_if_nil" do
     let(:transaction) { new_transaction }
 
-    context "when the action is not set" do
+    context "when the action is not set", :manual_start do
       let(:action_name) { "PagesController#show" }
 
       def perform
@@ -1552,6 +1569,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         expect(transaction.action).to eq(nil)
         expect(transaction).to_not have_action
 
@@ -1562,6 +1580,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(transaction.action).to eq(nil)
 
         perform
@@ -1581,6 +1600,7 @@ describe Appsignal::Transaction do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
           perform
 
           expect(transaction.action).to eq(action_name)
@@ -1588,6 +1608,7 @@ describe Appsignal::Transaction do
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform
 
           expect(transaction.action).to eq(action_name)
@@ -1597,7 +1618,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the action is set" do
+    context "when the action is set", :manual_start do
       let(:action_name) { "something" }
 
       def perform
@@ -1606,6 +1627,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1613,6 +1635,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
 
         expect(transaction.action).to eq(action_name)
@@ -1627,12 +1650,13 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
     let(:namespace) { "custom" }
 
-    context "when the namespace is not nil" do
+    context "when the namespace is not nil", :manual_start do
       def perform
         transaction.set_namespace(namespace)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction.namespace).to eq namespace
@@ -1640,6 +1664,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
 
         expect(transaction.namespace).to eq namespace
@@ -1648,13 +1673,14 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the namespace is nil" do
+    context "when the namespace is nil", :manual_start do
       def perform
         transaction.set_namespace(namespace)
         transaction.set_namespace(nil)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction.namespace).to eq(namespace)
@@ -1662,6 +1688,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
 
         expect(transaction.namespace).to eq(namespace)
@@ -1670,8 +1697,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when set_namespace is never called", :collector_mode do
+    context "when set_namespace is never called", :collector_mode, :manual_start do
       it "carries the namespace from creation" do
+        start_collector_agent
         transaction = http_request_transaction
         transaction.complete
 
@@ -1982,12 +2010,13 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "recording the error on the span" do
+    describe "recording the error on the span", :manual_start do
       def perform
         transaction.add_error(error)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction).to have_error(
@@ -1998,6 +2027,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2011,7 +2041,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "recording an error that has causes" do
+    describe "recording an error that has causes", :manual_start do
       let(:error) do
         cause = ExampleStandardError.new("cause message").tap do |e|
           e.set_backtrace(["/path/cause.rb:1:in `cause_method'"])
@@ -2030,6 +2060,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction).to have_error("ExampleException", "wrapper message")
@@ -2039,6 +2070,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2058,7 +2090,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "recording multiple errors" do
+    describe "recording multiple errors", :manual_start do
       let(:other_error) do
         ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
       end
@@ -2069,6 +2101,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
         # The extension holds one error per transaction, so the extra error is
         # reported as a duplicate transaction.
@@ -2084,6 +2117,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2103,7 +2137,8 @@ describe Appsignal::Transaction do
 
     # Collector-mode-specific behavior (no agent-mode analog): the error is
     # recorded on the span that is current when `add_error` is called.
-    it "records the error on the current event span", :collector_mode do
+    it "records the error on the current event span", :collector_mode, :manual_start do
+      start_collector_agent
       transaction.start_event
       transaction.add_error(error)
       transaction.finish_event("query", "title", "body", Appsignal::EventFormatter::DEFAULT)
@@ -2117,7 +2152,8 @@ describe Appsignal::Transaction do
     # Collector-mode-specific: errors collapse onto one trace, so error blocks
     # merge onto the transaction in order -- the last-added error wins on a
     # shared key.
-    it "applies error blocks in order, last-added error wins", :collector_mode do
+    it "applies error blocks in order, last-added error wins", :collector_mode, :manual_start do
+      start_collector_agent
       second_error = ExampleStandardError.new("second message")
       transaction.add_error(error) { |t| t.set_action("FirstAction") }
       transaction.add_error(second_error) { |t| t.set_action("SecondAction") }
@@ -2239,7 +2275,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "with a PG::UniqueViolation" do
+    context "with a PG::UniqueViolation", :manual_start do
       let(:error) do
         PG::UniqueViolation.new(
           "ERROR: duplicate key value violates unique constraint " \
@@ -2257,12 +2293,14 @@ describe Appsignal::Transaction do
       end
 
       it "returns a sanizited error message in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction).to have_error("PG::UniqueViolation", sanitized_message)
       end
 
       it "records a sanitized error message in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2272,7 +2310,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "with a ActiveRecord::RecordNotUnique" do
+    context "with a ActiveRecord::RecordNotUnique", :manual_start do
       let(:error) do
         ActiveRecord::RecordNotUnique.new(
           "PG::UniqueViolation: ERROR: duplicate key value violates unique constraint " \
@@ -2290,12 +2328,14 @@ describe Appsignal::Transaction do
       end
 
       it "returns a sanizited error message in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(transaction).to have_error("ActiveRecord::RecordNotUnique", sanitized_message)
       end
 
       it "records a sanitized error message in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2305,7 +2345,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "with Rails module but without backtrace_cleaner method" do
+    context "with Rails module but without backtrace_cleaner method", :manual_start do
       def perform
         stub_const("Rails", Module.new)
         error = ExampleStandardError.new("error message")
@@ -2314,6 +2354,7 @@ describe Appsignal::Transaction do
       end
 
       it "returns the backtrace uncleaned in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         perform
 
         expect(last_transaction).to have_error(
@@ -2324,6 +2365,7 @@ describe Appsignal::Transaction do
       end
 
       it "records the backtrace uncleaned in collector mode", :collector_mode do
+        start_collector_agent
         perform
         transaction.complete
 
@@ -2333,7 +2375,7 @@ describe Appsignal::Transaction do
     end
 
     if rails_present?
-      context "with Rails" do
+      context "with Rails", :manual_start do
         let(:test_filter) do
           lambda do |line|
             if Appsignal::Testing.store[:enable_rails_backtrace_line_filter]
@@ -2355,6 +2397,7 @@ describe Appsignal::Transaction do
         end
 
         it "cleans the backtrace with the Rails backtrace cleaner in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
           perform
 
           expect(last_transaction).to have_error(
@@ -2366,6 +2409,7 @@ describe Appsignal::Transaction do
 
         it "cleans the backtrace with the Rails backtrace cleaner in collector mode",
           :collector_mode do
+          start_collector_agent
           perform
           transaction.complete
 
@@ -2419,13 +2463,15 @@ describe Appsignal::Transaction do
     end
 
     context "when the error has no causes" do
-      it "should set an empty causes array as sample data", :agent_mode do
+      it "should set an empty causes array as sample data", :agent_mode, :manual_start do
+        start_agent(**start_agent_args)
         transaction.send(:_set_error, error)
 
         expect(transaction).to include_error_causes([])
       end
 
-      it "sets no error causes attribute in collector mode", :collector_mode do
+      it "sets no error causes attribute in collector mode", :collector_mode, :manual_start do
+        start_collector_agent
         transaction.send(:_set_error, error)
         transaction.complete
 
@@ -2468,7 +2514,8 @@ describe Appsignal::Transaction do
       end
       let(:options) { { :revision => "my_revision" } }
 
-      it "sends the error causes information as sample data", :agent_mode do
+      it "sends the error causes information as sample data", :agent_mode, :manual_start do
+        start_agent(**start_agent_args)
         # Hide Rails so we can test the normal Ruby behavior. The Rails
         # behavior is tested in another spec.
         hide_const("Rails")
@@ -2522,7 +2569,9 @@ describe Appsignal::Transaction do
       # The collector-mode cause channel is `appsignal.error_causes`, which
       # carries the full cleaned backtrace per cause (`lines`) rather than the
       # agent's `first_line`-only projection.
-      it "records the error causes on the exception event in collector mode", :collector_mode do
+      it "records the error causes on the exception event in collector mode", :collector_mode,
+        :manual_start do
+        start_collector_agent
         hide_const("Rails")
 
         transaction.send(:_set_error, error)
@@ -2728,7 +2777,8 @@ describe Appsignal::Transaction do
         e
       end
 
-      it "sends only the first causes as sample data", :agent_mode do
+      it "sends only the first causes as sample data", :agent_mode, :manual_start do
+        start_agent(**start_agent_args)
         expected_error_causes =
           Array.new(10) do |i|
             {
@@ -2756,7 +2806,8 @@ describe Appsignal::Transaction do
       end
 
       it "records only the first causes on the exception event in collector mode",
-        :collector_mode do
+        :collector_mode, :manual_start do
+        start_collector_agent
         expected_error_causes =
           Array.new(10) do |i|
             {
@@ -2794,7 +2845,8 @@ describe Appsignal::Transaction do
         transaction.send(:_set_error, error)
       end
 
-      it "sets an error on the transaction without an error message", :agent_mode do
+      it "sets an error on the transaction without an error message", :agent_mode, :manual_start do
+        start_agent(**start_agent_args)
         transaction.send(:_set_error, error)
 
         expect(transaction).to have_error(
@@ -2805,7 +2857,8 @@ describe Appsignal::Transaction do
       end
 
       it "records an empty error message on the exception event in collector mode",
-        :collector_mode do
+        :collector_mode, :manual_start do
+        start_collector_agent
         transaction.send(:_set_error, error)
         transaction.complete
 
@@ -2951,8 +3004,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    context "when the transaction has several errors" do
+    context "when the transaction has several errors", :manual_start do
       it "calls the given hook for each of the duplicate error transactions", :agent_mode do
+        start_agent(**start_agent_args)
         block = proc do |transaction, error|
           transaction.set_action(error.message)
         end
@@ -2979,6 +3033,7 @@ describe Appsignal::Transaction do
       end
 
       it "calls the hook once with the first error in collector mode", :collector_mode do
+        start_collector_agent
         block = proc do |transaction, error|
           transaction.set_action(error.message)
         end
@@ -3165,7 +3220,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "recording an event with the given duration" do
+    describe "recording an event with the given duration", :manual_start do
       let(:duration_ns) { 1_000_000_000 }
 
       def perform(transaction)
@@ -3174,6 +3229,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3186,6 +3242,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3227,13 +3284,14 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "instrumenting a SQL event" do
+    describe "instrumenting a SQL event", :manual_start do
       def perform(transaction)
         transaction.instrument("sql.active_record", "Query", "SELECT 1",
           Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3247,6 +3305,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3263,13 +3322,14 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "instrumenting a default-format event" do
+    describe "instrumenting a default-format event", :manual_start do
       def perform(transaction)
         transaction.instrument("custom.event", "Title", "Body",
           Appsignal::EventFormatter::DEFAULT) { nil }
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3283,6 +3343,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3297,7 +3358,7 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "nesting instrumented events" do
+    describe "nesting instrumented events", :manual_start do
       def perform(transaction)
         transaction.instrument("outer.event", "Outer", "outer body",
           Appsignal::EventFormatter::DEFAULT) do
@@ -3307,6 +3368,7 @@ describe Appsignal::Transaction do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3320,6 +3382,7 @@ describe Appsignal::Transaction do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         perform(transaction)
         Appsignal::Transaction.complete_current!
@@ -3332,8 +3395,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "with an empty title" do
+    describe "with an empty title", :manual_start do
       it "omits the appsignal.title attribute on the span", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         transaction.instrument("custom.event", nil, "Body",
           Appsignal::EventFormatter::DEFAULT) { nil }
@@ -3343,8 +3407,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "with an empty body" do
+    describe "with an empty body", :manual_start do
       it "omits the body attribute on the span", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         transaction.instrument("custom.event", "Title", nil,
           Appsignal::EventFormatter::DEFAULT) { nil }
@@ -3356,8 +3421,9 @@ describe Appsignal::Transaction do
       end
     end
 
-    describe "OpenTelemetry current context during the block" do
+    describe "OpenTelemetry current context during the block", :manual_start do
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         root_span_id = ::OpenTelemetry::Trace.current_span.context.span_id
 

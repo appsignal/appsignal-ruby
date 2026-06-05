@@ -1,10 +1,11 @@
 shared_examples "activesupport instrument override" do
-  describe "an event with a registered formatter" do
+  describe "an event with a registered formatter", :manual_start do
     def perform
       as.instrument("sql.active_record", :sql => "SQL") { "value" }
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -20,6 +21,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -38,12 +40,13 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event with no registered formatter" do
+  describe "an event with no registered formatter", :manual_start do
     def perform
       as.instrument("no-registered.formatter", :key => "something") { "value" }
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -59,6 +62,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -77,12 +81,13 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event with a non-string name" do
+  describe "an event with a non-string name", :manual_start do
     def perform
       as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -99,6 +104,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -111,12 +117,13 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event whose name starts with a bang" do
+  describe "an event whose name starts with a bang", :manual_start do
     def perform
       as.instrument("!sql.active_record", :sql => "SQL") { "value" }
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -126,6 +133,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -137,7 +145,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when an error is raised in an instrumented block" do
+  describe "when an error is raised in an instrumented block", :manual_start do
     def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") do
@@ -147,6 +155,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -163,6 +172,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -179,7 +189,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when a message is thrown in an instrumented block" do
+  describe "when a message is thrown in an instrumented block", :manual_start do
     def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
@@ -187,6 +197,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -203,6 +214,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -219,7 +231,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when the transaction is completed inside an instrumented block" do
+  describe "when the transaction is completed inside an instrumented block", :manual_start do
     def perform
       as.instrument("sql.active_record", :sql => "SQL") do
         Appsignal::Transaction.complete_current!
@@ -227,6 +239,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -238,6 +251,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier

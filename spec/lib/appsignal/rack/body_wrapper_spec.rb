@@ -75,7 +75,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped).to respond_to(:close)
     end
 
-    describe "reads out the body in full using each" do
+    describe "reads out the body in full using each", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -85,6 +85,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -94,6 +96,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -103,7 +107,7 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "returns an Enumerator if each() gets called without a block" do
+    describe "returns an Enumerator if each() gets called without a block", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -115,12 +119,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to_not include_event("name" => "process_response_body.rack")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         transaction.complete
 
@@ -136,7 +144,7 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "sets the exception raised inside each() on the transaction" do
+    describe "sets the exception raised inside each() on the transaction", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:each).once.and_raise(ExampleException, "error message")
@@ -148,19 +156,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "doesn't report EPIPE error" do
+    describe "doesn't report EPIPE error", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:each).once.and_raise(Errno::EPIPE)
@@ -172,17 +184,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "doesn't report ECONNRESET error" do
+    describe "doesn't report ECONNRESET error", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:each).once.and_raise(Errno::ECONNRESET)
@@ -194,17 +210,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error when it's the error cause" do
+    describe "does not report EPIPE error when it's the error cause", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         fake_body = double
@@ -217,17 +237,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error when it's the nested error cause" do
+    describe "does not report EPIPE error when it's the nested error cause", :manual_start do
       def perform
         error = error_with_nested_cause(StandardError, "error message", Errno::EPIPE)
         fake_body = double
@@ -240,17 +264,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error when it's the error cause" do
+    describe "does not report ECONNRESET error when it's the error cause", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_body = double
@@ -263,17 +291,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error when it's the nested error cause" do
+    describe "does not report ECONNRESET error when it's the nested error cause", :manual_start do
       def perform
         error = error_with_nested_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_body = double
@@ -286,17 +318,22 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "closes the body and tracks an instrumentation event when it gets closed" do
+    describe "closes the body and tracks an instrumentation event when it gets closed",
+      :manual_start do
       def perform
         fake_body = double(:close => nil)
         expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
@@ -307,19 +344,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event("name" => "close_response_body.rack")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event("close_response_body.rack")
       end
     end
 
-    describe "reports an error if an error occurs on close" do
+    describe "reports an error if an error occurs on close", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:close).and_raise(ExampleException, "error message")
@@ -331,19 +372,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "doesn't report EPIPE error on close" do
+    describe "doesn't report EPIPE error on close", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:close).and_raise(Errno::EPIPE)
@@ -353,17 +398,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "doesn't report ECONNRESET error on close" do
+    describe "doesn't report ECONNRESET error on close", :manual_start do
       def perform
         fake_body = double
         expect(fake_body).to receive(:close).and_raise(Errno::ECONNRESET)
@@ -373,17 +422,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error when it's the error cause on close" do
+    describe "does not report EPIPE error when it's the error cause on close", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         fake_body = double
@@ -394,17 +447,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error when it's the error cause on close" do
+    describe "does not report ECONNRESET error when it's the error cause on close", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_body = double
@@ -415,11 +472,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -455,7 +516,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped).to respond_to(:close)
     end
 
-    describe "reads out the body in full using each" do
+    describe "reads out the body in full using each", :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
@@ -464,6 +525,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -473,6 +536,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -482,7 +547,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "sets the exception raised inside each() into the Appsignal transaction" do
+    describe "sets the exception raised inside each() into the Appsignal transaction",
+      :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_raise(ExampleException, "error message")
 
@@ -493,19 +559,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "doesn't report EPIPE error" do
+    describe "doesn't report EPIPE error", :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_raise(Errno::EPIPE)
 
@@ -516,17 +586,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "doesn't report ECONNRESET error" do
+    describe "doesn't report ECONNRESET error", :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_raise(Errno::ECONNRESET)
 
@@ -537,17 +611,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error when it's the error cause (each)" do
+    describe "does not report EPIPE error when it's the error cause (each)", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         fake_body = double
@@ -560,17 +638,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error when it's the error cause (each)" do
+    describe "does not report ECONNRESET error when it's the error cause (each)", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_body = double
@@ -583,17 +665,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "reads out the body in full using to_ary" do
+    describe "reads out the body in full using to_ary", :manual_start do
       def perform
         expect(fake_body).to receive(:to_ary).and_return(["one", "two", "three"])
 
@@ -602,6 +688,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -611,6 +699,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -620,7 +710,7 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "sends the exception raised inside to_ary() to AppSignal and closes" do
+    describe "sends the exception raised inside to_ary() to AppSignal and closes", :manual_start do
       def perform
         fake_body = double
         allow(fake_body).to receive(:each)
@@ -634,19 +724,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "does not report EPIPE error when it's the error cause (to_ary)" do
+    describe "does not report EPIPE error when it's the error cause (to_ary)", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         fake_body = double
@@ -661,17 +755,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error when it's the error cause (to_ary)" do
+    describe "does not report ECONNRESET error when it's the error cause (to_ary)", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_body = double
@@ -686,11 +784,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -709,7 +811,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped).to respond_to(:close)
     end
 
-    describe "reads out the body in full using each()" do
+    describe "reads out the body in full using each()", :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_yield("a").and_yield("b").and_yield("c")
 
@@ -718,6 +820,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -727,6 +831,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -736,7 +842,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "sets the exception raised inside each() into the Appsignal transaction" do
+    describe "sets the exception raised inside each() into the Appsignal transaction",
+      :manual_start do
       def perform
         expect(fake_body).to receive(:each).once.and_raise(ExampleException, "error message")
 
@@ -747,19 +854,24 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "sets the exception raised inside to_path() into the Appsignal transaction" do
+    describe "sets the exception raised inside to_path() into the Appsignal transaction",
+      :manual_start do
       def perform
         allow(fake_body).to receive(:to_path).once.and_raise(ExampleException, "error message")
 
@@ -770,19 +882,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "doesn't report EPIPE error" do
+    describe "doesn't report EPIPE error", :manual_start do
       def perform
         expect(fake_body).to receive(:to_path).once.and_raise(Errno::EPIPE)
 
@@ -793,17 +909,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "doesn't report ECONNRESET error" do
+    describe "doesn't report ECONNRESET error", :manual_start do
       def perform
         expect(fake_body).to receive(:to_path).once.and_raise(Errno::ECONNRESET)
 
@@ -814,17 +934,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error from #each when it's the error cause" do
+    describe "does not report EPIPE error from #each when it's the error cause", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         expect(fake_body).to receive(:each).once.and_raise(error)
@@ -836,17 +960,22 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error from #each when it's the error cause" do
+    describe "does not report ECONNRESET error from #each when it's the error cause",
+      :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         expect(fake_body).to receive(:each).once.and_raise(error)
@@ -858,17 +987,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error from #to_path when it's the error cause" do
+    describe "does not report EPIPE error from #to_path when it's the error cause", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         allow(fake_body).to receive(:to_path).once.and_raise(error)
@@ -880,17 +1013,22 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error from #to_path when it's the error cause" do
+    describe "does not report ECONNRESET error from #to_path when it's the error cause",
+      :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         allow(fake_body).to receive(:to_path).once.and_raise(error)
@@ -902,17 +1040,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "exposes to_path to the sender" do
+    describe "exposes to_path to the sender", :manual_start do
       def perform
         allow(fake_body).to receive(:to_path).and_return("/tmp/file.bin")
 
@@ -921,6 +1063,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -930,6 +1074,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -952,7 +1098,7 @@ describe Appsignal::Rack::BodyWrapper do
       expect(wrapped).to respond_to(:close)
     end
 
-    describe "passes the stream into the call() of the body" do
+    describe "passes the stream into the call() of the body", :manual_start do
       def perform
         fake_rack_stream = double("stream")
         expect(fake_body).to receive(:call).with(fake_rack_stream)
@@ -962,6 +1108,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -971,6 +1119,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -980,7 +1130,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
     end
 
-    describe "sets the exception raised inside call() into the Appsignal transaction" do
+    describe "sets the exception raised inside call() into the Appsignal transaction",
+      :manual_start do
       def perform
         fake_rack_stream = double
         allow(fake_body).to receive(:call)
@@ -995,19 +1146,23 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
       end
     end
 
-    describe "doesn't report EPIPE error" do
+    describe "doesn't report EPIPE error", :manual_start do
       def perform
         fake_rack_stream = double
         expect(fake_body).to receive(:call)
@@ -1021,17 +1176,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "doesn't report ECONNRESET error" do
+    describe "doesn't report ECONNRESET error", :manual_start do
       def perform
         fake_rack_stream = double
         expect(fake_body).to receive(:call)
@@ -1045,17 +1204,21 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report EPIPE error from #call when it's the error cause" do
+    describe "does not report EPIPE error from #call when it's the error cause", :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::EPIPE)
         fake_rack_stream = double
@@ -1071,17 +1234,22 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
     end
 
-    describe "does not report ECONNRESET error from #call when it's the error cause" do
+    describe "does not report ECONNRESET error from #call when it's the error cause",
+      :manual_start do
       def perform
         error = error_with_cause(StandardError, "error message", Errno::ECONNRESET)
         fake_rack_stream = double
@@ -1097,11 +1265,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end

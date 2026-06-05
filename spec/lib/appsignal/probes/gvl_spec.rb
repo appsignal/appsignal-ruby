@@ -56,7 +56,7 @@ describe Appsignal::Probes::GvlProbe do
 
   after { FakeGVLTools.reset }
 
-  describe "the global timer delta gauge" do
+  describe "the global timer delta gauge", :manual_start do
     def perform(probe)
       FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
       probe.call
@@ -65,6 +65,7 @@ describe Appsignal::Probes::GvlProbe do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       # The two-entry match also proves the first call emits nothing: a gauge
       # on the first call would add a third entry.
       perform(probe)
@@ -80,6 +81,7 @@ describe Appsignal::Probes::GvlProbe do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       perform(collector_probe)
 
       # The probe emits the gauge twice: once tagged with the process, once
@@ -143,13 +145,14 @@ describe Appsignal::Probes::GvlProbe do
       FakeGVLTools::WaitingThreads.enabled = true
     end
 
-    describe "the waiting threads count gauge" do
+    describe "the waiting threads count gauge", :manual_start do
       def perform(probe)
         FakeGVLTools::WaitingThreads.count = 3
         probe.call
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         perform(probe)
 
         expect(gauges_for("gvl_waiting_threads")).to eq [
@@ -163,6 +166,7 @@ describe Appsignal::Probes::GvlProbe do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform(collector_probe)
 
         expect_dual_gauge_points("gvl_waiting_threads", 3, :process_name => "rspec")

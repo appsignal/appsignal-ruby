@@ -6,7 +6,7 @@ require "appsignal/integrations/mongo_ruby_driver"
   # backend; the OTel-backed transaction output is covered by "instrumenting a
   # finished query" below in both modes. `start_agent` comes from the mode
   # context, so it is not started here.
-  context "with transaction", :agent_mode do
+  context "with transaction", :agent_mode, :manual_start do
     let(:transaction) { http_request_transaction }
     before do
       set_current_transaction(transaction)
@@ -53,18 +53,24 @@ require "appsignal/integrations/mongo_ruby_driver"
         subscriber.succeeded(succeeded_event)
       end
 
-      it "records the query as an event and emits a duration metric" do
+      it "should sanitize command" do
         start_agent
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
+        # TODO: additional curly brackets required for issue
+        # https://github.com/rspec/rspec-mocks/issues/1460
+        expect(Appsignal::EventFormatter::MongoRubyDriver::QueryFormatter)
+          .to receive(:format).with("find", { "foo" => "bar" })
+        subscriber.started(event)
+      end
 
       it "should store command on the transaction" do
+        start_agent
         subscriber.started(event)
 
         expect(transaction.store("mongo_driver")).to eq(1 => { "foo" => "?" })
       end
 
       it "should start an event in the extension" do
+        start_agent
         expect(transaction).to receive(:start_event)
 
         subscriber.started(event)
@@ -75,6 +81,7 @@ require "appsignal/integrations/mongo_ruby_driver"
       let(:event) { double }
 
       it "should finish the event" do
+        start_agent
         expect(subscriber).to receive(:finish).with("SUCCEEDED", event)
 
         subscriber.succeeded(event)
@@ -85,6 +92,7 @@ require "appsignal/integrations/mongo_ruby_driver"
       let(:event) { double }
 
       it "should finish the event" do
+        start_agent
         expect(subscriber).to receive(:finish).with("FAILED", event)
 
         subscriber.failed(event)
@@ -108,6 +116,7 @@ require "appsignal/integrations/mongo_ruby_driver"
       end
 
       it "should get the query from the store" do
+        start_agent
         expect(transaction).to receive(:store).with("mongo_driver").and_return(command)
 
         subscriber.finish("SUCCEEDED", event)
@@ -115,7 +124,7 @@ require "appsignal/integrations/mongo_ruby_driver"
     end
   end
 
-  describe "instrumenting a finished query" do
+  describe "instrumenting a finished query", :manual_start do
     let(:started_event) do
       double(
         :request_id   => 2,
@@ -138,6 +147,7 @@ require "appsignal/integrations/mongo_ruby_driver"
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
 
@@ -157,6 +167,7 @@ require "appsignal/integrations/mongo_ruby_driver"
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
@@ -174,20 +185,15 @@ require "appsignal/integrations/mongo_ruby_driver"
       expect(snapshot.data_points.first.attributes).to eq("database" => "test")
     end
 
-  context "without transaction", :agent_mode do
+  context "without transaction", :agent_mode, :manual_start do
     before do
       allow(Appsignal::Transaction).to receive(:current)
         .and_return(Appsignal::Transaction::NilTransaction.new)
     end
 
-    # The subscriber guards on a current, unpaused transaction before touching
-    # the extension, so nothing is recorded otherwise.
-    describe "without an active transaction" do
-      def perform
-        started = command_started_event
-        subscriber.started(started)
-        subscriber.succeeded(command_succeeded_event(started))
-      end
+    it "should not attempt to start an event" do
+      start_agent
+      expect(Appsignal::Extension).to_not receive(:start_event)
 
       it "does not record anything" do
         start_agent
@@ -199,12 +205,9 @@ require "appsignal/integrations/mongo_ruby_driver"
       end
     end
 
-    describe "when the transaction is paused" do
-      def perform
-        started = command_started_event
-        subscriber.started(started)
-        subscriber.succeeded(command_succeeded_event(started))
-      end
+    it "should not attempt to finish an event" do
+      start_agent
+      expect(Appsignal::Extension).to_not receive(:finish_event)
 
       it "does not record anything" do
         start_agent
@@ -212,31 +215,34 @@ require "appsignal/integrations/mongo_ruby_driver"
         set_current_transaction(transaction)
         transaction.pause!
 
-        expect(Appsignal::Extension).to_not receive(:start_event)
-        expect(Appsignal::Extension).to_not receive(:finish_event)
-        expect(Appsignal).to_not receive(:add_distribution_value)
+    it "should not attempt to send duration metrics" do
+      start_agent
+      expect(Appsignal).to_not receive(:add_distribution_value)
 
       subscriber.finish("SUCCEEDED", double)
     end
   end
 
-  context "when appsignal is paused", :agent_mode do
+  context "when appsignal is paused", :agent_mode, :manual_start do
     let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
     before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 
     it "should not attempt to start an event" do
+      start_agent
       expect(Appsignal::Extension).to_not receive(:start_event)
 
       subscriber.started(double)
     end
 
     it "should not attempt to finish an event" do
+      start_agent
       expect(Appsignal::Extension).to_not receive(:finish_event)
 
       subscriber.finish("SUCCEEDED", double)
     end
 
     it "should not attempt to send duration metrics" do
+      start_agent
       expect(Appsignal).to_not receive(:add_distribution_value)
 
       subscriber.finish("SUCCEEDED", double)

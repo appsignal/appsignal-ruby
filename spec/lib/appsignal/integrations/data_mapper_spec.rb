@@ -20,7 +20,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       connection_class.new.log(message)
     end
 
-    describe "a SQL-like scheme" do
+    describe "a SQL-like scheme", :manual_start do
       let(:connection_class) { DataObjects::Sqlite3::Connection }
       before do
         stub_const("DataObjects::Sqlite3::Connection", Class.new do
@@ -30,13 +30,15 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
 
       def perform
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
         log_message
+        transaction
       end
 
       it "in agent mode", :agent_mode do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-        perform
+        start_agent
+        transaction = perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -47,8 +49,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
 
       it "in collector mode", :collector_mode do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
+        start_collector_agent
         perform
         Appsignal::Transaction.complete_current!
 
@@ -66,7 +67,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
     end
 
-    describe "a non-SQL scheme" do
+    describe "a non-SQL scheme", :manual_start do
       let(:connection_class) { DataObjects::MongoDB::Connection }
       before do
         stub_const("DataObjects::MongoDB::Connection", Class.new do
@@ -76,13 +77,15 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
 
       def perform
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
         log_message
+        transaction
       end
 
       it "in agent mode", :agent_mode do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-        perform
+        start_agent
+        transaction = perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -93,8 +96,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
 
       it "in collector mode", :collector_mode do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
+        start_collector_agent
         perform
         Appsignal::Transaction.complete_current!
 

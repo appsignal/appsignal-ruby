@@ -2139,12 +2139,13 @@ describe Appsignal do
     end
   end
 
-  describe "custom metrics" do
+  describe "custom metrics", :manual_start do
     let(:tags) { { :foo => "bar" } }
 
     describe ".set_gauge" do
       describe "with a string key and float value" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:set_gauge)
             .with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge("key", 0.1)
@@ -2157,12 +2158,14 @@ describe Appsignal do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:set_gauge)
             .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
           perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
           expect(Appsignal::Extension).not_to receive(:set_gauge)
           perform
@@ -2173,6 +2176,7 @@ describe Appsignal do
 
       describe "with a symbol key and int value" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:set_gauge)
             .with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.set_gauge(:key, 1)
@@ -2181,6 +2185,7 @@ describe Appsignal do
 
       describe "when the value is out of range" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:set_gauge).with(
             "key",
             10,
@@ -2197,6 +2202,7 @@ describe Appsignal do
     describe ".increment_counter" do
       describe "with a string key" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key")
@@ -2209,12 +2215,14 @@ describe Appsignal do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 5, Appsignal::Utils::Data.generate(tags))
           perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
           expect(Appsignal::Extension).not_to receive(:increment_counter)
           perform
@@ -2225,6 +2233,7 @@ describe Appsignal do
 
       describe "with a symbol key" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 1, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter(:key)
@@ -2233,6 +2242,7 @@ describe Appsignal do
 
       describe "with a count" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 5, Appsignal::Extension.data_map_new)
           Appsignal.increment_counter("key", 5)
@@ -2241,6 +2251,7 @@ describe Appsignal do
 
       describe "when the value is out of range" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:increment_counter)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
@@ -2254,6 +2265,7 @@ describe Appsignal do
     describe ".add_distribution_value" do
       describe "with a string key and float value" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 0.1, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value("key", 0.1)
@@ -2266,12 +2278,14 @@ describe Appsignal do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
           perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
           expect(Appsignal::Extension).not_to receive(:add_distribution_value)
           perform
@@ -2282,6 +2296,7 @@ describe Appsignal do
 
       describe "with a symbol key and int value" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 1.0, Appsignal::Extension.data_map_new)
           Appsignal.add_distribution_value(:key, 1)
@@ -2290,6 +2305,7 @@ describe Appsignal do
 
       describe "when the value is out of range" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:add_distribution_value)
             .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
           expect(Appsignal.internal_logger).to receive(:warn)
@@ -2301,7 +2317,7 @@ describe Appsignal do
     end
   end
 
-  describe ".instrument" do
+  describe ".instrument", :manual_start do
     describe "block return value" do
       it_in_both_modes do
         set_current_transaction(transaction)
@@ -2318,6 +2334,7 @@ describe Appsignal do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         set_current_transaction(transaction)
         perform
         expect(transaction).to include_event(
@@ -2329,6 +2346,7 @@ describe Appsignal do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         set_current_transaction(transaction)
         perform
         Appsignal::Transaction.complete_current!
@@ -2352,6 +2370,7 @@ describe Appsignal do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         set_current_transaction(transaction)
         perform
         expect(transaction).to include_event(
@@ -2360,6 +2379,7 @@ describe Appsignal do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         set_current_transaction(transaction)
         perform
         Appsignal::Transaction.complete_current!
@@ -2380,6 +2400,7 @@ describe Appsignal do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         set_current_transaction(transaction)
         perform
         expect(transaction).to include_event(
@@ -2388,6 +2409,7 @@ describe Appsignal do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         set_current_transaction(transaction)
         perform
         Appsignal::Transaction.complete_current!
@@ -2401,13 +2423,14 @@ describe Appsignal do
     end
   end
 
-  describe ".instrument_sql" do
+  describe ".instrument_sql", :manual_start do
     describe "recording a SQL event around the block" do
       def perform
         Appsignal.instrument_sql("name", "title", "body") { "return value" }
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         set_current_transaction(transaction)
 
         expect(perform).to eq("return value")
@@ -2420,6 +2443,7 @@ describe Appsignal do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         set_current_transaction(transaction)
 
         expect(perform).to eq("return value")
@@ -2437,9 +2461,10 @@ describe Appsignal do
     end
   end
 
-  describe ".ignore_instrumentation_events" do
+  describe ".ignore_instrumentation_events", :manual_start do
     describe "with a current transaction" do
       it "in agent mode", :agent_mode do
+        start_agent
         set_current_transaction(transaction)
         expect(transaction).to receive(:pause!).and_call_original
         expect(transaction).to receive(:resume!).and_call_original
@@ -2454,6 +2479,7 @@ describe Appsignal do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         set_current_transaction(transaction)
 
         Appsignal.instrument("register.this.event") { :do_nothing }

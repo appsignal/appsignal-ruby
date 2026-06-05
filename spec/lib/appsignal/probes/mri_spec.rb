@@ -34,12 +34,13 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the vm cache gauges" do
+      describe "the vm cache gauges", :manual_start do
         def perform(probe)
           probe.call
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           vm_cache_metrics.each do |metric|
             expect_gauge_value("ruby_vm", :tags => { :metric => metric })
@@ -47,6 +48,7 @@ describe Appsignal::Probes::MriProbe do
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
 
           snapshots = metric_snapshots
@@ -57,17 +59,19 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the thread count gauge" do
+      describe "the thread count gauge", :manual_start do
         def perform(probe)
           probe.call
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           expect_gauge_value("thread_count")
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
 
           snapshot = metric_snapshot("thread_count")
@@ -79,7 +83,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the gc time gauge" do
+      describe "the gc time gauge", :manual_start do
         # The gauge reports the delta between measurements, so call twice.
         def perform(probe)
           expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
@@ -88,11 +92,13 @@ describe Appsignal::Probes::MriProbe do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           expect_gauge_value("gc_time", 5)
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
           expect(find_gauge_point(metric_snapshots, "gc_time").value).to eq(5)
         end
@@ -126,7 +132,7 @@ describe Appsignal::Probes::MriProbe do
       end
 
       context "when GC profiling is disabled" do
-        describe "the gc time gauge" do
+        describe "the gc time gauge", :manual_start do
           def perform(probe)
             allow(GC::Profiler).to receive(:enabled?).and_return(false)
             expect(gc_profiler_mock).to_not receive(:total_time)
@@ -135,12 +141,14 @@ describe Appsignal::Probes::MriProbe do
           end
 
           it "does not report a gc_time metric in agent mode", :agent_mode do
+            start_agent
             perform(probe)
             metrics = appsignal_mock.gauges.map { |(key)| key }
             expect(metrics).to_not include("gc_time")
           end
 
           it "does not report a gc_time metric in collector mode", :collector_mode do
+            start_collector_agent
             perform(collector_probe)
             expect(metric_snapshots.map(&:name)).to_not include("gc_time")
           end
@@ -183,7 +191,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the gc run count gauge" do
+      describe "the gc run count gauge", :manual_start do
         # The gauges report deltas between measurements, so call twice.
         def perform(probe)
           expect(GC).to receive(:count).and_return(10, 15)
@@ -196,6 +204,7 @@ describe Appsignal::Probes::MriProbe do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           expect_gauge_value("gc_count", 5, :tags => { :metric => :gc_count })
           expect_gauge_value("gc_count", 6, :tags => { :metric => :minor_gc_count })
@@ -203,6 +212,7 @@ describe Appsignal::Probes::MriProbe do
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
           snapshots = metric_snapshots
           expect(find_gauge_point(snapshots, "gc_count", :metric => :gc_count).value).to eq(5)
@@ -211,7 +221,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the allocated objects gauge" do
+      describe "the allocated objects gauge", :manual_start do
         # Only tracks the delta value, so it needs to be called twice.
         def perform(probe)
           expect(GC).to receive(:stat).and_return(
@@ -223,28 +233,32 @@ describe Appsignal::Probes::MriProbe do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           expect_gauge_value("allocated_objects", 5)
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
           expect(find_gauge_point(metric_snapshots, "allocated_objects").value).to eq(5)
         end
       end
 
-      describe "the heap slots gauges" do
+      describe "the heap slots gauges", :manual_start do
         def perform(probe)
           probe.call
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           perform(probe)
           expect_gauge_value("heap_slots", :tags => { :metric => :heap_live })
           expect_gauge_value("heap_slots", :tags => { :metric => :heap_free })
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform(collector_probe)
           snapshots = metric_snapshots
           expect(find_gauge_point(snapshots, "heap_slots", :metric => :heap_live).value)

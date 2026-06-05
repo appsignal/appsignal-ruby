@@ -498,13 +498,15 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
   end
 
-  describe "for a successful request" do
+  describe "for a successful request", :manual_start do
     def perform
       event_handler_instance.on_start(request, response)
       event_handler_instance.on_finish(request, response)
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       expect(Appsignal).to receive(:increment_counter)
         .with(:response_status, 1, :status => 200, :namespace => :web)
 
@@ -512,6 +514,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("response_status")
@@ -524,7 +528,7 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
   end
 
-  describe "for a request that errors" do
+  describe "for a request that errors", :manual_start do
     # No response, and an error recorded by `on_error`, so the status comes
     # from the error (500) rather than the response.
     def perform
@@ -534,6 +538,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       expect(Appsignal).to receive(:increment_counter)
         .with(:response_status, 1, :status => 500, :namespace => :web)
 
@@ -541,6 +547,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("response_status")

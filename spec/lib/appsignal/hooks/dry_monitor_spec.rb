@@ -34,7 +34,7 @@ if DependencyHelper.dry_monitor_present?
   describe "Dry Monitor Integration" do
     let(:notifications) { Dry::Monitor::Notifications.new(:test) }
 
-    describe "a SQL event" do
+    describe "a SQL event", :manual_start do
       let(:event_id) { :sql }
       let(:payload) do
         {
@@ -48,6 +48,7 @@ if DependencyHelper.dry_monitor_present?
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
@@ -61,6 +62,7 @@ if DependencyHelper.dry_monitor_present?
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
@@ -78,7 +80,7 @@ if DependencyHelper.dry_monitor_present?
       end
     end
 
-    describe "an unregistered formatter event" do
+    describe "an unregistered formatter event", :manual_start do
       let(:event_id) { :foo }
       let(:payload) { { :name => "foo" } }
 
@@ -87,6 +89,7 @@ if DependencyHelper.dry_monitor_present?
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
@@ -100,6 +103,7 @@ if DependencyHelper.dry_monitor_present?
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform

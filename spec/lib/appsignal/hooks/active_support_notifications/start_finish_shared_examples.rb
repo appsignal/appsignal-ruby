@@ -1,13 +1,14 @@
 shared_examples "activesupport start finish override" do
   let(:instrumenter) { as.instrumenter }
 
-  describe "a start/finish event whose payload is provided at start" do
+  describe "a start/finish event whose payload is provided at start", :manual_start do
     def perform
       instrumenter.start("sql.active_record", :sql => "SQL")
       instrumenter.finish("sql.active_record", {})
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -24,6 +25,7 @@ shared_examples "activesupport start finish override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -42,13 +44,14 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "a start/finish event whose payload is provided at finish" do
+  describe "a start/finish event whose payload is provided at finish", :manual_start do
     def perform
       instrumenter.start("sql.active_record", {})
       instrumenter.finish("sql.active_record", :sql => "SQL")
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -65,6 +68,7 @@ shared_examples "activesupport start finish override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -81,13 +85,14 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "an event whose name starts with a bang" do
+  describe "an event whose name starts with a bang", :manual_start do
     def perform
       instrumenter.start("!sql.active_record", {})
       instrumenter.finish("!sql.active_record", {})
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -98,6 +103,7 @@ shared_examples "activesupport start finish override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -109,7 +115,7 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "when the transaction is completed between start and finish" do
+  describe "when the transaction is completed between start and finish", :manual_start do
     def perform
       instrumenter.start("sql.active_record", {})
       Appsignal::Transaction.complete_current!
@@ -117,6 +123,7 @@ shared_examples "activesupport start finish override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -128,6 +135,7 @@ shared_examples "activesupport start finish override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
