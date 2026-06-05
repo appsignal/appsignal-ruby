@@ -37,12 +37,42 @@ RSpec.shared_context "collector mode", :collector_mode do
     provider
   end
 
+  # Dual-mode start principle: mode setup is global state, so an automatic
+  # `before` start and ad-hoc `start_agent` calls fight over it with fragile
+  # ordering. Going forward, prefer starting the agent in the example body. A
+  # describe tagged `:manual_start` opts out of this automatic start; its
+  # `it "in collector mode"` calls `start_collector_agent` itself before
+  # `perform`. The in-memory providers, helpers and teardown below still apply.
+  before do |example|
+    start_collector_agent unless example.metadata[:manual_start]
+  end
+
+  after do
+    # `clear_current_transaction!` in spec_helper clears the thread-local but
+    # not the attached OTel context. `complete_current!` does both.
+    Appsignal::Transaction.complete_current!
+    # Shut down whatever OTel SDK is current at teardown. Usually that's
+    # the threadless in-memory providers (a near no-op), but examples that
+    # boot AppSignal again themselves leave real providers behind, whose
+    # background threads would otherwise accumulate across the suite. The
+    # targeted shutdown, not `Appsignal.stop`: stop's `Extension.stop`
+    # takes ~2 seconds per call, which across every collector-mode example
+    # adds minutes to the suite. Runs before the global
+    # `Appsignal::OpenTelemetry.reset!` hook, so the `started?` gate inside
+    # the shutdown still passes.
+    Appsignal::OpenTelemetry.shutdown
+  end
+
+  # Boots the agent in collector mode and swaps in the in-memory OTel providers.
+  # Called automatically by the `before` above, or explicitly from an example
+  # body in a `:manual_start` describe.
+  #
   # Examples can define a `start_agent_args` `let` to pass `:env`/`:options`; the
   # `collector_endpoint` is always merged into the options so collector mode
   # stays enabled. Guarded with `defined?` rather than a default `let`, because
   # an included shared context's `let` would take precedence over the example
   # group's own `let` override.
-  before do
+  def start_collector_agent
     args = (defined?(start_agent_args) ? start_agent_args : {}).dup
     args[:options] = { :collector_endpoint => "http://127.0.0.1:9090" }.merge(args[:options] || {})
     start_agent(**args)
@@ -60,22 +90,6 @@ RSpec.shared_context "collector mode", :collector_mode do
     ::OpenTelemetry.logger_provider = logger_provider
     Appsignal::Metrics::OpenTelemetryBackend.reset!
     Appsignal::Logger::OpenTelemetryBackend.reset!
-  end
-
-  after do
-    # `clear_current_transaction!` in spec_helper clears the thread-local but
-    # not the attached OTel context. `complete_current!` does both.
-    Appsignal::Transaction.complete_current!
-    # Shut down whatever OTel SDK is current at teardown. Usually that's
-    # the threadless in-memory providers (a near no-op), but examples that
-    # boot AppSignal again themselves leave real providers behind, whose
-    # background threads would otherwise accumulate across the suite. The
-    # targeted shutdown, not `Appsignal.stop`: stop's `Extension.stop`
-    # takes ~2 seconds per call, which across every collector-mode example
-    # adds minutes to the suite. Runs before the global
-    # `Appsignal::OpenTelemetry.reset!` hook, so the `started?` gate inside
-    # the shutdown still passes.
-    Appsignal::OpenTelemetry.shutdown
   end
 
   def root_span
