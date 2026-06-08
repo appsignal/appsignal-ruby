@@ -10,8 +10,12 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   let(:sqs_msg) { double(:message_id => "msg1", :attributes => {}) }
   let(:body) { {} }
   let(:options) { {} }
-  before { start_agent(:options => options) }
-  around { |example| keep_transactions { example.run } }
+
+  # Pass the example's options through to the mode contexts' `start_agent`. In
+  # collector mode `start_collector_agent` merges these on top of the
+  # `collector_endpoint`, so options like `:filter_parameters` apply in both
+  # modes.
+  let(:start_agent_args) { { :options => options } }
 
   def perform_shoryuken_job(&block)
     block ||= lambda {}
@@ -35,38 +39,88 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     context "with complex argument" do
       let(:body) { { :foo => "Foo", :bar => "Bar" } }
 
-      it "wraps the job in a transaction with the correct params" do
-        expect { perform_shoryuken_job }.to change { created_transactions.length }.by(1)
+      describe "wraps the job in a transaction" do
+        def perform
+          perform_shoryuken_job
+        end
 
-        transaction = last_transaction
-        expect(transaction).to have_id
-        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-        expect(transaction).to have_action("DemoShoryukenWorker#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to include_event(
-          "body" => "",
-          "body_format" => Appsignal::EventFormatter::DEFAULT,
-          "count" => 1,
-          "name" => "perform_job.shoryuken",
-          "title" => ""
-        )
-        expect(transaction).to include_params("foo" => "Foo", "bar" => "Bar")
-        expect(transaction).to include_tags(
-          "message_id" => "msg1",
-          "queue" => queue,
-          "SentTimestamp" => sent_timestamp
-        )
-        expect(transaction).to have_queue_start(sent_timestamp)
-        expect(transaction).to be_completed
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          expect { perform }.to change { created_transactions.length }.by(1)
+
+          transaction = last_transaction
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(transaction).to have_action("DemoShoryukenWorker#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_event(
+            "body" => "",
+            "body_format" => Appsignal::EventFormatter::DEFAULT,
+            "count" => 1,
+            "name" => "perform_job.shoryuken",
+            "title" => ""
+          )
+          expect(transaction).to include_params("foo" => "Foo", "bar" => "Bar")
+          expect(transaction).to include_tags(
+            "message_id" => "msg1",
+            "queue" => queue,
+            "SentTimestamp" => sent_timestamp
+          )
+          # queue_start: agent-only; the OTel backend intentionally drops it
+          # (no collector consumer computes queue_duration from a raw timestamp).
+          expect(transaction).to have_queue_start(sent_timestamp)
+          expect(transaction).to be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect { perform }.to change { created_transactions.length }.by(1)
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"])
+            .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+          expect(root_span.name).to eq("DemoShoryukenWorker#perform")
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("DemoShoryukenWorker#perform")
+          expect(exception_events).to be_empty
+          span = event_spans.find { |s| s.name == "perform_job.shoryuken" }
+          expect(span).not_to be_nil
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes).not_to have_key("appsignal.body")
+          expect(span.attributes).not_to have_key("appsignal.title")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq("foo" => "Foo", "bar" => "Bar")
+          expect(root_span.attributes["appsignal.tag.message_id"]).to eq("msg1")
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+          expect(root_span.attributes["appsignal.tag.SentTimestamp"]).to eq(sent_timestamp)
+          # queue_start has no OTel representation; assert no attribute is emitted
+          expect(root_span.attributes).not_to have_key("appsignal.queue_start")
+          expect(last_transaction).to be_completed
+        end
       end
 
       context "with parameter filtering" do
         let(:options) { { :filter_parameters => ["foo"] } }
 
-        it "filters selected arguments" do
-          perform_shoryuken_job
+        describe "filters selected arguments" do
+          def perform
+            perform_shoryuken_job
+          end
 
-          expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq("foo" => "[FILTERED]", "bar" => "Bar")
+          end
         end
       end
     end
@@ -74,38 +128,94 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     context "with a string as an argument" do
       let(:body) { "foo bar" }
 
-      it "handles string arguments" do
-        perform_shoryuken_job
+      describe "handles string arguments" do
+        def perform
+          perform_shoryuken_job
+        end
 
-        expect(last_transaction).to include_params("params" => body)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(last_transaction).to include_params("params" => body)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq("params" => body)
+        end
       end
     end
 
     context "with primitive type as argument" do
       let(:body) { 1 }
 
-      it "handles primitive types as arguments" do
-        perform_shoryuken_job
+      describe "handles primitive types as arguments" do
+        def perform
+          perform_shoryuken_job
+        end
 
-        expect(last_transaction).to include_params("params" => body)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(last_transaction).to include_params("params" => body)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq("params" => body)
+        end
       end
     end
   end
 
   context "with exception" do
-    it "sets the exception on the transaction" do
-      expect do
-        expect do
-          perform_shoryuken_job { raise ExampleException, "error message" }
-        end.to raise_error(ExampleException)
-      end.to change { created_transactions.length }.by(1)
+    describe "sets the exception on the transaction" do
+      def perform
+        perform_shoryuken_job { raise ExampleException, "error message" }
+      end
 
-      transaction = last_transaction
-      expect(transaction).to have_id
-      expect(transaction).to have_action("DemoShoryukenWorker#perform")
-      expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-      expect(transaction).to have_error("ExampleException", "error message")
-      expect(transaction).to be_completed
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect do
+          expect { perform }.to raise_error(ExampleException)
+        end.to change { created_transactions.length }.by(1)
+
+        transaction = last_transaction
+        expect(transaction).to have_id
+        expect(transaction).to have_action("DemoShoryukenWorker#perform")
+        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(transaction).to have_error("ExampleException", "error message")
+        expect(transaction).to be_completed
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect do
+          expect { perform }.to raise_error(ExampleException)
+        end.to change { created_transactions.length }.by(1)
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["appsignal.action_name"])
+          .to eq("DemoShoryukenWorker#perform")
+        expect(root_span.attributes["appsignal.namespace"])
+          .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+
+        error_event = exception_events
+          .find { |e| e.attributes["exception.type"] == "ExampleException" }
+        expect(error_event).not_to be_nil
+        expect(error_event.attributes["exception.message"]).to eq("error message")
+        expect(error_event.attributes["exception.stacktrace"]).to be_a(String)
+        expect(error_event.attributes["appsignal.alert_this_error"]).to eq(true)
+        expect(last_transaction).to be_completed
+      end
     end
   end
 
@@ -132,34 +242,69 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     end
     let(:sent_timestamp) { Time.parse("1976-11-18 01:00:00UTC").to_i * 1000 }
 
-    it "creates a transaction for the batch" do
-      expect do
+    describe "creates a transaction for the batch" do
+      def perform
         perform_shoryuken_job {} # rubocop:disable Lint/EmptyBlock
-      end.to change { created_transactions.length }.by(1)
+      end
 
-      transaction = last_transaction
-      expect(transaction).to have_id
-      expect(transaction).to have_action("DemoShoryukenWorker#perform")
-      expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-      expect(transaction).to_not have_error
-      expect(transaction).to include_event(
-        "body" => "",
-        "body_format" => Appsignal::EventFormatter::DEFAULT,
-        "count" => 1,
-        "name" => "perform_job.shoryuken",
-        "title" => ""
-      )
-      expect(transaction).to include_params(
-        "msg2" => "foo bar",
-        "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
-      )
-      expect(transaction).to include_tags(
-        "batch" => true,
-        "queue" => "some-funky-queue-name",
-        "SentTimestamp" => sent_timestamp.to_s # Earliest/oldest timestamp from messages
-      )
-      # Queue time based on earliest/oldest timestamp from messages
-      expect(transaction).to have_queue_start(sent_timestamp)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect { perform }.to change { created_transactions.length }.by(1)
+
+        transaction = last_transaction
+        expect(transaction).to have_id
+        expect(transaction).to have_action("DemoShoryukenWorker#perform")
+        expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(transaction).to_not have_error
+        expect(transaction).to include_event(
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "count" => 1,
+          "name" => "perform_job.shoryuken",
+          "title" => ""
+        )
+        expect(transaction).to include_params(
+          "msg2" => "foo bar",
+          "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
+        )
+        expect(transaction).to include_tags(
+          "batch" => true,
+          "queue" => "some-funky-queue-name",
+          "SentTimestamp" => sent_timestamp.to_s # Earliest/oldest timestamp from messages
+        )
+        # Queue time based on earliest/oldest timestamp from messages
+        expect(transaction).to have_queue_start(sent_timestamp)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect { perform }.to change { created_transactions.length }.by(1)
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.name).to eq("DemoShoryukenWorker#perform")
+        expect(root_span.attributes["appsignal.action_name"])
+          .to eq("DemoShoryukenWorker#perform")
+        expect(root_span.attributes["appsignal.namespace"])
+          .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(exception_events).to be_empty
+        span = event_spans.find { |s| s.name == "perform_job.shoryuken" }
+        expect(span).not_to be_nil
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes).not_to have_key("appsignal.body")
+        expect(span.attributes).not_to have_key("appsignal.title")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq(
+            "msg2" => "foo bar",
+            "msg1" => { "id" => "123", "foo" => "Foo", "bar" => "Bar" }
+          )
+        expect(root_span.attributes["appsignal.tag.batch"]).to eq(true)
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq("some-funky-queue-name")
+        # Earliest/oldest timestamp from messages
+        expect(root_span.attributes["appsignal.tag.SentTimestamp"])
+          .to eq(sent_timestamp.to_s)
+        # queue_start has no OTel representation; assert no attribute is emitted
+        expect(root_span.attributes).not_to have_key("appsignal.queue_start")
+      end
     end
   end
 end
