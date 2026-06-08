@@ -46,8 +46,10 @@ module Appsignal
         @handle.set_metadata(key, value)
       end
 
+      # `data` is a raw Ruby Hash/Array; the C extension wants a `Data` object,
+      # so serialize it here (mirrors how `set_error` serializes its backtrace).
       def set_sample_data(key, data)
-        @handle.set_sample_data(key, data)
+        @handle.set_sample_data(key, Appsignal::Utils::Data.generate(data))
       end
 
       # `backtrace` is a raw Array (or nil); the C extension wants a `Data`

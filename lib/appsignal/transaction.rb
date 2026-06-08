@@ -860,10 +860,11 @@ module Appsignal
         return
       end
 
-      @backend.set_sample_data(
-        key.to_s,
-        Appsignal::Utils::Data.generate(data)
-      )
+      # Pass raw Ruby through to the backend. ExtensionBackend serializes to a
+      # C-extension `Data` object; OpenTelemetryBackend reads the Hash/Array
+      # directly. The `RuntimeError` rescue still covers ExtensionBackend's
+      # `Data.generate`, which now runs inside the backend call.
+      @backend.set_sample_data(key.to_s, data)
     rescue RuntimeError => e
       begin
         inspected_data = data.inspect
