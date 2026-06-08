@@ -498,7 +498,7 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
   end
 
-  describe "for a successful request", :manual_start do
+  describe "for a successful request" do
     def perform
       event_handler_instance.on_start(request, response)
       event_handler_instance.on_finish(request, response)
@@ -528,7 +528,7 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
   end
 
-  describe "for a request that errors", :manual_start do
+  describe "for a request that errors" do
     # No response, and an error recorded by `on_error`, so the status comes
     # from the error (500) rather than the response.
     def perform

@@ -15,7 +15,7 @@ describe Appsignal::Hooks::SequelHook do
       it { is_expected.to be_truthy }
     end
 
-    context "with a transaction", :manual_start do
+    context "with a transaction" do
       def perform
         db["SELECT 1"].all.to_a
       end

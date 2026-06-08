@@ -34,7 +34,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the vm cache gauges", :manual_start do
+      describe "the vm cache gauges" do
         def perform(probe)
           probe.call
         end
@@ -59,7 +59,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the thread count gauge", :manual_start do
+      describe "the thread count gauge" do
         def perform(probe)
           probe.call
         end
@@ -83,7 +83,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the gc time gauge", :manual_start do
+      describe "the gc time gauge" do
         # The gauge reports the delta between measurements, so call twice.
         def perform(probe)
           expect(gc_profiler_mock).to receive(:total_time).and_return(10, 15)
@@ -132,7 +132,7 @@ describe Appsignal::Probes::MriProbe do
       end
 
       context "when GC profiling is disabled" do
-        describe "the gc time gauge", :manual_start do
+        describe "the gc time gauge" do
           def perform(probe)
             allow(GC::Profiler).to receive(:enabled?).and_return(false)
             expect(gc_profiler_mock).to_not receive(:total_time)
@@ -191,7 +191,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the gc run count gauge", :manual_start do
+      describe "the gc run count gauge" do
         # The gauges report deltas between measurements, so call twice.
         def perform(probe)
           expect(GC).to receive(:count).and_return(10, 15)
@@ -221,7 +221,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the allocated objects gauge", :manual_start do
+      describe "the allocated objects gauge" do
         # Only tracks the delta value, so it needs to be called twice.
         def perform(probe)
           expect(GC).to receive(:stat).and_return(
@@ -245,7 +245,7 @@ describe Appsignal::Probes::MriProbe do
         end
       end
 
-      describe "the heap slots gauges", :manual_start do
+      describe "the heap slots gauges" do
         def perform(probe)
           probe.call
         end

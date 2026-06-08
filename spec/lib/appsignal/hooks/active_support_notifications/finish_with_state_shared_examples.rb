@@ -1,7 +1,7 @@
 shared_examples "activesupport finish_with_state override" do
   let(:instrumenter) { as.instrumenter }
 
-  describe "a finish_with_state event", :manual_start do
+  describe "a finish_with_state event" do
     def perform
       listeners_state = instrumenter.start("sql.active_record", {})
       instrumenter.finish_with_state(listeners_state, "sql.active_record", :sql => "SQL")
@@ -42,7 +42,7 @@ shared_examples "activesupport finish_with_state override" do
     end
   end
 
-  describe "an event whose name starts with a bang", :manual_start do
+  describe "an event whose name starts with a bang" do
     def perform
       listeners_state = instrumenter.start("!sql.active_record", {})
       instrumenter.finish_with_state(listeners_state, "!sql.active_record", :sql => "SQL")

@@ -23,22 +23,21 @@ describe Appsignal::Hooks::ExconHook do
     end
 
     describe "instrumentation" do
-      describe "a http request", :manual_start do
+      describe "a http request" do
         def perform
-          transaction = http_request_transaction
-          set_current_transaction(transaction)
           data = {
             :host => "www.google.com",
             :method => :get,
             :scheme => "http"
           }
           Excon.defaults[:instrumentor].instrument("excon.request", data) {} # rubocop:disable Lint/EmptyBlock
-          transaction
         end
 
         it "in agent mode", :agent_mode do
           start_agent
-          transaction = perform
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
 
           expect(transaction).to include_event(
             "name" => "request.excon",
@@ -49,6 +48,7 @@ describe Appsignal::Hooks::ExconHook do
 
         it "in collector mode", :collector_mode do
           start_collector_agent
+          set_current_transaction(http_request_transaction)
           perform
           Appsignal::Transaction.complete_current!
 
@@ -61,18 +61,17 @@ describe Appsignal::Hooks::ExconHook do
         end
       end
 
-      describe "a http response", :manual_start do
+      describe "a http response" do
         def perform
-          transaction = http_request_transaction
-          set_current_transaction(transaction)
           data = { :host => "www.google.com" }
           Excon.defaults[:instrumentor].instrument("excon.response", data) {} # rubocop:disable Lint/EmptyBlock
-          transaction
         end
 
         it "in agent mode", :agent_mode do
           start_agent
-          transaction = perform
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
 
           expect(transaction).to include_event(
             "name" => "response.excon",
@@ -83,6 +82,7 @@ describe Appsignal::Hooks::ExconHook do
 
         it "in collector mode", :collector_mode do
           start_collector_agent
+          set_current_transaction(http_request_transaction)
           perform
           Appsignal::Transaction.complete_current!
 

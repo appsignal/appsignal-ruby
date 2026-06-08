@@ -37,16 +37,13 @@ RSpec.shared_context "collector mode", :collector_mode do
     provider
   end
 
-  # Dual-mode start principle: mode setup is global state, so an automatic
-  # `before` start and ad-hoc `start_agent` calls fight over it with fragile
-  # ordering. Going forward, prefer starting the agent in the example body. A
-  # describe tagged `:manual_start` opts out of this automatic start; its
-  # `it "in collector mode"` calls `start_collector_agent` itself before
-  # `perform`. The in-memory providers, helpers and teardown below still apply.
-  before do |example|
-    start_collector_agent unless example.metadata[:manual_start]
-  end
-
+  # Dual-mode start principle: mode is global state, so the agent is NOT
+  # started in a `before` here -- that fought with ad-hoc `start_agent` calls
+  # with fragile ordering. Each `:collector_mode` example calls
+  # `start_collector_agent` itself in its body (the `it_in_both_modes` helper
+  # does this for its shared body). This context provides the in-memory
+  # providers, the `start_collector_agent` helper, the read-back helpers, and
+  # the teardown below.
   after do
     # `clear_current_transaction!` in spec_helper clears the thread-local but
     # not the attached OTel context. `complete_current!` does both.
@@ -64,8 +61,7 @@ RSpec.shared_context "collector mode", :collector_mode do
   end
 
   # Boots the agent in collector mode and swaps in the in-memory OTel providers.
-  # Called automatically by the `before` above, or explicitly from an example
-  # body in a `:manual_start` describe.
+  # Called explicitly from each collector-mode example body.
   #
   # Examples can define a `start_agent_args` `let` to pass `:env`/`:options`; the
   # `collector_endpoint` is always merged into the options so collector mode

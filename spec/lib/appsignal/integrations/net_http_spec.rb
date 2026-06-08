@@ -1,7 +1,7 @@
 require "appsignal/integrations/net_http"
 
 describe Appsignal::Integrations::NetHttpIntegration do
-  describe "a http request", :manual_start do
+  describe "a http request" do
     def perform
       stub_request(:any, "http://www.google.com/")
 
@@ -37,7 +37,7 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
   end
 
-  describe "a https request", :manual_start do
+  describe "a https request" do
     def perform
       stub_request(:any, "https://www.google.com/")
 

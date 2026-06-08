@@ -1,5 +1,5 @@
 shared_examples "activesupport instrument override" do
-  describe "an event with a registered formatter", :manual_start do
+  describe "an event with a registered formatter" do
     def perform
       as.instrument("sql.active_record", :sql => "SQL") { "value" }
     end
@@ -40,7 +40,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event with no registered formatter", :manual_start do
+  describe "an event with no registered formatter" do
     def perform
       as.instrument("no-registered.formatter", :key => "something") { "value" }
     end
@@ -81,7 +81,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event with a non-string name", :manual_start do
+  describe "an event with a non-string name" do
     def perform
       as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
     end
@@ -117,7 +117,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "an event whose name starts with a bang", :manual_start do
+  describe "an event whose name starts with a bang" do
     def perform
       as.instrument("!sql.active_record", :sql => "SQL") { "value" }
     end
@@ -145,7 +145,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when an error is raised in an instrumented block", :manual_start do
+  describe "when an error is raised in an instrumented block" do
     def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") do
@@ -189,7 +189,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when a message is thrown in an instrumented block", :manual_start do
+  describe "when a message is thrown in an instrumented block" do
     def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
@@ -231,7 +231,7 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "when the transaction is completed inside an instrumented block", :manual_start do
+  describe "when the transaction is completed inside an instrumented block" do
     def perform
       as.instrument("sql.active_record", :sql => "SQL") do
         Appsignal::Transaction.complete_current!

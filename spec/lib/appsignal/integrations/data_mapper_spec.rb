@@ -20,7 +20,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       connection_class.new.log(message)
     end
 
-    describe "a SQL-like scheme", :manual_start do
+    describe "a SQL-like scheme" do
       let(:connection_class) { DataObjects::Sqlite3::Connection }
       before do
         stub_const("DataObjects::Sqlite3::Connection", Class.new do
@@ -67,7 +67,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
       end
     end
 
-    describe "a non-SQL scheme", :manual_start do
+    describe "a non-SQL scheme" do
       let(:connection_class) { DataObjects::MongoDB::Connection }
       before do
         stub_const("DataObjects::MongoDB::Connection", Class.new do

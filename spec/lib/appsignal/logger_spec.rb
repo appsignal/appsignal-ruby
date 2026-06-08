@@ -1,5 +1,5 @@
 shared_examples "tagged logging" do
-  describe "with tags from logger.tagged", :manual_start do
+  describe "with tags from logger.tagged" do
     def perform
       logger.tagged("My tag", "My other tag") do
         logger.info("Some message")
@@ -33,7 +33,7 @@ shared_examples "tagged logging" do
     end
   end
 
-  describe "with nested tags from logger.tagged", :manual_start do
+  describe "with nested tags from logger.tagged" do
     def perform
       logger.tagged("My tag", "My other tag") do
         logger.tagged("Nested tag", "Nested other tag") do
@@ -69,7 +69,7 @@ shared_examples "tagged logging" do
     end
   end
 
-  describe "with tags from Rails.application.config.log_tags", :manual_start do
+  describe "with tags from Rails.application.config.log_tags" do
     it "in agent mode", :agent_mode do
       start_agent
       allow(Appsignal::Extension).to receive(:log)
@@ -145,7 +145,7 @@ shared_examples "tagged logging" do
     end
   end
 
-  describe "with tags from Rails 8 application.config.log_tags", :manual_start do
+  describe "with tags from Rails 8 application.config.log_tags" do
     def perform
       logger.push_tags("Request tag", "Second tag")
       logger.tagged("First message", "My other tag") { logger.info("Some message") }
@@ -180,7 +180,7 @@ shared_examples "tagged logging" do
     end
   end
 
-  describe "clearing all tags with clear_tags!", :manual_start do
+  describe "clearing all tags with clear_tags!" do
     it "in agent mode", :agent_mode do
       start_agent
       allow(Appsignal::Extension).to receive(:log)
@@ -236,7 +236,7 @@ shared_examples "tagged logging" do
     end
   end
 
-  describe "with tags passed as an array", :manual_start do
+  describe "with tags passed as an array" do
     def perform
       logger.tagged(["My tag", "My other tag"]) do
         logger.info("Some message")
@@ -276,7 +276,7 @@ shared_examples "tagged logging" do
   # is present.
   if !DependencyHelper.rails_present? || DependencyHelper.rails7_present?
     describe "when calling #tagged without a block" do
-      describe "returns a new logger with the tags added", :manual_start do
+      describe "returns a new logger with the tags added" do
         def perform
           logger.tagged("My tag", "My other tag").info("Some message")
         end
@@ -308,7 +308,7 @@ shared_examples "tagged logging" do
         end
       end
 
-      describe "does not modify the original logger", :manual_start do
+      describe "does not modify the original logger" do
         it "in agent mode", :agent_mode do
           start_agent
           expect(Appsignal::Extension).to receive(:log)
@@ -362,7 +362,7 @@ shared_examples "tagged logging" do
         end
       end
 
-      describe "can be chained", :manual_start do
+      describe "can be chained" do
         def perform
           logger.tagged("My tag", "My other tag").tagged("My third tag").info("Some message")
         end
@@ -394,7 +394,7 @@ shared_examples "tagged logging" do
         end
       end
 
-      describe "can be chained before a block invocation", :manual_start do
+      describe "can be chained before a block invocation" do
         def perform
           # Use the logger passed to the block: the logger returned from
           # the first #tagged invocation is a new instance.
@@ -430,7 +430,7 @@ shared_examples "tagged logging" do
         end
       end
 
-      describe "can be chained after a block invocation", :manual_start do
+      describe "can be chained after a block invocation" do
         def perform
           logger.tagged("My tag", "My other tag") do
             logger.tagged("My third tag").info("Some message")
@@ -512,7 +512,7 @@ describe Appsignal::Logger do
   end
 
   describe "#add" do
-    describe "with a level and message", :manual_start do
+    describe "with a level and message" do
       def perform
         logger.add(::Logger::INFO, "Log message")
       end
@@ -532,7 +532,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with a non-string message", :manual_start do
+    describe "with a non-string message" do
       def perform
         logger.add(::Logger::INFO, 123)
         logger.add(::Logger::INFO, {})
@@ -562,7 +562,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with a block", :manual_start do
+    describe "with a block" do
       def perform
         logger.add(::Logger::INFO) { "Log message" }
       end
@@ -582,7 +582,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with a level, message and group", :manual_start do
+    describe "with a level, message and group" do
       def perform
         logger.add(::Logger::INFO, "Log message", "other_group")
       end
@@ -605,7 +605,7 @@ describe Appsignal::Logger do
     describe "with info log level" do
       let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
 
-      describe "when the call's level is too low", :manual_start do
+      describe "when the call's level is too low" do
         def perform
           logger.add(::Logger::DEBUG, "Log message")
         end
@@ -624,7 +624,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with the PLAINTEXT format set", :manual_start do
+    describe "with the PLAINTEXT format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::PLAINTEXT) }
 
       def perform
@@ -646,7 +646,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with the logfmt format set", :manual_start do
+    describe "with the logfmt format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::LOGFMT) }
 
       def perform
@@ -668,7 +668,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "with the JSON format set", :manual_start do
+    describe "with the JSON format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::JSON) }
 
       def perform
@@ -697,7 +697,7 @@ describe Appsignal::Logger do
         end
       end
 
-      describe "logs with a level, message and group", :manual_start do
+      describe "logs with a level, message and group" do
         def perform
           logger.add(::Logger::INFO, "Log message", "other_group")
         end
@@ -727,7 +727,7 @@ describe Appsignal::Logger do
         end
       end
 
-      describe "calls the formatter with the original message", :manual_start do
+      describe "calls the formatter with the original message" do
         def perform
           logger.add(::Logger::INFO, { :a => "b" })
         end
@@ -765,7 +765,7 @@ describe Appsignal::Logger do
         end
       end
 
-      describe "calls #to_s on the formatter output if it is not a string", :manual_start do
+      describe "calls #to_s on the formatter output if it is not a string" do
         def perform
           logger.add(::Logger::INFO, 123)
         end
@@ -802,7 +802,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "silences the logger up to, but not including, the given level", :manual_start do
+    describe "silences the logger up to, but not including, the given level" do
       def perform
         logger.silence(::Logger::WARN) do
           logger.info("Log message")
@@ -829,7 +829,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "silences the logger to error level by default", :manual_start do
+    describe "silences the logger to error level by default" do
       def perform
         logger.silence do
           logger.debug("Log message")
@@ -869,7 +869,7 @@ describe Appsignal::Logger do
   end
 
   describe "#broadcast_to" do
-    describe "broadcasts the message to the given logger", :manual_start do
+    describe "broadcasts the message to the given logger" do
       let(:other_device) { StringIO.new }
       let(:other_logger) { ::Logger.new(other_device) }
       before { logger.broadcast_to(other_logger) }
@@ -894,8 +894,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "broadcasts the message to the given logger when it's below the log level",
-      :manual_start do
+    describe "broadcasts the message to the given logger when it's below the log level" do
       let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
       let(:other_device) { StringIO.new }
       let(:other_logger) { ::Logger.new(other_device) }
@@ -919,7 +918,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "does not broadcast the message to the given logger when silenced", :manual_start do
+    describe "does not broadcast the message to the given logger when silenced" do
       let(:other_device) { StringIO.new }
       let(:other_logger) { ::Logger.new(other_device) }
       before { logger.broadcast_to(other_logger) }
@@ -984,7 +983,7 @@ describe Appsignal::Logger do
           ActiveSupport::TaggedLogging.new(appsignal_logger)
         end
 
-        describe "broadcasts a tagged message to the given logger", :manual_start do
+        describe "broadcasts a tagged message to the given logger" do
           def perform
             logger.tagged("My tag", "My other tag") do
               logger.info("Some message")
@@ -1032,7 +1031,7 @@ describe Appsignal::Logger do
     method, extension_level, logger_level, higher_level = permutation
 
     describe "##{method}" do
-      describe "with a message and attributes", :manual_start do
+      describe "with a message and attributes" do
         # `define_method` (rather than `def`) so the block captures the
         # enclosing closure -- `method` is a block-local of the
         # `.each do |permutation|` loop and isn't visible from `def`.
@@ -1067,7 +1066,7 @@ describe Appsignal::Logger do
         end
       end
 
-      describe "with a block", :manual_start do
+      describe "with a block" do
         define_method(:perform) do
           logger.send(method) { "Log message" }
         end
@@ -1093,7 +1092,7 @@ describe Appsignal::Logger do
         end
       end
 
-      describe "with a nil message", :manual_start do
+      describe "with a nil message" do
         define_method(:perform) { logger.send(method) }
 
         it "in agent mode", :agent_mode do
@@ -1113,7 +1112,7 @@ describe Appsignal::Logger do
         context "with a lower log level" do
           let(:logger) { Appsignal::Logger.new("group", :level => higher_level) }
 
-          describe "skips logging when the level is too low", :manual_start do
+          describe "skips logging when the level is too low" do
             define_method(:perform) { logger.send(method, "Log message") }
 
             it "in agent mode", :agent_mode do
@@ -1144,7 +1143,7 @@ describe Appsignal::Logger do
 
         after { Timecop.return }
 
-        describe "logs the formatted message", :manual_start do
+        describe "logs the formatted message" do
           define_method(:perform) { logger.send(method, "Log message") }
 
           it "in agent mode", :agent_mode do
@@ -1180,7 +1179,7 @@ describe Appsignal::Logger do
   describe "a logger with default attributes" do
     let(:logger) { Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" }) }
 
-    describe "adds the attributes when a message is logged", :manual_start do
+    describe "adds the attributes when a message is logged" do
       def perform
         logger.error("Some message", { :other_key => "other_value" })
       end
@@ -1222,7 +1221,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "prioritises line attributes over default attributes", :manual_start do
+    describe "prioritises line attributes over default attributes" do
       def perform
         logger.error("Some message", { :some_key => "other_value" })
       end
@@ -1249,7 +1248,7 @@ describe Appsignal::Logger do
       end
     end
 
-    describe "adds the default attributes when #add is called", :manual_start do
+    describe "adds the default attributes when #add is called" do
       def perform
         logger.add(::Logger::INFO, "Log message")
       end
@@ -1278,7 +1277,7 @@ describe Appsignal::Logger do
   end
 
   describe "#error with exception object" do
-    describe "logs the exception class and its message", :manual_start do
+    describe "logs the exception class and its message" do
       let(:error) do
         raise ExampleStandardError, "oh no!"
       rescue => e
@@ -1320,7 +1319,7 @@ describe Appsignal::Logger do
   end
 
   describe "#<<" do
-    describe "writes an info message and returns the number of characters written", :manual_start do
+    describe "writes an info message and returns the number of characters written" do
       def perform
         message = "hello there"
         result = logger << message
@@ -1352,7 +1351,7 @@ describe Appsignal::Logger do
       # Documents how the logger currently behaves: a Ruby logger would
       # normally bypass the formatter for `<<`. We recommend against setting
       # a formatter on the AppSignal logger.
-      describe "logs a formatted message", :manual_start do
+      describe "logs a formatted message" do
         def perform
           logger << "Log message"
         end

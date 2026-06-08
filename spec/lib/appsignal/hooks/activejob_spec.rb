@@ -697,7 +697,7 @@ if DependencyHelper.active_job_present?
   # yet. Self-contained so it doesn't inherit the `ActiveJobClassInstrumentation`
   # group's parameterized `start_agent`; `start_agent` comes from the mode
   # contexts.
-  describe "emitting the queue job count metric", :manual_start do
+  describe "emitting the queue job count metric" do
     before do
       ActiveJob::Base.queue_adapter = :inline
       stub_const("ActiveJobTestJob", Class.new(ActiveJob::Base) do
@@ -736,7 +736,7 @@ if DependencyHelper.active_job_present?
 
   # A failing job emits the job count metric a second time, tagged
   # `status: failed`. Self-contained, same rationale as the describe above.
-  describe "emitting the failed job count metric", :manual_start do
+  describe "emitting the failed job count metric" do
     before do
       ActiveJob::Base.queue_adapter = :inline
       stub_const("ActiveJobFailingJob", Class.new(ActiveJob::Base) do
@@ -779,7 +779,7 @@ if DependencyHelper.active_job_present?
 
   # A job with a priority emits an additional `priority_job_count` metric.
   if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
-    describe "emitting the priority job count metric", :manual_start do
+    describe "emitting the priority job count metric" do
       before do
         ActiveJob::Base.queue_adapter = :inline
         stub_const("ActiveJobPriorityJob", Class.new(ActiveJob::Base) do
@@ -828,7 +828,7 @@ if DependencyHelper.active_job_present?
   # A job carrying an `enqueued_at` reports its queue time as a distribution.
   context "with enqueued_at",
     :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
-    describe "emitting the queue time metric", :manual_start do
+    describe "emitting the queue time metric" do
       before do
         stub_const(
           "ActiveJob::QueueAdapters::AppsignalTestAdapter",

@@ -205,7 +205,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    it "loads Sidekiq::API", :agent_mode, :manual_start do
+    it "loads Sidekiq::API", :agent_mode do
       start_agent
       with_sidekiq!
       # Hide the Sidekiq constant if it was already loaded. It will be
@@ -217,7 +217,7 @@ describe Appsignal::Probes::SidekiqProbe do
       expect(defined?(Sidekiq::Stats)).to be_truthy
     end
 
-    it "logs config on initialize", :agent_mode, :manual_start do
+    it "logs config on initialize", :agent_mode do
       start_agent
       with_sidekiq!
       log = capture_logs { probe }
@@ -227,7 +227,7 @@ describe Appsignal::Probes::SidekiqProbe do
     context "with Sidekiq 7" do
       before { with_sidekiq7! }
 
-      it "logs used hostname on call once", :agent_mode, :manual_start do
+      it "logs used hostname on call once", :agent_mode do
         start_agent
         log = capture_logs { probe.call }
         expect(log).to contains_log(
@@ -239,7 +239,7 @@ describe Appsignal::Probes::SidekiqProbe do
         expect(log).to_not contains_log(:debug, %(Sidekiq probe: ))
       end
 
-      describe "collecting custom metrics", :manual_start do
+      describe "collecting custom metrics" do
         # Call the probe twice so the delta-based gauges report a value.
         def perform
           probe.call
@@ -262,7 +262,7 @@ describe Appsignal::Probes::SidekiqProbe do
       context "when redis info doesn't contain requested keys" do
         before { Sidekiq7Mock.redis_info_data = {} }
 
-        describe "the redis info gauges", :manual_start do
+        describe "the redis info gauges" do
           # Call probe twice so we can calculate the delta for some gauge values.
           def perform
             probe.call
@@ -292,7 +292,7 @@ describe Appsignal::Probes::SidekiqProbe do
     context "with Sidekiq 6" do
       before { with_sidekiq6! }
 
-      it "logs used hostname on call once", :agent_mode, :manual_start do
+      it "logs used hostname on call once", :agent_mode do
         start_agent
         log = capture_logs { probe.call }
         expect(log).to contains_log(
@@ -304,7 +304,7 @@ describe Appsignal::Probes::SidekiqProbe do
         expect(log).to_not contains_log(:debug, %(Sidekiq probe: ))
       end
 
-      describe "collecting custom metrics", :manual_start do
+      describe "collecting custom metrics" do
         # Call the probe twice so the delta-based gauges report a value.
         def perform
           probe.call
@@ -329,7 +329,7 @@ describe Appsignal::Probes::SidekiqProbe do
           allow(Sidekiq).to receive(:respond_to?).with(:redis_info).and_return(false)
         end
 
-        describe "the redis info gauges", :manual_start do
+        describe "the redis info gauges" do
           it "does not collect redis metrics in agent mode", :agent_mode do
             start_agent
             expect_gauge("connection_count", 2).never
@@ -350,7 +350,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
     end
 
-    context "when hostname is configured for probe", :manual_start do
+    context "when hostname is configured for probe" do
       let(:redis_hostname) { "my_redis_server" }
       let(:probe) { described_class.new(:hostname => redis_hostname) }
 

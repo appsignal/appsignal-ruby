@@ -24,7 +24,7 @@ describe Appsignal::Hooks::ActionMailerHook do
         end
       end
 
-      describe ".install", :manual_start do
+      describe ".install" do
         it "in agent mode", :agent_mode do
           start_agent
 
