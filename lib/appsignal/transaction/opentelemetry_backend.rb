@@ -117,6 +117,7 @@ module Appsignal
         # namespace override updates `appsignal.namespace` but not the kind --
         # the collector uses the attribute for the namespace and the kind only
         # to pick the subtrace root, so this is fine for the rare late change.
+        @namespace = namespace
         @span.set_attribute("appsignal.namespace", namespace)
       end
 
@@ -155,6 +156,8 @@ module Appsignal
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
         when "environment"
           write_request_headers(data)
+        when "breadcrumbs"
+          write_breadcrumbs(data)
         when "tags"
           write_tags(data)
         when "error_causes"
@@ -288,6 +291,26 @@ module Appsignal
           "appsignal.function.parameters"
         else
           "appsignal.request.payload"
+        end
+      end
+
+      # Breadcrumbs have no sample-data attribute in the OTel pipeline, so emit
+      # each as an `appsignal.breadcrumb` span event. The breadcrumb's recorded
+      # time becomes the event timestamp (events carry their own time), so it is
+      # not duplicated as an attribute; category/action/message are attributes
+      # and the metadata Hash is a JSON string (event attributes are flat).
+      def write_breadcrumbs(breadcrumbs)
+        breadcrumbs.each do |breadcrumb|
+          @span.add_event(
+            "appsignal.breadcrumb",
+            :timestamp => Time.at(breadcrumb[:time]),
+            :attributes => {
+              "category" => breadcrumb[:category],
+              "action" => breadcrumb[:action],
+              "message" => breadcrumb[:message],
+              "metadata" => JSON.generate(breadcrumb[:metadata] || {})
+            }
+          )
         end
       end
 
