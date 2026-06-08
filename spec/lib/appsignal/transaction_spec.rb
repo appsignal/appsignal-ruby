@@ -1565,71 +1565,186 @@ describe Appsignal::Transaction do
       expect(transaction.method(:add_headers)).to eq(transaction.method(:set_headers))
     end
 
-    it "adds the headers to the transaction" do
-      headers = { "PATH_INFO" => "value" }
-      transaction.add_headers(headers)
+    describe "adding the headers to the transaction" do
+      def perform
+        # A true header (kept, normalized in collector mode) and a CGI var
+        # (kept in agent mode, dropped in collector mode).
+        transaction.add_headers("HTTP_ACCEPT" => "text/html", "PATH_INFO" => "/path")
+      end
 
-      transaction._sample
-      expect(transaction).to include_environment(headers)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment(
+          "HTTP_ACCEPT" => "text/html",
+          "PATH_INFO" => "/path"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # True headers normalized to the OTel convention; non-header CGI vars
+        # dropped.
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        expect(root_span.attributes).to_not have_key("http.request.header.path-info")
+      end
     end
 
-    it "merges the headers on the transaction" do
-      transaction.add_headers("PATH_INFO" => "value")
-      transaction.add_headers("REQUEST_METHOD" => "value")
-      transaction.add_headers { { "HTTP_ACCEPT" => "value" } }
+    describe "merging the headers on the transaction" do
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "text/html")
+        transaction.add_headers("HTTP_RANGE" => "bytes=0-")
+        transaction.add_headers { { "HTTP_CACHE_CONTROL" => "no-cache" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_environment(
-        "PATH_INFO" => "value",
-        "REQUEST_METHOD" => "value",
-        "HTTP_ACCEPT" => "value"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment(
+          "HTTP_ACCEPT" => "text/html",
+          "HTTP_RANGE" => "bytes=0-",
+          "HTTP_CACHE_CONTROL" => "no-cache"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        expect(root_span.attributes["http.request.header.range"]).to eq("bytes=0-")
+        expect(root_span.attributes["http.request.header.cache-control"]).to eq("no-cache")
+      end
     end
 
-    it "adds the headers to the transaction with a block" do
-      headers = { "PATH_INFO" => "value" }
-      transaction.add_headers { headers }
+    describe "adding the headers to the transaction with a block" do
+      def perform
+        transaction.add_headers { { "HTTP_ACCEPT" => "text/html" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_environment(headers)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+      end
     end
 
-    it "adds the headers block value when both an argument and block are given" do
-      arg_data = { "PATH_INFO" => "/arg-path" }
-      block_data = { "PATH_INFO" => "/block-path" }
-      transaction.add_headers(arg_data) { block_data }
+    describe "adding the headers block value when both an argument and block are given" do
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "arg") { { "HTTP_ACCEPT" => "block" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_environment(block_data)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "block")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("block")
+      end
     end
 
-    it "logs an error if an error occurred storing the headers" do
-      transaction.add_headers { raise "uh oh" }
+    describe "when an error occurs storing the headers" do
+      def perform
+        transaction.add_headers { raise "uh oh" }
+      end
 
-      logs = capture_logs { transaction._sample }
-      expect(logs).to contains_log(
-        :error,
-        "Exception while fetching headers: RuntimeError: uh oh"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        logs = capture_logs { transaction._sample }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching headers: RuntimeError: uh oh"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        logs = capture_logs { transaction.complete }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching headers: RuntimeError: uh oh"
+        )
+      end
     end
 
-    it "does not update the headers on the transaction if the given value is nil" do
-      headers = { "PATH_INFO" => "value" }
-      transaction.add_headers(headers)
-      transaction.add_headers(nil)
+    describe "when the given headers value is nil" do
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "text/html")
+        transaction.add_headers(nil)
+      end
 
-      transaction._sample
-      expect(transaction).to include_environment(headers)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+      end
     end
 
     context "with request_headers options" do
-      let(:options) { { :request_headers => ["MY_HEADER"] } }
+      let(:options) { { :request_headers => ["HTTP_ACCEPT"] } }
 
-      it "does not include filtered out headers" do
-        transaction.add_headers("MY_HEADER" => "value1", "filtered_key" => "filtered_value")
+      describe "filtering out headers not in the allowlist" do
+        def perform
+          transaction.add_headers("HTTP_ACCEPT" => "text/html", "HTTP_RANGE" => "bytes=0-")
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment("MY_HEADER" => "value1")
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+          expect(transaction).to_not include_environment("HTTP_RANGE" => "bytes=0-")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+          expect(root_span.attributes).to_not have_key("http.request.header.range")
+        end
       end
     end
   end
@@ -1642,60 +1757,141 @@ describe Appsignal::Transaction do
     end
 
     context "when the headers are not set" do
-      it "adds the headers to the transaction" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.add_headers_if_nil(headers)
+      describe "adding the headers to the transaction" do
+        def perform
+          transaction.add_headers_if_nil("HTTP_ACCEPT" => "text/html")
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(headers)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        end
       end
 
-      it "adds the headers to the transaction with a block" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.add_headers_if_nil { headers }
+      describe "adding the headers to the transaction with a block" do
+        def perform
+          transaction.add_headers_if_nil { { "HTTP_ACCEPT" => "text/html" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(headers)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        end
       end
 
-      it "adds the headers block value when both an argument and block are given" do
-        arg_data = { "PATH_INFO" => "/arg-path" }
-        block_data = { "PATH_INFO" => "/block-path" }
-        transaction.add_headers_if_nil(arg_data) { block_data }
+      describe "adding the headers block value when an argument and block are given" do
+        def perform
+          transaction.add_headers_if_nil("HTTP_ACCEPT" => "arg") { { "HTTP_ACCEPT" => "block" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(block_data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "block")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("block")
+        end
       end
 
-      it "does not update the headers on the transaction if the given value is nil" do
-        headers = { "PATH_INFO" => "value" }
-        transaction.add_headers(headers)
-        transaction.add_headers_if_nil(nil)
+      describe "when the given value is nil" do
+        def perform
+          transaction.add_headers("HTTP_ACCEPT" => "text/html")
+          transaction.add_headers_if_nil(nil)
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(headers)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        end
       end
     end
 
     context "when the headers are set" do
-      it "does not update the headers on the transaction" do
-        preset_headers = { "PATH_INFO" => "/first-path" }
-        headers = { "PATH_INFO" => "/other-path" }
-        transaction.add_headers(preset_headers)
-        transaction.add_headers_if_nil(headers)
+      describe "not updating the headers on the transaction" do
+        def perform
+          transaction.add_headers("HTTP_ACCEPT" => "first")
+          transaction.add_headers_if_nil("HTTP_ACCEPT" => "other")
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(preset_headers)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "first")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("first")
+        end
       end
 
-      it "does not update the headers with a block on the transaction" do
-        preset_headers = { "PATH_INFO" => "/first-path" }
-        headers = { "PATH_INFO" => "/other-path" }
-        transaction.add_headers(preset_headers)
-        transaction.add_headers_if_nil { headers }
+      describe "not updating the headers with a block on the transaction" do
+        def perform
+          transaction.add_headers("HTTP_ACCEPT" => "first")
+          transaction.add_headers_if_nil { { "HTTP_ACCEPT" => "other" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_environment(preset_headers)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "first")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("first")
+        end
       end
     end
   end

@@ -142,6 +142,8 @@ module Appsignal
           @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
         when "custom_data"
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
+        when "environment"
+          write_request_headers(data)
         when "tags"
           write_tags(data)
         when "error_causes"
@@ -275,6 +277,27 @@ module Appsignal
           "appsignal.function.parameters"
         else
           "appsignal.request.payload"
+        end
+      end
+
+      # The transaction's "environment" sample data is a Rack/CGI env allowlist
+      # mixing true HTTP headers (HTTP_*, plus CONTENT_LENGTH/CONTENT_TYPE) with
+      # non-header CGI vars (REQUEST_METHOD, REQUEST_PATH, PATH_INFO, SERVER_*).
+      # Only the true headers map to the OTel `http.request.header.*` convention
+      # the collector and trace UI read, so emit those (normalized to lowercase,
+      # dashed header names) and drop everything else.
+      def write_request_headers(headers)
+        headers.each do |key, value|
+          name = otel_header_name(key)
+          @span.set_attribute("http.request.header.#{name}", value.to_s) if name
+        end
+      end
+
+      def otel_header_name(env_key)
+        if env_key.start_with?("HTTP_")
+          env_key.delete_prefix("HTTP_").downcase.tr("_", "-")
+        elsif env_key.start_with?("CONTENT_")
+          env_key.downcase.tr("_", "-")
         end
       end
 
