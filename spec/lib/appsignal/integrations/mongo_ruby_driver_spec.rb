@@ -8,7 +8,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
   # backend; the OTel-backed transaction output is covered by "instrumenting a
   # finished query" below in both modes. `start_agent` comes from the mode
   # context, so it is not started here.
-  context "with transaction", :agent_mode, :manual_start do
+  context "with transaction", :agent_mode do
     let(:transaction) { http_request_transaction }
     before do
       set_current_transaction(transaction)
@@ -94,7 +94,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
   end
 
-  describe "instrumenting a finished query", :manual_start do
+  describe "instrumenting a finished query" do
     let(:started_event) do
       double(
         :request_id   => 2,
@@ -156,7 +156,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
   end
 
-  context "without transaction", :agent_mode, :manual_start do
+  context "without transaction", :agent_mode do
     before do
       allow(Appsignal::Transaction).to receive(:current)
         .and_return(Appsignal::Transaction::NilTransaction.new)
@@ -184,7 +184,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
     end
   end
 
-  context "when appsignal is paused", :agent_mode, :manual_start do
+  context "when appsignal is paused", :agent_mode do
     let(:transaction) { double(:paused? => true, :nil_transaction? => false) }
     before { allow(Appsignal::Transaction).to receive(:current).and_return(transaction) }
 

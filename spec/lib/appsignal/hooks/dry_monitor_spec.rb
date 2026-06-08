@@ -34,7 +34,7 @@ if DependencyHelper.dry_monitor_present?
   describe "Dry Monitor Integration" do
     let(:notifications) { Dry::Monitor::Notifications.new(:test) }
 
-    describe "a SQL event", :manual_start do
+    describe "a SQL event" do
       let(:event_id) { :sql }
       let(:payload) do
         {
@@ -80,7 +80,7 @@ if DependencyHelper.dry_monitor_present?
       end
     end
 
-    describe "an unregistered formatter event", :manual_start do
+    describe "an unregistered formatter event" do
       let(:event_id) { :foo }
       let(:payload) { { :name => "foo" } }
 

@@ -60,7 +60,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       expect(logs).to_not contains_log(:error, "Appsignal.report_error: Cannot add error.")
     end
 
-    describe "reports an error if there's an unhandled error", :manual_start do
+    describe "reports an error if there's an unhandled error" do
       def perform
         with_error(ExampleException, "error message") do
           call_callback

@@ -104,7 +104,7 @@ if DependencyHelper.sinatra_present?
 
       context "when appsignal is active" do
         context "without an error" do
-          describe "creates a transaction for the request", :manual_start do
+          describe "creates a transaction for the request" do
             def perform
               make_request
             end
@@ -126,7 +126,7 @@ if DependencyHelper.sinatra_present?
             end
           end
 
-          describe "reports a process_action.sinatra event", :manual_start do
+          describe "reports a process_action.sinatra event" do
             def perform
               make_request
             end
@@ -153,7 +153,7 @@ if DependencyHelper.sinatra_present?
           let(:error) { ExampleException.new("error message") }
           before { env["sinatra.error"] = error }
 
-          describe "creates a transaction for the request", :manual_start do
+          describe "creates a transaction for the request" do
             def perform
               make_request
             end
@@ -177,7 +177,7 @@ if DependencyHelper.sinatra_present?
           context "when raise_errors is off" do
             let(:settings) { double(:raise_errors => false) }
 
-            describe "records the error", :manual_start do
+            describe "records the error" do
               def perform
                 make_request
               end
@@ -207,7 +207,7 @@ if DependencyHelper.sinatra_present?
           context "when raise_errors is on" do
             let(:settings) { double(:raise_errors => true) }
 
-            describe "does not record the error", :manual_start do
+            describe "does not record the error" do
               def perform
                 make_request
               end
@@ -236,7 +236,7 @@ if DependencyHelper.sinatra_present?
               )
             end
 
-            describe "does not record the error", :manual_start do
+            describe "does not record the error" do
               def perform
                 make_request
               end
@@ -259,7 +259,7 @@ if DependencyHelper.sinatra_present?
         end
 
         describe "action name" do
-          describe "sets the action to the request method and path", :manual_start do
+          describe "sets the action to the request method and path" do
             def perform
               make_request
             end
@@ -285,7 +285,7 @@ if DependencyHelper.sinatra_present?
               Rack::MockRequest.env_for("/path", "REQUEST_METHOD" => "GET")
             end
 
-            describe "doesn't set an action name", :manual_start do
+            describe "doesn't set an action name" do
               def perform
                 make_request
               end
@@ -309,7 +309,7 @@ if DependencyHelper.sinatra_present?
           context "with mounted modular application" do
             before { env["SCRIPT_NAME"] = "/api" }
 
-            describe "sets the action name with an application prefix path", :manual_start do
+            describe "sets the action name with an application prefix path" do
               def perform
                 make_request
               end
@@ -335,7 +335,7 @@ if DependencyHelper.sinatra_present?
                 Rack::MockRequest.env_for("/path", "REQUEST_METHOD" => "GET")
               end
 
-              describe "doesn't set an action name", :manual_start do
+              describe "doesn't set an action name" do
                 def perform
                   make_request
                 end

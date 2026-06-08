@@ -9,7 +9,11 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
     }
   end
 
-  describe "#emit", :manual_start do
+  describe "#emit" do
+    def perform
+      subscriber.emit(event)
+    end
+
     it "in agent mode", :agent_mode do
       start_agent
 
@@ -21,13 +25,13 @@ describe Appsignal::Integrations::ActiveSupportEventReporter::Subscriber do
         { :id => 123, :email => "user@example.com" }
       )
 
-      subscriber.emit(event)
+      perform
     end
 
     it "in collector mode", :collector_mode do
       start_collector_agent
 
-      subscriber.emit(event)
+      perform
 
       expect(log_records.size).to eq(1)
       record = log_records.first

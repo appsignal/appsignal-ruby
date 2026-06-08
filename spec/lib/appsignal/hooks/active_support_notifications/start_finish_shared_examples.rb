@@ -1,7 +1,7 @@
 shared_examples "activesupport start finish override" do
   let(:instrumenter) { as.instrumenter }
 
-  describe "a start/finish event whose payload is provided at start", :manual_start do
+  describe "a start/finish event whose payload is provided at start" do
     def perform
       instrumenter.start("sql.active_record", :sql => "SQL")
       instrumenter.finish("sql.active_record", {})
@@ -44,7 +44,7 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "a start/finish event whose payload is provided at finish", :manual_start do
+  describe "a start/finish event whose payload is provided at finish" do
     def perform
       instrumenter.start("sql.active_record", {})
       instrumenter.finish("sql.active_record", :sql => "SQL")
@@ -85,7 +85,7 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "an event whose name starts with a bang", :manual_start do
+  describe "an event whose name starts with a bang" do
     def perform
       instrumenter.start("!sql.active_record", {})
       instrumenter.finish("!sql.active_record", {})
@@ -115,7 +115,7 @@ shared_examples "activesupport start finish override" do
     end
   end
 
-  describe "when the transaction is completed between start and finish", :manual_start do
+  describe "when the transaction is completed between start and finish" do
     def perform
       instrumenter.start("sql.active_record", {})
       Appsignal::Transaction.complete_current!

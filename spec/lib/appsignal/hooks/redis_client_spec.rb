@@ -79,7 +79,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 Appsignal::Hooks::RedisClientHook.new.install
               end
 
-              describe "a redis call", :manual_start do
+              describe "a redis call" do
                 def perform
                   RedisClient::RubyConnection.new(client_config).write([:get, "key"])
                 end
@@ -114,7 +114,7 @@ describe Appsignal::Hooks::RedisClientHook do
                 end
               end
 
-              describe "a redis script call", :manual_start do
+              describe "a redis script call" do
                 let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                 def perform
@@ -210,7 +210,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   Appsignal::Hooks::RedisClientHook.new.install
                 end
 
-                describe "a redis call", :manual_start do
+                describe "a redis call" do
                   def perform
                     RedisClient::HiredisConnection.new(client_config).write([:get, "key"])
                   end
@@ -245,7 +245,7 @@ describe Appsignal::Hooks::RedisClientHook do
                   end
                 end
 
-                describe "a redis script call", :manual_start do
+                describe "a redis script call" do
                   let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                   def perform

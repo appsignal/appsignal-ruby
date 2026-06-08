@@ -73,7 +73,7 @@ describe Appsignal::Hooks::RedisHook do
                 Appsignal::Hooks::RedisHook.new.install
               end
 
-              describe "a redis call", :manual_start do
+              describe "a redis call" do
                 def perform
                   Redis::Client.new.write([:get, "key"])
                 end
@@ -108,7 +108,7 @@ describe Appsignal::Hooks::RedisHook do
                 end
               end
 
-              describe "a redis script call", :manual_start do
+              describe "a redis script call" do
                 let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
                 def perform

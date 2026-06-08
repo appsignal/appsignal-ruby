@@ -1139,10 +1139,13 @@ describe Appsignal do
   end
 
   context "with config and started" do
-    # Opt-out-aware so a `:manual_start` describe can start its own agent in the
-    # example body (the dual-mode start principle) without this hook clobbering
-    # the collector-mode setup.
-    before { |example| start_agent unless example.metadata[:manual_start] }
+    # Only auto-start for non-mode examples. Mode-tagged examples
+    # (`:agent_mode`/`:collector_mode`) start the agent in their own body (the
+    # dual-mode start principle), so starting it here too would clobber the
+    # collector-mode setup.
+    before do |example|
+      start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+    end
     around { |example| keep_transactions { example.run } }
 
     describe ".monitor" do
@@ -1612,7 +1615,7 @@ describe Appsignal do
         keep_transactions { example.run }
       end
 
-      describe "sending the error", :manual_start do
+      describe "sending the error" do
         def perform
           Appsignal.send_error(error)
         end
@@ -1664,7 +1667,7 @@ describe Appsignal do
       end
 
       context "when given a block" do
-        describe "yielding the transaction to set metadata", :manual_start do
+        describe "yielding the transaction to set metadata" do
           def perform
             Appsignal.send_error(StandardError.new("my_error")) do |transaction|
               transaction.set_action("my_action")
@@ -1737,7 +1740,7 @@ describe Appsignal do
       let(:transaction) { http_request_transaction }
       around { |example| keep_transactions { example.run } }
 
-      describe "adding the error to the active transaction", :manual_start do
+      describe "adding the error to the active transaction" do
         # `set_current_transaction` (which builds the transaction's root span)
         # happens in the body, not a `before`, so in collector mode it uses the
         # in-memory provider that `start_collector_agent` swaps in.
@@ -1840,7 +1843,7 @@ describe Appsignal do
       end
 
       context "when there is no active transaction" do
-        describe "reporting the error", :manual_start do
+        describe "reporting the error" do
           def perform
             Appsignal.report_error(error)
           end
@@ -1901,13 +1904,16 @@ describe Appsignal do
 
       context "when there is an active transaction" do
         let(:transaction) { http_request_transaction }
-        # Opt-out-aware: `:manual_start` examples set the current transaction in
-        # their own body, after swapping in the collector providers.
+        # Only for non-mode examples. Mode-tagged examples set the current
+        # transaction in their own body, after starting the agent (collector
+        # mode swaps in the in-memory providers there).
         before do |example|
-          set_current_transaction(transaction) unless example.metadata[:manual_start]
+          unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+            set_current_transaction(transaction)
+          end
         end
 
-        describe "reporting the error onto it", :manual_start do
+        describe "reporting the error onto it" do
           def perform
             set_current_transaction(transaction)
             Appsignal.report_error(error)
@@ -1933,7 +1939,7 @@ describe Appsignal do
           end
         end
 
-        describe "with multiple reported errors", :manual_start do
+        describe "with multiple reported errors" do
           let(:other_error) do
             ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
           end
@@ -2138,7 +2144,7 @@ describe Appsignal do
     end
   end
 
-  describe "custom metrics", :manual_start do
+  describe "custom metrics" do
     let(:tags) { { :foo => "bar" } }
 
     describe ".set_gauge" do
@@ -2316,7 +2322,7 @@ describe Appsignal do
     end
   end
 
-  describe ".instrument", :manual_start do
+  describe ".instrument" do
     describe "block return value" do
       it_in_both_modes do
         set_current_transaction(transaction)
@@ -2422,7 +2428,7 @@ describe Appsignal do
     end
   end
 
-  describe ".instrument_sql", :manual_start do
+  describe ".instrument_sql" do
     describe "recording a SQL event around the block" do
       def perform
         Appsignal.instrument_sql("name", "title", "body") { "return value" }
@@ -2460,7 +2466,7 @@ describe Appsignal do
     end
   end
 
-  describe ".ignore_instrumentation_events", :manual_start do
+  describe ".ignore_instrumentation_events" do
     describe "with a current transaction" do
       it "in agent mode", :agent_mode do
         start_agent

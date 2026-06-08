@@ -56,7 +56,7 @@ describe Appsignal::Probes::GvlProbe do
 
   after { FakeGVLTools.reset }
 
-  describe "the global timer delta gauge", :manual_start do
+  describe "the global timer delta gauge" do
     def perform(probe)
       FakeGVLTools::GlobalTimer.monotonic_time = 100_000_000
       probe.call
@@ -145,7 +145,7 @@ describe Appsignal::Probes::GvlProbe do
       FakeGVLTools::WaitingThreads.enabled = true
     end
 
-    describe "the waiting threads count gauge", :manual_start do
+    describe "the waiting threads count gauge" do
       def perform(probe)
         FakeGVLTools::WaitingThreads.count = 3
         probe.call

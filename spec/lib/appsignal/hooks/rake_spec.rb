@@ -48,7 +48,7 @@ describe Appsignal::Hooks::RakeHook do
       context "with :enable_rake_performance_instrumentation == true" do
         let(:options) { { :enable_rake_performance_instrumentation => true } }
 
-        describe "creates a transaction", :manual_start do
+        describe "creates a transaction" do
           it "in agent mode", :agent_mode do
             start_agent(**start_agent_args)
             expect { perform }.to(change { created_transactions.count }.by(1))
@@ -101,7 +101,7 @@ describe Appsignal::Hooks::RakeHook do
       context "with normal error" do
         let(:error) { ExampleException.new("error message") }
 
-        describe "creates a background job transaction", :manual_start do
+        describe "creates a background job transaction" do
           it "in agent mode", :agent_mode do
             start_agent(**start_agent_args)
             perform
@@ -147,6 +147,7 @@ describe Appsignal::Hooks::RakeHook do
           # Agent-only: asserting on params is a collector-mode gap
           # (set_sample_data is not yet implemented in the OpenTelemetry backend).
           it "does not add the params to the transaction", :agent_mode do
+            start_agent(**start_agent_args)
             perform
 
             expect(last_transaction).to_not include_params
@@ -157,7 +158,7 @@ describe Appsignal::Hooks::RakeHook do
       context "when error is a SystemExit" do
         let(:error) { SystemExit.new(1) }
 
-        describe "does not report the error", :manual_start do
+        describe "does not report the error" do
           it "in agent mode", :agent_mode do
             start_agent(**start_agent_args)
             perform
@@ -177,7 +178,7 @@ describe Appsignal::Hooks::RakeHook do
       context "when error is a SignalException" do
         let(:error) { SignalException.new(1) }
 
-        describe "does not report the error", :manual_start do
+        describe "does not report the error" do
           it "in agent mode", :agent_mode do
             start_agent(**start_agent_args)
             perform
