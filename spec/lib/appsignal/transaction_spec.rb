@@ -2158,8 +2158,13 @@ describe Appsignal::Transaction do
   describe "#add_breadcrumb" do
     let(:transaction) { new_transaction }
 
+    # The OpenTelemetry `appsignal.breadcrumb` events recorded on the root span.
+    def breadcrumb_events
+      root_span.events.to_a.select { |event| event.name == "appsignal.breadcrumb" }
+    end
+
     context "when over the limit" do
-      before do
+      def perform
         22.times do |i|
           transaction.add_breadcrumb(
             "network",
@@ -2169,10 +2174,13 @@ describe Appsignal::Transaction do
             Time.parse("10-10-2010 10:00:00 UTC")
           )
         end
-        transaction._sample
       end
 
-      it "stores last <LIMIT> breadcrumbs on the transaction" do
+      it "stores last <LIMIT> breadcrumbs on the transaction in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
         expect(transaction.to_h["sample_data"]["breadcrumbs"].length).to eql(20)
         expect(transaction.to_h["sample_data"]["breadcrumbs"][0]).to eq(
           "action" => "GET http://localhost",
@@ -2189,12 +2197,33 @@ describe Appsignal::Transaction do
           "time" => 1286704800 # rubocop:disable Style/NumericLiterals
         )
       end
+
+      it "emits the last <LIMIT> breadcrumb events in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        events = breadcrumb_events
+        expect(events.length).to eq(20)
+        expect(events.first.attributes).to include(
+          "category" => "network",
+          "action" => "GET http://localhost",
+          "message" => "User made external network request"
+        )
+        expect(JSON.parse(events.first.attributes["metadata"])).to eq("code" => 3)
+        expect(JSON.parse(events.last.attributes["metadata"])).to eq("code" => 22)
+      end
     end
 
     context "with defaults" do
-      it "stores breadcrumb with defaults on transaction" do
-        timeframe_start = Time.now.utc.to_i
+      def perform
         transaction.add_breadcrumb("user_action", "clicked HOME")
+      end
+
+      it "stores breadcrumb with defaults on transaction in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        timeframe_start = Time.now.utc.to_i
+        perform
         transaction._sample
         timeframe_end = Time.now.utc.to_i
 
@@ -2206,17 +2235,46 @@ describe Appsignal::Transaction do
           be_between(timeframe_start, timeframe_end)
         )
       end
+
+      it "emits a breadcrumb event with defaults on the span in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        events = breadcrumb_events
+        expect(events.length).to eq(1)
+        expect(events.first.attributes).to include(
+          "category" => "user_action",
+          "action" => "clicked HOME",
+          "message" => "",
+          "metadata" => "{}"
+        )
+      end
     end
 
     context "with metadata argument that's not a Hash" do
-      it "does not add the breadcrumb and logs and error" do
-        logs =
-          capture_logs do
-            transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
-          end
+      def perform
+        transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
+      end
+
+      it "does not add the breadcrumb and logs an error in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        logs = capture_logs { perform }
         transaction._sample
 
         expect(transaction).to_not include_breadcrumbs
+        expect(logs).to contains_log(
+          :error,
+          "add_breadcrumb: Cannot add breadcrumb. The given metadata argument is not a Hash."
+        )
+      end
+
+      it "does not emit a breadcrumb event and logs an error in collector mode", :collector_mode do
+        start_collector_agent
+        logs = capture_logs { perform }
+        transaction.complete
+
+        expect(breadcrumb_events).to be_empty
         expect(logs).to contains_log(
           :error,
           "add_breadcrumb: Cannot add breadcrumb. The given metadata argument is not a Hash."
