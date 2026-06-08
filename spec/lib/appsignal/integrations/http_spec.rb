@@ -6,127 +6,307 @@ if DependencyHelper.http_present?
   describe Appsignal::Integrations::HttpIntegration do
     let(:transaction) { http_request_transaction }
 
-    around do |example|
-      keep_transactions { example.run }
-    end
-    before do
-      start_agent
-      set_current_transaction(transaction)
-    end
+    describe "instrumenting a HTTP request" do
+      def perform
+        stub_request(:get, "http://www.google.com")
 
-    it "instruments a HTTP request" do
-      stub_request(:get, "http://www.google.com")
+        HTTP.get("http://www.google.com")
+      end
 
-      HTTP.get("http://www.google.com")
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+        perform
 
-      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-      expect(transaction).to include_event(
-        "body" => "",
-        "body_format" => Appsignal::EventFormatter::DEFAULT,
-        "name" => "request.http_rb",
-        "title" => "GET http://www.google.com"
-      )
-    end
-
-    it "instruments a HTTPS request" do
-      stub_request(:get, "https://www.google.com")
-
-      HTTP.get("https://www.google.com")
-
-      expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
-      expect(transaction).to include_event(
-        "body" => "",
-        "body_format" => Appsignal::EventFormatter::DEFAULT,
-        "name" => "request.http_rb",
-        "title" => "GET https://www.google.com"
-      )
-    end
-
-    context "with request parameters" do
-      it "does not include the query parameters in the title" do
-        stub_request(:get, "https://www.google.com?q=Appsignal")
-
-        HTTP.get("https://www.google.com", :params => { :q => "Appsignal" })
-
+        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
         expect(transaction).to include_event(
           "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "name" => "request.http_rb",
+          "title" => "GET http://www.google.com"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(root_span.attributes["appsignal.namespace"])
+          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("request.http_rb")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        expect(span.attributes).not_to have_key("appsignal.body")
+      end
+    end
+
+    describe "instrumenting a HTTPS request" do
+      def perform
+        stub_request(:get, "https://www.google.com")
+
+        HTTP.get("https://www.google.com")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+        perform
+
+        expect(transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
+        expect(transaction).to include_event(
+          "body" => "",
+          "body_format" => Appsignal::EventFormatter::DEFAULT,
+          "name" => "request.http_rb",
           "title" => "GET https://www.google.com"
         )
       end
 
-      it "does not include the request body in the title" do
-        stub_request(:post, "https://www.google.com")
-          .with(:body => { :q => "Appsignal" }.to_json)
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
 
-        HTTP.post("https://www.google.com", :json => { :q => "Appsignal" })
+        expect(root_span.attributes["appsignal.namespace"])
+          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("request.http_rb")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes["appsignal.title"]).to eq("GET https://www.google.com")
+        expect(span.attributes).not_to have_key("appsignal.body")
+      end
+    end
 
-        expect(transaction).to include_event(
-          "body" => "",
-          "title" => "POST https://www.google.com"
-        )
+    context "with request parameters" do
+      describe "not including the query parameters in the title" do
+        def perform
+          stub_request(:get, "https://www.google.com?q=Appsignal")
+
+          HTTP.get("https://www.google.com", :params => { :q => "Appsignal" })
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "body" => "",
+            "title" => "GET https://www.google.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.attributes["appsignal.title"]).to eq("GET https://www.google.com")
+          expect(span.attributes).not_to have_key("appsignal.body")
+        end
+      end
+
+      describe "not including the request body in the title" do
+        def perform
+          stub_request(:post, "https://www.google.com")
+            .with(:body => { :q => "Appsignal" }.to_json)
+
+          HTTP.post("https://www.google.com", :json => { :q => "Appsignal" })
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "body" => "",
+            "title" => "POST https://www.google.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.attributes["appsignal.title"]).to eq("POST https://www.google.com")
+          expect(span.attributes).not_to have_key("appsignal.body")
+        end
       end
     end
 
     context "with various URI objects" do
-      it "parses an object responding to #to_s" do
-        request_uri = Struct.new(:uri) do
-          def to_s
-            uri.to_s
+      describe "parsing an object responding to #to_s" do
+        def perform
+          request_uri = Struct.new(:uri) do
+            def to_s
+              uri.to_s
+            end
           end
+
+          stub_request(:get, "http://www.google.com")
+
+          HTTP.get(request_uri.new("http://www.google.com"))
         end
 
-        stub_request(:get, "http://www.google.com")
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
 
-        HTTP.get(request_uri.new("http://www.google.com"))
+          expect(transaction).to include_event(
+            "name" => "request.http_rb",
+            "title" => "GET http://www.google.com"
+          )
+        end
 
-        expect(transaction).to include_event(
-          "name" => "request.http_rb",
-          "title" => "GET http://www.google.com"
-        )
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("request.http_rb")
+          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        end
       end
 
-      it "parses an URI object" do
-        stub_request(:get, "http://www.google.com")
+      describe "parsing an URI object" do
+        def perform
+          stub_request(:get, "http://www.google.com")
 
-        HTTP.get(URI("http://www.google.com"))
+          HTTP.get(URI("http://www.google.com"))
+        end
 
-        expect(transaction).to include_event(
-          "name" => "request.http_rb",
-          "title" => "GET http://www.google.com"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "name" => "request.http_rb",
+            "title" => "GET http://www.google.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("request.http_rb")
+          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        end
       end
 
-      it "parses an HTTP::URI object" do
-        stub_request(:get, "http://www.google.com")
+      describe "parsing an HTTP::URI object" do
+        def perform
+          stub_request(:get, "http://www.google.com")
 
-        HTTP.get(HTTP::URI.parse("http://www.google.com"))
+          HTTP.get(HTTP::URI.parse("http://www.google.com"))
+        end
 
-        expect(transaction).to include_event(
-          "name" => "request.http_rb",
-          "title" => "GET http://www.google.com"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "name" => "request.http_rb",
+            "title" => "GET http://www.google.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("request.http_rb")
+          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        end
       end
 
-      it "parses a string" do
-        stub_request(:get, "http://www.google.com")
+      describe "parsing a string" do
+        def perform
+          stub_request(:get, "http://www.google.com")
 
-        HTTP.get("http://www.google.com")
+          HTTP.get("http://www.google.com")
+        end
 
-        expect(transaction).to include_event(
-          "name" => "request.http_rb",
-          "title" => "GET http://www.google.com"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "name" => "request.http_rb",
+            "title" => "GET http://www.google.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("request.http_rb")
+          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        end
       end
 
-      it "parses a string with non-ascii characters" do
-        stub_request(:get, "http://www.example.com/áéíóúãÔù")
+      describe "parsing a string with non-ascii characters" do
+        def perform
+          stub_request(:get, "http://www.example.com/áéíóúãÔù")
 
-        HTTP.get("http://www.example.com/áéíóúãÔù")
+          HTTP.get("http://www.example.com/áéíóúãÔù")
+        end
 
-        expect(transaction).to include_event(
-          "name" => "request.http_rb",
-          "title" => "GET http://www.example.com"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "name" => "request.http_rb",
+            "title" => "GET http://www.example.com"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("request.http_rb")
+          expect(span.attributes["appsignal.title"]).to eq("GET http://www.example.com")
+        end
       end
     end
   end
