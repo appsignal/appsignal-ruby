@@ -120,10 +120,21 @@ module Appsignal
         @span.set_attribute("appsignal.namespace", namespace)
       end
 
+      # Intentional no-op. Nothing in the OpenTelemetry pipeline consumes a queue
+      # start: the agent only uses it to compute a `queue_duration` scalar (it
+      # does not backdate the transaction), the collector has no handling, and
+      # the spans processor reports `queue_duration: 0` for OTel traces. A bare
+      # timestamp is meaningless without a consumer to compute the delta, and
+      # emulating it via span timing would distort the trace duration, so we drop
+      # it rather than emit an attribute nothing reads.
       def set_queue_start(_start) # rubocop:disable Naming/AccessorMethodName
       end
 
-      def set_metadata(_key, _value)
+      # Transaction metadata (request path, method, ...) has no dedicated OTel
+      # attribute, but it is the same shape as tags and the collector/trace UI
+      # already surface `appsignal.tag.*`, so emit metadata as a tag.
+      def set_metadata(key, value)
+        @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
       # Routes each sample-data category to the attribute the collector and the

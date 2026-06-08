@@ -2433,19 +2433,51 @@ describe Appsignal::Transaction do
   describe "#set_queue_start" do
     let(:transaction) { new_transaction }
 
-    it "sets the queue start in extension" do
-      transaction.set_queue_start(10)
+    describe "setting the queue start" do
+      def perform
+        transaction.set_queue_start(10)
+      end
 
-      expect(transaction).to have_queue_start(10)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to have_queue_start(10)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # Intentional no-op in collector mode: nothing consumes a queue start in
+        # the OTel pipeline, so no attribute is emitted.
+        expect(root_span.attributes.keys.grep(/queue/i)).to be_empty
+      end
     end
 
-    it "does not set the queue start in extension when value is nil" do
-      transaction.set_queue_start(nil)
+    describe "when the value is nil" do
+      def perform
+        transaction.set_queue_start(nil)
+      end
 
-      expect(transaction).to_not have_queue_start
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to_not have_queue_start
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes.keys.grep(/queue/i)).to be_empty
+      end
     end
 
-    it "does not raise an error when the queue start is too big" do
+    it_in_both_modes "does not raise an error when the queue start is too big" do
       expect(transaction.backend).to receive(:set_queue_start).and_raise(RangeError)
 
       expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
@@ -2457,36 +2489,97 @@ describe Appsignal::Transaction do
   describe "#set_metadata" do
     let(:transaction) { new_transaction }
 
-    it "updates the metadata on the transaction" do
-      transaction.set_metadata("request_method", "GET")
+    describe "updating the metadata on the transaction" do
+      def perform
+        transaction.set_metadata("request_method", "GET")
+      end
 
-      expect(transaction).to include_metadata("request_method" => "GET")
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_metadata("request_method" => "GET")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # Metadata has no dedicated OTel attribute; it is emitted as a tag.
+        expect(root_span.attributes["appsignal.tag.request_method"]).to eq("GET")
+      end
     end
 
     context "when filter_metadata includes metadata key" do
       let(:options) { { :filter_metadata => ["filter_key"] } }
 
-      it "does not set the metadata on the transaction" do
-        transaction.set_metadata(:filter_key, "filtered value")
-        transaction.set_metadata("filter_key", "filtered value")
+      describe "not setting the filtered metadata" do
+        def perform
+          transaction.set_metadata(:filter_key, "filtered value")
+          transaction.set_metadata("filter_key", "filtered value")
+        end
 
-        expect(transaction).to_not include_metadata("filter_key" => anything)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to_not include_metadata("filter_key" => anything)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.tag.filter_key")
+        end
       end
     end
 
     context "when the key is nil" do
-      it "does not update the metadata on the transaction" do
-        transaction.set_metadata(nil, "GET")
+      describe "not updating the metadata" do
+        def perform
+          transaction.set_metadata(nil, "GET")
+        end
 
-        expect(transaction).to_not include_metadata
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to_not include_metadata
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes.keys.grep(/appsignal\.tag\./)).to be_empty
+        end
       end
     end
 
     context "when the value is nil" do
-      it "does not update the metadata on the transaction" do
-        transaction.set_metadata("request_method", nil)
+      describe "not updating the metadata" do
+        def perform
+          transaction.set_metadata("request_method", nil)
+        end
 
-        expect(transaction).to_not include_metadata
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to_not include_metadata
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes.keys.grep(/appsignal\.tag\./)).to be_empty
+        end
       end
     end
   end
@@ -2494,138 +2587,237 @@ describe Appsignal::Transaction do
   describe "storing sample data" do
     let(:transaction) { new_transaction }
 
-    it "stores sample data on the transaction" do
-      transaction.set_params(
-        "string_param" => "string_value",
-        :symbol_param => "symbol_value",
-        "integer" => 123,
-        "float" => 123.45,
-        "array" => ["abc", 456, { "option" => true }],
-        "hash" => { "hash_key" => "hash_value" }
-      )
+    describe "storing sample data on the transaction" do
+      def perform
+        transaction.set_params(
+          "string_param" => "string_value",
+          :symbol_param => "symbol_value",
+          "integer" => 123,
+          "float" => 123.45,
+          "array" => ["abc", 456, { "option" => true }],
+          "hash" => { "hash_key" => "hash_value" }
+        )
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(
-        "string_param" => "string_value",
-        "symbol_param" => "symbol_value",
-        "integer" => 123,
-        "float" => 123.45,
-        "array" => ["abc", 456, { "option" => true }],
-        "hash" => { "hash_key" => "hash_value" }
-      )
+      let(:expected) do
+        {
+          "string_param" => "string_value",
+          "symbol_param" => "symbol_value",
+          "integer" => 123,
+          "float" => 123.45,
+          "array" => ["abc", 456, { "option" => true }],
+          "hash" => { "hash_key" => "hash_value" }
+        }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"])).to eq(expected)
+      end
     end
 
-    it "does not store non-Array and non-Hash data" do
-      logs =
-        capture_logs do
-          transaction.set_params("some string")
-          transaction._sample
-          expect(transaction).to_not include_params
+    describe "storing non-Array and non-Hash data" do
+      def perform
+        transaction.set_params("some string")
+        transaction.set_params(123)
+        transaction.set_params(Class.new)
+        set = Set.new
+        set.add("abc")
+        transaction.set_params(set)
+      end
 
-          transaction.set_params(123)
-          transaction._sample
-          expect(transaction).to_not include_params
+      def expect_unsupported_type_logs(logs)
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'params': Unsupported data type 'String' received: "some string")
+        )
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'params': Unsupported data type 'Integer' received: 123)
+        )
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'params': Unsupported data type 'Class' received: #<Class)
+        )
+        expect(logs).to contains_log(
+          :error,
+          /Sample data 'params': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
+        )
+      end
 
-          transaction.set_params(Class.new)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        logs = capture_logs do
+          perform
           transaction._sample
-          expect(transaction).to_not include_params
-
-          set = Set.new
-          set.add("abc")
-          transaction.set_params(set)
-          transaction._sample
-          expect(transaction).to_not include_params
         end
 
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'params': Unsupported data type 'String' received: "some string")
-      )
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'params': Unsupported data type 'Integer' received: 123)
-      )
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'params': Unsupported data type 'Class' received: #<Class)
-      )
-      expect(logs).to contains_log(
-        :error,
-        /Sample data 'params': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
-      )
+        expect(transaction).to_not include_params
+        expect_unsupported_type_logs(logs)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        logs = capture_logs do
+          perform
+          transaction.complete
+        end
+
+        expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+        expect_unsupported_type_logs(logs)
+      end
     end
 
-    it "does not store data that can't be converted to JSON" do
-      klass = Class.new do
-        def initialize
-          @calls = 0
-        end
+    describe "storing data that can't be serialized" do
+      let(:unserializable) do
+        Class.new do
+          def initialize
+            @calls = 0
+          end
 
-        def to_s
-          raise "foo" if @calls > 0 # Cause a deliberate error
+          def to_s
+            raise "foo" if @calls > 0 # Cause a deliberate error
 
-          @calls += 1
+            @calls += 1
+          end
         end
       end
 
-      transaction.set_params(klass.new => 1)
-      logs = capture_logs { transaction._sample }
+      def perform
+        transaction.set_params(unserializable.new => 1)
+      end
 
-      expect(transaction).to_not include_params
-      expect(logs).to contains_log :error,
-        "Error generating data (RuntimeError: foo) for"
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        logs = capture_logs { transaction._sample }
+
+        expect(transaction).to_not include_params
+        expect(logs).to contains_log :error,
+          "Error generating data (RuntimeError: foo) for"
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        logs = capture_logs { transaction.complete }
+
+        expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+        expect(logs).to contains_log :error,
+          "Error generating data (RuntimeError: foo) for"
+      end
     end
   end
 
   describe "#set_sample_data" do
     let(:transaction) { new_transaction }
 
-    it "updates the sample data on the transaction" do
-      silence do
-        transaction.send(
-          :set_sample_data,
-          "params",
-          :controller => "blog_posts",
-          :action     => "show",
-          :id         => "1"
-        )
+    describe "updating the sample data on the transaction" do
+      def perform
+        silence do
+          transaction.send(
+            :set_sample_data,
+            "params",
+            :controller => "blog_posts",
+            :action     => "show",
+            :id         => "1"
+          )
+        end
       end
 
-      expect(transaction).to include_params(
-        "action" => "show",
-        "controller" => "blog_posts",
-        "id" => "1"
-      )
+      let(:expected) do
+        { "action" => "show", "controller" => "blog_posts", "id" => "1" }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_params(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"])).to eq(expected)
+      end
     end
 
     context "when the data is no Array or Hash" do
-      it "does not update the sample data on the transaction" do
-        logs =
-          capture_logs do
-            silence { transaction.send(:set_sample_data, "params", "string") }
-          end
+      describe "not updating the sample data" do
+        def perform
+          silence { transaction.send(:set_sample_data, "params", "string") }
+        end
 
-        expect(transaction.to_h["sample_data"]).to eq({})
-        expect(logs).to contains_log :error,
-          %(Invalid sample data for 'params'. Value is not an Array or Hash: '"string"')
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          logs = capture_logs { perform }
+
+          expect(transaction.to_h["sample_data"]).to eq({})
+          expect(logs).to contains_log :error,
+            %(Invalid sample data for 'params'. Value is not an Array or Hash: '"string"')
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          logs = capture_logs { perform }
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+          expect(logs).to contains_log :error,
+            %(Invalid sample data for 'params'. Value is not an Array or Hash: '"string"')
+        end
       end
     end
 
-    context "when the data cannot be converted to JSON" do
-      it "does not update the sample data on the transaction" do
-        klass = Class.new do
-          def to_s
-            raise "foo" # Cause a deliberate error
+    context "when the data cannot be converted" do
+      # The direct call skips sanitization, so the raw object reaches the
+      # backend serializer (`Data.generate` in agent mode, `JSON.generate` in
+      # collector mode); both call `to_s` and rescue the resulting error.
+      describe "not updating the sample data" do
+        let(:unserializable) do
+          Class.new do
+            def to_s
+              raise "foo" # Cause a deliberate error
+            end
           end
         end
-        logs =
-          capture_logs do
-            silence { transaction.send(:set_sample_data, "params", klass.new => 1) }
-          end
 
-        expect(transaction).to_not include_params
-        expect(logs).to contains_log :error,
-          "Error generating data (RuntimeError: foo) for"
+        def perform
+          silence { transaction.send(:set_sample_data, "params", unserializable.new => 1) }
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          logs = capture_logs { perform }
+
+          expect(transaction).to_not include_params
+          expect(logs).to contains_log :error,
+            "Error generating data (RuntimeError: foo) for"
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          logs = capture_logs { perform }
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+          expect(logs).to contains_log :error,
+            "Error generating data (RuntimeError: foo) for"
+        end
       end
     end
   end
