@@ -828,71 +828,184 @@ describe Appsignal::Transaction do
       expect(transaction.method(:add_params)).to eq(transaction.method(:set_params))
     end
 
-    it "adds the params to the transaction" do
-      params = { "key" => "value" }
-      transaction.add_params(params)
+    describe "adding the params to the transaction" do
+      def perform
+        transaction.add_params("key" => "value")
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(params)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("key" => "value")
+      end
     end
 
-    it "merges the params on the transaction" do
-      transaction.add_params("abc" => "value")
-      transaction.add_params("def" => "value")
-      transaction.add_params { { "xyz" => "value" } }
+    describe "merging the params on the transaction" do
+      def perform
+        transaction.add_params("abc" => "value")
+        transaction.add_params("def" => "value")
+        transaction.add_params { { "xyz" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(
-        "abc" => "value",
-        "def" => "value",
-        "xyz" => "value"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params(
+          "abc" => "value",
+          "def" => "value",
+          "xyz" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"])).to eq(
+          "abc" => "value",
+          "def" => "value",
+          "xyz" => "value"
+        )
+      end
     end
 
-    it "adds the params to the transaction with a block" do
-      params = { "key" => "value" }
-      transaction.add_params { params }
+    describe "adding the params to the transaction with a block" do
+      def perform
+        transaction.add_params { { "key" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(params)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("key" => "value")
+      end
     end
 
-    it "adds the params block value when both an argument and block are given" do
-      arg_params = { "argument" => "value" }
-      block_params = { "block" => "value" }
-      transaction.add_params(arg_params) { block_params }
+    describe "adding the params block value when both an argument and block are given" do
+      def perform
+        transaction.add_params("argument" => "value") { { "block" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(block_params)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("block" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("block" => "value")
+      end
     end
 
-    it "logs an error if an error occurred storing the params" do
-      transaction.add_params { raise "uh oh" }
+    describe "when an error occurs storing the params" do
+      def perform
+        transaction.add_params { raise "uh oh" }
+      end
 
-      logs = capture_logs { transaction._sample }
-      expect(logs).to contains_log(
-        :error,
-        "Exception while fetching params: RuntimeError: uh oh"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        logs = capture_logs { transaction._sample }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching params: RuntimeError: uh oh"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        logs = capture_logs { transaction.complete }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching params: RuntimeError: uh oh"
+        )
+        expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+      end
     end
 
-    it "does not update the params on the transaction if the given value is nil" do
-      params = { "key" => "value" }
-      transaction.add_params(params)
-      transaction.add_params(nil)
+    describe "when the given params value is nil" do
+      def perform
+        transaction.add_params("key" => "value")
+        transaction.add_params(nil)
+      end
 
-      transaction._sample
-      expect(transaction).to include_params(params)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("key" => "value")
+      end
     end
 
     context "with AppSignal filtering" do
       let(:options) { { :filter_parameters => %w[foo] } }
 
-      it "returns sanitized custom params" do
-        transaction.add_params("foo" => "value", "baz" => "bat")
+      describe "sanitizing the params" do
+        def perform
+          transaction.add_params("foo" => "value", "baz" => "bat")
+        end
 
-        transaction._sample
-        expect(transaction).to include_params("foo" => "[FILTERED]", "baz" => "bat")
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("foo" => "[FILTERED]", "baz" => "bat")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("foo" => "[FILTERED]", "baz" => "bat")
+        end
       end
     end
   end
@@ -905,71 +1018,173 @@ describe Appsignal::Transaction do
     end
 
     context "when the params are not set" do
-      it "adds the params to the transaction" do
-        params = { "key" => "value" }
-        transaction.add_params_if_nil(params)
+      describe "adding the params to the transaction" do
+        def perform
+          transaction.add_params_if_nil("key" => "value")
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("key" => "value")
+        end
       end
 
-      it "adds the params to the transaction with a block" do
-        params = { "key" => "value" }
-        transaction.add_params_if_nil { params }
+      describe "adding the params to the transaction with a block" do
+        def perform
+          transaction.add_params_if_nil { { "key" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("key" => "value")
+        end
       end
 
-      it "adds the params block value when both an argument and block are given" do
-        arg_params = { "argument" => "value" }
-        block_params = { "block" => "value" }
-        transaction.add_params_if_nil(arg_params) { block_params }
+      describe "adding the params block value when both an argument and block are given" do
+        def perform
+          transaction.add_params_if_nil("argument" => "value") { { "block" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(block_params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("block" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("block" => "value")
+        end
       end
 
-      it "does not update the params on the transaction if the given value is nil" do
-        params = { "key" => "value" }
-        transaction.add_params(params)
-        transaction.add_params_if_nil(nil)
+      describe "when the given value is nil" do
+        def perform
+          transaction.add_params("key" => "value")
+          transaction.add_params_if_nil(nil)
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("key" => "value")
+        end
       end
     end
 
     context "when the params are set" do
-      it "does not update the params on the transaction" do
-        preset_params = { "other" => "params" }
-        params = { "key" => "value" }
-        transaction.add_params(preset_params)
-        transaction.add_params_if_nil(params)
+      describe "not updating the params on the transaction" do
+        def perform
+          transaction.add_params("other" => "params")
+          transaction.add_params_if_nil("key" => "value")
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(preset_params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("other" => "params")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("other" => "params")
+        end
       end
 
-      it "does not update the params with a block on the transaction" do
-        preset_params = { "other" => "params" }
-        params = { "key" => "value" }
-        transaction.add_params(preset_params)
-        transaction.add_params_if_nil { params }
+      describe "not updating the params with a block on the transaction" do
+        def perform
+          transaction.add_params("other" => "params")
+          transaction.add_params_if_nil { { "key" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_params(preset_params)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_params("other" => "params")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("other" => "params")
+        end
       end
     end
 
     context "when the params were set as an empty value" do
-      it "does not set params on the transaction" do
-        transaction.add_params("key1" => "value")
-        transaction.set_empty_params!
-        transaction.add_params_if_nil("key2" => "value")
+      describe "not setting params on the transaction" do
+        def perform
+          transaction.add_params("key1" => "value")
+          transaction.set_empty_params!
+          transaction.add_params_if_nil("key2" => "value")
+        end
 
-        transaction._sample
-        expect(transaction).to_not include_params
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to_not include_params
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+        end
       end
     end
   end
@@ -981,82 +1196,215 @@ describe Appsignal::Transaction do
       expect(transaction.method(:add_session_data)).to eq(transaction.method(:set_session_data))
     end
 
-    it "adds the session data to the transaction" do
-      data = { "key" => "value" }
-      transaction.add_session_data(data)
+    describe "adding the session data to the transaction" do
+      def perform
+        transaction.add_session_data("key" => "value")
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(data)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq("key" => "value")
+      end
     end
 
-    it "merges the session data on the transaction" do
-      transaction.add_session_data("abc" => "value")
-      transaction.add_session_data("def" => "value")
-      transaction.add_session_data { { "xyz" => "value" } }
+    describe "merging the session data on the transaction" do
+      def perform
+        transaction.add_session_data("abc" => "value")
+        transaction.add_session_data("def" => "value")
+        transaction.add_session_data { { "xyz" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(
-        "abc" => "value",
-        "def" => "value",
-        "xyz" => "value"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data(
+          "abc" => "value",
+          "def" => "value",
+          "xyz" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"])).to eq(
+          "abc" => "value",
+          "def" => "value",
+          "xyz" => "value"
+        )
+      end
     end
 
-    it "adds the session data to the transaction with a block" do
-      data = { "key" => "value" }
-      transaction.add_session_data { data }
+    describe "adding the session data to the transaction with a block" do
+      def perform
+        transaction.add_session_data { { "key" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(data)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq("key" => "value")
+      end
     end
 
-    it "adds the session data block value when both an argument and block are given" do
-      arg_data = { "argument" => "value" }
-      block_data = { "block" => "value" }
-      transaction.add_session_data(arg_data) { block_data }
+    describe "adding the session data block when an argument and block are given" do
+      def perform
+        transaction.add_session_data("argument" => "value") { { "block" => "value" } }
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(block_data)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data("block" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq("block" => "value")
+      end
     end
 
-    it "adds certain Ruby objects as Strings" do
-      transaction.add_session_data("time" => Time.utc(2024, 9, 12, 13, 14, 15))
-      transaction.add_session_data("date" => Date.new(2024, 9, 11))
+    describe "adding certain Ruby objects as Strings" do
+      def perform
+        transaction.add_session_data("time" => Time.utc(2024, 9, 12, 13, 14, 15))
+        transaction.add_session_data("date" => Date.new(2024, 9, 11))
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(
-        "time" => "#<Time: 2024-09-12T13:14:15Z>",
-        "date" => "#<Date: 2024-09-11>"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data(
+          "time" => "#<Time: 2024-09-12T13:14:15Z>",
+          "date" => "#<Date: 2024-09-11>"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"])).to eq(
+          "time" => "#<Time: 2024-09-12T13:14:15Z>",
+          "date" => "#<Date: 2024-09-11>"
+        )
+      end
     end
 
-    it "logs an error if an error occurred storing the session data" do
-      transaction.add_session_data { raise "uh oh" }
+    describe "when an error occurs storing the session data" do
+      def perform
+        transaction.add_session_data { raise "uh oh" }
+      end
 
-      logs = capture_logs { transaction._sample }
-      expect(logs).to contains_log(
-        :error,
-        "Exception while fetching session data: RuntimeError: uh oh"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        logs = capture_logs { transaction._sample }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching session data: RuntimeError: uh oh"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        logs = capture_logs { transaction.complete }
+        expect(logs).to contains_log(
+          :error,
+          "Exception while fetching session data: RuntimeError: uh oh"
+        )
+        expect(root_span.attributes).to_not have_key("appsignal.request.session_data")
+      end
     end
 
-    it "does not update the session data on the transaction if the given value is nil" do
-      data = { "key" => "value" }
-      transaction.add_session_data(data)
-      transaction.add_session_data(nil)
+    describe "when the given session data value is nil" do
+      def perform
+        transaction.add_session_data("key" => "value")
+        transaction.add_session_data(nil)
+      end
 
-      transaction._sample
-      expect(transaction).to include_session_data(data)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq("key" => "value")
+      end
     end
 
     context "with filter_session_data" do
       let(:options) { { :filter_session_data => ["filtered_key"] } }
 
-      it "does not include filtered out session data" do
-        transaction.add_session_data("data" => "value1", "filtered_key" => "filtered_value")
+      describe "filtering out session data" do
+        def perform
+          transaction.add_session_data("data" => "value1", "filtered_key" => "filtered_value")
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data("data" => "value1")
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("data" => "value1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          # Filtering redacts the value (mode-independent, applied before the
+          # backend) rather than dropping the key.
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("data" => "value1", "filtered_key" => "[FILTERED]")
+        end
       end
     end
   end
@@ -1065,60 +1413,147 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     context "when the session data is not set" do
-      it "sets the session data on the transaction" do
-        data = { "key" => "value" }
-        transaction.add_session_data_if_nil(data)
+      describe "setting the session data on the transaction" do
+        def perform
+          transaction.add_session_data_if_nil("key" => "value")
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("key" => "value")
+        end
       end
 
-      it "updates the session data on the transaction with a block" do
-        data = { "key" => "value" }
-        transaction.add_session_data_if_nil { data }
+      describe "updating the session data on the transaction with a block" do
+        def perform
+          transaction.add_session_data_if_nil { { "key" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("key" => "value")
+        end
       end
 
-      it "updates with the session data block when both an argument and block are given" do
-        arg_data = { "argument" => "value" }
-        block_data = { "block" => "value" }
-        transaction.add_session_data_if_nil(arg_data) { block_data }
+      describe "updating with the session data block when an argument and block are given" do
+        def perform
+          transaction.add_session_data_if_nil("argument" => "value") { { "block" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(block_data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("block" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("block" => "value")
+        end
       end
 
-      it "does not update the session data on the transaction if the given value is nil" do
-        data = { "key" => "value" }
-        transaction.add_session_data(data)
-        transaction.add_session_data_if_nil(nil)
+      describe "when the given value is nil" do
+        def perform
+          transaction.add_session_data("key" => "value")
+          transaction.add_session_data_if_nil(nil)
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("key" => "value")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("key" => "value")
+        end
       end
     end
 
     context "when the session data are set" do
-      it "does not update the session data on the transaction" do
-        preset_data = { "other" => "data" }
-        data = { "key" => "value" }
-        transaction.add_session_data(preset_data)
-        transaction.add_session_data_if_nil(data)
+      describe "not updating the session data on the transaction" do
+        def perform
+          transaction.add_session_data("other" => "data")
+          transaction.add_session_data_if_nil("key" => "value")
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(preset_data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("other" => "data")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("other" => "data")
+        end
       end
 
-      it "does not update the session data with a block on the transaction" do
-        preset_data = { "other" => "data" }
-        data = { "key" => "value" }
-        transaction.add_session_data(preset_data)
-        transaction.add_session_data_if_nil { data }
+      describe "not updating the session data with a block on the transaction" do
+        def perform
+          transaction.add_session_data("other" => "data")
+          transaction.add_session_data_if_nil { { "key" => "value" } }
+        end
 
-        transaction._sample
-        expect(transaction).to include_session_data(preset_data)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_session_data("other" => "data")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+            .to eq("other" => "data")
+        end
       end
     end
   end
@@ -1269,43 +1704,90 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
     let(:long_string) { "a" * 10_001 }
 
-    it "stores tags on the transaction" do
-      transaction.add_tags(
-        :valid_key => "valid_value",
-        "valid_string_key" => "valid_value",
-        :both_symbols => :valid_value,
-        :integer_value => 1,
-        :hash_value => { "invalid" => "hash" },
-        :array_value => %w[invalid array],
-        :object => Object.new,
-        :too_long_value => long_string,
-        long_string => "too_long_key",
-        :true_tag => true,
-        :false_tag => false
-      )
-      transaction._sample
+    describe "storing tags on the transaction" do
+      def perform
+        transaction.add_tags(
+          :valid_key => "valid_value",
+          "valid_string_key" => "valid_value",
+          :both_symbols => :valid_value,
+          :integer_value => 1,
+          :hash_value => { "invalid" => "hash" },
+          :array_value => %w[invalid array],
+          :object => Object.new,
+          :too_long_value => long_string,
+          long_string => "too_long_key",
+          :true_tag => true,
+          :false_tag => false
+        )
+      end
 
-      expect(transaction).to include_tags(
-        "valid_key" => "valid_value",
-        "valid_string_key" => "valid_value",
-        "both_symbols" => "valid_value",
-        "integer_value" => 1,
-        "too_long_value" => "#{"a" * 10_000}...",
-        long_string => "too_long_key",
-        "true_tag" => true,
-        "false_tag" => false
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # The extension truncates over-long tag values to 10,000 chars + "...".
+        expect(transaction).to include_tags(
+          "valid_key" => "valid_value",
+          "valid_string_key" => "valid_value",
+          "both_symbols" => "valid_value",
+          "integer_value" => 1,
+          "too_long_value" => "#{"a" * 10_000}...",
+          long_string => "too_long_key",
+          "true_tag" => true,
+          "false_tag" => false
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        attributes = root_span.attributes
+        # Each tag is its own `appsignal.tag.<key>` attribute. Symbols are
+        # coerced to strings; over-long values are sent whole (not truncated
+        # like the extension does) -- the collector/server apply their limits.
+        expect(attributes["appsignal.tag.valid_key"]).to eq("valid_value")
+        expect(attributes["appsignal.tag.valid_string_key"]).to eq("valid_value")
+        expect(attributes["appsignal.tag.both_symbols"]).to eq("valid_value")
+        expect(attributes["appsignal.tag.integer_value"]).to eq(1)
+        expect(attributes["appsignal.tag.true_tag"]).to eq(true)
+        expect(attributes["appsignal.tag.false_tag"]).to eq(false)
+        expect(attributes["appsignal.tag.too_long_value"]).to eq(long_string)
+        expect(attributes["appsignal.tag.#{long_string}"]).to eq("too_long_key")
+        # Non-primitive tag values are dropped by `sanitized_tags` in both modes.
+        expect(attributes).to_not have_key("appsignal.tag.hash_value")
+        expect(attributes).to_not have_key("appsignal.tag.array_value")
+        expect(attributes).to_not have_key("appsignal.tag.object")
+      end
     end
 
-    it "merges the tags when called multiple times" do
-      transaction.add_tags(:key1 => "value1")
-      transaction.add_tags(:key2 => "value2")
-      transaction._sample
+    describe "merging the tags when called multiple times" do
+      def perform
+        transaction.add_tags(:key1 => "value1")
+        transaction.add_tags(:key2 => "value2")
+      end
 
-      expect(transaction).to include_tags(
-        "key1" => "value1",
-        "key2" => "value2"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_tags(
+          "key1" => "value1",
+          "key2" => "value2"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.tag.key1"]).to eq("value1")
+        expect(root_span.attributes["appsignal.tag.key2"]).to eq("value2")
+      end
     end
 
     context "with config default_tags" do
@@ -1313,34 +1795,83 @@ describe Appsignal::Transaction do
         { :default_tags => { "config_tag" => "config_value", "another_tag" => 123 } }
       end
 
-      it "includes default_tags from config" do
-        transaction._sample
+      describe "including default_tags from config" do
+        def perform
+        end
 
-        expect(transaction).to include_tags(
-          "config_tag" => "config_value",
-          "another_tag" => 123
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_tags(
+            "config_tag" => "config_value",
+            "another_tag" => 123
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.config_tag"]).to eq("config_value")
+          expect(root_span.attributes["appsignal.tag.another_tag"]).to eq(123)
+        end
       end
 
-      it "transaction tags override default_tags" do
-        transaction.add_tags("config_tag" => "transaction_value")
-        transaction._sample
+      describe "transaction tags override default_tags" do
+        def perform
+          transaction.add_tags("config_tag" => "transaction_value")
+        end
 
-        expect(transaction).to include_tags(
-          "config_tag" => "transaction_value",
-          "another_tag" => 123
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_tags(
+            "config_tag" => "transaction_value",
+            "another_tag" => 123
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.config_tag"]).to eq("transaction_value")
+          expect(root_span.attributes["appsignal.tag.another_tag"]).to eq(123)
+        end
       end
 
-      it "merges default_tags with transaction tags" do
-        transaction.add_tags("transaction_tag" => "transaction_value")
-        transaction._sample
+      describe "merging default_tags with transaction tags" do
+        def perform
+          transaction.add_tags("transaction_tag" => "transaction_value")
+        end
 
-        expect(transaction).to include_tags(
-          "config_tag" => "config_value",
-          "another_tag" => 123,
-          "transaction_tag" => "transaction_value"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_tags(
+            "config_tag" => "config_value",
+            "another_tag" => 123,
+            "transaction_tag" => "transaction_value"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.config_tag"]).to eq("config_value")
+          expect(root_span.attributes["appsignal.tag.another_tag"]).to eq(123)
+          expect(root_span.attributes["appsignal.tag.transaction_tag"]).to eq("transaction_value")
+        end
       end
     end
   end
@@ -1352,83 +1883,149 @@ describe Appsignal::Transaction do
       expect(transaction.method(:add_custom_data)).to eq(transaction.method(:set_custom_data))
     end
 
-    it "adds a custom Hash data to the transaction" do
-      transaction.add_custom_data(
-        :user => {
-          :id => 123,
-          :locale => "abc"
-        },
-        :organization => {
-          :slug => "appsignal",
-          :plan => "enterprise"
-        }
-      )
+    describe "adding a custom Hash data to the transaction" do
+      def perform
+        transaction.add_custom_data(
+          :user => {
+            :id => 123,
+            :locale => "abc"
+          },
+          :organization => {
+            :slug => "appsignal",
+            :plan => "enterprise"
+          }
+        )
+      end
 
-      transaction._sample
-      expect(transaction).to include_custom_data(
-        "user" => {
-          "id" => 123,
-          "locale" => "abc"
-        },
-        "organization" => {
-          "slug" => "appsignal",
-          "plan" => "enterprise"
+      let(:expected) do
+        {
+          "user" => {
+            "id" => 123,
+            "locale" => "abc"
+          },
+          "organization" => {
+            "slug" => "appsignal",
+            "plan" => "enterprise"
+          }
         }
-      )
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_custom_data(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.custom_data"])).to eq(expected)
+      end
     end
 
-    it "adds a custom Array data to the transaction" do
-      transaction.add_custom_data([
-        [123, "abc"],
-        ["appsignal", "enterprise"]
-      ])
+    describe "adding a custom Array data to the transaction" do
+      def perform
+        transaction.add_custom_data([
+          [123, "abc"],
+          ["appsignal", "enterprise"]
+        ])
+      end
 
-      transaction._sample
-      expect(transaction).to include_custom_data([
-        [123, "abc"],
-        ["appsignal", "enterprise"]
-      ])
+      let(:expected) { [[123, "abc"], ["appsignal", "enterprise"]] }
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_custom_data(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.custom_data"])).to eq(expected)
+      end
     end
 
-    it "does not store non Hash or Array custom data" do
-      logs =
-        capture_logs do
-          transaction.add_custom_data("abc")
-          transaction._sample
-          expect(transaction).to_not include_custom_data
+    describe "storing non Hash or Array custom data" do
+      def perform
+        transaction.add_custom_data("abc")
+        transaction.add_custom_data(123)
+        transaction.add_custom_data(Object.new)
+      end
 
-          transaction.add_custom_data(123)
-          transaction._sample
-          expect(transaction).to_not include_custom_data
+      def expect_unsupported_type_logs(logs)
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'custom_data': Unsupported data type 'String' received: "abc")
+        )
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'custom_data': Unsupported data type 'Integer' received: 123)
+        )
+        expect(logs).to contains_log(
+          :error,
+          %(Sample data 'custom_data': Unsupported data type 'Object' received: #<Object:)
+        )
+      end
 
-          transaction.add_custom_data(Object.new)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        logs = capture_logs do
+          perform
           transaction._sample
-          expect(transaction).to_not include_custom_data
         end
 
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'custom_data': Unsupported data type 'String' received: "abc")
-      )
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'custom_data': Unsupported data type 'Integer' received: 123)
-      )
-      expect(logs).to contains_log(
-        :error,
-        %(Sample data 'custom_data': Unsupported data type 'Object' received: #<Object:)
-      )
+        expect(transaction).to_not include_custom_data
+        expect_unsupported_type_logs(logs)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        logs = capture_logs do
+          perform
+          transaction.complete
+        end
+
+        expect(root_span.attributes).to_not have_key("appsignal.custom_data")
+        expect_unsupported_type_logs(logs)
+      end
     end
 
-    it "merges the custom data if called multiple times" do
-      transaction.add_custom_data("abc" => "value")
-      transaction.add_custom_data("def" => "value")
+    describe "merging the custom data if called multiple times" do
+      def perform
+        transaction.add_custom_data("abc" => "value")
+        transaction.add_custom_data("def" => "value")
+      end
 
-      transaction._sample
-      expect(transaction).to include_custom_data(
-        "abc" => "value",
-        "def" => "value"
-      )
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_custom_data(
+          "abc" => "value",
+          "def" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.custom_data"])).to eq(
+          "abc" => "value",
+          "def" => "value"
+        )
+      end
     end
   end
 
