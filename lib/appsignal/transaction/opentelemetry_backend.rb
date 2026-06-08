@@ -126,7 +126,30 @@ module Appsignal
       def set_metadata(_key, _value)
       end
 
-      def set_sample_data(_key, _data)
+      # Routes each sample-data category to the attribute the collector and the
+      # server's trace UI recognize. The JSON-blob categories (params, session
+      # data, custom data) are serialized as JSON strings; the collector
+      # re-parses and filters them. `environment` and `breadcrumbs` are handled
+      # in later branches. `error_causes` is intentionally dropped because causes
+      # ride on the exception event instead (see #set_error) -- otherwise the
+      # `else` pass-through would duplicate them. Any other (unknown) category is
+      # passed through as a JSON `appsignal.<key>` attribute so no data is lost.
+      def set_sample_data(key, data)
+        case key
+        when "params"
+          @span.set_attribute(params_attribute, JSON.generate(data))
+        when "session_data"
+          @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
+        when "custom_data"
+          @span.set_attribute("appsignal.custom_data", JSON.generate(data))
+        when "tags"
+          write_tags(data)
+        when "error_causes"
+          # No-op: causes are emitted as the exception event's
+          # `appsignal.error_causes` attribute (see #set_error), not sample data.
+        else
+          @span.set_attribute("appsignal.#{key}", JSON.generate(data))
+        end
       end
 
       # Records the error as an OpenTelemetry `exception` span-event on the
@@ -172,11 +195,12 @@ module Appsignal
         span.status = ::OpenTelemetry::Trace::Status.error
       end
 
-      # Always returns `false` for now: there is no sample data flush in
-      # collector mode (the OTel span carries the data itself once span
-      # emission lands in later steps).
+      # Returns `true` so `Transaction#complete` runs `sample_data`, flushing the
+      # params/session/custom-data/tags/etc. onto the still-open root span before
+      # `complete` finishes it. The OTel SDK makes its own sampling decision; the
+      # gem always populates the span.
       def finish(_gc_duration)
-        false
+        true
       end
 
       def complete
@@ -238,6 +262,32 @@ module Appsignal
 
       def placeholder_span_name(namespace)
         "appsignal.transaction #{namespace}"
+      end
+
+      # The collector exposes three params channels (query parameters, request
+      # payload, function parameters), each separately filtered and labeled in
+      # the trace UI. The gem only has a single merged params blob, so route it
+      # by namespace: message/job (CONSUMER-kind) transactions use the
+      # function-parameters channel, everything else (web-style, SERVER-kind)
+      # uses the request-payload channel.
+      def params_attribute
+        if SPAN_KIND_BY_NAMESPACE.fetch(@namespace, DEFAULT_SPAN_KIND) == :consumer
+          "appsignal.function.parameters"
+        else
+          "appsignal.request.payload"
+        end
+      end
+
+      # Each tag becomes its own `appsignal.tag.<key>` attribute, which the
+      # collector hoists and the trace UI lists under "Tags". `sanitized_tags`
+      # already restricts values to String/Symbol/Integer/boolean; OTel
+      # attribute values must be primitives, so coerce the Symbol case to a
+      # string (the only non-primitive that survives sanitization).
+      def write_tags(tags)
+        tags.each do |key, value|
+          value = value.to_s if value.is_a?(Symbol)
+          @span.set_attribute("appsignal.tag.#{key}", value)
+        end
       end
 
       def write_event_body_attributes(span, body, body_format)
