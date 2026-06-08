@@ -86,10 +86,12 @@ describe Appsignal::Transaction::ExtensionBackend do
       backend.set_metadata("key", "value")
     end
 
-    it "forwards #set_sample_data to the handle" do
-      data = Appsignal::Utils::Data.generate({ :a => 1 })
+    it "serializes the sample data to Data and forwards #set_sample_data to the handle" do
+      raw = { "a" => 1 }
+      data = Appsignal::Utils::Data.generate(raw)
+      expect(Appsignal::Utils::Data).to receive(:generate).with(raw).and_return(data)
       expect(handle).to receive(:set_sample_data).with("params", data)
-      backend.set_sample_data("params", data)
+      backend.set_sample_data("params", raw)
     end
 
     it "serializes the backtrace Array to Data and forwards #set_error to the handle" do
