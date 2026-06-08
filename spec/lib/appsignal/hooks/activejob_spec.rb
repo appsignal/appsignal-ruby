@@ -72,10 +72,10 @@ if DependencyHelper.active_job_present?
       end
     end
     let(:options) { {} }
+    let(:start_agent_args) { { :options => options } }
     before do
       ActiveJob::Base.queue_adapter = :inline
 
-      start_agent(:options => options)
       stub_const("ActiveJobTestJob", Class.new(ActiveJob::Base) do
         def perform(*_args)
         end
@@ -102,41 +102,90 @@ if DependencyHelper.active_job_present?
         end
       end)
     end
-    around { |example| keep_transactions { example.run } }
 
-    # The queue job count counter is covered (in both modes) by the
-    # "emitting the queue job count metric" describe below; this stays
-    # agent-only because the transaction shape it asserts (action, namespace,
-    # tags, events) isn't implemented in collector mode yet.
-    it "reports the name from the ActiveJob integration" do
-      queue_job(ActiveJobTestJob)
+    describe "reports action, namespace, tags and params" do
+      def perform
+        queue_job(ActiveJobTestJob)
+      end
 
-      transaction = last_transaction
-      expect(transaction).to have_namespace(namespace)
-      expect(transaction).to have_action("ActiveJobTestJob#perform")
-      expect(transaction).to_not have_error
-      expect(transaction).to_not include_metadata
-      expect(transaction).to include_params([])
-      expect(transaction).to include_tags(
-        "active_job_id" => kind_of(String),
-        "request_id" => kind_of(String),
-        "queue" => queue,
-        "executions" => 1
-      )
-      events = transaction.to_h["events"]
-        .sort_by { |e| e["start"] }
-        .map { |event| event["name"] }
-      expect(events).to eq(expected_perform_events)
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+
+        allow(Appsignal).to receive(:increment_counter)
+
+        perform
+
+        transaction = last_transaction
+        transaction._sample
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ActiveJobTestJob#perform")
+        expect(transaction).to_not have_error
+        expect(transaction).to_not include_metadata
+        expect(transaction).to include_params([])
+        expect(transaction).to include_tags(
+          "active_job_id" => kind_of(String),
+          "request_id" => kind_of(String),
+          "queue" => queue,
+          "executions" => 1
+        )
+        events = transaction.to_h["events"]
+          .sort_by { |e| e["start"] }
+          .map { |event| event["name"] }
+        expect(events).to eq(expected_perform_events)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+
+        allow(Appsignal).to receive(:increment_counter)
+
+        perform
+        last_transaction.complete
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
+        expect(exception_events).to be_empty
+        expect(root_span.attributes).to_not have_key("appsignal.metadata")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"])).to eq([])
+        expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+        expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+        expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+        # The agent sibling asserts the perform_*.active_job events; mirror that
+        # here by checking the event spans exist and nest under the root span.
+        expect(event_spans.map(&:name)).to include(*expected_perform_events)
+        perform_span = event_spans.find { |s| s.name == "perform.active_job" }
+        expect(perform_span).not_to be_nil
+        expect(perform_span.parent_span_id).to eq(root_span.span_id)
+      end
     end
 
     context "with custom queue" do
-      it "reports the custom queue as tag on the transaction" do
-        tags = { :queue => "custom_queue" }
-        expect(Appsignal).to receive(:increment_counter)
-          .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-        queue_job(ActiveJobCustomQueueTestJob)
+      describe "reports the custom queue as tag" do
+        def perform
+          queue_job(ActiveJobCustomQueueTestJob)
+        end
 
-        expect(last_transaction).to include_tags("queue" => "custom_queue")
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+
+          allow(Appsignal).to receive(:increment_counter)
+
+          perform
+          expect(last_transaction).to include_tags("queue" => "custom_queue")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          allow(Appsignal).to receive(:increment_counter)
+
+          perform
+          last_transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq("custom_queue")
+        end
       end
     end
 
@@ -151,67 +200,121 @@ if DependencyHelper.active_job_present?
           end)
         end
 
-        it "reports the priority as tag on the transaction" do
-          tags = { :queue => queue }
-          expect(Appsignal).to receive(:increment_counter)
-            .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-          expect(Appsignal).to receive(:increment_counter)
-            .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
-              :status => :processed))
+        describe "reports the priority as tag" do
+          def perform
+            queue_job(ActiveJobPriorityTestJob)
+          end
 
-          queue_job(ActiveJobPriorityTestJob)
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
 
-          expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
+            allow(Appsignal).to receive(:increment_counter)
+
+            perform
+            expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            allow(Appsignal).to receive(:increment_counter)
+
+            perform
+            last_transaction.complete
+
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+            expect(root_span.attributes["appsignal.tag.priority"]).to eq(10)
+          end
         end
       end
     end
 
     context "with error" do
-      it "reports the error on the transaction from the ActiveRecord integration" do
-        allow(Appsignal).to receive(:increment_counter) # Other calls we're testing in another test
-        tags = { :queue => queue }
-        expect(Appsignal).to receive(:increment_counter)
-          .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
-        expect(Appsignal).to receive(:increment_counter)
-          .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-
-        expect do
+      describe "reports the error on the transaction" do
+        def perform
           queue_job(ActiveJobErrorTestJob)
-        end.to raise_error(RuntimeError, "uh oh")
+        end
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace(namespace)
-        expect(transaction).to have_action("ActiveJobErrorTestJob#perform")
-        expect(transaction).to have_error("RuntimeError", "uh oh")
-        expect(transaction).to_not include_metadata
-        expect(transaction).to include_params([])
-        expect(transaction).to include_tags(
-          "active_job_id" => kind_of(String),
-          "request_id" => kind_of(String),
-          "queue" => queue,
-          "executions" => 1
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
 
-        events = transaction.to_h["events"]
-          .sort_by { |e| e["start"] }
-          .map { |event| event["name"] }
-        expect(events).to eq(expected_perform_events)
+          allow(Appsignal).to receive(:increment_counter)
+
+          expect { perform }.to raise_error(RuntimeError, "uh oh")
+
+          transaction = last_transaction
+          transaction._sample
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("ActiveJobErrorTestJob#perform")
+          expect(transaction).to have_error("RuntimeError", "uh oh")
+          expect(transaction).to_not include_metadata
+          expect(transaction).to include_params([])
+          expect(transaction).to include_tags(
+            "active_job_id" => kind_of(String),
+            "request_id" => kind_of(String),
+            "queue" => queue,
+            "executions" => 1
+          )
+          events = transaction.to_h["events"]
+            .sort_by { |e| e["start"] }
+            .map { |event| event["name"] }
+          expect(events).to eq(expected_perform_events)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          allow(Appsignal).to receive(:increment_counter)
+
+          expect { perform }.to raise_error(RuntimeError, "uh oh")
+          last_transaction.complete
+
+          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("ActiveJobErrorTestJob#perform")
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event).not_to be_nil
+          expect(event.attributes["exception.type"]).to eq("RuntimeError")
+          expect(event.attributes["exception.message"]).to eq("uh oh")
+          expect(event.attributes["exception.stacktrace"]).to be_a(String)
+          expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+          expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+          expect(root_span.attributes).to_not have_key("appsignal.metadata")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"])).to eq([])
+          expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+          expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+          expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+        end
       end
 
       context "with activejob_report_errors set to none" do
         let(:options) { { :activejob_report_errors => "none" } }
 
-        it "does not report the error" do
-          allow(Appsignal).to receive(:increment_counter)
-          tags = { :queue => queue }
-          expect(Appsignal).to receive(:increment_counter)
-            .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
-
-          expect do
+        describe "does not report the error" do
+          def perform
             queue_job(ActiveJobErrorTestJob)
-          end.to raise_error(RuntimeError, "uh oh")
+          end
 
-          expect(last_transaction).to_not have_error
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+
+            allow(Appsignal).to receive(:increment_counter)
+
+            expect { perform }.to raise_error(RuntimeError, "uh oh")
+            expect(last_transaction).to_not have_error
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            allow(Appsignal).to receive(:increment_counter)
+
+            expect { perform }.to raise_error(RuntimeError, "uh oh")
+            last_transaction.complete
+
+            expect(exception_events).to be_empty
+          end
         end
       end
 
@@ -219,35 +322,74 @@ if DependencyHelper.active_job_present?
         context "with activejob_report_errors set to discard" do
           let(:options) { { :activejob_report_errors => "discard" } }
 
-          it "does not report error on first failure" do
-            with_test_adapter do
-              # Prevent the job from being instantly retried so we can test
-              # what happens before it's retried
-              allow_any_instance_of(ActiveJobErrorWithRetryTestJob).to receive(:retry_job)
+          describe "does not report error on first failure" do
+            def perform
+              with_test_adapter do
+                # Prevent the job from being instantly retried so we can test
+                # what happens before it's retried
+                allow_any_instance_of(ActiveJobErrorWithRetryTestJob).to receive(:retry_job)
 
-              queue_job(ActiveJobErrorWithRetryTestJob)
+                queue_job(ActiveJobErrorWithRetryTestJob)
+              end
             end
 
-            transaction = last_transaction
-            expect(transaction).to_not have_error
-            expect(transaction).to include_tags("executions" => 1)
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              perform
+
+              transaction = last_transaction
+              transaction._sample
+              expect(transaction).to_not have_error
+              expect(transaction).to include_tags("executions" => 1)
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              perform
+              last_transaction.complete
+
+              expect(exception_events).to be_empty
+              expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+            end
           end
 
-          it "reports error when discarding the job" do
-            allow(Appsignal).to receive(:increment_counter)
-            tags = { :queue => queue }
-            expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
+          describe "reports error when discarding the job" do
+            def perform
+              allow(Appsignal).to receive(:increment_counter)
 
-            with_test_adapter do
-              expect do
+              with_test_adapter do
                 queue_job(ActiveJobErrorWithRetryTestJob)
-              end.to raise_error(RuntimeError, "uh oh")
+              end
             end
 
-            transaction = last_transaction
-            expect(transaction).to have_error("RuntimeError", "uh oh")
-            expect(transaction).to include_tags("executions" => 2)
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              expect { perform }.to raise_error(RuntimeError, "uh oh")
+
+              transaction = last_transaction
+              transaction._sample
+              expect(transaction).to have_error("RuntimeError", "uh oh")
+              expect(transaction).to include_tags("executions" => 2)
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              expect { perform }.to raise_error(RuntimeError, "uh oh")
+              last_transaction.complete
+
+              event = exception_events.find do |e|
+                e.attributes["exception.type"] == "RuntimeError"
+              end
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.message"]).to eq("uh oh")
+              expect(event.attributes["exception.stacktrace"]).to be_a(String)
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.attributes["appsignal.tag.executions"]).to eq(2)
+            end
           end
         end
       end
@@ -264,94 +406,182 @@ if DependencyHelper.active_job_present?
             end)
           end
 
-          it "reports the priority as tag on the transaction" do
-            tags = { :queue => queue }
-            expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_job_count", 1, tags.merge(:status => :processed))
-            expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_job_count", 1, tags.merge(:status => :failed))
-            expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
-                :status => :processed))
-            expect(Appsignal).to receive(:increment_counter)
-              .with("active_job_queue_priority_job_count", 1, tags.merge(:priority => 10,
-                :status => :failed))
-
-            expect do
+          describe "reports the priority as tag" do
+            def perform
               queue_job(ActiveJobErrorPriorityTestJob)
-            end.to raise_error(RuntimeError, "uh oh")
+            end
 
-            expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              allow(Appsignal).to receive(:increment_counter)
+
+              expect { perform }.to raise_error(RuntimeError, "uh oh")
+              expect(last_transaction).to include_tags("queue" => queue, "priority" => 10)
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              allow(Appsignal).to receive(:increment_counter)
+
+              expect { perform }.to raise_error(RuntimeError, "uh oh")
+              last_transaction.complete
+
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("RuntimeError")
+              expect(event.attributes["exception.message"]).to eq("uh oh")
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+              expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+              expect(root_span.attributes["appsignal.tag.priority"]).to eq(10)
+            end
           end
         end
       end
     end
 
     context "with retries" do
-      it "reports the number of retries as executions" do
-        with_test_adapter do
-          expect do
+      describe "reports the number of retries as executions" do
+        def perform
+          with_test_adapter do
             queue_job(ActiveJobErrorWithRetryTestJob)
-          end.to raise_error(RuntimeError, "uh oh")
+          end
         end
 
-        expect(last_transaction).to include_tags("executions" => 2)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+
+          expect { perform }.to raise_error(RuntimeError, "uh oh")
+          expect(last_transaction).to include_tags("executions" => 2)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          expect { perform }.to raise_error(RuntimeError, "uh oh")
+          last_transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.executions"]).to eq(2)
+        end
       end
     end
 
     context "when wrapped in another transaction" do
-      it "does not create a new transaction or close the currently open one" do
-        current_transaction = background_job_transaction
-        set_current_transaction current_transaction
+      describe "does not create a new transaction or close the currently open one" do
+        def perform(current_transaction)
+          set_current_transaction current_transaction
+          queue_job(ActiveJobTestJob)
+        end
 
-        queue_job(ActiveJobTestJob)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
 
-        expect(created_transactions.count).to eql(1)
+          allow(Appsignal).to receive(:increment_counter)
 
-        transaction = current_transaction
-        expect(transaction).to_not be_completed
-        transaction._sample
-        # It does set data on the transaction
-        expect(transaction).to have_namespace(namespace)
-        expect(transaction).to have_id(current_transaction.transaction_id)
-        expect(transaction).to have_action("ActiveJobTestJob#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to_not include_metadata
-        expect(transaction).to include_params([])
-        expect(transaction).to include_tags(
-          "active_job_id" => kind_of(String),
-          "request_id" => kind_of(String),
-          "queue" => queue,
-          "executions" => 1
-        )
+          current_transaction = background_job_transaction
+          perform(current_transaction)
 
-        events = transaction.to_h["events"]
-          .reject { |e| e["name"] == "enqueue.active_job" }
-          .sort_by { |e| e["start"] }
-          .map { |event| event["name"] }
-        expect(events).to eq(expected_perform_events)
+          expect(created_transactions.count).to eql(1)
+
+          transaction = current_transaction
+          expect(transaction).to_not be_completed
+          transaction._sample
+          # It does set data on the transaction
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_id(current_transaction.transaction_id)
+          expect(transaction).to have_action("ActiveJobTestJob#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to_not include_metadata
+          expect(transaction).to include_params([])
+          expect(transaction).to include_tags(
+            "active_job_id" => kind_of(String),
+            "request_id" => kind_of(String),
+            "queue" => queue,
+            "executions" => 1
+          )
+
+          events = transaction.to_h["events"]
+            .reject { |e| e["name"] == "enqueue.active_job" }
+            .sort_by { |e| e["start"] }
+            .map { |event| event["name"] }
+          expect(events).to eq(expected_perform_events)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          allow(Appsignal).to receive(:increment_counter)
+
+          current_transaction = background_job_transaction
+          perform(current_transaction)
+
+          expect(created_transactions.count).to eql(1)
+          expect(current_transaction).to_not be_completed
+
+          current_transaction.complete
+
+          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
+          expect(exception_events).to be_empty
+          expect(root_span.attributes).to_not have_key("appsignal.metadata")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"])).to eq([])
+          expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+          expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+          expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+        end
       end
     end
 
     context "with params" do
       let(:options) { { :filter_parameters => ["foo"] } }
 
-      it "filters the configured params" do
-        queue_job(ActiveJobTestJob, method_given_args)
+      describe "filters the configured params" do
+        def perform
+          queue_job(ActiveJobTestJob, method_given_args)
+        end
 
-        transaction = last_transaction
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["sample_data"]["params"]).to include(
-          [
-            "foo",
-            {
-              "_aj_symbol_keys" => ["foo"],
-              "foo" => "[FILTERED]",
-              "bar" => "Bar",
-              "baz" => { "_aj_symbol_keys" => [], "1" => "foo" }
-            }
-          ]
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+
+          perform
+
+          transaction = last_transaction
+          transaction_hash = transaction.to_h
+          expect(transaction_hash["sample_data"]["params"]).to include(
+            [
+              "foo",
+              {
+                "_aj_symbol_keys" => ["foo"],
+                "foo" => "[FILTERED]",
+                "bar" => "Bar",
+                "baz" => { "_aj_symbol_keys" => [], "1" => "foo" }
+              }
+            ]
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          perform
+          last_transaction.complete
+
+          params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+          expect(params).to include(
+            [
+              "foo",
+              {
+                "_aj_symbol_keys" => ["foo"],
+                "foo" => "[FILTERED]",
+                "bar" => "Bar",
+                "baz" => { "_aj_symbol_keys" => [], "1" => "foo" }
+              }
+            ]
+          )
+        end
       end
     end
 
@@ -382,12 +612,29 @@ if DependencyHelper.active_job_present?
         end)
       end
 
-      it "sets provider_job_id as tag" do
-        queue_job(ProviderWrappedActiveJobTestJob)
+      describe "sets provider_job_id as tag" do
+        def perform
+          queue_job(ProviderWrappedActiveJobTestJob)
+        end
 
-        expect(last_transaction).to include_tags(
-          "provider_job_id" => "my_provider_job_id"
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+
+          perform
+          expect(last_transaction).to include_tags(
+            "provider_job_id" => "my_provider_job_id"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          perform
+          last_transaction.complete
+
+          expect(root_span.attributes["appsignal.tag.provider_job_id"])
+            .to eq("my_provider_job_id")
+        end
       end
     end
 
@@ -419,21 +666,15 @@ if DependencyHelper.active_job_present?
         end)
       end
 
-      it "sets queue time on transaction" do
+      # queue_start has no OTel equivalent; stays agent-only. The queue time
+      # metric is dual-moded separately (see "emitting the queue time metric").
+      it "sets queue time on transaction", :agent_mode do
+        start_agent(**start_agent_args)
+
         queue_job(ProviderWrappedActiveJobTestJob)
 
         queue_time = Time.parse("2001-01-01T09:00:00.000000000Z")
         expect(last_transaction).to have_queue_start((queue_time.to_f * 1_000).to_i)
-      end
-
-      it "reports the queue time" do
-        allow(Appsignal).to receive(:add_distribution_value)
-
-        queue_job(ProviderWrappedActiveJobTestJob)
-
-        # Asserts 1 hour queue time
-        expect(Appsignal).to have_received(:add_distribution_value)
-          .with("active_job_queue_time", 3_600_000.0, :queue => queue)
       end
     end
 
@@ -448,55 +689,21 @@ if DependencyHelper.active_job_present?
       end
 
       context "without params" do
-        it "sets the Action mailer data on the transaction" do
-          perform_mailer(ActionMailerTestJob, :welcome)
+        describe "sets the Action mailer data on the transaction" do
+          def perform
+            perform_mailer(ActionMailerTestJob, :welcome)
+          end
 
-          transaction = last_transaction
-          expect(transaction).to have_action("ActionMailerTestJob#welcome")
-          expect(transaction).to include_params(
-            ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper
-          )
-          expect(transaction).to include_tags(
-            "active_job_id" => kind_of(String),
-            "request_id" => kind_of(String),
-            "queue" => "mailers",
-            "executions" => 1
-          )
-        end
-      end
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
 
-      context "with multiple arguments" do
-        it "sets the arguments on the transaction" do
-          perform_mailer(ActionMailerTestJob, :welcome, method_given_args)
-
-          transaction = last_transaction
-          expect(transaction).to have_action("ActionMailerTestJob#welcome")
-          expect(transaction).to include_params(
-            ["ActionMailerTestJob", "welcome",
-             "deliver_now"] + active_job_args_wrapper(:args => method_expected_args)
-          )
-          expect(transaction).to include_tags(
-            "active_job_id" => kind_of(String),
-            "request_id" => kind_of(String),
-            "queue" => "mailers",
-            "executions" => 1
-          )
-        end
-      end
-
-      if DependencyHelper.rails_version >= Gem::Version.new("5.2.0")
-        context "with parameterized arguments" do
-          it "sets the arguments on the transaction" do
-            perform_mailer(ActionMailerTestJob, :welcome, parameterized_given_args)
+            perform
 
             transaction = last_transaction
+            transaction._sample
             expect(transaction).to have_action("ActionMailerTestJob#welcome")
             expect(transaction).to include_params(
-              [
-                "ActionMailerTestJob",
-                "welcome",
-                "deliver_now"
-              ] + active_job_args_wrapper(:params => parameterized_expected_args)
+              ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper
             )
             expect(transaction).to include_tags(
               "active_job_id" => kind_of(String),
@@ -504,6 +711,126 @@ if DependencyHelper.active_job_present?
               "queue" => "mailers",
               "executions" => 1
             )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            perform
+            last_transaction.complete
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("ActionMailerTestJob#welcome")
+            expected_params =
+              ["ActionMailerTestJob", "welcome", "deliver_now"] + active_job_args_wrapper
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+            expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+            expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+          end
+        end
+      end
+
+      context "with multiple arguments" do
+        describe "sets the arguments on the transaction" do
+          def perform
+            perform_mailer(ActionMailerTestJob, :welcome, method_given_args)
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+
+            perform
+
+            transaction = last_transaction
+            transaction._sample
+            expect(transaction).to have_action("ActionMailerTestJob#welcome")
+            expect(transaction).to include_params(
+              ["ActionMailerTestJob", "welcome",
+               "deliver_now"] + active_job_args_wrapper(:args => method_expected_args)
+            )
+            expect(transaction).to include_tags(
+              "active_job_id" => kind_of(String),
+              "request_id" => kind_of(String),
+              "queue" => "mailers",
+              "executions" => 1
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            perform
+            last_transaction.complete
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("ActionMailerTestJob#welcome")
+            expected_params =
+              ["ActionMailerTestJob", "welcome",
+               "deliver_now"] + active_job_args_wrapper(:args => method_expected_args)
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+            expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+            expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+          end
+        end
+      end
+
+      if DependencyHelper.rails_version >= Gem::Version.new("5.2.0")
+        context "with parameterized arguments" do
+          describe "sets the arguments on the transaction" do
+            def perform
+              perform_mailer(ActionMailerTestJob, :welcome, parameterized_given_args)
+            end
+
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              perform
+
+              transaction = last_transaction
+              transaction._sample
+              expect(transaction).to have_action("ActionMailerTestJob#welcome")
+              expect(transaction).to include_params(
+                [
+                  "ActionMailerTestJob",
+                  "welcome",
+                  "deliver_now"
+                ] + active_job_args_wrapper(:params => parameterized_expected_args)
+              )
+              expect(transaction).to include_tags(
+                "active_job_id" => kind_of(String),
+                "request_id" => kind_of(String),
+                "queue" => "mailers",
+                "executions" => 1
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              perform
+              last_transaction.complete
+
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("ActionMailerTestJob#welcome")
+              expected_params =
+                [
+                  "ActionMailerTestJob",
+                  "welcome",
+                  "deliver_now"
+                ] + active_job_args_wrapper(:params => parameterized_expected_args)
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq(expected_params)
+              expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+              expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+            end
           end
         end
       end
@@ -522,42 +849,25 @@ if DependencyHelper.active_job_present?
           end)
         end
 
-        it "sets the Action mailer data on the transaction" do
-          perform_mailer(ActionMailerTestMailDeliveryJob, :welcome)
+        describe "sets the Action mailer data on the transaction" do
+          def perform
+            perform_mailer(ActionMailerTestMailDeliveryJob, :welcome)
+          end
 
-          transaction = last_transaction
-          expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
-          expect(transaction).to include_params(
-            [
-              "ActionMailerTestMailDeliveryJob",
-              "welcome",
-              "deliver_now",
-              { active_job_internal_key => ["args"], "args" => [] }
-            ]
-          )
-          expect(transaction).to include_tags(
-            "active_job_id" => kind_of(String),
-            "request_id" => kind_of(String),
-            "queue" => "mailers",
-            "executions" => 1
-          )
-        end
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
 
-        context "with method arguments" do
-          it "sets the Action mailer data on the transaction" do
-            perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, method_given_args)
+            perform
 
             transaction = last_transaction
+            transaction._sample
             expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
             expect(transaction).to include_params(
               [
                 "ActionMailerTestMailDeliveryJob",
                 "welcome",
                 "deliver_now",
-                {
-                  active_job_internal_key => ["args"],
-                  "args" => method_expected_args
-                }
+                { active_job_internal_key => ["args"], "args" => [] }
               ]
             )
             expect(transaction).to include_tags(
@@ -567,15 +877,103 @@ if DependencyHelper.active_job_present?
               "executions" => 1
             )
           end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            perform
+            last_transaction.complete
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("ActionMailerTestMailDeliveryJob#welcome")
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq([
+                "ActionMailerTestMailDeliveryJob",
+                "welcome",
+                "deliver_now",
+                { active_job_internal_key => ["args"], "args" => [] }
+              ])
+            expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+            expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+          end
+        end
+
+        context "with method arguments" do
+          describe "sets the Action mailer data on the transaction" do
+            def perform
+              perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, method_given_args)
+            end
+
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              perform
+
+              transaction = last_transaction
+              transaction._sample
+              expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
+              expect(transaction).to include_params(
+                [
+                  "ActionMailerTestMailDeliveryJob",
+                  "welcome",
+                  "deliver_now",
+                  {
+                    active_job_internal_key => ["args"],
+                    "args" => method_expected_args
+                  }
+                ]
+              )
+              expect(transaction).to include_tags(
+                "active_job_id" => kind_of(String),
+                "request_id" => kind_of(String),
+                "queue" => "mailers",
+                "executions" => 1
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              perform
+              last_transaction.complete
+
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("ActionMailerTestMailDeliveryJob#welcome")
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq([
+                  "ActionMailerTestMailDeliveryJob",
+                  "welcome",
+                  "deliver_now",
+                  {
+                    active_job_internal_key => ["args"],
+                    "args" => method_expected_args
+                  }
+                ])
+              expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+              expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+            end
+          end
         end
 
         context "with parameterized arguments" do
-          it "sets the Action mailer data on the transaction" do
-            perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, parameterized_given_args)
+          describe "sets the Action mailer data on the transaction" do
+            def perform
+              perform_mailer(ActionMailerTestMailDeliveryJob, :welcome, parameterized_given_args)
+            end
 
-            transaction = last_transaction
-            expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
-            expect(transaction).to include_params(
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+
+              perform
+
+              transaction = last_transaction
+              transaction._sample
+              expect(transaction).to have_action("ActionMailerTestMailDeliveryJob#welcome")
+              expect(transaction).to include_params(
                 [
                   "ActionMailerTestMailDeliveryJob",
                   "welcome",
@@ -587,12 +985,38 @@ if DependencyHelper.active_job_present?
                   }
                 ]
               )
-            expect(transaction).to include_tags(
-              "active_job_id" => kind_of(String),
-              "request_id" => kind_of(String),
-              "queue" => "mailers",
-              "executions" => 1
-            )
+              expect(transaction).to include_tags(
+                "active_job_id" => kind_of(String),
+                "request_id" => kind_of(String),
+                "queue" => "mailers",
+                "executions" => 1
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+
+              perform
+              last_transaction.complete
+
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("ActionMailerTestMailDeliveryJob#welcome")
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq([
+                  "ActionMailerTestMailDeliveryJob",
+                  "welcome",
+                  "deliver_now",
+                  {
+                    active_job_internal_key => ["params", "args"],
+                    "args" => [],
+                    "params" => parameterized_expected_args
+                  }
+                ])
+              expect(root_span.attributes["appsignal.tag.active_job_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.request_id"]).to be_a(String)
+              expect(root_span.attributes["appsignal.tag.queue"]).to eq("mailers")
+              expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+            end
           end
         end
       end
