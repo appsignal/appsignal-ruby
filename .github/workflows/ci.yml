@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 194
+# Generated job count: 201
 ---
 name: Ruby gem CI
 'on':
@@ -564,6 +564,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-8.0.gemfile
+  ruby_4-0-0__resque-2_ubuntu-latest:
+    name: Ruby 4.0.0 - resque-2
+    needs: ruby_4-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_4-0-0__sequel_ubuntu-latest:
     name: Ruby 4.0.0 - sequel
     needs: ruby_4-0-0_ubuntu-latest
@@ -1378,6 +1405,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
+  ruby_3-4-1__resque-2_ubuntu-latest:
+    name: Ruby 3.4.1 - resque-2
+    needs: ruby_3-4-1_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.1
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_3-4-1__sequel_ubuntu-latest:
     name: Ruby 3.4.1 - sequel
     needs: ruby_3-4-1_ubuntu-latest
@@ -2219,6 +2273,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
+  ruby_3-3-4__resque-2_ubuntu-latest:
+    name: Ruby 3.3.4 - resque-2
+    needs: ruby_3-3-4_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.4
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_3-3-4__sequel_ubuntu-latest:
     name: Ruby 3.3.4 - sequel
     needs: ruby_3-3-4_ubuntu-latest
@@ -2979,6 +3060,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-8.1.gemfile
+  ruby_3-2-5__resque-2_ubuntu-latest:
+    name: Ruby 3.2.5 - resque-2
+    needs: ruby_3-2-5_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2.5
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_3-2-5__sequel_ubuntu-latest:
     name: Ruby 3.2.5 - sequel
     needs: ruby_3-2-5_ubuntu-latest
@@ -3658,6 +3766,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.2.gemfile
+  ruby_3-1-6__resque-2_ubuntu-latest:
+    name: Ruby 3.1.6 - resque-2
+    needs: ruby_3-1-6_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1.6
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_3-1-6__sequel_ubuntu-latest:
     name: Ruby 3.1.6 - sequel
     needs: ruby_3-1-6_ubuntu-latest
@@ -4310,6 +4445,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.1.gemfile
+  ruby_3-0-7__resque-2_ubuntu-latest:
+    name: Ruby 3.0.7 - resque-2
+    needs: ruby_3-0-7_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0.7
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_3-0-7__sequel_ubuntu-latest:
     name: Ruby 3.0.7 - sequel
     needs: ruby_3-0-7_ubuntu-latest
@@ -4854,6 +5016,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.0.gemfile
+  ruby_2-7-8__resque-2_ubuntu-latest:
+    name: Ruby 2.7.8 - resque-2
+    needs: ruby_2-7-8_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7.8
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/resque-2.gemfile
   ruby_2-7-8__sequel_ubuntu-latest:
     name: Ruby 2.7.8 - sequel
     needs: ruby_2-7-8_ubuntu-latest
