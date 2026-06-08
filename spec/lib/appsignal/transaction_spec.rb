@@ -2541,6 +2541,9 @@ describe Appsignal::Transaction do
       expect(Appsignal.internal_logger).to receive(:warn).with("Queue start value 10 is too big")
 
       transaction.set_queue_start(10)
+      # Complete so the collector-mode example detaches its OTel context rather
+      # than leaking it into later examples.
+      transaction.complete
     end
   end
 

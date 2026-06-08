@@ -290,8 +290,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   end
 
   describe "#finish" do
-    it "returns false so Transaction#complete does not run the sample_data path" do
-      expect(create_backend.finish(0)).to eq(false)
+    it "returns true so Transaction#complete runs the sample_data path" do
+      expect(create_backend.finish(0)).to eq(true)
     end
   end
 
@@ -338,6 +338,18 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect(duplicate).to be_kind_of(described_class)
       expect(duplicate).not_to be(backend)
       expect(duplicate.instance_variable_get(:@transaction_id)).to eq("new-id")
+    end
+
+    it "carries a namespace updated via #set_namespace into the duplicate" do
+      backend = create_backend("http_request")
+      backend.set_namespace("background_job")
+      duplicate = backend.duplicate("new-id")
+      @backends_created << duplicate
+      duplicate.complete
+
+      # The duplicate selects its span kind from the namespace it was
+      # constructed with, so the updated namespace must reach it.
+      expect(span_exporter.finished_spans.first.kind).to eq(:consumer)
     end
   end
 
