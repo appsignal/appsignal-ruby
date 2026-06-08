@@ -83,6 +83,10 @@ module DependencyHelper
     dependency_present? "sequel"
   end
 
+  def mongo_present?
+    dependency_present? "mongo"
+  end
+
   def resque_present?
     dependency_present? "resque"
   end
