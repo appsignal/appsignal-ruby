@@ -66,7 +66,6 @@ if DependencyHelper.padrino_present?
       let(:env)      { {} }
       # TODO: use an instance double
       let(:settings) { double(:name => "TestApp") }
-      around { |example| keep_transactions { example.run } }
 
       describe "routes" do
         let(:env) do
@@ -114,9 +113,12 @@ if DependencyHelper.padrino_present?
 
         context "when AppSignal is not active" do
           let(:path) { "/foo" }
+          let(:appsignal_env) { :inactive_env }
+          # Pass the inactive env through to the mode contexts' `start_agent`.
+          let(:start_agent_args) { { :env => appsignal_env } }
           before { app.controllers { get(:foo) { "content" } } }
 
-          it "does not instrument the request" do
+          it_in_both_modes "does not instrument the request" do
             expect do
               expect(response).to match_response(200, "content")
             end.to_not(change { created_transactions.count })
@@ -124,18 +126,41 @@ if DependencyHelper.padrino_present?
         end
 
         context "when AppSignal is active" do
-          let(:transaction) { http_request_transaction }
-          before do
-            start_agent
-            set_current_transaction(transaction)
+          # The Padrino integration sets the action on the current transaction,
+          # so build it in the example body (after the agent starts, so it is
+          # backed by the right backend) and set it as current before the
+          # request. `response` triggers `app.call(env)`.
+          def perform(status, body)
+            set_current_transaction(http_request_transaction)
+            expect(response).to match_response(status, body)
+          end
+
+          # In collector mode the action lands as the OTel span name and the
+          # `appsignal.action_name` attribute. Complete the transaction first so
+          # the root span is exported and readable.
+          def expect_collector_action(action)
+            Appsignal::Transaction.complete_current!
+            expect(root_span.name).to eq(action)
+            expect(root_span.attributes["appsignal.action_name"]).to eq(action)
           end
 
           context "with not existing route" do
             let(:path) { "/404" }
 
-            it "instruments the request" do
-              expect(response).to match_response(404, /^GET &#x2F;404/)
-              expect(last_transaction).to have_action("PadrinoTestApp#unknown")
+            describe "sets the action to the app name and unknown action" do
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform(404, /^GET &#x2F;404/)
+
+                expect(last_transaction).to have_action("PadrinoTestApp#unknown")
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform(404, /^GET &#x2F;404/)
+
+                expect_collector_action("PadrinoTestApp#unknown")
+              end
             end
           end
 
@@ -146,9 +171,21 @@ if DependencyHelper.padrino_present?
               app.controllers { get(:static) { "Static!" } }
             end
 
-            it "does not instrument the request" do
-              expect(response).to match_response(200, "Static!")
-              expect(last_transaction).to_not have_action
+            describe "does not set an action name" do
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform(200, "Static!")
+
+                expect(last_transaction).to_not have_action
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform(200, "Static!")
+                Appsignal::Transaction.complete_current!
+
+                expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              end
             end
           end
 
@@ -160,9 +197,20 @@ if DependencyHelper.padrino_present?
               app.controllers { get(:my_original_path, :with => :id) { "content" } }
             end
 
-            it "falls back on Sinatra::Request#route_obj.original_path" do
-              expect(response).to match_response(200, "content")
-              expect(last_transaction).to have_action("PadrinoTestApp:/my_original_path/:id")
+            describe "falls back on Sinatra::Request#route_obj.original_path" do
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform(200, "content")
+
+                expect(last_transaction).to have_action("PadrinoTestApp:/my_original_path/:id")
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform(200, "content")
+
+                expect_collector_action("PadrinoTestApp:/my_original_path/:id")
+              end
             end
           end
 
@@ -174,17 +222,25 @@ if DependencyHelper.padrino_present?
               app.controllers { get(:my_original_path) { "content" } }
             end
 
-            it "falls back on app name" do
-              expect(response).to match_response(200, "content")
-              expect(last_transaction).to have_action("PadrinoTestApp#unknown")
+            describe "falls back on app name" do
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform(200, "content")
+
+                expect(last_transaction).to have_action("PadrinoTestApp#unknown")
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform(200, "content")
+
+                expect_collector_action("PadrinoTestApp#unknown")
+              end
             end
           end
 
           context "with existing route" do
             let(:path) { "/" }
-            def make_request
-              expect(response).to match_response(200, "content")
-            end
 
             context "with action name as symbol" do
               context "with :index helper" do
@@ -193,9 +249,20 @@ if DependencyHelper.padrino_present?
                   app.controllers { get(:index) { "content" } }
                 end
 
-                it "sets the action with the app name and action name" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:#index")
+                describe "sets the action with the app name and action name" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:#index")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:#index")
+                  end
                 end
               end
 
@@ -205,9 +272,20 @@ if DependencyHelper.padrino_present?
                   app.controllers { get(:foo) { "content" } }
                 end
 
-                it "sets the action with the app name and action name" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:#foo")
+                describe "sets the action with the app name and action name" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:#foo")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:#foo")
+                  end
                 end
               end
             end
@@ -219,9 +297,20 @@ if DependencyHelper.padrino_present?
                   app.controllers { get("/") { "content" } }
                 end
 
-                it "sets the action with the app name and action path" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:#/")
+                describe "sets the action with the app name and action path" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:#/")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:#/")
+                  end
                 end
               end
 
@@ -231,9 +320,20 @@ if DependencyHelper.padrino_present?
                   app.controllers { get("/foo") { "content" } }
                 end
 
-                it "sets the action with the app name and action path" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:#/foo")
+                describe "sets the action with the app name and action path" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:#/foo")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:#/foo")
+                  end
                 end
               end
             end
@@ -247,9 +347,20 @@ if DependencyHelper.padrino_present?
                   app.controllers(:my_controller) { get(:index) { "content" } }
                 end
 
-                it "sets the action with the app name, controller name and action name" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:my_controller#index")
+                describe "sets the action with the app name, controller name and action name" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:my_controller#index")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:my_controller#index")
+                  end
                 end
               end
 
@@ -259,9 +370,20 @@ if DependencyHelper.padrino_present?
                   app.controllers("/my_controller") { get(:index) { "content" } }
                 end
 
-                it "sets the action with the app name, controller name and action path" do
-                  make_request
-                  expect(last_transaction).to have_action("PadrinoTestApp:/my_controller#index")
+                describe "sets the action with the app name, controller name and action path" do
+                  it "in agent mode", :agent_mode do
+                    start_agent
+                    perform(200, "content")
+
+                    expect(last_transaction).to have_action("PadrinoTestApp:/my_controller#index")
+                  end
+
+                  it "in collector mode", :collector_mode do
+                    start_collector_agent
+                    perform(200, "content")
+
+                    expect_collector_action("PadrinoTestApp:/my_controller#index")
+                  end
                 end
               end
             end
