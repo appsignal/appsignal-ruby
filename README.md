@@ -279,9 +279,9 @@ This gem uses [Semantic Versioning][semver].
 The `main` branch corresponds to the current stable release of the gem.
 
 The `develop` branch is used for development of features that will end up in
-the next minor release.
+the next minor release, if present.
 
-Open a Pull Request on the `main` branch if you're fixing a bug. For new new
+Open a Pull Request on the `main` branch if you're fixing a bug. For new
 features, open a Pull Request on the `develop` branch.
 
 Every stable and unstable release is tagged in git with a version tag.
