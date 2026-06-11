@@ -289,14 +289,10 @@ describe Appsignal::Transaction do
     end
 
     context "when a transaction is marked as discarded" do
-      it "does not complete the transaction" do
+      it "marks the transaction as discarded" do
         expect do
           transaction.discard!
         end.to change { transaction.discarded? }.from(false).to(true)
-
-        transaction.complete
-
-        expect(transaction).to_not be_completed
       end
 
       it "logs a debug message" do
@@ -308,17 +304,67 @@ describe Appsignal::Transaction do
           "Skipping transaction 'mock_transaction_id' because it was manually discarded."
       end
 
-      context "when a discarded transaction is restored" do
-        before { transaction.discard! }
+      describe "completing a discarded transaction" do
+        def perform
+          transaction.discard!
+          transaction.complete
+        end
 
-        it "completes the transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          # Nothing is reported: the transaction is dropped, not completed.
+          expect(transaction).to_not be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          # The root span is still finished and exported, but flagged so the
+          # collector ignores the whole subtrace.
+          expect(root_span.attributes["appsignal.ignore_subtrace"]).to be(true)
+          # The discarded transaction's context is detached -- it does not leak
+          # as the thread's current OTel span.
+          expect(::OpenTelemetry::Trace.current_span)
+            .to eq(::OpenTelemetry::Trace::Span::INVALID)
+        end
+      end
+
+      context "when a discarded transaction is restored" do
+        it "unmarks the transaction as discarded" do
+          transaction.discard!
+
           expect do
             transaction.restore!
           end.to change { transaction.discarded? }.from(true).to(false)
+        end
 
-          transaction.complete
+        describe "completing a restored transaction" do
+          def perform
+            transaction.discard!
+            transaction.restore!
+            transaction.complete
+          end
 
-          expect(transaction).to be_completed
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            # The transaction is reported as normal: the root span is exported
+            # without the ignore flag, so the collector keeps the subtrace.
+            expect(transaction).to be_completed
+            expect(root_span).not_to be_nil
+            expect(root_span.attributes).not_to have_key("appsignal.ignore_subtrace")
+          end
         end
       end
     end
