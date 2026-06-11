@@ -73,6 +73,14 @@ module Appsignal
         @handle.complete
       end
 
+      # Discarding in agent mode drops the transaction: the extension handle is
+      # simply abandoned and never told to complete, so nothing is sent. There
+      # is no `ignore_subtrace` concept on the agent path. This mirrors the
+      # pre-backend behavior, where `Transaction#complete` returned before
+      # touching the handle on a discarded transaction.
+      def discard
+      end
+
       # The extension transaction holds a single error, so the Transaction
       # reports additional errors as duplicate transactions.
       def supports_multiple_errors?

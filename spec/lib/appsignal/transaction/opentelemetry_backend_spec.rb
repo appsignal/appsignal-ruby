@@ -325,6 +325,50 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
+  describe "#discard" do
+    it "sets appsignal.ignore_subtrace = true on the root span" do
+      backend = create_backend
+      span = backend.instance_variable_get(:@span)
+      backend.discard
+
+      finished = span_exporter.finished_spans.find { |s| s.span_id == span.context.span_id }
+      expect(finished.attributes["appsignal.ignore_subtrace"]).to be(true)
+    end
+
+    it "finishes the OTel span" do
+      backend = create_backend
+      span = backend.instance_variable_get(:@span)
+      backend.discard
+
+      expect(span_exporter.finished_spans.map(&:span_id)).to include(span.context.span_id)
+    end
+
+    it "detaches the OTel context (current_span back to INVALID)" do
+      backend = create_backend
+      expect(::OpenTelemetry::Trace.current_span).not_to eq(::OpenTelemetry::Trace::Span::INVALID)
+
+      backend.discard
+
+      expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
+    end
+
+    it "toggles _completed? from false to true" do
+      backend = create_backend
+      expect(backend._completed?).to eq(false)
+
+      backend.discard
+
+      expect(backend._completed?).to eq(true)
+    end
+
+    it "is idempotent" do
+      backend = create_backend
+      backend.discard
+
+      expect { backend.discard }.not_to raise_error
+    end
+  end
+
   describe "#duplicate" do
     # Multi-error duplicate is dead code in collector mode until errors are
     # wired up in a later step (one span + multiple `record_exception` events

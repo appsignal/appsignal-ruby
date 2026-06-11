@@ -220,24 +220,22 @@ module Appsignal
       end
 
       def complete
-        # Idempotent: completing twice would re-detach an already-detached
-        # context (a mismatched-detach error) and re-finish an ended span (a
-        # warning). The Transaction can be completed directly and then again
-        # by a `complete_current!` cleanup path, so guard against it.
+        teardown
+      end
+
+      # Discarding does not mean "don't send" as it does in agent mode: the
+      # root span is still finished and exported, but flagged with
+      # `appsignal.ignore_subtrace = true` so the collector drops the whole
+      # subtrace (the attribute is hoisted to the subtrace root, last write
+      # wins). The flag must be written before the span finishes -- attributes
+      # set on an ended span are dropped. Tearing the span down here also
+      # detaches the context, so a discarded transaction can't leak its root
+      # span as the current OTel context onto the thread.
+      def discard
         return if @completed
 
-        @completed = true
-        # Drain unfinished event spans defensively: if `start_event` was
-        # called without a matching `finish_event` (caller bug or aborted
-        # flow), the root context can't detach in LIFO order until the
-        # event tokens are released first.
-        until @event_stack.empty?
-          span, token = @event_stack.pop
-          ::OpenTelemetry::Context.detach(token)
-          span.finish
-        end
-        ::OpenTelemetry::Context.detach(@context_token) if @context_token
-        @span&.finish
+        @span&.set_attribute("appsignal.ignore_subtrace", true)
+        teardown
       end
 
       def duplicate(new_transaction_id)
@@ -271,6 +269,30 @@ module Appsignal
       end
 
       private
+
+      # Detaches the OTel context and finishes the root span. Shared by
+      # `complete` and `discard`.
+      #
+      # Idempotent: tearing down twice would re-detach an already-detached
+      # context (a mismatched-detach error) and re-finish an ended span (a
+      # warning). The Transaction can be completed directly and then again by a
+      # `complete_current!` cleanup path, so guard against it.
+      def teardown
+        return if @completed
+
+        @completed = true
+        # Drain unfinished event spans defensively: if `start_event` was
+        # called without a matching `finish_event` (caller bug or aborted
+        # flow), the root context can't detach in LIFO order until the
+        # event tokens are released first.
+        until @event_stack.empty?
+          span, token = @event_stack.pop
+          ::OpenTelemetry::Context.detach(token)
+          span.finish
+        end
+        ::OpenTelemetry::Context.detach(@context_token) if @context_token
+        @span&.finish
+      end
 
       def tracer
         ::OpenTelemetry.tracer_provider.tracer(TRACER_NAME, Appsignal::VERSION)

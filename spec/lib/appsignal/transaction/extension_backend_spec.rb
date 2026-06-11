@@ -118,6 +118,11 @@ describe Appsignal::Transaction::ExtensionBackend do
       backend.complete
     end
 
+    it "drops the transaction on #discard without completing the handle" do
+      expect(handle).to_not receive(:complete)
+      backend.discard
+    end
+
     it "forwards #to_json to the handle" do
       expect(handle).to receive(:to_json).and_return("{}")
       expect(backend.to_json).to eq("{}")

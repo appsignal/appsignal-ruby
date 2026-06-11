@@ -214,6 +214,13 @@ module Appsignal
       if discarded?
         Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
           "because it was manually discarded."
+        # Let the backend tear itself down. The agent backend drops the
+        # transaction (nothing is sent); the OpenTelemetry backend still
+        # finishes and exports the root span, but flags it with
+        # `appsignal.ignore_subtrace` so the collector ignores the subtrace.
+        # `@completed` stays false either way: a discarded transaction was
+        # never reported.
+        @backend.discard
         return
       end
 
