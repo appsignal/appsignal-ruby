@@ -5,7 +5,7 @@ AppSignal. They will help you get set up, tweak your code and make sure you get
 the most out of using AppSignal. You can also find our documentation at
 [docs.appsignal.com](https://docs.appsignal.com/).
 
-We do not recommend creating an issue on the Ruby gem's GitHub project if it
+We do not recommend creating an issue on this project's GitHub repository if it
 concerns your private app data. During the support process we'll need the
 AppSignal logs and other resources that contain your app's private data,
 something for which the public GitHub issue tracker is not suited.
