@@ -88,18 +88,17 @@ module Appsignal
         return if @event_stack.empty?
 
         span, token = @event_stack.pop
-        span.name = name
+        write_event_name_attributes(span, name, title)
         write_event_body_attributes(span, body, body_format)
-        span.set_attribute("appsignal.title", title) if title && !title.empty?
         ::OpenTelemetry::Context.detach(token)
         span.finish
       end
 
       def record_event(name, title, body, body_format, duration, _gc_duration) # rubocop:disable Metrics/ParameterLists
         start_time = Time.now - (duration / 1_000_000_000.0)
-        span = tracer.start_span(name, :start_timestamp => start_time)
+        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :start_timestamp => start_time)
+        write_event_name_attributes(span, name, title)
         write_event_body_attributes(span, body, body_format)
-        span.set_attribute("appsignal.title", title) if title && !title.empty?
         span.finish
       end
 
@@ -367,6 +366,18 @@ module Appsignal
           value = value.to_s if value.is_a?(Symbol)
           @span.set_attribute("appsignal.tag.#{key}", value)
         end
+      end
+
+      # The OTel span name is what the collector surfaces as the event's
+      # label in the trace UI, so prefer the human-readable `title` (e.g.
+      # "User Load", "GET https://example.com") and fall back to the AS::N
+      # `name` (e.g. "sql.active_record") when no formatter supplied a title.
+      # The machine name still rides along in `appsignal.category` so it is
+      # not lost once the title wins the span name -- it keeps the event's
+      # grouping key available for later filtering.
+      def write_event_name_attributes(span, name, title)
+        span.name = title && !title.empty? ? title : name
+        span.set_attribute("appsignal.category", name)
       end
 
       def write_event_body_attributes(span, body, body_format)

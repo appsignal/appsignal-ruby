@@ -85,10 +85,11 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         perform
         Appsignal::Transaction.complete_current!
 
-        span = event_spans.find { |s| s.name == "query.mongodb" }
+        span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
         expect(span).not_to be_nil
+        expect(span.name).to eq("find | test | SUCCEEDED")
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.title"]).to eq("find | test | SUCCEEDED")
+        expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
 
         snapshot = metric_snapshot("mongodb_query_duration")
@@ -128,9 +129,10 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         perform
         Appsignal::Transaction.complete_current!
 
-        span = event_spans.find { |s| s.name == "query.mongodb" }
+        span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
         expect(span).not_to be_nil
-        expect(span.attributes["appsignal.title"]).to eq("find | test | FAILED")
+        expect(span.name).to eq("find | test | FAILED")
+        expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
       end
     end

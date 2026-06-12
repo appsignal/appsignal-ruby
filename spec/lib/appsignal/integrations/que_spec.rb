@@ -88,7 +88,7 @@ if DependencyHelper.que_present?
             expect(span).not_to be_nil
             expect(span.parent_span_id).to eq(root_span.span_id)
             expect(span.attributes).not_to have_key("appsignal.body")
-            expect(span.attributes).not_to have_key("appsignal.title")
+            expect(span.attributes["appsignal.category"]).to eq("perform_job.que")
             expected_params = { "arguments" => %w[post_id_123 user_id_123] }
             expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
             expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))

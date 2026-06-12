@@ -28,15 +28,17 @@ describe Appsignal::Rack::BodyWrapper do
 
   def expect_collector_event(name, title = nil)
     transaction.complete
-    span = event_spans.find { |s| s.name == name }
+    # The event name lives in appsignal.category; the span name carries the
+    # human-readable title (falling back to the event name when title-less).
+    span = event_spans.find { |s| s.attributes["appsignal.category"] == name }
     expect(span).not_to be_nil
     expect(span.parent_span_id).to eq(root_span.span_id)
-    expect(span.attributes["appsignal.title"]).to eq(title) if title
+    expect(span.name).to eq(title) if title
   end
 
   def expect_collector_no_event(name)
     transaction.complete
-    expect(event_spans.map(&:name)).to_not include(name)
+    expect(event_spans.map { |s| s.attributes["appsignal.category"] }).to_not include(name)
   end
 
   it_in_both_modes "forwards method calls to the body if the method doesn't exist" do
@@ -136,9 +138,11 @@ describe Appsignal::Rack::BodyWrapper do
         # excludes a *default-shaped* event (empty title). Iterating the
         # returned Enumerator still instruments `each`, so the recorded event
         # carries the "#each" title -- there is just never a title-less one.
+        # A title-less event would fall back to naming the span after its
+        # category (the event name); the "#each" one never does.
         titleless_event = event_spans.find do |span|
-          span.name == "process_response_body.rack" &&
-            span.attributes["appsignal.title"].to_s.empty?
+          span.attributes["appsignal.category"] == "process_response_body.rack" &&
+            span.name == span.attributes["appsignal.category"]
         end
         expect(titleless_event).to be_nil
       end

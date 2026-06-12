@@ -168,10 +168,12 @@ describe Appsignal::Rack::EventHandler do
 
         # `set_queue_start` is an intentional no-op in collector mode.
         expect(last_transaction.backend.queue_start).to be_nil
-        event = event_spans.find { |span| span.name == "process_request.rack" }
+        event = event_spans.find do |span|
+          span.attributes["appsignal.category"] == "process_request.rack"
+        end
         expect(event).not_to be_nil
         expect(event.parent_span_id).to eq(root_span.span_id)
-        expect(event.attributes["appsignal.title"]).to eq("callback: after_reply")
+        expect(event.name).to eq("callback: after_reply")
       end
     end
 
@@ -903,10 +905,12 @@ describe Appsignal::Rack::EventHandler do
         use_test_logger
         perform
 
-        event = event_spans.find { |span| span.name == "process_request.rack" }
+        event = event_spans.find do |span|
+          span.attributes["appsignal.category"] == "process_request.rack"
+        end
         expect(event).not_to be_nil
         expect(event.parent_span_id).to eq(root_span.span_id)
-        expect(event.attributes["appsignal.title"]).to eq("callback: on_finish")
+        expect(event.name).to eq("callback: on_finish")
       end
     end
 

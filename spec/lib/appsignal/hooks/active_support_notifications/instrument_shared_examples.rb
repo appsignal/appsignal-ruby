@@ -35,7 +35,7 @@ shared_examples "activesupport instrument override" do
       expect(span.parent_span_id).to eq(root_span.span_id)
       expect(span.attributes["db.query.text"]).to eq("SQL")
       expect(span.attributes["db.system.name"]).to eq("other_sql")
-      expect(span.attributes).not_to have_key("appsignal.title")
+      expect(span.attributes["appsignal.category"]).to eq("sql.active_record")
       expect(span.attributes).not_to have_key("appsignal.body")
     end
   end
@@ -75,7 +75,7 @@ shared_examples "activesupport instrument override" do
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
       expect(span.attributes).not_to have_key("appsignal.body")
-      expect(span.attributes).not_to have_key("appsignal.title")
+      expect(span.attributes["appsignal.category"]).to eq("no-registered.formatter")
       expect(span.attributes).not_to have_key("db.query.text")
       expect(span.attributes).not_to have_key("db.system.name")
     end
@@ -114,6 +114,8 @@ shared_examples "activesupport instrument override" do
 
       expect(event_spans.size).to eq(1)
       expect(event_spans.map(&:name)).to include("not_a_string")
+      span = event_spans.find { |s| s.name == "not_a_string" }
+      expect(span.attributes["appsignal.category"]).to eq("not_a_string")
     end
   end
 
