@@ -87,7 +87,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
-          expect(span.attributes).not_to have_key("appsignal.title")
+          expect(span.attributes["appsignal.category"]).to eq("perform_job.shoryuken")
           expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
             .to eq("foo" => "Foo", "bar" => "Bar")
           expect(root_span.attributes["appsignal.tag.message_id"]).to eq("msg1")
@@ -291,7 +291,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes).not_to have_key("appsignal.body")
-        expect(span.attributes).not_to have_key("appsignal.title")
+        expect(span.attributes["appsignal.category"]).to eq("perform_job.shoryuken")
         expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
           .to eq(
             "msg2" => "foo bar",

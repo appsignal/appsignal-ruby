@@ -77,7 +77,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
-          expect(span.attributes).not_to have_key("appsignal.title")
+          expect(span.attributes["appsignal.category"]).to eq("perform_job.delayed_job")
           expect(root_span.attributes["appsignal.tag.priority"]).to eq(1)
           expect(root_span.attributes["appsignal.tag.attempts"]).to eq(1)
           expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
@@ -416,7 +416,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
               expect(span).not_to be_nil
               expect(span.parent_span_id).to eq(root_span.span_id)
               expect(span.attributes).not_to have_key("appsignal.body")
-              expect(span.attributes).not_to have_key("appsignal.title")
+              expect(span.attributes["appsignal.category"]).to eq("perform_job.delayed_job")
               expect(root_span.attributes["appsignal.tag.priority"]).to eq(1)
               expect(root_span.attributes["appsignal.tag.attempts"]).to eq(1)
               expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")

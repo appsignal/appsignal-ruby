@@ -3262,7 +3262,7 @@ describe Appsignal::Transaction do
       transaction.finish_event("query", "title", "body", Appsignal::EventFormatter::DEFAULT)
       transaction.complete
 
-      event_span = event_spans.find { |span| span.name == "query" }
+      event_span = event_spans.find { |span| span.attributes["appsignal.category"] == "query" }
       expect(event_span.events.map(&:name)).to include("exception")
       expect(Array(root_span.events).map(&:name)).not_to include("exception")
     end
@@ -4365,7 +4365,8 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
-        expect(span.name).to eq("custom.event")
+        expect(span.name).to eq("T")
+        expect(span.attributes["appsignal.category"]).to eq("custom.event")
         expect(span.parent_span_id).to eq(root_span.span_id)
         observed = span.end_timestamp - span.start_timestamp
         expect(observed).to be_within(50_000_000).of(duration_ns)
@@ -4428,12 +4429,12 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
-        expect(span.name).to eq("sql.active_record")
+        expect(span.name).to eq("Query")
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes).to include(
           "db.query.text" => "SELECT 1",
           "db.system.name" => "other_sql",
-          "appsignal.title" => "Query"
+          "appsignal.category" => "sql.active_record"
         )
         expect(span.attributes).not_to have_key("appsignal.body")
       end
@@ -4466,9 +4467,10 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.complete_current!
 
         span = event_spans.first
+        expect(span.name).to eq("Title")
         expect(span.attributes).to include(
           "appsignal.body" => "Body",
-          "appsignal.title" => "Title"
+          "appsignal.category" => "custom.event"
         )
         expect(span.attributes).not_to have_key("db.query.text")
         expect(span.attributes).not_to have_key("db.system.name")
@@ -4504,8 +4506,8 @@ describe Appsignal::Transaction do
         perform(transaction)
         Appsignal::Transaction.complete_current!
 
-        outer = event_spans.find { |s| s.name == "outer.event" }
-        inner = event_spans.find { |s| s.name == "inner.event" }
+        outer = event_spans.find { |s| s.attributes["appsignal.category"] == "outer.event" }
+        inner = event_spans.find { |s| s.attributes["appsignal.category"] == "inner.event" }
 
         expect(inner.parent_span_id).to eq(outer.span_id)
         expect(outer.parent_span_id).to eq(root_span.span_id)
@@ -4513,14 +4515,17 @@ describe Appsignal::Transaction do
     end
 
     describe "with an empty title" do
-      it "omits the appsignal.title attribute on the span", :collector_mode do
+      it "names the span after the event name and omits appsignal.title", :collector_mode do
         start_collector_agent
         transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         transaction.instrument("custom.event", nil, "Body",
           Appsignal::EventFormatter::DEFAULT) { nil }
         Appsignal::Transaction.complete_current!
 
-        expect(event_spans.first.attributes).not_to have_key("appsignal.title")
+        span = event_spans.first
+        expect(span.name).to eq("custom.event")
+        expect(span.attributes["appsignal.category"]).to eq("custom.event")
+        expect(span.attributes).not_to have_key("appsignal.title")
       end
     end
 

@@ -75,7 +75,7 @@ if DependencyHelper.dry_monitor_present?
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
-        expect(attrs["appsignal.title"]).to eq("query.postgres")
+        expect(attrs["appsignal.category"]).to eq("query.postgres")
         expect(attrs).not_to have_key("appsignal.body")
       end
     end
@@ -114,7 +114,7 @@ if DependencyHelper.dry_monitor_present?
         expect(span.name).to eq("foo")
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
-        expect(attrs).not_to have_key("appsignal.title")
+        expect(attrs["appsignal.category"]).to eq("foo")
         expect(attrs).not_to have_key("appsignal.body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")

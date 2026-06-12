@@ -2684,9 +2684,9 @@ describe Appsignal do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("name")
+        expect(span.name).to eq("title")
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["appsignal.category"]).to eq("name")
         expect(span.attributes["appsignal.body"]).to eq("body")
         expect(span.attributes).not_to have_key("db.query.text")
         expect(span.attributes).not_to have_key("db.system.name")
@@ -2717,8 +2717,8 @@ describe Appsignal do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("name")
-        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.name).to eq("title")
+        expect(span.attributes["appsignal.category"]).to eq("name")
         expect(span.attributes["appsignal.body"]).to eq("body")
       end
     end
@@ -2747,8 +2747,8 @@ describe Appsignal do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("name")
-        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.name).to eq("title")
+        expect(span.attributes["appsignal.category"]).to eq("name")
         expect(span.attributes["appsignal.body"]).to eq("body")
       end
     end
@@ -2782,9 +2782,9 @@ describe Appsignal do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("name")
+        expect(span.name).to eq("title")
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["appsignal.category"]).to eq("name")
         expect(span.attributes["db.query.text"]).to eq("body")
         expect(span.attributes["db.system.name"]).to eq("other_sql")
         expect(span.attributes).not_to have_key("appsignal.body")

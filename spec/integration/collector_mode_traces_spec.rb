@@ -21,20 +21,25 @@ if DependencyHelper.opentelemetry_present?
       expect(root).not_to be_nil
       expect(root.kind).to eq(:SPAN_KIND_SERVER)
 
-      # Event spans for each instrumented block are present.
-      expect(by_name.keys).to include("active_record.sql", "template.render", "partial.render")
+      # Event spans for each instrumented block are present. The title-less
+      # events keep the event name as the span name; the SQL event has a
+      # human-readable title ("Find user"), which becomes the span name, with
+      # the event name carried in the `appsignal.category` attribute.
+      expect(by_name.keys).to include("template.render", "partial.render")
+      sql = spans.find { |s| attribute_value(s, "appsignal.category") == "active_record.sql" }
+      expect(sql).not_to be_nil
+      expect(sql.name).to eq("Find user")
 
       # Nested instrument calls produce a parent/child chain rooted at the monitor span.
       expect(by_name["partial.render"].parent_span_id).to eq(by_name["template.render"].span_id)
       expect(by_name["template.render"].parent_span_id).to eq(root.span_id)
-      expect(by_name["active_record.sql"].parent_span_id).to eq(root.span_id)
+      expect(sql.parent_span_id).to eq(root.span_id)
 
       # All spans share one trace id.
       expect(spans.map(&:trace_id).uniq.size).to eq(1)
 
       # SQL formatter applied at the OTel backend: body becomes `db.query.text` and
       # `db.system.name` is set so the collector can sanitize.
-      sql = by_name["active_record.sql"]
       expect(attribute_value(sql, "db.query.text")).to eq("SELECT * FROM users")
       expect(attribute_value(sql, "db.system.name")).to eq("other_sql")
     end

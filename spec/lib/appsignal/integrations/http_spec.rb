@@ -37,9 +37,9 @@ if DependencyHelper.http_present?
           .to eq(Appsignal::Transaction::HTTP_REQUEST)
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("request.http_rb")
+        expect(span.name).to eq("GET http://www.google.com")
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+        expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         expect(span.attributes).not_to have_key("appsignal.body")
       end
     end
@@ -75,9 +75,9 @@ if DependencyHelper.http_present?
           .to eq(Appsignal::Transaction::HTTP_REQUEST)
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("request.http_rb")
+        expect(span.name).to eq("GET https://www.google.com")
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.title"]).to eq("GET https://www.google.com")
+        expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         expect(span.attributes).not_to have_key("appsignal.body")
       end
     end
@@ -109,7 +109,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.attributes["appsignal.title"]).to eq("GET https://www.google.com")
+          expect(span.name).to eq("GET https://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
           expect(span.attributes).not_to have_key("appsignal.body")
         end
       end
@@ -141,7 +142,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.attributes["appsignal.title"]).to eq("POST https://www.google.com")
+          expect(span.name).to eq("POST https://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
           expect(span.attributes).not_to have_key("appsignal.body")
         end
       end
@@ -200,8 +202,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("request.http_rb")
-          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
 
@@ -231,8 +233,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("request.http_rb")
-          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
 
@@ -262,8 +264,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("request.http_rb")
-          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
 
@@ -293,8 +295,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("request.http_rb")
-          expect(span.attributes["appsignal.title"]).to eq("GET http://www.google.com")
+          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
 
@@ -324,8 +326,8 @@ if DependencyHelper.http_present?
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("request.http_rb")
-          expect(span.attributes["appsignal.title"]).to eq("GET http://www.example.com")
+          expect(span.name).to eq("GET http://www.example.com")
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
     end

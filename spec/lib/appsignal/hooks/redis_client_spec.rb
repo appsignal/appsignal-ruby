@@ -106,10 +106,10 @@ describe Appsignal::Hooks::RedisClientHook do
 
                   expect(event_spans.size).to eq(1)
                   span = event_spans.first
-                  expect(span.name).to eq("query.redis")
+                  expect(span.name).to eq("stub_id")
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("get ?")
-                  expect(span.attributes["appsignal.title"]).to eq("stub_id")
+                  expect(span.attributes["appsignal.category"]).to eq("query.redis")
                   expect(span.attributes).not_to have_key("db.query.text")
                 end
               end
@@ -146,10 +146,10 @@ describe Appsignal::Hooks::RedisClientHook do
 
                   expect(event_spans.size).to eq(1)
                   span = event_spans.first
-                  expect(span.name).to eq("query.redis")
+                  expect(span.name).to eq("stub_id")
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
-                  expect(span.attributes["appsignal.title"]).to eq("stub_id")
+                  expect(span.attributes["appsignal.category"]).to eq("query.redis")
                   expect(span.attributes).not_to have_key("db.query.text")
                 end
               end
@@ -237,10 +237,10 @@ describe Appsignal::Hooks::RedisClientHook do
 
                     expect(event_spans.size).to eq(1)
                     span = event_spans.first
-                    expect(span.name).to eq("query.redis")
+                    expect(span.name).to eq("stub_id")
                     expect(span.parent_span_id).to eq(root_span.span_id)
                     expect(span.attributes["appsignal.body"]).to eq("get ?")
-                    expect(span.attributes["appsignal.title"]).to eq("stub_id")
+                    expect(span.attributes["appsignal.category"]).to eq("query.redis")
                     expect(span.attributes).not_to have_key("db.query.text")
                   end
                 end
@@ -277,10 +277,10 @@ describe Appsignal::Hooks::RedisClientHook do
 
                     expect(event_spans.size).to eq(1)
                     span = event_spans.first
-                    expect(span.name).to eq("query.redis")
+                    expect(span.name).to eq("stub_id")
                     expect(span.parent_span_id).to eq(root_span.span_id)
                     expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
-                    expect(span.attributes["appsignal.title"]).to eq("stub_id")
+                    expect(span.attributes["appsignal.category"]).to eq("query.redis")
                     expect(span.attributes).not_to have_key("db.query.text")
                   end
                 end

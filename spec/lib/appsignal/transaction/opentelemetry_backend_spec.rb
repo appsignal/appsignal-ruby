@@ -260,7 +260,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT, 0)
       backend.complete
 
-      event_span = span_exporter.finished_spans.find { |s| s.name == "sql.query" }
+      event_span = span_exporter.finished_spans
+        .find { |s| s.attributes["appsignal.category"] == "sql.query" }
       backend_span_id = backend.instance_variable_get(:@span).context.span_id
       root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
 
@@ -484,7 +485,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
 
     describe "#finish_event" do
-      it "pops the stack, renames the span, finishes it, and detaches the context" do
+      it "pops the stack, names the span after the title, finishes it, and detaches the context" do
         backend = create_backend
         root_span = backend.instance_variable_get(:@span)
 
@@ -495,10 +496,15 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(backend.instance_variable_get(:@event_stack)).to be_empty
         expect(::OpenTelemetry::Trace.current_span).to eq(root_span)
 
-        event_span = span_exporter.finished_spans.find { |s| s.name == "custom.event" }
+        event_span = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "custom.event" }
         expect(event_span).not_to be_nil
+        # The human-readable title becomes the span name; the event name
+        # rides along in appsignal.category.
+        expect(event_span.name).to eq("Title")
+        expect(event_span.attributes["appsignal.category"]).to eq("custom.event")
         expect(event_span.attributes["appsignal.body"]).to eq("Body")
-        expect(event_span.attributes["appsignal.title"]).to eq("Title")
+        expect(event_span.attributes).not_to have_key("appsignal.title")
       end
 
       it "does nothing if the event stack is empty (unpaired finish_event)" do
@@ -517,8 +523,10 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.record_event("custom.event", "T", "B",
           Appsignal::EventFormatter::DEFAULT, duration_ns, 0)
 
-        span = span_exporter.finished_spans.find { |s| s.name == "custom.event" }
+        span = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "custom.event" }
         expect(span).not_to be_nil
+        expect(span.name).to eq("T")
         observed = span.end_timestamp - span.start_timestamp
         # Allow a small slack for clock jitter and the time elapsed
         # between computing start_time and calling finish.
@@ -565,7 +573,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.finish_event("sql.query", "Q", "SELECT 1",
           Appsignal::EventFormatter::SQL_BODY_FORMAT, 0)
 
-        attrs = span_exporter.finished_spans.find { |s| s.name == "sql.query" }.attributes
+        attrs = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "sql.query" }.attributes
         expect(attrs["db.query.text"]).to eq("SELECT 1")
         expect(attrs["db.system.name"]).to eq("other_sql")
         expect(attrs).not_to have_key("appsignal.body")
@@ -577,7 +586,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.finish_event("custom", "T", "Body",
           Appsignal::EventFormatter::DEFAULT, 0)
 
-        attrs = span_exporter.finished_spans.find { |s| s.name == "custom" }.attributes
+        attrs = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "custom" }.attributes
         expect(attrs["appsignal.body"]).to eq("Body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")
@@ -592,15 +602,17 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.finish_event("empty.body", "T", "",
           Appsignal::EventFormatter::DEFAULT, 0)
 
-        no_body = span_exporter.finished_spans.find { |s| s.name == "no.body" }
-        empty_body = span_exporter.finished_spans.find { |s| s.name == "empty.body" }
+        no_body = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "no.body" }
+        empty_body = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "empty.body" }
         expect(no_body.attributes).not_to have_key("appsignal.body")
         expect(no_body.attributes).not_to have_key("db.query.text")
         expect(empty_body.attributes).not_to have_key("appsignal.body")
         expect(empty_body.attributes).not_to have_key("db.query.text")
       end
 
-      it "omits appsignal.title when title is empty or nil" do
+      it "falls back to the event name as the span name when title is empty or nil" do
         backend = create_backend
         backend.start_event(0)
         backend.finish_event("no.title", nil, "Body",
@@ -609,8 +621,13 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.finish_event("empty.title", "", "Body",
           Appsignal::EventFormatter::DEFAULT, 0)
 
-        no_title = span_exporter.finished_spans.find { |s| s.name == "no.title" }
-        empty_title = span_exporter.finished_spans.find { |s| s.name == "empty.title" }
+        no_title = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "no.title" }
+        empty_title = span_exporter.finished_spans
+          .find { |s| s.attributes["appsignal.category"] == "empty.title" }
+        # With no usable title, the span name is the event name itself.
+        expect(no_title.name).to eq("no.title")
+        expect(empty_title.name).to eq("empty.title")
         expect(no_title.attributes).not_to have_key("appsignal.title")
         expect(empty_title.attributes).not_to have_key("appsignal.title")
       end
