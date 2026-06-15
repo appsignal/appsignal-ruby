@@ -56,6 +56,7 @@ module Appsignal
         @gc_duration = gc_duration
         @completed = false
         @event_stack = []
+        @breadcrumb_count = 0
 
         # `start_root_span` (not `start_span`) so the transaction's root
         # ignores any ambient OTel context. A transaction is a unit of work
@@ -140,11 +141,13 @@ module Appsignal
       # Routes each sample-data category to the attribute the collector and the
       # server's trace UI recognize. The JSON-blob categories (params, session
       # data, custom data) are serialized as JSON strings; the collector
-      # re-parses and filters them. `environment` and `breadcrumbs` are handled
-      # in later branches. `error_causes` is intentionally dropped because causes
-      # ride on the exception event instead (see #set_error) -- otherwise the
-      # `else` pass-through would duplicate them. Any other (unknown) category is
-      # passed through as a JSON `appsignal.<key>` attribute so no data is lost.
+      # re-parses and filters them. `environment` is handled in a later branch.
+      # `error_causes` and `breadcrumbs` are intentionally dropped here: causes
+      # ride on the exception event (see #set_error) and breadcrumbs are emitted
+      # per-call as span events on the current span (see #add_breadcrumb), so
+      # flushing either as sample data would duplicate them on the root span. Any
+      # other (unknown) category is passed through as a JSON `appsignal.<key>`
+      # attribute so no data is lost.
       def set_sample_data(key, data)
         case key
         when "params"
@@ -156,7 +159,9 @@ module Appsignal
         when "environment"
           write_request_headers(data)
         when "breadcrumbs"
-          write_breadcrumbs(data)
+          # No-op: breadcrumbs are emitted as `appsignal.breadcrumb` span events
+          # on the current span at add time (see #add_breadcrumb). Flushing them
+          # here would re-emit them on the already-finished root span.
         when "tags"
           write_tags(data)
         when "error_causes"
@@ -208,6 +213,36 @@ module Appsignal
 
         span.add_event("exception", :attributes => attributes)
         span.status = ::OpenTelemetry::Trace::Status.error
+      end
+
+      # Emits a breadcrumb as an `appsignal.breadcrumb` span event on the span
+      # that is current *now* -- the event span active when the breadcrumb was
+      # added, falling back to the root span when none is open. Breadcrumbs are
+      # emitted immediately (not flushed at completion) because by completion the
+      # event span has finished, and the OTel SDK drops events added to an ended
+      # span.
+      #
+      # The breadcrumb's recorded time becomes the event timestamp (events carry
+      # their own time), so it is not duplicated as an attribute;
+      # category/action/message are attributes and the metadata Hash is a JSON
+      # string (event attributes are flat).
+      #
+      # Capped at `BREADCRUMB_LIMIT` per transaction: streamed events can't be
+      # retracted, so we keep the first N rather than agent mode's last N.
+      def add_breadcrumb(breadcrumb)
+        return if @breadcrumb_count >= Appsignal::Transaction::BREADCRUMB_LIMIT
+
+        @breadcrumb_count += 1
+        ::OpenTelemetry::Trace.current_span.add_event(
+          "appsignal.breadcrumb",
+          :timestamp => Time.at(breadcrumb[:time]),
+          :attributes => {
+            "category" => breadcrumb[:category],
+            "action" => breadcrumb[:action],
+            "message" => breadcrumb[:message],
+            "metadata" => JSON.generate(breadcrumb[:metadata] || {})
+          }
+        )
       end
 
       # Returns `true` so `Transaction#complete` runs `sample_data`, flushing the
@@ -312,26 +347,6 @@ module Appsignal
           "appsignal.function.parameters"
         else
           "appsignal.request.payload"
-        end
-      end
-
-      # Breadcrumbs have no sample-data attribute in the OTel pipeline, so emit
-      # each as an `appsignal.breadcrumb` span event. The breadcrumb's recorded
-      # time becomes the event timestamp (events carry their own time), so it is
-      # not duplicated as an attribute; category/action/message are attributes
-      # and the metadata Hash is a JSON string (event attributes are flat).
-      def write_breadcrumbs(breadcrumbs)
-        breadcrumbs.each do |breadcrumb|
-          @span.add_event(
-            "appsignal.breadcrumb",
-            :timestamp => Time.at(breadcrumb[:time]),
-            :attributes => {
-              "category" => breadcrumb[:category],
-              "action" => breadcrumb[:action],
-              "message" => breadcrumb[:message],
-              "metadata" => JSON.generate(breadcrumb[:metadata] || {})
-            }
-          )
         end
       end
 

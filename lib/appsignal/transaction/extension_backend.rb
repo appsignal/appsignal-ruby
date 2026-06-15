@@ -52,6 +52,13 @@ module Appsignal
         @handle.set_sample_data(key, Appsignal::Utils::Data.generate(data))
       end
 
+      # No-op: agent mode collects breadcrumbs on the Transaction and flushes the
+      # whole (last-`BREADCRUMB_LIMIT`) array at completion through
+      # `set_sample_data("breadcrumbs", …)`. Only the OpenTelemetry backend acts
+      # on the per-breadcrumb call.
+      def add_breadcrumb(_breadcrumb)
+      end
+
       # `backtrace` is a raw Array (or nil); the C extension wants a `Data`
       # object, so serialize it here. `causes` is unused in agent mode -- the
       # Transaction reports causes separately via the `error_causes` sample data.

@@ -2274,9 +2274,13 @@ describe Appsignal::Transaction do
   describe "#add_breadcrumb" do
     let(:transaction) { new_transaction }
 
-    # The OpenTelemetry `appsignal.breadcrumb` events recorded on the root span.
+    # The OpenTelemetry `appsignal.breadcrumb` events recorded across all
+    # finished spans (breadcrumbs attach to the span that was current when they
+    # were added, which may be the root span or an event span).
     def breadcrumb_events
-      root_span.events.to_a.select { |event| event.name == "appsignal.breadcrumb" }
+      span_exporter.finished_spans.flat_map { |span| Array(span.events) }.select do |event|
+        event.name == "appsignal.breadcrumb"
+      end
     end
 
     context "when over the limit" do
@@ -2314,7 +2318,10 @@ describe Appsignal::Transaction do
         )
       end
 
-      it "emits the last <LIMIT> breadcrumb events in collector mode", :collector_mode do
+      # Collector mode caps at the first <LIMIT> rather than the last: streamed
+      # span events can't be retracted once emitted, so the agent-mode last-N
+      # trim can't be reproduced.
+      it "emits the first <LIMIT> breadcrumb events in collector mode", :collector_mode do
         start_collector_agent
         perform
         transaction.complete
@@ -2326,8 +2333,29 @@ describe Appsignal::Transaction do
           "action" => "GET http://localhost",
           "message" => "User made external network request"
         )
-        expect(JSON.parse(events.first.attributes["metadata"])).to eq("code" => 3)
-        expect(JSON.parse(events.last.attributes["metadata"])).to eq("code" => 22)
+        expect(JSON.parse(events.first.attributes["metadata"])).to eq("code" => 1)
+        expect(JSON.parse(events.last.attributes["metadata"])).to eq("code" => 20)
+      end
+    end
+
+    context "when added inside an instrumented event" do
+      def perform
+        transaction.start_event
+        transaction.add_breadcrumb("network", "GET http://localhost")
+        transaction.finish_event("sql.active_record", "User Load", "body",
+          Appsignal::EventFormatter::DEFAULT)
+      end
+
+      it "emits the breadcrumb on the event span, not the root span", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        event_span = event_spans.find do |span|
+          span.attributes["appsignal.category"] == "sql.active_record"
+        end
+        expect(event_span.events.map(&:name)).to include("appsignal.breadcrumb")
+        expect(Array(root_span.events).map(&:name)).to_not include("appsignal.breadcrumb")
       end
     end
 

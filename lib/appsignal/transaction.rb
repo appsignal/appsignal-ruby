@@ -510,14 +510,21 @@ module Appsignal
         return
       end
 
-      @breadcrumbs.push(
+      breadcrumb = {
         :time => time.to_i,
         :category => category,
         :action => action,
         :message => message,
         :metadata => metadata
-      )
+      }
+      @breadcrumbs.push(breadcrumb)
       @breadcrumbs = @breadcrumbs.last(BREADCRUMB_LIMIT)
+
+      # Hand the breadcrumb to the backend immediately. The agent backend
+      # ignores this (it flushes the whole `@breadcrumbs` array at completion via
+      # `sample_data`); the OpenTelemetry backend emits it right away as a span
+      # event on the current span, which has already finished by completion time.
+      @backend.add_breadcrumb(breadcrumb)
     end
 
     # Set an action name for the transaction.
