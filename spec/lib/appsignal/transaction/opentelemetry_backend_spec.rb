@@ -16,6 +16,16 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   before do
     ::OpenTelemetry.tracer_provider = tracer_provider
     @backends_created = []
+
+    # OTel reports context-balance violations (e.g. DetachError) through its
+    # error handler, which by default only logs. Capture them so the after hook
+    # can fail the example on an unexpected one -- an accidental imbalance should
+    # be a red test, not a silent log. An example that deliberately provokes one
+    # sets @expect_otel_errors.
+    @otel_errors = []
+    @original_otel_error_handler = ::OpenTelemetry.error_handler
+    ::OpenTelemetry.error_handler =
+      lambda { |exception: nil, message: nil| @otel_errors << [exception, message] }
   end
 
   # Each `create_backend` call constructs a real backend, which attaches an
@@ -25,10 +35,36 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   # are stacked in creation order, so the last one created must detach first.
   after do
     @backends_created.reverse_each { |backend| backend.complete unless backend._completed? }
+    ::OpenTelemetry.error_handler = @original_otel_error_handler
+    expect(@otel_errors).to be_empty unless @expect_otel_errors
   end
 
   def create_backend(namespace = "http_request")
     described_class.new("abc-123", namespace).tap { |b| @backends_created << b }
+  end
+
+  def foreign_tracer
+    ::OpenTelemetry.tracer_provider.tracer("foreign-instrumentation")
+  end
+
+  # Start a foreign span, make it the current OTel context for the block, and
+  # detach it afterwards (LIFO). Models another instrumentation's span sitting on
+  # top of AppSignal's context.
+  def with_foreign_current_span(name = "foreign")
+    foreign = foreign_tracer.start_span(name)
+    token = ::OpenTelemetry::Context.attach(::OpenTelemetry::Trace.context_with_span(foreign))
+    yield foreign
+  ensure
+    ::OpenTelemetry::Context.detach(token)
+    foreign.finish
+  end
+
+  def finished_span(span)
+    span_exporter.finished_spans.find { |s| s.span_id == span.context.span_id }
+  end
+
+  def event_names(finished)
+    Array(finished&.events).map(&:name)
   end
 
   describe "#initialize" do
@@ -665,6 +701,198 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         # Both drained spans keep the placeholder name; root span keeps its own.
         names = span_exporter.finished_spans.map(&:name)
         expect(names.count("appsignal.event")).to eq(2)
+      end
+    end
+  end
+
+  describe "#add_breadcrumb" do
+    def breadcrumb(overrides = {})
+      {
+        :time => 1_700_000_000,
+        :category => "network",
+        :action => "GET /",
+        :message => "ok",
+        :metadata => { "code" => "200" }
+      }.merge(overrides)
+    end
+
+    it "emits an appsignal.breadcrumb event with the breadcrumb's fields and time" do
+      backend = create_backend
+      backend.add_breadcrumb(breadcrumb)
+      backend.complete
+
+      event = finished_span(backend.instance_variable_get(:@span)).events
+        .find { |e| e.name == "appsignal.breadcrumb" }
+      expect(event.attributes["category"]).to eq("network")
+      expect(event.attributes["action"]).to eq("GET /")
+      expect(event.attributes["message"]).to eq("ok")
+      expect(JSON.parse(event.attributes["metadata"])).to eq("code" => "200")
+      expect(event.timestamp).to eq((Time.at(1_700_000_000).to_r * 1_000_000_000).to_i)
+    end
+
+    it "lands on the open event span when one is open" do
+      backend = create_backend
+      backend.start_event
+      event_span = backend.instance_variable_get(:@event_stack).last.first
+      backend.add_breadcrumb(breadcrumb)
+      backend.finish_event("custom", "T", "B", Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(event_names(finished_span(event_span))).to include("appsignal.breadcrumb")
+    end
+
+    it "caps at BREADCRUMB_LIMIT, keeping the first ones added" do
+      backend = create_backend
+      limit = Appsignal::Transaction::BREADCRUMB_LIMIT
+      (limit + 5).times { |i| backend.add_breadcrumb(breadcrumb(:action => "act-#{i}")) }
+      backend.complete
+
+      crumbs = finished_span(backend.instance_variable_get(:@span)).events
+        .select { |e| e.name == "appsignal.breadcrumb" }
+      expect(crumbs.size).to eq(limit)
+      expect(crumbs.first.attributes["action"]).to eq("act-0")
+      expect(crumbs.last.attributes["action"]).to eq("act-#{limit - 1}")
+    end
+  end
+
+  # AppSignal writes to the OpenTelemetry SDK but does not read its global
+  # current span to decide where its own data goes: errors and breadcrumbs land
+  # on AppSignal's own span (the open event span, or the root), never on a
+  # foreign span that happens to be current. Parenting is the one thing that
+  # does follow the global context, so foreign and AppSignal spans nest under
+  # each other.
+  describe "interop with foreign OpenTelemetry spans" do
+    describe "AppSignal data lands on AppSignal's own spans" do
+      it "records an error on the root span, not a foreign current span" do
+        backend = create_backend
+        foreign = nil
+        with_foreign_current_span do |f|
+          foreign = f
+          backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
+        end
+        backend.complete
+
+        expect(event_names(finished_span(backend.instance_variable_get(:@span))))
+          .to include("exception")
+        expect(event_names(finished_span(foreign))).not_to include("exception")
+      end
+
+      it "records an error on the open event span, not a foreign current span" do
+        backend = create_backend
+        backend.start_event
+        event_span = backend.instance_variable_get(:@event_stack).last.first
+        foreign = nil
+        with_foreign_current_span do |f|
+          foreign = f
+          backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
+        end
+        backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT)
+        backend.complete
+
+        expect(event_names(finished_span(event_span))).to include("exception")
+        expect(event_names(finished_span(foreign))).not_to include("exception")
+        expect(event_names(finished_span(backend.instance_variable_get(:@span))))
+          .not_to include("exception")
+      end
+
+      it "records a breadcrumb on the root span, not a foreign current span" do
+        backend = create_backend
+        foreign = nil
+        with_foreign_current_span do |f|
+          foreign = f
+          backend.add_breadcrumb(
+            :time => 1_700_000_000, :category => "c", :action => "a",
+            :message => "m", :metadata => {}
+          )
+        end
+        backend.complete
+
+        expect(event_names(finished_span(backend.instance_variable_get(:@span))))
+          .to include("appsignal.breadcrumb")
+        expect(event_names(finished_span(foreign))).not_to include("appsignal.breadcrumb")
+      end
+    end
+
+    describe "tree shape (parenting follows the global context)" do
+      it "parents a foreign span under the open AppSignal event span" do
+        backend = create_backend
+        backend.start_event
+        event_span = backend.instance_variable_get(:@event_stack).last.first
+
+        foreign = foreign_tracer.start_span("foreign")
+        foreign.finish
+
+        backend.finish_event("e", "t", "b", Appsignal::EventFormatter::DEFAULT)
+        backend.complete
+
+        expect(finished_span(foreign).parent_span_id).to eq(event_span.context.span_id)
+      end
+
+      it "parents a foreign span under the root span when no event is open" do
+        backend = create_backend
+        root = backend.instance_variable_get(:@span)
+
+        foreign = foreign_tracer.start_span("foreign")
+        foreign.finish
+        backend.complete
+
+        expect(finished_span(foreign).parent_span_id).to eq(root.context.span_id)
+      end
+
+      it "parents an AppSignal event span under a foreign current span" do
+        backend = create_backend
+        event_span = nil
+        foreign_id = nil
+        with_foreign_current_span do |foreign|
+          foreign_id = foreign.context.span_id
+          backend.start_event
+          event_span = backend.instance_variable_get(:@event_stack).last.first
+          backend.finish_event("e", "t", "b", Appsignal::EventFormatter::DEFAULT)
+        end
+        backend.complete
+
+        expect(finished_span(event_span).parent_span_id).to eq(foreign_id)
+      end
+    end
+
+    describe "context lifecycle" do
+      it "unwinds cleanly when a foreign span attaches and detaches inside an event" do
+        backend = create_backend
+        root = backend.instance_variable_get(:@span)
+        backend.start_event
+
+        with_foreign_current_span { nil }
+
+        backend.finish_event("e", "t", "b", Appsignal::EventFormatter::DEFAULT)
+        expect(::OpenTelemetry::Trace.current_span).to eq(root)
+        expect(backend.instance_variable_get(:@event_stack)).to be_empty
+
+        backend.complete
+        expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
+        # The after hook asserts no OTel context error was recorded.
+      end
+
+      it "does not defend against a co-resident context leak (characterization)" do
+        # If another instrumentation attaches a context and never detaches it,
+        # AppSignal's own detach pops that leaked frame instead of its own and
+        # OTel signals a DetachError. AppSignal does not try to recover. This
+        # records the current behaviour; it is not a guarantee.
+        @expect_otel_errors = true
+
+        backend = create_backend
+        backend.start_event
+        leaked = foreign_tracer.start_span("leaky")
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Trace.context_with_span(leaked))
+
+        backend.finish_event("e", "t", "b", Appsignal::EventFormatter::DEFAULT)
+
+        expect(@otel_errors.map(&:first))
+          .to include(an_instance_of(::OpenTelemetry::Context::DetachError))
+
+        backend.complete
+        leaked.finish
+        # Clear the deliberately leaked frame so it can't pollute later examples.
+        ::OpenTelemetry::Context.clear
       end
     end
   end

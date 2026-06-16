@@ -161,15 +161,16 @@ module Appsignal
         end
       end
 
-      # Records the error as an `exception` event on the span that is current now
-      # -- which may be an event span, not the root -- so it attaches to the
-      # operation that raised it. `appsignal.alert_this_error` tells the collector
-      # to report it even on a child span; the collector computes the digest.
-      # Causes ride on one `appsignal.error_causes` JSON attribute (keys match the
-      # processor's `ErrorSubCause`); separate cause events would each become their
-      # own incident.
+      # Records the error as an `exception` event on AppSignal's current span --
+      # the open event span, or the root -- so it attaches to the operation that
+      # raised it. Uses AppSignal's own span, not the OTel current span, which
+      # may belong to another instrumentation. `appsignal.alert_this_error` tells
+      # the collector to report it even on a child span; the collector computes
+      # the digest. Causes ride on one `appsignal.error_causes` JSON attribute
+      # (keys match the processor's `ErrorSubCause`); separate cause events would
+      # each become their own incident.
       def set_error(class_name, message, backtrace, causes, _root_cause_missing)
-        span = ::OpenTelemetry::Trace.current_span
+        span = current_span
 
         attributes = {
           "exception.type" => class_name,
@@ -194,12 +195,12 @@ module Appsignal
         span.status = ::OpenTelemetry::Trace::Status.error
       end
 
-      # Emits a breadcrumb as an `appsignal.breadcrumb` span event on the span
-      # that is current *now* -- the event span active when the breadcrumb was
-      # added, falling back to the root span when none is open. Breadcrumbs are
-      # emitted immediately (not flushed at completion) because by completion the
-      # event span has finished, and the OTel SDK drops events added to an ended
-      # span.
+      # Emits a breadcrumb as an `appsignal.breadcrumb` span event on AppSignal's
+      # current span -- the open event span, falling back to the root -- not the
+      # OTel current span, which may belong to another instrumentation.
+      # Breadcrumbs are emitted immediately (not flushed at completion) because by
+      # completion the event span has finished, and the OTel SDK drops events
+      # added to an ended span.
       #
       # The breadcrumb's recorded time becomes the event timestamp (events carry
       # their own time), so it is not duplicated as an attribute;
@@ -212,7 +213,7 @@ module Appsignal
         return if @breadcrumb_count >= Appsignal::Transaction::BREADCRUMB_LIMIT
 
         @breadcrumb_count += 1
-        ::OpenTelemetry::Trace.current_span.add_event(
+        current_span.add_event(
           "appsignal.breadcrumb",
           :timestamp => Time.at(breadcrumb[:time]),
           :attributes => {
@@ -311,6 +312,13 @@ module Appsignal
 
       def tracer
         ::OpenTelemetry.tracer_provider.tracer(TRACER_NAME, Appsignal::VERSION)
+      end
+
+      # The open event span, or the root span when no event is open. Not the OTel
+      # current span, which may belong to another instrumentation.
+      def current_span
+        span, _token = @event_stack.last
+        span || @span
       end
 
       def placeholder_span_name(namespace)

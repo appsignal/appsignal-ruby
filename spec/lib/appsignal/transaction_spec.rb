@@ -174,6 +174,36 @@ describe Appsignal::Transaction do
         expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
       end
     end
+
+    describe "OpenTelemetry interop with a foreign current span" do
+      it "keeps errors and breadcrumbs on AppSignal's span", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        # A foreign instrumentation's span becomes current inside an AppSignal
+        # event. AppSignal's error and breadcrumb should still land on its own
+        # event span, not on the foreign span.
+        transaction.start_event
+        foreign = ::OpenTelemetry.tracer_provider.tracer("foreign").start_span("foreign-call")
+        foreign_token =
+          ::OpenTelemetry::Context.attach(::OpenTelemetry::Trace.context_with_span(foreign))
+
+        transaction.add_error(ExampleStandardError.new("boom"))
+        transaction.add_breadcrumb("network", "GET /", "ok", { "code" => "200" })
+
+        ::OpenTelemetry::Context.detach(foreign_token)
+        foreign.finish
+        transaction.finish_event("sql.query", "Query", "SELECT 1",
+          Appsignal::EventFormatter::DEFAULT)
+        Appsignal::Transaction.complete_current!
+
+        event_span = event_spans.find { |s| s.attributes["appsignal.category"] == "sql.query" }
+        foreign_span = span_exporter.finished_spans.find { |s| s.name == "foreign-call" }
+
+        expect(event_span.events.map(&:name)).to include("exception", "appsignal.breadcrumb")
+        expect(Array(foreign_span.events).map(&:name)).to be_empty
+      end
+    end
   end
 
   describe ".current" do
