@@ -220,7 +220,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "records an exception span-event on the root span" do
       backend = create_backend
-      backend.set_error("RuntimeError", "boom", ["line 1", "line 2"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1", "line 2"], [], false)
 
       event = exception_event(backend)
       expect(event).not_to be_nil
@@ -231,7 +231,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "sets the span status to error" do
       backend = create_backend
-      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
       backend.complete
 
       backend_span_id = backend.instance_variable_get(:@span).context.span_id
@@ -241,7 +241,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "omits exception.stacktrace content when there is no backtrace" do
       backend = create_backend
-      backend.set_error("RuntimeError", "boom", nil, [])
+      backend.set_error("RuntimeError", "boom", nil, [], false)
 
       expect(exception_event(backend).attributes["exception.stacktrace"]).to eq("")
     end
@@ -249,10 +249,10 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     it "emits causes as an appsignal.error_causes JSON attribute matching ErrorSubCause" do
       backend = create_backend
       causes = [
-        { :name => "ArgumentError", :message => "bad arg", :lines => ["cause 1", "cause 2"] },
-        { :name => "KeyError", :message => "missing", :lines => ["cause 3"] }
+        { :name => "ArgumentError", :message => "bad arg", :backtrace => ["cause 1", "cause 2"] },
+        { :name => "KeyError", :message => "missing", :backtrace => ["cause 3"] }
       ]
-      backend.set_error("RuntimeError", "boom", ["line 1"], causes)
+      backend.set_error("RuntimeError", "boom", ["line 1"], causes, false)
 
       parsed = JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
       expect(parsed).to eq(
@@ -267,7 +267,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend = create_backend
       backend.set_error(
         "RuntimeError", "boom", ["line 1"],
-        [{ :name => "ArgumentError", :message => "bad arg", :lines => nil }]
+        [{ :name => "ArgumentError", :message => "bad arg", :backtrace => nil }],
+        false
       )
 
       parsed = JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
@@ -276,14 +277,14 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "does not set appsignal.error_causes when there are no causes" do
       backend = create_backend
-      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
 
       expect(exception_event(backend).attributes).not_to have_key("appsignal.error_causes")
     end
 
     it "flags the error for the collector and lets it compute the digest" do
       backend = create_backend
-      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
 
       attributes = exception_event(backend).attributes
       # The gem flags the exception so the collector reports it even on a
@@ -295,7 +296,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     it "records the exception on the span that is current when called" do
       backend = create_backend
       backend.start_event
-      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
       backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT)
       backend.complete
 
@@ -310,8 +311,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "records one exception event per call (multiple errors on one span)" do
       backend = create_backend
-      backend.set_error("RuntimeError", "first", ["line 1"], [])
-      backend.set_error("ArgumentError", "second", ["line 2"], [])
+      backend.set_error("RuntimeError", "first", ["line 1"], [], false)
+      backend.set_error("ArgumentError", "second", ["line 2"], [], false)
       backend.complete
 
       backend_span_id = backend.instance_variable_get(:@span).context.span_id

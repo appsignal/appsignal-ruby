@@ -94,17 +94,30 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
 
     it "serializes the backtrace Array to Data and forwards #set_error to the handle" do
+      allow(backend).to receive(:set_sample_data)
       data = Appsignal::Utils::Data.generate(["line 1"])
       expect(Appsignal::Utils::Data).to receive(:generate).with(["line 1"]).and_return(data)
       expect(handle).to receive(:set_error).with("RuntimeError", "boom", data)
-      backend.set_error("RuntimeError", "boom", ["line 1"], [])
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
     end
 
     it "forwards an empty Data array when the backtrace is nil" do
+      allow(backend).to receive(:set_sample_data)
       data = Appsignal::Extension.data_array_new
       expect(Appsignal::Extension).to receive(:data_array_new).and_return(data)
       expect(handle).to receive(:set_error).with("RuntimeError", "boom", data)
-      backend.set_error("RuntimeError", "boom", nil, [])
+      backend.set_error("RuntimeError", "boom", nil, [], false)
+    end
+
+    it "flushes the causes as error_causes sample data" do
+      allow(handle).to receive(:set_error)
+      causes = [{
+        :name => "ArgumentError",
+        :message => "bad arg",
+        :backtrace => ["/app/lib/foo.rb:10:in `bar'"]
+      }]
+      expect(backend).to receive(:set_sample_data).with("error_causes", an_instance_of(Array))
+      backend.set_error("RuntimeError", "boom", ["line 1"], causes, false)
     end
 
     it "forwards #finish to the handle and returns its value" do
@@ -174,6 +187,34 @@ describe Appsignal::Transaction::ExtensionBackend do
       duplicate = backend.duplicate("new-id")
 
       expect(duplicate.instance_variable_get(:@breadcrumbs)).to eq([{ :action => "click" }])
+    end
+  end
+
+  describe "error_causes projection" do
+    it "projects causes to the first-line shape" do
+      causes = [{
+        :name => "ArgumentError",
+        :message => "bad arg",
+        :backtrace => ["/app/lib/foo.rb:10:in `bar'"]
+      }]
+      projected = backend.send(:error_causes_sample_data, causes, false)
+
+      expect(projected.first).to include(:name => "ArgumentError", :message => "bad arg")
+      expect(projected.first[:first_line]["original"]).to eq("/app/lib/foo.rb:10:in `bar'")
+      expect(projected.first[:first_line]["line"]).to eq(10)
+    end
+
+    it "marks the last cause as not the root cause when the chain was truncated" do
+      causes = [{ :name => "E", :message => "m", :backtrace => ["/app/x.rb:1:in `y'"] }]
+
+      expect(backend.send(:error_causes_sample_data, causes, true).last[:is_root_cause])
+        .to eq(false)
+    end
+
+    it "leaves the first line nil for a cause with no backtrace" do
+      causes = [{ :name => "E", :message => "m", :backtrace => nil }]
+
+      expect(backend.send(:error_causes_sample_data, causes, false).first[:first_line]).to be_nil
     end
   end
 

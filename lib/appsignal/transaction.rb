@@ -793,52 +793,28 @@ module Appsignal
 
     def _set_error(error)
       @error_set = error
-
       _send_error_to_backend(error)
-
-      # Agent-mode cause channel: a `first_line`-only projection sent as sample
-      # data. The OpenTelemetry backend stubs `set_sample_data`, so in collector
-      # mode this is a no-op (causes ride on `appsignal.error_causes` instead).
-      causes, root_cause_missing = _error_causes(error)
-      causes_sample_data = causes.map do |e|
-        {
-          :name => e.class.name,
-          :message => cleaned_error_message(e),
-          :first_line => first_formatted_backtrace_line(e)
-        }
-      end
-
-      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
-
-      set_sample_data(
-        "error_causes",
-        causes_sample_data
-      )
     end
 
-    # Records an error on the backend without touching `@error_set` or the
-    # `error_causes` sample data, so it can be called both for the first error
-    # (from `_set_error`) and for additional errors when collapsing multiple
-    # errors onto one trace (see `#complete`).
-    #
-    # The backend receives raw Ruby inputs (a backtrace Array, not a
-    # pre-serialized Data object) and the rich cause list. The agent backend
-    # serializes the backtrace to Data itself; the OpenTelemetry backend uses
-    # the causes to emit the `appsignal.error_causes` attribute. The `:lines`
-    # key matches the processor's `ErrorSubCause { name, message, lines }`.
+    # Records an error on the backend. The cause chain is walked once into
+    # neutral data ({name, message, backtrace}); each backend projects what it
+    # needs -- the agent's first-line `error_causes` sample data, or the
+    # OpenTelemetry `appsignal.error_causes` attribute. Called for the first
+    # error and, in collector mode, for each additional error as it is added.
     def _send_error_to_backend(error)
-      causes, = _error_causes(error)
+      causes, root_cause_missing = _error_causes(error)
       @backend.set_error(
         error.class.name,
         cleaned_error_message(error),
         cleaned_backtrace(error.backtrace),
-        causes.map do |e|
+        causes.map do |cause|
           {
-            :name => e.class.name,
-            :message => cleaned_error_message(e),
-            :lines => cleaned_backtrace(e.backtrace)
+            :name => cause.class.name,
+            :message => cleaned_error_message(cause),
+            :backtrace => cleaned_backtrace(cause.backtrace)
           }
-        end
+        end,
+        root_cause_missing
       )
     end
 
@@ -862,38 +838,6 @@ module Appsignal
       end
 
       [causes, root_cause_missing]
-    end
-
-    BACKTRACE_REGEX =
-      %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?::in `(?<method>.+)')?$}.freeze
-    private_constant :BACKTRACE_REGEX
-
-    def first_formatted_backtrace_line(error)
-      backtrace = cleaned_backtrace(error.backtrace)
-      first_line = backtrace&.first
-      return unless first_line
-
-      captures = BACKTRACE_REGEX.match(first_line)
-      return unless captures
-
-      captures.named_captures
-        .merge("original" => first_line)
-        .tap do |c|
-          config = Appsignal.config
-          # Strip of whitespace at the end of the gem name
-          c["gem"] = c["gem"]&.strip
-          # Strip the app path from the path if present
-          root_path = config.root_path
-          if c["path"].start_with?(root_path)
-            c["path"].delete_prefix!(root_path)
-            # Relative paths shouldn't start with a slash
-            c["path"].delete_prefix!("/")
-          end
-          # Add revision for linking to the repository from the UI
-          c["revision"] = config[:revision]
-          # Convert line number to an integer
-          c["line"] = c["line"].to_i
-        end
     end
 
     def set_sample_data(key, data)
