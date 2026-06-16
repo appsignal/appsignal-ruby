@@ -767,7 +767,6 @@ if DependencyHelper.sidekiq_present?
             "queue" => "default",
             "retry_count" => "0"
           )
-          # queue_start has no OTel consumer; agent-only assertion.
           expect(transaction).to have_queue_start(
             Time.parse("2001-01-01 10:00:00UTC").to_i * 1000
           )
@@ -786,6 +785,9 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.tag.extra"]).to eq("data")
           expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
           expect(root_span.attributes["appsignal.tag.retry_count"]).to eq("0")
+          queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+          expect(queue_event.attributes["appsignal.queue_start"])
+            .to eq(Time.parse("2001-01-01 10:00:00UTC").to_i * 1000)
           expect(event_spans.size).to eq(1)
           span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
           expect(span).not_to be_nil
@@ -931,7 +933,6 @@ if DependencyHelper.sidekiq_present?
           expect(transaction).to_not include_environment
           expect(transaction).to include_params([expected_args])
           expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
-          # queue_start has no OTel consumer; agent-only assertion.
           expect(transaction).to have_queue_start(time.to_i * 1000)
 
           events = transaction.to_h["events"]
@@ -953,6 +954,8 @@ if DependencyHelper.sidekiq_present?
           expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
             .to eq([expected_args])
           expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+          queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+          expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
           expect(event_spans.map(&:name)).to match_array(expected_perform_events)
           sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
           expect(sidekiq_span).not_to be_nil
@@ -980,7 +983,6 @@ if DependencyHelper.sidekiq_present?
             expect(transaction).to_not include_environment
             expect(transaction).to include_params([expected_args])
             expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
-            # queue_start has no OTel consumer; agent-only assertion.
             expect(transaction).to have_queue_start(time.to_i * 1000)
 
             events = transaction.to_h["events"]
@@ -1004,6 +1006,8 @@ if DependencyHelper.sidekiq_present?
             expect(event.attributes["exception.stacktrace"]).to be_a(String)
             expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
             expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+            queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+            expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
             expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
               .to eq([expected_args])
             sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }

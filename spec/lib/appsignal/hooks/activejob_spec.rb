@@ -666,8 +666,9 @@ if DependencyHelper.active_job_present?
         end)
       end
 
-      # queue_start has no OTel equivalent; stays agent-only. The queue time
-      # metric is dual-moded separately (see "emitting the queue time metric").
+      # `have_queue_start` reads agent-only backend state, so this stays
+      # agent-only. In collector mode the queue start surfaces as a span event
+      # and `transaction_queue_duration` metric (covered in the transaction spec).
       it "sets queue time on transaction", :agent_mode do
         start_agent(**start_agent_args)
 

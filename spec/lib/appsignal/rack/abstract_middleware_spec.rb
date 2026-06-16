@@ -478,9 +478,9 @@ describe Appsignal::Rack::AbstractMiddleware do
               start_collector_agent
               perform
 
-              # `set_queue_start` is an intentional no-op in collector mode:
-              # nothing in the OpenTelemetry pipeline consumes a queue start.
-              expect(last_transaction).to_not have_queue_start
+              queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+              expect(queue_event.attributes["appsignal.queue_start"])
+                .to eq(queue_start_time.to_i)
             end
           end
         end

@@ -98,7 +98,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
-  describe "write methods (no-op for step 2 — implementations land in subsequent steps)" do
+  describe "write method smoke tests" do
     it "accepts #start_event without raising" do
       expect { create_backend.start_event }.not_to raise_error
     end
@@ -111,16 +111,55 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect { create_backend.record_event("name", "title", "body", 1, 1000) }.not_to raise_error
     end
 
-    it "accepts #set_queue_start without raising" do
-      expect { create_backend.set_queue_start(123_456) }.not_to raise_error
-    end
-
     it "accepts #set_metadata without raising" do
       expect { create_backend.set_metadata("key", "value") }.not_to raise_error
     end
 
     it "accepts #set_sample_data without raising" do
       expect { create_backend.set_sample_data("params", "anything") }.not_to raise_error
+    end
+  end
+
+  describe "#set_queue_start" do
+    let(:metrics) { Appsignal::Metrics::OpenTelemetryBackend }
+
+    it "adds an appsignal.queue_start event on the root span at the queue time" do
+      allow(metrics).to receive(:add_distribution_value)
+      backend = create_backend
+      backend.set_queue_start(1_700_000_000_000)
+      backend.complete
+
+      event = span_exporter.finished_spans.first.events
+        .find { |e| e.name == "appsignal.queue_start" }
+      expect(event).not_to be_nil
+      expect(event.attributes["appsignal.queue_start"]).to eq(1_700_000_000_000)
+    end
+
+    it "emits the queue duration metric in two series on completion" do
+      backend = create_backend("background_job")
+      start_time = backend.instance_variable_get(:@start_time)
+      queue_start = ((start_time.to_f * 1000) - 5_000).round
+
+      expect(metrics).to receive(:add_distribution_value).with(
+        "transaction_queue_duration", be_within(1_000).of(5_000), :namespace => "background_job"
+      )
+      expect(metrics).to receive(:add_distribution_value).with(
+        "transaction_queue_duration", be_within(1_000).of(5_000),
+        :namespace => "background_job", :hostname => an_instance_of(String)
+      )
+
+      backend.set_queue_start(queue_start)
+      backend.complete
+    end
+
+    it "ignores values below the epoch-ms floor" do
+      expect(metrics).to_not receive(:add_distribution_value)
+      backend = create_backend
+      backend.set_queue_start(10)
+      backend.complete
+
+      expect(Array(span_exporter.finished_spans.first.events).map(&:name))
+        .to_not include("appsignal.queue_start")
     end
   end
 
