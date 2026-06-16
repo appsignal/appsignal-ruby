@@ -155,31 +155,19 @@ module Appsignal
           write_request_headers(data)
         when "tags"
           write_tags(data)
-        when "error_causes"
-          # Emitted on the exception event (see #set_error), not as sample data.
         else
           @span.set_attribute("appsignal.#{key}", JSON.generate(data))
         end
       end
 
-      # Records the error as an OpenTelemetry `exception` span-event on the
-      # span that is current *now* -- which may be an event span, not the root --
-      # so the error attaches to the operation that raised it. The Transaction
-      # records each error at the moment it is added, so the current span is the
-      # one active at that point.
-      #
-      # `appsignal.alert_this_error` makes the collector report the exception
-      # even when it is on a non-root span: the collector reports every exception
-      # on the root span, but only flagged ones on child spans. The collector
-      # computes `appsignal.error_digest` itself, so we don't set it here.
-      #
-      # Causes are emitted as a single `appsignal.error_causes` JSON attribute on
-      # the exception event (not on the span): separate cause events would each
-      # be stamped with a digest and become their own incident. The processor
-      # reads `appsignal.error_causes` off the event and expands it into cause
-      # subdata. The JSON keys (`name`/`message`/`lines`) match the processor's
-      # `ErrorSubCause` struct.
-      def set_error(class_name, message, backtrace, causes)
+      # Records the error as an `exception` event on the span that is current now
+      # -- which may be an event span, not the root -- so it attaches to the
+      # operation that raised it. `appsignal.alert_this_error` tells the collector
+      # to report it even on a child span; the collector computes the digest.
+      # Causes ride on one `appsignal.error_causes` JSON attribute (keys match the
+      # processor's `ErrorSubCause`); separate cause events would each become their
+      # own incident.
+      def set_error(class_name, message, backtrace, causes, _root_cause_missing)
         span = ::OpenTelemetry::Trace.current_span
 
         attributes = {
@@ -195,7 +183,7 @@ module Appsignal
               {
                 "name" => cause[:name],
                 "message" => cause[:message],
-                "lines" => cause[:lines] || []
+                "lines" => cause[:backtrace] || []
               }
             end
           )

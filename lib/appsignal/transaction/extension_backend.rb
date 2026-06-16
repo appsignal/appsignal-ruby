@@ -12,6 +12,11 @@ module Appsignal
     # `Appsignal::Transaction#initialize` instantiates one and stores it in
     # `@backend`.
     class ExtensionBackend
+      # rubocop:disable Layout/LineLength
+      BACKTRACE_REGEX =
+        %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?::in `(?<method>.+)')?$}.freeze
+      # rubocop:enable Layout/LineLength
+
       # @!visibility private
       attr_writer :breadcrumbs
 
@@ -63,10 +68,10 @@ module Appsignal
         @breadcrumbs = @breadcrumbs.last(Appsignal::Transaction::BREADCRUMB_LIMIT)
       end
 
-      # `backtrace` is a raw Array (or nil); the C extension wants a `Data`
-      # object, so serialize it here. `causes` is unused in agent mode -- the
-      # Transaction reports causes separately via the `error_causes` sample data.
-      def set_error(class_name, message, backtrace, _causes)
+      # Serializes the backtrace to a C-extension `Data` object and records the
+      # error, then flushes the causes as `error_causes` sample data in the
+      # agent's first-line shape.
+      def set_error(class_name, message, backtrace, causes, root_cause_missing)
         backtrace_data =
           if backtrace
             Appsignal::Utils::Data.generate(backtrace)
@@ -74,6 +79,8 @@ module Appsignal
             Appsignal::Extension.data_array_new
           end
         @handle.set_error(class_name, message, backtrace_data)
+
+        set_sample_data("error_causes", error_causes_sample_data(causes, root_cause_missing))
       end
 
       def finish
@@ -120,6 +127,46 @@ module Appsignal
 
       def _completed?
         @handle._completed?
+      end
+
+      private
+
+      # Projects the neutral causes to the agent's first-line shape. A truncated
+      # chain marks its last entry as not the root cause.
+      def error_causes_sample_data(causes, root_cause_missing)
+        sample_data = causes.map do |cause|
+          {
+            :name => cause[:name],
+            :message => cause[:message],
+            :first_line => first_formatted_backtrace_line(cause[:backtrace])
+          }
+        end
+        sample_data.last[:is_root_cause] = false if root_cause_missing && sample_data.any?
+        sample_data
+      end
+
+      # Parses the first backtrace line into the fields the UI links on (gem,
+      # path, line, method), with the path made relative to the app root.
+      def first_formatted_backtrace_line(backtrace)
+        first_line = backtrace&.first
+        return unless first_line
+
+        captures = BACKTRACE_REGEX.match(first_line)
+        return unless captures
+
+        captures.named_captures
+          .merge("original" => first_line)
+          .tap do |c|
+            config = Appsignal.config
+            c["gem"] = c["gem"]&.strip
+            root_path = config.root_path
+            if c["path"].start_with?(root_path)
+              c["path"].delete_prefix!(root_path)
+              c["path"].delete_prefix!("/")
+            end
+            c["revision"] = config[:revision]
+            c["line"] = c["line"].to_i
+          end
       end
     end
   end
