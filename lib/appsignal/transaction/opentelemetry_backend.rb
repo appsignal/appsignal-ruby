@@ -257,10 +257,9 @@ module Appsignal
         self.class.new(new_transaction_id, @namespace)
       end
 
-      # Multiple errors are recorded as multiple `exception` events on the one
-      # root span (each its own incident), so the Transaction does not need to
-      # duplicate itself per error.
-      def supports_multiple_errors?
+      # Each error is recorded eagerly as its own `exception` event on the span
+      # current when it was added, so the Transaction never duplicates itself.
+      def records_errors_eagerly?
         true
       end
 
