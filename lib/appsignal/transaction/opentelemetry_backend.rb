@@ -137,16 +137,12 @@ module Appsignal
         @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
-      # Routes each sample-data category to the attribute the collector and the
-      # server's trace UI recognize. The JSON-blob categories (params, session
-      # data, custom data) are serialized as JSON strings; the collector
-      # re-parses and filters them. `environment` is handled in a later branch.
-      # `error_causes` and `breadcrumbs` are intentionally dropped here: causes
-      # ride on the exception event (see #set_error) and breadcrumbs are emitted
-      # per-call as span events on the current span (see #add_breadcrumb), so
-      # flushing either as sample data would duplicate them on the root span. Any
-      # other (unknown) category is passed through as a JSON `appsignal.<key>`
-      # attribute so no data is lost.
+      # Routes each sample-data category to the attribute the collector reads.
+      # The JSON-blob categories (params, session, custom data) are serialized as
+      # JSON; `environment` becomes request-header attributes; tags fan out to
+      # `appsignal.tag.*`. Unknown keys pass through as `appsignal.<key>` JSON so
+      # nothing is lost. Breadcrumbs never reach here (the backend emits them as
+      # span events); causes ride on the exception event (see #set_error).
       def set_sample_data(key, data)
         case key
         when "params"
@@ -157,15 +153,10 @@ module Appsignal
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
         when "environment"
           write_request_headers(data)
-        when "breadcrumbs"
-          # No-op: breadcrumbs are emitted as `appsignal.breadcrumb` span events
-          # on the current span at add time (see #add_breadcrumb). Flushing them
-          # here would re-emit them on the already-finished root span.
         when "tags"
           write_tags(data)
         when "error_causes"
-          # No-op: causes are emitted as the exception event's
-          # `appsignal.error_causes` attribute (see #set_error), not sample data.
+          # Emitted on the exception event (see #set_error), not as sample data.
         else
           @span.set_attribute("appsignal.#{key}", JSON.generate(data))
         end

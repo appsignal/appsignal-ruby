@@ -12,10 +12,14 @@ module Appsignal
     # `Appsignal::Transaction#initialize` instantiates one and stores it in
     # `@backend`.
     class ExtensionBackend
+      # @!visibility private
+      attr_writer :breadcrumbs
+
       def initialize(transaction_id, namespace, handle: nil)
         @handle = handle ||
           Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
           Appsignal::Extension::MockTransaction.new
+        @breadcrumbs = []
       end
 
       def start_event
@@ -52,11 +56,11 @@ module Appsignal
         @handle.set_sample_data(key, Appsignal::Utils::Data.generate(data))
       end
 
-      # No-op: agent mode collects breadcrumbs on the Transaction and flushes the
-      # whole (last-`BREADCRUMB_LIMIT`) array at completion through
-      # `set_sample_data("breadcrumbs", …)`. Only the OpenTelemetry backend acts
-      # on the per-breadcrumb call.
-      def add_breadcrumb(_breadcrumb)
+      # Buffer breadcrumbs, keeping the last `BREADCRUMB_LIMIT`, and flush them as
+      # sample data on completion.
+      def add_breadcrumb(breadcrumb)
+        @breadcrumbs.push(breadcrumb)
+        @breadcrumbs = @breadcrumbs.last(Appsignal::Transaction::BREADCRUMB_LIMIT)
       end
 
       # `backtrace` is a raw Array (or nil); the C extension wants a `Data`
@@ -77,6 +81,9 @@ module Appsignal
       end
 
       def complete
+        unless @breadcrumbs.empty?
+          @handle.set_sample_data("breadcrumbs", Appsignal::Utils::Data.generate(@breadcrumbs))
+        end
         @handle.complete
       end
 
@@ -95,7 +102,9 @@ module Appsignal
       end
 
       def duplicate(new_transaction_id)
-        self.class.new(new_transaction_id, nil, :handle => @handle.duplicate(new_transaction_id))
+        self.class.new(
+          new_transaction_id, nil, :handle => @handle.duplicate(new_transaction_id)
+        ).tap { |backend| backend.breadcrumbs = @breadcrumbs.dup }
       end
 
       def to_json # rubocop:disable Lint/ToJSON

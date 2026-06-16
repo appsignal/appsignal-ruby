@@ -163,7 +163,8 @@ RSpec::Matchers.define :include_breadcrumb do |action, category, message, metada
       breadcrumb = format_breadcrumb(action, category, message, metadata, time)
       expect(breadcrumbs).to_not include(breadcrumb)
     else
-      expect(breadcrumbs).to_not be_any
+      # No breadcrumbs added means no breadcrumbs sample data at all (nil).
+      expect(breadcrumbs || []).to_not be_any
     end
   end
 
