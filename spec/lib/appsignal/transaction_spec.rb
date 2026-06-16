@@ -4245,7 +4245,7 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     it "starts the event in the extension" do
-      expect(transaction.backend).to receive(:start_event).with(0).and_call_original
+      expect(transaction.backend).to receive(:start_event).with(no_args).and_call_original
 
       transaction.start_event
     end
@@ -4262,15 +4262,13 @@ describe Appsignal::Transaction do
 
   describe "#finish_event" do
     let(:transaction) { new_transaction }
-    let(:fake_gc_time) { 0 }
 
     it "should finish the event in the extension" do
       expect(transaction.backend).to receive(:finish_event).with(
         "name",
         "title",
         "body",
-        1,
-        fake_gc_time
+        1
       ).and_call_original
 
       transaction.finish_event(
@@ -4286,8 +4284,7 @@ describe Appsignal::Transaction do
         "name",
         "",
         "",
-        0,
-        fake_gc_time
+        0
       ).and_call_original
 
       transaction.finish_event(
@@ -4310,7 +4307,6 @@ describe Appsignal::Transaction do
 
   describe "#record_event" do
     let(:transaction) { new_transaction }
-    let(:fake_gc_time) { 0 }
 
     it "should record the event in the extension" do
       expect(transaction.backend).to receive(:record_event).with(
@@ -4318,8 +4314,7 @@ describe Appsignal::Transaction do
         "title",
         "body",
         1,
-        1000,
-        fake_gc_time
+        1000
       ).and_call_original
 
       transaction.record_event(
@@ -4337,8 +4332,7 @@ describe Appsignal::Transaction do
         "",
         "",
         0,
-        1000,
-        fake_gc_time
+        1000
       ).and_call_original
 
       transaction.record_event(
