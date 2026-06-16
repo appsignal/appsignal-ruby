@@ -1839,7 +1839,7 @@ describe Appsignal do
           start_agent
           perform
 
-          transaction._sample
+          transaction.complete
           expect(transaction).to include_breadcrumb(
             "http",
             "Network",

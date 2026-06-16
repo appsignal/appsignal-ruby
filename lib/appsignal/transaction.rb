@@ -168,7 +168,6 @@ module Appsignal
       @discarded = false
       @completed = false
       @tags = {}
-      @breadcrumbs = []
       @store = Hash.new { |hash, key| hash[key] = {} }
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
@@ -467,21 +466,16 @@ module Appsignal
         return
       end
 
-      breadcrumb = {
+      # The backend owns how breadcrumbs are stored: the agent backend buffers
+      # them and flushes at completion, the OpenTelemetry backend emits each as a
+      # span event right away (by completion its target span has finished).
+      @backend.add_breadcrumb(
         :time => time.to_i,
         :category => category,
         :action => action,
         :message => message,
         :metadata => metadata
-      }
-      @breadcrumbs.push(breadcrumb)
-      @breadcrumbs = @breadcrumbs.last(BREADCRUMB_LIMIT)
-
-      # Hand the breadcrumb to the backend immediately. The agent backend
-      # ignores this (it flushes the whole `@breadcrumbs` array at completion via
-      # `sample_data`); the OpenTelemetry backend emits it right away as a span
-      # event on the current span, which has already finished by completion time.
-      @backend.add_breadcrumb(breadcrumb)
+      )
     end
 
     # Set an action name for the transaction.
@@ -654,7 +648,7 @@ module Appsignal
     protected
 
     # @!visibility private
-    attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params,
+    attr_writer :is_duplicate, :tags, :custom_data, :params,
       :session_data, :headers
 
     # @!visibility private
@@ -683,8 +677,6 @@ module Appsignal
     end
 
     private
-
-    attr_reader :breadcrumbs
 
     def run_after_create_hooks
       self.class.after_create.each do |block|
@@ -895,7 +887,6 @@ module Appsignal
         :environment => sanitized_request_headers,
         :session_data => sanitized_session_data,
         :tags => sanitized_tags,
-        :breadcrumbs => breadcrumbs,
         :custom_data => custom_data
       }.each do |key, data|
         set_sample_data(key, data)
@@ -912,7 +903,6 @@ module Appsignal
         transaction.is_duplicate = true
         transaction.tags = @tags.dup
         transaction.custom_data = @custom_data.dup
-        transaction.breadcrumbs = @breadcrumbs.dup
         transaction.params = @params.dup
         transaction.session_data = @session_data.dup
         transaction.headers = @headers.dup

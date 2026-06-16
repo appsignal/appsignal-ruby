@@ -833,7 +833,7 @@ module Appsignal
   # Breadcrumbs can be used to trace what path a user has taken
   # before encountering an error.
   # 
-  # Only the last 20 added breadcrumbs will be saved.
+  # At most 20 of the added breadcrumbs will be saved.
   # 
   # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
   # 
@@ -2481,7 +2481,7 @@ module Appsignal
       # Breadcrumbs can be used to trace what path a user has taken
       # before encountering an error.
       # 
-      # Only the last 20 added breadcrumbs will be saved.
+      # At most 20 of the added breadcrumbs will be saved.
       # 
       # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
       # 

@@ -2229,7 +2229,7 @@ describe Appsignal::Transaction do
       it "stores last <LIMIT> breadcrumbs on the transaction in agent mode", :agent_mode do
         start_agent(**start_agent_args)
         perform
-        transaction._sample
+        transaction.complete
 
         expect(transaction.to_h["sample_data"]["breadcrumbs"].length).to eql(20)
         expect(transaction.to_h["sample_data"]["breadcrumbs"][0]).to eq(
@@ -2298,7 +2298,7 @@ describe Appsignal::Transaction do
         start_agent(**start_agent_args)
         timeframe_start = Time.now.utc.to_i
         perform
-        transaction._sample
+        transaction.complete
         timeframe_end = Time.now.utc.to_i
 
         expect(transaction).to include_breadcrumb(
@@ -2334,7 +2334,7 @@ describe Appsignal::Transaction do
       it "does not add the breadcrumb and logs an error in agent mode", :agent_mode do
         start_agent(**start_agent_args)
         logs = capture_logs { perform }
-        transaction._sample
+        transaction.complete
 
         expect(transaction).to_not include_breadcrumbs
         expect(logs).to contains_log(

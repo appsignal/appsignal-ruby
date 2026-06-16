@@ -139,6 +139,44 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
   end
 
+  describe "breadcrumbs" do
+    let(:handle) { backend.instance_variable_get(:@handle) }
+
+    it "caps the buffer at the breadcrumb limit, keeping the most recent" do
+      25.times { |i| backend.add_breadcrumb(:index => i) }
+
+      buffer = backend.instance_variable_get(:@breadcrumbs)
+      expect(buffer.length).to eq(Appsignal::Transaction::BREADCRUMB_LIMIT)
+      expect(buffer.first).to eq(:index => 5)
+      expect(buffer.last).to eq(:index => 24)
+    end
+
+    it "flushes the buffered breadcrumbs as sample data on complete" do
+      backend.add_breadcrumb(:action => "click")
+      data = Appsignal::Utils::Data.generate([{ :action => "click" }])
+      expect(Appsignal::Utils::Data).to receive(:generate)
+        .with([{ :action => "click" }]).and_return(data)
+      expect(handle).to receive(:set_sample_data).with("breadcrumbs", data)
+      expect(handle).to receive(:complete)
+
+      backend.complete
+    end
+
+    it "does not flush sample data when there are no breadcrumbs" do
+      expect(handle).to_not receive(:set_sample_data)
+      expect(handle).to receive(:complete)
+
+      backend.complete
+    end
+
+    it "copies the buffer into a duplicate" do
+      backend.add_breadcrumb(:action => "click")
+      duplicate = backend.duplicate("new-id")
+
+      expect(duplicate.instance_variable_get(:@breadcrumbs)).to eq([{ :action => "click" }])
+    end
+  end
+
   describe "#supports_multiple_errors?" do
     it "returns false (extra errors are reported as duplicate transactions)" do
       expect(backend.supports_multiple_errors?).to eq(false)
