@@ -1,25 +1,16 @@
 # frozen_string_literal: true
 
 require "json"
+require "socket"
 
 module Appsignal
   class Transaction
     # @!visibility private
     #
     # The transaction backend used in collector mode. Emits an OpenTelemetry
-    # root span for the transaction lifecycle plus child spans for each
-    # instrumented event. Error events land in a subsequent step.
-    #
-    # On construction the backend starts an OTel root span and attaches it
-    # to the current OpenTelemetry context, so any third-party OTel
-    # instrumentation that runs while the transaction is active nests
-    # naturally under the transaction's span. `start_event` opens a child
-    # span and pushes it onto a per-transaction LIFO; `finish_event` pops
-    # it, renames it from a placeholder to the event name, writes the
-    # body/title attributes, and closes the span. `record_event` is the
-    # post-facto variant that creates a span with a backdated start
-    # timestamp. On `complete` the backend drains any leftover event
-    # spans, detaches the root context, and finishes the root span.
+    # root span for the transaction, a child span per instrumented event, and
+    # queue timing as a metric. Errors and breadcrumbs attach to whichever span
+    # is current when they happen.
     class OpenTelemetryBackend
       TRACER_NAME = "appsignal-ruby"
 
@@ -50,17 +41,23 @@ module Appsignal
       # sanitization on `db.query.text`.
       SQL_DB_SYSTEM = "other_sql"
 
+      # Epoch-ms floor (~year 2000) below which a queue start is ignored. Mirrors
+      # the agent's `set_queue_start` (ext `transaction.rs`), which only records a
+      # queue duration when `queue_start_ms > 946_681_200_000`.
+      QUEUE_START_MIN = 946_681_200_000
+
       def initialize(transaction_id, namespace, **)
         @transaction_id = transaction_id
         @namespace = namespace
         @completed = false
         @event_stack = []
         @breadcrumb_count = 0
+        @queue_start = nil
+        @start_time = Time.now
 
-        # `start_root_span` (not `start_span`) so the transaction's root
-        # ignores any ambient OTel context. A transaction is a unit of work
-        # in its own right -- nesting it under whatever span happens to be
-        # current would lose that boundary and mix unrelated traces.
+        # A transaction is its own unit of work, so start a root span that
+        # ignores any ambient OTel context instead of nesting under an
+        # unrelated current span.
         @span = tracer.start_root_span(
           placeholder_span_name(namespace),
           :kind => SPAN_KIND_BY_NAMESPACE.fetch(namespace, DEFAULT_SPAN_KIND)
@@ -69,10 +66,8 @@ module Appsignal
           ::OpenTelemetry::Trace.context_with_span(@span)
         )
 
-        # `Appsignal::Transaction#initialize` sets `@namespace` directly and
-        # never calls `set_namespace`, so emit the attribute here from the
-        # constructor namespace -- otherwise a transaction that never calls
-        # `set_namespace` would carry no namespace for the collector.
+        # Transaction#initialize sets the namespace directly without calling
+        # set_namespace, so emit the attribute from here.
         @span.set_attribute("appsignal.namespace", namespace) if namespace
       end
 
@@ -120,14 +115,19 @@ module Appsignal
         @span.set_attribute("appsignal.namespace", namespace)
       end
 
-      # Intentional no-op. Nothing in the OpenTelemetry pipeline consumes a queue
-      # start: the agent only uses it to compute a `queue_duration` scalar (it
-      # does not backdate the transaction), the collector has no handling, and
-      # the spans processor reports `queue_duration: 0` for OTel traces. A bare
-      # timestamp is meaningless without a consumer to compute the delta, and
-      # emulating it via span timing would distort the trace duration, so we drop
-      # it rather than emit an attribute nothing reads.
-      def set_queue_start(_start) # rubocop:disable Naming/AccessorMethodName
+      # Queue start has no OTel-native home, so surface it two ways: an
+      # `appsignal.queue_start` event on the root span (per-trace timeline) and,
+      # at completion, a `transaction_queue_duration` metric (the aggregate
+      # graph). Like the agent, we record the delta and never shift span timing.
+      def set_queue_start(start) # rubocop:disable Naming/AccessorMethodName
+        return unless start && start > QUEUE_START_MIN
+
+        @queue_start = start
+        @span.add_event(
+          "appsignal.queue_start",
+          :timestamp => Time.at(start / 1000.0),
+          :attributes => { "appsignal.queue_start" => start }
+        )
       end
 
       # Transaction metadata (request path, method, ...) has no dedicated OTel
@@ -253,6 +253,9 @@ module Appsignal
       end
 
       def complete
+        # `teardown` sets `@completed`, so this guard also makes the metric
+        # idempotent across a double `complete`, and skips it on `discard`.
+        emit_queue_duration_metric unless @completed
         teardown
       end
 
@@ -303,21 +306,15 @@ module Appsignal
 
       private
 
-      # Detaches the OTel context and finishes the root span. Shared by
-      # `complete` and `discard`.
-      #
-      # Idempotent: tearing down twice would re-detach an already-detached
-      # context (a mismatched-detach error) and re-finish an ended span (a
-      # warning). The Transaction can be completed directly and then again by a
-      # `complete_current!` cleanup path, so guard against it.
+      # Detaches the OTel context and finishes the root span. Idempotent: the
+      # Transaction can complete directly and again via a cleanup path, and
+      # re-detaching/re-finishing an ended span would error.
       def teardown
         return if @completed
 
         @completed = true
-        # Drain unfinished event spans defensively: if `start_event` was
-        # called without a matching `finish_event` (caller bug or aborted
-        # flow), the root context can't detach in LIFO order until the
-        # event tokens are released first.
+        # Release any event span left unfinished by an aborted flow, so the
+        # root context can detach in LIFO order.
         until @event_stack.empty?
           span, token = @event_stack.pop
           ::OpenTelemetry::Context.detach(token)
@@ -325,6 +322,28 @@ module Appsignal
         end
         ::OpenTelemetry::Context.detach(@context_token) if @context_token
         @span&.finish
+      end
+
+      # Emits the queue duration as a distribution metric in both the
+      # per-namespace and per-namespace-and-host series the queue-time graph
+      # reads. Nothing downstream fans these out, so emit both ourselves.
+      def emit_queue_duration_metric
+        return unless @queue_start
+
+        duration_ms = (@start_time.to_f * 1000) - @queue_start
+        return if duration_ms.negative?
+
+        Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
+          "transaction_queue_duration", duration_ms, :namespace => @namespace
+        )
+        Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
+          "transaction_queue_duration", duration_ms,
+          :namespace => @namespace, :hostname => hostname
+        )
+      end
+
+      def hostname
+        Appsignal.config&.[](:hostname) || Socket.gethostname
       end
 
       def tracer

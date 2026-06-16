@@ -31,7 +31,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   end
 
   context "with a performance call" do
-    let(:sent_timestamp) { Time.parse("1976-11-18 0:00:00UTC").to_i * 1000 }
+    let(:sent_timestamp) { Time.parse("2024-11-18 0:00:00UTC").to_i * 1000 }
     let(:sqs_msg) do
       double(:message_id => "msg1", :attributes => { "SentTimestamp" => sent_timestamp })
     end
@@ -66,8 +66,6 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
             "queue" => queue,
             "SentTimestamp" => sent_timestamp
           )
-          # queue_start: agent-only; the OTel backend intentionally drops it
-          # (no collector consumer computes queue_duration from a raw timestamp).
           expect(transaction).to have_queue_start(sent_timestamp)
           expect(transaction).to be_completed
         end
@@ -93,8 +91,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect(root_span.attributes["appsignal.tag.message_id"]).to eq("msg1")
           expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
           expect(root_span.attributes["appsignal.tag.SentTimestamp"]).to eq(sent_timestamp)
-          # queue_start has no OTel representation; assert no attribute is emitted
-          expect(root_span.attributes).not_to have_key("appsignal.queue_start")
+          queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+          expect(queue_event.attributes["appsignal.queue_start"]).to eq(sent_timestamp)
           expect(last_transaction).to be_completed
         end
       end
@@ -225,7 +223,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         double(
           :message_id => "msg2",
           :attributes => {
-            "SentTimestamp" => (Time.parse("1976-11-18 01:00:00UTC").to_i * 1000).to_s
+            "SentTimestamp" => (Time.parse("2024-11-18 01:00:00UTC").to_i * 1000).to_s
           }
         ),
         double(
@@ -240,7 +238,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         { :id => "123", :foo => "Foo", :bar => "Bar" }
       ]
     end
-    let(:sent_timestamp) { Time.parse("1976-11-18 01:00:00UTC").to_i * 1000 }
+    let(:sent_timestamp) { Time.parse("2024-11-18 01:00:00UTC").to_i * 1000 }
 
     describe "creates a transaction for the batch" do
       def perform
@@ -302,8 +300,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         # Earliest/oldest timestamp from messages
         expect(root_span.attributes["appsignal.tag.SentTimestamp"])
           .to eq(sent_timestamp.to_s)
-        # queue_start has no OTel representation; assert no attribute is emitted
-        expect(root_span.attributes).not_to have_key("appsignal.queue_start")
+        queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+        expect(queue_event.attributes["appsignal.queue_start"]).to eq(sent_timestamp)
       end
     end
   end

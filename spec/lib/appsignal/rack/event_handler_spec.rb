@@ -166,8 +166,8 @@ describe Appsignal::Rack::EventHandler do
         use_test_logger
         perform
 
-        # `set_queue_start` is an intentional no-op in collector mode.
-        expect(last_transaction.backend.queue_start).to be_nil
+        queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+        expect(queue_event.attributes["appsignal.queue_start"]).to eq(queue_start_time.to_i)
         event = event_spans.find do |span|
           span.attributes["appsignal.category"] == "process_request.rack"
         end

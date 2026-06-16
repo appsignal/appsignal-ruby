@@ -2636,25 +2636,32 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     describe "setting the queue start" do
-      def perform
-        transaction.set_queue_start(10)
-      end
-
       it "in agent mode", :agent_mode do
         start_agent(**start_agent_args)
-        perform
+        transaction.set_queue_start(1_000_000_000_000)
 
-        expect(transaction).to have_queue_start(10)
+        expect(transaction).to have_queue_start(1_000_000_000_000)
       end
 
       it "in collector mode", :collector_mode do
         start_collector_agent
-        perform
+        # An epoch-ms timestamp shortly before the transaction started, so the
+        # duration comes out to a known positive delta.
+        start_time = transaction.backend.instance_variable_get(:@start_time)
+        queue_start = ((start_time.to_f * 1000) - 5_000).round
+        transaction.set_queue_start(queue_start)
         transaction.complete
 
-        # Intentional no-op in collector mode: nothing consumes a queue start in
-        # the OTel pipeline, so no attribute is emitted.
-        expect(root_span.attributes.keys.grep(/queue/i)).to be_empty
+        event = root_span.events.find { |e| e.name == "appsignal.queue_start" }
+        expect(event).not_to be_nil
+        expect(event.attributes["appsignal.queue_start"]).to eq(queue_start)
+
+        snapshot = metric_snapshot("transaction_queue_duration")
+        expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
+          { "namespace" => transaction.namespace },
+          { "namespace" => transaction.namespace, "hostname" => an_instance_of(String) }
+        )
+        expect(snapshot.data_points.map(&:sum)).to all(be_within(1_000).of(5_000))
       end
     end
 
@@ -2675,7 +2682,8 @@ describe Appsignal::Transaction do
         perform
         transaction.complete
 
-        expect(root_span.attributes.keys.grep(/queue/i)).to be_empty
+        expect(Array(root_span.events).map(&:name)).to_not include("appsignal.queue_start")
+        expect(metric_snapshot("transaction_queue_duration")).to be_nil
       end
     end
 
