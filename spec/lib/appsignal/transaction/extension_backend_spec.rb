@@ -3,7 +3,7 @@
 describe Appsignal::Transaction::ExtensionBackend do
   before { start_agent }
 
-  let(:backend) { described_class.new("abc-123", Appsignal::Transaction::HTTP_REQUEST, 0) }
+  let(:backend) { described_class.new("abc-123", Appsignal::Transaction::HTTP_REQUEST) }
 
   describe "#initialize" do
     it "wraps a real extension transaction when the extension is loaded" do
@@ -18,7 +18,6 @@ describe Appsignal::Transaction::ExtensionBackend do
         backend_with_handle = described_class.new(
           "ignored-id",
           "ignored-namespace",
-          0,
           :handle => existing_handle
         )
 
@@ -30,7 +29,7 @@ describe Appsignal::Transaction::ExtensionBackend do
       around { |example| Appsignal::Testing.without_testing { example.run } }
 
       it "falls back to a MockTransaction" do
-        backend = described_class.new("abc-123", Appsignal::Transaction::HTTP_REQUEST, 0)
+        backend = described_class.new("abc-123", Appsignal::Transaction::HTTP_REQUEST)
         expect(backend.instance_variable_get(:@handle))
           .to be_kind_of(Appsignal::Extension::MockTransaction)
       end
@@ -53,17 +52,17 @@ describe Appsignal::Transaction::ExtensionBackend do
 
     it "forwards #start_event to the handle" do
       expect(handle).to receive(:start_event).with(0)
-      backend.start_event(0)
+      backend.start_event
     end
 
     it "forwards #finish_event to the handle" do
       expect(handle).to receive(:finish_event).with("name", "title", "body", 1, 0)
-      backend.finish_event("name", "title", "body", 1, 0)
+      backend.finish_event("name", "title", "body", 1)
     end
 
     it "forwards #record_event to the handle" do
       expect(handle).to receive(:record_event).with("name", "title", "body", 1, 1000, 0)
-      backend.record_event("name", "title", "body", 1, 1000, 0)
+      backend.record_event("name", "title", "body", 1, 1000)
     end
 
     it "forwards #set_action to the handle" do
@@ -110,7 +109,7 @@ describe Appsignal::Transaction::ExtensionBackend do
 
     it "forwards #finish to the handle and returns its value" do
       expect(handle).to receive(:finish).with(0).and_return(true)
-      expect(backend.finish(0)).to eq(true)
+      expect(backend.finish).to eq(true)
     end
 
     it "forwards #complete to the handle" do

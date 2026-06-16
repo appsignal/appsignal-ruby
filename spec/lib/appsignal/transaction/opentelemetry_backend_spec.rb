@@ -28,7 +28,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   end
 
   def create_backend(namespace = "http_request")
-    described_class.new("abc-123", namespace, 0).tap { |b| @backends_created << b }
+    described_class.new("abc-123", namespace).tap { |b| @backends_created << b }
   end
 
   describe "#initialize" do
@@ -100,15 +100,15 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
   describe "write methods (no-op for step 2 — implementations land in subsequent steps)" do
     it "accepts #start_event without raising" do
-      expect { create_backend.start_event(0) }.not_to raise_error
+      expect { create_backend.start_event }.not_to raise_error
     end
 
     it "accepts #finish_event without raising" do
-      expect { create_backend.finish_event("name", "title", "body", 1, 0) }.not_to raise_error
+      expect { create_backend.finish_event("name", "title", "body", 1) }.not_to raise_error
     end
 
     it "accepts #record_event without raising" do
-      expect { create_backend.record_event("name", "title", "body", 1, 1000, 0) }.not_to raise_error
+      expect { create_backend.record_event("name", "title", "body", 1, 1000) }.not_to raise_error
     end
 
     it "accepts #set_queue_start without raising" do
@@ -255,9 +255,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "records the exception on the span that is current when called" do
       backend = create_backend
-      backend.start_event(0)
+      backend.start_event
       backend.set_error("RuntimeError", "boom", ["line 1"], [])
-      backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT, 0)
+      backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT)
       backend.complete
 
       event_span = span_exporter.finished_spans
@@ -292,7 +292,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
   describe "#finish" do
     it "returns true so Transaction#complete runs the sample_data path" do
-      expect(create_backend.finish(0)).to eq(true)
+      expect(create_backend.finish).to eq(true)
     end
   end
 
@@ -423,7 +423,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     before { start_agent }
 
     def new_transaction_with_otel_backend(namespace = Appsignal::Transaction::HTTP_REQUEST)
-      backend = described_class.new("abc-123", namespace, 0)
+      backend = described_class.new("abc-123", namespace)
       @backends_created << backend
       Appsignal::Transaction.new(namespace, :backend => backend)
     end
@@ -472,7 +472,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend = create_backend
         root_span = backend.instance_variable_get(:@span)
 
-        backend.start_event(0)
+        backend.start_event
 
         current = ::OpenTelemetry::Trace.current_span
         expect(current).not_to eq(root_span)
@@ -489,9 +489,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend = create_backend
         root_span = backend.instance_variable_get(:@span)
 
-        backend.start_event(0)
+        backend.start_event
         backend.finish_event("custom.event", "Title", "Body",
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
 
         expect(backend.instance_variable_get(:@event_stack)).to be_empty
         expect(::OpenTelemetry::Trace.current_span).to eq(root_span)
@@ -511,7 +511,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend = create_backend
         expect do
           backend.finish_event("custom.event", "T", "B",
-            Appsignal::EventFormatter::DEFAULT, 0)
+            Appsignal::EventFormatter::DEFAULT)
         end.not_to raise_error
       end
     end
@@ -521,7 +521,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend = create_backend
         duration_ns = 1_000_000_000 # 1 second
         backend.record_event("custom.event", "T", "B",
-          Appsignal::EventFormatter::DEFAULT, duration_ns, 0)
+          Appsignal::EventFormatter::DEFAULT, duration_ns)
 
         span = span_exporter.finished_spans
           .find { |s| s.attributes["appsignal.category"] == "custom.event" }
@@ -536,7 +536,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       it "does NOT push onto the event stack" do
         backend = create_backend
         backend.record_event("custom.event", nil, nil,
-          Appsignal::EventFormatter::DEFAULT, 1_000, 0)
+          Appsignal::EventFormatter::DEFAULT, 1_000)
         expect(backend.instance_variable_get(:@event_stack)).to be_empty
       end
     end
@@ -546,15 +546,15 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend = create_backend
         root_span = backend.instance_variable_get(:@span)
 
-        backend.start_event(0)
+        backend.start_event
         outer_span = backend.instance_variable_get(:@event_stack).last.first
-        backend.start_event(0)
+        backend.start_event
         inner_span = backend.instance_variable_get(:@event_stack).last.first
 
         backend.finish_event("inner.event", nil, nil,
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
         backend.finish_event("outer.event", nil, nil,
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
 
         inner = span_exporter.finished_spans.find { |s| s.name == "inner.event" }
         outer = span_exporter.finished_spans.find { |s| s.name == "outer.event" }
@@ -569,9 +569,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     describe "attribute mapping" do
       it "writes db.query.text + db.system.name for SQL bodies (not appsignal.body)" do
         backend = create_backend
-        backend.start_event(0)
+        backend.start_event
         backend.finish_event("sql.query", "Q", "SELECT 1",
-          Appsignal::EventFormatter::SQL_BODY_FORMAT, 0)
+          Appsignal::EventFormatter::SQL_BODY_FORMAT)
 
         attrs = span_exporter.finished_spans
           .find { |s| s.attributes["appsignal.category"] == "sql.query" }.attributes
@@ -582,9 +582,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
       it "writes appsignal.body for default bodies (no db.* attributes)" do
         backend = create_backend
-        backend.start_event(0)
+        backend.start_event
         backend.finish_event("custom", "T", "Body",
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
 
         attrs = span_exporter.finished_spans
           .find { |s| s.attributes["appsignal.category"] == "custom" }.attributes
@@ -595,12 +595,12 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
       it "omits the body attribute entirely when body is empty or nil" do
         backend = create_backend
-        backend.start_event(0)
+        backend.start_event
         backend.finish_event("no.body", "T", nil,
-          Appsignal::EventFormatter::DEFAULT, 0)
-        backend.start_event(0)
+          Appsignal::EventFormatter::DEFAULT)
+        backend.start_event
         backend.finish_event("empty.body", "T", "",
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
 
         no_body = span_exporter.finished_spans
           .find { |s| s.attributes["appsignal.category"] == "no.body" }
@@ -614,12 +614,12 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
       it "falls back to the event name as the span name when title is empty or nil" do
         backend = create_backend
-        backend.start_event(0)
+        backend.start_event
         backend.finish_event("no.title", nil, "Body",
-          Appsignal::EventFormatter::DEFAULT, 0)
-        backend.start_event(0)
+          Appsignal::EventFormatter::DEFAULT)
+        backend.start_event
         backend.finish_event("empty.title", "", "Body",
-          Appsignal::EventFormatter::DEFAULT, 0)
+          Appsignal::EventFormatter::DEFAULT)
 
         no_title = span_exporter.finished_spans
           .find { |s| s.attributes["appsignal.category"] == "no.title" }
@@ -636,8 +636,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     describe "#complete with unfinished event spans" do
       it "drains the event stack without raising, finishing each span with the placeholder name" do
         backend = create_backend
-        backend.start_event(0)
-        backend.start_event(0)
+        backend.start_event
+        backend.start_event
 
         expect { backend.complete }.not_to raise_error
         expect(backend.instance_variable_get(:@event_stack)).to be_empty

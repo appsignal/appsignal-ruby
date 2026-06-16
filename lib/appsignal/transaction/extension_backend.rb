@@ -12,22 +12,22 @@ module Appsignal
     # `Appsignal::Transaction#initialize` instantiates one and stores it in
     # `@backend`.
     class ExtensionBackend
-      def initialize(transaction_id, namespace, gc_duration, handle: nil)
+      def initialize(transaction_id, namespace, handle: nil)
         @handle = handle ||
-          Appsignal::Extension.start_transaction(transaction_id, namespace, gc_duration) ||
+          Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
           Appsignal::Extension::MockTransaction.new
       end
 
-      def start_event(gc_duration)
-        @handle.start_event(gc_duration)
+      def start_event
+        @handle.start_event(0)
       end
 
-      def finish_event(name, title, body, body_format, gc_duration)
-        @handle.finish_event(name, title, body, body_format, gc_duration)
+      def finish_event(name, title, body, body_format)
+        @handle.finish_event(name, title, body, body_format, 0)
       end
 
-      def record_event(name, title, body, body_format, duration, gc_duration) # rubocop:disable Metrics/ParameterLists
-        @handle.record_event(name, title, body, body_format, duration, gc_duration)
+      def record_event(name, title, body, body_format, duration)
+        @handle.record_event(name, title, body, body_format, duration, 0)
       end
 
       def set_action(action) # rubocop:disable Naming/AccessorMethodName
@@ -72,8 +72,8 @@ module Appsignal
         @handle.set_error(class_name, message, backtrace_data)
       end
 
-      def finish(gc_duration)
-        @handle.finish(gc_duration)
+      def finish
+        @handle.finish(0)
       end
 
       def complete
@@ -95,7 +95,7 @@ module Appsignal
       end
 
       def duplicate(new_transaction_id)
-        self.class.new(new_transaction_id, nil, 0, :handle => @handle.duplicate(new_transaction_id))
+        self.class.new(new_transaction_id, nil, :handle => @handle.duplicate(new_transaction_id))
       end
 
       def to_json # rubocop:disable Lint/ToJSON

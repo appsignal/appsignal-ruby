@@ -181,8 +181,7 @@ module Appsignal
 
       @backend = backend || Appsignal::Backends.transaction.new(
         @transaction_id,
-        @namespace,
-        0
+        @namespace
       )
 
       run_after_create_hooks
@@ -233,7 +232,7 @@ module Appsignal
 
       unless duplicate?
         self.class.last_errors = @error_blocks.keys
-        should_sample = @backend.finish(0)
+        should_sample = @backend.finish
       end
 
       report_errors
@@ -607,7 +606,7 @@ module Appsignal
     def start_event
       return if paused?
 
-      @backend.start_event(0)
+      @backend.start_event
     end
 
     # @!visibility private
@@ -619,8 +618,7 @@ module Appsignal
         name,
         title || BLANK,
         body || BLANK,
-        body_format || Appsignal::EventFormatter::DEFAULT,
-        0
+        body_format || Appsignal::EventFormatter::DEFAULT
       )
     end
 
@@ -634,8 +632,7 @@ module Appsignal
         title || BLANK,
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
-        duration,
-        0
+        duration
       )
     end
 

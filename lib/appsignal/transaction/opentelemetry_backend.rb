@@ -50,10 +50,9 @@ module Appsignal
       # sanitization on `db.query.text`.
       SQL_DB_SYSTEM = "other_sql"
 
-      def initialize(transaction_id, namespace, gc_duration, **)
+      def initialize(transaction_id, namespace, **)
         @transaction_id = transaction_id
         @namespace = namespace
-        @gc_duration = gc_duration
         @completed = false
         @event_stack = []
         @breadcrumb_count = 0
@@ -77,7 +76,7 @@ module Appsignal
         @span.set_attribute("appsignal.namespace", namespace) if namespace
       end
 
-      def start_event(_gc_duration)
+      def start_event
         span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME)
         token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(span)
@@ -85,7 +84,7 @@ module Appsignal
         @event_stack.push([span, token])
       end
 
-      def finish_event(name, title, body, body_format, _gc_duration)
+      def finish_event(name, title, body, body_format)
         return if @event_stack.empty?
 
         span, token = @event_stack.pop
@@ -95,7 +94,7 @@ module Appsignal
         span.finish
       end
 
-      def record_event(name, title, body, body_format, duration, _gc_duration) # rubocop:disable Metrics/ParameterLists
+      def record_event(name, title, body, body_format, duration)
         start_time = Time.now - (duration / 1_000_000_000.0)
         span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :start_timestamp => start_time)
         write_event_name_attributes(span, name, title)
@@ -249,7 +248,7 @@ module Appsignal
       # params/session/custom-data/tags/etc. onto the still-open root span before
       # `complete` finishes it. The OTel SDK makes its own sampling decision; the
       # gem always populates the span.
-      def finish(_gc_duration)
+      def finish
         true
       end
 
@@ -273,7 +272,7 @@ module Appsignal
       end
 
       def duplicate(new_transaction_id)
-        self.class.new(new_transaction_id, @namespace, 0)
+        self.class.new(new_transaction_id, @namespace)
       end
 
       # Multiple errors are recorded as multiple `exception` events on the one
