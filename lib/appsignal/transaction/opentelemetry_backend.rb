@@ -11,7 +11,7 @@ module Appsignal
     # root span for the transaction, a child span per instrumented event, and
     # queue timing as a metric. Errors and breadcrumbs attach to whichever span
     # is current when they happen.
-    class OpenTelemetryBackend
+    class OpenTelemetryBackend < BaseBackend
       TRACER_NAME = "appsignal-ruby"
 
       # Keys correspond to `Appsignal::Transaction::HTTP_REQUEST`,
@@ -47,6 +47,7 @@ module Appsignal
       QUEUE_START_MIN = 946_681_200_000
 
       def initialize(transaction_id, namespace, **)
+        super()
         @transaction_id = transaction_id
         @namespace = namespace
         @completed = false
@@ -253,33 +254,17 @@ module Appsignal
         teardown
       end
 
-      def duplicate(new_transaction_id)
-        self.class.new(new_transaction_id, @namespace)
-      end
-
       # Each error is recorded eagerly as its own `exception` event on the span
-      # current when it was added, so the Transaction never duplicates itself.
+      # current when it was added, so the Transaction never duplicates itself --
+      # which is why `duplicate` is left unimplemented (see BaseBackend).
       def records_errors_eagerly?
         true
       end
 
-      # Returned so `Transaction#to_h` (which does `JSON.parse(@backend.to_json)`)
-      # produces an empty Hash instead of raising. The existing agent-mode
-      # transaction matchers all read from `to_h`; in collector mode they
-      # will be replaced by OTel-based assertions in subsequent steps.
+      # Returned so `Transaction#to_h` (`JSON.parse(@backend.to_json)`) yields an
+      # empty Hash. Collector mode asserts on emitted spans, not `to_h`.
       def to_json # rubocop:disable Lint/ToJSON
         "{}"
-      end
-
-      # Test-mode introspection parity with `ExtensionBackend`. Returns `nil`
-      # for now since `set_queue_start` is a no-op; `_completed?` toggles on
-      # `complete` so `be_completed` keeps working.
-      def queue_start
-        nil
-      end
-
-      def _completed?
-        @completed
       end
 
       private

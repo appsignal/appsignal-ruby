@@ -11,7 +11,7 @@ module Appsignal
     # In agent mode `Appsignal::Backends.transaction` returns this class;
     # `Appsignal::Transaction#initialize` instantiates one and stores it in
     # `@backend`.
-    class ExtensionBackend
+    class ExtensionBackend < BaseBackend
       # rubocop:disable Layout/LineLength
       BACKTRACE_REGEX =
         %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?::in `(?<method>.+)')?$}.freeze
@@ -21,6 +21,7 @@ module Appsignal
       attr_writer :breadcrumbs
 
       def initialize(transaction_id, namespace, handle: nil)
+        super()
         @handle = handle ||
           Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
           Appsignal::Extension::MockTransaction.new
@@ -116,17 +117,6 @@ module Appsignal
 
       def to_json # rubocop:disable Lint/ToJSON
         @handle.to_json
-      end
-
-      # Test-mode introspection. The `Appsignal::Extension::Transaction` patches
-      # in `spec/support/testing.rb` add `queue_start` and `_completed?` on the
-      # underlying handle; matchers reach in via `transaction.backend.<reader>`.
-      def queue_start
-        @handle.queue_start
-      end
-
-      def _completed?
-        @handle._completed?
       end
 
       private

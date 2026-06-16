@@ -411,30 +411,10 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   end
 
   describe "#duplicate" do
-    # Multi-error duplicate is dead code in collector mode until errors are
-    # wired up in a later step (one span + multiple `record_exception` events
-    # will replace the duplicate-per-error model). For now we just preserve
-    # the shape so `Transaction#complete`'s duplicate loop won't crash.
-    it "returns a new OpenTelemetryBackend instance with the new id" do
-      backend = create_backend
-      duplicate = backend.duplicate("new-id")
-      @backends_created << duplicate
-
-      expect(duplicate).to be_kind_of(described_class)
-      expect(duplicate).not_to be(backend)
-      expect(duplicate.instance_variable_get(:@transaction_id)).to eq("new-id")
-    end
-
-    it "carries a namespace updated via #set_namespace into the duplicate" do
-      backend = create_backend("http_request")
-      backend.set_namespace("background_job")
-      duplicate = backend.duplicate("new-id")
-      @backends_created << duplicate
-      duplicate.complete
-
-      # The duplicate selects its span kind from the namespace it was
-      # constructed with, so the updated namespace must reach it.
-      expect(span_exporter.finished_spans.first.kind).to eq(:consumer)
+    # Collector mode records every error eagerly on one trace, so the Transaction
+    # never duplicates the backend. Duplication is agent-only.
+    it "raises NotImplementedError" do
+      expect { create_backend.duplicate("new-id") }.to raise_error(NotImplementedError)
     end
   end
 
