@@ -218,9 +218,9 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
   end
 
-  describe "#supports_multiple_errors?" do
+  describe "#records_errors_eagerly?" do
     it "returns false (extra errors are reported as duplicate transactions)" do
-      expect(backend.supports_multiple_errors?).to eq(false)
+      expect(backend.records_errors_eagerly?).to eq(false)
     end
   end
 end

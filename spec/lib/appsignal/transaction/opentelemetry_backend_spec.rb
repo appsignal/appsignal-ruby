@@ -324,9 +324,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
-  describe "#supports_multiple_errors?" do
+  describe "#records_errors_eagerly?" do
     it "returns true (multiple exception events on one span)" do
-      expect(create_backend.supports_multiple_errors?).to eq(true)
+      expect(create_backend.records_errors_eagerly?).to eq(true)
     end
   end
 

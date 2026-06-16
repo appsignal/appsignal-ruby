@@ -664,11 +664,10 @@ module Appsignal
 
       if @error_blocks.empty?
         _set_error(error)
-      elsif is_new_error && @backend.supports_multiple_errors?
-        # Record additional errors as they are added, so the exception event
-        # lands on the span that is current now rather than the root span at
-        # completion time. The agent backend instead reports extra errors as
-        # duplicate transactions at completion (see `#report_errors`).
+      elsif is_new_error && @backend.records_errors_eagerly?
+        # Record additional errors immediately so each exception event lands on
+        # the span current now, not the root span at completion. The agent
+        # backend instead reports extras as duplicate transactions.
         _send_error_to_backend(error)
       end
 
@@ -690,30 +689,29 @@ module Appsignal
       end
     end
 
-    # Reports every error stored on the transaction at completion time. How
-    # additional errors (beyond the first, `@error_set`) are reported depends on
-    # the backend.
+    # Reports the errors stored on the transaction at completion, in one of two
+    # ways depending on the backend:
+    #
+    #   - eager (collector): each error was already recorded as its own exception
+    #     event when added, on the span current at that moment; here we only run
+    #     the error blocks.
+    #   - deferred (agent): the extension holds a single error, so the primary
+    #     error's blocks run on this transaction and every additional error is
+    #     reported as a duplicate transaction.
     def report_errors
-      if @backend.supports_multiple_errors?
-        report_errors_on_one_trace
+      if @backend.records_errors_eagerly?
+        run_error_blocks
       else
         report_errors_as_duplicates
       end
     end
 
-    # Collector mode: every error is recorded as its own `exception` event (on
-    # the span current when it was added) at `add_error` time, so a single trace
-    # carries all the errors -- no duplicate transactions. Here we only run the
-    # error blocks.
-    #
-    # Blocks run in the order their errors were added (the first error's blocks
-    # first), so a later error's block overrides an earlier one on a shared key.
-    # Every block runs against this transaction, so block-set metadata merges
-    # onto the root span. This intentionally deviates from the per-error metadata
-    # isolation in `transaction-otel-backend.md` §6.9: isolating further errors'
-    # metadata onto their own exception event is deferred, as the processor/UI
-    # does not read those event attributes yet.
-    def report_errors_on_one_trace
+    # Eager mode: the errors are already recorded, so just run their blocks.
+    # Blocks run in add-order, so a later error's block wins on a shared key, and
+    # all block-set metadata merges onto the root span. (Per-error metadata
+    # isolation is deferred -- the processor/UI does not read per-event
+    # attributes yet.)
+    def run_error_blocks
       @error_blocks.each_value do |blocks|
         self.class.with_transaction(self) do
           blocks.each { |block| block.call(self) }
