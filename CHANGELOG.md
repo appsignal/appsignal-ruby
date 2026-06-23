@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.8.6
+
+_Published on 2026-06-23._
+
+### Fixed
+
+- Fix host-metrics leaking zombie `[timeout]` processes in Alpine linux containers.
+
+  Before this release AppSignal agent relied on a proper init process that reaps child processes killed by system `timeout`. Now the agent terminates and reaps unresponsive child processes in host-metrics collection and a subreaper is no longer required.
+
+  (patch [d151eb7e](https://github.com/appsignal/appsignal-ruby/commit/d151eb7e1e8b05b42f5bf0426e267108294335fa))
+
 ## 4.8.5
 
 _Published on 2026-06-02._
