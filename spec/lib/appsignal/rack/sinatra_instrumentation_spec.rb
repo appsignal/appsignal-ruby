@@ -121,7 +121,7 @@ if DependencyHelper.sinatra_present?
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
-                .to eq(Appsignal::Transaction::HTTP_REQUEST)
+                .to eq("web")
               expect(root_span.kind).to eq(:server)
             end
           end
@@ -170,7 +170,7 @@ if DependencyHelper.sinatra_present?
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
-                .to eq(Appsignal::Transaction::HTTP_REQUEST)
+                .to eq("web")
             end
           end
 

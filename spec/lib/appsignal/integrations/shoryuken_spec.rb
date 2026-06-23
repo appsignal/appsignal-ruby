@@ -76,7 +76,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
 
           expect(root_span.kind).to eq(:consumer)
           expect(root_span.attributes["appsignal.namespace"])
-            .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+            .to eq("background")
           expect(root_span.name).to eq("DemoShoryukenWorker#perform")
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("DemoShoryukenWorker#perform")
@@ -204,7 +204,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(root_span.attributes["appsignal.action_name"])
           .to eq("DemoShoryukenWorker#perform")
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+          .to eq("background")
 
         error_event = exception_events
           .find { |e| e.attributes["exception.type"] == "ExampleException" }
@@ -283,7 +283,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(root_span.attributes["appsignal.action_name"])
           .to eq("DemoShoryukenWorker#perform")
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+          .to eq("background")
         expect(exception_events).to be_empty
         span = event_spans.find { |s| s.name == "perform_job.shoryuken" }
         expect(span).not_to be_nil

@@ -143,7 +143,7 @@ if DependencyHelper.active_job_present?
         last_transaction.complete
 
         expect(root_span.kind).to eq(:consumer)
-        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
         expect(exception_events).to be_empty
         expect(root_span.attributes).to_not have_key("appsignal.metadata")
@@ -269,7 +269,7 @@ if DependencyHelper.active_job_present?
           expect { perform }.to raise_error(RuntimeError, "uh oh")
           last_transaction.complete
 
-          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("ActiveJobErrorTestJob#perform")
           event = root_span.events.find { |e| e.name == "exception" }
@@ -522,7 +522,7 @@ if DependencyHelper.active_job_present?
 
           current_transaction.complete
 
-          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
           expect(exception_events).to be_empty
           expect(root_span.attributes).to_not have_key("appsignal.metadata")

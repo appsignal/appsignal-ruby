@@ -34,7 +34,7 @@ if DependencyHelper.http_present?
         Appsignal::Transaction.complete_current!
 
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+          .to eq("web")
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("GET http://www.google.com")
@@ -72,7 +72,7 @@ if DependencyHelper.http_present?
         Appsignal::Transaction.complete_current!
 
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+          .to eq("web")
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("GET https://www.google.com")

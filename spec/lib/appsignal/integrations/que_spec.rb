@@ -81,7 +81,7 @@ if DependencyHelper.que_present?
 
             expect(root_span.kind).to eq(:consumer)
             expect(root_span.attributes["appsignal.namespace"])
-              .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+              .to eq("background")
             expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
             expect(exception_events).to be_empty
             span = event_spans.find { |s| s.name == "perform_job.que" }
@@ -146,7 +146,7 @@ if DependencyHelper.que_present?
             expect(root_span.kind).to eq(:consumer)
             expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
             expect(root_span.attributes["appsignal.namespace"])
-              .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+              .to eq("background")
             event = exception_events.find { |e| e.attributes["exception.type"] == error.class.name }
             expect(event).not_to be_nil
             expect(event.attributes["exception.message"]).to eq(error.message)
@@ -207,7 +207,7 @@ if DependencyHelper.que_present?
             expect(root_span.kind).to eq(:consumer)
             expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
             expect(root_span.attributes["appsignal.namespace"])
-              .to eq(Appsignal::Transaction::BACKGROUND_JOB)
+              .to eq("background")
             event = exception_events.find { |e| e.attributes["exception.type"] == error.class.name }
             expect(event).not_to be_nil
             expect(event.attributes["exception.message"]).to eq(error.message)

@@ -1174,7 +1174,7 @@ describe Appsignal do
           # HTTP_REQUEST maps to a SERVER span (a subtrace root).
           expect(root_span.kind).to eq(:server)
           expect(root_span.attributes["appsignal.namespace"])
-            .to eq(Appsignal::Transaction::HTTP_REQUEST)
+            .to eq("web")
           expect(root_span.name).to eq("MyAction")
           expect(root_span.attributes["appsignal.action_name"]).to eq("MyAction")
           expect(exception_events).to be_empty
@@ -1408,7 +1408,7 @@ describe Appsignal do
             transaction.complete
 
             expect(root_span.attributes["appsignal.namespace"])
-              .to eq(Appsignal::Transaction::HTTP_REQUEST)
+              .to eq("web")
           end
         end
 
@@ -1942,7 +1942,7 @@ describe Appsignal do
           # HTTP_REQUEST maps to a SERVER span (a subtrace root).
           expect(root_span.kind).to eq(:server)
           expect(root_span.attributes["appsignal.namespace"])
-            .to eq(Appsignal::Transaction::HTTP_REQUEST)
+            .to eq("web")
           expect(root_span.attributes).not_to have_key("appsignal.action_name")
 
           event = root_span.events.find { |e| e.name == "exception" }
