@@ -76,7 +76,7 @@ module Appsignal
       EXCLUDED_JOB_KEYS = %w[
         args backtrace class created_at enqueued_at error_backtrace error_class
         error_message failed_at jid retried_at retry wrapped cattr tags retry_for
-        unique_for
+        unique_for traceparent tracestate __otel_headers
       ].freeze
 
       def self.sidekiq8?
@@ -88,7 +88,12 @@ module Appsignal
       def call(_worker, item, _queue, &block)
         job_status = nil
         action_name = formatted_action_name(item)
-        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        # Read trace context off the job so the transaction links back to the
+        # enqueuer. No-op outside collector mode.
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(item)
+        )
         transaction.set_action_if_nil(action_name)
 
         formatted_metadata(item).each do |key, value|
