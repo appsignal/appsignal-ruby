@@ -104,8 +104,10 @@ RSpec.configure do |config|
     # connections; when those specs run, relax the rule just enough to reach the
     # mock server bound by `OTLPCollectorServer`.
     if DependencyHelper.opentelemetry_present?
-      WebMock.disable_net_connect!(:allow => "127.0.0.1:#{OTLPCollectorServer::PORT}")
+      # Boot first: the server binds an OS-assigned port, so its address is only
+      # known afterwards.
       OTLPCollectorServer.boot!
+      WebMock.disable_net_connect!(:allow => "127.0.0.1:#{OTLPCollectorServer.port}")
     else
       WebMock.disable_net_connect!
     end

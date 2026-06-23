@@ -16,17 +16,22 @@ require "zlib"
 # Hand-rolled on top of `TCPServer` rather than Sinatra/WEBrick so the spec
 # suite doesn't drag those gems into every framework gemfile via the gemspec.
 module OTLPCollectorServer
-  PORT = 9090
   PATHS = %w[/v1/traces /v1/metrics /v1/logs].freeze
 
   @received = Hash.new { |h, k| h[k] = Queue.new }
   @booted = false
+  @port = nil
 
   class << self
     attr_reader :received
 
+    # The port the mock server is bound to. Assigned by `boot!`, which binds to
+    # an OS-assigned free port rather than a fixed one, so concurrent suite runs
+    # on the same machine don't collide. `nil` until booted.
+    attr_reader :port
+
     def endpoint
-      "http://127.0.0.1:#{PORT}"
+      "http://127.0.0.1:#{port}"
     end
 
     # Env vars that put a spawned runner into collector mode, pointed at this
@@ -51,7 +56,10 @@ module OTLPCollectorServer
     def boot!
       return if @booted
 
-      @server = TCPServer.new("127.0.0.1", PORT)
+      # Port 0 lets the OS pick a free port; read the assigned one back so
+      # `endpoint`/`env` can hand it to the spawned runners.
+      @server = TCPServer.new("127.0.0.1", 0)
+      @port = @server.addr[1]
       @booted = true
       @thread = Thread.new do
         Thread.current.abort_on_exception = false
