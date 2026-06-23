@@ -103,7 +103,7 @@ describe Appsignal::Rack::EventHandler do
         # opened with.
         Appsignal::Transaction.complete_current!
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+          .to eq("web")
         expect(root_span.kind).to eq(:server)
       end
     end

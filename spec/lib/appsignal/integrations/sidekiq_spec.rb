@@ -711,7 +711,7 @@ if DependencyHelper.sidekiq_present?
           perform
 
           expect(root_span.kind).to eq(:consumer)
-          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
           event = root_span.events.find { |e| e.name == "exception" }
           expect(event).not_to be_nil
@@ -772,7 +772,7 @@ if DependencyHelper.sidekiq_present?
             perform
 
             expect(root_span.kind).to eq(:consumer)
-            expect(root_span.attributes["appsignal.namespace"]).to eq("background_job")
+            expect(root_span.attributes["appsignal.namespace"]).to eq("background")
             expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
             event = exception_events
               .find { |e| e.attributes["exception.type"] == "ExampleStandardError" }
@@ -827,7 +827,7 @@ if DependencyHelper.sidekiq_present?
           perform
 
           expect(root_span.kind).to eq(:consumer)
-          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
           expect(exception_events).to be_empty
           expect(root_span.attributes["appsignal.tag.request_id"]).to eq(jid)
@@ -995,7 +995,7 @@ if DependencyHelper.sidekiq_present?
           perform
 
           expect(root_span.kind).to eq(:consumer)
-          expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("ActiveJobSidekiqTestJob#perform")
           expect(exception_events).to be_empty
@@ -1045,7 +1045,7 @@ if DependencyHelper.sidekiq_present?
             perform
 
             expect(root_span.kind).to eq(:consumer)
-            expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+            expect(root_span.attributes["appsignal.namespace"]).to eq("background")
             expect(root_span.attributes["appsignal.action_name"])
               .to eq("ActiveJobSidekiqErrorTestJob#perform")
             expect(exception_events.size).to be >= 1

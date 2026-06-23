@@ -420,7 +420,7 @@ if DependencyHelper.rails_present?
 
               expect(root_span.kind).to eq(:server)
               expect(root_span.attributes["appsignal.namespace"])
-                .to eq(Appsignal::Transaction::HTTP_REQUEST)
+                .to eq("web")
               expect(root_span.attributes).to_not have_key("appsignal.action_name")
               event = root_span.events.find { |e| e.name == "exception" }
               expect(event).not_to be_nil

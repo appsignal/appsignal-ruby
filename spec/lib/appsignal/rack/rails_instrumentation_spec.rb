@@ -166,7 +166,7 @@ if DependencyHelper.rails_present?
 
         expect(root_span.kind).to eq(:server)
         expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+          .to eq("web")
         expect(root_span.name).to eq("MockController#index")
         expect(root_span.attributes["appsignal.action_name"]).to eq("MockController#index")
       end

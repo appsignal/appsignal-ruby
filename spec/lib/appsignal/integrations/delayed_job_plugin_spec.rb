@@ -71,7 +71,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
           expect(root_span.kind).to eq(:consumer)
           expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
-          expect(root_span.attributes["appsignal.namespace"]).to eq("background_job")
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(exception_events).to be_empty
           span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
           expect(span).not_to be_nil
@@ -410,7 +410,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
               expect(root_span.kind).to eq(:consumer)
               expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
-              expect(root_span.attributes["appsignal.namespace"]).to eq("background_job")
+              expect(root_span.attributes["appsignal.namespace"]).to eq("background")
               expect(exception_events).to be_empty
               span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
               expect(span).not_to be_nil
@@ -525,7 +525,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           end.to raise_error(error)
 
           expect(root_span.kind).to eq(:consumer)
-          expect(root_span.attributes["appsignal.namespace"]).to eq("background_job")
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
           event = root_span.events.find { |e| e.name == "exception" }
           expect(event).not_to be_nil

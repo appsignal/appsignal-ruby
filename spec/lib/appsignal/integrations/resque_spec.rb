@@ -53,7 +53,7 @@ if DependencyHelper.resque_present?
         perform
 
         expect(root_span.kind).to eq(:consumer)
-        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueTestJob#perform")
         expect(exception_events).to be_empty
         expect(root_span.attributes).to_not have_key("appsignal.tag.metadata_key")
@@ -93,7 +93,7 @@ if DependencyHelper.resque_present?
         perform
 
         expect(root_span.kind).to eq(:consumer)
-        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueErrorTestJob#perform")
         event = root_span.events.find { |e| e.name == "exception" }
         expect(event).not_to be_nil
@@ -157,7 +157,7 @@ if DependencyHelper.resque_present?
         expect(Appsignal).to receive(:stop)
         perform
 
-        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueTestJob#perform")
         expect(exception_events).to be_empty
         expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
@@ -224,7 +224,7 @@ if DependencyHelper.resque_present?
         expect(Appsignal).to receive(:stop)
         perform
 
-        expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"])
           .to eq("ResqueTestJobByActiveJob#perform")
         expect(exception_events).to be_empty
