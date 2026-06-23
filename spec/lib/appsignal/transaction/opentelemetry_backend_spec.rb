@@ -89,6 +89,50 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       end
     end
 
+    context "with an incoming opentelemetry_context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:remote_context) do
+        ::OpenTelemetry.propagation.extract(
+          { "traceparent" => "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        )
+      end
+
+      def create_backend_with_context(namespace, context)
+        described_class.new("abc-123", namespace, :opentelemetry_context => context)
+          .tap { |b| @backends_created << b }
+      end
+
+      it "parents a server transaction under the remote span (continues the trace)" do
+        backend = create_backend_with_context("http_request", remote_context)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).to eq(trace_id_hex)
+        expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        expect(root.kind).to eq(:server)
+      end
+
+      it "starts a fresh root trace when no context is given" do
+        backend = create_backend("http_request")
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).not_to eq(trace_id_hex)
+        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+      end
+
+      it "does not parent a consumer transaction (jobs link instead; Phase 3)" do
+        backend = create_backend_with_context("background_job", remote_context)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).not_to eq(trace_id_hex)
+        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        expect(root.kind).to eq(:consumer)
+      end
+    end
+
     it "attaches the new span as the OpenTelemetry current span" do
       backend = create_backend
       expect(::OpenTelemetry::Trace.current_span)

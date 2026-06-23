@@ -61,6 +61,27 @@ describe Appsignal::Rack::AbstractMiddleware do
         end
       end
 
+      describe "incoming trace context" do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+
+        it "continues the upstream trace when a traceparent is present", :collector_mode do
+          env["HTTP_TRACEPARENT"] = "00-#{trace_id_hex}-#{span_id_hex}-01"
+          start_collector_agent
+          make_request
+
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        end
+
+        it "starts a fresh root trace when no traceparent is present", :collector_mode do
+          start_collector_agent
+          make_request
+
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        end
+      end
+
       it_in_both_modes "wraps the response body in a BodyWrapper subclass" do
         _status, _headers, body = make_request
         expect(body).to be_kind_of(Appsignal::Rack::BodyWrapper)

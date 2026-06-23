@@ -29,7 +29,7 @@ module Appsignal
       #
       # @param namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
-      def create(namespace)
+      def create(namespace, opentelemetry_context: nil)
         # Reset the transaction if it was already completed but not cleared
         if Thread.current[:appsignal_transaction]&.completed?
           Thread.current[:appsignal_transaction] = nil
@@ -37,7 +37,12 @@ module Appsignal
 
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
-          set_current_transaction(Appsignal::Transaction.new(namespace))
+          set_current_transaction(
+            Appsignal::Transaction.new(
+              namespace,
+              :opentelemetry_context => opentelemetry_context
+            )
+          )
         else
           transaction = current
           # Otherwise, log the issue about trying to start another transaction
@@ -160,7 +165,7 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @!visibility private
-    def initialize(namespace, id: SecureRandom.uuid, backend: nil)
+    def initialize(namespace, id: SecureRandom.uuid, backend: nil, opentelemetry_context: nil)
       @transaction_id = id
       @action = nil
       @namespace = namespace
@@ -180,7 +185,8 @@ module Appsignal
 
       @backend = backend || Appsignal::Backends.transaction.new(
         @transaction_id,
-        @namespace
+        @namespace,
+        :opentelemetry_context => opentelemetry_context
       )
 
       run_after_create_hooks

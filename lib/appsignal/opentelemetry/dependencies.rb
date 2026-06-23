@@ -23,6 +23,7 @@ module Appsignal
     # loading the rest of the gem.
     REQUIRED_GEMS = {
       "opentelemetry-sdk" => "1.8.0",
+      "opentelemetry-common" => "0.20.0",
       "opentelemetry-metrics-sdk" => "0.7.1",
       "opentelemetry-logs-sdk" => "0.2.0",
       "opentelemetry-exporter-otlp" => "0.30.0",

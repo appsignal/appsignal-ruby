@@ -36,12 +36,7 @@ module Appsignal
         ENV["OTEL_METRICS_EXPORTER"] = "none"
         ENV["OTEL_LOGS_EXPORTER"] = "none"
 
-        require "opentelemetry/sdk"
-        require "opentelemetry/exporter/otlp"
-        require "opentelemetry-metrics-sdk"
-        require "opentelemetry-exporter-otlp-metrics"
-        require "opentelemetry-logs-sdk"
-        require "opentelemetry-exporter-otlp-logs"
+        require_sdk_gems
 
         # The OpenTelemetry gems are optional and installed by the user (not
         # declared in the gemspec). If they're present but older than the
@@ -130,6 +125,22 @@ module Appsignal
         ::OpenTelemetry.propagation.inject(carrier)
       end
 
+      # Read the trace context off an incoming Rack request env using the
+      # globally configured propagator, so an AppSignal transaction created for
+      # the request can continue the upstream trace. Returns an
+      # `OpenTelemetry::Context` (its current span is the remote parent), or
+      # `nil` when the SDK has not booted -- outside collector mode there is
+      # nothing to continue. `rack_env_getter` reads the `HTTP_*`-mangled header
+      # names Rack puts in the env.
+      def extract_rack_context(env)
+        return unless started?
+
+        ::OpenTelemetry.propagation.extract(
+          env,
+          :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter
+        )
+      end
+
       # @!visibility private
       #
       # Test-only. Drops the started flag so subsequent tests start from a
@@ -191,6 +202,19 @@ module Appsignal
       end
 
       private
+
+      # The optional OpenTelemetry gems, required lazily so users not in
+      # collector mode don't pay the load cost. A missing gem raises LoadError,
+      # caught by {.configure}.
+      def require_sdk_gems
+        require "opentelemetry/sdk"
+        require "opentelemetry-common"
+        require "opentelemetry/exporter/otlp"
+        require "opentelemetry-metrics-sdk"
+        require "opentelemetry-exporter-otlp-metrics"
+        require "opentelemetry-logs-sdk"
+        require "opentelemetry-exporter-otlp-logs"
+      end
 
       # Checks the installed OpenTelemetry gem versions against {REQUIRED_GEMS}.
       # On a shortfall, warns and flags the SDK as not started so the caller
