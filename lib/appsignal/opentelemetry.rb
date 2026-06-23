@@ -141,6 +141,24 @@ module Appsignal
         )
       end
 
+      # Read the trace context off an incoming background job hash, so a
+      # transaction created for the job can link back to the enqueuer. Returns
+      # an `OpenTelemetry::Context`, or `nil` when the SDK has not booted.
+      #
+      # Reads both carriers a job can arrive with: top-level `traceparent` /
+      # `tracestate` keys (how OpenTelemetry's Sidekiq instrumentation injects)
+      # and a nested `__otel_headers` hash (how its ActiveJob instrumentation
+      # does). The nested keys win when both are present, since ActiveJob is the
+      # outer, more specific layer.
+      def extract_job_context(item)
+        return unless started?
+
+        carrier = item
+        nested = item["__otel_headers"]
+        carrier = item.merge(nested) if nested.is_a?(Hash)
+        ::OpenTelemetry.propagation.extract(carrier)
+      end
+
       # @!visibility private
       #
       # Test-only. Drops the started flag so subsequent tests start from a

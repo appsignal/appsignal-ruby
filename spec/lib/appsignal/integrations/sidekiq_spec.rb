@@ -402,6 +402,59 @@ if DependencyHelper.sidekiq_present?
       end
     end
 
+    describe "with incoming trace context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+
+      # A job runs as its own trace, linked back to the span that enqueued it.
+      def expect_linked_back_to_remote
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.links.size).to eq(1)
+        link_context = root_span.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+      end
+
+      context "with a top-level traceparent (Sidekiq style)" do
+        let(:item) { super().merge("traceparent" => traceparent) }
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
+
+          # The trace header doesn't leak into the transaction as metadata.
+          expect(transaction.to_h["metadata"].keys).to_not include("traceparent")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_linked_back_to_remote
+        end
+      end
+
+      context "with a traceparent nested under __otel_headers (ActiveJob style)" do
+        let(:item) { super().merge("__otel_headers" => { "traceparent" => traceparent }) }
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
+
+          expect(transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_linked_back_to_remote
+        end
+      end
+    end
+
     context "with parameter filtering" do
       let(:options) { { :filter_parameters => ["foo"] } }
 
