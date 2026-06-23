@@ -332,30 +332,42 @@ module Appsignal
         "appsignal.transaction #{namespace}"
       end
 
-      # Open the transaction's root span. When the request carried an incoming
-      # trace context (a SERVER-kind unit of work continuing an upstream trace),
-      # parent under it so the transaction joins that trace. Otherwise -- no
-      # context, an invalid remote span, or a CONSUMER-kind unit of work (jobs,
-      # which link rather than parent; handled later) -- start a fresh root span
-      # that ignores any ambient OTel context, as a transaction is its own unit
-      # of work.
+      # Open the transaction's root span, relating it to any incoming trace
+      # context by the unit of work's kind:
+      #
+      # - SERVER (web): parent under the remote span so the transaction
+      #   continues the upstream trace.
+      # - CONSUMER (jobs): start a fresh trace linked back to the remote span. A
+      #   job is its own unit of work decoupled from the enqueuer, so it gets its
+      #   own trace, with a link recording the causal relationship.
+      # - No context, an invalid remote span, or any other kind: a plain root
+      #   span that ignores any ambient OTel context, as a transaction is its
+      #   own unit of work.
       def start_transaction_span(namespace, kind, opentelemetry_context)
-        if parent_under?(opentelemetry_context, kind)
-          tracer.start_span(
-            placeholder_span_name(namespace),
-            :with_parent => opentelemetry_context,
-            :kind => kind
+        name = placeholder_span_name(namespace)
+        remote = remote_span_context(opentelemetry_context)
+
+        if remote && kind == :server
+          tracer.start_span(name, :with_parent => opentelemetry_context, :kind => kind)
+        elsif remote && kind == :consumer
+          tracer.start_root_span(
+            name,
+            :kind => kind,
+            :links => [::OpenTelemetry::Trace::Link.new(remote)]
           )
         else
-          tracer.start_root_span(placeholder_span_name(namespace), :kind => kind)
+          tracer.start_root_span(name, :kind => kind)
         end
       end
 
-      def parent_under?(opentelemetry_context, kind)
-        return false unless opentelemetry_context
-        return false if kind == :consumer
+      # The remote parent's SpanContext from an incoming OTel context, or nil
+      # when there is no context or the remote span is invalid -- in which case
+      # callers fall back to a plain root span.
+      def remote_span_context(opentelemetry_context)
+        return unless opentelemetry_context
 
-        ::OpenTelemetry::Trace.current_span(opentelemetry_context).context.valid?
+        context = ::OpenTelemetry::Trace.current_span(opentelemetry_context).context
+        context if context.valid?
       end
 
       def display_namespace(namespace)
