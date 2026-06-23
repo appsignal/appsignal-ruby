@@ -21,6 +21,9 @@ if DependencyHelper.opentelemetry_present?
       expect(root).not_to be_nil
       expect(root.kind).to eq(:SPAN_KIND_SERVER)
 
+      # The "http_request" namespace is converted to "web" on the way out.
+      expect(attribute_value(root, "appsignal.namespace")).to eq("web")
+
       # Event spans for each instrumented block are present. The title-less
       # events keep the event name as the span name; the SQL event has a
       # human-readable title ("Find user"), which becomes the span name, with

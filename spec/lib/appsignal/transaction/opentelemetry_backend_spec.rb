@@ -177,11 +177,11 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       queue_start = ((start_time.to_f * 1000) - 5_000).round
 
       expect(metrics).to receive(:add_distribution_value).with(
-        "transaction_queue_duration", be_within(1_000).of(5_000), :namespace => "background_job"
+        "transaction_queue_duration", be_within(1_000).of(5_000), :namespace => "background"
       )
       expect(metrics).to receive(:add_distribution_value).with(
         "transaction_queue_duration", be_within(1_000).of(5_000),
-        :namespace => "background_job", :hostname => an_instance_of(String)
+        :namespace => "background", :hostname => an_instance_of(String)
       )
 
       backend.set_queue_start(queue_start)
@@ -219,11 +219,20 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   end
 
   describe "appsignal.namespace attribute" do
-    it "is set from the constructor namespace" do
-      create_backend("background_job").complete
+    # The backend converts the internal namespaces to the values the collector
+    # expects; everything else passes through.
+    {
+      "http_request" => "web",
+      "background_job" => "background",
+      "action_cable" => "action_cable",
+      "custom" => "custom"
+    }.each do |namespace, expected|
+      it "maps the constructor namespace #{namespace.inspect} to #{expected.inspect}" do
+        create_backend(namespace).complete
 
-      expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
-        .to eq("background_job")
+        expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
+          .to eq(expected)
+      end
     end
 
     describe "#set_namespace" do
@@ -234,6 +243,15 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
         expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
           .to eq("custom")
+      end
+
+      it "converts the overriding namespace to its canonical value" do
+        backend = create_backend("custom")
+        backend.set_namespace("background_job")
+        backend.complete
+
+        expect(span_exporter.finished_spans.first.attributes["appsignal.namespace"])
+          .to eq("background")
       end
 
       it "does not change the span kind (fixed at creation)" do

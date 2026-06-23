@@ -2581,13 +2581,12 @@ describe Appsignal::Transaction do
     end
 
     context "when set_namespace is never called", :collector_mode do
-      it "carries the namespace from creation" do
+      it "carries the namespace from creation, converted to its canonical value" do
         start_collector_agent
         transaction = http_request_transaction
         transaction.complete
 
-        expect(root_span.attributes["appsignal.namespace"])
-          .to eq(Appsignal::Transaction::HTTP_REQUEST)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("web")
       end
     end
   end
@@ -2616,10 +2615,11 @@ describe Appsignal::Transaction do
         expect(event).not_to be_nil
         expect(event.attributes["appsignal.queue_start"]).to eq(queue_start)
 
+        # The "http_request" namespace is emitted as "web".
         snapshot = metric_snapshot("transaction_queue_duration")
         expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
-          { "namespace" => transaction.namespace },
-          { "namespace" => transaction.namespace, "hostname" => an_instance_of(String) }
+          { "namespace" => "web" },
+          { "namespace" => "web", "hostname" => an_instance_of(String) }
         )
         expect(snapshot.data_points.map(&:sum)).to all(be_within(1_000).of(5_000))
       end

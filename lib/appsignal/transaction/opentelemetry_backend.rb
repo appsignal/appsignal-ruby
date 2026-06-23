@@ -30,6 +30,14 @@ module Appsignal
       # external-triggered units of work).
       DEFAULT_SPAN_KIND = :server
 
+      # The collector expects "web"/"background"; the agent's processor converts
+      # these internal namespaces in agent mode, but nothing does in collector
+      # mode. Other namespaces pass through unchanged.
+      DISPLAY_NAMESPACE = {
+        "http_request" => "web",
+        "background_job" => "background"
+      }.freeze
+
       # Placeholder name an event span carries between `start_event` and
       # `finish_event`. `finish_event` overwrites it with the AS::N event
       # name; only surfaces if `complete` has to drain a span that was
@@ -69,7 +77,7 @@ module Appsignal
 
         # Transaction#initialize sets the namespace directly without calling
         # set_namespace, so emit the attribute from here.
-        @span.set_attribute("appsignal.namespace", namespace) if namespace
+        @span.set_attribute("appsignal.namespace", display_namespace(namespace)) if namespace
       end
 
       def start_event
@@ -113,7 +121,7 @@ module Appsignal
         # the collector uses the attribute for the namespace and the kind only
         # to pick the subtrace root, so this is fine for the rare late change.
         @namespace = namespace
-        @span.set_attribute("appsignal.namespace", namespace)
+        @span.set_attribute("appsignal.namespace", display_namespace(namespace))
       end
 
       # Queue start has no OTel-native home, so surface it two ways: an
@@ -297,12 +305,13 @@ module Appsignal
         duration_ms = (@start_time.to_f * 1000) - @queue_start
         return if duration_ms.negative?
 
+        namespace = display_namespace(@namespace)
         Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
-          "transaction_queue_duration", duration_ms, :namespace => @namespace
+          "transaction_queue_duration", duration_ms, :namespace => namespace
         )
         Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
           "transaction_queue_duration", duration_ms,
-          :namespace => @namespace, :hostname => hostname
+          :namespace => namespace, :hostname => hostname
         )
       end
 
@@ -323,6 +332,10 @@ module Appsignal
 
       def placeholder_span_name(namespace)
         "appsignal.transaction #{namespace}"
+      end
+
+      def display_namespace(namespace)
+        DISPLAY_NAMESPACE.fetch(namespace, namespace)
       end
 
       # The collector exposes three params channels (query parameters, request
