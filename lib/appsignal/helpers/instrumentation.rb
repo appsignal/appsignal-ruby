@@ -800,10 +800,18 @@ module Appsignal
         title = nil,
         body = nil,
         body_format = Appsignal::EventFormatter::DEFAULT,
+        opentelemetry_kind: nil,
         &block
       )
         Appsignal::Transaction.current
-          .instrument(name, title, body, body_format, &block)
+          .instrument(
+            name,
+            title,
+            body,
+            body_format,
+            :opentelemetry_kind => opentelemetry_kind,
+            &block
+          )
       end
 
       # Instrumentation helper for SQL queries.

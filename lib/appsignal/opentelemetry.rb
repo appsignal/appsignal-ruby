@@ -114,6 +114,22 @@ module Appsignal
         defined?(@started) ? @started : false
       end
 
+      # Write the current trace context onto an outgoing carrier (HTTP request,
+      # job hash, ...) using the globally configured propagator (W3C
+      # TraceContext + baggage). Called by integrations on the emit side so a
+      # downstream service joins the same trace.
+      #
+      # No-op unless the SDK has booted ({.started?}); outside collector mode
+      # there is no context to propagate. The carrier is injected from whatever
+      # span is current at call time -- inside an `Appsignal.instrument` block
+      # that is the AppSignal event span, so the written `traceparent` reflects
+      # it.
+      def inject_context(carrier)
+        return unless started?
+
+        ::OpenTelemetry.propagation.inject(carrier)
+      end
+
       # @!visibility private
       #
       # Test-only. Drops the started flag so subsequent tests start from a

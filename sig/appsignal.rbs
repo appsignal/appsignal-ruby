@@ -862,7 +862,8 @@ module Appsignal
                          String name,
                          ?String? title,
                          ?String? body,
-                         ?Integer body_format
+                         ?Integer body_format,
+                         ?opentelemetry_kind: untyped
                        ) -> Object
 
   # Instrumentation helper for SQL queries.
@@ -2402,7 +2403,8 @@ module Appsignal
                         String name,
                         ?String? title,
                         ?String? body,
-                        ?Integer body_format
+                        ?Integer body_format,
+                        ?opentelemetry_kind: untyped
                       ) -> Object
 
       # Instrumentation helper for SQL queries.
