@@ -639,10 +639,10 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def start_event
+    def start_event(opentelemetry_kind: nil)
       return if paused?
 
-      @backend.start_event
+      @backend.start_event(:opentelemetry_kind => opentelemetry_kind)
     end
 
     # @!visibility private
@@ -674,8 +674,14 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
-      start_event
+    def instrument(
+      name,
+      title = nil,
+      body = nil,
+      body_format = Appsignal::EventFormatter::DEFAULT,
+      opentelemetry_kind: nil
+    )
+      start_event(:opentelemetry_kind => opentelemetry_kind)
       yield if block_given?
     ensure
       finish_event(name, title, body, body_format)

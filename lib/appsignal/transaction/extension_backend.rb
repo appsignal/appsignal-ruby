@@ -28,7 +28,8 @@ module Appsignal
         @breadcrumbs = []
       end
 
-      def start_event
+      # Agent mode has no span kind; `opentelemetry_kind` is ignored here.
+      def start_event(opentelemetry_kind: nil) # rubocop:disable Lint/UnusedMethodArgument
         @handle.start_event(0)
       end
 

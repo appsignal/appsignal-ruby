@@ -922,10 +922,11 @@ module Appsignal
       title: T.nilable(String),
       body: T.nilable(String),
       body_format: Integer,
+      opentelemetry_kind: T.untyped,
       block: T.untyped
     ).returns(Object)
   end
-  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, &block); end
+  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
 
   # Instrumentation helper for SQL queries.
   # 
@@ -2574,10 +2575,11 @@ module Appsignal
           title: T.nilable(String),
           body: T.nilable(String),
           body_format: Integer,
+          opentelemetry_kind: T.untyped,
           block: T.untyped
         ).returns(Object)
       end
-      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, &block); end
+      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
 
       # Instrumentation helper for SQL queries.
       # 

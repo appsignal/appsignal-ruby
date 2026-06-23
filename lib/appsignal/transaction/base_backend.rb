@@ -10,7 +10,7 @@ module Appsignal
     # contract; a backend that leaves a method unimplemented raises here.
     class BaseBackend
       # Instrumented events.
-      def start_event
+      def start_event(opentelemetry_kind: nil)
         raise NotImplementedError
       end
 

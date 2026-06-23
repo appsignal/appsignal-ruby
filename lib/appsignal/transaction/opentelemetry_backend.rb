@@ -80,8 +80,11 @@ module Appsignal
         @span.set_attribute("appsignal.namespace", display_namespace(namespace)) if namespace
       end
 
-      def start_event
-        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME)
+      # `opentelemetry_kind` (e.g. `:client` for an outgoing HTTP request) is set
+      # at span creation because OTel span kind is immutable afterwards. `nil`
+      # leaves the SDK default (INTERNAL).
+      def start_event(opentelemetry_kind: nil)
+        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :kind => opentelemetry_kind)
         token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(span)
         )

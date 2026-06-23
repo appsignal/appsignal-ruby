@@ -156,6 +156,30 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
+  describe "#start_event with opentelemetry_kind" do
+    def event_span_for(category)
+      span_exporter.finished_spans.find { |s| s.attributes["appsignal.category"] == category }
+    end
+
+    it "creates the event span with the given span kind" do
+      backend = create_backend
+      backend.start_event(:opentelemetry_kind => :client)
+      backend.finish_event("request.net_http", "GET", "", Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(event_span_for("request.net_http").kind).to eq(:client)
+    end
+
+    it "defaults to an internal span when no kind is given" do
+      backend = create_backend
+      backend.start_event
+      backend.finish_event("sql.query", "title", "", Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(event_span_for("sql.query").kind).to eq(:internal)
+    end
+  end
+
   describe "#set_queue_start" do
     let(:metrics) { Appsignal::Metrics::OpenTelemetryBackend }
 
