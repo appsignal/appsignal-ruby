@@ -70,7 +70,8 @@ RSpec.shared_context "collector mode", :collector_mode do
   # group's own `let` override.
   def start_collector_agent
     args = (defined?(start_agent_args) ? start_agent_args : {}).dup
-    args[:options] = { :collector_endpoint => "http://127.0.0.1:9090" }.merge(args[:options] || {})
+    args[:options] = { :collector_endpoint => OTLPCollectorServer.endpoint }
+      .merge(args[:options] || {})
     start_agent(**args)
     # `Appsignal.start` booted a full OTel SDK whose providers each carry a
     # background export thread (batch span and log processors, periodic
