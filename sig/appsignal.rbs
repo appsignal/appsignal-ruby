@@ -1527,7 +1527,7 @@ module Appsignal
     # transaction.
     # 
     # _@param_ `namespace` — Namespace of the to be created transaction.
-    def self.create: (String namespace) -> Transaction
+    def self.create: (String namespace, ?opentelemetry_context: untyped) -> Transaction
 
     # Returns currently active transaction or a {NilTransaction} if none is
     # active.
