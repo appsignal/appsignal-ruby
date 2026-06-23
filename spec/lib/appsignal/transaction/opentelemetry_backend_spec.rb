@@ -122,14 +122,30 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
       end
 
-      it "does not parent a consumer transaction (jobs link instead; Phase 3)" do
+      it "links a consumer transaction back to the remote span (starts a new trace)" do
         backend = create_backend_with_context("background_job", remote_context)
         backend.complete
         root = finished_span(backend.instance_variable_get(:@span))
 
+        # A job is its own unit of work: new trace, no parent.
         expect(root.hex_trace_id).not_to eq(trace_id_hex)
         expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
         expect(root.kind).to eq(:consumer)
+
+        # ... but linked back to the enqueuing span.
+        expect(root.links.size).to eq(1)
+        link_context = root.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+      end
+
+      it "does not link a consumer transaction when there is no context" do
+        backend = create_backend("background_job")
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.kind).to eq(:consumer)
+        expect(root.links).to be_nil
       end
     end
 
