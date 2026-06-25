@@ -347,7 +347,9 @@ if DependencyHelper.que_present?
     end
   end
 
-  describe Appsignal::Integrations::QueClientPlugin do
+  # Enqueue-side propagation reads context from the job's tags, which only Que 2
+  # persists in the layout these tests inspect; Que 1 enqueue is not covered.
+  describe Appsignal::Integrations::QueClientPlugin, :if => DependencyHelper.que2_present? do
     let(:job) do
       Class.new(::Que::Job) do
         def self.name
