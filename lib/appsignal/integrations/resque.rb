@@ -30,7 +30,7 @@ module Appsignal
       end
     end
 
-    # Wraps `Resque.push` to record an `enqueue_job.resque` event so the
+    # Wraps `Resque.push` to record an `enqueue.resque` event so the
     # enqueue shows up under the active transaction (both modes), and in
     # collector mode writes the trace context onto the job hash so the job that
     # later performs links back to it.
@@ -42,7 +42,7 @@ module Appsignal
     # @!visibility private
     module ResquePushIntegration
       def push(queue, item)
-        Appsignal.instrument("enqueue_job.resque", :opentelemetry_kind => :producer) do
+        Appsignal.instrument("enqueue.resque", :opentelemetry_kind => :producer) do
           Appsignal::OpenTelemetry.inject_context(item)
           super
         end
