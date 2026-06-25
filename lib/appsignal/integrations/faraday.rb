@@ -2,32 +2,20 @@
 
 module Appsignal
   module Integrations
-    # Faraday middleware that records each request as a `request.faraday` event
-    # and suppresses the downstream HTTP client's own instrumentation, so the
-    # request is recorded once rather than as nested Faraday + Net::HTTP (or
-    # Excon) client events.
+    # Faraday middleware that writes trace context onto the outgoing request, so
+    # the called service joins this trace. The `request.faraday` event recorded
+    # by Faraday's own instrumentation middleware provides the span; this
+    # middleware only injects.
     #
     # @!visibility private
     class FaradayMiddleware < ::Faraday::Middleware
-      def call(env)
-        http_method = env[:method].to_s.upcase
-        uri = env[:url]
-        # Title only, no body: the path is left out so the event matches
-        # Net::HTTP's (scheme and host only), keeping paths out of event titles.
-        Appsignal.instrument(
-          "request.faraday",
-          "#{http_method} #{uri.scheme}://#{uri.host}"
-        ) do
-          # Faraday's default adapter is Net::HTTP, which AppSignal also
-          # instruments. Suppress the adapter's own instrumentation so the
-          # request appears once (as the Faraday event) rather than as nested
-          # Faraday + Net::HTTP client events.
-          if Appsignal::Transaction.current?
-            Appsignal::Transaction.current.suppress_http_client_events { @app.call(env) }
-          else
-            @app.call(env)
-          end
-        end
+      def on_request(env)
+        # Inject from whatever span is current. Faraday's instrumentation
+        # middleware wraps this call in the `request.faraday` event, so its event
+        # span is current and the written `traceparent` reflects the Faraday
+        # client event. No-op outside collector mode. `env.request_headers` is the
+        # live outgoing header set and a valid carrier (it responds to `[]=`).
+        Appsignal::OpenTelemetry.inject_context(env.request_headers)
       end
     end
 
@@ -37,13 +25,26 @@ module Appsignal
     # the build path is the only way to instrument every connection automatically.
     #
     # Just before the adapter (the innermost handler, where the request is sent)
-    # it inserts `FaradayMiddleware`, which records the `request.faraday` event
-    # and suppresses the downstream client. Skipped if it's already present.
+    # it inserts:
+    #
+    # - `Faraday::Request::Instrumentation`, so the `request.faraday` event fires
+    #   without the user adding it themselves -- but only when
+    #   ActiveSupport::Notifications is loaded, since that middleware references it
+    #   at build time. Skipped if the user already added it.
+    # - `FaradayMiddleware`, which injects trace context. Added after
+    #   Instrumentation so it runs inside that event's span.
     #
     # @!visibility private
     module FaradayRackBuilderPatch
       def adapter(*)
-        use(FaradayMiddleware) unless handlers.any? { |handler| handler.klass == FaradayMiddleware }
+        unless handlers.any? { |handler| handler.klass == FaradayMiddleware }
+          if defined?(::ActiveSupport::Notifications) &&
+              defined?(::Faraday::Request::Instrumentation) &&
+              handlers.none? { |handler| handler.klass == ::Faraday::Request::Instrumentation }
+            use(::Faraday::Request::Instrumentation)
+          end
+          use(FaradayMiddleware)
+        end
         super
       end
     end
