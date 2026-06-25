@@ -101,6 +101,7 @@ describe Appsignal::Hooks::RedisHook do
                   expect(event_spans.size).to eq(1)
                   span = event_spans.first
                   expect(span.name).to eq("stub_id")
+                  expect(span.kind).to eq(:client)
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("get ?")
                   expect(span.attributes["appsignal.category"]).to eq("query.redis")
@@ -140,6 +141,7 @@ describe Appsignal::Hooks::RedisHook do
                   expect(event_spans.size).to eq(1)
                   span = event_spans.first
                   expect(span.name).to eq("stub_id")
+                  expect(span.kind).to eq(:client)
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
                   expect(span.attributes["appsignal.category"]).to eq("query.redis")
