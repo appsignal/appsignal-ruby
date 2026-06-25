@@ -45,6 +45,7 @@ describe Appsignal::Hooks::SequelHook do
           s.name == "sql.sequel" && s.attributes["db.query.text"] == "SELECT 1"
         end
         expect(span).not_to be_nil
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["db.system.name"]).to eq("other_sql")
         expect(span.attributes).not_to have_key("appsignal.body")
