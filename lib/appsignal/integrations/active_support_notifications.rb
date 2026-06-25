@@ -7,10 +7,21 @@ module Appsignal
       class << self
         BANG = "!"
 
+        # ActiveSupport::Notifications events whose span represents an outgoing
+        # call to a datastore, so they carry CLIENT kind in collector mode (to
+        # match the dedicated DB integrations). Kept deliberately narrow:
+        # `start_event` runs for every instrumented Rails event and span kind is
+        # immutable, so only genuine client calls belong here. Object
+        # instantiation (`instantiation.active_record`) is not a client call.
+        CLIENT_EVENT_NAMES = ["sql.active_record"].freeze
+
         def start_event(name)
           # Events that start with a bang are internal to Rails
-          instrument_this = name[0] != BANG
-          Appsignal::Transaction.current.start_event if instrument_this
+          return if name[0] == BANG
+
+          Appsignal::Transaction.current.start_event(
+            :opentelemetry_kind => CLIENT_EVENT_NAMES.include?(name.to_s) ? :client : nil
+          )
         end
 
         def finish_event(name, payload = {})

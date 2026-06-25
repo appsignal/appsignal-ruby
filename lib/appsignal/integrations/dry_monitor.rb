@@ -4,8 +4,13 @@ module Appsignal
   module Integrations
     # @!visibility private
     module DryMonitorIntegration
+      # ROM emits its SQL queries as dry-monitor `"sql"` events; tag those as
+      # CLIENT in collector mode to match the dedicated DB integrations. Span
+      # kind is immutable, so it has to be set here at event start.
       def instrument(event_id, payload = {}, &block)
-        Appsignal::Transaction.current.start_event
+        Appsignal::Transaction.current.start_event(
+          :opentelemetry_kind => event_id.to_s == "sql" ? :client : nil
+        )
 
         super
       ensure

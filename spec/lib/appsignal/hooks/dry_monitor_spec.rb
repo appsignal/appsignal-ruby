@@ -72,6 +72,9 @@ if DependencyHelper.dry_monitor_present?
         span = event_spans.first
         expect(span.name).to eq("query.postgres")
         expect(span.parent_span_id).to eq(root_span.span_id)
+        # ROM emits its queries as dry-monitor `sql` events; a query is an
+        # outgoing call, so it carries CLIENT kind.
+        expect(span.kind).to eq(:client)
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
@@ -113,6 +116,8 @@ if DependencyHelper.dry_monitor_present?
         span = event_spans.first
         expect(span.name).to eq("foo")
         expect(span.parent_span_id).to eq(root_span.span_id)
+        # A non-SQL dry event is not an outgoing call, so it keeps the default kind.
+        expect(span.kind).to eq(:internal)
         attrs = span.attributes
         expect(attrs["appsignal.category"]).to eq("foo")
         expect(attrs).not_to have_key("appsignal.body")
