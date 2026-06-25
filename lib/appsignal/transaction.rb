@@ -666,7 +666,7 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def record_event(
+    def record_event( # rubocop:disable Metrics/ParameterLists
       name,
       title,
       body,

@@ -98,7 +98,7 @@ module Appsignal
 
       # `opentelemetry_kind` is set at span creation (kind is immutable in OTel),
       # mirroring `start_event`. `nil` leaves the SDK default (INTERNAL).
-      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil)
+      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil) # rubocop:disable Metrics/ParameterLists
         start_time = Time.now - (duration / 1_000_000_000.0)
         span = tracer.start_span(
           EVENT_SPAN_PLACEHOLDER_NAME,
