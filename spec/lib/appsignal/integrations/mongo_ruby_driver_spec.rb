@@ -88,6 +88,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
         expect(span).not_to be_nil
         expect(span.name).to eq("find | test | SUCCEEDED")
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
@@ -132,6 +133,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
         expect(span).not_to be_nil
         expect(span.name).to eq("find | test | FAILED")
+        expect(span.kind).to eq(:client)
         expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
       end
