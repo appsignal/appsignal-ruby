@@ -93,8 +93,21 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
       let(:span_id_hex) { "b7ad6b7169203331" }
       let(:remote_context) do
-        ::OpenTelemetry.propagation.extract(
-          { "traceparent" => "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        # Build the remote parent context directly instead of parsing a
+        # `traceparent` through `OpenTelemetry.propagation`. The backend's job
+        # is to parent under a context it is handed; extracting one from a
+        # carrier is the Rack middleware's job, covered by its own specs.
+        # Building it here also keeps this a self-contained unit test: parsing
+        # would depend on the global propagator, which is only configured as a
+        # side effect of booting the SDK in some other example.
+        span_context = ::OpenTelemetry::Trace::SpanContext.new(
+          :trace_id => [trace_id_hex].pack("H*"),
+          :span_id => [span_id_hex].pack("H*"),
+          :trace_flags => ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
+          :remote => true
+        )
+        ::OpenTelemetry::Trace.context_with_span(
+          ::OpenTelemetry::Trace.non_recording_span(span_context)
         )
       end
 
