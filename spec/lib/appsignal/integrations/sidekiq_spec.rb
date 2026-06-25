@@ -327,48 +327,62 @@ if DependencyHelper.sidekiq_present?
   describe Appsignal::Integrations::SidekiqClientMiddleware do
     let(:plugin) { described_class.new }
     let(:job) { { "class" => "TestClass", "args" => [] } }
-    before { start_agent }
-    around { |example| keep_transactions { example.run } }
 
     def enqueue
       plugin.call("TestClass", job, "default", nil) { :enqueued }
     end
 
     context "with an active transaction" do
-      it "records the enqueue under the transaction" do
+      it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
 
         expect(enqueue).to eq(:enqueued)
 
-        # Records an enqueue event on the transaction, titled after the job.
-        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
-        expect(event).to_not be_nil
-        expect(event["title"]).to eq("enqueue TestClass job")
+        # Records an enqueue event on the transaction; no wire context in agent mode.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue_job.sidekiq")
+        expect(job).to_not have_key("traceparent")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+        Appsignal::Transaction.complete_current!
+
+        # The enqueue is a producer event span under the active transaction.
+        producer = event_spans.find { |s| s.name == "enqueue_job.sidekiq" }
+        expect(producer.kind).to eq(:producer)
+        expect(producer.parent_span_id).to eq(root_span.span_id)
+
+        # The job carries the producer span's trace context, so the job that
+        # performs can link back to it.
+        expect(job["traceparent"])
+          .to eq("00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
       end
     end
 
     context "without an active transaction" do
-      it "passes through without recording" do
-        expect { |block| plugin.call("TestClass", job, "default", nil, &block) }
-          .to yield_control
+      it "in agent mode", :agent_mode do
+        start_agent
 
-        expect(created_transactions).to be_empty
+        # A transparent pass-through: the job hash is untouched.
+        expect(enqueue).to eq(:enqueued)
+        expect(job).to_not have_key("traceparent")
       end
-    end
 
-    context "when job enqueue events are suppressed" do
-      # As happens under Active Job, which records the enqueue itself.
-      it "passes through without recording the enqueue" do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
+      it "in collector mode", :collector_mode do
+        start_collector_agent
 
-        result = transaction.suppress_job_enqueue_events { enqueue }
-        expect(result).to eq(:enqueued)
-
-        # The outer integration records the enqueue, so this one doesn't.
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to_not include("enqueue.sidekiq")
+        # No transaction to attach the event to, so nothing is emitted and the
+        # job hash is untouched.
+        expect(enqueue).to eq(:enqueued)
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue_job.sidekiq")
+        expect(job).to_not have_key("traceparent")
       end
     end
   end
@@ -1058,6 +1072,8 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
           queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
           expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
+          # The job is enqueued without an active transaction here, so no
+          # enqueue event/producer span is recorded -- only the perform events.
           expect(event_spans.map(&:name)).to match_array(expected_perform_events)
           sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
           expect(sidekiq_span).not_to be_nil

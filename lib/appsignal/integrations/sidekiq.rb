@@ -49,23 +49,22 @@ module Appsignal
       end
     end
 
-    # Sidekiq client middleware that runs on enqueue. Records an
-    # `enqueue.sidekiq` event so the enqueue shows up under the active
-    # transaction.
+    # Client middleware that runs on enqueue. Records an `enqueue_job.sidekiq`
+    # event so the enqueue shows up under the active transaction (both modes),
+    # and in collector mode writes the trace context onto the job hash so the
+    # job that later performs links back to it.
     #
     # Like all AppSignal events, this only records when there's an active
-    # transaction (e.g. enqueuing from within a web request or another job). An
-    # enqueue with no transaction is a transparent pass-through.
+    # transaction (e.g. enqueuing from within a web request or another job).
+    # An enqueue with no transaction is a transparent pass-through.
     #
     # @!visibility private
     class SidekiqClientMiddleware
-      def call(_worker_class, job, _queue, _redis_pool, &block)
-        # Under Active Job the enqueue is already recorded as an
-        # `enqueue.active_job` event, so skip recording it again here.
-        return yield if Appsignal::Transaction.current? &&
-          Appsignal::Transaction.current.job_enqueue_events_suppressed?
-
-        Appsignal.instrument("enqueue.sidekiq", "enqueue #{job["class"]} job", &block)
+      def call(_worker_class, job, _queue, _redis_pool)
+        Appsignal.instrument("enqueue_job.sidekiq", :opentelemetry_kind => :producer) do
+          Appsignal::OpenTelemetry.inject_context(job)
+          yield
+        end
       end
     end
 
