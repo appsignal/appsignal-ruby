@@ -162,6 +162,7 @@ matrix:
           - "3.2.5"
           - "3.1.6"
           - "3.0.7"
+    - gem: "excon"
     - gem: "grape"
     - gem: "hanami-2.0"
       only:

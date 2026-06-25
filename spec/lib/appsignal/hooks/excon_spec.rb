@@ -3,7 +3,9 @@ describe Appsignal::Hooks::ExconHook do
     before do
       stub_const("Excon", Class.new do
         def self.defaults
-          @defaults ||= { :middlewares => [] }
+          # Mock is the innermost default middleware; the hook inserts ours
+          # before it. Referenced lazily so it's resolved after the stub below.
+          @defaults ||= { :middlewares => [Excon::Middleware::Mock] }
         end
       end)
       stub_const("Excon::Middleware", Module.new)
@@ -18,6 +20,7 @@ describe Appsignal::Hooks::ExconHook do
           datum
         end
       end)
+      stub_const("Excon::Middleware::Mock", Class.new(Excon::Middleware::Base))
       Appsignal::Hooks::ExconHook.new.install
     end
 
@@ -33,8 +36,18 @@ describe Appsignal::Hooks::ExconHook do
         expect(Excon.defaults[:instrumentor]).to eql(Appsignal::Integrations::ExconIntegration)
       end
 
-      it "adds the AppSignal middleware to Excon" do
-        expect(Excon.defaults[:middlewares]).to include(Appsignal::Integrations::ExconMiddleware)
+      it "adds the AppSignal middleware to Excon, before the Mock middleware" do
+        middlewares = Excon.defaults[:middlewares]
+        expect(middlewares).to include(Appsignal::Integrations::ExconMiddleware)
+        expect(middlewares.index(Appsignal::Integrations::ExconMiddleware))
+          .to be < middlewares.index(Excon::Middleware::Mock)
+      end
+
+      it "does not add the middleware twice when installed again" do
+        Appsignal::Hooks::ExconHook.new.install
+        expect(
+          Excon.defaults[:middlewares].count(Appsignal::Integrations::ExconMiddleware)
+        ).to eq(1)
       end
     end
 
