@@ -233,6 +233,24 @@ if DependencyHelper.opentelemetry_present?
       end
     end
 
+    describe ".if_started" do
+      it "does not run the block and returns nil when the SDK has not booted" do
+        expect(described_class.started?).to be(false)
+
+        ran = false
+        result = described_class.if_started { ran = true }
+
+        expect(ran).to be(false)
+        expect(result).to be_nil
+      end
+
+      it "runs the block and returns its result when started" do
+        allow(described_class).to receive(:started?).and_return(true)
+
+        expect(described_class.if_started { :value }).to eq(:value)
+      end
+    end
+
     describe ".build_resource" do
       it "maps AppSignal config attributes onto the resource" do
         resource = described_class.build_resource(
