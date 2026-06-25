@@ -71,5 +71,19 @@ module Appsignal
         end
       end
     end
+
+    # Shoryuken client middleware that records an `enqueue.shoryuken` event so
+    # the enqueue shows up under the active transaction.
+    #
+    # Like all AppSignal events, this only records when there's an active
+    # transaction (e.g. enqueuing from within a web request or another job). An
+    # enqueue with no transaction is a transparent pass-through.
+    #
+    # @!visibility private
+    class ShoryukenClientMiddleware
+      def call(_options, &block)
+        Appsignal.instrument("enqueue.shoryuken", &block)
+      end
+    end
   end
 end
