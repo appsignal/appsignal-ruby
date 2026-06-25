@@ -179,6 +179,10 @@ module DependencyHelper
     dependency_present?("sidekiq")
   end
 
+  def shoryuken_present?
+    dependency_present?("shoryuken")
+  end
+
   def sidekiq8_present?
     sidekiq_present? &&
       Gem::Version.new(::Sidekiq::VERSION) >= Gem::Version.new("8.0.0")
