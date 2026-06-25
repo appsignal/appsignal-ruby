@@ -535,6 +535,112 @@ if DependencyHelper.active_job_present?
       end
     end
 
+    context "with distributed trace context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+
+      describe "serializing context onto the job" do
+        it "round-trips __otel_headers through serialize/deserialize in collector mode",
+          :collector_mode do
+          start_collector_agent
+
+          job = ActiveJobTestJob.new
+          job.__otel_headers = { "traceparent" => traceparent }
+          data = job.serialize
+
+          # Wire-compatible with OpenTelemetry: headers ride as an array of
+          # [key, value] pairs (ActiveJob's argument-serializer output), not a
+          # hash.
+          expect(data["__otel_headers"]).to eq([["traceparent", traceparent]])
+          expect(ActiveJobTestJob.deserialize(data).__otel_headers)
+            .to eq("traceparent" => traceparent)
+        end
+
+        it "leaves the job untouched outside collector mode", :agent_mode do
+          start_agent(**start_agent_args)
+
+          job = ActiveJobTestJob.new
+          job.__otel_headers = { "traceparent" => traceparent }
+
+          expect(job.serialize).to_not have_key("__otel_headers")
+        end
+      end
+
+      describe "injecting context on enqueue" do
+        before { ActiveJob::Base.queue_adapter = :test }
+
+        # Returns the enqueuing transaction so the example can read its events.
+        def enqueue_within_transaction
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          ActiveJobTestJob.perform_later
+          transaction
+        end
+
+        it "writes the producer span's context onto the job in collector mode",
+          :collector_mode do
+          start_collector_agent
+          enqueue_within_transaction
+          Appsignal::Transaction.complete_current!
+
+          # The enqueue is a producer event span under the enqueuing transaction.
+          producer = event_spans.find { |s| s.name == "enqueue.active_job" }
+          expect(producer.kind).to eq(:producer)
+          expect(producer.parent_span_id).to eq(root_span.span_id)
+
+          # The serialized job carries that span's context, so the performed job
+          # links back to it.
+          enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.first
+          expect(enqueued["__otel_headers"]).to eq(
+            [["traceparent", "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"]]
+          )
+        end
+
+        it "records an enqueue event without wire context in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          transaction = enqueue_within_transaction
+
+          # Exactly one enqueue event: ours. The native `enqueue.active_job`
+          # notification is suppressed so it isn't recorded a second time.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names.count("enqueue.active_job")).to eq(1)
+
+          enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.first
+          expect(enqueued).to_not have_key("__otel_headers")
+        end
+      end
+
+      describe "linking a performed job back to the enqueuer" do
+        # A job arrives with OpenTelemetry's serialized array-of-pairs carrier.
+        def perform_with_incoming_context
+          job_data = ActiveJobTestJob.new.serialize
+            .merge("__otel_headers" => [["traceparent", traceparent]])
+          perform_active_job { ActiveJob::Base.execute(job_data) }
+        end
+
+        it "starts a linked trace in collector mode", :collector_mode do
+          start_collector_agent
+          perform_with_incoming_context
+
+          # A job is its own unit of work: new trace, linked back to the enqueuer.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          link = root_span.links.first.span_context
+          expect(link.hex_trace_id).to eq(trace_id_hex)
+          expect(link.hex_span_id).to eq(span_id_hex)
+        end
+
+        it "does not leak the trace context as metadata in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_with_incoming_context
+
+          expect(last_transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+      end
+    end
+
     context "with params" do
       let(:options) { { :filter_parameters => ["foo"] } }
 

@@ -29,6 +29,11 @@ module Appsignal
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+          # Carry W3C trace context across the enqueue/perform boundary in
+          # collector mode (no-ops otherwise). The patches are cheap and
+          # mode-gated inside their method bodies, so install them unconditionally.
+          ::ActiveJob::Base
+            .prepend ::Appsignal::Hooks::ActiveJobHook::ActiveJobTraceContext
 
           next unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
 
@@ -62,8 +67,17 @@ module Appsignal
               # We don't have a separate integration for this QueueAdapter like
               # we do for Sidekiq.
               #
+              # Read the trace context off the job so the transaction links back
+              # to the enqueuer (no-op outside collector mode). Only here, in the
+              # standalone branch: when a wrapper integration (e.g. Sidekiq)
+              # created the transaction, it already extracted, so we must not
+              # extract a second time.
+              #
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
-              Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+              Appsignal::Transaction.create(
+                Appsignal::Transaction::BACKGROUND_JOB,
+                :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job)
+              )
             end
 
           begin
@@ -121,6 +135,53 @@ module Appsignal
 
           transaction.set_error(exception)
         end
+      end
+
+      # Reads and writes W3C trace context on the ActiveJob enqueue/perform
+      # boundary, wire-compatible with OpenTelemetry's ActiveJob instrumentation.
+      # All of this no-ops outside collector mode.
+      #
+      # Context rides on the job under `__otel_headers`, the same carrier OTel
+      # uses. Stock `serialize`/`deserialize` only carry a fixed key set, so --
+      # like OTel -- we patch both plus an accessor to round-trip it. The on-wire
+      # value is run through ActiveJob's argument serializer (an array of
+      # `[key, value]` pairs), matching OTel byte-for-byte so an AppSignal- and an
+      # OTel-instrumented service read each other's jobs.
+      module ActiveJobTraceContext
+        # Inject on enqueue from inside a producer event, so the job carries this
+        # transaction's context and the perform later links back. Mirrors the
+        # Sidekiq client middleware: an AppSignal event (a producer span in
+        # collector mode), not a direct SDK span. `Appsignal.instrument` is a
+        # transparent pass-through when there's no active transaction, and
+        # `inject_context` no-ops outside collector mode.
+        def enqueue(*)
+          Appsignal.instrument("enqueue.active_job", :opentelemetry_kind => :producer) do
+            Appsignal::OpenTelemetry.inject_context(__otel_headers)
+            super
+          end
+        end
+
+        def serialize
+          super.tap do |data|
+            next unless Appsignal::OpenTelemetry.started?
+            next if __otel_headers.empty?
+
+            data["__otel_headers"] = ::ActiveJob::Arguments.serialize(__otel_headers)
+          end
+        end
+
+        def deserialize(job_data)
+          super
+          serialized = job_data["__otel_headers"]
+          @__otel_headers =
+            serialized ? ::ActiveJob::Arguments.deserialize(serialized).to_h : {}
+        end
+
+        def __otel_headers
+          @__otel_headers ||= {}
+        end
+
+        attr_writer :__otel_headers
       end
 
       module ActiveJobHelpers
