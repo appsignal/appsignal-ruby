@@ -96,9 +96,15 @@ module Appsignal
         span.finish
       end
 
-      def record_event(name, title, body, body_format, duration)
+      # `opentelemetry_kind` is set at span creation (kind is immutable in OTel),
+      # mirroring `start_event`. `nil` leaves the SDK default (INTERNAL).
+      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil)
         start_time = Time.now - (duration / 1_000_000_000.0)
-        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :start_timestamp => start_time)
+        span = tracer.start_span(
+          EVENT_SPAN_PLACEHOLDER_NAME,
+          :start_timestamp => start_time,
+          :kind => opentelemetry_kind
+        )
         write_event_name_attributes(span, name, title)
         write_event_body_attributes(span, body, body_format)
         span.finish

@@ -4360,7 +4360,8 @@ describe Appsignal::Transaction do
         "title",
         "body",
         1,
-        1000
+        1000,
+        :opentelemetry_kind => nil
       ).and_call_original
 
       transaction.record_event(
@@ -4378,7 +4379,8 @@ describe Appsignal::Transaction do
         "",
         "",
         0,
-        1000
+        1000,
+        :opentelemetry_kind => nil
       ).and_call_original
 
       transaction.record_event(

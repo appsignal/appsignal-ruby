@@ -666,7 +666,14 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
+    def record_event(
+      name,
+      title,
+      body,
+      duration,
+      body_format = Appsignal::EventFormatter::DEFAULT,
+      opentelemetry_kind: nil
+    )
       return if paused?
 
       @backend.record_event(
@@ -674,7 +681,8 @@ module Appsignal
         title || BLANK,
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
-        duration
+        duration,
+        :opentelemetry_kind => opentelemetry_kind
       )
     end
 
