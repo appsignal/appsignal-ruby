@@ -24,10 +24,11 @@ if DependencyHelper.faraday_present?
         set_current_transaction(transaction)
         perform
 
+        # Title only, no body -- the path is left out, matching Net::HTTP.
         expect(transaction).to include_event(
           "name" => "request.faraday",
           "title" => "GET http://www.example.com",
-          "body" => "GET http://www.example.com/"
+          "body" => ""
         )
         # Net::HTTP is suppressed under Faraday, so it isn't recorded again.
         expect(transaction).to_not include_event("name" => "request.net_http")
