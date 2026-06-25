@@ -162,6 +162,19 @@ module Appsignal
         ::OpenTelemetry.propagation.extract(carrier)
       end
 
+      # Run `block` only when the OpenTelemetry SDK has booted (collector mode),
+      # returning its result; a no-op returning `nil` otherwise. The block can
+      # touch the OTel SDK freely -- it only runs when the SDK is loaded.
+      #
+      # This is the gate every integration's OTel-specific work goes through, so
+      # integration-specific carrier/getter/setter logic lives in the
+      # integration rather than as a bespoke helper here.
+      def if_started
+        return unless started?
+
+        yield
+      end
+
       # @!visibility private
       #
       # Test-only. Drops the started flag so subsequent tests start from a
