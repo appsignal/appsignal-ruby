@@ -72,7 +72,15 @@ describe Appsignal::Hooks::ExconHook do
         # Runs the AppSignal Excon middleware's `request_call` over an empty
         # datum, returning the datum so we can read the injected headers.
         def inject_with_middleware
-          middleware = Appsignal::Integrations::ExconMiddleware.new
+          # Excon middlewares wrap the next one in the stack and forward to it,
+          # so pass a tail that just returns the datum. Excon's Middleware::Base
+          # requires this argument.
+          tail = Class.new do
+            def request_call(datum)
+              datum
+            end
+          end.new
+          middleware = Appsignal::Integrations::ExconMiddleware.new(tail)
           middleware.request_call({})
         end
 
