@@ -18,7 +18,7 @@ module Appsignal
         raise NotImplementedError
       end
 
-      def record_event(_name, _title, _body, _body_format, _duration)
+      def record_event(_name, _title, _body, _body_format, _duration, opentelemetry_kind: nil)
         raise NotImplementedError
       end
 

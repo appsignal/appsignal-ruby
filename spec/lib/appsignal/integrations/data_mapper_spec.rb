@@ -56,6 +56,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("DataMapper Query")
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * from users")
@@ -103,6 +104,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("DataMapper Query")
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
         expect(attrs["appsignal.category"]).to eq("query.data_mapper")
