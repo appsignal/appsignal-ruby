@@ -346,4 +346,95 @@ if DependencyHelper.que_present?
       end
     end
   end
+
+  describe Appsignal::Integrations::QueClientPlugin do
+    let(:job) do
+      Class.new(::Que::Job) do
+        def self.name
+          "MyQueJob"
+        end
+      end
+    end
+
+    # Capture what Que would persist, without needing a database.
+    let(:captured) { {} }
+    before do
+      allow(Que).to receive(:execute) do |command, values|
+        captured[:values] = values if command == :insert_job
+        [{}]
+      end
+    end
+
+    # `data` is the 7th value Que passes to its `:insert_job` query; the tags
+    # live under it as a JSON string.
+    def enqueued_tags
+      data = captured[:values] && captured[:values][6]
+      data ? JSON.parse(data)["tags"] : nil
+    end
+
+    def enqueue(tags: ["user:42"])
+      job.enqueue("post_id_123", :job_options => { :tags => tags })
+    end
+
+    context "with an active transaction" do
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue_job.que")
+        # No wire context in agent mode; only the user's own tag persists.
+        expect(enqueued_tags).to eq(["user:42"])
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+        Appsignal::Transaction.complete_current!
+
+        # The enqueue is a producer event span under the active transaction.
+        producer = event_spans.find { |s| s.name == "enqueue_job.que" }
+        expect(producer.kind).to eq(:producer)
+        expect(producer.parent_span_id).to eq(root_span.span_id)
+
+        # The job carries the producer span's context as a traceparent tag,
+        # alongside the user's own tag.
+        expect(enqueued_tags).to include("user:42")
+        expect(enqueued_tags)
+          .to include("traceparent:00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
+      end
+
+      it "skips propagation rather than break the enqueue when tags are full",
+        :collector_mode do
+        start_collector_agent
+        set_current_transaction(http_request_transaction)
+
+        # Already at Que's 5-tag limit; adding trace context would exceed it, so
+        # propagation is skipped and the enqueue still succeeds unchanged.
+        full = %w[t1 t2 t3 t4 t5]
+        expect { enqueue(:tags => full) }.to_not raise_error
+        Appsignal::Transaction.complete_current!
+
+        expect(enqueued_tags).to eq(full)
+      end
+    end
+
+    context "without an active transaction" do
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+
+        enqueue
+
+        # No transaction to attach to: nothing recorded, nothing injected.
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue_job.que")
+        expect(enqueued_tags).to eq(["user:42"])
+      end
+    end
+  end
 end
