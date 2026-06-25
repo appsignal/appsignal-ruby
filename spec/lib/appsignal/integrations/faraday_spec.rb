@@ -1,69 +1,101 @@
 if DependencyHelper.faraday_present?
   require "faraday"
   require "appsignal/integrations/faraday"
-  require "faraday/excon" if DependencyHelper.excon_present?
 
-  # Integration test against the real Faraday gem. The hook auto-installs
-  # AppSignal's middleware onto every connection, so the `request.faraday` event
-  # is recorded without the user adding anything themselves -- and without a
-  # dependency on ActiveSupport (these gemfiles no longer load it).
+  # Integration test against the real Faraday gem. The hook auto-installs, onto
+  # every connection, Faraday's instrumentation middleware (so the
+  # `request.faraday` event fires without the user adding it) and an inject-only
+  # middleware (so outgoing requests carry trace context).
   describe "Faraday integration" do
     before { Appsignal::Hooks::FaradayHook.new.install }
 
-    # The common case: the default adapter is Net::HTTP, which AppSignal also
-    # instruments. Faraday suppresses it, so the request is recorded once -- as
-    # the `request.faraday` event.
+    # The common case: the default adapter is Net::HTTP, which AppSignal already
+    # instruments. So a Faraday request nests two client spans -- the
+    # `request.faraday` event around the `request.net_http` event -- and Net::HTTP
+    # (the innermost) writes the final `traceparent`.
     describe "a request over the default Net::HTTP adapter" do
       def perform
         stub_request(:get, "http://www.example.com/")
         Faraday.new("http://www.example.com").get("/")
       end
 
-      it "records the request once, as the Faraday event" do
+      it "in agent mode", :agent_mode do
         start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
 
-        # Title only, no body -- the path is left out, matching Net::HTTP.
         expect(transaction).to include_event(
           "name" => "request.faraday",
           "title" => "GET http://www.example.com",
-          "body" => ""
+          "body" => "GET http://www.example.com/"
         )
-        # Net::HTTP is suppressed under Faraday, so it isn't recorded again.
-        expect(transaction).to_not include_event("name" => "request.net_http")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        faraday_span = event_span("request.faraday")
+        net_http_span = event_span("request.net_http")
+
+        expect(faraday_span).not_to be_nil
+        expect(faraday_span.kind).to eq(:client)
+        expect(faraday_span.parent_span_id).to eq(root_span.span_id)
+
+        # Net::HTTP runs inside the Faraday event, so its span nests under it.
+        expect(net_http_span).not_to be_nil
+        expect(net_http_span.parent_span_id).to eq(faraday_span.span_id)
+
+        # Net::HTTP injects last (innermost), so the wire traceparent reflects it.
+        expect(injected_traceparent("http://www.example.com/"))
+          .to eq("00-#{net_http_span.hex_trace_id}-#{net_http_span.hex_span_id}-01")
       end
     end
 
-    # Excon is also a Faraday adapter, and AppSignal instruments it through
-    # Excon's instrumentor. Faraday suppresses it too, so the request is recorded
-    # once -- as the `request.faraday` event.
-    describe "a request over the Excon adapter", :if => DependencyHelper.excon_present? do
-      before { Appsignal::Hooks::ExconHook.new.install }
+    # With a non-Net::HTTP adapter (here Faraday's test adapter), our inject
+    # middleware is the only thing writing context, so the request carries the
+    # `request.faraday` client span's traceparent -- proving the middleware runs
+    # and injects inside that event's span. This is the path that gives Faraday
+    # propagation for adapters AppSignal doesn't instrument directly.
+    it "injects the Faraday client context on a non-Net::HTTP adapter", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
 
-      def perform
-        stub_request(:get, "http://www.example.com/")
-        connection = Faraday.new("http://www.example.com") do |faraday|
-          faraday.adapter :excon
+      captured_env = nil
+      connection = Faraday.new("http://www.example.com") do |faraday|
+        faraday.adapter :test do |stub|
+          stub.get("/") do |env|
+            captured_env = env
+            [200, {}, ""]
+          end
         end
-        connection.get("/")
       end
+      connection.get("/")
+      Appsignal::Transaction.complete_current!
 
-      it "records the request once, as the Faraday event" do
-        start_agent
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-        perform
+      faraday_span = event_span("request.faraday")
+      expect(faraday_span).not_to be_nil
+      expect(captured_env.request_headers["traceparent"])
+        .to eq("00-#{faraday_span.hex_trace_id}-#{faraday_span.hex_span_id}-01")
+    end
 
-        expect(transaction).to include_event(
-          "name" => "request.faraday",
-          "title" => "GET http://www.example.com",
-          "body" => ""
-        )
-        # Excon is suppressed under Faraday, so it isn't recorded again.
-        expect(transaction).to_not include_event("name" => "request.excon")
-      end
+    # Finds the recorded event span for an `appsignal.category` (AS::N name).
+    def event_span(category)
+      event_spans.find { |span| span.attributes["appsignal.category"] == category }
+    end
+
+    # Reads the `traceparent` header off the recorded outgoing request to `url`.
+    def injected_traceparent(url)
+      traceparent = nil
+      expect(
+        a_request(:get, url).with { |request| traceparent = request.headers["Traceparent"] }
+      ).to have_been_made
+      traceparent
     end
   end
 end
