@@ -58,6 +58,13 @@ RSpec.shared_context "collector mode", :collector_mode do
     # `Appsignal::OpenTelemetry.reset!` hook, so the `started?` gate inside
     # the shutdown still passes.
     Appsignal::OpenTelemetry.shutdown
+    # Booting the SDK installs the global W3C propagator as a side effect, and
+    # nothing ever resets it. Left in place it leaks to every later example, so
+    # an unrelated spec can silently pass on a propagator this example happened
+    # to install. Reset it to the API default so collector-mode examples can't
+    # leak trace propagation into the rest of the suite.
+    ::OpenTelemetry.propagation =
+      ::OpenTelemetry::Context::Propagation::NoopTextMapPropagator.new
   end
 
   # Boots the agent in collector mode and swaps in the in-memory OTel providers.
