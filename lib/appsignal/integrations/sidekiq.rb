@@ -49,7 +49,7 @@ module Appsignal
       end
     end
 
-    # Client middleware that runs on enqueue. Records an `enqueue_job.sidekiq`
+    # Client middleware that runs on enqueue. Records an `enqueue.sidekiq`
     # event so the enqueue shows up under the active transaction (both modes),
     # and in collector mode writes the trace context onto the job hash so the
     # job that later performs links back to it.
@@ -61,7 +61,7 @@ module Appsignal
     # @!visibility private
     class SidekiqClientMiddleware
       def call(_worker_class, job, _queue, _redis_pool)
-        Appsignal.instrument("enqueue_job.sidekiq", :opentelemetry_kind => :producer) do
+        Appsignal.instrument("enqueue.sidekiq", :opentelemetry_kind => :producer) do
           Appsignal::OpenTelemetry.inject_context(job)
           yield
         end
