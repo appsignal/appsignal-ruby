@@ -120,9 +120,9 @@ module Appsignal
       # that is the AppSignal event span, so the written `traceparent` reflects
       # it.
       def inject_context(carrier)
-        return unless started?
-
-        ::OpenTelemetry.propagation.inject(carrier)
+        if_started do
+          ::OpenTelemetry.propagation.inject(carrier)
+        end
       end
 
       # Read the trace context off an incoming Rack request env using the
@@ -133,12 +133,12 @@ module Appsignal
       # nothing to continue. `rack_env_getter` reads the `HTTP_*`-mangled header
       # names Rack puts in the env.
       def extract_rack_context(env)
-        return unless started?
-
-        ::OpenTelemetry.propagation.extract(
-          env,
-          :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter
-        )
+        if_started do
+          ::OpenTelemetry.propagation.extract(
+            env,
+            :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter
+          )
+        end
       end
 
       # Read the trace context off an incoming background job hash, so a
@@ -153,13 +153,13 @@ module Appsignal
       # accept both shapes. The nested keys win when present, since ActiveJob is
       # the outer, more specific layer.
       def extract_job_context(item)
-        return unless started?
-
-        carrier = item
-        nested = item["__otel_headers"]
-        nested = nested.to_h if otel_header_pairs?(nested)
-        carrier = item.merge(nested) if nested.is_a?(Hash)
-        ::OpenTelemetry.propagation.extract(carrier)
+        if_started do
+          carrier = item
+          nested = item["__otel_headers"]
+          nested = nested.to_h if otel_header_pairs?(nested)
+          carrier = item.merge(nested) if nested.is_a?(Hash)
+          ::OpenTelemetry.propagation.extract(carrier)
+        end
       end
 
       # Run `block` only when the OpenTelemetry SDK has booted (collector mode),
