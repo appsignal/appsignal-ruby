@@ -147,14 +147,17 @@ module Appsignal
       #
       # Reads both carriers a job can arrive with: top-level `traceparent` /
       # `tracestate` keys (how OpenTelemetry's Sidekiq instrumentation injects)
-      # and a nested `__otel_headers` hash (how its ActiveJob instrumentation
-      # does). The nested keys win when both are present, since ActiveJob is the
-      # outer, more specific layer.
+      # and a nested `__otel_headers` (how its ActiveJob instrumentation does).
+      # ActiveJob runs the headers through ActiveJob's argument serializer, so
+      # `__otel_headers` arrives as an array of `[key, value]` pairs, not a hash;
+      # accept both shapes. The nested keys win when present, since ActiveJob is
+      # the outer, more specific layer.
       def extract_job_context(item)
         return unless started?
 
         carrier = item
         nested = item["__otel_headers"]
+        nested = nested.to_h if otel_header_pairs?(nested)
         carrier = item.merge(nested) if nested.is_a?(Hash)
         ::OpenTelemetry.propagation.extract(carrier)
       end
@@ -220,6 +223,14 @@ module Appsignal
       end
 
       private
+
+      # Whether a `__otel_headers` value is the array-of-`[key, value]`-pairs
+      # shape produced by ActiveJob's argument serializer, so it can be turned
+      # into a hash carrier. Anything else (including a malformed array) is left
+      # alone rather than raising on `to_h` inside a job perform.
+      def otel_header_pairs?(value)
+        value.is_a?(Array) && value.all? { |pair| pair.is_a?(Array) && pair.size == 2 }
+      end
 
       # The optional OpenTelemetry gems, required lazily so users not in
       # collector mode don't pay the load cost. A missing gem raises LoadError,

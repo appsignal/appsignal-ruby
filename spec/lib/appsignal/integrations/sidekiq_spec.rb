@@ -500,7 +500,10 @@ if DependencyHelper.sidekiq_present?
       end
 
       context "with a traceparent nested under __otel_headers (ActiveJob style)" do
-        let(:item) { super().merge("__otel_headers" => { "traceparent" => traceparent }) }
+        # OpenTelemetry's ActiveJob instrumentation runs the headers through
+        # ActiveJob's argument serializer, so they arrive as an array of
+        # [key, value] pairs, not a hash.
+        let(:item) { super().merge("__otel_headers" => [["traceparent", traceparent]]) }
 
         it "in agent mode", :agent_mode do
           start_agent(**start_agent_args)
