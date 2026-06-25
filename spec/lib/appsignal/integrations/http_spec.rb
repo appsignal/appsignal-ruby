@@ -38,9 +38,15 @@ if DependencyHelper.http_present?
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("GET http://www.google.com")
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         expect(span.attributes).not_to have_key("appsignal.body")
+
+        # The outgoing request carries a W3C traceparent for the client span, so
+        # the called service joins this trace.
+        expect(injected_traceparent("http://www.google.com/"))
+          .to eq("00-#{span.hex_trace_id}-#{span.hex_span_id}-01")
       end
     end
 
@@ -76,9 +82,13 @@ if DependencyHelper.http_present?
         expect(event_spans.size).to eq(1)
         span = event_spans.first
         expect(span.name).to eq("GET https://www.google.com")
+        expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         expect(span.attributes).not_to have_key("appsignal.body")
+
+        expect(injected_traceparent("https://www.google.com/"))
+          .to eq("00-#{span.hex_trace_id}-#{span.hex_span_id}-01")
       end
     end
 
@@ -330,6 +340,61 @@ if DependencyHelper.http_present?
           expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end
+    end
+
+    describe "following redirects" do
+      # `perform` is the single send chokepoint, called once per request and
+      # once per redirect hop, so each hop becomes its own `request.http_rb`
+      # event. (Before this moved to `perform`, the `request`-level event
+      # spanned all hops.)
+      def perform
+        stub_request(:get, "http://www.google.com")
+          .to_return(:status => 301, :headers => { "Location" => "http://www.example.com" })
+        stub_request(:get, "http://www.example.com").to_return(:status => 200)
+
+        HTTP.follow.get("http://www.google.com")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+        perform
+
+        events = transaction.to_h["events"]
+          .select { |event| event["name"] == "request.http_rb" }
+        expect(events.map { |event| event["title"] }).to eq(
+          [
+            "GET http://www.google.com",
+            "GET http://www.example.com"
+          ]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(2)
+        expect(event_spans.map(&:name)).to contain_exactly(
+          "GET http://www.google.com",
+          "GET http://www.example.com"
+        )
+        event_spans.each do |span|
+          expect(span.kind).to eq(:client)
+          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
+        end
+      end
+    end
+
+    # Reads the `traceparent` header off the recorded outgoing request to `url`.
+    def injected_traceparent(url)
+      traceparent = nil
+      expect(
+        a_request(:get, url).with { |request| traceparent = request.headers["Traceparent"] }
+      ).to have_been_made
+      traceparent
     end
   end
 end
