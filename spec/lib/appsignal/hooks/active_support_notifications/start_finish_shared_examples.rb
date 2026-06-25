@@ -37,6 +37,8 @@ shared_examples "activesupport start finish override" do
       span = event_spans.find { |s| s.name == "sql.active_record" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
       # The formatter received an empty finish payload, so body is empty —
       # the OTel backend skips writing db.query.text / db.system.name.
       expect(span.attributes).not_to have_key("db.query.text")
@@ -80,6 +82,8 @@ shared_examples "activesupport start finish override" do
       span = event_spans.find { |s| s.name == "sql.active_record" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
       expect(span.attributes["db.query.text"]).to eq("SQL")
       expect(span.attributes["db.system.name"]).to eq("other_sql")
     end
