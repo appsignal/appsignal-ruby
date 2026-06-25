@@ -10,6 +10,22 @@ module Appsignal
     module QueTraceContext
       module_function
 
+      # Que has no header map, so context rides in the tags array. OTel writes
+      # each header as a `"key:value"` tag; mirror that exact format.
+      module TagSetter
+        def self.set(carrier, key, value)
+          carrier << "#{key}:#{value}"
+        end
+      end
+
+      # Que rejects jobs with too many or too-long tags, so injected context
+      # must stay within these or the enqueue would raise. Read the limits from
+      # Que when available, with the documented defaults as a fallback.
+      MAX_TAGS_COUNT =
+        defined?(::Que::Job::MAXIMUM_TAGS_COUNT) ? ::Que::Job::MAXIMUM_TAGS_COUNT : 5
+      MAX_TAG_LENGTH =
+        defined?(::Que::Job::MAXIMUM_TAG_LENGTH) ? ::Que::Job::MAXIMUM_TAG_LENGTH : 100
+
       # Read the incoming context off the job's tags. Splits each `"key:value"`
       # tag on the first colon back into a carrier hash, then extracts. Returns
       # an `OpenTelemetry::Context`, or `nil` outside collector mode.
@@ -21,6 +37,27 @@ module Appsignal
             .to_h
           ::OpenTelemetry.propagation.extract(carrier)
         end
+      end
+
+      # Returns the tags array to enqueue the job with. In collector mode injects
+      # the current context into a copy of the tags; keeps the result only if it
+      # still fits Que's limits, otherwise returns the original tags unchanged --
+      # we skip propagation rather than break the user's enqueue. Outside
+      # collector mode returns the tags unchanged.
+      def inject(tags)
+        original = Array(tags)
+        injected = Appsignal::OpenTelemetry.if_started do
+          copy = original.dup
+          ::OpenTelemetry.propagation.inject(copy, :setter => TagSetter)
+          copy
+        end
+        return original if injected.nil? || !within_limits?(injected)
+
+        injected
+      end
+
+      def within_limits?(tags)
+        tags.length <= MAX_TAGS_COUNT && tags.all? { |tag| tag.length <= MAX_TAG_LENGTH }
       end
     end
 
@@ -65,68 +102,19 @@ module Appsignal
 
     # @!visibility private
     #
-    # Prepended to `Que::Job`'s singleton so it records each enqueue as an
-    # `enqueue.que` event under the active transaction. Like all AppSignal
-    # events, it only records when there's an active transaction (e.g. enqueuing
-    # from within a web request or another job); otherwise it's a transparent
-    # pass-through.
+    # Prepended to `Que::Job`'s singleton so it wraps enqueues. Records the
+    # enqueue as an AppSignal event (a producer span in collector mode), and in
+    # collector mode writes the current trace context onto the job's tags so the
+    # job that later performs links back to it. Like all AppSignal events, the
+    # enqueue only records when there's an active transaction; otherwise it's a
+    # transparent pass-through.
     module QueClientPlugin
-      def enqueue(*_args, job_options: {}, **_rest)
-        # Inside a `bulk_enqueue` block the batch is recorded once by the
-        # `bulk_enqueue` wrapper, so each inner enqueue is a pass-through to
-        # avoid recording an event per job.
-        return super if Thread.current[:appsignal_que_bulk_enqueue]
-
-        # Under Active Job the enqueue is already recorded as an
-        # `enqueue.active_job` event, so skip recording it again here.
-        return super if Appsignal::Transaction.current? &&
-          Appsignal::Transaction.current.job_enqueue_events_suppressed?
-
-        # Resolve the job class the way Que does: an explicit `:job_class`, else
-        # the class `enqueue` was called on.
-        title = "enqueue #{job_options[:job_class] || name} job"
-        Appsignal.instrument("enqueue.que", title) { super }
-      end
-    end
-
-    # @!visibility private
-    #
-    # `bulk_enqueue` exists only on Que 2+, so this lives in its own module that
-    # the hook prepends only when Que has the method -- otherwise we'd define a
-    # `bulk_enqueue` on Que versions that have none. The whole batch records a
-    # single `bulk_enqueue.que` event; the inner enqueues are pass-throughs.
-    module QueBulkClientPlugin
-      def bulk_enqueue(*_args, job_options: {}, **_rest)
-        # Under Active Job the enqueue is already recorded as an
-        # `enqueue.active_job` event, so skip recording it again here.
-        return super if Appsignal::Transaction.current? &&
-          Appsignal::Transaction.current.job_enqueue_events_suppressed?
-
-        Appsignal.instrument("bulk_enqueue.que", bulk_enqueue_title(job_options)) do
-          # Flag the batch so the enqueues this block triggers pass through
-          # without recording, without reading Que's internal bulk state.
-          was_bulk = Thread.current[:appsignal_que_bulk_enqueue]
-          Thread.current[:appsignal_que_bulk_enqueue] = true
-          begin
-            super
-          ensure
-            Thread.current[:appsignal_que_bulk_enqueue] = was_bulk
-          end
+      def enqueue(*args, job_options: {}, **rest)
+        Appsignal.instrument("enqueue_job.que", :opentelemetry_kind => :producer) do
+          tags = QueTraceContext.inject(job_options[:tags])
+          merged = tags.empty? ? job_options : job_options.merge(:tags => tags)
+          super(*args, :job_options => merged, **rest)
         end
-      end
-
-      private
-
-      # The batch's job class is known up front only from an explicit
-      # `:job_class` or when `bulk_enqueue` is called on a concrete subclass;
-      # called on `Que::Job` itself the class isn't known until the inner
-      # enqueues run, so the title is left class-less.
-      def bulk_enqueue_title(job_options)
-        job_class = job_options[:job_class]
-        job_class ||= name unless equal?(::Que::Job)
-        return "bulk enqueue jobs" unless job_class
-
-        "bulk enqueue #{job_class} jobs"
       end
     end
   end

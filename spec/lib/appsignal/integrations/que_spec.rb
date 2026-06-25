@@ -363,16 +363,12 @@ if DependencyHelper.que_present?
         captured[:values] = values if command == :insert_job
         [{}]
       end
-
-      start_agent
     end
-    around { |example| keep_transactions { example.run } }
 
-    # `data` is the last value Que passes to its `:insert_job` query on both Que
-    # 1 and Que 2 (Que 2 inserts `kwargs` before it, shifting its index); the
-    # tags live under it as a JSON string.
+    # `data` is the 7th value Que passes to its `:insert_job` query; the tags
+    # live under it as a JSON string.
     def enqueued_tags
-      data = captured[:values]&.last
+      data = captured[:values] && captured[:values][6]
       data ? JSON.parse(data)["tags"] : nil
     end
 
@@ -381,92 +377,63 @@ if DependencyHelper.que_present?
     end
 
     context "with an active transaction" do
-      it "records an enqueue event and leaves the job's tags untouched" do
+      it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
 
         enqueue
 
-        # Records an enqueue event on the transaction, titled after the job.
-        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.que" }
-        expect(event).to_not be_nil
-        expect(event["title"]).to eq("enqueue MyQueJob job")
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue_job.que")
+        # No wire context in agent mode; only the user's own tag persists.
         expect(enqueued_tags).to eq(["user:42"])
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+        Appsignal::Transaction.complete_current!
+
+        # The enqueue is a producer event span under the active transaction.
+        producer = event_spans.find { |s| s.name == "enqueue_job.que" }
+        expect(producer.kind).to eq(:producer)
+        expect(producer.parent_span_id).to eq(root_span.span_id)
+
+        # The job carries the producer span's context as a traceparent tag,
+        # alongside the user's own tag.
+        expect(enqueued_tags).to include("user:42")
+        expect(enqueued_tags)
+          .to include("traceparent:00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
+      end
+
+      it "skips propagation rather than break the enqueue when tags are full",
+        :collector_mode do
+        start_collector_agent
+        set_current_transaction(http_request_transaction)
+
+        # Already at Que's 5-tag limit; adding trace context would exceed it, so
+        # propagation is skipped and the enqueue still succeeds unchanged.
+        full = %w[t1 t2 t3 t4 t5]
+        expect { enqueue(:tags => full) }.to_not raise_error
+        Appsignal::Transaction.complete_current!
+
+        expect(enqueued_tags).to eq(full)
       end
     end
 
     context "without an active transaction" do
-      it "is a transparent pass-through" do
-        expect { enqueue }.to_not raise_error
+      it "in collector mode", :collector_mode do
+        start_collector_agent
 
+        enqueue
+
+        # No transaction to attach to: nothing recorded, nothing injected.
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue_job.que")
         expect(enqueued_tags).to eq(["user:42"])
-      end
-    end
-
-    context "when job enqueue events are suppressed" do
-      # As happens under Active Job, which records the enqueue itself.
-      it "passes through without recording the enqueue" do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-
-        transaction.suppress_job_enqueue_events { enqueue }
-
-        # The outer integration records the enqueue, so this one doesn't.
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to_not include("enqueue.que")
-      end
-    end
-
-    # `bulk_enqueue` is Que 2 only. The whole batch records a single
-    # `bulk_enqueue.que` event; the inner enqueues are pass-throughs.
-    describe "#bulk_enqueue", :if => DependencyHelper.que2_present? do
-      before do
-        # Que's bulk path constantizes the job class by name, so it needs a real
-        # constant (the single-enqueue path uses `new` and doesn't).
-        stub_const("MyQueJob", job)
-        allow(Que).to receive(:transaction).and_yield
-        allow(Que).to receive(:execute) do |command, values|
-          captured[:values] = values if command == :bulk_insert_jobs
-          [{}]
-        end
-      end
-
-      def bulk_enqueue(tags: ["user:42"])
-        job.bulk_enqueue(:job_options => { :tags => tags }) do
-          job.enqueue("post_id_123")
-          job.enqueue("post_id_456")
-        end
-      end
-
-      it "records one bulk_enqueue event for the whole batch" do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-
-        bulk_enqueue
-
-        # One event for the whole batch, titled after the job -- the inner
-        # enqueues don't add their own.
-        bulk_events =
-          transaction.to_h["events"].select { |e| e["name"] == "bulk_enqueue.que" }
-        expect(bulk_events.size).to eq(1)
-        expect(bulk_events.first["title"]).to eq("bulk enqueue MyQueJob jobs")
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to_not include("enqueue.que")
-        expect(enqueued_tags).to eq(["user:42"])
-      end
-
-      context "when job enqueue events are suppressed" do
-        # As happens under Active Job, which records the enqueue itself.
-        it "passes through without recording the enqueue" do
-          transaction = http_request_transaction
-          set_current_transaction(transaction)
-
-          transaction.suppress_job_enqueue_events { bulk_enqueue }
-
-          # The outer integration records the enqueue, so this one doesn't.
-          event_names = transaction.to_h["events"].map { |event| event["name"] }
-          expect(event_names).to_not include("bulk_enqueue.que")
-        end
       end
     end
   end
