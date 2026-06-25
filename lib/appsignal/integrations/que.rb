@@ -3,10 +3,39 @@
 module Appsignal
   module Integrations
     # @!visibility private
+    #
+    # Reads and writes W3C trace context the way OpenTelemetry's Que
+    # instrumentation does: as `"key:value"` strings in the job's tags array
+    # (the only carrier Que's enqueue API exposes). Collector mode only.
+    module QueTraceContext
+      module_function
+
+      # Read the incoming context off the job's tags. Splits each `"key:value"`
+      # tag on the first colon back into a carrier hash, then extracts. Returns
+      # an `OpenTelemetry::Context`, or `nil` outside collector mode.
+      def extract(tags)
+        Appsignal::OpenTelemetry.if_started do
+          carrier = Array(tags)
+            .map { |tag| tag.split(":", 2) }
+            .select { |pair| pair.size == 2 }
+            .to_h
+          ::OpenTelemetry.propagation.extract(carrier)
+        end
+      end
+    end
+
+    # @!visibility private
     module QuePlugin
       def _run(*args)
+        local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
+
+        # Read the incoming trace context off the job's tags so the transaction
+        # links back to the enqueuer. No-op outside collector mode.
         transaction =
-          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+          Appsignal::Transaction.create(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags))
+          )
 
         begin
           Appsignal.instrument("perform_job.que") { super }
@@ -14,7 +43,6 @@ module Appsignal
           transaction.set_error(error)
           raise error
         ensure
-          local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
           transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
           transaction.add_params_if_nil do
             {

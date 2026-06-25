@@ -310,6 +310,40 @@ if DependencyHelper.que_present?
           end
         end
       end
+
+      context "with incoming trace context" do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        # OpenTelemetry's Que instrumentation carries the trace context as
+        # "key:value" tag strings under the job's `data` attribute.
+        let(:job_attrs) do
+          super().merge(:data => { :tags => ["traceparent:#{traceparent}"] })
+        end
+
+        def perform
+          perform_que_job(instance)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect { perform }.to change { created_transactions.length }.by(1)
+          expect(last_transaction).to be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          # The job runs as its own trace, linked back to the enqueuer.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          link_context = root_span.links.first.span_context
+          expect(link_context.hex_trace_id).to eq(trace_id_hex)
+          expect(link_context.hex_span_id).to eq(span_id_hex)
+        end
+      end
     end
   end
 end
