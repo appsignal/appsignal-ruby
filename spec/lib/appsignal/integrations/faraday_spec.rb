@@ -9,10 +9,9 @@ if DependencyHelper.faraday_present?
   describe "Faraday integration" do
     before { Appsignal::Hooks::FaradayHook.new.install }
 
-    # The common case: the default adapter is Net::HTTP, which AppSignal already
-    # instruments. So a Faraday request nests two client spans -- the
-    # `request.faraday` event around the `request.net_http` event -- and Net::HTTP
-    # (the innermost) writes the final `traceparent`.
+    # The common case: the default adapter is Net::HTTP, which AppSignal also
+    # instruments. Faraday suppresses it, so the request is recorded once -- as
+    # the `request.faraday` event, which also writes the `traceparent`.
     describe "a request over the default Net::HTTP adapter" do
       def perform
         stub_request(:get, "http://www.example.com/")
@@ -30,6 +29,8 @@ if DependencyHelper.faraday_present?
           "title" => "GET http://www.example.com",
           "body" => "GET http://www.example.com/"
         )
+        # Net::HTTP is suppressed under Faraday, so it isn't recorded again.
+        expect(transaction).to_not include_event("name" => "request.net_http")
       end
 
       it "in collector mode", :collector_mode do
@@ -40,19 +41,16 @@ if DependencyHelper.faraday_present?
         Appsignal::Transaction.complete_current!
 
         faraday_span = event_span("request.faraday")
-        net_http_span = event_span("request.net_http")
-
         expect(faraday_span).not_to be_nil
         expect(faraday_span.kind).to eq(:client)
         expect(faraday_span.parent_span_id).to eq(root_span.span_id)
 
-        # Net::HTTP runs inside the Faraday event, so its span nests under it.
-        expect(net_http_span).not_to be_nil
-        expect(net_http_span.parent_span_id).to eq(faraday_span.span_id)
+        # Net::HTTP is suppressed, so there's no nested net_http span.
+        expect(event_span("request.net_http")).to be_nil
 
-        # Net::HTTP injects last (innermost), so the wire traceparent reflects it.
+        # Faraday writes the wire traceparent (Net::HTTP doesn't run its inject).
         expect(injected_traceparent("http://www.example.com/"))
-          .to eq("00-#{net_http_span.hex_trace_id}-#{net_http_span.hex_span_id}-01")
+          .to eq("00-#{faraday_span.hex_trace_id}-#{faraday_span.hex_span_id}-01")
       end
     end
 

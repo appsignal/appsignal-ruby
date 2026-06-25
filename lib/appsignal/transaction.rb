@@ -292,13 +292,10 @@ module Appsignal
     # integration (Faraday) already records the request, so the same request is
     # not instrumented twice as nested client events.
     def suppress_http_client_events
-      # Restore the previous value rather than forcing `false`, so nested calls
-      # don't unsuppress while an outer block is still active.
-      previously_suppressed = store("http_client")[:suppressed]
       store("http_client")[:suppressed] = true
       yield
     ensure
-      store("http_client")[:suppressed] = previously_suppressed
+      store("http_client")[:suppressed] = false
     end
 
     # @!visibility private
