@@ -246,7 +246,7 @@ if DependencyHelper.resque_present?
 
           # Records an enqueue event on the transaction; no wire context in agent mode.
           event_names = transaction.to_h["events"].map { |event| event["name"] }
-          expect(event_names).to include("enqueue_job.resque")
+          expect(event_names).to include("enqueue.resque")
           expect(item).to_not have_key("traceparent")
         end
 
@@ -259,7 +259,7 @@ if DependencyHelper.resque_present?
           Appsignal::Transaction.complete_current!
 
           # The enqueue is a producer event span under the active transaction.
-          producer = event_spans.find { |s| s.name == "enqueue_job.resque" }
+          producer = event_spans.find { |s| s.name == "enqueue.resque" }
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -285,7 +285,7 @@ if DependencyHelper.resque_present?
           # No transaction to attach the event to, so nothing is emitted and the
           # job hash is untouched.
           expect(enqueue).to eq(:pushed)
-          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue_job.resque")
+          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
           expect(item).to_not have_key("traceparent")
         end
       end

@@ -163,10 +163,11 @@ module Appsignal
 
         def serialize
           super.tap do |data|
-            next unless Appsignal::OpenTelemetry.started?
-            next if __otel_headers.empty?
+            Appsignal::OpenTelemetry.if_started do
+              next if __otel_headers.empty?
 
-            data["__otel_headers"] = ::ActiveJob::Arguments.serialize(__otel_headers)
+              data["__otel_headers"] = ::ActiveJob::Arguments.serialize(__otel_headers)
+            end
           end
         end
 

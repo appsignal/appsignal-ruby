@@ -385,7 +385,7 @@ if DependencyHelper.que_present?
         enqueue
 
         event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue_job.que")
+        expect(event_names).to include("enqueue.que")
         # No wire context in agent mode; only the user's own tag persists.
         expect(enqueued_tags).to eq(["user:42"])
       end
@@ -399,7 +399,7 @@ if DependencyHelper.que_present?
         Appsignal::Transaction.complete_current!
 
         # The enqueue is a producer event span under the active transaction.
-        producer = event_spans.find { |s| s.name == "enqueue_job.que" }
+        producer = event_spans.find { |s| s.name == "enqueue.que" }
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -432,7 +432,7 @@ if DependencyHelper.que_present?
         enqueue
 
         # No transaction to attach to: nothing recorded, nothing injected.
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue_job.que")
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.que")
         expect(enqueued_tags).to eq(["user:42"])
       end
     end

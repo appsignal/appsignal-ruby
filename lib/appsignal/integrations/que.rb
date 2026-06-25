@@ -110,7 +110,7 @@ module Appsignal
     # transparent pass-through.
     module QueClientPlugin
       def enqueue(*args, job_options: {}, **rest)
-        Appsignal.instrument("enqueue_job.que", :opentelemetry_kind => :producer) do
+        Appsignal.instrument("enqueue.que", :opentelemetry_kind => :producer) do
           tags = QueTraceContext.inject(job_options[:tags])
           merged = tags.empty? ? job_options : job_options.merge(:tags => tags)
           super(*args, :job_options => merged, **rest)
