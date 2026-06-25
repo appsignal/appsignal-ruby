@@ -21,8 +21,8 @@ module Appsignal
         store                   = transaction.store("mongo_driver")
         store[event.request_id] = command
 
-        # Start this event
-        transaction.start_event
+        # Start this event. The query is an outgoing client call.
+        transaction.start_event(:opentelemetry_kind => :client)
       end
 
       # Called by Mongo::Monitor when query succeeds
