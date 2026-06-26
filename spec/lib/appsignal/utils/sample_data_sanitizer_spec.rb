@@ -49,7 +49,7 @@ describe Appsignal::Utils::SampleDataSanitizer do
       expect(sanitize(:file => rack_uploaded_file))
         .to eq(:file => normalized_file)
 
-      expect(sanitize(:file => [:file => rack_uploaded_file])[:file].first[:file])
+      expect(sanitize(:file => [{ :file => rack_uploaded_file }])[:file].first[:file])
         .to eq(normalized_file)
     end
 
@@ -63,7 +63,7 @@ describe Appsignal::Utils::SampleDataSanitizer do
         expect(sanitize(:file => rails_uploaded_file))
           .to eq(:file => normalized_file)
 
-        expect(sanitize(:file => [:file => rails_uploaded_file])[:file].first[:file])
+        expect(sanitize(:file => [{ :file => rails_uploaded_file }])[:file].first[:file])
           .to eq(normalized_file)
       end
     end
@@ -157,18 +157,22 @@ describe Appsignal::Utils::SampleDataSanitizer do
 
       it "sanitizes values in a nested objects" do
         object = [
-          :users => [
-            { :password => "secret", :id => 123 },
-            { :password => ["shhhhh"], :id => 456 },
-            { :password => { :obj => "shhhhh" }, :id => 789 }
-          ]
+          {
+            :users => [
+              { :password => "secret", :id => 123 },
+              { :password => ["shhhhh"], :id => 456 },
+              { :password => { :obj => "shhhhh" }, :id => 789 }
+            ]
+          }
         ]
         expect(sanitize(object, ["password"])).to eq([
-          :users => [
-            { :password => "[FILTERED]", :id => 123 },
-            { :password => "[FILTERED]", :id => 456 },
-            { :password => "[FILTERED]", :id => 789 }
-          ]
+          {
+            :users => [
+              { :password => "[FILTERED]", :id => 123 },
+              { :password => "[FILTERED]", :id => 456 },
+              { :password => "[FILTERED]", :id => 789 }
+            ]
+          }
         ])
       end
 

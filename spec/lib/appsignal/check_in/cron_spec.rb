@@ -69,8 +69,10 @@ describe Appsignal::CheckIn::Cron do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "cron-checkin-name",
-          "kind" => "start"
+          {
+            "identifier" => "cron-checkin-name",
+            "kind" => "start"
+          }
         ]
       )
 
@@ -92,8 +94,10 @@ describe Appsignal::CheckIn::Cron do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "cron-checkin-name",
-          "kind" => "start"
+          {
+            "identifier" => "cron-checkin-name",
+            "kind" => "start"
+          }
         ],
         :response => { :status => 499 }
       )
@@ -117,8 +121,10 @@ describe Appsignal::CheckIn::Cron do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "cron-checkin-name",
-          "kind" => "finish"
+          {
+            "identifier" => "cron-checkin-name",
+            "kind" => "finish"
+          }
         ]
       )
 
@@ -139,8 +145,10 @@ describe Appsignal::CheckIn::Cron do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "cron-checkin-name",
-          "kind" => "finish"
+          {
+            "identifier" => "cron-checkin-name",
+            "kind" => "finish"
+          }
         ],
         :response => { :status => 499 }
       )
@@ -178,8 +186,10 @@ describe Appsignal::CheckIn::Cron do
       it "does not send a cron check-in finish event when an error is raised" do
         stubs << stub_cron_check_in_request(
           :events => [
-            "identifier" => "cron-checkin-with-block",
-            "kind" => "start"
+            {
+              "identifier" => "cron-checkin-with-block",
+              "kind" => "start"
+            }
           ]
         )
 
@@ -193,8 +203,10 @@ describe Appsignal::CheckIn::Cron do
       it "only sends a cron check-in finish event" do
         stubs << stub_cron_check_in_request(
           :events => [
-            "identifier" => "cron-checkin-without-block",
-            "kind" => "finish"
+            {
+              "identifier" => "cron-checkin-without-block",
+              "kind" => "finish"
+            }
           ]
         )
 

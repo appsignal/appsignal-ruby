@@ -77,7 +77,7 @@ def link_libraries
   end
 end
 
-def have_required_function(library, func) # rubocop:disable Naming/PredicateName
+def have_required_function(library, func)
   if have_func(func)
     report["build"]["dependencies"][library] = "linked"
     return

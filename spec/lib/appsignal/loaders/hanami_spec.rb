@@ -29,8 +29,7 @@ if DependencyHelper.hanami_present?
       def uninstall_hanami_middleware
         middleware_stack = ::Hanami.app.config.middleware.stack[::Hanami::Router::DEFAULT_PREFIX]
         middleware_stack.delete_if do |middleware|
-          middleware.first == Appsignal::Rack::HanamiMiddleware ||
-            middleware.first == Appsignal::Rack::EventMiddleware
+          [Appsignal::Rack::HanamiMiddleware, Appsignal::Rack::EventMiddleware].include?(middleware.first)
         end
       end
 

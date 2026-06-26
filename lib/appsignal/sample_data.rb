@@ -68,6 +68,7 @@ module Appsignal
     private
 
     UNSET_VALUE = nil
+    private_constant :UNSET_VALUE
 
     # Method called by `dup` and `clone` to create a duplicate instance.
     # Make sure the `@blocks` variable is also properly duplicated.

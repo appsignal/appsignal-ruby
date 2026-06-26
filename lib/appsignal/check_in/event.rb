@@ -67,7 +67,7 @@ module Appsignal
           end
         end
 
-        def deduplicate_cron!(events) # rubocop:disable Metrics/AbcSize,Metrics/CyclomaticComplexity
+        def deduplicate_cron!(events) # rubocop:disable Metrics/AbcSize
           # Remove redundant cron check-in events from the given list of events.
           # This is done by removing redundant *pairs* of events -- that is,
           # for each identifier, only send one complete pair of start and
@@ -111,9 +111,7 @@ module Appsignal
             # Do not remove events that are not cron check-in events or that
             # have an unknown kind.
             return false unless
-              event[:check_in_type] == "cron" && (
-                event[:kind] == "start" ||
-                event[:kind] == "finish")
+              event[:check_in_type] == "cron" && ["start", "finish"].include?(event[:kind])
 
             # Remove any event that is part of a complete digest pair, except
             # for the one digest that should be kept.

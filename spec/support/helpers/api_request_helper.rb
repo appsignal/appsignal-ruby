@@ -108,7 +108,7 @@ module ApiRequestHelper
         payloads = request.body.split("\n").map { |line| JSON.parse(line) }
         formatted_events =
           events.map do |event|
-            a_hash_including(**event_shape.merge(event))
+            a_hash_including(**event_shape, **event)
           end
 
         expect(payloads).to include(*formatted_events)

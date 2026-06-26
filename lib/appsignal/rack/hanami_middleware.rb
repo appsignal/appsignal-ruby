@@ -14,6 +14,7 @@ module Appsignal
 
       HANAMI_ACTION_INSTANCE = "hanami.action_instance"
       ROUTER_PARAMS = "router.params"
+      private_constant :HANAMI_ACTION_INSTANCE, :ROUTER_PARAMS
 
       def add_transaction_metadata_after(transaction, request)
         action_name = fetch_hanami_action(request.env)

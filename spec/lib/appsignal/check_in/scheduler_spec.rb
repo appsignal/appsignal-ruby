@@ -73,8 +73,10 @@ describe Appsignal::CheckIn::Scheduler do
     it "starts a thread" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish"
+          {
+            "identifier" => "test",
+            "kind" => "finish"
+          }
         ]
       )
       Appsignal::CheckIn.cron("test")
@@ -84,8 +86,10 @@ describe Appsignal::CheckIn::Scheduler do
     it "schedules a debounce" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish"
+          {
+            "identifier" => "test",
+            "kind" => "finish"
+          }
         ]
       )
       Appsignal::CheckIn.cron("test")
@@ -95,8 +99,10 @@ describe Appsignal::CheckIn::Scheduler do
     it "schedules the event to be transmitted" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish"
+          {
+            "identifier" => "test",
+            "kind" => "finish"
+          }
         ]
       )
 
@@ -124,8 +130,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish"
+          {
+            "identifier" => "test",
+            "kind" => "finish"
+          }
         ]
       )
 
@@ -157,9 +165,11 @@ describe Appsignal::CheckIn::Scheduler do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          {
+            "identifier" => "test",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          }
         ]
       )
 
@@ -181,9 +191,11 @@ describe Appsignal::CheckIn::Scheduler do
     it "closes the queue when stopped" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          {
+            "identifier" => "test",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          }
         ]
       )
 
@@ -195,9 +207,11 @@ describe Appsignal::CheckIn::Scheduler do
     it "kills the thread when stopped" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          {
+            "identifier" => "test",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          }
         ]
       )
 
@@ -209,9 +223,11 @@ describe Appsignal::CheckIn::Scheduler do
     it "unschedules the debounce when stopped" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "finish",
-          "check_in_type" => "cron"
+          {
+            "identifier" => "test",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          }
         ]
       )
       Appsignal::CheckIn.cron("test")
@@ -273,9 +289,11 @@ describe Appsignal::CheckIn::Scheduler do
       it "transmits the first event and enqueues future events" do
         stubs << stub_cron_check_in_request(
           :events => [
-            "identifier" => "first",
-            "kind" => "finish",
-            "check_in_type" => "cron"
+            {
+              "identifier" => "first",
+              "kind" => "finish",
+              "check_in_type" => "cron"
+            }
           ]
         )
 
@@ -313,8 +331,10 @@ describe Appsignal::CheckIn::Scheduler do
       it "transmits the other events after the debounce interval" do
         stubs << stub_cron_check_in_request(
           :events => [
-            "identifier" => "first",
-            "kind" => "finish"
+            {
+              "identifier" => "first",
+              "kind" => "finish"
+            }
           ]
         )
 
@@ -360,8 +380,10 @@ describe Appsignal::CheckIn::Scheduler do
 
         stubs << stub_cron_check_in_request(
           :events => [
-            "identifier" => "first",
-            "kind" => "finish"
+            {
+              "identifier" => "first",
+              "kind" => "finish"
+            }
           ]
         )
         Appsignal::CheckIn.cron("first")
@@ -409,8 +431,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "test",
-          "kind" => "start"
+          {
+            "identifier" => "test",
+            "kind" => "start"
+          }
         ]
       )
 
@@ -474,8 +498,10 @@ describe Appsignal::CheckIn::Scheduler do
     it "logs the error and continues" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "first",
-          "kind" => "finish"
+          {
+            "identifier" => "first",
+            "kind" => "finish"
+          }
         ],
         :response => { :status => 404 }
       )
@@ -486,8 +512,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "second",
-          "kind" => "finish"
+          {
+            "identifier" => "second",
+            "kind" => "finish"
+          }
         ]
       )
 
@@ -510,8 +538,10 @@ describe Appsignal::CheckIn::Scheduler do
     it "logs the error and continues" do
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "first",
-          "kind" => "finish"
+          {
+            "identifier" => "first",
+            "kind" => "finish"
+          }
         ],
         :response => ExampleStandardError.new("Something went wrong")
       )
@@ -522,8 +552,10 @@ describe Appsignal::CheckIn::Scheduler do
 
       stubs << stub_cron_check_in_request(
         :events => [
-          "identifier" => "second",
-          "kind" => "finish"
+          {
+            "identifier" => "second",
+            "kind" => "finish"
+          }
         ]
       )
 

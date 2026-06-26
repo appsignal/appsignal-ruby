@@ -103,7 +103,7 @@ describe Appsignal::Utils::Data do
             # Many nested
             expect(generate("a" => ["abc", [:def]]).to_s).to eq(%({"a":["abc",["def"]]}))
             # Nested Hash
-            expect(generate("a" => ["b" => "c"]).to_s).to eq(%({"a":[{"b":"c"}]}))
+            expect(generate("a" => [{ "b" => "c" }]).to_s).to eq(%({"a":[{"b":"c"}]}))
           end
 
           it "casts unsupported key types to string" do

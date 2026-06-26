@@ -1,5 +1,6 @@
 describe Appsignal do
   include EnvironmentMetadataHelper
+
   around { |example| keep_transactions { example.run } }
 
   let(:transaction) { http_request_transaction }

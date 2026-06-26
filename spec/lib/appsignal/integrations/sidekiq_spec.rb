@@ -293,7 +293,7 @@ if DependencyHelper.sidekiq_present?
         perform_sidekiq_job
 
         expect(transaction).to have_action("DelayedTestClass.foo_method")
-        expect(transaction).to include_params(["bar" => "baz"])
+        expect(transaction).to include_params([{ "bar" => "baz" }])
       end
 
       context "when job arguments is a malformed YAML object" do
@@ -329,7 +329,7 @@ if DependencyHelper.sidekiq_present?
         perform_sidekiq_job
 
         expect(transaction).to have_action("DelayedTestClass#foo_method")
-        expect(transaction).to include_params(["bar" => "baz"])
+        expect(transaction).to include_params([{ "bar" => "baz" }])
       end
 
       context "when job arguments is a malformed YAML object" do

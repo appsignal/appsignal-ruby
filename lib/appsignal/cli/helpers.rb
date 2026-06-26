@@ -5,8 +5,6 @@ require "appsignal/utils/rails_helper"
 module Appsignal
   class CLI
     module Helpers
-      private
-
       COLOR_CODES = {
         :red => 31,
         :green => 32,
@@ -15,6 +13,8 @@ module Appsignal
         :pink => 35,
         :default => 0
       }.freeze
+
+      private
 
       def coloring=(value)
         @coloring = value
