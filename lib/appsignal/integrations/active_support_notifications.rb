@@ -9,10 +9,10 @@ module Appsignal
 
         # Events a dedicated AppSignal integration already records, so the
         # generic notifications path must not record them a second time. The
-        # Faraday integration owns `request.faraday`: its middleware records the
-        # request itself, and Faraday's own instrumentation notification, if the
-        # user added that middleware, fires nested inside it.
-        SUPPRESSED_EVENT_NAMES = ["request.faraday"].freeze
+        # ActiveJob hook owns `enqueue.active_job` (it wraps the enqueue in its
+        # own event, with Rails' native notification nested inside), and the
+        # Faraday integration owns `request.faraday`.
+        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job", "request.faraday"].freeze
 
         def start_event(name)
           return unless record_event?(name)

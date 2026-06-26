@@ -29,6 +29,8 @@ module Appsignal
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
+          ::ActiveJob::Base
+            .prepend ::Appsignal::Hooks::ActiveJobHook::ActiveJobEnqueueInstrumentation
 
           next unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
 
@@ -38,6 +40,23 @@ module Appsignal
 
             Appsignal::Transaction.current.set_error(exception)
           end
+        end
+      end
+
+      # Records an `enqueue.active_job` event when a job is enqueued, so the
+      # enqueue shows up on the active transaction's timeline (e.g. when
+      # enqueuing from within a web request or another job).
+      #
+      # Wrapping `enqueue` ourselves -- rather than relying on Rails' native
+      # `enqueue.active_job` notification, which the AppSignal notifications
+      # path now suppresses -- gives us a single event we own. Like all
+      # AppSignal events, this only records when there's an active transaction;
+      # an enqueue with no transaction is a transparent pass-through.
+      #
+      # @!visibility private
+      module ActiveJobEnqueueInstrumentation
+        def enqueue(*)
+          Appsignal.instrument("enqueue.active_job") { super }
         end
       end
 
