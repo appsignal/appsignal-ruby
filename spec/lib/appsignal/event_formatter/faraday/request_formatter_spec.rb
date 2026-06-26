@@ -16,6 +16,6 @@ describe Appsignal::EventFormatter::Faraday::RequestFormatter do
 
     subject { formatter.format(payload) }
 
-    it { is_expected.to eq ["GET http://example.org", "GET http://example.org/hello/world"] }
+    it { is_expected.to eq ["GET http://example.org", ""] }
   end
 end

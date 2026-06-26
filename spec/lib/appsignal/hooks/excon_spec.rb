@@ -57,6 +57,8 @@ describe Appsignal::Hooks::ExconHook do
   end
 
   context "without Excon" do
+    before { hide_const "Excon" }
+
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 

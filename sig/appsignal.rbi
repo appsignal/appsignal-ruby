@@ -1218,6 +1218,10 @@ module Appsignal
       sig { returns(T::Boolean) }
       attr_accessor :files_world_accessible
 
+      # _@return_ — Configure whether to instrument requests made with the Faraday gem
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_faraday
+
       # _@return_ — Configure whether to instrument requests made with the http.rb gem
       sig { returns(T::Boolean) }
       attr_accessor :instrument_http_rb
