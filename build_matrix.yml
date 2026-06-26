@@ -279,6 +279,12 @@ matrix:
           - "3.0.7"
     - gem: "sequel"
     - gem: "shoryuken"
+      only:
+        ruby:
+          - "4.0.0"
+          - "3.4.1"
+          - "3.3.4"
+          - "3.2.5"
     - gem: "sinatra"
     - gem: "webmachine2"
     - gem: "redis-4"
