@@ -174,6 +174,36 @@ if DependencyHelper.sidekiq_present?
     end
   end
 
+  describe Appsignal::Integrations::SidekiqClientMiddleware do
+    let(:plugin) { described_class.new }
+    let(:job) { { "class" => "TestClass", "args" => [] } }
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
+
+    def enqueue
+      plugin.call("TestClass", job, "default", nil) { :enqueued }
+    end
+
+    context "with an active transaction" do
+      it "records the enqueue under the transaction" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue.sidekiq")
+      end
+    end
+
+    context "without an active transaction" do
+      it "passes through without recording" do
+        expect { |block| plugin.call("TestClass", job, "default", nil, &block) }
+          .to yield_control
+      end
+    end
+  end
+
   describe Appsignal::Integrations::SidekiqMiddleware do
     class DelayedTestClass; end
 
