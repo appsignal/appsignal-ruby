@@ -77,7 +77,7 @@ module TransactionHelpers
   #
   # When a block is given, the current transaction is automatically unset after
   # the block.
-  def set_current_transaction(transaction) # rubocop:disable Naming/AccessorMethodName
+  def set_current_transaction(transaction)
     Thread.current[:appsignal_transaction] = transaction
     yield if block_given?
   ensure

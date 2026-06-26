@@ -122,10 +122,17 @@ Naming/FileName:
   Exclude:
     - "ext/Rakefile"
 
+# Our API mirrors the agent's set_*/get_* method names, a convention used
+# throughout the gem and the extension. We follow it deliberately, so disable
+# the cop instead of scattering excludes and inline disables for it.
 Naming/AccessorMethodName:
-  Exclude:
-    - "lib/appsignal/helpers/instrumentation.rb"
-    - "lib/appsignal/transaction.rb"
+  Enabled: false
+
+# Several command methods return a boolean status (abort_installation,
+# Demo.transmit). The cop wants them renamed with a `?`, which would wrongly
+# read them as queries, so we don't run it.
+Naming/PredicateMethod:
+  Enabled: false
 
 Naming/RescuedExceptionsVariableName:
   Enabled: false

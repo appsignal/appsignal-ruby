@@ -17,17 +17,6 @@ Lint/MissingSuper:
 Lint/StructNewOverride:
   Exclude:
     - 'spec/lib/appsignal/probes/sidekiq_spec.rb'
-# Offense count: 5
-# Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
-# AllowedMethods: call
-# WaywardPredicates: infinite?, nonzero?
-Naming/PredicateMethod:
-  Exclude:
-    - 'ext/base.rb'
-    - 'lib/appsignal/demo.rb'
-    - 'spec/lib/appsignal/integrations/delayed_job_plugin_spec.rb'
-    - 'spec/support/testing.rb'
-
 # Offense count: 1
 # Configuration parameters: NamePrefix, ForbiddenPrefixes, AllowedMethods, MethodDefinitionMacros, UseSorbetSigs.
 # NamePrefix: is_, has_, have_, does_
