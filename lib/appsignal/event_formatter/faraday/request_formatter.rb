@@ -8,10 +8,9 @@ module Appsignal
         def format(payload)
           http_method = payload[:method].to_s.upcase
           uri = payload[:url]
-          [
-            "#{http_method} #{uri.scheme}://#{uri.host}",
-            "#{http_method} #{uri.scheme}://#{uri.host}#{uri.path}"
-          ]
+          # Empty body: the path is left out so the event matches Net::HTTP's
+          # (scheme and host only), keeping paths out of event titles.
+          ["#{http_method} #{uri.scheme}://#{uri.host}", ""]
         end
       end
     end
