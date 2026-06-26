@@ -4,6 +4,9 @@ describe Appsignal::Hooks::ShoryukenHook do
       stub_const("Shoryuken", Module.new do
         def self.configure_server
         end
+
+        def self.configure_client
+        end
       end)
       Appsignal::Hooks::ShoryukenHook.new.install
     end
@@ -16,6 +19,8 @@ describe Appsignal::Hooks::ShoryukenHook do
   end
 
   context "without shoryuken" do
+    before { hide_const "Shoryuken" }
+
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
