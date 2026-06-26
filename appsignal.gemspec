@@ -60,6 +60,13 @@ Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
   # Needs 2.0+ because we rely on Rack::Events
   gem.add_dependency "rack", ">= 2.0.0"
 
+  # The OpenTelemetry SDK and OTLP exporters are *optional* and intentionally
+  # not declared here: they're only needed in collector mode (Ruby 3.1+), so
+  # bundling them would break Ruby 2.7 and burden non-collector users. Apps
+  # that enable collector mode add them to their own Gemfile; the minimum
+  # versions live in `lib/appsignal/opentelemetry/dependencies.rb` and are
+  # enforced at boot by `Appsignal::OpenTelemetry.configure`.
+
   gem.add_development_dependency "pry"
   gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"

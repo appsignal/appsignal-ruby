@@ -29,7 +29,7 @@ module Appsignal
       #
       # @param namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
-      def create(namespace)
+      def create(namespace, opentelemetry_context: nil)
         # Reset the transaction if it was already completed but not cleared
         if Thread.current[:appsignal_transaction]&.completed?
           Thread.current[:appsignal_transaction] = nil
@@ -37,7 +37,12 @@ module Appsignal
 
         if Thread.current[:appsignal_transaction].nil?
           # If not, start a new transaction
-          set_current_transaction(Appsignal::Transaction.new(namespace))
+          set_current_transaction(
+            Appsignal::Transaction.new(
+              namespace,
+              :opentelemetry_context => opentelemetry_context
+            )
+          )
         else
           transaction = current
           # Otherwise, log the issue about trying to start another transaction
@@ -160,7 +165,7 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @!visibility private
-    def initialize(namespace, id: SecureRandom.uuid, ext: nil)
+    def initialize(namespace, id: SecureRandom.uuid, backend: nil, opentelemetry_context: nil)
       @transaction_id = id
       @action = nil
       @namespace = namespace
@@ -168,7 +173,6 @@ module Appsignal
       @discarded = false
       @completed = false
       @tags = {}
-      @breadcrumbs = []
       @store = Hash.new { |hash, key| hash[key] = {} }
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
@@ -179,11 +183,11 @@ module Appsignal
       @headers = Appsignal::SampleData.new(:headers, Hash)
       @custom_data = Appsignal::SampleData.new(:custom_data)
 
-      @ext = ext || Appsignal::Extension.start_transaction(
+      @backend = backend || Appsignal::Backends.transaction.new(
         @transaction_id,
         @namespace,
-        0
-      ) || Appsignal::Extension::MockTransaction.new
+        :opentelemetry_context => opentelemetry_context
+      )
 
       run_after_create_hooks
     end
@@ -205,9 +209,22 @@ module Appsignal
 
     # @!visibility private
     def complete
+      # Completing is idempotent: a transaction can be completed explicitly and
+      # then again by a `complete_current!` cleanup path. Re-running would, for a
+      # multi-error transaction, re-record the extra errors (a second duplicate
+      # in agent mode, or an event on an already-finished span in collector mode).
+      return if completed?
+
       if discarded?
         Appsignal.internal_logger.debug "Skipping transaction '#{transaction_id}' " \
           "because it was manually discarded."
+        # Let the backend tear itself down. The agent backend drops the
+        # transaction (nothing is sent); the OpenTelemetry backend still
+        # finishes and exports the root span, but flags it with
+        # `appsignal.ignore_subtrace` so the collector ignores the subtrace.
+        # `@completed` stays false either way: a discarded transaction was
+        # never reported.
+        @backend.discard
         return
       end
 
@@ -220,39 +237,17 @@ module Appsignal
 
       unless duplicate?
         self.class.last_errors = @error_blocks.keys
-        should_sample = @ext.finish(0)
+        should_sample = @backend.finish
       end
 
-      @error_blocks.each do |error, blocks|
-        # Ignore the error that is already set in this transaction.
-        next if error == @error_set
-
-        duplicate.tap do |transaction|
-          # In the duplicate transaction for each error, set an error
-          # with a block that calls all the blocks set for that error
-          # in the original transaction.
-          transaction.internal_set_error(error) do
-            blocks.each { |block| block.call(transaction) }
-          end
-
-          transaction.complete
-        end
-      end
-
-      if @error_set && @error_blocks[@error_set].any?
-        self.class.with_transaction(self) do
-          @error_blocks[@error_set].each do |block|
-            block.call(self)
-          end
-        end
-      end
+      report_errors
 
       run_before_complete_hooks
 
       sample_data if should_sample
 
       @completed = true
-      @ext.complete
+      @backend.complete
     end
 
     # @!visibility private
@@ -477,14 +472,16 @@ module Appsignal
         return
       end
 
-      @breadcrumbs.push(
+      # The backend owns how breadcrumbs are stored: the agent backend buffers
+      # them and flushes at completion, the OpenTelemetry backend emits each as a
+      # span event right away (by completion its target span has finished).
+      @backend.add_breadcrumb(
         :time => time.to_i,
         :category => category,
         :action => action,
         :message => message,
         :metadata => metadata
       )
-      @breadcrumbs = @breadcrumbs.last(BREADCRUMB_LIMIT)
     end
 
     # Set an action name for the transaction.
@@ -501,7 +498,7 @@ module Appsignal
       return unless action
 
       @action = action
-      @ext.set_action(action)
+      @backend.set_action(action)
     end
 
     # Set an action name only if there is no current action set.
@@ -549,7 +546,7 @@ module Appsignal
       return unless namespace
 
       @namespace = namespace
-      @ext.set_namespace(namespace)
+      @backend.set_namespace(namespace)
     end
 
     # Set queue start time for transaction.
@@ -563,7 +560,7 @@ module Appsignal
     def set_queue_start(start)
       return unless start
 
-      @ext.set_queue_start(start)
+      @backend.set_queue_start(start)
     rescue RangeError
       Appsignal.internal_logger.warn("Queue start value #{start} is too big")
     end
@@ -573,7 +570,7 @@ module Appsignal
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
-      @ext.set_metadata(key, value)
+      @backend.set_metadata(key, value)
     end
 
     # @!visibility private
@@ -606,10 +603,10 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def start_event
+    def start_event(opentelemetry_kind: nil)
       return if paused?
 
-      @ext.start_event(0)
+      @backend.start_event(:opentelemetry_kind => opentelemetry_kind)
     end
 
     # @!visibility private
@@ -617,34 +614,46 @@ module Appsignal
     def finish_event(name, title, body, body_format = Appsignal::EventFormatter::DEFAULT)
       return if paused?
 
-      @ext.finish_event(
+      @backend.finish_event(
         name,
         title || BLANK,
         body || BLANK,
-        body_format || Appsignal::EventFormatter::DEFAULT,
-        0
+        body_format || Appsignal::EventFormatter::DEFAULT
       )
     end
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def record_event(name, title, body, duration, body_format = Appsignal::EventFormatter::DEFAULT)
+    def record_event( # rubocop:disable Metrics/ParameterLists
+      name,
+      title,
+      body,
+      duration,
+      body_format = Appsignal::EventFormatter::DEFAULT,
+      opentelemetry_kind: nil
+    )
       return if paused?
 
-      @ext.record_event(
+      @backend.record_event(
         name,
         title || BLANK,
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
-        0
+        :opentelemetry_kind => opentelemetry_kind
       )
     end
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT)
-      start_event
+    def instrument(
+      name,
+      title = nil,
+      body = nil,
+      body_format = Appsignal::EventFormatter::DEFAULT,
+      opentelemetry_kind: nil
+    )
+      start_event(:opentelemetry_kind => opentelemetry_kind)
       yield if block_given?
     ensure
       finish_event(name, title, body, body_format)
@@ -652,33 +661,41 @@ module Appsignal
 
     # @!visibility private
     def to_h
-      JSON.parse(@ext.to_json)
+      JSON.parse(@backend.to_json)
     end
     alias_method :to_hash, :to_h
 
     protected
 
     # @!visibility private
-    attr_writer :is_duplicate, :tags, :custom_data, :breadcrumbs, :params,
+    attr_writer :is_duplicate, :tags, :custom_data, :params,
       :session_data, :headers
 
     # @!visibility private
     def internal_set_error(error, &block)
-      _set_error(error) if @error_blocks.empty?
+      is_new_error = !@error_blocks.include?(error)
 
-      if !@error_blocks.include?(error) && @error_blocks.length >= ERRORS_LIMIT
+      if is_new_error && @error_blocks.length >= ERRORS_LIMIT
         Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
           "than #{ERRORS_LIMIT} distinct errors. Only the first " \
           "#{ERRORS_LIMIT} distinct errors will be reported."
         return
       end
+
+      if @error_blocks.empty?
+        _set_error(error)
+      elsif is_new_error && @backend.records_errors_eagerly?
+        # Record additional errors immediately so each exception event lands on
+        # the span current now, not the root span at completion. The agent
+        # backend instead reports extras as duplicate transactions.
+        _send_error_to_backend(error)
+      end
+
       @error_blocks[error] << block
       @error_blocks[error].compact!
     end
 
     private
-
-    attr_reader :breadcrumbs
 
     def run_after_create_hooks
       self.class.after_create.each do |block|
@@ -692,23 +709,99 @@ module Appsignal
       end
     end
 
+    # Reports the errors stored on the transaction at completion, in one of two
+    # ways depending on the backend:
+    #
+    #   - eager (collector): each error was already recorded as its own exception
+    #     event when added, on the span current at that moment; here we only run
+    #     the error blocks.
+    #   - deferred (agent): the extension holds a single error, so the primary
+    #     error's blocks run on this transaction and every additional error is
+    #     reported as a duplicate transaction.
+    def report_errors
+      if @backend.records_errors_eagerly?
+        run_error_blocks
+      else
+        report_errors_as_duplicates
+      end
+    end
+
+    # Eager mode: the errors are already recorded, so just run their blocks.
+    # Blocks run in add-order, so a later error's block wins on a shared key, and
+    # all block-set metadata merges onto the root span. (Per-error metadata
+    # isolation is deferred -- the processor/UI does not read per-event
+    # attributes yet.)
+    def run_error_blocks
+      @error_blocks.each_value do |blocks|
+        self.class.with_transaction(self) do
+          blocks.each { |block| block.call(self) }
+        end
+      end
+    end
+
+    # Agent mode: the extension transaction holds a single error, so report each
+    # additional error as a duplicate transaction.
+    def report_errors_as_duplicates
+      @error_blocks.each do |error, blocks|
+        # Ignore the error that is already set in this transaction.
+        next if error == @error_set
+
+        duplicate.tap do |transaction|
+          # In the duplicate transaction for each error, set an error
+          # with a block that calls all the blocks set for that error
+          # in the original transaction.
+          transaction.internal_set_error(error) do
+            blocks.each { |block| block.call(transaction) }
+          end
+
+          transaction.complete
+        end
+      end
+
+      return unless @error_set && @error_blocks[@error_set].any?
+
+      self.class.with_transaction(self) do
+        @error_blocks[@error_set].each do |block|
+          block.call(self)
+        end
+      end
+    end
+
     def _set_error(error)
-      backtrace = cleaned_backtrace(error.backtrace)
-      @ext.set_error(
+      @error_set = error
+      _send_error_to_backend(error)
+    end
+
+    # Records an error on the backend. The cause chain is walked once into
+    # neutral data ({name, message, backtrace}); each backend projects what it
+    # needs -- the agent's first-line `error_causes` sample data, or the
+    # OpenTelemetry `appsignal.error_causes` attribute. Called for the first
+    # error and, in collector mode, for each additional error as it is added.
+    def _send_error_to_backend(error)
+      causes, root_cause_missing = _error_causes(error)
+      @backend.set_error(
         error.class.name,
         cleaned_error_message(error),
-        backtrace ? Appsignal::Utils::Data.generate(backtrace) : Appsignal::Extension.data_array_new
+        cleaned_backtrace(error.backtrace),
+        causes.map do |cause|
+          {
+            :name => cause.class.name,
+            :message => cleaned_error_message(cause),
+            :backtrace => cleaned_backtrace(cause.backtrace)
+          }
+        end,
+        root_cause_missing
       )
-      @error_set = error
+    end
 
+    # Walks the `error.cause` chain (without mutating `error`), collecting up to
+    # `ERROR_CAUSES_LIMIT` causes. Returns the causes and whether the chain was
+    # truncated (the root cause is missing).
+    def _error_causes(error)
       root_cause_missing = false
-
       causes = []
-      while error
-        error = error.cause
-
-        break unless error
-
+      cause = error
+      while (cause = cause.cause)
         if causes.length >= ERROR_CAUSES_LIMIT
           Appsignal.internal_logger.debug "Appsignal::Transaction#add_error: Error has more " \
             "than #{ERROR_CAUSES_LIMIT} error causes. Only the first #{ERROR_CAUSES_LIMIT} " \
@@ -717,54 +810,10 @@ module Appsignal
           break
         end
 
-        causes << error
+        causes << cause
       end
 
-      causes_sample_data = causes.map do |e|
-        {
-          :name => e.class.name,
-          :message => cleaned_error_message(e),
-          :first_line => first_formatted_backtrace_line(e)
-        }
-      end
-
-      causes_sample_data.last[:is_root_cause] = false if root_cause_missing
-
-      set_sample_data(
-        "error_causes",
-        causes_sample_data
-      )
-    end
-
-    BACKTRACE_REGEX =
-      %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?::in `(?<method>.+)')?$}.freeze
-
-    def first_formatted_backtrace_line(error)
-      backtrace = cleaned_backtrace(error.backtrace)
-      first_line = backtrace&.first
-      return unless first_line
-
-      captures = BACKTRACE_REGEX.match(first_line)
-      return unless captures
-
-      captures.named_captures
-        .merge("original" => first_line)
-        .tap do |c|
-          config = Appsignal.config
-          # Strip of whitespace at the end of the gem name
-          c["gem"] = c["gem"]&.strip
-          # Strip the app path from the path if present
-          root_path = config.root_path
-          if c["path"].start_with?(root_path)
-            c["path"].delete_prefix!(root_path)
-            # Relative paths shouldn't start with a slash
-            c["path"].delete_prefix!("/")
-          end
-          # Add revision for linking to the repository from the UI
-          c["revision"] = config[:revision]
-          # Convert line number to an integer
-          c["line"] = c["line"].to_i
-        end
+      [causes, root_cause_missing]
     end
 
     def set_sample_data(key, data)
@@ -777,10 +826,11 @@ module Appsignal
         return
       end
 
-      @ext.set_sample_data(
-        key.to_s,
-        Appsignal::Utils::Data.generate(data)
-      )
+      # Pass raw Ruby through to the backend. ExtensionBackend serializes to a
+      # C-extension `Data` object; OpenTelemetryBackend reads the Hash/Array
+      # directly. The `RuntimeError` rescue still covers ExtensionBackend's
+      # `Data.generate`, which now runs inside the backend call.
+      @backend.set_sample_data(key.to_s, data)
     rescue RuntimeError => e
       begin
         inspected_data = data.inspect
@@ -800,7 +850,6 @@ module Appsignal
         :environment => sanitized_request_headers,
         :session_data => sanitized_session_data,
         :tags => sanitized_tags,
-        :breadcrumbs => breadcrumbs,
         :custom_data => custom_data
       }.each do |key, data|
         set_sample_data(key, data)
@@ -812,12 +861,11 @@ module Appsignal
       self.class.new(
         namespace,
         :id => new_transaction_id,
-        :ext => @ext.duplicate(new_transaction_id)
+        :backend => @backend.duplicate(new_transaction_id)
       ).tap do |transaction|
         transaction.is_duplicate = true
         transaction.tags = @tags.dup
         transaction.custom_data = @custom_data.dup
-        transaction.breadcrumbs = @breadcrumbs.dup
         transaction.params = @params.dup
         transaction.session_data = @session_data.dup
         transaction.headers = @headers.dup

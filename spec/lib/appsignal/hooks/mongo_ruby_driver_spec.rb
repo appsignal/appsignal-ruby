@@ -31,11 +31,16 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
     end
   end
 
-  context "without mongo ruby driver" do
-    describe "#dependencies_present?" do
-      subject { described_class.new.dependencies_present? }
+  # Only meaningful when the real driver isn't loaded. Under `mongo.gemfile`
+  # the `Mongo::Monitoring::Global` constant is defined for real, so
+  # `dependencies_present?` is truthy and this expectation no longer holds.
+  unless DependencyHelper.mongo_present?
+    context "without mongo ruby driver" do
+      describe "#dependencies_present?" do
+        subject { described_class.new.dependencies_present? }
 
-      it { is_expected.to be_falsy }
+        it { is_expected.to be_falsy }
+      end
     end
   end
 end

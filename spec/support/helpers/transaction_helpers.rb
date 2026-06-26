@@ -33,8 +33,8 @@ module TransactionHelpers
     Appsignal::Transaction.create(namespace)
   end
 
-  def new_transaction(namespace = default_namespace, ext: nil)
-    Appsignal::Transaction.new(namespace, :ext => ext)
+  def new_transaction(namespace = default_namespace, backend: nil)
+    Appsignal::Transaction.new(namespace, :backend => backend)
   end
 
   def rack_request(env)

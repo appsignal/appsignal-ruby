@@ -42,6 +42,18 @@ module Appsignal
               chain.add Appsignal::Integrations::SidekiqMiddleware
             end
           end
+
+          # Servers enqueue jobs too, so they need the client middleware that
+          # writes the trace context onto outgoing jobs.
+          config.client_middleware do |chain|
+            chain.add Appsignal::Integrations::SidekiqClientMiddleware
+          end
+        end
+
+        ::Sidekiq.configure_client do |config|
+          config.client_middleware do |chain|
+            chain.add Appsignal::Integrations::SidekiqClientMiddleware
+          end
         end
       end
     end

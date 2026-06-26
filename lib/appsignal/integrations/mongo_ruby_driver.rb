@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module Appsignal
   class Hooks
     # @!visibility private
@@ -19,8 +21,8 @@ module Appsignal
         store                   = transaction.store("mongo_driver")
         store[event.request_id] = command
 
-        # Start this event
-        transaction.start_event
+        # Start this event. The query is an outgoing client call.
+        transaction.start_event(:opentelemetry_kind => :client)
       end
 
       # Called by Mongo::Monitor when query succeeds
@@ -46,11 +48,14 @@ module Appsignal
         store   = transaction.store("mongo_driver")
         command = store.delete(event.request_id) || {}
 
-        # Finish the event in the extension.
+        # Finish the event. The sanitized command is a (nested) Hash; emit it
+        # as a JSON string so it works with both transaction backends. The
+        # agent serializes structured bodies to JSON anyway, so this is
+        # equivalent output there, and the collector receives a plain string.
         transaction.finish_event(
           "query.mongodb",
           "#{event.command_name} | #{event.database_name} | #{result}",
-          Appsignal::Utils::Data.generate(command),
+          JSON.generate(command),
           Appsignal::EventFormatter::DEFAULT
         )
 

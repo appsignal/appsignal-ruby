@@ -12,7 +12,6 @@ describe "Appsignal::Integrations::DelayedJobHook" do
       end
     end)
     require "appsignal/integrations/delayed_job_plugin"
-    start_agent(:options => options)
   end
 
   # We haven't found a way to test the hooks, we'll have to do that manually
@@ -23,6 +22,7 @@ describe "Appsignal::Integrations::DelayedJobHook" do
     let(:created_at) { time - 3600 }
     let(:run_at) { time - 3600 }
     let(:payload_object) { double(:args => args) }
+    let(:start_agent_args) { { :options => options } }
     let(:job_data) do
       {
         :id => 123,
@@ -41,28 +41,50 @@ describe "Appsignal::Integrations::DelayedJobHook" do
 
     def perform
       Timecop.freeze(time) do
-        keep_transactions do
-          plugin.invoke_with_instrumentation(job, invoked_block)
-        end
+        plugin.invoke_with_instrumentation(job, invoked_block)
       end
     end
 
     context "with a normal call" do
-      it "wraps it in a transaction" do
-        perform
+      describe "wraps it in a transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace("background_job")
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to include_event(:name => "perform_job.delayed_job")
-        expect(transaction).to include_tags(
-          "priority" => 1,
-          "attempts" => 1,
-          "queue" => "default",
-          "id" => "123"
-        )
-        expect(transaction).to include_params(["argument"])
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("TestClass#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_event(:name => "perform_job.delayed_job")
+          expect(transaction).to include_tags(
+            "priority" => 1,
+            "attempts" => 1,
+            "queue" => "default",
+            "id" => "123"
+          )
+          expect(transaction).to include_params(["argument"])
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(exception_events).to be_empty
+          span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
+          expect(span).not_to be_nil
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes).not_to have_key("appsignal.body")
+          expect(span.attributes["appsignal.category"]).to eq("perform_job.delayed_job")
+          expect(root_span.attributes["appsignal.tag.priority"]).to eq(1)
+          expect(root_span.attributes["appsignal.tag.attempts"]).to eq(1)
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+          expect(root_span.attributes["appsignal.tag.id"]).to eq("123")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq(["argument"])
+        end
       end
 
       context "with more complex params" do
@@ -73,19 +95,41 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           }
         end
 
-        it "adds the more complex arguments" do
-          perform
+        describe "adds the more complex arguments" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
 
-          expect(last_transaction).to include_params("foo" => "Foo", "bar" => "Bar")
+            expect(last_transaction).to include_params("foo" => "Foo", "bar" => "Bar")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq("foo" => "Foo", "bar" => "Bar")
+          end
         end
 
         context "with parameter filtering" do
           let(:options) { { :filter_parameters => ["foo"] } }
 
-          it "filters selected arguments" do
-            perform
+          describe "filters selected arguments" do
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+              perform
 
-            expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
+              expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq("foo" => "[FILTERED]", "bar" => "Bar")
+            end
           end
         end
       end
@@ -93,7 +137,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
       context "with run_at in the future" do
         let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
 
-        it "reports queue_start with run_at time" do
+        it "reports queue_start with run_at time", :agent_mode do
+          start_agent(**start_agent_args)
           perform
 
           expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
@@ -105,39 +150,87 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           { :name => "CustomClassMethod.perform", :payload_object => payload_object }
         end
 
-        it "wraps it in a transaction using the class method job name" do
-          perform
-          expect(last_transaction).to have_action("CustomClassMethod.perform")
+        describe "wraps it in a transaction using the class method job name" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to have_action("CustomClassMethod.perform")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("CustomClassMethod.perform")
+          end
         end
       end
 
       context "with custom name call" do
-        before { perform }
-
         context "with appsignal_name defined" do
           context "with payload_object being an object" do
             context "with value" do
               let(:payload_object) { double(:appsignal_name => "CustomClass#perform") }
 
-              it "wraps it in a transaction using the custom name" do
-                expect(last_transaction).to have_action("CustomClass#perform")
+              describe "wraps it in a transaction using the custom name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("CustomClass#perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("CustomClass#perform")
+                end
               end
             end
 
             context "with non-String value" do
               let(:payload_object) { double(:appsignal_name => Object.new) }
 
-              it "wraps it in a transaction using the original job name" do
-                expect(last_transaction).to have_action("TestClass#perform")
+              describe "wraps it in a transaction using the original job name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("TestClass#perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("TestClass#perform")
+                end
               end
             end
 
             context "with class method name as job" do
               let(:payload_object) { double(:appsignal_name => "CustomClassMethod.perform") }
 
-              it "wraps it in a transaction using the custom name" do
-                perform
-                expect(last_transaction).to have_action("CustomClassMethod.perform")
+              describe "wraps it in a transaction using the custom name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("CustomClassMethod.perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("CustomClassMethod.perform")
+                end
               end
             end
           end
@@ -146,25 +239,63 @@ describe "Appsignal::Integrations::DelayedJobHook" do
             context "with value" do
               let(:payload_object) { double(:appsignal_name => "CustomClassHash#perform") }
 
-              it "wraps it in a transaction using the custom name" do
-                expect(last_transaction).to have_action("CustomClassHash#perform")
+              describe "wraps it in a transaction using the custom name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("CustomClassHash#perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("CustomClassHash#perform")
+                end
               end
             end
 
             context "with non-String value" do
               let(:payload_object) { double(:appsignal_name => Object.new) }
 
-              it "wraps it in a transaction using the original job name" do
-                expect(last_transaction).to have_action("TestClass#perform")
+              describe "wraps it in a transaction using the original job name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("TestClass#perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("TestClass#perform")
+                end
               end
             end
 
             context "with class method name as job" do
               let(:payload_object) { { :appsignal_name => "CustomClassMethod.perform" } }
 
-              it "wraps it in a transaction using the custom name" do
-                perform
-                expect(last_transaction).to have_action("CustomClassMethod.perform")
+              describe "wraps it in a transaction using the custom name" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  expect(last_transaction).to have_action("CustomClassMethod.perform")
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"])
+                    .to eq("CustomClassMethod.perform")
+                end
               end
             end
           end
@@ -185,8 +316,21 @@ describe "Appsignal::Integrations::DelayedJobHook" do
             # this means ClassActingAsHash returns `Object.new` instead
             # of `self.appsignal_name`. Since this isn't a valid `String`
             # we return the default job name as action name.
-            it "wraps it in a transaction using the original job name" do
-              expect(last_transaction).to have_action("TestClass#perform")
+            describe "wraps it in a transaction using the original job name" do
+              it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
+                perform
+
+                expect(last_transaction).to have_action("TestClass#perform")
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform
+
+                expect(root_span.attributes["appsignal.action_name"])
+                  .to eq("TestClass#perform")
+              end
             end
           end
         end
@@ -197,9 +341,20 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           { :name => "Banana", :payload_object => payload_object }
         end
 
-        it "appends #perform to the class name" do
-          perform
-          expect(last_transaction).to have_action("Banana#perform")
+        describe "appends #perform to the class name" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to have_action("Banana#perform")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"]).to eq("Banana#perform")
+          end
         end
       end
 
@@ -230,21 +385,45 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           end
           let(:args) { ["activejob_argument"] }
 
-          it "wraps it in a transaction with the correct params" do
-            perform
+          describe "wraps it in a transaction with the correct params" do
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+              perform
 
-            transaction = last_transaction
-            expect(transaction).to have_namespace("background_job")
-            expect(transaction).to have_action("TestClass#perform")
-            expect(transaction).to_not have_error
-            expect(transaction).to include_event("name" => "perform_job.delayed_job")
-            expect(transaction).to include_tags(
-              "priority" => 1,
-              "attempts" => 1,
-              "queue" => "default",
-              "id" => "123"
-            )
-            expect(transaction).to include_params(["activejob_argument"])
+              transaction = last_transaction
+              expect(transaction).to have_namespace("background_job")
+              expect(transaction).to have_action("TestClass#perform")
+              expect(transaction).to_not have_error
+              expect(transaction).to include_event("name" => "perform_job.delayed_job")
+              expect(transaction).to include_tags(
+                "priority" => 1,
+                "attempts" => 1,
+                "queue" => "default",
+                "id" => "123"
+              )
+              expect(transaction).to include_params(["activejob_argument"])
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(root_span.kind).to eq(:consumer)
+              expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+              expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+              expect(exception_events).to be_empty
+              span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
+              expect(span).not_to be_nil
+              expect(span.parent_span_id).to eq(root_span.span_id)
+              expect(span.attributes).not_to have_key("appsignal.body")
+              expect(span.attributes["appsignal.category"]).to eq("perform_job.delayed_job")
+              expect(root_span.attributes["appsignal.tag.priority"]).to eq(1)
+              expect(root_span.attributes["appsignal.tag.attempts"]).to eq(1)
+              expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+              expect(root_span.attributes["appsignal.tag.id"]).to eq("123")
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq(["activejob_argument"])
+            end
           end
 
           context "with more complex params" do
@@ -255,27 +434,53 @@ describe "Appsignal::Integrations::DelayedJobHook" do
               }
             end
 
-            it "adds the more complex arguments" do
-              perform
-              transaction = last_transaction
-              expect(transaction).to have_action("TestClass#perform")
-              expect(transaction).to include_params(
-                "foo" => "Foo",
-                "bar" => "Bar"
-              )
+            describe "adds the more complex arguments" do
+              it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
+                perform
+
+                transaction = last_transaction
+                expect(transaction).to have_action("TestClass#perform")
+                expect(transaction).to include_params(
+                  "foo" => "Foo",
+                  "bar" => "Bar"
+                )
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform
+
+                expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+                expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                  .to eq("foo" => "Foo", "bar" => "Bar")
+              end
             end
 
             context "with parameter filtering" do
               let(:options) { { :filter_parameters => ["foo"] } }
 
-              it "filters selected arguments" do
-                perform
-                transaction = last_transaction
-                expect(transaction).to have_action("TestClass#perform")
-                expect(transaction).to include_params(
-                  "foo" => "[FILTERED]",
-                  "bar" => "Bar"
-                )
+              describe "filters selected arguments" do
+                it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
+                  perform
+
+                  transaction = last_transaction
+                  expect(transaction).to have_action("TestClass#perform")
+                  expect(transaction).to include_params(
+                    "foo" => "[FILTERED]",
+                    "bar" => "Bar"
+                  )
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  perform
+
+                  expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+                  expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                    .to eq("foo" => "[FILTERED]", "bar" => "Bar")
+                end
               end
             end
           end
@@ -283,7 +488,8 @@ describe "Appsignal::Integrations::DelayedJobHook" do
           context "with run_at in the future" do
             let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
 
-            it "reports queue_start with run_at time" do
+            it "reports queue_start with run_at time", :agent_mode do
+              start_agent(**start_agent_args)
               perform
 
               expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
@@ -299,21 +505,44 @@ describe "Appsignal::Integrations::DelayedJobHook" do
         expect(invoked_block).to receive(:call).and_raise(error)
       end
 
-      it "adds the error to the transaction" do
-        expect do
-          perform
-        end.to raise_error(error)
+      describe "adds the error to the transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          expect do
+            perform
+          end.to raise_error(error)
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace("background_job")
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to have_error("ExampleException", "uh oh")
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("TestClass#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect do
+            perform
+          end.to raise_error(error)
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event).not_to be_nil
+          expect(event.attributes["exception.type"]).to eq("ExampleException")
+          expect(event.attributes["exception.message"]).to eq("uh oh")
+          expect(event.attributes["exception.stacktrace"]).to be_a(String)
+          expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+          expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+        end
       end
     end
   end
 
   describe ".extract_value" do
     let(:plugin) { Appsignal::Integrations::DelayedJobPlugin }
+
+    before { start_agent }
 
     context "for a hash" do
       let(:hash) { { :key => "value", :bool_false => false } }

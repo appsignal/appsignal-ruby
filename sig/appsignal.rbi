@@ -833,7 +833,7 @@ module Appsignal
   # Breadcrumbs can be used to trace what path a user has taken
   # before encountering an error.
   # 
-  # Only the last 20 added breadcrumbs will be saved.
+  # At most 20 of the added breadcrumbs will be saved.
   # 
   # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
   # 
@@ -922,10 +922,11 @@ module Appsignal
       title: T.nilable(String),
       body: T.nilable(String),
       body_format: Integer,
+      opentelemetry_kind: T.untyped,
       block: T.untyped
     ).returns(Object)
   end
-  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, &block); end
+  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
 
   # Instrumentation helper for SQL queries.
   # 
@@ -1040,6 +1041,38 @@ module Appsignal
     # _@return_ — True if valid and active for the current environment.
     sig { returns(T::Boolean) }
     def active?; end
+
+    # Check if collector mode is configured.
+    # 
+    # Returns true when a non-empty `collector_endpoint` is set and the
+    # running Ruby version is at least {MIN_RUBY_VERSION_FOR_COLLECTOR_MODE}.
+    # On older Rubies, `collector_endpoint` is ignored (with a warning) and
+    # the AppSignal agent is used instead.
+    # 
+    # This is the *intent* check — it answers "did the user ask for
+    # collector mode, and could we honor it?". It does not say whether the
+    # OpenTelemetry SDK actually booted. See {#collector_mode?} for that.
+    # 
+    # Memoised: the result is cached on first call so hot paths avoid
+    # re-running the string-strip predicate, and so the unsupported-Ruby
+    # warning is emitted at most once per `Config` instance.
+    # 
+    # _@return_ — True if collector mode is configured.
+    sig { returns(T::Boolean) }
+    def collector_mode_configured?; end
+
+    # Check if AppSignal is actively running in collector mode.
+    # 
+    # True only if collector mode is {#collector_mode_configured? configured}
+    # *and* `Appsignal::OpenTelemetry.configure` has successfully booted the
+    # SDK in this process. Use this for backend dispatch on hot paths
+    # (metric and log emits): if the OTel boot failed, callers fall back to
+    # the agent backend rather than silently dropping data into no-op
+    # providers.
+    # 
+    # _@return_ — True if collector mode is configured and started.
+    sig { returns(T::Boolean) }
+    def collector_mode?; end
 
     sig { returns(T::Boolean) }
     def yml_config_file?; end
@@ -1622,8 +1655,8 @@ module Appsignal
     # transaction.
     # 
     # _@param_ `namespace` — Namespace of the to be created transaction.
-    sig { params(namespace: String).returns(Transaction) }
-    def self.create(namespace); end
+    sig { params(namespace: String, opentelemetry_context: T.untyped).returns(Transaction) }
+    def self.create(namespace, opentelemetry_context: nil); end
 
     # Returns currently active transaction or a {NilTransaction} if none is
     # active.
@@ -2449,7 +2482,7 @@ module Appsignal
       # Breadcrumbs can be used to trace what path a user has taken
       # before encountering an error.
       # 
-      # Only the last 20 added breadcrumbs will be saved.
+      # At most 20 of the added breadcrumbs will be saved.
       # 
       # _@param_ `category` — category of breadcrumb e.g. "UI", "Network", "Navigation", "Console".
       # 
@@ -2538,10 +2571,11 @@ module Appsignal
           title: T.nilable(String),
           body: T.nilable(String),
           body_format: Integer,
+          opentelemetry_kind: T.untyped,
           block: T.untyped
         ).returns(Object)
       end
-      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, &block); end
+      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
 
       # Instrumentation helper for SQL queries.
       # 
@@ -2624,6 +2658,9 @@ module Appsignal
   class NotStartedError < Appsignal::InternalError
     sig { returns(String) }
     def message; end
+  end
+
+  module Metrics
   end
 end
 

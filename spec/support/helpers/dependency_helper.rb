@@ -25,6 +25,24 @@ module DependencyHelper
     Appsignal::System.jruby?
   end
 
+  # Whether the optional OpenTelemetry gems collector mode needs are
+  # installable in this bundle. They're no longer gemspec dependencies, so
+  # the OTel specs only run under the `-collector` gemfiles (Ruby 3.1+). This
+  # actually requires the gems (idempotent) so the guarded specs can use them.
+  def opentelemetry_present?
+    return @opentelemetry_present if defined?(@opentelemetry_present)
+
+    @opentelemetry_present =
+      begin
+        require "opentelemetry/sdk"
+        require "opentelemetry-metrics-sdk"
+        require "opentelemetry-logs-sdk"
+        true
+      rescue LoadError
+        false
+      end
+  end
+
   def rails_present?
     dependency_present? "rails"
   end
@@ -63,6 +81,10 @@ module DependencyHelper
 
   def sequel_present?
     dependency_present? "sequel"
+  end
+
+  def mongo_present?
+    dependency_present? "mongo"
   end
 
   def resque_present?
@@ -125,6 +147,10 @@ module DependencyHelper
   def capistrano3_present?
     capistrano_present? &&
       Gem.loaded_specs["capistrano"].version >= Gem::Version.new("3.0")
+  end
+
+  def excon_present?
+    dependency_present? "excon"
   end
 
   def http_present?

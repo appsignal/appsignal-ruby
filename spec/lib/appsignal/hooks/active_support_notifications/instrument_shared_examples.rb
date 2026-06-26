@@ -1,62 +1,172 @@
 shared_examples "activesupport instrument override" do
-  it "instruments an ActiveSupport::Notifications.instrument event" do
-    return_value = as.instrument("sql.active_record", :sql => "SQL") do
-      "value"
+  describe "an event with a registered formatter" do
+    def perform
+      as.instrument("sql.active_record", :sql => "SQL") { "value" }
     end
 
-    expect(return_value).to eq "value"
-    expect(transaction).to include_event(
-      "body" => "SQL",
-      "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
-      "count" => 1,
-      "name" => "sql.active_record",
-      "title" => ""
-    )
-  end
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
 
-  it "instruments an ActiveSupport::Notifications.instrument event with no registered formatter" do
-    return_value = as.instrument("no-registered.formatter", :key => "something") do
-      "value"
+      expect(perform).to eq "value"
+      expect(transaction).to include_event(
+        "body" => "SQL",
+        "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+        "count" => 1,
+        "name" => "sql.active_record",
+        "title" => ""
+      )
     end
 
-    expect(return_value).to eq "value"
-    expect(transaction).to include_event(
-      "body" => "",
-      "body_format" => Appsignal::EventFormatter::DEFAULT,
-      "count" => 1,
-      "name" => "no-registered.formatter",
-      "title" => ""
-    )
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "sql.active_record" }
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
+      expect(span.attributes["db.query.text"]).to eq("SQL")
+      expect(span.attributes["db.system.name"]).to eq("other_sql")
+      expect(span.attributes["appsignal.category"]).to eq("sql.active_record")
+      expect(span.attributes).not_to have_key("appsignal.body")
+    end
   end
 
-  it "converts non-string names to strings" do
-    as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
-    expect(transaction).to include_event(
-      "body" => "",
-      "body_format" => Appsignal::EventFormatter::DEFAULT,
-      "count" => 1,
-      "name" => "not_a_string",
-      "title" => ""
-    )
-  end
-
-  it "does not instrument events whose name starts with a bang" do
-    return_value = as.instrument("!sql.active_record", :sql => "SQL") do
-      "value"
+  describe "an event with no registered formatter" do
+    def perform
+      as.instrument("no-registered.formatter", :key => "something") { "value" }
     end
 
-    expect(return_value).to eq "value"
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
 
-    expect(transaction).to_not include_events
+      expect(perform).to eq "value"
+      expect(transaction).to include_event(
+        "body" => "",
+        "body_format" => Appsignal::EventFormatter::DEFAULT,
+        "count" => 1,
+        "name" => "no-registered.formatter",
+        "title" => ""
+      )
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "no-registered.formatter" }
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A plain event is not an outgoing call, so it keeps the default kind.
+      expect(span.kind).to eq(:internal)
+      expect(span.attributes).not_to have_key("appsignal.body")
+      expect(span.attributes["appsignal.category"]).to eq("no-registered.formatter")
+      expect(span.attributes).not_to have_key("db.query.text")
+      expect(span.attributes).not_to have_key("db.system.name")
+    end
   end
 
-  context "when an error is raised in an instrumented block" do
-    it "instruments an ActiveSupport::Notifications.instrument event" do
+  describe "an event with a non-string name" do
+    def perform
+      as.instrument(:not_a_string) {} # rubocop:disable Lint/EmptyBlock
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
+
+      expect(transaction).to include_event(
+        "body" => "",
+        "body_format" => Appsignal::EventFormatter::DEFAULT,
+        "count" => 1,
+        "name" => "not_a_string",
+        "title" => ""
+      )
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      expect(event_spans.map(&:name)).to include("not_a_string")
+      span = event_spans.find { |s| s.name == "not_a_string" }
+      expect(span.attributes["appsignal.category"]).to eq("not_a_string")
+    end
+  end
+
+  describe "an event whose name starts with a bang" do
+    def perform
+      as.instrument("!sql.active_record", :sql => "SQL") { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      expect(transaction).to_not include_events
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans).to be_empty
+    end
+  end
+
+  describe "when an error is raised in an instrumented block" do
+    def perform
       expect do
         as.instrument("sql.active_record", :sql => "SQL") do
           raise ExampleException, "foo"
         end
       end.to raise_error(ExampleException, "foo")
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
 
       expect(transaction).to include_event(
         "body" => "SQL",
@@ -66,15 +176,41 @@ shared_examples "activesupport instrument override" do
         "title" => ""
       )
     end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "sql.active_record" }
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
+      expect(span.attributes["db.query.text"]).to eq("SQL")
+      expect(span.attributes["db.system.name"]).to eq("other_sql")
+    end
   end
 
-  context "when a message is thrown in an instrumented block" do
-    it "instruments an ActiveSupport::Notifications.instrument event" do
+  describe "when a message is thrown in an instrumented block" do
+    def perform
       expect do
-        as.instrument("sql.active_record", :sql => "SQL") do
-          throw :foo
-        end
+        as.instrument("sql.active_record", :sql => "SQL") { throw :foo }
       end.to throw_symbol(:foo)
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
 
       expect(transaction).to include_event(
         "body" => "SQL",
@@ -84,16 +220,56 @@ shared_examples "activesupport instrument override" do
         "title" => ""
       )
     end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "sql.active_record" }
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
+      expect(span.attributes["db.query.text"]).to eq("SQL")
+      expect(span.attributes["db.system.name"]).to eq("other_sql")
+    end
   end
 
-  context "when a transaction is completed in an instrumented block" do
-    it "does not complete the ActiveSupport::Notifications.instrument event" do
+  describe "when the transaction is completed inside an instrumented block" do
+    def perform
       as.instrument("sql.active_record", :sql => "SQL") do
         Appsignal::Transaction.complete_current!
       end
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
 
       expect(transaction).to_not include_events
       expect(transaction).to be_completed
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      perform
+
+      expect(transaction).to be_completed
+      expect(event_spans.map(&:name)).not_to include("sql.active_record")
     end
   end
 end

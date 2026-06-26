@@ -91,6 +91,7 @@ module Appsignal
     DEFAULT_CONFIG = {
       :activejob_report_errors => "all",
       :ca_file_path => File.expand_path(File.join("../../../resources/cacert.pem"), __FILE__),
+      :collector_endpoint => nil,
       :dns_servers => [],
       :enable_allocation_tracking => true,
       :enable_at_exit_hook => "on_error",
@@ -106,8 +107,12 @@ module Appsignal
       :enable_rake_performance_instrumentation => false,
       :endpoint => "https://push.appsignal.com",
       :files_world_accessible => true,
+      :filter_attributes => [],
+      :filter_function_parameters => [],
       :filter_metadata => [],
       :filter_parameters => [],
+      :filter_request_payload => [],
+      :filter_request_query_parameters => [],
       :filter_session_data => [],
       :ignore_actions => [],
       :ignore_errors => [],
@@ -129,9 +134,14 @@ module Appsignal
         REQUEST_METHOD REQUEST_PATH SERVER_NAME SERVER_PORT
         SERVER_PROTOCOL
       ],
+      :response_headers => [],
       :send_environment_metadata => true,
+      :send_function_parameters => nil,
       :send_params => true,
+      :send_request_payload => nil,
+      :send_request_query_parameters => nil,
       :send_session_data => true,
+      :service_name => nil,
       :sidekiq_report_errors => "all",
       :default_tags => {}
     }.freeze
@@ -157,6 +167,7 @@ module Appsignal
       :name => "APPSIGNAL_APP_NAME",
       :bind_address => "APPSIGNAL_BIND_ADDRESS",
       :ca_file_path => "APPSIGNAL_CA_FILE_PATH",
+      :collector_endpoint => "APPSIGNAL_COLLECTOR_ENDPOINT",
       :enable_at_exit_hook => "APPSIGNAL_ENABLE_AT_EXIT_HOOK",
       :hostname => "APPSIGNAL_HOSTNAME",
       :host_role => "APPSIGNAL_HOST_ROLE",
@@ -167,6 +178,7 @@ module Appsignal
       :logging_endpoint => "APPSIGNAL_LOGGING_ENDPOINT",
       :endpoint => "APPSIGNAL_PUSH_API_ENDPOINT",
       :push_api_key => "APPSIGNAL_PUSH_API_KEY",
+      :service_name => "APPSIGNAL_SERVICE_NAME",
       :sidekiq_report_errors => "APPSIGNAL_SIDEKIQ_REPORT_ERRORS",
       :statsd_port => "APPSIGNAL_STATSD_PORT",
       :nginx_port => "APPSIGNAL_NGINX_PORT",
@@ -200,21 +212,29 @@ module Appsignal
       :ownership_set_namespace => "APPSIGNAL_OWNERSHIP_SET_NAMESPACE",
       :running_in_container => "APPSIGNAL_RUNNING_IN_CONTAINER",
       :send_environment_metadata => "APPSIGNAL_SEND_ENVIRONMENT_METADATA",
+      :send_function_parameters => "APPSIGNAL_SEND_FUNCTION_PARAMETERS",
       :send_params => "APPSIGNAL_SEND_PARAMS",
+      :send_request_payload => "APPSIGNAL_SEND_REQUEST_PAYLOAD",
+      :send_request_query_parameters => "APPSIGNAL_SEND_REQUEST_QUERY_PARAMETERS",
       :send_session_data => "APPSIGNAL_SEND_SESSION_DATA"
     }.freeze
 
     # @!visibility private
     ARRAY_OPTIONS = {
       :dns_servers => "APPSIGNAL_DNS_SERVERS",
+      :filter_attributes => "APPSIGNAL_FILTER_ATTRIBUTES",
+      :filter_function_parameters => "APPSIGNAL_FILTER_FUNCTION_PARAMETERS",
       :filter_metadata => "APPSIGNAL_FILTER_METADATA",
       :filter_parameters => "APPSIGNAL_FILTER_PARAMETERS",
+      :filter_request_payload => "APPSIGNAL_FILTER_REQUEST_PAYLOAD",
+      :filter_request_query_parameters => "APPSIGNAL_FILTER_REQUEST_QUERY_PARAMETERS",
       :filter_session_data => "APPSIGNAL_FILTER_SESSION_DATA",
       :ignore_actions => "APPSIGNAL_IGNORE_ACTIONS",
       :ignore_errors => "APPSIGNAL_IGNORE_ERRORS",
       :ignore_logs => "APPSIGNAL_IGNORE_LOGS",
       :ignore_namespaces => "APPSIGNAL_IGNORE_NAMESPACES",
-      :request_headers => "APPSIGNAL_REQUEST_HEADERS"
+      :request_headers => "APPSIGNAL_REQUEST_HEADERS",
+      :response_headers => "APPSIGNAL_RESPONSE_HEADERS"
     }.freeze
 
     # @!visibility private
@@ -226,6 +246,39 @@ module Appsignal
     HASH_OPTIONS = {
       :default_tags => "APPSIGNAL_DEFAULT_TAGS"
     }.freeze
+
+    # Collector mode requires Ruby 3.1+. The OpenTelemetry Ruby SDK relies on
+    # `Process._fork` (introduced in Ruby 3.1) for its fork hooks, without
+    # which background reader threads don't restart in child processes and
+    # buffered telemetry is lost after a fork.
+    # @!visibility private
+    MIN_RUBY_VERSION_FOR_COLLECTOR_MODE = "3.1"
+
+    # Configuration options that only have an effect when the integration is
+    # in collector mode. When the agent is in use, setting any of these emits
+    # a warning at startup.
+    # @!visibility private
+    COLLECTOR_ONLY_OPTIONS = [
+      :filter_attributes,
+      :filter_function_parameters,
+      :filter_request_payload,
+      :filter_request_query_parameters,
+      :response_headers,
+      :send_function_parameters,
+      :send_request_payload,
+      :send_request_query_parameters,
+      :service_name
+    ].freeze
+
+    # Existing AppSignal options that only affect the agent's handling of
+    # trace data. In collector mode these don't filter anything; users need
+    # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
+    # @!visibility private
+    AGENT_ONLY_TRACE_OPTIONS = [
+      :filter_metadata,
+      :filter_parameters,
+      :send_params
+    ].freeze
 
     # @!visibility private
     attr_reader :root_path, :env, :config_hash
@@ -431,6 +484,57 @@ module Appsignal
       valid? && active_for_env?
     end
 
+    # Check if collector mode is configured.
+    #
+    # Returns true when a non-empty `collector_endpoint` is set and the
+    # running Ruby version is at least {MIN_RUBY_VERSION_FOR_COLLECTOR_MODE}.
+    # On older Rubies, `collector_endpoint` is ignored (with a warning) and
+    # the AppSignal agent is used instead.
+    #
+    # This is the *intent* check — it answers "did the user ask for
+    # collector mode, and could we honor it?". It does not say whether the
+    # OpenTelemetry SDK actually booted. See {#collector_mode?} for that.
+    #
+    # Memoised: the result is cached on first call so hot paths avoid
+    # re-running the string-strip predicate, and so the unsupported-Ruby
+    # warning is emitted at most once per `Config` instance.
+    #
+    # @return [Boolean] True if collector mode is configured.
+    def collector_mode_configured?
+      return @collector_mode_configured if defined?(@collector_mode_configured)
+
+      endpoint = config_hash[:collector_endpoint]
+      configured = !endpoint.nil? && !endpoint.to_s.strip.empty?
+
+      if configured && Gem::Version.new(RUBY_VERSION) <
+          Gem::Version.new(MIN_RUBY_VERSION_FOR_COLLECTOR_MODE)
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(
+          "Collector mode requires Ruby #{MIN_RUBY_VERSION_FOR_COLLECTOR_MODE} or higher " \
+            "(running Ruby #{RUBY_VERSION}). The `collector_endpoint` option will be " \
+            "ignored and the AppSignal agent will be used instead."
+        )
+        @collector_mode_configured = false
+      else
+        @collector_mode_configured = configured
+      end
+    end
+
+    # Check if AppSignal is actively running in collector mode.
+    #
+    # True only if collector mode is {#collector_mode_configured? configured}
+    # *and* `Appsignal::OpenTelemetry.configure` has successfully booted the
+    # SDK in this process. Use this for backend dispatch on hot paths
+    # (metric and log emits): if the OTel boot failed, callers fall back to
+    # the agent backend rather than silently dropping data into no-op
+    # providers.
+    #
+    # @return [Boolean] True if collector mode is configured and started.
+    def collector_mode?
+      collector_mode_configured? &&
+        defined?(Appsignal::OpenTelemetry) &&
+        Appsignal::OpenTelemetry.started?
+    end
+
     # @!visibility private
     def write_to_environment # rubocop:disable Metrics/AbcSize
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
@@ -507,6 +611,30 @@ module Appsignal
       else
         @valid = true
       end
+
+      warn_for_mode_mismatch
+    end
+
+    # Emit warnings when a configuration option is set that has no effect in
+    # the current mode (collector vs. agent).
+    #
+    # Uses {#collector_mode_configured?} (intent) rather than
+    # {#collector_mode?} so the warnings fire based on what the user asked
+    # for, independent of whether the OpenTelemetry SDK successfully booted.
+    # @!visibility private
+    def warn_for_mode_mismatch
+      if collector_mode_configured?
+        warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
+          "The collector is in use. The '#{option}' configuration option is " \
+            "only used by the agent for trace data and will be ignored."
+        end
+      else
+        warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
+          "The agent is in use. The '#{option}' configuration option is " \
+            "only used by the collector and will be ignored. Set " \
+            "'collector_endpoint' to use the collector."
+        end
+      end
     end
 
     # Deep freeze the config object so it cannot be modified during the runtime
@@ -529,6 +657,17 @@ module Appsignal
     end
 
     private
+
+    # Yield a warning for each option in `options` whose effective value
+    # differs from the default. Setting an option to its default value is
+    # a no-op, so we don't warn about it.
+    def warn_user_modified(options)
+      options.each do |option|
+        next if config_hash[option] == DEFAULT_CONFIG[option]
+
+        logger.warn(yield(option))
+      end
+    end
 
     def logger
       Appsignal.internal_logger

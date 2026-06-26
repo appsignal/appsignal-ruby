@@ -1,11 +1,12 @@
 describe Appsignal::Hooks::AtExit do
   describe ".install" do
-    before { start_agent(:options => options) }
+    # The mode contexts run `start_agent`; thread the at_exit options through.
+    let(:start_agent_args) { { :options => options } }
 
     context "with :enable_at_exit_reporter == true" do
       let(:options) { { :enable_at_exit_reporter => true } }
 
-      it "installs the at_exit hook" do
+      it_in_both_modes "installs the at_exit hook" do
         expect(Appsignal::Hooks::AtExit::AtExitCallback).to receive(:call)
 
         expect(Kernel).to receive(:at_exit).with(no_args) do |*_args, &block|
@@ -19,7 +20,7 @@ describe Appsignal::Hooks::AtExit do
     context "with :enable_at_exit_reporter == false" do
       let(:options) { { :enable_at_exit_reporter => false } }
 
-      it "doesn't install the at_exit hook" do
+      it_in_both_modes "doesn't install the at_exit hook" do
         expect(Kernel).to_not receive(:at_exit)
       end
     end
@@ -27,8 +28,7 @@ describe Appsignal::Hooks::AtExit do
 end
 
 describe Appsignal::Hooks::AtExit::AtExitCallback do
-  around { |example| keep_transactions { example.run } }
-  before { start_agent(:options => options) }
+  let(:start_agent_args) { { :options => options } }
 
   def with_error(error_class, error_message)
     raise error_class, error_message
@@ -48,7 +48,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       }
     end
 
-    it "reports no transaction if the process didn't exit with an error" do
+    it_in_both_modes "reports no transaction if the process didn't exit with an error" do
       expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
@@ -60,20 +60,40 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       expect(logs).to_not contains_log(:error, "Appsignal.report_error: Cannot add error.")
     end
 
-    it "reports an error if there's an unhandled error" do
-      expect(Appsignal).to receive(:stop).with("at_exit")
-      expect do
+    describe "reports an error if there's an unhandled error" do
+      def perform
         with_error(ExampleException, "error message") do
           call_callback
         end
-      end.to change { created_transactions.count }.by(1)
+      end
 
-      transaction = last_transaction
-      expect(transaction).to have_namespace("unhandled")
-      expect(transaction).to have_error("ExampleException", "error message")
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop).with("at_exit")
+        expect { perform }.to change { created_transactions.count }.by(1)
+
+        transaction = last_transaction
+        expect(transaction).to have_namespace("unhandled")
+        expect(transaction).to have_error("ExampleException", "error message")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop).with("at_exit")
+        expect { perform }.to change { created_transactions.count }.by(1)
+
+        expect(root_span.attributes["appsignal.namespace"]).to eq("unhandled")
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event).not_to be_nil
+        expect(event.attributes["exception.type"]).to eq("ExampleException")
+        expect(event.attributes["exception.message"]).to eq("error message")
+        expect(event.attributes["exception.stacktrace"]).to be_a(String)
+        expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+        expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+      end
     end
 
-    it "doesn't report the error if it is also the last error reported" do
+    it_in_both_modes "doesn't report the error if it is also the last error reported" do
       expect(Appsignal).to_not receive(:stop)
       with_error(ExampleException, "error message") do |error|
         Appsignal.report_error(error)
@@ -85,7 +105,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       end
     end
 
-    it "doesn't report the error if it is a SystemExit exception" do
+    it_in_both_modes "doesn't report the error if it is a SystemExit exception" do
       expect(Appsignal).to_not receive(:stop)
       with_error(SystemExit, "error message") do |error|
         Appsignal.report_error(error)
@@ -97,7 +117,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       end
     end
 
-    it "doesn't report the error if it is a SignalException exception" do
+    it_in_both_modes "doesn't report the error if it is a SignalException exception" do
       expect(Appsignal).to_not receive(:stop)
       with_error(SignalException, "TERM") do |error|
         Appsignal.report_error(error)
@@ -118,7 +138,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       }
     end
 
-    it "reports no error if the process didn't exit with an error" do
+    it_in_both_modes "reports no error if the process didn't exit with an error" do
       expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
@@ -130,7 +150,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
       expect(logs).to_not contains_log(:error, "Appsignal.report_error: Cannot add error.")
     end
 
-    it "reports no error if there's an unhandled error" do
+    it_in_both_modes "reports no error if there's an unhandled error" do
       expect(Appsignal).to_not receive(:stop)
       logs =
         capture_logs do
@@ -148,7 +168,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
   context "when enable_at_exit_hook is true" do
     let(:options) { { :enable_at_exit_hook => "always" } }
 
-    it "calls Appsignal.stop" do
+    it_in_both_modes "calls Appsignal.stop" do
       expect(Appsignal).to receive(:stop).with("at_exit")
       call_callback
     end
@@ -157,7 +177,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
   context "when enable_at_exit_hook is false" do
     let(:options) { { :enable_at_exit_hook => false } }
 
-    it "does not call Appsignal.stop" do
+    it_in_both_modes "does not call Appsignal.stop" do
       expect(Appsignal).to_not receive(:stop).with("at_exit")
       call_callback
     end

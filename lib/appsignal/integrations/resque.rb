@@ -5,7 +5,12 @@ module Appsignal
     # @!visibility private
     module ResqueIntegration
       def perform
-        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        # Read trace context off the job so the transaction links back to the
+        # enqueuer. No-op outside collector mode.
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload)
+        )
 
         Appsignal.instrument "perform.resque" do
           super
@@ -22,6 +27,25 @@ module Appsignal
           Appsignal::Transaction.complete_current!
         end
         Appsignal.stop("resque")
+      end
+    end
+
+    # Wraps `Resque.push` to record an `enqueue.resque` event so the
+    # enqueue shows up under the active transaction (both modes), and in
+    # collector mode writes the trace context onto the job hash so the job that
+    # later performs links back to it.
+    #
+    # Like all AppSignal events, this only records when there's an active
+    # transaction (e.g. enqueuing from within a web request or another job).
+    # An enqueue with no transaction is a transparent pass-through.
+    #
+    # @!visibility private
+    module ResquePushIntegration
+      def push(queue, item)
+        Appsignal.instrument("enqueue.resque", :opentelemetry_kind => :producer) do
+          Appsignal::OpenTelemetry.inject_context(item)
+          super
+        end
       end
     end
 

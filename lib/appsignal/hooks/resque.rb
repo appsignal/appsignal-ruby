@@ -13,6 +13,10 @@ module Appsignal
       def install
         require "appsignal/integrations/resque"
         Resque::Job.prepend Appsignal::Integrations::ResqueIntegration
+
+        # Resque enqueues through the `Resque.push` singleton method, so prepend
+        # onto its singleton class to write the trace context onto outgoing jobs.
+        Resque.singleton_class.prepend Appsignal::Integrations::ResquePushIntegration
       end
     end
   end
