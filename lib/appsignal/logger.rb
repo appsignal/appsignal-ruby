@@ -67,6 +67,8 @@ module Appsignal
     # @return [Integer]
     attr_reader :level
 
+    # rubocop:disable Lint/MissingSuper
+
     # Create a new logger instance
     #
     # @param group [String] Name of the group for this logger.
@@ -87,6 +89,7 @@ module Appsignal
       @appsignal_attributes = attributes
       @loggers = []
     end
+    # rubocop:enable Lint/MissingSuper
 
     # Sets the formatter for this logger and all broadcasted loggers.
     # @param formatter [Proc] The formatter to use for log messages.

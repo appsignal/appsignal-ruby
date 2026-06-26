@@ -6,6 +6,7 @@ module Appsignal
       REPLACEMENT_KEY = "?"
 
       module ClassMethods
+        # rubocop:disable Style/OptionalBooleanParameter
         def sanitize(params, only_top_level = false, key_sanitizer = nil)
           case params
           when Hash
@@ -16,6 +17,7 @@ module Appsignal
             REPLACEMENT_KEY
           end
         end
+        # rubocop:enable Style/OptionalBooleanParameter
 
         private
 

@@ -86,7 +86,7 @@ module Appsignal
 
       # @see TransactionHelpers#keep_transactions
       def keep_transactions?
-        defined?(@keep_transactions) ? @keep_transactions : nil
+        defined?(@keep_transactions) ? @keep_transactions : false
       end
 
       # @see TransactionHelpers#keep_transactions
