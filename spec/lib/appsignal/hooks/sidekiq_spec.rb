@@ -53,6 +53,19 @@ describe Appsignal::Hooks::SidekiqHook do
         middlewares
       end
 
+      def self.client_middlewares
+        @client_middlewares ||= SidekiqMiddlewareMockWithPrepend.new
+      end
+
+      def self.configure_client
+        yield self
+      end
+
+      def self.client_middleware
+        yield client_middlewares if block_given?
+        client_middlewares
+      end
+
       def self.error_handlers
         @error_handlers ||= []
       end
@@ -73,6 +86,13 @@ describe Appsignal::Hooks::SidekiqHook do
       Sidekiq.middleware_mock = SidekiqMiddlewareMockWithPrepend
       described_class.new.install
       expect(Sidekiq.error_handlers).to include(Appsignal::Integrations::SidekiqErrorHandler)
+    end
+
+    it "adds the AppSignal client middleware to the client middleware chain" do
+      Sidekiq.middleware_mock = SidekiqMiddlewareMockWithPrepend
+      described_class.new.install
+      expect(Sidekiq.client_middleware)
+        .to include(Appsignal::Integrations::SidekiqClientMiddleware)
     end
 
     context "when Sidekiq middleware responds to prepend method" do # Sidekiq 3.3.0 and newer
