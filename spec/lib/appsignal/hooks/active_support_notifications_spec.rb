@@ -12,6 +12,18 @@ describe Appsignal::Hooks::ActiveSupportNotificationsHook do
     end
     around { |example| keep_transactions { example.run } }
 
+    # The before hook swaps in a fresh notifier (`as.notifier = notifier`) to
+    # control which subscriptions are active. Restore the original afterwards so
+    # the swap doesn't leak into later specs -- e.g. ActionMailer's
+    # instrumentation, which subscribes on the default notifier and would
+    # otherwise fire into the stale, subscription-less notifier left behind.
+    around do |example|
+      original_notifier = ActiveSupport::Notifications.notifier
+      example.run
+    ensure
+      ActiveSupport::Notifications.notifier = original_notifier
+    end
+
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
