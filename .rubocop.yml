@@ -67,6 +67,12 @@ Style/SymbolArray:
 Style/RedundantConstantBase:
   Enabled: false
 
+# Keep the detection but never autocorrect: removing the `\` after a `%()`
+# literal silently breaks adjacent-string concatenation, turning the joined
+# string into dead code. Let it flag for a human instead of rewriting.
+Style/RedundantLineContinuation:
+  AutoCorrect: false
+
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - "spec/**/*.rb"
