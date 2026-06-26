@@ -50,16 +50,6 @@ Security/YAMLLoad:
   Exclude:
     - 'lib/appsignal/config.rb'
     - 'lib/appsignal/integrations/sidekiq.rb'
-
-# Offense count: 22
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: prefer_alias, prefer_alias_method
-Style/Alias:
-  Exclude:
-    - 'lib/appsignal/helpers/instrumentation.rb'
-    - 'lib/appsignal/transaction.rb'
-
 # Offense count: 1
 Style/ClassVars:
   Exclude:

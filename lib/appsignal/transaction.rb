@@ -311,7 +311,7 @@ module Appsignal
     def add_params(given_params = nil, &block)
       @params.add(given_params, &block)
     end
-    alias :set_params :add_params
+    alias set_params add_params
 
     # @since 4.0.0
     # @return [void]
@@ -337,7 +337,7 @@ module Appsignal
     def add_params_if_nil(given_params = nil, &block)
       add_params(given_params, &block) if !@params.value? && !@params.empty?
     end
-    alias :set_params_if_nil :add_params_if_nil
+    alias set_params_if_nil add_params_if_nil
 
     # Add tags to the transaction.
     #
@@ -357,7 +357,7 @@ module Appsignal
     def add_tags(given_tags = {})
       @tags.merge!(given_tags)
     end
-    alias :set_tags :add_tags
+    alias set_tags add_tags
 
     # Add session data to the transaction.
     #
@@ -379,7 +379,7 @@ module Appsignal
     def add_session_data(given_session_data = nil, &block)
       @session_data.add(given_session_data, &block)
     end
-    alias :set_session_data :add_session_data
+    alias set_session_data add_session_data
 
     # Set session data on the transaction if not already set.
     #
@@ -401,7 +401,7 @@ module Appsignal
     def add_session_data_if_nil(given_session_data = nil, &block)
       add_session_data(given_session_data, &block) unless @session_data.value?
     end
-    alias :set_session_data_if_nil :add_session_data_if_nil
+    alias set_session_data_if_nil add_session_data_if_nil
 
     # Add headers to the transaction.
     #
@@ -418,7 +418,7 @@ module Appsignal
     def add_headers(given_headers = nil, &block)
       @headers.add(given_headers, &block)
     end
-    alias :set_headers :add_headers
+    alias set_headers add_headers
 
     # Add headers to the transaction if not already set.
     #
@@ -439,7 +439,7 @@ module Appsignal
     def add_headers_if_nil(given_headers = nil, &block)
       add_headers(given_headers, &block) unless @headers.value?
     end
-    alias :set_headers_if_nil :add_headers_if_nil
+    alias set_headers_if_nil add_headers_if_nil
 
     # Add custom data to the transaction.
     #
@@ -454,7 +454,7 @@ module Appsignal
     def add_custom_data(data)
       @custom_data.add(data)
     end
-    alias :set_custom_data :add_custom_data
+    alias set_custom_data add_custom_data
 
     # Add breadcrumbs to the transaction.
     #
@@ -601,8 +601,8 @@ module Appsignal
         error = error.cause
       end
     end
-    alias :set_error :add_error
-    alias_method :add_exception, :add_error
+    alias set_error add_error
+    alias add_exception add_error
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
@@ -654,7 +654,7 @@ module Appsignal
     def to_h
       JSON.parse(@ext.to_json)
     end
-    alias_method :to_hash, :to_h
+    alias to_hash to_h
 
     protected
 

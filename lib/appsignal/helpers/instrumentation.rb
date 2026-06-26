@@ -242,7 +242,7 @@ module Appsignal
 
         transaction.complete
       end
-      alias :send_exception :send_error
+      alias send_exception send_error
 
       # Set an error on the current transaction.
       #
@@ -305,8 +305,8 @@ module Appsignal
         transaction.set_error(exception)
         yield transaction if block_given?
       end
-      alias :set_exception :set_error
-      alias :add_exception :set_error
+      alias set_exception set_error
+      alias add_exception set_error
 
       # Report an error to AppSignal.
       #
@@ -377,7 +377,7 @@ module Appsignal
 
         transaction.complete unless has_parent_transaction
       end
-      alias :report_exception :report_error
+      alias report_exception report_error
 
       # Set a custom action name for the current transaction.
       #
@@ -497,7 +497,7 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         transaction.add_custom_data(data)
       end
-      alias :set_custom_data :add_custom_data
+      alias set_custom_data add_custom_data
 
       # Add tags to the current transaction.
       #
@@ -542,9 +542,9 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         transaction.add_tags(tags)
       end
-      alias :tag_request :add_tags
-      alias :tag_job :add_tags
-      alias :set_tags :add_tags
+      alias tag_request add_tags
+      alias tag_job add_tags
+      alias set_tags add_tags
 
       # Add parameters to the current transaction.
       #
@@ -600,7 +600,7 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         transaction.add_params(params, &block)
       end
-      alias :set_params :add_params
+      alias set_params add_params
 
       # Mark the parameters sample data to be set as an empty value.
       #
@@ -666,7 +666,7 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         transaction.add_session_data(session_data, &block)
       end
-      alias :set_session_data :add_session_data
+      alias set_session_data add_session_data
 
       # Add request headers to the current transaction.
       #
@@ -708,7 +708,7 @@ module Appsignal
         transaction = Appsignal::Transaction.current
         transaction.add_headers(headers, &block)
       end
-      alias :set_headers :add_headers
+      alias set_headers add_headers
 
       # Add breadcrumbs to the transaction.
       #
