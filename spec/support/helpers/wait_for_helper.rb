@@ -21,7 +21,7 @@ module WaitForHelper
       begin
         result = yield
         break if result
-      rescue Exception => e # rubocop:disable Lint/RescueException
+      rescue Exception => e
         # Capture error so we know if it exited with an error
         error = e
       ensure

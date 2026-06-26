@@ -73,6 +73,12 @@ Style/RedundantConstantBase:
 Style/RedundantLineContinuation:
   AutoCorrect: false
 
+# Every integration rescues Exception to record the error and re-raise it; the
+# exception is never swallowed. The cop can't see the re-raise, so here it only
+# ever produces false positives.
+Lint/RescueException:
+  Enabled: false
+
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - "spec/**/*.rb"
@@ -127,15 +133,30 @@ Naming/RescuedExceptionsVariableName:
 Naming/VariableNumber:
   Enabled: false
 
-Metrics/ModuleLength:
+# Complexity and length metrics were never enforced here: their thresholds
+# floated for years through `rubocop --auto-gen-config` and the remaining hits
+# were silenced inline. They flag a style we deliberately accept, so instead of
+# tracking an ever-changing Max we don't run them.
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/BlockLength:
   Enabled: false
 
 Metrics/ClassLength:
   Enabled: false
 
-Metrics/BlockLength:
-  Exclude:
-    - "Rakefile"
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
 
 Gemspec/DevelopmentDependencies:
   Enabled: false

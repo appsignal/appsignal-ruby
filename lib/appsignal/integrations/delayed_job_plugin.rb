@@ -24,7 +24,7 @@ module Appsignal
           Appsignal.instrument("perform_job.delayed_job") do
             block.call(job)
           end
-        rescue Exception => error # rubocop:disable Lint/RescueException
+        rescue Exception => error
           transaction.set_error(error)
           raise
         ensure

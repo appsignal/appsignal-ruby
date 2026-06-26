@@ -8,7 +8,7 @@ require "json"
 #
 # For even more information:
 # https://docs.appsignal.com/ruby/integrations/puma.html
-Puma::Plugin.create do # rubocop:disable Metrics/BlockLength
+Puma::Plugin.create do
   def start(launcher)
     @launcher = launcher
     log_debug "AppSignal: Puma plugin start."

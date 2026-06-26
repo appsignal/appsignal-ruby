@@ -101,7 +101,7 @@ module Appsignal
     # We support the various methods in the Ruby
     # logger class by supplying this method.
     # @!visibility private
-    def add(severity, message = nil, group = nil, &block) # rubocop:disable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
+    def add(severity, message = nil, group = nil, &block)
       # If we do not need to broadcast to any loggers and the severity is
       # below the log level, we can return early.
       severity ||= UNKNOWN

@@ -432,7 +432,7 @@ module Appsignal
     end
 
     # @!visibility private
-    def write_to_environment # rubocop:disable Metrics/AbcSize
+    def write_to_environment
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
       ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]

@@ -77,7 +77,7 @@ module Appsignal
 
         begin
           Appsignal.instrument "perform_job.sidekiq", &block
-        rescue Exception => exception # rubocop:disable Lint/RescueException
+        rescue Exception => exception
           job_status = :failed
           raise exception
         ensure

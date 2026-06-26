@@ -105,7 +105,7 @@ module Appsignal
     #
     # @return [void]
     # @since 0.7.0
-    def start # rubocop:disable Metrics/AbcSize
+    def start
       if ENV.fetch("_APPSIGNAL_DIAGNOSE", false)
         internal_logger.info("Skipping start in diagnose context")
         return
@@ -169,7 +169,7 @@ module Appsignal
     # @param block [Proc] Optional block to configure the config object.
     # @return [void]
     # @!visibility private
-    def _load_config!(env_param = nil, &block) # rubocop:disable Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
+    def _load_config!(env_param = nil, &block)
       # Ensure it's not an empty string if it's a value
       proper_env_param = env_param&.to_s&.strip
       # Unset it if it's an empty string

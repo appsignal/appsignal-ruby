@@ -25,7 +25,7 @@ module Appsignal
           Appsignal.instrument "task.rake" do
             super
           end
-        rescue Exception => error # rubocop:disable Lint/RescueException
+        rescue Exception => error
           Appsignal::Integrations::RakeIntegrationHelper.register_at_exit_hook
           unless RakeIntegration.ignored_error?(error)
             transaction ||= _appsignal_create_transaction

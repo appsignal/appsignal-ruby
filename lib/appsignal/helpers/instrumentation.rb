@@ -138,7 +138,7 @@ module Appsignal
 
         begin
           yield if block_given?
-        rescue Exception => error # rubocop:disable Lint/RescueException
+        rescue Exception => error
           transaction.set_error(error)
           raise error
         ensure

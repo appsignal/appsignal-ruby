@@ -17,33 +17,6 @@ Lint/MissingSuper:
 Lint/StructNewOverride:
   Exclude:
     - 'spec/lib/appsignal/probes/sidekiq_spec.rb'
-
-# Offense count: 78
-# Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes.
-Metrics/AbcSize:
-  Max: 43
-
-# Offense count: 4
-# Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
-# AllowedMethods: refine
-Metrics/BlockLength:
-  Max: 31
-
-# Offense count: 25
-# Configuration parameters: AllowedMethods, AllowedPatterns.
-Metrics/CyclomaticComplexity:
-  Max: 11
-
-# Offense count: 176
-# Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns.
-Metrics/MethodLength:
-  Max: 54
-
-# Offense count: 20
-# Configuration parameters: AllowedMethods, AllowedPatterns.
-Metrics/PerceivedComplexity:
-  Max: 13
-
 # Offense count: 5
 # Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
 # AllowedMethods: call
