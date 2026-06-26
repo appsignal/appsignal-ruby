@@ -208,12 +208,12 @@ describe Appsignal::Probes do
     end
 
     it "ensures only one minutely probes thread is active at a time" do
-      alive_thread_counter = proc { Thread.list.reject { |t| t.status == "dead" }.length }
       probe = MockProbe.new
       Appsignal::Probes.register :my_probe, probe
-      expect do
-        Appsignal::Probes.start
-      end.to change { alive_thread_counter.call }.by(1)
+
+      Appsignal::Probes.start
+      first_thread = Appsignal::Probes.instance_variable_get(:@thread)
+      expect(first_thread).to be_alive
 
       wait_for("enough probe calls") { probe.calls >= 2 }
       expect(Appsignal::Probes).to have_received(:initial_wait_time).once
@@ -221,14 +221,18 @@ describe Appsignal::Probes do
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 1 probe")
       expect(log).to contains_log(:debug, "Gathering minutely metrics with 'my_probe' probe")
 
-      # Starting twice in this spec, so expecting it more than once
-      expect(Appsignal::Probes).to have_received(:initial_wait_time).once
-      expect do
-        # Fetch old thread
-        thread = Appsignal::Probes.instance_variable_get(:@thread)
-        Appsignal::Probes.start
-        thread&.join # Wait for old thread to exit
-      end.to_not(change { alive_thread_counter.call })
+      # Starting again replaces the probe thread rather than leaving the
+      # previous one running: `start` kills the old thread and assigns a new
+      # one in its place. Assert on the thread objects directly instead of
+      # counting every live thread in the process, which is fragile to
+      # unrelated background threads starting or stopping mid-example.
+      Appsignal::Probes.start
+      second_thread = Appsignal::Probes.instance_variable_get(:@thread)
+      first_thread.join # Wait for the killed old thread to finish exiting
+
+      expect(second_thread).not_to be(first_thread)
+      expect(first_thread).not_to be_alive
+      expect(second_thread).to be_alive
     end
 
     context "with thread already started" do
