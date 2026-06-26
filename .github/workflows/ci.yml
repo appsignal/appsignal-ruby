@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 231
+# Generated job count: 234
 ---
 name: Ruby gem CI
 'on':
@@ -726,8 +726,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_4-0-0__shoryuken_ubuntu-latest:
-    name: Ruby 4.0.0 - shoryuken
+  ruby_4-0-0__shoryuken-7_ubuntu-latest:
+    name: Ruby 4.0.0 - shoryuken-7
     needs: ruby_4-0-0_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -752,7 +752,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+      BUNDLE_GEMFILE: gemfiles/shoryuken-7.gemfile
   ruby_4-0-0__sinatra_ubuntu-latest:
     name: Ruby 4.0.0 - sinatra
     needs: ruby_4-0-0_ubuntu-latest
@@ -1702,8 +1702,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-4-1__shoryuken_ubuntu-latest:
-    name: Ruby 3.4.1 - shoryuken
+  ruby_3-4-1__shoryuken-7_ubuntu-latest:
+    name: Ruby 3.4.1 - shoryuken-7
     needs: ruby_3-4-1_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -1728,7 +1728,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+      BUNDLE_GEMFILE: gemfiles/shoryuken-7.gemfile
   ruby_3-4-1__sinatra_ubuntu-latest:
     name: Ruby 3.4.1 - sinatra
     needs: ruby_3-4-1_ubuntu-latest
@@ -2705,8 +2705,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-3-4__shoryuken_ubuntu-latest:
-    name: Ruby 3.3.4 - shoryuken
+  ruby_3-3-4__shoryuken-7_ubuntu-latest:
+    name: Ruby 3.3.4 - shoryuken-7
     needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -2731,7 +2731,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+      BUNDLE_GEMFILE: gemfiles/shoryuken-7.gemfile
   ruby_3-3-4__sinatra_ubuntu-latest:
     name: Ruby 3.3.4 - sinatra
     needs: ruby_3-3-4_ubuntu-latest
@@ -3627,8 +3627,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
-  ruby_3-2-5__shoryuken_ubuntu-latest:
-    name: Ruby 3.2.5 - shoryuken
+  ruby_3-2-5__shoryuken-7_ubuntu-latest:
+    name: Ruby 3.2.5 - shoryuken-7
     needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -3653,7 +3653,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+      BUNDLE_GEMFILE: gemfiles/shoryuken-7.gemfile
   ruby_3-2-5__sinatra_ubuntu-latest:
     name: Ruby 3.2.5 - sinatra
     needs: ruby_3-2-5_ubuntu-latest
@@ -4468,6 +4468,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_3-1-6__shoryuken-6_ubuntu-latest:
+    name: Ruby 3.1.6 - shoryuken-6
+    needs: ruby_3-1-6_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1.6
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-6.gemfile
   ruby_3-1-6__sinatra_ubuntu-latest:
     name: Ruby 3.1.6 - sinatra
     needs: ruby_3-1-6_ubuntu-latest
@@ -5255,6 +5282,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_3-0-7__shoryuken-6_ubuntu-latest:
+    name: Ruby 3.0.7 - shoryuken-6
+    needs: ruby_3-0-7_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0.7
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-6.gemfile
   ruby_3-0-7__sinatra_ubuntu-latest:
     name: Ruby 3.0.7 - sinatra
     needs: ruby_3-0-7_ubuntu-latest
@@ -5880,6 +5934,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_2-7-8__shoryuken-6_ubuntu-latest:
+    name: Ruby 2.7.8 - shoryuken-6
+    needs: ruby_2-7-8_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7.8
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-6.gemfile
   ruby_2-7-8__sinatra_ubuntu-latest:
     name: Ruby 2.7.8 - sinatra
     needs: ruby_2-7-8_ubuntu-latest
