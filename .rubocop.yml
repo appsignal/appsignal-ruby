@@ -71,9 +71,11 @@ Style/RedundantConstantBase:
 Style/RedundantLineContinuation:
   AutoCorrect: false
 
-# Every integration rescues Exception to record the error and re-raise it; the
-# exception is never swallowed. The cop can't see the re-raise, so here it only
-# ever produces false positives.
+# We rescue Exception only in deliberate, reviewed places: integrations that
+# record the error and re-raise it, and a spec helper that retries on RSpec
+# expectation failures (ExpectationNotMetError subclasses Exception). The cop
+# can't tell these from a careless rescue, so we disable it rather than scatter
+# inline disables.
 Lint/RescueException:
   Enabled: false
 
