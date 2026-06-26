@@ -114,6 +114,7 @@ module Appsignal
       :ignore_logs => [],
       :ignore_namespaces => [],
       :instrument_code_ownership => true,
+      :instrument_faraday => true,
       :instrument_http_rb => true,
       :instrument_net_http => true,
       :instrument_ownership => true,
@@ -192,6 +193,7 @@ module Appsignal
         "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION",
       :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
       :instrument_code_ownership => "APPSIGNAL_INSTRUMENT_CODE_OWNERSHIP",
+      :instrument_faraday => "APPSIGNAL_INSTRUMENT_FARADAY",
       :instrument_http_rb => "APPSIGNAL_INSTRUMENT_HTTP_RB",
       :instrument_net_http => "APPSIGNAL_INSTRUMENT_NET_HTTP",
       :instrument_ownership => "APPSIGNAL_INSTRUMENT_OWNERSHIP",
@@ -842,6 +844,8 @@ module Appsignal
       #   @return [Boolean] Configure whether Rake performance instrumentation is enabled
       # @!attribute [rw] files_world_accessible
       #   @return [Boolean] Configure whether files created by AppSignal should be world accessible
+      # @!attribute [rw] instrument_faraday
+      #   @return [Boolean] Configure whether to instrument requests made with the Faraday gem
       # @!attribute [rw] instrument_http_rb
       #   @return [Boolean] Configure whether to instrument requests made with the http.rb gem
       # @!attribute [rw] instrument_net_http
