@@ -191,12 +191,12 @@ describe Appsignal::Utils::Data do
                 "one" => string_with_invalid_utf8
               }
             }
-            # rubocop:disable Style/StringConcatenation
-            expect(generate(value).to_s).to eq %({"field_four":{"one":"aa�"},) +
-              %("field_one":"aa",) +
-              %("field_three":["one","aa�"],) +
+            expect(generate(value).to_s).to eq [
+              %({"field_four":{"one":"aa�"},),
+              %("field_one":"aa",),
+              %("field_three":["one","aa�"],),
               %("field_two":"aa�"})
-            # rubocop:enable Style/StringConcatenation
+            ].join
           end
         end
       end

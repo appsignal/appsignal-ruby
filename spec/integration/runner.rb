@@ -60,7 +60,7 @@ class Runner
     # Read the output (STDOUT and STDERR)
     output_lines = []
     begin
-      while line = @read.readline # rubocop:disable Lint/AssignmentInCondition
+      while (line = @read.readline)
         output_lines << line.rstrip
       end
     rescue EOFError
