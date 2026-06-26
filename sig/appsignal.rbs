@@ -1132,6 +1132,9 @@ module Appsignal
       # _@return_ — Configure whether files created by AppSignal should be world accessible
       attr_accessor files_world_accessible: bool
 
+      # _@return_ — Configure whether to instrument requests made with the Faraday gem
+      attr_accessor instrument_faraday: bool
+
       # _@return_ — Configure whether to instrument requests made with the http.rb gem
       attr_accessor instrument_http_rb: bool
 
