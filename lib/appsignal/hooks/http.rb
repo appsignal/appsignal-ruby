@@ -16,6 +16,8 @@ module Appsignal
 
       def install
         require "appsignal/integrations/http"
+        # `Client#request` takes positional options in http5 and keyword options
+        # in http6.
         integration =
           if self.class.http6_or_higher?
             Appsignal::Integrations::HttpIntegration::KeywordOptions
@@ -23,6 +25,13 @@ module Appsignal
             Appsignal::Integrations::HttpIntegration::HashOptions
           end
         HTTP::Client.prepend integration
+        # In http6 a chained request (`.follow`, `.headers`, ...) goes through
+        # `HTTP::Session#request` instead of `HTTP::Client#request`, so
+        # instrument it too (keyword options). http5 has no Session; chained
+        # requests run through `Client#request` there.
+        if defined?(HTTP::Session)
+          HTTP::Session.prepend Appsignal::Integrations::HttpIntegration::KeywordOptions
+        end
 
         Appsignal::Environment.report_enabled("http_rb")
       end

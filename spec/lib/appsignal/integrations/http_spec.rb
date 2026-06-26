@@ -67,6 +67,26 @@ if DependencyHelper.http_present?
       end
     end
 
+    describe "following redirects" do
+      # `HTTP.follow` chains through `HTTP::Session#request` in http6, which is
+      # instrumented separately from `HTTP::Client#request`. The event is
+      # recorded at the request boundary, so a redirected request is a single
+      # `request.http_rb` event spanning every hop.
+      it "records a single event spanning every hop" do
+        stub_request(:get, "http://www.google.com")
+          .to_return(:status => 301, :headers => { "Location" => "http://www.example.com" })
+        stub_request(:get, "http://www.example.com").to_return(:status => 200)
+
+        HTTP.follow.get("http://www.google.com")
+
+        events = transaction.to_h["events"]
+          .select { |event| event["name"] == "request.http_rb" }
+        expect(events.map { |event| event["title"] }).to eq(
+          ["GET http://www.google.com"]
+        )
+      end
+    end
+
     context "with various URI objects" do
       it "parses an object responding to #to_s" do
         request_uri = Struct.new(:uri) do
