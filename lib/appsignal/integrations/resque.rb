@@ -25,6 +25,20 @@ module Appsignal
       end
     end
 
+    # Wraps `Resque.push` to record an `enqueue.resque` event so the enqueue
+    # shows up under the active transaction.
+    #
+    # Like all AppSignal events, this only records when there's an active
+    # transaction (e.g. enqueuing from within a web request or another job).
+    # An enqueue with no transaction is a transparent pass-through.
+    #
+    # @!visibility private
+    module ResquePushIntegration
+      def push(_queue, _item)
+        Appsignal.instrument("enqueue.resque") { super }
+      end
+    end
+
     # @!visibility private
     class ResqueHelpers
       def self.arguments(payload)
