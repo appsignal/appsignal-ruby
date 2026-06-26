@@ -70,7 +70,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
 
       class SidekiqQueue
-        Queue = Struct.new(:name, :size, :latency)
+        Queue = Struct.new(:name, :size, :latency) # rubocop:disable Lint/StructNewOverride
 
         def self.all
           [

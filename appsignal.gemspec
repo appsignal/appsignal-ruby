@@ -21,7 +21,7 @@ IGNORED_PATHS = [
   ".rubocop_todo.yml"
 ].freeze
 
-Gem::Specification.new do |gem| # rubocop:disable Metrics/BlockLength
+Gem::Specification.new do |gem|
   gem.authors = [
     "Robert Beekman",
     "Thijs Cadier",

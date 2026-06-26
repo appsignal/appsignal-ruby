@@ -1281,14 +1281,14 @@ describe Appsignal::Transaction do
           "category" => "network",
           "message" => "User made external network request",
           "metadata" => { "code" => 3 },
-          "time" => 1286704800 # rubocop:disable Style/NumericLiterals
+          "time" => 1_286_704_800
         )
         expect(transaction.to_h["sample_data"]["breadcrumbs"][19]).to eq(
           "action" => "GET http://localhost",
           "category" => "network",
           "message" => "User made external network request",
           "metadata" => { "code" => 22 },
-          "time" => 1286704800 # rubocop:disable Style/NumericLiterals
+          "time" => 1_286_704_800
         )
       end
     end

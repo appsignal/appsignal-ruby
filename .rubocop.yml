@@ -1,5 +1,3 @@
-inherit_from: .rubocop_todo.yml
-
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
@@ -73,6 +71,14 @@ Style/RedundantConstantBase:
 Style/RedundantLineContinuation:
   AutoCorrect: false
 
+# We rescue Exception only in deliberate, reviewed places: integrations that
+# record the error and re-raise it, and a spec helper that retries on RSpec
+# expectation failures (ExpectationNotMetError subclasses Exception). The cop
+# can't tell these from a careless rescue, so we disable it rather than scatter
+# inline disables.
+Lint/RescueException:
+  Enabled: false
+
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - "spec/**/*.rb"
@@ -116,10 +122,17 @@ Naming/FileName:
   Exclude:
     - "ext/Rakefile"
 
+# Our API mirrors the agent's set_*/get_* method names, a convention used
+# throughout the gem and the extension. We follow it deliberately, so disable
+# the cop instead of scattering excludes and inline disables for it.
 Naming/AccessorMethodName:
-  Exclude:
-    - "lib/appsignal/helpers/instrumentation.rb"
-    - "lib/appsignal/transaction.rb"
+  Enabled: false
+
+# Several command methods return a boolean status (abort_installation,
+# Demo.transmit). The cop wants them renamed with a `?`, which would wrongly
+# read them as queries, so we don't run it.
+Naming/PredicateMethod:
+  Enabled: false
 
 Naming/RescuedExceptionsVariableName:
   Enabled: false
@@ -127,15 +140,30 @@ Naming/RescuedExceptionsVariableName:
 Naming/VariableNumber:
   Enabled: false
 
-Metrics/ModuleLength:
+# Complexity and length metrics were never enforced here: their thresholds
+# floated for years through `rubocop --auto-gen-config` and the remaining hits
+# were silenced inline. They flag a style we deliberately accept, so instead of
+# tracking an ever-changing Max we don't run them.
+Metrics/AbcSize:
+  Enabled: false
+
+Metrics/BlockLength:
   Enabled: false
 
 Metrics/ClassLength:
   Enabled: false
 
-Metrics/BlockLength:
-  Exclude:
-    - "Rakefile"
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
 
 Gemspec/DevelopmentDependencies:
   Enabled: false

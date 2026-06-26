@@ -108,7 +108,7 @@ module Appsignal
       # @see #instrument_app_call
       def instrument_app_call_with_exception_handling(env, transaction, wrapped_instrumentation)
         instrument_app_call(env, transaction)
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         report_errors =
           if @report_errors == DEFAULT_ERROR_REPORTING
             # If there's no parent transaction, report the error

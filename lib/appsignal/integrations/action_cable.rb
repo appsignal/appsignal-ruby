@@ -15,7 +15,7 @@ module Appsignal
 
         begin
           super
-        rescue Exception => exception # rubocop:disable Lint/RescueException
+        rescue Exception => exception
           transaction.set_error(exception)
           raise exception
         ensure

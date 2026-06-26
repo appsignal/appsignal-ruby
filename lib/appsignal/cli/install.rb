@@ -12,7 +12,7 @@ module Appsignal
       EXCLUDED_ENVIRONMENTS = ["test"].freeze
 
       class << self
-        def run(push_api_key, options) # rubocop:disable Metrics/AbcSize
+        def run(push_api_key, options)
           self.coloring = options.delete(:color) { true }
           $stdout.sync = true
 
@@ -228,7 +228,7 @@ module Appsignal
           done_notice
         end
 
-        def configure(config, environments, name_overwritten) # rubocop:disable Metrics/AbcSize
+        def configure(config, environments, name_overwritten)
           install_for_capistrano
 
           ENV["APPSIGNAL_APP_ENV"] = "development"
@@ -241,7 +241,7 @@ module Appsignal
           puts "  See our docs for information on the different configuration methods: "
           puts "  https://docs.appsignal.com/ruby/configuration.html"
           puts
-          loop do # rubocop:disable Metrics/BlockLength
+          loop do
             print "  Choose (1-3): "
             case ask_for_input
             when "1"

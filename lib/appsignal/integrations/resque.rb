@@ -10,7 +10,7 @@ module Appsignal
         Appsignal.instrument "perform.resque" do
           super
         end
-      rescue Exception => exception # rubocop:disable Lint/RescueException
+      rescue Exception => exception
         transaction.set_error(exception)
         raise exception
       ensure

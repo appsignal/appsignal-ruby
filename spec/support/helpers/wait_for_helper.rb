@@ -21,7 +21,10 @@ module WaitForHelper
       begin
         result = yield
         break if result
-      rescue Exception => e # rubocop:disable Lint/RescueException
+      # Rescue Exception, not StandardError: callers pass blocks containing RSpec
+      # expectations, and ExpectationNotMetError subclasses Exception. We must
+      # catch it to keep retrying until the expectation passes.
+      rescue Exception => e
         # Capture error so we know if it exited with an error
         error = e
       ensure

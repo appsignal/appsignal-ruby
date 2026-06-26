@@ -444,7 +444,7 @@ if DependencyHelper.sidekiq_present?
         plugin.call(worker, item, queue) do
           yield if block_given?
         end
-      rescue Exception => exception # rubocop:disable Lint/RescueException
+      rescue Exception => exception
         raise exception
       ensure
         Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item) if exception
@@ -626,7 +626,7 @@ if DependencyHelper.sidekiq_present?
           # Combined with Sidekiq::Testing.fake! and drain_all we get a
           # enqueue_at in the job data.
           Sidekiq::Worker.drain_all
-        rescue Exception => exception # rubocop:disable Lint/RescueException
+        rescue Exception => exception
           raise exception
         ensure
           Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, {}) if exception
