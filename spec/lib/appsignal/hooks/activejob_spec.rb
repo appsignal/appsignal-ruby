@@ -31,6 +31,7 @@ if DependencyHelper.active_job_present?
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
     include ActiveJobHelpers
+
     let(:time) { Time.parse("2001-01-01 10:00:00UTC") }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:queue) { "default" }

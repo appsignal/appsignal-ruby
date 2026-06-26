@@ -48,7 +48,7 @@ if DependencyHelper.padrino_present?
           [
             Appsignal::Rack::SinatraBaseInstrumentation,
             [
-              :instrument_event_name => "process_action.padrino"
+              { :instrument_event_name => "process_action.padrino" }
             ],
             nil
           ]

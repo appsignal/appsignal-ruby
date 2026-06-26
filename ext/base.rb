@@ -100,15 +100,11 @@ def installation_succeeded?
 end
 
 def check_architecture
-  if APPSIGNAL_AGENT_CONFIG["triples"].key?(TARGET_TRIPLE)
-    true
-  else
-    abort_installation(
+  APPSIGNAL_AGENT_CONFIG["triples"].key?(TARGET_TRIPLE) || abort_installation(
       "AppSignal currently does not support your system architecture (#{TARGET_TRIPLE})." \
         "Please let us know at support@appsignal.com, we aim to support everything " \
         "our customers run."
     )
-  end
 end
 
 def download_archive(type)

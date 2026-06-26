@@ -30,15 +30,15 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is an array of hashes" do
-        let(:value) { ["foo" => "bar"] }
+        let(:value) { [{ "foo" => "bar" }] }
 
         it "should sanitize all hash values with a questionmark" do
-          expect(subject).to eq(["foo" => "?"])
+          expect(subject).to eq([{ "foo" => "?" }])
         end
 
         it "should not modify source value" do
           subject
-          expect(value).to eq(["foo" => "bar"])
+          expect(value).to eq([{ "foo" => "bar" }])
         end
       end
 
@@ -102,15 +102,15 @@ describe Appsignal::Utils::QueryParamsSanitizer do
       end
 
       context "when value is an array of hashes" do
-        let(:value) { ["foo" => "bar"] }
+        let(:value) { [{ "foo" => "bar" }] }
 
         it "should sanitize all hash values with a questionmark" do
-          expect(subject).to eq(["foo" => "?"])
+          expect(subject).to eq([{ "foo" => "?" }])
         end
 
         it "should not modify source value" do
           subject
-          expect(value).to eq(["foo" => "bar"])
+          expect(value).to eq([{ "foo" => "bar" }])
         end
       end
 

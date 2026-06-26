@@ -547,6 +547,7 @@ module Appsignal
 
       class Data
         include StringHelpers
+
         attr_reader :pointer
 
         def initialize(pointer)

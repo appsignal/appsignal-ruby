@@ -738,6 +738,7 @@ module Appsignal
 
     BACKTRACE_REGEX =
       %r{(?<gem>[\w-]+ \(.+\) )?(?<path>:?/?\w+?.+?):(?<line>:?\d+)(?::in `(?<method>.+)')?$}.freeze
+    private_constant :BACKTRACE_REGEX
 
     def first_formatted_backtrace_line(error)
       backtrace = cleaned_backtrace(error.backtrace)

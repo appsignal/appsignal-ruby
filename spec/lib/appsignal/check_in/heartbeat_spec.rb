@@ -65,7 +65,7 @@ describe "Appsignal::CheckIn.heartbeat" do
 
     stubs << stub_heartbeat_check_in_request(
       :events => [
-        "identifier" => "heartbeat-checkin-name"
+        { "identifier" => "heartbeat-checkin-name" }
       ]
     )
 
@@ -83,7 +83,7 @@ describe "Appsignal::CheckIn.heartbeat" do
 
     stubs << stub_heartbeat_check_in_request(
       :events => [
-        "identifier" => "heartbeat-checkin-name"
+        { "identifier" => "heartbeat-checkin-name" }
       ],
       :response => { :status => 499 }
     )
@@ -114,8 +114,10 @@ describe "Appsignal::CheckIn.heartbeat" do
         # to prevent the test from failing.
         :requests => Array.new(5) do
           [
-            "identifier" => "heartbeat-checkin-name",
-            "check_in_type" => "heartbeat"
+            {
+              "identifier" => "heartbeat-checkin-name",
+              "check_in_type" => "heartbeat"
+            }
           ]
         end
       )
