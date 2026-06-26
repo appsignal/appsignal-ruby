@@ -91,12 +91,12 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         subscriber.finish("SUCCEEDED", event)
       end
 
-      it "should finish the transaction in the extension" do
+      it "should finish the event with the command as a JSON string" do
         expect(transaction).to receive(:finish_event).with(
           "query.mongodb",
           "find | test | SUCCEEDED",
-          Appsignal::Utils::Data.generate("foo" => "?"),
-          0
+          "{\"foo\":\"?\"}",
+          Appsignal::EventFormatter::DEFAULT
         )
 
         subscriber.finish("SUCCEEDED", event)
