@@ -333,6 +333,34 @@ if DependencyHelper.active_job_present?
       end
     end
 
+    context "when enqueuing a job" do
+      before { ActiveJob::Base.queue_adapter = :test }
+
+      context "with an active transaction" do
+        it "records a single enqueue.active_job event on the transaction" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          ActiveJobTestJob.perform_later
+
+          # Exactly one enqueue event: ours. Rails' native `enqueue.active_job`
+          # notification is suppressed so it isn't recorded a second time.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names.count("enqueue.active_job")).to eq(1)
+        end
+      end
+
+      context "without an active transaction" do
+        it "is a transparent pass-through that still enqueues the job" do
+          expect do
+            ActiveJobTestJob.perform_later
+          end.to_not(change { created_transactions.count })
+
+          expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
+        end
+      end
+    end
+
     context "with params" do
       let(:options) { { :filter_parameters => ["foo"] } }
 

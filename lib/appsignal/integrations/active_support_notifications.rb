@@ -7,16 +7,20 @@ module Appsignal
       class << self
         BANG = "!"
 
+        # Events a dedicated AppSignal integration already records, so the
+        # generic notifications path must not record them a second time. The
+        # ActiveJob hook owns `enqueue.active_job`: it wraps the enqueue in its
+        # own event, and Rails' native notification fires nested inside it.
+        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job"].freeze
+
         def start_event(name)
-          # Events that start with a bang are internal to Rails
-          instrument_this = name[0] != BANG
-          Appsignal::Transaction.current.start_event if instrument_this
+          return unless record_event?(name)
+
+          Appsignal::Transaction.current.start_event
         end
 
         def finish_event(name, payload = {})
-          # Events that start with a bang are internal to Rails
-          instrument_this = name[0] != BANG
-          return unless instrument_this
+          return unless record_event?(name)
 
           title, body, body_format = Appsignal::EventFormatter.format(name, payload)
           Appsignal::Transaction.current.finish_event(
@@ -25,6 +29,13 @@ module Appsignal
             body,
             body_format
           )
+        end
+
+        # Events starting with a bang are internal to Rails; suppressed events
+        # are recorded by a dedicated integration instead. Both `start_event`
+        # and `finish_event` gate on this so the event stack stays balanced.
+        def record_event?(name)
+          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name.to_s)
         end
       end
 
