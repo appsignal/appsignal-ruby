@@ -127,6 +127,10 @@ module DependencyHelper
       Gem.loaded_specs["capistrano"].version >= Gem::Version.new("3.0")
   end
 
+  def faraday_present?
+    dependency_present? "faraday"
+  end
+
   def http_present?
     dependency_present? "http"
   end
