@@ -12,6 +12,15 @@ module Appsignal
         Appsignal.instrument("request.http_rb", "#{verb.upcase} #{request_uri}", &block)
       end
 
+      # The event is recorded at the request boundary, so a redirected request
+      # stays a single `request.http_rb` event spanning every hop. That boundary
+      # lives in more than one place: a bare request runs through
+      # `HTTP::Client#request`, but in http6 a chained request (`.follow`,
+      # `.headers`, `.timeout`, ...) runs through `HTTP::Session#request`
+      # instead, which never touches `Client#request`. The hook prepends one of
+      # these onto each. `Client#request` takes positional options in http5 and
+      # keyword options in http6; `Session#request` (http6 only) takes keyword
+      # options.
       module HashOptions
         def request(verb, uri, opts = {})
           HttpIntegration.instrument(verb, uri) { super }

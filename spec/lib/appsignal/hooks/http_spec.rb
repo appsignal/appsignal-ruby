@@ -17,6 +17,11 @@ describe Appsignal::Hooks::HttpHook do
           expect(HTTP::Client.included_modules)
             .to include(Appsignal::Integrations::HttpIntegration::KeywordOptions)
         end
+
+        it "instruments chained requests through HTTP::Session" do
+          expect(HTTP::Session.included_modules)
+            .to include(Appsignal::Integrations::HttpIntegration::KeywordOptions)
+        end
       else
         it "installs the HTTP plugin with hash options" do
           expect(HTTP::Client.included_modules)
