@@ -1495,10 +1495,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           before { run_within_dir root_path }
 
           it "outputs ownership" do
-            expect(output).to include \
-              %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    )
-            "Ownership?: true (file: #{process_user}:#{Process.uid}, " \
-              "process: #{process_user}:#{Process.uid})"
+            expect(output).to include(
+              [
+                %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    ),
+                "Ownership?: true (file: #{process_user}:#{Process.uid}, ",
+                "process: #{process_user}:#{Process.uid})"
+              ].join
+            )
           end
 
           it "transmits path data in report" do
@@ -1529,9 +1532,12 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           end
 
           it "outputs no ownership" do
-            expect(output).to include \
-              %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    )
-            "Ownership?: false (file: root:0, process: #{process_user}:#{Process.uid})"
+            expect(output).to include(
+              [
+                %(Root path\n    Path: "#{root_path}"\n    Writable?: true\n    ),
+                "Ownership?: false (file: root:0, process: #{process_user}:#{Process.uid})"
+              ].join
+            )
           end
         end
       end
