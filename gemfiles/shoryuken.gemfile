@@ -1,5 +1,8 @@
 source "https://rubygems.org"
 
 gem "shoryuken"
+# Shoryuken uses AWS SDK 3, which requires the SQS client to be installed
+# separately.
+gem "aws-sdk-sqs"
 
 gemspec :path => "../"
