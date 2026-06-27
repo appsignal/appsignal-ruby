@@ -139,4 +139,49 @@ if DependencyHelper.resque_present?
       end
     end
   end
+
+  describe Appsignal::Integrations::ResquePushIntegration do
+    # A stand-in for the `Resque` singleton with the integration prepended.
+    # Its `push` records the pushed item so we can inspect what was written.
+    let(:resque) do
+      Class.new do
+        attr_reader :pushed
+
+        def push(queue, item)
+          @pushed = [queue, item]
+          :pushed
+        end
+
+        prepend Appsignal::Integrations::ResquePushIntegration
+      end.new
+    end
+    let(:item) { { "class" => "ResqueTestJob", "args" => [] } }
+
+    before { start_agent }
+    around { |example| keep_transactions { example.run } }
+
+    def enqueue
+      resque.push("default", item)
+    end
+
+    context "with an active transaction" do
+      it "records an enqueue event and leaves the job untouched" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:pushed)
+
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue.resque")
+        expect(item).to eq("class" => "ResqueTestJob", "args" => [])
+      end
+    end
+
+    context "without an active transaction" do
+      it "is a transparent pass-through" do
+        expect(enqueue).to eq(:pushed)
+        expect(item).to eq("class" => "ResqueTestJob", "args" => [])
+      end
+    end
+  end
 end
