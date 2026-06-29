@@ -163,3 +163,32 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     end
   end
 end
+
+describe Appsignal::Integrations::ShoryukenClientMiddleware do
+  let(:options) { { :message_body => "foo" } }
+  before { start_agent }
+  around { |example| keep_transactions { example.run } }
+
+  def enqueue(&block)
+    block ||= lambda {}
+    described_class.new.call(options, &block)
+  end
+
+  context "with an active transaction" do
+    it "records the enqueue under the transaction" do
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+
+      enqueue
+
+      event_names = transaction.to_h["events"].map { |event| event["name"] }
+      expect(event_names).to include("enqueue.shoryuken")
+    end
+  end
+
+  context "without an active transaction" do
+    it "passes through without recording" do
+      expect { |block| enqueue(&block) }.to yield_control
+    end
+  end
+end
