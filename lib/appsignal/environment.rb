@@ -87,6 +87,7 @@ module Appsignal
       elasticsearch
       excon
       faraday
+      grape
       gvltools
       hanami
       hiredis
