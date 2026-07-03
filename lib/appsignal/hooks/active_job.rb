@@ -56,7 +56,7 @@ module Appsignal
       # @!visibility private
       module ActiveJobEnqueueInstrumentation
         def enqueue(*, **)
-          Appsignal.instrument("enqueue.active_job") do
+          Appsignal.instrument("enqueue.active_job", "enqueue #{self.class.name} job") do
             # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that
             # has its own enqueue instrumentation. Suppress it so the enqueue is
             # recorded once, as this event, rather than as nested Active Job +

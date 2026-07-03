@@ -346,8 +346,11 @@ if DependencyHelper.active_job_present?
 
           # Exactly one enqueue event: ours. Rails' native `enqueue.active_job`
           # notification is suppressed so it isn't recorded a second time.
-          event_names = transaction.to_h["events"].map { |event| event["name"] }
-          expect(event_names.count("enqueue.active_job")).to eq(1)
+          enqueue_events =
+            transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
+          expect(enqueue_events.size).to eq(1)
+          # The event is titled after the job being enqueued.
+          expect(enqueue_events.first["title"]).to eq("enqueue ActiveJobTestJob job")
         end
       end
 
