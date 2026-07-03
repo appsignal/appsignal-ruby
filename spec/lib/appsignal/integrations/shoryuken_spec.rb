@@ -368,22 +368,36 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
   end
 
   context "with an active transaction" do
-    describe "records the enqueue under the transaction" do
-      def perform
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-        enqueue
-        transaction
+    def perform
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      enqueue
+      transaction
+    end
+
+    # Enqueuing through a Shoryuken worker carries the worker class in the
+    # `shoryuken_class` message attribute, so the event is titled after it.
+    describe "enqueued through a worker" do
+      let(:options) do
+        {
+          :message_body => "foo",
+          :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue",
+          :message_attributes => {
+            "shoryuken_class" => { :string_value => "MyShoryukenWorker", :data_type => "String" }
+          }
+        }
       end
 
       it "in agent mode", :agent_mode do
         start_agent
         transaction = perform
 
-        # Records an enqueue event on the transaction; no wire context in agent mode.
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.shoryuken")
-        expect(options).to_not have_key(:message_attributes)
+        # Records an enqueue event on the transaction, titled after the worker;
+        # no wire context in agent mode.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue MyShoryukenWorker job")
+        expect(options[:message_attributes]).to_not have_key("traceparent")
       end
 
       it "in collector mode", :collector_mode do
@@ -391,8 +405,10 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
         perform
         Appsignal::Transaction.complete_current!
 
-        # The enqueue is a producer event span under the active transaction.
-        producer = event_spans.find { |s| s.name == "enqueue.shoryuken" }
+        # The enqueue is a producer event span under the active transaction,
+        # named after the worker being enqueued.
+        producer = event_spans.find { |s| s.name == "enqueue MyShoryukenWorker job" }
+        expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -402,6 +418,33 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
           :string_value => "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01",
           :data_type => "String"
         )
+      end
+    end
+
+    # A raw `send_message` enqueue has no worker class, so the event falls back
+    # to naming the queue it was sent to.
+    describe "enqueued as a raw message" do
+      let(:options) do
+        { :message_body => "foo", :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue" }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = perform
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue on my-queue")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        Appsignal::Transaction.complete_current!
+
+        producer = event_spans.find { |s| s.name == "enqueue on my-queue" }
+        expect(producer).to_not be_nil
+        expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
       end
     end
   end

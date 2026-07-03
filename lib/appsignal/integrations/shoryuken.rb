@@ -167,10 +167,27 @@ module Appsignal
           return yield
         end
 
-        Appsignal.instrument("enqueue.shoryuken", :opentelemetry_kind => :producer) do
+        Appsignal.instrument(
+          "enqueue.shoryuken",
+          enqueue_title(options),
+          :opentelemetry_kind => :producer
+        ) do
           ShoryukenTraceContext.inject(options)
           yield
         end
+      end
+
+      private
+
+      # Enqueues through a Shoryuken worker carry the worker class in the
+      # `shoryuken_class` message attribute. Raw `send_message` enqueues don't,
+      # so there's no worker class to name -- fall back to the queue instead.
+      def enqueue_title(options)
+        worker_class = options.dig(:message_attributes, "shoryuken_class", :string_value)
+        return "enqueue #{worker_class} job" if worker_class
+
+        queue = options[:queue_url].to_s.split("/").last
+        "enqueue on #{queue}"
       end
     end
   end
