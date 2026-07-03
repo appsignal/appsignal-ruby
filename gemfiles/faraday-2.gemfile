@@ -1,6 +1,5 @@
 source "https://rubygems.org"
 
-gem "activesupport", :require => "active_support"
 gem "excon"
 gem "faraday", "~> 2.0"
 gem "faraday-excon"

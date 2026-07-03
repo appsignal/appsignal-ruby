@@ -2,29 +2,31 @@
 
 module Appsignal
   module Integrations
-    # Faraday middleware that suppresses the downstream HTTP client's own
-    # instrumentation when Faraday already records the request as a
-    # `request.faraday` event, so the request appears once rather than as nested
-    # Faraday + Net::HTTP client events.
+    # Faraday middleware that records each request as a `request.faraday` event
+    # and suppresses the downstream HTTP client's own instrumentation, so the
+    # request is recorded once rather than as nested Faraday + Net::HTTP (or
+    # Excon) client events.
     #
     # @!visibility private
     class FaradayMiddleware < ::Faraday::Middleware
-      # `super(app)` passes only the app: Faraday 1's `Middleware#initialize`
-      # takes the app alone, so forwarding our options hash to it would raise.
-      def initialize(app, options = {})
-        super(app)
-        @suppress_downstream = options[:suppress_downstream]
-      end
-
       def call(env)
-        # Faraday's default adapter is Net::HTTP, which AppSignal also
-        # instruments. When the `request.faraday` event is recorded, suppress the
-        # adapter's instrumentation so the request appears once (as the Faraday
-        # event) rather than as nested Faraday + Net::HTTP client events.
-        if @suppress_downstream && Appsignal::Transaction.current?
-          Appsignal::Transaction.current.suppress_http_client_events { @app.call(env) }
-        else
-          @app.call(env)
+        http_method = env[:method].to_s.upcase
+        uri = env[:url]
+        # Title only, no body: the path is left out so the event matches
+        # Net::HTTP's (scheme and host only), keeping paths out of event titles.
+        Appsignal.instrument(
+          "request.faraday",
+          "#{http_method} #{uri.scheme}://#{uri.host}"
+        ) do
+          # Faraday's default adapter is Net::HTTP, which AppSignal also
+          # instruments. Suppress the adapter's own instrumentation so the
+          # request appears once (as the Faraday event) rather than as nested
+          # Faraday + Net::HTTP client events.
+          if Appsignal::Transaction.current?
+            Appsignal::Transaction.current.suppress_http_client_events { @app.call(env) }
+          else
+            @app.call(env)
+          end
         end
       end
     end
@@ -35,30 +37,13 @@ module Appsignal
     # the build path is the only way to instrument every connection automatically.
     #
     # Just before the adapter (the innermost handler, where the request is sent)
-    # it inserts:
-    #
-    # - `Faraday::Request::Instrumentation`, so the `request.faraday` event fires
-    #   without the user adding it themselves -- but only when
-    #   ActiveSupport::Notifications is loaded, since that middleware references it
-    #   at build time. Skipped if the user already added it.
-    # - `FaradayMiddleware`, which suppresses the downstream client when the
-    #   Faraday event is recorded -- decided here, at build time, so it stays in
-    #   sync with whether Instrumentation is added.
+    # it inserts `FaradayMiddleware`, which records the `request.faraday` event
+    # and suppresses the downstream client. Skipped if it's already present.
     #
     # @!visibility private
     module FaradayRackBuilderPatch
       def adapter(*)
-        unless handlers.any? { |handler| handler.klass == FaradayMiddleware }
-          # The `request.faraday` event needs ActiveSupport::Notifications, which
-          # Faraday's instrumentation middleware references at build time.
-          records_event = defined?(::ActiveSupport::Notifications) &&
-            defined?(::Faraday::Request::Instrumentation)
-          if records_event &&
-              handlers.none? { |handler| handler.klass == ::Faraday::Request::Instrumentation }
-            use(::Faraday::Request::Instrumentation)
-          end
-          use(FaradayMiddleware, { :suppress_downstream => records_event })
-        end
+        use(FaradayMiddleware) unless handlers.any? { |handler| handler.klass == FaradayMiddleware }
         super
       end
     end

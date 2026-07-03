@@ -4,8 +4,9 @@ if DependencyHelper.faraday_present?
   require "faraday/excon" if DependencyHelper.excon_present?
 
   # Integration test against the real Faraday gem. The hook auto-installs
-  # Faraday's instrumentation middleware onto every connection, so the
-  # `request.faraday` event fires without the user adding it themselves.
+  # AppSignal's middleware onto every connection, so the `request.faraday` event
+  # is recorded without the user adding anything themselves -- and without a
+  # dependency on ActiveSupport (these gemfiles no longer load it).
   describe "Faraday integration" do
     before { Appsignal::Hooks::FaradayHook.new.install }
 

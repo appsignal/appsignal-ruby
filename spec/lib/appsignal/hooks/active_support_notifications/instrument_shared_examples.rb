@@ -50,6 +50,16 @@ shared_examples "activesupport instrument override" do
     expect(transaction).to_not include_events
   end
 
+  it "does not instrument suppressed events, recorded by a dedicated integration" do
+    return_value = as.instrument("request.faraday", :method => :get) do
+      "value"
+    end
+
+    expect(return_value).to eq "value"
+
+    expect(transaction).to_not include_events
+  end
+
   context "when an error is raised in an instrumented block" do
     it "instruments an ActiveSupport::Notifications.instrument event" do
       expect do

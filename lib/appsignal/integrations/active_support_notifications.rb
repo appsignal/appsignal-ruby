@@ -7,16 +7,21 @@ module Appsignal
       class << self
         BANG = "!"
 
+        # Events a dedicated AppSignal integration already records, so the
+        # generic notifications path must not record them a second time. The
+        # Faraday integration owns `request.faraday`: its middleware records the
+        # request itself, and Faraday's own instrumentation notification, if the
+        # user added that middleware, fires nested inside it.
+        SUPPRESSED_EVENT_NAMES = ["request.faraday"].freeze
+
         def start_event(name)
-          # Events that start with a bang are internal to Rails
-          instrument_this = name[0] != BANG
-          Appsignal::Transaction.current.start_event if instrument_this
+          return unless record_event?(name)
+
+          Appsignal::Transaction.current.start_event
         end
 
         def finish_event(name, payload = {})
-          # Events that start with a bang are internal to Rails
-          instrument_this = name[0] != BANG
-          return unless instrument_this
+          return unless record_event?(name)
 
           title, body, body_format = Appsignal::EventFormatter.format(name, payload)
           Appsignal::Transaction.current.finish_event(
@@ -25,6 +30,14 @@ module Appsignal
             body,
             body_format
           )
+        end
+
+        # Events starting with a bang are internal to Rails; suppressed events
+        # are recorded by a dedicated integration instead. Both `start_event`
+        # and `finish_event` gate on this so the event stack stays balanced.
+        def record_event?(name)
+          name = name.to_s
+          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name)
         end
       end
 
