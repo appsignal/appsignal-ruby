@@ -49,6 +49,11 @@ module Appsignal
         # avoid recording an event per job.
         return super if bulk_insert_in_progress?
 
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return super if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
         Appsignal.instrument("enqueue.que") { super }
       end
 
@@ -67,6 +72,11 @@ module Appsignal
     # single `bulk_enqueue.que` event; the inner enqueues are pass-throughs.
     module QueBulkClientPlugin
       def bulk_enqueue(*_args, **_rest)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return super if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
         Appsignal.instrument("bulk_enqueue.que") { super }
       end
     end

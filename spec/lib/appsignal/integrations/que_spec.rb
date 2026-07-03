@@ -239,6 +239,20 @@ if DependencyHelper.que_present?
       end
     end
 
+    context "when job enqueue events are suppressed" do
+      # As happens under Active Job, which records the enqueue itself.
+      it "passes through without recording the enqueue" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        transaction.suppress_job_enqueue_events { enqueue }
+
+        # The outer integration records the enqueue, so this one doesn't.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.que")
+      end
+    end
+
     # `bulk_enqueue` is Que 2 only. The whole batch records a single
     # `bulk_enqueue.que` event; the inner enqueues are pass-throughs.
     describe "#bulk_enqueue", :if => DependencyHelper.que2_present? do
@@ -271,6 +285,20 @@ if DependencyHelper.que_present?
         expect(event_names.count { |name| name == "bulk_enqueue.que" }).to eq(1)
         expect(event_names).to_not include("enqueue.que")
         expect(enqueued_tags).to eq(["user:42"])
+      end
+
+      context "when job enqueue events are suppressed" do
+        # As happens under Active Job, which records the enqueue itself.
+        it "passes through without recording the enqueue" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          transaction.suppress_job_enqueue_events { bulk_enqueue }
+
+          # The outer integration records the enqueue, so this one doesn't.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names).to_not include("bulk_enqueue.que")
+        end
       end
     end
   end
