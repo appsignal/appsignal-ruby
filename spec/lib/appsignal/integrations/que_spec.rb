@@ -441,6 +441,39 @@ if DependencyHelper.que_present?
       end
     end
 
+    context "when job enqueue events are suppressed" do
+      # As happens under Active Job, which records the enqueue itself.
+      def enqueue_suppressed(transaction)
+        transaction.suppress_job_enqueue_events { enqueue }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue_suppressed(transaction)
+
+        # The outer integration records the enqueue, so this one doesn't.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.que")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue_suppressed(transaction)
+        Appsignal::Transaction.complete_current!
+
+        # No producer span for the suppressed enqueue...
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.que")
+        # ...but the trace context is still injected so the job links back.
+        expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
+      end
+    end
+
     # `bulk_enqueue` is Que 2 only. The whole batch shares one `job_options`, so
     # it records a single producer event and the inner enqueues are pass-throughs.
     describe "#bulk_enqueue", :if => DependencyHelper.que2_present? do
@@ -507,6 +540,39 @@ if DependencyHelper.que_present?
           Appsignal::Transaction.complete_current!
 
           expect(enqueued_tags).to eq(full)
+        end
+      end
+
+      context "when job enqueue events are suppressed" do
+        # As happens under Active Job, which records the enqueue itself.
+        def bulk_enqueue_suppressed(transaction)
+          transaction.suppress_job_enqueue_events { bulk_enqueue }
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          bulk_enqueue_suppressed(transaction)
+
+          # The outer integration records the enqueue, so this one doesn't.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names).to_not include("bulk_enqueue.que")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          bulk_enqueue_suppressed(transaction)
+          Appsignal::Transaction.complete_current!
+
+          # No producer span for the suppressed batch...
+          expect(span_exporter.finished_spans.map(&:name)).to_not include("bulk_enqueue.que")
+          # ...but the trace context is still injected so the jobs link back.
+          expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
         end
       end
     end

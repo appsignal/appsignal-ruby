@@ -128,11 +128,25 @@ module Appsignal
       # performs links back. Yields the (possibly tag-augmented) `job_options` to
       # do the actual enqueue.
       def record_enqueue(job_options, event_name = "enqueue.que")
-        Appsignal.instrument(event_name, :opentelemetry_kind => :producer) do
-          tags = QueTraceContext.inject(job_options[:tags])
-          merged = tags.empty? ? job_options : job_options.merge(:tags => tags)
-          yield merged
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          return yield job_options_with_context(job_options)
         end
+
+        Appsignal.instrument(event_name, :opentelemetry_kind => :producer) do
+          yield job_options_with_context(job_options)
+        end
+      end
+
+      # In collector mode, injects the current trace context into a copy of the
+      # job's tags and returns the tag-augmented `job_options`; a no-op that
+      # returns `job_options` unchanged outside collector mode.
+      def job_options_with_context(job_options)
+        tags = QueTraceContext.inject(job_options[:tags])
+        tags.empty? ? job_options : job_options.merge(:tags => tags)
       end
 
       def bulk_insert_in_progress?
