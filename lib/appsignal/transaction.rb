@@ -290,6 +290,27 @@ module Appsignal
       @store[key]
     end
 
+    # @!visibility private
+    #
+    # Run a block during which downstream HTTP client integrations (Net::HTTP,
+    # ...) skip recording their own event. Used when an outer HTTP client
+    # integration (Faraday) already records the request, so the same request is
+    # not instrumented twice as nested client events.
+    def suppress_http_client_events
+      # Restore the previous value rather than forcing `false`, so nested calls
+      # don't unsuppress while an outer block is still active.
+      previously_suppressed = store("http_client")[:suppressed]
+      store("http_client")[:suppressed] = true
+      yield
+    ensure
+      store("http_client")[:suppressed] = previously_suppressed
+    end
+
+    # @!visibility private
+    def http_client_events_suppressed?
+      store("http_client")[:suppressed] == true
+    end
+
     # Add parameters to the transaction.
     #
     # When this method is called multiple times, it will merge the request parameters.

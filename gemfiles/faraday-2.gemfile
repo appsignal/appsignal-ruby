@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+gem "excon"
+gem "faraday", "~> 2.0"
+gem "faraday-excon"
+
+gemspec :path => "../"
