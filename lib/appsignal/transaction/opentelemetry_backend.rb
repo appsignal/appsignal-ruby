@@ -110,7 +110,7 @@ module Appsignal
         span.finish
       end
 
-      def set_action(action) # rubocop:disable Naming/AccessorMethodName
+      def set_action(action)
         # The collector reads the action from `appsignal.action_name`, not the
         # span name. Set the name too so the OTel-native trace stays readable;
         # the collector treats the span name as authoritative for display.
@@ -118,7 +118,7 @@ module Appsignal
         @span.set_attribute("appsignal.action_name", action)
       end
 
-      def set_namespace(namespace) # rubocop:disable Naming/AccessorMethodName
+      def set_namespace(namespace)
         # Only the attribute can change here: SpanKind is fixed at span
         # creation (immutable in OTel) from the initial namespace. A later
         # namespace override updates `appsignal.namespace` but not the kind --
@@ -132,7 +132,7 @@ module Appsignal
       # `appsignal.queue_start` event on the root span (per-trace timeline) and,
       # at completion, a `transaction_queue_duration` metric (the aggregate
       # graph). Like the agent, we record the delta and never shift span timing.
-      def set_queue_start(start) # rubocop:disable Naming/AccessorMethodName
+      def set_queue_start(start)
         return unless start && start > QUEUE_START_MIN
 
         @queue_start = start

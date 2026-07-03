@@ -23,11 +23,11 @@ module Appsignal
       end
 
       # Transaction metadata.
-      def set_action(_action) # rubocop:disable Naming/AccessorMethodName
+      def set_action(_action)
         raise NotImplementedError
       end
 
-      def set_namespace(_namespace) # rubocop:disable Naming/AccessorMethodName
+      def set_namespace(_namespace)
         raise NotImplementedError
       end
 
@@ -35,7 +35,7 @@ module Appsignal
         raise NotImplementedError
       end
 
-      def set_queue_start(_start) # rubocop:disable Naming/AccessorMethodName
+      def set_queue_start(_start)
         raise NotImplementedError
       end
 

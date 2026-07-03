@@ -18,7 +18,7 @@ if DependencyHelper.opentelemetry_present?
     # config attribute the runner script sets, with the right types, plus the
     # `telemetry.sdk.*` attributes from the OTel SDK's default resource. Used
     # for traces, metrics and logs alike so all three signal types are checked.
-    def expect_appsignal_resource(resource) # rubocop:disable Metrics/AbcSize
+    def expect_appsignal_resource(resource)
       attrs = resource.attributes.to_h { |kv| [kv.key, kv.value] }
       defaults = Runner::DEFAULT_ENV
 

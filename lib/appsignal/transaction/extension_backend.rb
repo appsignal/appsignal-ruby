@@ -44,15 +44,15 @@ module Appsignal
         @handle.record_event(name, title, body, body_format, duration, 0)
       end
 
-      def set_action(action) # rubocop:disable Naming/AccessorMethodName
+      def set_action(action)
         @handle.set_action(action)
       end
 
-      def set_namespace(namespace) # rubocop:disable Naming/AccessorMethodName
+      def set_namespace(namespace)
         @handle.set_namespace(namespace)
       end
 
-      def set_queue_start(start) # rubocop:disable Naming/AccessorMethodName
+      def set_queue_start(start)
         @handle.set_queue_start(start)
       end
 
