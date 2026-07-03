@@ -154,7 +154,7 @@ module Appsignal
         # collector mode), not a direct SDK span. `Appsignal.instrument` is a
         # transparent pass-through when there's no active transaction, and
         # `inject_context` no-ops outside collector mode.
-        def enqueue(*)
+        def enqueue(*, **)
           Appsignal.instrument("enqueue.active_job", :opentelemetry_kind => :producer) do
             Appsignal::OpenTelemetry.inject_context(__otel_headers)
             super

@@ -46,7 +46,8 @@ module Appsignal
         # are recorded elsewhere. Both `start_event` and `finish_event` gate on
         # this so the event stack stays balanced.
         def record_event?(name)
-          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name.to_s)
+          name = name.to_s
+          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name)
         end
       end
 
