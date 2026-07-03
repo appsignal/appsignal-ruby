@@ -162,20 +162,40 @@ if DependencyHelper.http_present?
     describe "following redirects" do
       # `HTTP.follow` chains through `HTTP::Session#request` in http6, which is
       # instrumented separately from `HTTP::Client#request`. The event is
-      # recorded at the request boundary, so a redirected request is a single
-      # `request.http_rb` event spanning every hop.
-      it "records a single event spanning every hop" do
+      # recorded at the request boundary, so a redirected request stays a single
+      # `request.http_rb` event (span) spanning every hop; trace context still
+      # rides on each hop, injected at `perform`.
+      def perform
         stub_request(:get, "http://www.google.com")
           .to_return(:status => 301, :headers => { "Location" => "http://www.example.com" })
         stub_request(:get, "http://www.example.com").to_return(:status => 200)
 
         HTTP.follow.get("http://www.google.com")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+        perform
 
         events = transaction.to_h["events"]
           .select { |event| event["name"] == "request.http_rb" }
         expect(events.map { |event| event["title"] }).to eq(
           ["GET http://www.google.com"]
         )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("GET http://www.google.com")
+        expect(span.kind).to eq(:client)
+        expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
       end
     end
 
@@ -337,52 +357,6 @@ if DependencyHelper.http_present?
           expect(event_spans.size).to eq(1)
           span = event_spans.first
           expect(span.name).to eq("GET http://www.example.com")
-          expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
-        end
-      end
-    end
-
-    describe "following redirects" do
-      # `perform` is the single send chokepoint, called once per request and
-      # once per redirect hop, so each hop becomes its own `request.http_rb`
-      # event. (Before this moved to `perform`, the `request`-level event
-      # spanned all hops.)
-      def perform
-        stub_request(:get, "http://www.google.com")
-          .to_return(:status => 301, :headers => { "Location" => "http://www.example.com" })
-        stub_request(:get, "http://www.example.com").to_return(:status => 200)
-
-        HTTP.follow.get("http://www.google.com")
-      end
-
-      it "in agent mode", :agent_mode do
-        start_agent
-        set_current_transaction(transaction)
-        perform
-
-        events = transaction.to_h["events"]
-          .select { |event| event["name"] == "request.http_rb" }
-        expect(events.map { |event| event["title"] }).to eq(
-          [
-            "GET http://www.google.com",
-            "GET http://www.example.com"
-          ]
-        )
-      end
-
-      it "in collector mode", :collector_mode do
-        start_collector_agent
-        set_current_transaction(transaction)
-        perform
-        Appsignal::Transaction.complete_current!
-
-        expect(event_spans.size).to eq(2)
-        expect(event_spans.map(&:name)).to contain_exactly(
-          "GET http://www.google.com",
-          "GET http://www.example.com"
-        )
-        event_spans.each do |span|
-          expect(span.kind).to eq(:client)
           expect(span.attributes["appsignal.category"]).to eq("request.http_rb")
         end
       end

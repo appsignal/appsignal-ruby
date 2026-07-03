@@ -17,17 +17,37 @@ module Appsignal
         )
       end
 
-      # `perform` is the single send chokepoint in both http5 and http6 (its
-      # signature is identical), called once per request and once per redirect
-      # hop. Instrumenting here keeps a single prepend module across versions and
-      # gives each hop its own event with trace context injected into that hop's
-      # outgoing request.
-      def perform(req, options)
-        HttpIntegration.instrument(req.verb, req.uri) do
-          # Write trace context onto the outgoing request headers so the called
-          # service joins this trace. No-op outside collector mode. `req.headers`
-          # is the live outgoing header set and a valid carrier (it responds to
-          # `[]=`).
+      # The event is recorded at the request boundary, so a redirected request
+      # stays a single `request.http_rb` event spanning every hop. That boundary
+      # lives in more than one place: a bare request runs through
+      # `HTTP::Client#request`, but in http6 a chained request (`.follow`,
+      # `.headers`, `.timeout`, ...) runs through `HTTP::Session#request`
+      # instead, which never touches `Client#request`. The hook prepends one of
+      # these onto each. `Client#request` takes positional options in http5 and
+      # keyword options in http6; `Session#request` (http6 only) takes keyword
+      # options.
+      module HashOptions
+        def request(verb, uri, opts = {})
+          HttpIntegration.instrument(verb, uri) { super }
+        end
+      end
+
+      module KeywordOptions
+        def request(verb, uri, **opts)
+          HttpIntegration.instrument(verb, uri) { super }
+        end
+      end
+
+      # Trace context has to ride on each outgoing hop's headers, so it's
+      # injected at `HTTP::Client#perform` -- the single send chokepoint in both
+      # http5 and http6, called once per request and once per redirect hop --
+      # where the live request headers are reachable. The event stays at the
+      # request boundary above, so a redirected request is still a single event;
+      # this only propagates context, and every hop carries it. No-op outside
+      # collector mode. `req.headers` is the live outgoing header set and a valid
+      # carrier (it responds to `[]=`).
+      module ContextInjection
+        def perform(req, options)
           Appsignal::OpenTelemetry.inject_context(req.headers)
           super
         end

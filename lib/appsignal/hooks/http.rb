@@ -6,15 +6,37 @@ module Appsignal
     class HttpHook < Appsignal::Hooks::Hook
       register :http_rb
 
+      def self.http6_or_higher?
+        Gem::Version.new(HTTP::VERSION) >= Gem::Version.new("6.0.0")
+      end
+
       def dependencies_present?
         defined?(HTTP::Client) && Appsignal.config && Appsignal.config[:instrument_http_rb]
       end
 
       def install
         require "appsignal/integrations/http"
-        # `perform` has the same signature in http5 and http6, so a single
-        # prepend module works for both.
-        HTTP::Client.prepend Appsignal::Integrations::HttpIntegration
+        # `Client#request` takes positional options in http5 and keyword options
+        # in http6.
+        integration =
+          if self.class.http6_or_higher?
+            Appsignal::Integrations::HttpIntegration::KeywordOptions
+          else
+            Appsignal::Integrations::HttpIntegration::HashOptions
+          end
+        HTTP::Client.prepend integration
+        # In http6 a chained request (`.follow`, `.headers`, ...) goes through
+        # `HTTP::Session#request` instead of `HTTP::Client#request`, so
+        # instrument it too (keyword options). http5 has no Session; chained
+        # requests run through `Client#request` there.
+        if defined?(HTTP::Session)
+          HTTP::Session.prepend Appsignal::Integrations::HttpIntegration::KeywordOptions
+        end
+        # Propagate trace context onto every outgoing hop (redirects included) at
+        # `Client#perform`, where the live request headers are reachable. Kept
+        # separate from the request-boundary event above: it only injects context
+        # and no-ops outside collector mode.
+        HTTP::Client.prepend Appsignal::Integrations::HttpIntegration::ContextInjection
 
         Appsignal::Environment.report_enabled("http_rb")
       end
