@@ -55,7 +55,7 @@ module Appsignal
       #
       # @!visibility private
       module ActiveJobEnqueueInstrumentation
-        def enqueue(*)
+        def enqueue(*, **)
           Appsignal.instrument("enqueue.active_job") { super }
         end
       end
