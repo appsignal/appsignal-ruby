@@ -200,6 +200,8 @@ if DependencyHelper.sidekiq_present?
       it "passes through without recording" do
         expect { |block| plugin.call("TestClass", job, "default", nil, &block) }
           .to yield_control
+
+        expect(created_transactions).to be_empty
       end
     end
   end
