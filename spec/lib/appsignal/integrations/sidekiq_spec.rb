@@ -620,7 +620,7 @@ if DependencyHelper.sidekiq_present?
           perform
 
           expect(transaction).to have_action("DelayedTestClass.foo_method")
-          expect(transaction).to include_params(["bar" => "baz"])
+          expect(transaction).to include_params([{ "bar" => "baz" }])
         end
 
         it "in collector mode", :collector_mode do
@@ -630,7 +630,7 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("DelayedTestClass.foo_method")
           params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
-          expect(params).to eq(["bar" => "baz"])
+          expect(params).to eq([{ "bar" => "baz" }])
         end
       end
 
@@ -691,7 +691,7 @@ if DependencyHelper.sidekiq_present?
           perform
 
           expect(transaction).to have_action("DelayedTestClass#foo_method")
-          expect(transaction).to include_params(["bar" => "baz"])
+          expect(transaction).to include_params([{ "bar" => "baz" }])
         end
 
         it "in collector mode", :collector_mode do
@@ -701,7 +701,7 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("DelayedTestClass#foo_method")
           params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
-          expect(params).to eq(["bar" => "baz"])
+          expect(params).to eq([{ "bar" => "baz" }])
         end
       end
 

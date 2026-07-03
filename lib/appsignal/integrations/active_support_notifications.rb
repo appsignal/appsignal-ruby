@@ -46,8 +46,8 @@ module Appsignal
         end
 
         # Events starting with a bang are internal to Rails; suppressed events
-        # are recorded elsewhere. Both `start_event` and `finish_event` gate on
-        # this so the event stack stays balanced.
+        # are recorded by a dedicated integration instead. Both `start_event`
+        # and `finish_event` gate on this so the event stack stays balanced.
         def record_event?(name)
           name = name.to_s
           name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name)
