@@ -432,7 +432,7 @@ module Appsignal
     end
 
     # @!visibility private
-    def write_to_environment # rubocop:disable Metrics/AbcSize
+    def write_to_environment
       ENV["_APPSIGNAL_ACTIVE"]                       = active?.to_s
       ENV["_APPSIGNAL_AGENT_PATH"]                   = File.expand_path("../../ext", __dir__).to_s
       ENV["_APPSIGNAL_APP_NAME"]                     = config_hash[:name]
@@ -591,7 +591,9 @@ module Appsignal
       return unless yml_config_file?
 
       read_options = YAML::VERSION >= "4.0.0" ? { :aliases => true } : {}
+      # rubocop:disable Security/YAMLLoad
       configurations = YAML.load(ERB.new(File.read(yml_config_file)).result, **read_options)
+      # rubocop:enable Security/YAMLLoad
       config_for_this_env = configurations[env]
       if config_for_this_env
         config_for_this_env.transform_keys(&:to_sym)

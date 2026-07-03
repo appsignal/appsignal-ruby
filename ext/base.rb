@@ -136,9 +136,9 @@ def download_archive(type)
           :proxy => proxy }
       ]
       if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
-        return URI.open(*args)
+        return URI.open(*args) # rubocop:disable Security/Open
       else
-        return open(*args)
+        return open(*args) # rubocop:disable Security/Open
       end
     rescue => error
       backtrace = error.backtrace.join("\n")

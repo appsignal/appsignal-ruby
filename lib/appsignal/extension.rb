@@ -84,7 +84,7 @@ module Appsignal
     #
     # This class inherits from the {Data} class so that it passes type checks.
     class MockData < Data
-      def initialize(*_args)
+      def initialize(*_args) # rubocop:disable Lint/MissingSuper
         # JRuby extension requirement, as it sends a pointer to the Data object
         # when creating it
       end

@@ -27,9 +27,9 @@ class Object
       end
     end
 
-    if singleton_class.respond_to?(:ruby2_keywords, true) # rubocop:disable Style/GuardClause
-      singleton_class.send(:ruby2_keywords, method_name)
-    end
+    return unless singleton_class.respond_to?(:ruby2_keywords, true)
+
+    singleton_class.send(:ruby2_keywords, method_name)
   end
 
   # Instruments an instance method with AppSignal monitoring.

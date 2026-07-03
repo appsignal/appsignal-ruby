@@ -24,7 +24,7 @@ module Appsignal
           Appsignal.instrument("perform_job.delayed_job") do
             block.call(job)
           end
-        rescue Exception => error # rubocop:disable Lint/RescueException
+        rescue Exception => error
           transaction.set_error(error)
           raise
         ensure
@@ -63,6 +63,7 @@ module Appsignal
         "#{default_name}#perform"
       end
 
+      # rubocop:disable Style/OptionalBooleanParameter
       def self.extract_value(object_or_hash, field, default_value = nil, convert_to_s = false)
         value = nil
 
@@ -87,6 +88,7 @@ module Appsignal
           value
         end
       end
+      # rubocop:enable Style/OptionalBooleanParameter
     end
   end
 end

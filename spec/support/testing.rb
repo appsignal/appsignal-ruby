@@ -86,7 +86,7 @@ module Appsignal
 
       # @see TransactionHelpers#keep_transactions
       def keep_transactions?
-        defined?(@keep_transactions) ? @keep_transactions : nil
+        defined?(@keep_transactions) ? @keep_transactions : false
       end
 
       # @see TransactionHelpers#keep_transactions
@@ -108,7 +108,7 @@ module Appsignal
         alias original_set_queue_start set_queue_start
         # Temporary helper until the extension returns this information
         # https://github.com/appsignal/appsignal-agent/issues/293
-        def set_queue_start(start) # rubocop:disable Naming/AccessorMethodName
+        def set_queue_start(start)
           @queue_start = start
           original_set_queue_start(start)
         end

@@ -350,7 +350,7 @@ module Appsignal
           path = File.expand_path("../../../ext/install.report", __dir__)
           raw_report = File.read(path)
           JSON.parse(raw_report)
-        rescue StandardError, JSON::ParserError => e # rubocop:disable Lint/ShadowedException
+        rescue StandardError => e
           {
             "parsing_error" => {
               "error" => "#{e.class}: #{e}",

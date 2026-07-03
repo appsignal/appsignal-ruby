@@ -42,7 +42,9 @@ describe Appsignal::EventFormatter do
   around do |example|
     original_formatters = described_class.formatters
     example.run
+    # rubocop:disable Style/ClassVars
     described_class.class_variable_set(:@@formatters, original_formatters)
+    # rubocop:enable Style/ClassVars
   end
 
   describe ".register" do

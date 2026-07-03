@@ -77,7 +77,7 @@ module Appsignal
 
         begin
           Appsignal.instrument "perform_job.sidekiq", &block
-        rescue Exception => exception # rubocop:disable Lint/RescueException
+        rescue Exception => exception
           job_status = :failed
           raise exception
         ensure
@@ -185,7 +185,7 @@ module Appsignal
         if YAML::VERSION >= "4.0.0"
           yield(*YAML.unsafe_load(content))
         else
-          yield(*YAML.load(content))
+          yield(*YAML.load(content)) # rubocop:disable Security/YAMLLoad
         end
       rescue => error
         # Sidekiq issue #1761: in dev mode, it's possible to have jobs enqueued

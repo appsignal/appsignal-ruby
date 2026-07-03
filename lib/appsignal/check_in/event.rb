@@ -70,7 +70,7 @@ module Appsignal
           end
         end
 
-        def deduplicate_cron!(events) # rubocop:disable Metrics/AbcSize
+        def deduplicate_cron!(events)
           # Remove redundant cron check-in events from the given list of events.
           # This is done by removing redundant *pairs* of events -- that is,
           # for each identifier, only send one complete pair of start and

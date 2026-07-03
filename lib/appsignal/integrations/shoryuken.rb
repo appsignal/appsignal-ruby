@@ -8,7 +8,7 @@ module Appsignal
         transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
 
         Appsignal.instrument("perform_job.shoryuken", &block)
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         transaction.set_error(error)
         raise
       ensure

@@ -53,7 +53,7 @@ module Appsignal
         @body_already_closed = true
       rescue *IGNORED_ERRORS # Do not report
         raise
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         appsignal_report_error(error)
         raise error
       end
@@ -109,7 +109,7 @@ module Appsignal
         end
       rescue *IGNORED_ERRORS # Do not report
         raise
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         appsignal_report_error(error)
         raise error
       end
@@ -130,7 +130,7 @@ module Appsignal
         end
       rescue *IGNORED_ERRORS # Do not report
         raise
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         appsignal_report_error(error)
         raise error
       end
@@ -156,7 +156,7 @@ module Appsignal
         end
       rescue *IGNORED_ERRORS # Do not report
         raise
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         appsignal_report_error(error)
         raise error
       end
@@ -174,7 +174,7 @@ module Appsignal
         end
       rescue *IGNORED_ERRORS # Do not report
         raise
-      rescue Exception => error # rubocop:disable Lint/RescueException
+      rescue Exception => error
         appsignal_report_error(error)
         raise error
       end
