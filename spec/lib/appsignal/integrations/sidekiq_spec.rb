@@ -340,9 +340,11 @@ if DependencyHelper.sidekiq_present?
 
         expect(enqueue).to eq(:enqueued)
 
-        # Records an enqueue event on the transaction; no wire context in agent mode.
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.sidekiq")
+        # Records an enqueue event on the transaction, titled after the job;
+        # no wire context in agent mode.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue TestClass job")
         expect(job).to_not have_key("traceparent")
       end
 
@@ -354,8 +356,10 @@ if DependencyHelper.sidekiq_present?
         expect(enqueue).to eq(:enqueued)
         Appsignal::Transaction.complete_current!
 
-        # The enqueue is a producer event span under the active transaction.
-        producer = event_spans.find { |s| s.name == "enqueue.sidekiq" }
+        # The enqueue is a producer event span under the active transaction,
+        # named after the job being enqueued.
+        producer = event_spans.find { |s| s.name == "enqueue TestClass job" }
+        expect(producer.attributes["appsignal.category"]).to eq("enqueue.sidekiq")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 

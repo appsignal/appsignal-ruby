@@ -70,7 +70,11 @@ module Appsignal
           return yield
         end
 
-        Appsignal.instrument("enqueue.sidekiq", :opentelemetry_kind => :producer) do
+        Appsignal.instrument(
+          "enqueue.sidekiq",
+          "enqueue #{job["class"]} job",
+          :opentelemetry_kind => :producer
+        ) do
           Appsignal::OpenTelemetry.inject_context(job)
           yield
         end
